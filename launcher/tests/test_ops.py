@@ -23,7 +23,10 @@ class UpTest(unittest.TestCase):
         self.assertEqual(runs, [self.f.golden("llamacpp", "qwen3.6-35b-a3b")])
         out = self.f.host.out.getvalue()
         self.assertIn("http://127.0.0.1:8080/v1", out)
-        self.assertIn("opencode -m llamacpp-docker/qwen3.6-35b-a3b", out)
+        self.assertIn("OpenCode model: llamacpp-docker/qwen3.6-35b-a3b", out)
+        self.assertIn("/models", out)
+        self.assertIn('opencode run --model llamacpp-docker/qwen3.6-35b-a3b "', out)
+        self.assertNotIn("opencode -m", out)  # the interactive command has no -m flag in OpenCode v2.3.0
         self.assertIn("131072", out)
         self.assertIn("122.5 tok/s", out)
         self.assertIn("./llmctl down", out)

@@ -16,7 +16,8 @@ The recipes were measured on an MSI Raider 18 Max HX A2WI with an RTX 5080 Lapto
 ./llmctl down                 # stops the server
 ```
 
-`up` prints the OpenCode model to use, for example `opencode -m llamacpp-docker/qwen3.6-35b-a3b`, which works with the provider config in [opencode.md](opencode.md#the-validated-config).
+`up` prints the OpenCode model to use, for example `llamacpp-docker/qwen3.6-35b-a3b`, which works with the provider config in [opencode.md](opencode.md#the-validated-config).
+In the OpenCode screen, pick it with `/models` (or `ctrl+x m`); for a single prompt, pass it as `opencode run --model llamacpp-docker/qwen3.6-35b-a3b "..."`, because the interactive `opencode` command has no `-m` flag ([OpenCode models docs](https://opencode.ai/docs/models/)).
 It needs Linux, Docker Engine, the NVIDIA Container Toolkit with a CDI spec ([host-setup.md](host-setup.md)), and Python 3.11 or newer; it uses only Python's standard library, so there is nothing to install.
 Checked on the reference laptop on 2026-11-16: `up qwen3.6` was ready in 9 s and passed `test` and an OpenCode session, and `up gpt-oss --runtime vllm` was ready in 29 s with warm compile caches and passed `test` ([records](../research/2026-11-16/llmctl-e2e/)).
 

@@ -80,7 +80,10 @@ def up(host, catalog, name: str, runtime_name: str | None, *, replace: bool, dry
     served = adapter.served_name(recipe, runtime)
     out.write(f"ready: http://127.0.0.1:{runtime.host_port}/v1, served as '{served}', context {recipe.context}\n")
     if recipe.opencode:
-        out.write(f"OpenCode: opencode -m {runtime.opencode_provider}/{recipe.id}\n")
+        model = f"{runtime.opencode_provider}/{recipe.id}"
+        out.write(f"OpenCode model: {model}\n")
+        out.write("  in the OpenCode screen: type /models (or press ctrl+x m) and pick it\n")
+        out.write(f'  for a single prompt: opencode run --model {model} "your prompt"\n')
     else:
         out.write("OpenCode: no OpenCode entry for this recipe in docs/opencode.md\n")
     if recipe.chat_only:
