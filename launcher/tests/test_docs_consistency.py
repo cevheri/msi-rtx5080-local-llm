@@ -8,6 +8,7 @@ import re
 import shlex
 import unittest
 
+from launcher import opencode_config
 from launcher.catalog import load_catalog
 from launcher.runtimes import ADAPTERS
 from launcher.tests.fakes import REPO
@@ -36,6 +37,19 @@ def section(doc: str) -> list[str]:
     if not found:
         raise AssertionError(f"no section #{anchor} in {path}")
     return lines
+
+
+def heading_slugs(path) -> set[str]:
+    """The anchors of every Markdown heading in a file, outside fenced blocks."""
+    slugs, inside = set(), False
+    for line in path.read_text().splitlines():
+        if line.startswith("```"):
+            inside = not inside
+            continue
+        heading = None if inside else re.match(r"^#{1,6}\s+(.*?)\s*$", line)
+        if heading:
+            slugs.add(slug(heading.group(1)))
+    return slugs
 
 
 def last_run_block(lines: list[str]) -> list[str] | None:
@@ -94,6 +108,22 @@ def opencode_providers() -> dict:
     return json.loads(block)["providers"]
 
 
+def opencode_snippet(doc: str) -> dict | None:
+    """The "OpenCode entry" JSON snippet of a recipe's document section, or None when it has none."""
+    lines = section(doc)
+    start = next((index for index, line in enumerate(lines) if line.startswith("OpenCode entry")), None)
+    if start is None:
+        return None
+    opening = next(index for index in range(start + 1, len(lines)) if lines[index].startswith("```"))
+    if lines[opening] != "```json":
+        raise AssertionError(f"{doc}: the block after the OpenCode entry line is not ```json")
+    closing = next(index for index in range(opening + 1, len(lines)) if lines[index].startswith("```"))
+    snippet = json.loads("{" + "\n".join(lines[opening + 1:closing]) + "}")
+    if len(snippet) != 1:
+        raise AssertionError(f"{doc}: the OpenCode entry snippet holds {len(snippet)} keys, not one")
+    return next(iter(snippet.values()))
+
+
 class DocsConsistencyTest(unittest.TestCase):
     catalog = load_catalog(REPO / "recipes", None)
 
@@ -117,21 +147,67 @@ class DocsConsistencyTest(unittest.TestCase):
                 self.assertEqual((launch["memory"], launch["context"]), (recipe.memory_gib, recipe.context))
                 self.assertEqual(launch["args"], list(recipe.args))
 
-    def test_opencode_config_matches(self):
+    def test_opencode_entries_match_client_metadata(self):
         providers = opencode_providers()
         for name, entry in self.catalog.runtimes.items():
             models = providers[entry.runtime.opencode_provider]["models"]
             for recipe in entry.recipes.values():
                 with self.subTest(runtime=name, recipe=recipe.id):
-                    model = models.get(recipe.id)
-                    if not recipe.opencode:
-                        self.assertIsNone(model, "the recipe says opencode = false but the config has an entry")
-                        continue
-                    self.assertIsNotNone(model, "the recipe says opencode = true but the config has no entry")
-                    self.assertEqual(model["modelID"], ADAPTERS[name].served_name(recipe, entry.runtime))
-                    self.assertEqual(model["limit"]["context"], recipe.context)
+                    documented = []
+                    if recipe.opencode:
+                        self.assertIn(recipe.id, models, "the recipe says opencode = true but the config has no entry")
+                        documented.append(models[recipe.id])
+                    snippet = opencode_snippet(recipe.doc)
+                    if snippet is not None:
+                        documented.append(snippet)
+                    self.assertTrue(documented, "no documented OpenCode entry")
+                    expected = opencode_config.expected_entry(recipe, ADAPTERS[name].served_name(recipe, entry.runtime))
+                    for model in documented:
+                        self.assertEqual({key: value for key, value in model.items() if key != "name"}, expected)
+
+    def test_every_opencode_entry_has_a_recipe(self):
+        providers = opencode_providers()
+        for entry in self.catalog.runtimes.values():
+            models = providers[entry.runtime.opencode_provider]["models"]
             started = {recipe.id for recipe in entry.recipes.values() if recipe.opencode}
             self.assertEqual(set(models), started, f"{entry.runtime.opencode_provider} lists a model without a recipe")
+
+    def test_clients_doc_examples_match_golden(self):
+        lines = (REPO / "docs/clients.md").read_text().splitlines()
+        named = []
+        for index, line in enumerate(lines):
+            match = re.search(r"`launcher/tests/golden/clients/((?:llamacpp|vllm)/[^`]+)`", line)
+            if match is None:
+                continue
+            name = match.group(1)
+            named.append(name)
+            with self.subTest(golden=name):
+                opening = index + 1
+                while opening < len(lines) and not lines[opening].strip():
+                    opening += 1
+                self.assertTrue(opening < len(lines) and lines[opening].startswith("```"),
+                                f"docs/clients.md line {index + 1}: no fenced block before the next prose line")
+                closing = next(i for i in range(opening + 1, len(lines)) if lines[i].startswith("```"))
+                shown = "\n".join(lines[opening + 1:closing]) + "\n"
+                golden = (REPO / "launcher/tests/golden/clients" / name).read_text()
+                # Compared as text, so the document shows the layout llmctl writes, not only the same values.
+                self.assertEqual(shown, golden)
+        for required in ("llamacpp/qwen3.6-35b-a3b.hermes.yaml", "llamacpp/qwen3.6-35b-a3b.pi.json",
+                         "vllm/gpt-oss-20b.hermes.yaml", "vllm/gpt-oss-20b.pi.json"):
+            self.assertIn(required, named)
+
+    def test_doc_anchors_in_messages_resolve(self):
+        pattern = re.compile(r"\b((?:docs|llamacpp|vllm)/[A-Za-z0-9_.-]+\.md)#([A-Za-z0-9_-]+)")
+        found = 0
+        for source in sorted((REPO / "launcher").rglob("*.py")):
+            if (REPO / "launcher/tests") in source.parents:
+                continue
+            for path, anchor in pattern.findall(source.read_text()):
+                found += 1
+                with self.subTest(source=str(source.relative_to(REPO)), link=f"{path}#{anchor}"):
+                    self.assertTrue((REPO / path).is_file(), f"{path} does not exist")
+                    self.assertIn(anchor, heading_slugs(REPO / path))
+        self.assertGreater(found, 0)
 
 
 if __name__ == "__main__":

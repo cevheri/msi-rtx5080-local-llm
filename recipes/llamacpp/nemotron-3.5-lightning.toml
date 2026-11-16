@@ -22,6 +22,11 @@ args = [
   "8", "--moe-cache-mib", "3200", "--reasoning", "off", "--temp", "1.0", "--top-p", "0.95",
 ]
 
+[clients]
+output = 16384
+thinking = "toggle"
+default = "off"
+
 [needs]
 gpu_mib = 14994
 ram_gib = 10.3

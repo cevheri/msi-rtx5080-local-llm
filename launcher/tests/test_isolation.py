@@ -1,5 +1,6 @@
 """A change to one runtime's files must not change any command generated for the other runtime."""
 
+import ast
 import json
 import re
 import shutil
@@ -7,9 +8,15 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from launcher import hermes_config, pi_config
 from launcher.catalog import load_catalog
 from launcher.tests.fakes import REPO
-from launcher.tests.regen_golden import GOLDEN, golden_argv
+from launcher.tests.regen_golden import CLIENT_GOLDEN, GOLDEN, golden_argv, target_for
+
+CLIENT_MODULES = ["files.py", "hermes_config.py", "pi_config.py", "opencode_config.py", "clients.py"]
+ADAPTERS = ["runtimes/llamacpp.py", "runtimes/vllm.py"]
+CLIENT_IMPORTS = {"launcher.files", "launcher.clients", "launcher.hermes_config", "launcher.pi_config",
+                  "launcher.opencode_config"}
 
 
 def edit_runtime(directory: Path, port: int, extra_arg: str) -> None:
@@ -27,6 +34,7 @@ def edit_runtime(directory: Path, port: int, extra_arg: str) -> None:
         assert "args = [\n" in text, recipe
         text = text.replace("args = [\n", f'args = [\n  "{extra_arg}",\n', 1)
         text = re.sub(r"(?m)^memory_gib = \d+$", "memory_gib = 7", text)
+        text = re.sub(r"(?m)^output = \d+$", "output = 12288", text)
         recipe.write_text(text)
 
 
@@ -50,6 +58,22 @@ class IsolationTest(unittest.TestCase):
         for recipe_id in catalog.runtimes[untouched].recipes:
             expected = json.loads((GOLDEN / untouched / f"{recipe_id}.json").read_text())
             self.assertEqual(golden_argv(recipe_id, untouched, self.recipes), expected, f"{untouched}/{recipe_id}")
+        for recipe_id in catalog.runtimes[edited].recipes:
+            texts = self.client_texts(recipe_id, edited)
+            self.assertNotEqual(texts[0], (CLIENT_GOLDEN / edited / f"{recipe_id}.hermes.yaml").read_text(),
+                                f"the edit did not reach the Hermes block of {edited}/{recipe_id}")
+            self.assertNotEqual(texts[1], (CLIENT_GOLDEN / edited / f"{recipe_id}.pi.json").read_text(),
+                                f"the edit did not reach the Pi entry of {edited}/{recipe_id}")
+        for recipe_id in catalog.runtimes[untouched].recipes:
+            texts = self.client_texts(recipe_id, untouched)
+            self.assertEqual(texts[0], (CLIENT_GOLDEN / untouched / f"{recipe_id}.hermes.yaml").read_text(),
+                             f"{untouched}/{recipe_id}.hermes.yaml")
+            self.assertEqual(texts[1], (CLIENT_GOLDEN / untouched / f"{recipe_id}.pi.json").read_text(),
+                             f"{untouched}/{recipe_id}.pi.json")
+
+    def client_texts(self, recipe_id: str, runtime: str) -> tuple[str, str]:
+        target = target_for(recipe_id, runtime, self.recipes)
+        return hermes_config.render_block(target), pi_config.new_models_text(target)
 
     def test_llamacpp_edits_leave_vllm_alone(self):
         edit_runtime(self.recipes / "llamacpp", 8090, "--metrics")
@@ -58,6 +82,53 @@ class IsolationTest(unittest.TestCase):
     def test_vllm_edits_leave_llamacpp_alone(self):
         edit_runtime(self.recipes / "vllm", 8001, "--disable-log-requests")
         self.assert_runtime_untouched("vllm", "llamacpp")
+
+
+def parse_module(name: str) -> ast.Module:
+    path = REPO / "launcher" / name
+    return ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+
+
+def imported_modules(tree: ast.Module) -> list[str]:
+    """Every module an import names, with `from launcher import x` as `launcher.x`."""
+    names = []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            names += [alias.name for alias in node.names]
+        elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
+            names.append(node.module)
+            names += [f"{node.module}.{alias.name}" for alias in node.names]
+    return names
+
+
+class ClientBoundaryTest(unittest.TestCase):
+    def test_client_modules_read_no_process_environment(self):
+        for name in CLIENT_MODULES:
+            with self.subTest(module=name):
+                found = []
+                for node in ast.walk(parse_module(name)):
+                    if isinstance(node, ast.Attribute) and node.attr in ("environ", "getenv", "expanduser"):
+                        found.append(f"line {node.lineno}: .{node.attr}")
+                    elif (isinstance(node, ast.Attribute) and node.attr == "home"
+                          and isinstance(node.value, ast.Name) and node.value.id == "Path"):
+                        found.append(f"line {node.lineno}: Path.home")
+                    elif isinstance(node, ast.ImportFrom) and node.module in ("os", "os.path"):
+                        for alias in node.names:
+                            if alias.name in ("environ", "getenv", "expanduser"):
+                                found.append(f"line {node.lineno}: from {node.module} import {alias.name}")
+                self.assertEqual(found, [])
+
+    def test_adapters_and_client_modules_stay_apart(self):
+        for name in CLIENT_MODULES:
+            with self.subTest(module=name):
+                bad = [m for m in imported_modules(parse_module(name))
+                       if m == "launcher.runtimes" or m.startswith("launcher.runtimes.")]
+                self.assertEqual(bad, [])
+        for name in ADAPTERS:
+            with self.subTest(module=name):
+                bad = [m for m in imported_modules(parse_module(name))
+                       if m.startswith("launcher.runtimes.") or m in CLIENT_IMPORTS]
+                self.assertEqual(bad, [])
 
 
 if __name__ == "__main__":

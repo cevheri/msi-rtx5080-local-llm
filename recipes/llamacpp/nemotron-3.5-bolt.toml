@@ -23,6 +23,12 @@ args = [
   "--top-p", "0.95",
 ]
 
+[clients]
+output = 16384
+thinking = "toggle"
+default = "off"
+medium_kwargs = { medium_effort = true }
+
 [needs]
 gpu_mib = 14952
 ram_gib = 17.8

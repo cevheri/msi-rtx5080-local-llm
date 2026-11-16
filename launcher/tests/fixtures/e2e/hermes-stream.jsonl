@@ -1,0 +1,29 @@
+{"type": "system"}
+{"type": "tool_use", "name": "write_file"}
+{"type": "tool_result", "name": "write_file", "is_error": false}
+{"type": "tool_use", "name": "read_file"}
+{"type": "tool_result", "name": "read_file", "is_error": false}
+{"type": "text", "text": "x"}
+{"type": "text", "text": "x"}
+{"type": "text", "text": "x"}
+{"type": "text", "text": "x"}
+{"type": "text", "text": "x"}
+{"type": "text", "text": "x"}
+{"type": "text", "text": "x"}
+{"type": "text", "text": "x"}
+{"type": "text", "text": "x"}
+{"type": "text", "text": "x"}
+{"type": "text", "text": "x"}
+{"type": "text", "text": "x"}
+{"type": "text", "text": "x"}
+{"type": "text", "text": "x"}
+{"type": "text", "text": "x"}
+{"type": "text", "text": "x"}
+{"type": "text", "text": "x"}
+{"type": "text", "text": "x"}
+{"type": "text", "text": "x"}
+{"type": "text", "text": "x"}
+{"type": "text", "text": "x"}
+{"type": "text", "text": "x"}
+{"type": "text", "text": "x"}
+{"type": "result", "exit_code": 0, "text": "x"}

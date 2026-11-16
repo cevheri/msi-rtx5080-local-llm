@@ -1,0 +1,38 @@
+{
+  "providers": {
+    "llmctl": {
+      "name": "llmctl",
+      "baseUrl": "http://127.0.0.1:8000/v1",
+      "api": "openai-completions",
+      "apiKey": "no-key-required",
+      "compat": {
+        "supportsStore": false,
+        "supportsDeveloperRole": false,
+        "maxTokensField": "max_tokens"
+      },
+      "models": [
+        {
+          "id": "gpt-oss-20b",
+          "name": "gpt-oss-20b on vLLM (llmctl)",
+          "reasoning": true,
+          "input": [
+            "text"
+          ],
+          "contextWindow": 65536,
+          "maxTokens": 16384,
+          "thinkingLevelMap": {
+            "off": null,
+            "minimal": null,
+            "low": "low",
+            "medium": "medium",
+            "high": "high"
+          },
+          "compat": {
+            "thinkingFormat": "openai",
+            "supportsReasoningEffort": true
+          }
+        }
+      ]
+    }
+  }
+}

@@ -93,11 +93,16 @@ class CliTest(unittest.TestCase):
         config.parent.mkdir(parents=True)
         config.write_text('{"model": "llamacpp-docker/gemma-4-26b-a4b", "providers": {}}\n')
         host.env["XDG_CONFIG_HOME"] = str(config.parent.parent)
+        host.installed["opencode"] = "/usr/bin/opencode"
         rows, out = self.list_rows(host)
         self.assertEqual(rows[("gemma-4-26b-a4b", "llamacpp")]["STATUS"], "running")
         self.assertEqual(rows[("qwen3.6-35b-a3b", "llamacpp")]["STATUS"], "-")
         self.assertIn("running: gemma-4-26b-a4b on llamacpp, http://127.0.0.1:8080/v1", out)
-        self.assertIn("OpenCode default: llamacpp-docker/gemma-4-26b-a4b", out)
+        lines = out.splitlines()
+        self.assertIn("clients:", lines)
+        self.assertIn("  OpenCode: default llamacpp-docker/gemma-4-26b-a4b, the running model", lines)
+        self.assertIn("  Hermes: not installed (no hermes on PATH)", lines)
+        self.assertNotIn("OpenCode default:", out)
 
     def test_list_status_starting_and_older_file(self):
         host = self.host()
@@ -113,9 +118,31 @@ class CliTest(unittest.TestCase):
         host = self.host()
         host.on(("docker", "ps"), fail("permission denied while trying to connect to the Docker daemon socket"))
         host.on(("docker", "info"), fail("permission denied while trying to connect to the Docker daemon socket"))
+        config = Path(self.tmp.name) / "xdg" / "opencode" / "opencode.json"
+        config.parent.mkdir(parents=True)
+        config.write_text('{"model": "llamacpp-docker/gemma-4-26b-a4b", "providers": {}}\n')
+        host.env["XDG_CONFIG_HOME"] = str(config.parent.parent)
+        host.installed["opencode"] = "/usr/bin/opencode"
         rows, out = self.list_rows(host)
         self.assertEqual(rows[("qwen3.6-35b-a3b", "llamacpp")]["STATUS"], "?")
         self.assertIn("Docker did not answer", out)
+        self.assertIn("  OpenCode: default llamacpp-docker/gemma-4-26b-a4b", out.splitlines())
+        self.assertNotIn("points at llmctl, but no model is running", out)
+
+    def test_list_with_unknown_recipe_running_does_not_warn(self):
+        from launcher.tests.ops_fixture import managed_line
+        host, clients = self.client_host()
+        (clients.hermes_root / "active_profile").write_text("llmctl\n", encoding="utf-8")
+        clients.settings_path.write_text('{"defaultProvider": "llmctl", "defaultModel": "gpt-oss-20b"}\n',
+                                         encoding="utf-8")
+        line = managed_line("llamacpp", "running", "my-override-gone", source="override")
+        host.on(("docker", "ps"), ok(line + "\n"))
+        rows, out = self.list_rows(host)
+        self.assertIn("running: my-override-gone on llamacpp, http://127.0.0.1:8080/v1", out.splitlines())
+        self.assertIn("  OpenCode: default llamacpp-docker/gemma-4-26b-a4b", out.splitlines())
+        self.assertIn("default profile: llmctl", out)
+        self.assertIn("default llmctl/gpt-oss-20b", out)
+        self.assertNotIn("but no model is running", out)
 
     def test_list_speed_column(self):
         rows, _ = self.list_rows(self.host())
@@ -176,18 +203,86 @@ class CliTest(unittest.TestCase):
         self.assertEqual(main(["check"], host), 2)
         self.assertIn(str(path), host.out.getvalue())
 
-    def test_env_var_sets_opencode_default(self):
+    def client_host(self, **env):
+        from launcher import hermes_config, pi_config
+        from launcher.tests.client_fixture import ClientFixture
         from launcher.tests.ops_fixture import OpsFixture
-        from launcher.tests.test_opencode_config import doc_config_text
+        from launcher.tests.regen_golden import target_for
         fixture = OpsFixture()
         self.addCleanup(fixture.cleanup)
-        config = fixture.runtime_dir / "xdg" / "opencode" / "opencode.json"
-        config.parent.mkdir(parents=True)
-        config.write_text(doc_config_text().replace("llamacpp-docker/qwen3.6-35b-a3b", "vllm-docker/gpt-oss-20b", 1))
-        fixture.host.env.update({"XDG_CONFIG_HOME": str(config.parent.parent), "LLMCTL_SET_OPENCODE_DEFAULT": "1"})
-        fixture.host.on(("opencode", "reload"), ok())
-        self.assertEqual(main(["up", "qwen3.6"], fixture.host), 0)
-        self.assertIn('"model": "llamacpp-docker/qwen3.6-35b-a3b"', config.read_text())
+        clients = ClientFixture(fixture.host, Path(fixture.tmp.name))
+        clients.install("opencode", "hermes", "pi")
+        clients.route_clients()
+        clients.write_opencode("llamacpp-docker/gemma-4-26b-a4b")
+        old = target_for("gpt-oss-20b", "vllm", REPO / "recipes")
+        clients.hermes_config.parent.mkdir(parents=True)
+        clients.hermes_config.write_text(hermes_config.new_config_text(old), encoding="utf-8")
+        clients.models_path.write_text(pi_config.new_models_text(old), encoding="utf-8")
+        clients.settings_path.write_text('{"lastChangelogVersion": "1.5.2"}\n', encoding="utf-8")
+        fixture.host.env.update(env)
+        return fixture.host, clients
+
+    def pi_settings(self, clients):
+        import json
+        return json.loads(clients.settings_path.read_text(encoding="utf-8"))
+
+    def test_set_default_flag(self):
+        host, clients = self.client_host()
+        self.assertEqual(main(["up", "qwen3.6", "--set-default"], host), 0, host.err.getvalue())
+        self.assertEqual(self.pi_settings(clients).get("defaultProvider"), "llmctl")
+
+    def test_env_var_sets_default(self):
+        host, clients = self.client_host(LLMCTL_SET_DEFAULT="1")
+        self.assertEqual(main(["up", "qwen3.6"], host), 0, host.err.getvalue())
+        self.assertEqual(self.pi_settings(clients).get("defaultProvider"), "llmctl")
+
+    def test_env_var_off_values_set_nothing(self):
+        for value in ("", "0"):
+            with self.subTest(value=value):
+                host, clients = self.client_host(LLMCTL_SET_DEFAULT=value)
+                self.assertEqual(main(["up", "qwen3.6"], host), 0, host.err.getvalue())
+                self.assertNotIn("defaultProvider", self.pi_settings(clients))
+
+    def test_env_var_bad_value(self):
+        host, clients = self.client_host(LLMCTL_SET_DEFAULT="yes")
+        self.assertEqual(main(["up", "qwen3.6"], host), 1)
+        self.assertIn("LLMCTL_SET_DEFAULT must be 1 or 0", host.err.getvalue())
+        self.assertEqual(host.calls, [])
+
+    def test_env_var_bad_value_with_flag(self):
+        host, clients = self.client_host(LLMCTL_SET_DEFAULT="yes")
+        self.assertEqual(main(["up", "qwen3.6"], host), 1)
+        expected = host.err.getvalue()
+        host, clients = self.client_host(LLMCTL_SET_DEFAULT="yes")
+        self.assertEqual(main(["up", "qwen3.6-35b-a3b", "--set-default", "--dry-run"], host), 1)
+        self.assertEqual(host.err.getvalue(), expected)
+        self.assertEqual(host.calls, [])
+
+    def assert_nothing_ran(self, host, clients, before):
+        ran = [call for call in host.calls if call[0] in ("docker", "opencode", "hermes", "pi")]
+        self.assertEqual(ran, [])
+        self.assertEqual(clients.snapshot(), before)
+
+    def test_old_flag_is_usage_error(self):
+        host, clients = self.client_host()
+        before = clients.snapshot()
+        self.assertEqual(main(["up", "qwen3.6", "--set-opencode-default"], host), 1)
+        self.assertIn("unrecognized arguments", host.err.getvalue())
+        self.assert_nothing_ran(host, clients, before)
+
+    def test_unknown_client_is_usage_error(self):
+        host, clients = self.client_host(LLMCTL_CLIENTS="claude")
+        before = clients.snapshot()
+        self.assertEqual(main(["up", "qwen3.6"], host), 1)
+        self.assertIn("unknown client 'claude'", host.err.getvalue())
+        self.assert_nothing_ran(host, clients, before)
+
+    def test_client_write_error_exit_6(self):
+        import os
+        host, clients = self.client_host()
+        Path(os.path.realpath(clients.settings_path) + ".lock").mkdir()
+        self.assertEqual(main(["up", "qwen3.6"], host), 6)
+        self.assertTrue(host.err.getvalue().startswith("error: the model is running"), host.err.getvalue())
 
     def test_test_without_server(self):
         host = self.host()

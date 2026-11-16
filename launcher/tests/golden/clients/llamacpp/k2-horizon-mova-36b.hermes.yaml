@@ -1,0 +1,4 @@
+model: {"provider": "custom:llmctl", "default": "local"}
+providers: {"llmctl": {"name": "llmctl: k2-horizon-mova-36b on llama.cpp", "api": "http://127.0.0.1:8080/v1", "transport": "chat_completions", "default_model": "local", "discover_models": false, "extra_body": {"max_tokens": 16384}, "models": {"local": {"context_length": 65536}}}}
+model_overrides: {"custom": {"local": {"supports_reasoning": false}}}
+gateway: {"standalone": true}

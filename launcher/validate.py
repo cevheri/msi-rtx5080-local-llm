@@ -2,12 +2,13 @@
 
 import difflib
 import hashlib
+import math
 import tomllib
 from collections.abc import Iterable
 from pathlib import Path
 
 from launcher.errors import RecipeError
-from launcher.model import Evidence, Source
+from launcher.model import ClientMeta, Evidence, Source
 
 _MISSING = object()
 
@@ -117,3 +118,74 @@ def parse_evidence(data: dict, where: str) -> Evidence:
         doc=get_str(data, "doc", where, required=not measured),
         decode_tok_s=get_float(data, "decode_tok_s", where, lo=0.1, hi=10000, required=False),
     )
+
+
+THINKING = ("toggle", "effort", "always", "none")
+EFFORTS = ("none", "minimal", "low", "medium", "high", "xhigh", "max")
+_CLIENTS_KEYS = {"output", "thinking", "default", "efforts", "medium_kwargs"}
+
+
+def _applies_only(data: dict, key: str, thinking: str, owner: str, where: str) -> None:
+    if key in data and thinking != owner:
+        raise RecipeError(f'{where}: \'{key}\' applies only to thinking = "{owner}"')
+
+
+def _efforts(data: dict, where: str) -> tuple[str, ...]:
+    value = _get(data, "efforts", where, True)
+    shape = f"a non-empty list of {', '.join(EFFORTS)} in that order, without duplicates, that contains medium"
+    if not isinstance(value, list) or not value or not all(isinstance(item, str) for item in value):
+        raise RecipeError(f"{where}: 'efforts' must be {shape}")
+    unknown = [item for item in value if item not in EFFORTS]
+    if unknown:
+        raise RecipeError(f"{where}: 'efforts' must be {shape}, found unknown '{unknown[0]}'")
+    positions = [EFFORTS.index(item) for item in value]
+    if positions != sorted(set(positions)):
+        raise RecipeError(f"{where}: 'efforts' must be {shape}, found {value}")
+    if "medium" not in value:
+        raise RecipeError(f"{where}: 'efforts' must contain medium, the server's default effort")
+    return tuple(value)
+
+
+def _medium_kwargs(data: dict, where: str) -> tuple[tuple[str, object], ...]:
+    table = get_table(data, "medium_kwargs", where, required=False)
+    if "enable_thinking" in table:
+        raise RecipeError(f"{where}: 'medium_kwargs' may not set enable_thinking")
+    for key, value in table.items():
+        scalar = isinstance(value, (str, bool, int)) or (isinstance(value, float) and math.isfinite(value))
+        if not scalar:
+            raise RecipeError(f"{where}: 'medium_kwargs.{key}' must be a string, boolean, integer or finite number")
+    return tuple(table.items())
+
+
+def parse_clients(data: dict, where: str, *, context: int) -> ClientMeta:
+    """The [clients] table: generic checks only; each adapter checks it against its own server args."""
+    check_keys(data, _CLIENTS_KEYS, where)
+    output = get_int(data, "output", where, lo=1024, hi=context // 2)
+    thinking = get_str(data, "thinking", where)
+    if thinking not in THINKING:
+        raise RecipeError(f"{where}: 'thinking' must be one of {', '.join(THINKING)}, found '{thinking}'")
+    _applies_only(data, "default", thinking, "toggle", where)
+    _applies_only(data, "efforts", thinking, "effort", where)
+    _applies_only(data, "medium_kwargs", thinking, "toggle", where)
+    default = None
+    if thinking == "toggle":
+        default = get_str(data, "default", where)
+        if default not in ("off", "on"):
+            raise RecipeError(f"{where}: 'default' must be 'off' or 'on', found '{default}'")
+    efforts = _efforts(data, where) if thinking == "effort" else ()
+    medium_kwargs = _medium_kwargs(data, where) if thinking == "toggle" else ()
+    return ClientMeta(output, thinking, default, efforts, medium_kwargs)
+
+
+def flag_value(args: tuple[str, ...], flag: str) -> str | None:
+    """The value of the first `flag` in args: the next token, or the text after `flag=`; "" when flag ends args."""
+    for index, arg in enumerate(args):
+        if arg == flag:
+            return args[index + 1] if index + 1 < len(args) else ""
+        if arg.startswith(flag + "="):
+            return arg[len(flag) + 1:]
+    return None
+
+
+def flag_present(args: tuple[str, ...], flag: str) -> bool:
+    return flag_value(args, flag) is not None

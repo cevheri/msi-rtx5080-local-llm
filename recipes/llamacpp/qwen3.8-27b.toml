@@ -23,6 +23,11 @@ args = [
   "--min-p", "0",
 ]
 
+[clients]
+output = 16384
+thinking = "effort"
+efforts = ["none", "low", "medium"]
+
 [needs]
 gpu_mib = 14678
 

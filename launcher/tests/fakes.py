@@ -29,6 +29,7 @@ class FakeHost:
         self.downloads: dict[str, bytes] = {}
         self.download_calls: list[tuple[str, dict[str, str], int]] = []
         self.attached: list[list[str]] = []
+        self.installed: dict[str, str] = {}
         self._routes: list[tuple[tuple[str, ...], object]] = []
         self._http: dict[tuple[str, str], object] = {}
 
@@ -105,6 +106,9 @@ class FakeHost:
 
     def cdi_specs(self):
         return list(self.cdi)
+
+    def which(self, name):
+        return self.installed.get(name)
 
 
 def ok(stdout: str = "") -> Result:

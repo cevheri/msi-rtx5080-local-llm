@@ -17,6 +17,7 @@ The live schema at [https://opencode.ai/config.json](https://opencode.ai/config.
 
 Config files load from `~/.config/opencode/opencode.json(c)` (global) and `opencode.json(c)` in the project, with the project file overriding the global one ([config docs](https://opencode.ai/docs/config/)).
 After editing, `opencode reload` reloads the configuration and `opencode debug config` lists the configuration sources (`opencode --help` on v2.3.0, 2026-11-15).
+A script that starts `opencode run` in another folder should set `PWD` to that folder too, or `cd` there in a shell: OpenCode v2.3.0 took its working folder, and with it the project `opencode.json`, from an inherited `PWD` that still named the script's own folder (observed on the MSI Raider 18 Max HX on 2026-11-16, in an e2e run whose records are not in the repository; [clients.md](clients.md#verified-on-this-laptop)).
 
 | Key | Where | Meaning here |
 |---|---|---|
@@ -197,6 +198,7 @@ The config above assumes these server settings; the full commands live in [vllm/
 | `vllm-docker/gpt-oss-20b` | vLLM :8000 | `--served-model-name gpt-oss-20b` | `--max-model-len 65536` (needs `--gpu-memory-utilization 0.95`, FP8 KV and `TRITON_ATTN`) |
 
 [llmctl](llmctl.md) starts each entry's server with these values, and its tests check every recipe against this config.
+llmctl keeps a default that points at llmctl on the running model, rewriting only the top-level `"model"` line ([llmctl.md](llmctl.md#clients)), and its tests check each entry's `limit.output`, reasoning and variants against the recipe's `[clients]` table.
 Serving every llama.cpp model as `local` means the entry names, not the server, carry the model identity; it also means a wrong entry still gets an answer from whatever model is loaded, so check the window and thinking settings when you switch.
 If `limit.context` is larger than the server window, OpenCode never compacts in time and the server rejects the request; llama-server answers HTTP 400 `exceed_context_size_error` ([Unsloth Qwen3-Coder-Next page](https://unsloth.ai/docs/models/qwen3-coder-next)).
 If it is smaller, you waste window that the KV budget already paid for.

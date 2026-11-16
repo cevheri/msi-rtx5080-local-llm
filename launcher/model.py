@@ -38,6 +38,17 @@ class RuntimeConfig:
 
 
 @dataclass(frozen=True)
+class ClientMeta:
+    """A recipe's [clients] table: what the clients send and how they choose thinking."""
+
+    output: int
+    thinking: str  # "toggle", "effort", "always" or "none"
+    default: str | None  # "off" or "on" for toggle, else None
+    efforts: tuple[str, ...]  # for effort, in validate.EFFORTS order, else ()
+    medium_kwargs: tuple[tuple[str, object], ...]  # toggle only, in file order
+
+
+@dataclass(frozen=True)
 class Recipe:
     runtime: str
     id: str
@@ -54,6 +65,17 @@ class Recipe:
     model: object
     evidence: Evidence
     source: Source
+    clients: ClientMeta
+
+
+@dataclass(frozen=True)
+class Target:
+    """What a client entry describes: the recipe, its runtime, the served model name and the runtime's label."""
+
+    recipe: Recipe
+    runtime: RuntimeConfig
+    served: str
+    label: str  # "llama.cpp" or "vLLM"
 
 
 @dataclass(frozen=True)

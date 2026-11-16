@@ -1,0 +1,4 @@
+model: {"provider": "custom:llmctl", "default": "k2-horizon-7b"}
+providers: {"llmctl": {"name": "llmctl: k2-horizon-7b on vLLM", "api": "http://127.0.0.1:8000/v1", "transport": "chat_completions", "default_model": "k2-horizon-7b", "discover_models": false, "extra_body": {"max_tokens": 16384}, "models": {"k2-horizon-7b": {"context_length": 65536}}}}
+model_overrides: {"custom": {"k2-horizon-7b": {"supports_reasoning": false}}}
+gateway: {"standalone": true}

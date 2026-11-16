@@ -23,3 +23,13 @@ class StartError(LlmctlError):
 
 class DownloadError(LlmctlError):
     exit_code = 5
+
+
+class ClientError(PreflightError):
+    """A client config refuses the start before anything starts."""
+
+
+class ClientWriteError(LlmctlError):
+    """The model is running, but a client file or command failed."""
+
+    exit_code = 6

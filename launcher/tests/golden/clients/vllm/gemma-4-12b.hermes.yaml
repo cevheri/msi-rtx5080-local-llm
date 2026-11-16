@@ -1,0 +1,4 @@
+model: {"provider": "custom:llmctl", "default": "gemma-4-12b"}
+providers: {"llmctl": {"name": "llmctl: gemma-4-12b on vLLM", "api": "http://127.0.0.1:8000/v1", "transport": "chat_completions", "default_model": "gemma-4-12b", "discover_models": false, "extra_body": {"max_tokens": 16384}, "models": {"gemma-4-12b": {"context_length": 131072}}}}
+model_overrides: {"custom": {"gemma-4-12b": {"supports_reasoning": false}}}
+gateway: {"standalone": true}

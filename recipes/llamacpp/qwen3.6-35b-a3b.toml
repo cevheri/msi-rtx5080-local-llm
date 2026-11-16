@@ -23,6 +23,11 @@ args = [
   "--temp", "0.6", "--top-p", "0.95", "--top-k", "20", "--min-p", "0", "--presence-penalty", "0",
 ]
 
+[clients]
+output = 16384
+thinking = "toggle"
+default = "off"
+
 [needs]
 gpu_mib = 15078
 ram_gib = 14.9

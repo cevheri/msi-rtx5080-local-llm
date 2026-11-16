@@ -1,0 +1,4 @@
+model: {"provider": "custom:llmctl", "default": "groot-19b-a3b"}
+providers: {"llmctl": {"name": "llmctl: groot-19b-a3b on vLLM", "api": "http://127.0.0.1:8000/v1", "transport": "chat_completions", "default_model": "groot-19b-a3b", "discover_models": false, "extra_body": {"max_tokens": 16384}, "models": {"groot-19b-a3b": {"context_length": 131072}}}}
+model_overrides: {"custom": {"groot-19b-a3b": {"supports_reasoning": false}}}
+gateway: {"standalone": true}

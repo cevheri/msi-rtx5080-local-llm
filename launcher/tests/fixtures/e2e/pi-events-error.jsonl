@@ -1,0 +1,28 @@
+{"type": "session"}
+{"type": "agent_start"}
+{"type": "turn_start"}
+{"type": "message_start", "message": {"role": "system"}}
+{"type": "message_end", "message": {"role": "system"}}
+{"type": "message_start", "message": {"role": "user"}}
+{"type": "message_end", "message": {"role": "user"}}
+{"type": "message_start", "message": {"role": "assistant", "stopReason": "pending", "provider": "llmctl", "model": "local"}}
+{"type": "message_end", "message": {"role": "assistant", "stopReason": "toolUse", "provider": "llmctl", "model": "local"}}
+{"type": "tool_execution_start", "toolName": "write"}
+{"type": "tool_execution_end", "toolName": "write", "isError": false}
+{"type": "message_start", "message": {"role": "toolResult"}}
+{"type": "message_end", "message": {"role": "toolResult"}}
+{"type": "turn_end"}
+{"type": "turn_start"}
+{"type": "message_start", "message": {"role": "assistant", "stopReason": "pending", "provider": "llmctl", "model": "local"}}
+{"type": "message_end", "message": {"role": "assistant", "stopReason": "toolUse", "provider": "llmctl", "model": "local"}}
+{"type": "tool_execution_start", "toolName": "read"}
+{"type": "tool_execution_end", "toolName": "read", "isError": false}
+{"type": "message_start", "message": {"role": "toolResult"}}
+{"type": "message_end", "message": {"role": "toolResult"}}
+{"type": "turn_end"}
+{"type": "turn_start"}
+{"type": "message_start", "message": {"role": "assistant", "stopReason": "pending", "provider": "llmctl", "model": "local"}}
+{"type": "message_end", "message": {"role": "assistant", "stopReason": "error", "provider": "llmctl", "model": "local"}}
+{"type": "turn_end"}
+{"type": "agent_end"}
+{"type": "agent_settled"}

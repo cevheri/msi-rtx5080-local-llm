@@ -1,0 +1,9 @@
+{"type": "step_start"}
+{"type": "tool_use", "part": {"tool": "write", "state": {"status": "completed"}}}
+{"type": "step_finish"}
+{"type": "step_start"}
+{"type": "tool_use", "part": {"tool": "read", "state": {"status": "completed"}}}
+{"type": "step_finish"}
+{"type": "step_start"}
+{"type": "text", "part": {"text": "x"}}
+{"type": "step_finish"}

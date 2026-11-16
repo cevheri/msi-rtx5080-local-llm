@@ -38,7 +38,7 @@ class DockerUnreachableTest(unittest.TestCase):
         self.f.cleanup()
 
     def test_down_status_logs_refuse(self):
-        for call in (lambda: ops.down(self.f.host, remove=False), lambda: ops.status(self.f.host, self.f.catalog),
+        for call in (lambda: ops.down(self.f.host, self.f.catalog, remove=False), lambda: ops.status(self.f.host, self.f.catalog),
                      lambda: ops.logs(self.f.host, follow=False, tail=10)):
             with self.assertRaises(PreflightError) as ctx:
                 call()

@@ -564,6 +564,17 @@ docker run -d --name llamacpp \
 - **vLLM:** a 64k option with `--gpu-memory-utilization 0.95`, FP8 KV and `TRITON_ATTN` is in [../vllm/models.md](../vllm/models.md).
 - **Evidence:** Artificial Analysis TB2.1 13.9 ([AA](https://artificialanalysis.ai/models/gpt-oss-20b)) and NVIDIA same-harness SWE-bench Verified 52.44, TB2.1 15.17 ([Lightning card](https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/raw/main/README.md)).
 
+OpenCode entry (llmctl checks it against the recipe; it is not in the validated config, which carries the vLLM gpt-oss-20b entry):
+
+```json
+"gpt-oss-20b": {
+  "modelID": "local",
+  "name": "gpt-oss-20b MXFP4 (llama.cpp)",
+  "capabilities": { "tools": true, "input": ["text"], "output": ["text"], "reasoning": { "supported": true, "effort": ["low", "medium", "high"] } },
+  "limit": { "context": 131072, "output": 16384 }
+}
+```
+
 ## 10. DeepSeek-R1-0528-Qwen3-8B (chat and reasoning only)
 
 8.19B dense, MIT, released 2025-05-29 ([model card](https://huggingface.co/deepseek-ai/DeepSeek-R1-0528-Qwen3-8B/raw/main/README.md)).
@@ -610,6 +621,17 @@ docker run -d --name llamacpp \
   Do not set `capabilities.tools` for it in OpenCode.
 - **Ollama alternative:** `deepseek-r1:8b` is q4_K_M (5.2 GB); `deepseek-r1:8b-0528-qwen3-q8_0` (8.9 GB) matches this recipe.
   Ollama's `think` field works, and its 8b template has no tools block ([manifest](https://registry.ollama.ai/v2/library/deepseek-r1/manifests/8b)).
+
+OpenCode entry (tools off; use it in plan or chat mode, never as the build agent):
+
+```json
+"deepseek-r1-0528-qwen3-8b": {
+  "modelID": "local",
+  "name": "DeepSeek-R1-0528-Qwen3-8B Q8_0, chat only (llama.cpp)",
+  "capabilities": { "tools": false, "input": ["text"], "output": ["text"], "reasoning": { "supported": true } },
+  "limit": { "context": 65536, "output": 16384 }
+}
+```
 
 ## Fallbacks and trials
 

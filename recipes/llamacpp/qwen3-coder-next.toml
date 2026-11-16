@@ -23,6 +23,10 @@ args = [
   "--top-p", "0.95", "--top-k", "40", "--min-p", "0.01",
 ]
 
+[clients]
+output = 16384
+thinking = "none"
+
 [needs]
 gpu_mib = 14964
 ram_gib = 31.9

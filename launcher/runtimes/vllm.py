@@ -11,19 +11,24 @@ from pathlib import Path
 
 from launcher.errors import DownloadError, RecipeError
 from launcher.hfcache import HfAuth, repo_dirname
-from launcher.model import ContainerSpec, GpuInfo, HostEnv, Recipe, RuntimeConfig, Source
+from launcher.model import ClientMeta, ContainerSpec, GpuInfo, HostEnv, Recipe, RuntimeConfig, Source
 from launcher.validate import (
     check_keys,
+    flag_present,
+    flag_value,
     get_bool,
     get_float,
     get_int,
     get_str,
     get_str_list,
     get_table,
+    parse_clients,
     parse_evidence,
 )
 
 NAME = "vllm"
+LABEL = "vLLM"
+SERVED_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
 CONTAINER_PORT = 8000  # vllm serve's default port
 CONTAINER_HF_HOME = "/root/.cache/huggingface"  # the server runs as root, with the cache mounted read-only
 OWNED_FLAGS = frozenset({"--host", "--port", "--model", "--revision", "--served-model-name", "--max-model-len"})
@@ -33,7 +38,9 @@ UTILIZATION = "--gpu-memory-utilization"
 _RUNTIME_KEYS = {"schema", "runtime", "image", "container_name", "host_port", "ready_path",
                  "start_timeout_s", "opencode_provider", "env", "volumes", "default_gpu_memory_utilization"}
 _RECIPE_KEYS = {"schema", "id", "name", "aliases", "doc", "opencode", "chat_only", "model",
-                "container", "server", "needs", "evidence"}
+                "container", "server", "needs", "evidence", "clients"}
+_TEMPLATE_KWARGS = "--default-chat-template-kwargs"
+_TOOL_FLAGS = ("--enable-auto-tool-choice", "--tool-call-parser")
 _MODEL_KEYS = {"repo", "revision", "include", "exclude", "size_bytes", "served_name"}
 _CONTAINER_KEYS = {"memory_gib"}
 _SERVER_KEYS = {"context", "args"}
@@ -127,6 +134,31 @@ def _check_args(args: tuple[str, ...], where: str) -> None:
     _utilization(args, where)
 
 
+def _check_clients(clients: ClientMeta, args: tuple[str, ...], chat_only: bool, where: str) -> None:
+    """The [clients] table and chat_only must describe what these server args make the server do."""
+    parser = flag_present(args, "--reasoning-parser")
+    if parser != (clients.thinking != "none"):
+        need = "needs --reasoning-parser" if clients.thinking != "none" else "may not set --reasoning-parser"
+        raise RecipeError(f"{where}: thinking = \"{clients.thinking}\" {need}")
+    text = flag_value(args, _TEMPLATE_KWARGS)
+    if clients.thinking == "toggle" and text is not None:
+        try:
+            kwargs = json.loads(text)
+        except ValueError:
+            kwargs = None
+        if not isinstance(kwargs, dict):
+            raise RecipeError(f"{where}: '{_TEMPLATE_KWARGS}' must be followed by a JSON object, found '{text}'")
+        if "enable_thinking" in kwargs and kwargs["enable_thinking"] is not (clients.default == "on"):
+            raise RecipeError(f"{where}: default = \"{clients.default}\" but {_TEMPLATE_KWARGS} sets "
+                              f"enable_thinking to {json.dumps(kwargs['enable_thinking'])}")
+    present = [flag for flag in _TOOL_FLAGS if flag_present(args, flag)]
+    if chat_only and present:
+        raise RecipeError(f"{where}: a chat-only recipe may not set {present[0]}")
+    if not chat_only and len(present) != len(_TOOL_FLAGS):
+        missing = [flag for flag in _TOOL_FLAGS if flag not in present]
+        raise RecipeError(f"{where}: a recipe with tools (chat_only false) needs {' and '.join(missing)}")
+
+
 def parse_recipe(data: dict, source: Source, stem: str) -> Recipe:
     where = str(source.path)
     check_keys(data, _RECIPE_KEYS, where)
@@ -156,6 +188,9 @@ def parse_recipe(data: dict, source: Source, stem: str) -> Recipe:
         size_bytes=get_int(model_data, "size_bytes", model_where, lo=1, hi=10**13),
         served_name=get_str(model_data, "served_name", model_where),
     )
+    if not SERVED_NAME.fullmatch(model.served_name):
+        raise RecipeError(f"{model_where}: 'served_name' may use only letters, digits, '.', '_' and '-', "
+                          f"and must start with a letter or digit, found '{model.served_name}'")
 
     container_where = f"{where} [container]"
     container_data = get_table(data, "container", where)
@@ -168,6 +203,11 @@ def parse_recipe(data: dict, source: Source, stem: str) -> Recipe:
     context = get_int(server_data, "context", server_where, lo=1024, hi=1048576)
     args = get_str_list(server_data, "args", server_where)
     _check_args(args, server_where)
+    chat_only = get_bool(data, "chat_only", where, default=False)
+
+    clients_where = f"{where} [clients]"
+    clients = parse_clients(get_table(data, "clients", where), clients_where, context=context)
+    _check_clients(clients, args, chat_only, clients_where)
 
     needs_where = f"{where} [needs]"
     needs_data = get_table(data, "needs", where, required=False)
@@ -181,7 +221,7 @@ def parse_recipe(data: dict, source: Source, stem: str) -> Recipe:
         aliases=aliases,
         doc=get_str(data, "doc", where),
         opencode=get_bool(data, "opencode", where, default=False),
-        chat_only=get_bool(data, "chat_only", where, default=False),
+        chat_only=chat_only,
         memory_gib=memory_gib,
         context=context,
         args=args,
@@ -190,6 +230,7 @@ def parse_recipe(data: dict, source: Source, stem: str) -> Recipe:
         model=model,
         evidence=parse_evidence(get_table(data, "evidence", where), f"{where} [evidence]"),
         source=source,
+        clients=clients,
     )
 
 

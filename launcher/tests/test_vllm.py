@@ -159,5 +159,74 @@ class VllmReadyTest(unittest.TestCase):
         self.assertFalse(vllm.ready(host, self.runtime, self.recipe))
 
 
+def recipe_from(stem, edit=None):
+    data, source = read_toml(RECIPES / f"{stem}.toml", "shipped")
+    data = copy.deepcopy(data)
+    if edit:
+        edit(data)
+    return vllm.parse_recipe(data, source, stem)
+
+
+def drop_args(data, *flags):
+    """Remove each flag together with its value (the next token unless that is another flag)."""
+    args = data["server"]["args"]
+    for flag in flags:
+        index = args.index(flag)
+        end = index + 2 if index + 1 < len(args) and not args[index + 1].startswith("--") else index + 1
+        args = args[:index] + args[end:]
+    data["server"]["args"] = args
+
+
+class VllmClientRulesTest(unittest.TestCase):
+    def assertRefused(self, stem, edit, *fragments):
+        with self.assertRaises(RecipeError) as ctx:
+            recipe_from(stem, edit)
+        message = str(ctx.exception)
+        self.assertIn(str(RECIPES / f"{stem}.toml"), message)
+        for fragment in fragments:
+            self.assertIn(fragment, message)
+
+    def test_label(self):
+        self.assertEqual(vllm.LABEL, "vLLM")
+
+    def test_clients_table_required(self):
+        self.assertRefused("gpt-oss-20b", lambda data: data.pop("clients"), "missing key 'clients'")
+
+    def test_clients_parsed_into_recipe(self):
+        clients = gpt_oss().clients
+        self.assertEqual((clients.thinking, clients.efforts), ("effort", ("low", "medium", "high")))
+
+    def test_reasoning_parser_if_and_only_if_thinking(self):
+        def no_thinking(data):
+            data["clients"]["thinking"] = "none"
+            del data["clients"]["efforts"]
+        self.assertRefused("gpt-oss-20b", no_thinking, "[clients]", "--reasoning-parser")
+        self.assertRefused("groot-19b-a3b", lambda data: drop_args(data, "--reasoning-parser"),
+                           "[clients]", "--reasoning-parser")
+
+    def test_toggle_default_must_match_template_kwargs(self):
+        self.assertRefused("groot-19b-a3b", lambda data: data["clients"].update(default="on"),
+                           "[clients]", "--default-chat-template-kwargs")
+        # Without enable_thinking in the server args, vLLM cannot tell, so either default loads.
+        self.assertEqual(recipe_from("mellum2.1-12b").clients.default, "on")
+        self.assertEqual(recipe_from("mellum2.1-12b", lambda data: data["clients"].update(default="off")).clients.default,
+                         "off")
+
+    def test_tools_need_auto_choice_and_parser(self):
+        self.assertRefused("gpt-oss-20b", lambda data: drop_args(data, "--enable-auto-tool-choice"),
+                           "--enable-auto-tool-choice")
+        self.assertRefused("gpt-oss-20b", lambda data: drop_args(data, "--tool-call-parser"),
+                           "--tool-call-parser")
+
+    def test_chat_only_has_no_tool_flags(self):
+        self.assertRefused("deepseek-r1-0528-qwen3-8b",
+                           lambda data: data["server"]["args"].append("--enable-auto-tool-choice"),
+                           "--enable-auto-tool-choice")
+
+    def test_served_name_pattern(self):
+        self.assertRefused("gpt-oss-20b", lambda data: data["model"].update(served_name="gpt:oss"), "served_name")
+        self.assertTrue(vllm.SERVED_NAME.fullmatch("mellum2.1"))
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -12,12 +12,12 @@ Figures for every other model are still estimates or third-party numbers until t
 
 ## Quick start
 
-Start a measured model by name with [llmctl](docs/llmctl.md), which applies the rules below for you and prints the OpenCode model to use:
+Start a measured model by name with [llmctl](docs/llmctl.md), which applies the rules below for you and points OpenCode, Hermes Agent and Pi at it; `--set-default` also makes it each installed client's default:
 
 ```bash
 ./llmctl list
 ./llmctl pull qwen3.6
-./llmctl up qwen3.6
+./llmctl up qwen3.6 --set-default
 ./llmctl down
 ```
 
@@ -31,7 +31,7 @@ Start a measured model by name with [llmctl](docs/llmctl.md), which applies the 
 | CPU | Intel Core Ultra 9 290HX Plus, 24 cores |
 | RAM | 61 GiB usable, about 40 GiB free with the desktop running |
 | Disk | 2 TB NVMe; the model cache lives under /home |
-| Software | Ubuntu 26.04.1, Docker 29.9.3, Compose v5.7.1, OpenCode v2.3.0 |
+| Software | Ubuntu 26.04.1, Docker 29.9.3, Compose v5.7.1, OpenCode v2.3.0, Hermes Agent v0.23.1, Pi 1.5.2 |
 | NVIDIA Container Toolkit | 1.20.1, installed 2026-11-15; CDI, the `nvidia` Docker runtime and a CUDA kernel in a container verified ([install record](research/2026-11-15/probes/toolkit-install.md)) |
 | Not installed | Ollama and llama.cpp on the host (both run as containers instead) |
 
@@ -43,7 +43,8 @@ The bandwidth figure is NVIDIA's laptop specification ([NVIDIA](https://www.nvid
 
 | Path | What it covers |
 |---|---|
-| [docs/llmctl.md](docs/llmctl.md) | `./llmctl`: start a measured recipe by name, the rules it enforces, the recipe format, overrides for another machine |
+| [docs/llmctl.md](docs/llmctl.md) | `./llmctl`: start a measured recipe by name, the client entries it writes, the rules it enforces, the recipe format, overrides for another machine |
+| [docs/clients.md](docs/clients.md) | Hermes Agent v0.23.1 and Pi 1.5.2 with the local servers: the entries llmctl writes, thinking per type, the gateway and sticky-profile side effects, silent fallbacks |
 | [docs/model-selection.md](docs/model-selection.md) | Ranked picks with evidence, capability lists, new candidates, exclusions and what to measure first |
 | [docs/host-setup.md](docs/host-setup.md) | NVIDIA Container Toolkit, CDI, Compose GPU syntax, localhost-only ports, memory caps, laptop power, model cache |
 | [docs/opencode.md](docs/opencode.md) | OpenCode v2.3.0 provider config (schema-validated), thinking variants, context budget, known issues, remote trials |

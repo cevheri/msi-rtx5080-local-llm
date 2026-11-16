@@ -3,6 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from launcher import model
 from launcher.catalog import load_catalog, override_dir, resolve
 from launcher.command import docker_run_argv
 from launcher.errors import RecipeError, UsageError
@@ -157,6 +158,51 @@ class OverrideDirTest(unittest.TestCase):
         self.assertEqual(override_dir({"LLMCTL_RECIPES_DIR": "/x", "XDG_CONFIG_HOME": "/c", "HOME": "/h"}), Path("/x"))
         self.assertEqual(override_dir({"XDG_CONFIG_HOME": "/c", "HOME": "/h"}), Path("/c/llmctl/recipes"))
         self.assertEqual(override_dir({"XDG_CONFIG_HOME": "", "HOME": "/h"}), Path("/h/.config/llmctl/recipes"))
+
+
+TOGGLE_OFF = (16384, "toggle", "off", (), ())
+EFFORT_LMH = (16384, "effort", None, ("low", "medium", "high"), ())
+ALWAYS = (16384, "always", None, (), ())
+SHIPPED_CLIENTS = {
+    ("llamacpp", "qwen3.6-35b-a3b"): TOGGLE_OFF,
+    ("llamacpp", "gemma-4-26b-a4b"): TOGGLE_OFF,
+    ("llamacpp", "nemotron-3.5-lightning"): TOGGLE_OFF,
+    ("llamacpp", "groot-19b-a3b"): TOGGLE_OFF,
+    ("vllm", "groot-19b-a3b"): TOGGLE_OFF,
+    ("vllm", "gemma-4-12b"): TOGGLE_OFF,
+    ("vllm", "gemma-4-e4b"): TOGGLE_OFF,
+    ("vllm", "qwen3.5-9b"): TOGGLE_OFF,
+    ("llamacpp", "nemotron-3.5-bolt"): (16384, "toggle", "off", (), (("medium_effort", True),)),
+    ("vllm", "mellum2.1-12b"): (16384, "toggle", "on", (), ()),
+    ("llamacpp", "qwen3.8-27b"): (16384, "effort", None, ("none", "low", "medium"), ()),
+    ("llamacpp", "gpt-oss-20b"): EFFORT_LMH,
+    ("vllm", "gpt-oss-20b"): EFFORT_LMH,
+    ("llamacpp", "k2-horizon-mova-36b"): ALWAYS,
+    ("vllm", "k2-horizon-7b"): ALWAYS,
+    ("llamacpp", "deepseek-r1-0528-qwen3-8b"): ALWAYS,
+    ("vllm", "deepseek-r1-0528-qwen3-8b"): ALWAYS,
+    ("llamacpp", "k2-horizon-7b"): (32768, "always", None, (), ()),
+    ("llamacpp", "qwen3-coder-next"): (16384, "none", None, (), ()),
+}
+
+
+class ClientMetadataTest(unittest.TestCase):
+    @staticmethod
+    def clients_of(catalog):
+        return {(name, recipe.id): recipe.clients for name, entry in catalog.runtimes.items()
+                for recipe in entry.recipes.values()}
+
+    def test_shipped_client_metadata(self):
+        expected = {key: model.ClientMeta(*value) for key, value in SHIPPED_CLIENTS.items()}
+        shipped = load_catalog(REPO / "recipes", None)
+        self.assertEqual(len(expected), 19)
+        self.assertEqual(self.clients_of(shipped), expected)
+
+        with_example = load_catalog(REPO / "recipes", REPO / "recipes" / "examples")
+        self.assertEqual([p for rc in with_example.runtimes.values() for p in rc.problems], [])
+        example = with_example.runtimes["llamacpp"].recipes["qwen3.6-35b-a3b"]
+        self.assertEqual(example.source.kind, "override")
+        self.assertEqual(self.clients_of(with_example), expected)
 
 
 if __name__ == "__main__":

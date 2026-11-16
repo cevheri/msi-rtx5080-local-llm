@@ -2,15 +2,14 @@
 
 import shlex
 
-from launcher import docker_state
+from launcher import clients, docker_state
 from launcher.catalog import resolve
 from launcher.command import LABEL_PREFIX, docker_run_argv
-from launcher.errors import DownloadError, PreflightError, StartError, UsageError
+from launcher.errors import ClientWriteError, DownloadError, PreflightError, StartError, UsageError
 from launcher.gpu import gpu_info
 from launcher.hfcache import hf_home, read_auth
 from launcher.lock import hold_lock
-from launcher.model import HostEnv
-from launcher.opencode_config import apply_default, plan_default
+from launcher.model import HostEnv, Recipe, RuntimeConfig, Target
 from launcher.preflight import check_containers, check_port, check_resources, check_static
 from launcher.runtimes import ADAPTERS
 
@@ -66,14 +65,40 @@ def _start(host, recipe, runtime, adapter, argv, running, replace) -> None:
         raise StartError(f"docker run failed: {(result.stderr or result.stdout).strip()}")
 
 
+def client_target(recipe: Recipe, runtime: RuntimeConfig) -> Target:
+    adapter = ADAPTERS[recipe.runtime]
+    return Target(recipe, runtime, adapter.served_name(recipe, runtime), adapter.LABEL)
+
+
+def target_from(catalog, containers) -> Target | None:
+    """The Target of the first running container whose runtime and recipe labels name a recipe in the catalog."""
+    for container in containers:
+        if container.state != "running":
+            continue
+        entry = catalog.runtimes.get(container.labels.get(LABEL_PREFIX + "runtime"))
+        recipe = entry.recipes.get(container.labels.get(LABEL_PREFIX + "recipe")) if entry else None
+        if recipe is not None and entry.runtime is not None:
+            return client_target(recipe, entry.runtime)
+    return None
+
+
+def running_target(host, catalog) -> Target | None:
+    """The model llmctl is running, as a client Target; None when no managed container runs a catalog recipe."""
+    return target_from(catalog, docker_state.managed(host))
+
+
+def up_command(recipe: Recipe) -> str:
+    """The up command for this recipe; --runtime only when it is not the default runtime."""
+    command = f"./llmctl up {recipe.id}"
+    return command if recipe.runtime == next(iter(ADAPTERS)) else f"{command} --runtime {recipe.runtime}"
+
+
 def up(host, catalog, name: str, runtime_name: str | None, *, replace: bool, dry_run: bool,
-       set_opencode_default: bool = False) -> int:
+       set_default: bool = False) -> int:
     recipe, runtime = resolve(catalog, name, runtime_name)
-    plan = None
-    if set_opencode_default:
-        if not recipe.opencode:
-            raise UsageError(f"{recipe.id} has no OpenCode entry, so OpenCode's default cannot point at it")
-        plan = plan_default(host.env, f"{runtime.opencode_provider}/{recipe.id}")
+    target = client_target(recipe, runtime)
+    # Every client refusal comes before any check or start (spec D8); only a real start lets Pi check the entry.
+    plan = clients.plan(host, catalog, target, set_default=set_default, check=not dry_run)
     adapter = ADAPTERS[recipe.runtime]
     home = hf_home(host.env)
     uid, gid = host.uid_gid()
@@ -87,10 +112,11 @@ def up(host, catalog, name: str, runtime_name: str | None, *, replace: bool, dry
                   f"{runtime.host_port}, and an image other than the shipped one has no measurement behind it\n")
     if recipe.evidence.kind == "estimate":
         out.write("warning: this recipe was never run on the reference laptop; it may not start or fit\n")
+    out.write(clients.clients_line(host, list(plan.states)) + "\n")
     if dry_run:
         out.write(shlex.join(argv) + "\n")
-        if plan is not None:
-            out.write(f"would set OpenCode's default model: {plan.previous} -> {plan.model} ({plan.path})\n")
+        for line in clients.dry_run_lines(plan):
+            out.write(line + "\n")
         return 0
     with hold_lock(host.env):
         check_static(host, recipe, runtime, adapter, home)
@@ -104,44 +130,32 @@ def up(host, catalog, name: str, runtime_name: str | None, *, replace: bool, dry
         except KeyboardInterrupt:
             host.err.write(f"interrupted; the server keeps starting in the background, check ./llmctl status\n")
             return 130
-    served = adapter.served_name(recipe, runtime)
-    out.write(f"ready: http://127.0.0.1:{runtime.host_port}/v1, served as '{served}', context {recipe.context}\n")
-    if recipe.opencode:
-        model = f"{runtime.opencode_provider}/{recipe.id}"
-        out.write(f"OpenCode model: {model}\n")
-        out.write("  in the OpenCode screen: type /models (or press ctrl+x m) and pick it\n")
-        out.write(f'  for a single prompt: opencode run --model {model} "your prompt"\n')
-    else:
-        out.write("OpenCode: no OpenCode entry for this recipe in docs/opencode.md\n")
+        out.write(f"ready: http://127.0.0.1:{runtime.host_port}/v1, served as '{target.served}', "
+                  f"context {recipe.context}, output {recipe.clients.output}\n")
+        result = clients.apply(host, catalog, target, set_default=set_default)
+        for line in result.lines:
+            out.write(line + "\n")
+    for line in clients.up_lines(host, target, plan.states, up_command=up_command(recipe), changed=result.changed,
+                                 failed=result.failed, default_failed=result.default_failed):
+        out.write(line + "\n")
     if recipe.chat_only:
         out.write("note: chat only, no tool calling\n")
-    if plan is not None:
-        _set_opencode_default(host, plan)
     evidence = recipe.evidence
     where = f"{evidence.date}, {evidence.record}" if evidence.kind == "measured" else evidence.doc
     out.write(f"evidence: {evidence.summary} ({where})\n")
     out.write("stop with ./llmctl down\n")
+    if result.failures:
+        raise ClientWriteError(clients.failure_message(result.failures))
     return 0
 
 
-def _set_opencode_default(host, plan) -> None:
-    if plan.new_text is None:
-        host.out.write(f"OpenCode default model is already {plan.model}\n")
-        return
-    apply_default(plan)
-    host.out.write(f"OpenCode default model: {plan.previous} -> {plan.model} ({plan.path})\n")
-    if host.run(["opencode", "reload"]).returncode == 0:
-        host.out.write("OpenCode reloaded its configuration; new sessions open with this model\n")
-    else:
-        host.out.write("note: run `opencode reload`, or restart OpenCode, so an OpenCode that is already open sees it\n")
-
-
-def down(host, *, remove: bool) -> int:
+def down(host, catalog, *, remove: bool) -> int:
     with hold_lock(host.env):
         containers = docker_state.managed(host)
         if not containers:
             host.out.write("no model server started by llmctl is running\n")
             return 0
+        stopped = next((c for c in containers if c.state == "running"), None)
         for container in containers:
             if container.state == "running":
                 docker_state.stop(host, container.name)
@@ -149,6 +163,10 @@ def down(host, *, remove: bool) -> int:
             if remove:
                 docker_state.remove(host, container.name)
                 host.out.write(f"removed container '{container.name}'\n")
+        # Read after the stop, so a bad LLMCTL_CLIENTS cannot keep the GPU busy; no client file changes (D6 rule 4).
+        lines = clients.down_lines(host, catalog, stopped.labels.get(LABEL_PREFIX + "recipe", "?")) if stopped else []
+        for line in lines:
+            host.out.write(line + "\n")
     return 0
 
 
@@ -156,7 +174,6 @@ def status(host, catalog) -> int:
     containers = docker_state.managed(host)
     if not containers:
         host.out.write("no container started by llmctl\n")
-        return 0
     for container in containers:
         labels = container.labels
         runtime_name = labels.get(LABEL_PREFIX + "runtime", "?")
@@ -176,6 +193,11 @@ def status(host, catalog) -> int:
         gpu = gpu_info(host)
         host.out.write(f"  port: {port or 'none'}, health: {health}\n")
         host.out.write(f"  container memory: {memory}, GPU memory in use: {gpu.used_mib} MiB of {gpu.total_mib} MiB\n")
+    target = target_from(catalog, containers)
+    # A running container whose recipe the catalog lacks is still a running model, so no "no model is running".
+    unknown_running = target is None and any(container.state == "running" for container in containers)
+    for line in clients.report(host, catalog, target, with_paths=True, running_known=not unknown_running):
+        host.out.write(line + "\n")
     return 0
 
 

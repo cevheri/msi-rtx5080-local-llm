@@ -3,25 +3,31 @@
 This module reads only recipes/llamacpp/ and does not import the vLLM adapter.
 """
 
+import json
 import re
 from dataclasses import dataclass
 from pathlib import Path
 
 from launcher.errors import DownloadError, RecipeError
 from launcher.hfcache import HfAuth, download_file, repo_dirname
-from launcher.model import ContainerSpec, GpuInfo, HostEnv, Recipe, RuntimeConfig, Source
+from launcher.model import ClientMeta, ContainerSpec, GpuInfo, HostEnv, Recipe, RuntimeConfig, Source
 from launcher.validate import (
     check_keys,
+    flag_present,
+    flag_value,
     get_bool,
     get_float,
     get_int,
     get_str,
     get_str_list,
     get_table,
+    parse_clients,
     parse_evidence,
 )
 
 NAME = "llamacpp"
+LABEL = "llama.cpp"
+SERVED_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
 CONTAINER_PORT = 8080  # the image's LLAMA_ARG_PORT
 CONTAINER_HF_HOME = "/hf"
 OWNED_FLAGS = frozenset({
@@ -35,7 +41,9 @@ GRAPHS_OFF = ("GGML_CUDA_DISABLE_GRAPHS", "1")
 _RUNTIME_KEYS = {"schema", "runtime", "image", "container_name", "host_port", "ready_path",
                  "start_timeout_s", "opencode_provider", "served_name", "env"}
 _RECIPE_KEYS = {"schema", "id", "name", "aliases", "doc", "opencode", "chat_only", "model",
-                "container", "server", "needs", "evidence"}
+                "container", "server", "needs", "evidence", "clients"}
+_TEMPLATE_KWARGS = "--chat-template-kwargs"
+_REASONING_FLAGS = ("--reasoning", "--reasoning-effort", "--reasoning-format", _TEMPLATE_KWARGS)
 _MODEL_KEYS = {"repo", "revision", "files", "size_bytes"}
 _CONTAINER_KEYS = {"memory_gib"}
 _SERVER_KEYS = {"context", "args"}
@@ -72,6 +80,10 @@ def parse_runtime(data: dict, source: Source) -> RuntimeConfig:
             raise RecipeError(f"{where} [env]: '{key}' must be a string")
     if GRAPHS_OFF[0] in env:
         raise RecipeError(f"{where} [env]: {GRAPHS_OFF[0]} is set by llmctl (always 1) and may not appear here")
+    served = get_str(data, "served_name", where)
+    if not SERVED_NAME.fullmatch(served):
+        raise RecipeError(f"{where}: 'served_name' may use only letters, digits, '.', '_' and '-', "
+                          f"and must start with a letter or digit, found '{served}'")
     return RuntimeConfig(
         name=NAME,
         image=get_str(data, "image", where),
@@ -82,7 +94,7 @@ def parse_runtime(data: dict, source: Source) -> RuntimeConfig:
         env=tuple(env.items()),
         volumes=(),
         opencode_provider=get_str(data, "opencode_provider", where),
-        served_name=get_str(data, "served_name", where),
+        served_name=served,
         source=source,
     )
 
@@ -94,6 +106,47 @@ def _check_args(args: tuple[str, ...], where: str) -> None:
             raise RecipeError(f"{where}: '{flag}' is set by llmctl and may not appear in 'args'")
         if flag in SECRET_FLAGS:
             raise RecipeError(f"{where}: '{flag}' would put a secret on the command line and may not appear in 'args'")
+
+
+def _template_kwargs(args: tuple[str, ...], where: str) -> dict:
+    """The JSON object of --chat-template-kwargs, {} when the flag is absent."""
+    text = flag_value(args, _TEMPLATE_KWARGS)
+    if text is None:
+        return {}
+    try:
+        value = json.loads(text)
+    except ValueError:
+        value = None
+    if not isinstance(value, dict):
+        raise RecipeError(f"{where}: '{_TEMPLATE_KWARGS}' must be followed by a JSON object, found '{text}'")
+    return value
+
+
+def _check_clients(clients: ClientMeta, args: tuple[str, ...], server_where: str, where: str) -> None:
+    """The [clients] table must describe what these server args make the server do."""
+    kwargs = _template_kwargs(args, server_where)
+    effort = flag_value(args, "--reasoning-effort")
+    if clients.thinking == "toggle":
+        off = flag_value(args, "--reasoning") == "off" or kwargs.get("enable_thinking") is False
+        server = "off" if off else "on"
+        if clients.default != server:
+            raise RecipeError(
+                f"{where}: default = \"{clients.default}\" but the server args leave thinking {server} by default "
+                f"(off only with --reasoning off or enable_thinking false in {_TEMPLATE_KWARGS})")
+    elif clients.thinking == "effort":
+        if effort not in (None, "medium"):
+            raise RecipeError(f"{where}: thinking = \"effort\" needs --reasoning-effort absent or medium, "
+                              f"found --reasoning-effort '{effort}'")
+    elif clients.thinking == "always":
+        if not (effort == "high" or kwargs.get("reasoning_effort") == "high"
+                or flag_value(args, "--reasoning-format") == "deepseek"):
+            raise RecipeError(f"{where}: thinking = \"always\" needs --reasoning-effort high, reasoning_effort high "
+                              f"in {_TEMPLATE_KWARGS}, or --reasoning-format deepseek")
+    else:
+        present = [flag for flag in _REASONING_FLAGS if flag_present(args, flag)]
+        if present:
+            raise RecipeError(f"{where}: thinking = \"none\" allows none of {', '.join(_REASONING_FLAGS)}, "
+                              f"found {present[0]}")
 
 
 def parse_recipe(data: dict, source: Source, stem: str) -> Recipe:
@@ -134,6 +187,10 @@ def parse_recipe(data: dict, source: Source, stem: str) -> Recipe:
     args = get_str_list(server_data, "args", server_where, required=False)
     _check_args(args, server_where)
 
+    clients_where = f"{where} [clients]"
+    clients = parse_clients(get_table(data, "clients", where), clients_where, context=context)
+    _check_clients(clients, args, server_where, clients_where)
+
     evidence = parse_evidence(get_table(data, "evidence", where), f"{where} [evidence]")
     needs_where = f"{where} [needs]"
     needs_data = get_table(data, "needs", where)
@@ -157,6 +214,7 @@ def parse_recipe(data: dict, source: Source, stem: str) -> Recipe:
         model=GgufModel(repo, revision, files, size_bytes),
         evidence=evidence,
         source=source,
+        clients=clients,
     )
 
 

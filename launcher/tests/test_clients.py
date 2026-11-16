@@ -1,0 +1,813 @@
+import json
+import os
+import tempfile
+import unittest
+from pathlib import Path
+from unittest import mock
+
+from launcher import clients, hermes_config, pi_config
+from launcher.catalog import load_catalog
+from launcher.errors import ClientError, UsageError
+from launcher.host import Result
+from launcher.tests.client_fixture import LIST_HEADER, ClientFixture
+from launcher.tests.fakes import REPO, FakeHost, fail, ok
+from launcher.tests.regen_golden import target_for
+
+ALL_BINARIES = {"opencode": "/usr/bin/opencode", "hermes": "/usr/bin/hermes", "pi": "/usr/bin/pi"}
+
+
+class DetectionTest(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.home = Path(self.tmp.name)
+        for folder in (".config/opencode", ".hermes", ".pi/agent"):
+            (self.home / folder).mkdir(parents=True)
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def host(self, installed, **env):
+        host = FakeHost(env={"HOME": str(self.home), "PATH": "/usr/bin", **env})
+        host.installed = dict(installed)
+        return host
+
+    def by_name(self, states):
+        return {state.name: state for state in states}
+
+    def test_all_installed(self):
+        host = self.host(ALL_BINARIES)
+        states = clients.client_states(host)
+        self.assertEqual([s.name for s in states], ["opencode", "hermes", "pi"])
+        self.assertEqual([s.active for s in states], [True, True, True])
+        self.assertEqual([s.reason for s in states], [None, None, None])
+        self.assertEqual([s.label for s in states], ["OpenCode", "Hermes", "Pi"])
+        self.assertEqual(self.by_name(states)["pi"].root, self.home / ".pi/agent")
+        self.assertEqual(clients.clients_line(host, states), "clients: opencode, hermes, pi")
+
+    def test_binary_missing_but_root_present(self):
+        host = self.host({k: v for k, v in ALL_BINARIES.items() if k != "pi"})
+        states = clients.client_states(host)
+        pi = self.by_name(states)["pi"]
+        self.assertTrue(pi.enabled)
+        self.assertFalse(pi.installed)
+        self.assertFalse(pi.active)
+        self.assertEqual(pi.reason, "no pi on PATH")
+        line = clients.clients_line(host, states)
+        self.assertEqual(line, "clients: opencode, hermes (pi: not installed, no pi on PATH)")
+
+    def test_root_missing(self):
+        (self.home / ".hermes").rmdir()
+        host = self.host(ALL_BINARIES)
+        states = clients.client_states(host)
+        hermes = self.by_name(states)["hermes"]
+        self.assertFalse(hermes.installed)
+        self.assertEqual(hermes.reason, f"no {self.home}/.hermes")
+        self.assertEqual(clients.clients_line(host, states),
+                         f"clients: opencode, pi (hermes: not installed, no {self.home}/.hermes)")
+
+    def test_llmctl_clients_subset(self):
+        host = self.host(ALL_BINARIES, LLMCTL_CLIENTS=" pi , opencode")
+        with mock.patch("launcher.clients.hermes_config.hermes_root", side_effect=AssertionError):
+            states = clients.client_states(host)
+        hermes = self.by_name(states)["hermes"]
+        self.assertFalse(hermes.enabled)
+        self.assertFalse(hermes.active)
+        self.assertEqual(hermes.reason, "left out by LLMCTL_CLIENTS")
+        self.assertEqual(clients.clients_line(host, states),
+                         "clients: opencode, pi (hermes: left out by LLMCTL_CLIENTS)")
+
+    def test_disabled_client_binary_is_not_looked_up(self):
+        host = self.host(ALL_BINARIES, LLMCTL_CLIENTS="opencode")
+        looked_up = []
+        host.which = lambda name: looked_up.append(name) or ALL_BINARIES.get(name)
+        clients.client_states(host)
+        self.assertEqual(looked_up, ["opencode"])
+
+    def test_llmctl_clients_empty(self):
+        host = self.host(ALL_BINARIES, LLMCTL_CLIENTS="")
+        states = clients.client_states(host)
+        self.assertEqual([s.active for s in states], [False, False, False])
+        self.assertEqual(clients.clients_line(host, states), "clients: none (LLMCTL_CLIENTS is empty)")
+
+    def test_llmctl_clients_unknown_name(self):
+        host = self.host(ALL_BINARIES, LLMCTL_CLIENTS="opencode,claude")
+        with self.assertRaises(UsageError) as caught:
+            clients.client_states(host)
+        self.assertEqual(caught.exception.exit_code, 1)
+        self.assertEqual(str(caught.exception),
+                         "LLMCTL_CLIENTS: unknown client 'claude'; use opencode, hermes or pi, comma-separated, "
+                         "or an empty value for none")
+
+    def test_listed_client_missing_refuses(self):
+        host = self.host({}, LLMCTL_CLIENTS="pi")
+        states = clients.client_states(host)
+        with self.assertRaises(ClientError) as caught:
+            clients.require_listed(host, states)
+        self.assertEqual(caught.exception.exit_code, 3)
+        self.assertEqual(str(caught.exception), "LLMCTL_CLIENTS names pi, but Pi is not installed here: no pi on PATH")
+
+    def test_unlisted_missing_client_is_fine(self):
+        host = self.host({})
+        states = clients.client_states(host)
+        self.assertIsNone(clients.require_listed(host, states))
+        self.assertEqual(clients.clients_line(host, states),
+                         "clients: none (opencode: not installed, no opencode on PATH)"
+                         " (hermes: not installed, no hermes on PATH) (pi: not installed, no pi on PATH)")
+
+    def test_llmctl_providers(self):
+        catalog = load_catalog(REPO / "recipes", None)
+        self.assertEqual(clients.llmctl_providers(catalog), frozenset({"llamacpp-docker", "vllm-docker"}))
+
+
+START_SETTINGS = {"lastChangelogVersion": "1.5.2", "defaultProvider": "llmctl", "defaultModel": "gpt-oss-20b"}
+
+
+class PlanApplyTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.catalog = load_catalog(REPO / "recipes", None)
+        cls.target = target_for("qwen3.6-35b-a3b", "llamacpp", REPO / "recipes")
+        cls.old_target = target_for("gpt-oss-20b", "vllm", REPO / "recipes")
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.host = FakeHost(env={"HOME": "/nonexistent", "PATH": "/usr/bin"})
+        self.fx = ClientFixture(self.host, Path(self.tmp.name))
+        self.fx.install("opencode", "hermes", "pi")
+        self.fx.route_clients()
+        self.fx.write_opencode("vllm-docker/gpt-oss-20b")
+        self.fx.hermes_config.parent.mkdir(parents=True)
+        self.fx.hermes_config.write_text(hermes_config.new_config_text(self.old_target), encoding="utf-8")
+        self.fx.models_path.write_text(pi_config.new_models_text(self.old_target), encoding="utf-8")
+        self.write_settings(START_SETTINGS)
+
+    def write_settings(self, doc):
+        self.fx.settings_path.write_text(json.dumps(doc, indent=2) + "\n", encoding="utf-8")
+
+    def plan(self, *, set_default=False, check=True):
+        return clients.plan(self.host, self.catalog, self.target, set_default=set_default, check=check)
+
+    def apply(self, *, set_default=False):
+        return clients.apply(self.host, self.catalog, self.target, set_default=set_default)
+
+    def opencode_model(self):
+        return json.loads(self.fx.opencode_path.read_text(encoding="utf-8"))["model"]
+
+    def assert_opencode_written(self):
+        self.assertEqual(self.opencode_model(), "llamacpp-docker/qwen3.6-35b-a3b")
+
+    def assert_hermes_written(self):
+        self.assertEqual(self.fx.hermes_config.read_text(encoding="utf-8"), hermes_config.new_config_text(self.target))
+
+    def assert_models_written(self):
+        self.assertEqual(self.fx.models_path.read_text(encoding="utf-8"), pi_config.new_models_text(self.target))
+
+    def test_plan_without_check_runs_nothing(self):
+        before = self.fx.snapshot()
+        result = self.plan(check=False)
+        self.assertEqual(self.host.calls, [])
+        self.assertEqual(self.fx.snapshot(), before)
+        self.assertEqual([change.path for change in result.changes],
+                         [self.fx.opencode_path, self.fx.hermes_config, self.fx.models_path, self.fx.settings_path])
+        self.assertEqual([state.name for state in result.states], ["opencode", "hermes", "pi"])
+        self.assertFalse(result.hermes_use)
+        self.assertTrue(result.pi_active)
+
+    def test_plan_refusals_propagate(self):
+        before_text = self.fx.models_path.read_text(encoding="utf-8")
+
+        def no_markers():
+            self.fx.hermes_config.write_text("foo: 1\n", encoding="utf-8")
+
+        def comment_in_models():
+            self.fx.models_path.write_text("// mine\n" + before_text, encoding="utf-8")
+
+        def no_row():
+            self.host.on(["pi", "--offline", "--list-models", "llmctl"], ok(LIST_HEADER))
+
+        cases = [("no markers", no_markers), ("comment in models.json", comment_in_models), ("no pi row", no_row)]
+        for name, breaker in cases:
+            with self.subTest(name):
+                self.setUp()
+                breaker()
+                before = self.fx.snapshot()
+                with self.assertRaises(ClientError):
+                    self.plan(check=True)
+                self.assertEqual(self.fx.snapshot(), before)
+
+    def test_dry_run_lines(self):
+        oc, hermes = self.fx.opencode_path, self.fx.hermes_config
+        models, settings = self.fx.models_path, self.fx.settings_path
+        lines = clients.dry_run_lines(self.plan(set_default=True, check=False))
+        self.assertEqual(lines, [
+            f"would back up {oc} to {oc}.llmctl-backup",
+            f"would set OpenCode's default model: vllm-docker/gpt-oss-20b -> llamacpp-docker/qwen3.6-35b-a3b ({oc})",
+            f"would write {hermes}: llmctl block for qwen3.6-35b-a3b on llama.cpp (was gpt-oss-20b on vLLM)",
+            f"would write {models}: provider llmctl for qwen3.6-35b-a3b on llama.cpp, model local "
+            "(was gpt-oss-20b on vLLM)",
+            f"would back up {settings} to {settings}.llmctl-backup",
+            f"would write {settings}: modelThinkingLevels llmctl/local off (was absent); "
+            "defaultModel local (was gpt-oss-20b)",
+            "would run hermes profile use llmctl",
+            "dry run: nothing was written, and Pi has not checked the entry",
+        ])
+
+    def test_dry_run_skips_an_existing_backup_and_ends_without_pi(self):
+        oc = self.fx.opencode_path
+        Path(str(oc) + ".llmctl-backup").write_text("{}\n", encoding="utf-8")
+        self.host.env["LLMCTL_CLIENTS"] = "opencode"
+        lines = clients.dry_run_lines(self.plan(check=False))
+        self.assertEqual(lines, [
+            f"would set OpenCode's default model: vllm-docker/gpt-oss-20b -> llamacpp-docker/qwen3.6-35b-a3b ({oc})",
+            "dry run: nothing was written",
+        ])
+
+    def test_apply_writes_all_and_orders_lines(self):
+        oc, hermes = self.fx.opencode_path, self.fx.hermes_config
+        models, settings = self.fx.models_path, self.fx.settings_path
+        result = self.apply()
+        self.assertEqual(result.failures, ())
+        self.assertEqual(result.lines, (
+            f"backed up {oc} to {oc}.llmctl-backup before the first change",
+            f"backed up {settings} to {settings}.llmctl-backup before the first change",
+            f"wrote {oc}: model llamacpp-docker/qwen3.6-35b-a3b (was vllm-docker/gpt-oss-20b); "
+            "OpenCode reloaded its configuration",
+            f"wrote {hermes}: llmctl block for qwen3.6-35b-a3b on llama.cpp (was gpt-oss-20b on vLLM)",
+            f"wrote {models}: provider llmctl for qwen3.6-35b-a3b on llama.cpp, model local (was gpt-oss-20b on vLLM)",
+            f"wrote {settings}: modelThinkingLevels llmctl/local off (was absent); defaultModel local (was gpt-oss-20b)",
+        ))
+        self.assertEqual(result.changed, frozenset({"hermes", "pi"}))
+        self.assertEqual(self.host.calls.count(["opencode", "reload"]), 1)
+        self.assertFalse([call for call in self.host.calls if call[0] == "hermes"])
+        self.assert_opencode_written()
+        self.assert_hermes_written()
+        self.assert_models_written()
+        self.assertEqual(json.loads(settings.read_text(encoding="utf-8")),
+                         {**START_SETTINGS, "defaultModel": "local", "modelThinkingLevels": {"llmctl/local": "off"}})
+
+    def test_crlf_backup_is_byte_exact(self):
+        original = (json.dumps(START_SETTINGS, indent=2) + "\n").replace("\n", "\r\n").encode("utf-8")
+        self.fx.settings_path.write_bytes(original)
+        result = self.apply()
+        self.assertEqual(result.failures, ())
+        self.assertNotEqual(self.fx.settings_path.read_bytes(), original)
+        self.assertEqual(Path(str(self.fx.settings_path) + ".llmctl-backup").read_bytes(), original)
+
+    def test_apply_rereads_files(self):
+        self.plan()
+        self.write_settings({**START_SETTINGS, "defaultThinkingLevel": "high"})
+        result = self.apply()
+        self.assertEqual(result.failures, ())
+        doc = json.loads(self.fx.settings_path.read_text(encoding="utf-8"))
+        self.assertEqual(doc["defaultThinkingLevel"], "high")
+        self.assertEqual(doc["defaultModel"], "local")
+
+    def test_one_client_failure_keeps_the_others(self):
+        directory = self.fx.hermes_config.parent
+        os.chmod(directory, 0o500)
+        self.addCleanup(os.chmod, directory, 0o700)
+        result = self.apply()
+        self.assertEqual(len(result.failures), 1)
+        self.assertTrue(result.failures[0].startswith(f"{self.fx.hermes_config}: "), result.failures[0])
+        self.assertEqual(self.fx.hermes_config.read_text(encoding="utf-8"),
+                         hermes_config.new_config_text(self.old_target))
+        self.assert_opencode_written()
+        self.assert_models_written()
+        self.assertEqual(json.loads(self.fx.settings_path.read_text(encoding="utf-8"))["defaultModel"], "local")
+        self.assertNotIn("hermes", result.changed)
+        self.assertEqual(result.failed, frozenset({"hermes"}))
+
+    def test_pi_lock_failure_keeps_other_clients(self):
+        cases = [("both present", False, False), ("models.json absent", True, False),
+                 ("settings.json absent", False, True), ("both absent", True, True)]
+        for name, drop_models, drop_settings in cases:
+            with self.subTest(name):
+                self.setUp()
+                if drop_models:
+                    self.fx.models_path.unlink()
+                if drop_settings:
+                    self.fx.settings_path.unlink()
+                models_before = self.fx.models_path.read_bytes() if not drop_models else None
+                settings_before = self.fx.settings_path.read_bytes() if not drop_settings else None
+                lock = Path(str(self.fx.settings_path) + ".lock")
+                lock.mkdir()
+                result = self.apply()
+                self.assertEqual(len(result.failures), 1)
+                self.assertIn(f"Pi holds its settings lock {lock}", result.failures[0])
+                self.assert_opencode_written()
+                self.assert_hermes_written()
+                if drop_models:
+                    self.assertFalse(os.path.lexists(self.fx.models_path))
+                else:
+                    self.assertEqual(self.fx.models_path.read_bytes(), models_before)
+                if drop_settings:
+                    self.assertFalse(os.path.lexists(self.fx.settings_path))
+                else:
+                    self.assertEqual(self.fx.settings_path.read_bytes(), settings_before)
+                self.assertTrue(lock.is_dir())
+                self.assertNotIn("pi", result.changed)
+
+    def test_pi_lock_failure_keeps_pi_consistent(self):
+        self.fx.models_path.write_text(pi_config.new_models_text(self.old_target), encoding="utf-8")
+        self.write_settings({"defaultProvider": "llmctl", "defaultModel": "gpt-oss-20b"})
+        models_before = self.fx.models_path.read_bytes()
+        settings_before = self.fx.settings_path.read_bytes()
+        Path(str(self.fx.settings_path) + ".lock").mkdir()
+        result = self.apply(set_default=False)
+        self.assertEqual(len(result.failures), 1)
+        self.assertEqual(self.fx.models_path.read_bytes(), models_before)
+        self.assertEqual(self.fx.settings_path.read_bytes(), settings_before)
+
+    def test_models_json_is_written_under_the_settings_lock(self):
+        lock = os.path.realpath(self.fx.settings_path) + ".lock"
+        real_write = clients.write_atomic
+        seen = []
+
+        def spy(path, text, **kwargs):
+            if Path(path) == self.fx.models_path:
+                seen.append(os.path.isdir(lock))
+            return real_write(path, text, **kwargs)
+
+        with mock.patch("launcher.clients.write_atomic", side_effect=spy):
+            result = self.apply()
+        self.assertEqual(result.failures, ())
+        self.assertEqual(result.failed, frozenset())
+        self.assertEqual(seen, [True])
+
+    def test_pi_models_failure_skips_settings(self):
+        settings_before = self.fx.settings_path.read_bytes()
+        models_before = self.fx.models_path.read_bytes()
+        self.host.on(["pi", "--offline", "--list-models", "llmctl"], ok(LIST_HEADER))
+        result = self.apply()
+        self.assertEqual(result.failures,
+                         ("Pi rejects the llmctl entry for qwen3.6-35b-a3b: no llmctl row in pi --list-models",))
+        self.assertEqual(self.fx.settings_path.read_bytes(), settings_before)
+        self.assertEqual(self.fx.models_path.read_bytes(), models_before)
+        self.assertNotIn("pi", result.changed)
+        self.assert_opencode_written()
+        self.assert_hermes_written()
+
+    def test_pi_settings_refusal_leaves_models_json(self):
+        self.fx.models_path.write_text(pi_config.new_models_text(self.old_target), encoding="utf-8")
+        self.write_settings({"defaultProvider": "llmctl", "defaultModel": "gpt-oss-20b", "modelThinkingLevels": []})
+        models_before = self.fx.models_path.read_bytes()
+        settings_before = self.fx.settings_path.read_bytes()
+        result = self.apply()
+        self.assertEqual(len(result.failures), 1, result.failures)
+        self.assertEqual(self.fx.models_path.read_bytes(), models_before)
+        self.assertEqual(self.fx.settings_path.read_bytes(), settings_before)
+        self.assertNotIn("pi", result.changed)
+
+    def test_pi_settings_write_failure_puts_models_json_back(self):
+        for name, drop_models in (("models.json present", False), ("models.json absent", True)):
+            with self.subTest(name):
+                self.setUp()
+                if drop_models:
+                    self.fx.models_path.unlink()
+                models_before = None if drop_models else self.fx.models_path.read_bytes()
+                settings_before = self.fx.settings_path.read_bytes()
+                real_write = clients.write_atomic
+                attempts = []
+
+                def failing(path, text, **kwargs):
+                    if Path(path) == self.fx.settings_path:
+                        attempts.append(path)
+                        raise OSError(28, "No space left on device")
+                    return real_write(path, text, **kwargs)
+
+                with mock.patch("launcher.clients.write_atomic", side_effect=failing):
+                    result = self.apply()
+                self.assertEqual(len(attempts), 1)
+                self.assertEqual(len(result.failures), 1, result.failures)
+                message = result.failures[0]
+                self.assertIn(f"{self.fx.settings_path}: No space left on device", message)
+                self.assertIn(f"{self.fx.models_path} was put back", message)
+                if drop_models:
+                    self.assertFalse(os.path.lexists(self.fx.models_path))
+                else:
+                    self.assertEqual(self.fx.models_path.read_bytes(), models_before)
+                self.assertEqual(self.fx.settings_path.read_bytes(), settings_before)
+                self.assertNotIn("pi", result.changed)
+                self.assertEqual(result.failed, frozenset({"pi"}))
+                self.assert_opencode_written()
+                self.assert_hermes_written()
+
+    def test_pi_rollback_failure_names_both_errors(self):
+        real_write = clients.write_atomic
+        models_writes = []
+
+        def failing(path, text, **kwargs):
+            if Path(path) == self.fx.settings_path:
+                raise OSError(28, "No space left on device")
+            if Path(path) == self.fx.models_path:
+                models_writes.append(text)
+                if len(models_writes) > 1:
+                    raise OSError(5, "Input/output error")
+            return real_write(path, text, **kwargs)
+
+        with mock.patch("launcher.clients.write_atomic", side_effect=failing):
+            result = self.apply()
+        self.assertEqual(len(result.failures), 1, result.failures)
+        message = result.failures[0]
+        self.assertIn(f"{self.fx.settings_path}: No space left on device", message)
+        self.assertIn("Input/output error", message)
+        self.assertIn("disagree", message)
+        self.assertNotIn("was put back", message)
+
+    def test_pi_warning_goes_to_after_lines(self):
+        def warn(argv):
+            directory = Path(self.host.env_extras[-1]["PI_CODING_AGENT_DIR"])
+            served = json.loads((directory / "models.json").read_text())["providers"]["llmctl"]["models"][0]["id"]
+            return Result(0, LIST_HEADER + f"llmctl    {served}  131.1K   16.4K    yes       no\n",
+                          "errors loading models.json: other is bad\n")
+
+        self.host.on(["pi", "--offline", "--list-models", "llmctl"], warn)
+        result = self.apply()
+        self.assertEqual(result.failures, ())
+        self.assertEqual(result.lines[-1], f"warning: Pi reports problems in {self.fx.models_path} outside the llmctl "
+                                           "entry: errors loading models.json: other is bad")
+
+    def test_unchanged_models_are_still_validated(self):
+        self.fx.models_path.write_text(pi_config.new_models_text(self.target), encoding="utf-8")
+        result = self.apply()
+        self.assertEqual(result.failures, ())
+        self.assertEqual(self.host.calls.count(["pi", "--offline", "--list-models", "llmctl"]), 1)
+        self.assertFalse([line for line in result.lines if line.startswith(f"wrote {self.fx.models_path}")])
+        self.assertNotIn("pi", result.changed)
+
+    def test_hermes_use_failure_is_reported(self):
+        self.host.on(["hermes", "profile", "use", "llmctl"], fail("boom"))
+        result = self.apply(set_default=True)
+        self.assertEqual(result.failures, ("hermes profile use llmctl exited 1: boom",))
+        self.assert_hermes_written()
+        self.assertIn("hermes", result.changed)
+        self.assertEqual(result.failed, frozenset())
+        self.assertEqual(result.default_failed, frozenset({"hermes"}))
+
+    def test_pi_interrupt_during_settings_write_puts_models_json_back(self):
+        models_before = self.fx.models_path.read_bytes()
+        settings_before = self.fx.settings_path.read_bytes()
+        real_write = clients.write_atomic
+
+        def interrupted(path, text, **kwargs):
+            if Path(path) == self.fx.settings_path:
+                raise KeyboardInterrupt
+            return real_write(path, text, **kwargs)
+
+        with mock.patch("launcher.clients.write_atomic", side_effect=interrupted):
+            with self.assertRaises(KeyboardInterrupt):
+                self.apply()
+        self.assertEqual(self.fx.models_path.read_bytes(), models_before)
+        self.assertEqual(self.fx.settings_path.read_bytes(), settings_before)
+        self.assertFalse(os.path.lexists(os.path.realpath(self.fx.settings_path) + ".lock"))
+
+    def test_interrupt_after_the_settings_write_landed_keeps_models_json(self):
+        real_write = clients.write_atomic
+
+        def landed_then_interrupted(path, text, **kwargs):
+            real_write(path, text, **kwargs)
+            if Path(path) == self.fx.settings_path:
+                raise KeyboardInterrupt
+
+        with mock.patch("launcher.clients.write_atomic", side_effect=landed_then_interrupted):
+            with self.assertRaises(KeyboardInterrupt):
+                self.apply()
+        self.assert_models_written()
+        self.assertEqual(pi_config.pi_default(self.host.env), ("llmctl", "local"))
+
+    def test_put_back_keeps_a_dangling_models_symlink(self):
+        dotfiles = Path(self.tmp.name) / "dotfiles" / "pi"
+        dotfiles.mkdir(parents=True)
+        self.fx.models_path.unlink()
+        self.fx.models_path.symlink_to(dotfiles / "models.json")
+        real_write = clients.write_atomic
+        written = []
+
+        def failing(path, text, **kwargs):
+            if Path(path) == self.fx.settings_path:
+                raise OSError(28, "No space left on device")
+            if Path(path) == self.fx.models_path:
+                written.append(path)
+            return real_write(path, text, **kwargs)
+
+        with mock.patch("launcher.clients.write_atomic", side_effect=failing):
+            result = self.apply()
+        self.assertEqual(written, [self.fx.models_path])
+        self.assertEqual(len(result.failures), 1, result.failures)
+        self.assertTrue(result.failures[0].endswith(f"{self.fx.models_path} was put back as it was"), result.failures)
+        self.assertTrue(self.fx.models_path.is_symlink())
+        self.assertEqual(os.readlink(self.fx.models_path), str(dotfiles / "models.json"))
+        self.assertFalse(os.path.lexists(dotfiles / "models.json"))
+
+    def lock_seen(self):
+        """Route pi --list-models so that each call records whether llmctl holds Pi's settings lock."""
+        lock = os.path.realpath(self.fx.settings_path) + ".lock"
+        seen = []
+
+        def listing(argv):
+            seen.append(os.path.isdir(lock))
+            return self.fx._pi_list(argv)
+
+        self.host.on(["pi", "--offline", "--list-models", "llmctl"], listing)
+        return seen
+
+    def test_pi_is_validated_before_the_settings_lock(self):
+        seen = self.lock_seen()
+        result = self.apply()
+        self.assertEqual(result.failures, ())
+        self.assertEqual(seen, [False])
+        self.assert_models_written()
+
+    def test_pi_revalidates_when_models_json_changed_before_the_lock(self):
+        seen = self.lock_seen()
+        listing = self.host._routes[-1][1]
+        other = {"baseUrl": "http://127.0.0.1:9/v1", "api": "openai-completions", "models": [{"id": "m"}]}
+
+        def changing(argv):
+            if not seen:
+                doc = json.loads(self.fx.models_path.read_text(encoding="utf-8"))
+                doc["providers"]["other"] = other
+                self.fx.models_path.write_text(json.dumps(doc), encoding="utf-8")
+            return listing(argv)
+
+        self.host.on(["pi", "--offline", "--list-models", "llmctl"], changing)
+        result = self.apply()
+        self.assertEqual(result.failures, ())
+        self.assertEqual(seen, [False, True])
+        providers = json.loads(self.fx.models_path.read_text(encoding="utf-8"))["providers"]
+        self.assertEqual(providers["other"], other)
+        self.assertEqual(providers["llmctl"], pi_config.provider_entry(self.target))
+
+    def test_pi_unchanged_entry_is_validated_once(self):
+        self.fx.models_path.write_text(pi_config.new_models_text(self.target), encoding="utf-8")
+        seen = self.lock_seen()
+        result = self.apply()
+        self.assertEqual(result.failures, ())
+        self.assertEqual(seen, [False])
+
+    def test_pi_lock_taken_over_is_reported(self):
+        lock = Path(os.path.realpath(self.fx.settings_path) + ".lock")
+        spare = Path(self.tmp.name) / "spare-lock"
+        real_write = clients.write_atomic
+        taken = []
+
+        def take_over(path, text, **kwargs):
+            if Path(path) == self.fx.settings_path and not taken:
+                taken.append(True)
+                spare.mkdir()
+                lock.rmdir()
+                spare.rename(lock)
+            return real_write(path, text, **kwargs)
+
+        with mock.patch("launcher.clients.write_atomic", side_effect=take_over):
+            result = self.apply()
+        self.assertEqual(result.failures, (
+            f"{self.fx.settings_path}: Pi took over its settings lock while llmctl held it, so another writer may "
+            "have changed settings.json; check it",))
+        self.assertTrue(lock.is_dir())
+        self.assert_models_written()
+
+    def test_set_default_runs_hermes_use(self):
+        result = self.apply(set_default=True)
+        self.assertEqual(result.failures, ())
+        self.assertEqual(self.host.calls.count(["hermes", "profile", "use", "llmctl"]), 1)
+        self.assertEqual(result.lines[-2:], (
+            "ran hermes profile use llmctl: plain hermes commands, hermes gateway and hermes config included, "
+            "now use the profile llmctl; switch back with hermes profile use default",
+            "Hermes default profile: default -> llmctl",
+        ))
+
+    def test_set_default_with_llmctl_sticky_runs_no_hermes(self):
+        (self.fx.hermes_root / "active_profile").write_text("llmctl\n", encoding="utf-8")
+        planned = self.plan(set_default=True, check=False)
+        self.assertFalse(planned.hermes_use)
+        self.assertNotIn("would run hermes profile use llmctl", clients.dry_run_lines(planned))
+        result = self.apply(set_default=True)
+        self.assertEqual(result.failures, ())
+        self.assertFalse([call for call in self.host.calls if call[0] == "hermes"])
+        self.assertFalse([line for line in result.lines
+                          if line.startswith(("ran hermes profile use", "Hermes default profile:"))])
+
+    def test_reload_failure_note(self):
+        self.host.on(["opencode", "reload"], fail("no server"))
+        result = self.apply()
+        oc = self.fx.opencode_path
+        wrote = f"wrote {oc}: model llamacpp-docker/qwen3.6-35b-a3b (was vllm-docker/gpt-oss-20b)"
+        note = "note: run `opencode reload`, or restart OpenCode, so an OpenCode that is already open sees it"
+        self.assertIn(wrote, result.lines)
+        self.assertIn(note, result.lines)
+        last_write = max(index for index, line in enumerate(result.lines) if line.startswith("wrote "))
+        self.assertGreater(result.lines.index(note), last_write)
+        self.assertEqual(result.failures, ())
+
+    def test_disabled_client_untouched(self):
+        self.host.env["LLMCTL_CLIENTS"] = "opencode,pi"
+        before = self.fx.hermes_config.read_bytes()
+        result = self.apply(set_default=True)
+        self.assertEqual(result.failures, ())
+        self.assertEqual(self.fx.hermes_config.read_bytes(), before)
+        self.assertFalse([call for call in self.host.calls if call[0] == "hermes"])
+        self.assertNotIn("hermes", result.changed)
+        self.assertFalse(clients.plan(self.host, self.catalog, self.target, set_default=True, check=False).hermes_use)
+
+    def test_unencodable_write_is_a_client_write_error(self):
+        path = self.fx.home / "x.json"
+        change = clients.FileChange(path, None, '{"a": "\ud800"}\n', "s", "p")
+        with self.assertRaises(clients.ClientWriteError) as caught:
+            clients._Applier().write(change)
+        self.assertTrue(str(caught.exception).startswith(f"{path}: "), str(caught.exception))
+        self.assertFalse(os.path.lexists(path))
+
+    def test_failure_message(self):
+        self.assertEqual(clients.failure_message(["a: x", "b: y"]),
+                         "the model is running, but 2 client file(s) were not updated: a: x; b: y")
+
+
+class ReportTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.catalog = load_catalog(REPO / "recipes", None)
+        cls.target = target_for("qwen3.6-35b-a3b", "llamacpp", REPO / "recipes")
+        cls.old_target = target_for("gpt-oss-20b", "vllm", REPO / "recipes")
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.host = FakeHost(env={"HOME": "/nonexistent", "PATH": "/usr/bin"})
+        self.fx = ClientFixture(self.host, Path(self.tmp.name))
+        self.fx.install("opencode", "hermes", "pi")
+        self.fx.route_clients()
+        self.fx.write_opencode("vllm-docker/gpt-oss-20b")
+        self.fx.hermes_config.parent.mkdir(parents=True)
+        self.fx.hermes_config.write_text(hermes_config.new_config_text(self.old_target), encoding="utf-8")
+        self.fx.models_path.write_text(pi_config.new_models_text(self.old_target), encoding="utf-8")
+        self.write_settings(START_SETTINGS)
+
+    def write_settings(self, doc):
+        self.fx.settings_path.write_text(json.dumps(doc, indent=2) + "\n", encoding="utf-8")
+
+    def set_sticky(self, name):
+        (self.fx.hermes_root / "active_profile").write_text(name + "\n", encoding="utf-8")
+
+    def report(self, target="running", *, with_paths=True, running_known=True):
+        target = self.target if target == "running" else target
+        return clients.report(self.host, self.catalog, target, with_paths=with_paths, running_known=running_known)
+
+    def test_status_lines_running_model(self):
+        result = clients.apply(self.host, self.catalog, self.target, set_default=True)
+        self.assertEqual(result.failures, ())
+        agent = self.fx.models_path.parent
+        self.assertEqual(self.report(), [
+            "clients:",
+            f"  OpenCode: default llamacpp-docker/qwen3.6-35b-a3b, the running model ({self.fx.opencode_path})",
+            "  Hermes: profile llmctl for qwen3.6-35b-a3b on llama.cpp, the running model; default profile: llmctl "
+            f"({self.fx.hermes_config})",
+            "  Pi: llmctl/local for qwen3.6-35b-a3b on llama.cpp, the running model; default llmctl/local, "
+            f"thinking off ({agent})",
+        ])
+
+    def test_status_other_states(self):
+        agent = self.fx.models_path.parent
+        with self.subTest("no Hermes profile"):
+            self.fx.hermes_config.unlink()
+            self.assertIn("  Hermes: profile llmctl not created yet (the next ./llmctl up creates it)", self.report())
+        with self.subTest("Pi entry for another model"):
+            self.assertIn("  Pi: llmctl/gpt-oss-20b for gpt-oss-20b on vLLM, not the running model "
+                          f"(run ./llmctl up again); default llmctl/gpt-oss-20b, thinking not set ({agent})",
+                          self.report())
+        with self.subTest("Pi entry without a running model"):
+            self.assertIn("  Pi: llmctl/gpt-oss-20b for gpt-oss-20b on vLLM; default llmctl/gpt-oss-20b, "
+                          f"thinking not set ({agent})", self.report(None))
+        with self.subTest("Hermes profile for another model"):
+            self.fx.hermes_config.write_text(hermes_config.new_config_text(self.old_target), encoding="utf-8")
+            self.assertIn("  Hermes: profile llmctl for gpt-oss-20b on vLLM, not the running model "
+                          f"(run ./llmctl up again); default profile: default ({self.fx.hermes_config})",
+                          self.report())
+            self.assertIn(f"  Hermes: profile llmctl for gpt-oss-20b on vLLM; default profile: default "
+                          f"({self.fx.hermes_config})", self.report(None))
+        with self.subTest("no Pi provider"):
+            self.fx.models_path.unlink()
+            self.assertIn(f"  Pi: no llmctl provider yet (the next ./llmctl up writes it) ({agent})", self.report())
+        with self.subTest("broken opencode.json"):
+            self.fx.opencode_path.write_text("{", encoding="utf-8")
+            lines = self.report()
+            line = next(line for line in lines if line.startswith("  OpenCode: "))
+            self.assertTrue(line.startswith(f"  OpenCode: cannot read {self.fx.opencode_path}: "), line)
+        with self.subTest("no OpenCode config"):
+            self.fx.opencode_path.unlink()
+            self.assertIn(f"  OpenCode: no config at {self.fx.opencode_path}", self.report())
+        with self.subTest("disabled"):
+            self.host.env["LLMCTL_CLIENTS"] = "pi,hermes"
+            self.assertIn("  OpenCode: disabled by LLMCTL_CLIENTS", self.report())
+
+    def test_status_not_installed(self):
+        del self.host.installed["hermes"]
+        self.assertIn("  Hermes: not installed (no hermes on PATH)", self.report())
+
+    def test_no_default_model(self):
+        self.fx.opencode_path.write_text('{"providers": {}}\n', encoding="utf-8")
+        self.assertIn(f"  OpenCode: no default model ({self.fx.opencode_path})", self.report())
+
+    def test_status_warnings_without_server(self):
+        self.fx.write_opencode("llamacpp-docker/qwen3.6-35b-a3b")
+        self.set_sticky("llmctl")
+        self.write_settings({"defaultProvider": "llmctl", "defaultModel": "local"})
+        warnings = [
+            "warning: OpenCode's default llamacpp-docker/qwen3.6-35b-a3b points at llmctl, but no model is running",
+            "warning: Hermes' default profile llmctl points at llmctl, but no model is running",
+            "warning: Pi's default llmctl/local points at llmctl, but no model is running",
+        ]
+        lines = self.report(None)
+        self.assertEqual(lines[-3:], warnings)
+        self.assertEqual(len(lines), 7)
+        quiet = self.report(None, running_known=False)
+        self.assertEqual(len(quiet), 4)
+        self.assertFalse([line for line in quiet if "but no model is running" in line])
+
+    def test_no_warning_for_a_default_elsewhere(self):
+        self.fx.write_opencode("openai/gpt-5")
+        self.write_settings({"defaultProvider": "openai", "defaultModel": "gpt-5"})
+        self.assertFalse([line for line in self.report(None) if line.startswith("warning:")])
+
+    def test_opencode_default_not_running_model(self):
+        self.fx.write_opencode("llamacpp-docker/gemma-4-26b-a4b")
+        lines = self.report()
+        self.assertIn("warning: OpenCode's default llamacpp-docker/gemma-4-26b-a4b is not the running model "
+                      "qwen3.6-35b-a3b", lines)
+        self.assertIn(f"  OpenCode: default llamacpp-docker/gemma-4-26b-a4b ({self.fx.opencode_path})", lines)
+
+    def test_report_prints_hermes_warnings(self):
+        (self.fx.hermes_root / "gateway_state.json").write_text(
+            json.dumps({"gateway_state": "running", "served_profiles": ["llmctl"]}), encoding="utf-8")
+        with open(self.fx.hermes_config, "a", encoding="utf-8") as handle:
+            handle.write("agent:\n  reasoning_effort: high\n")
+        lines = self.report()
+        gateway = "warning: Hermes' gateway serves the profile llmctl"
+        self.assertTrue([line for line in lines if line.startswith(gateway)], lines)
+        self.assertTrue([line for line in lines
+                         if line.startswith(f"warning: {self.fx.hermes_config} sets agent.reasoning_effort high")],
+                        lines)
+
+    def test_unreadable_hermes_profile(self):
+        self.fx.hermes_config.write_text("foo: 1\n", encoding="utf-8")
+        lines = self.report()
+        line = next(line for line in lines if line.startswith("  Hermes: "))
+        self.assertTrue(line.startswith(f"  Hermes: cannot read {self.fx.hermes_config}: "), line)
+
+    def test_enabled_models_note_with_target(self):
+        self.write_settings({"defaultProvider": "llmctl", "defaultModel": "local", "enabledModels": ["openai/gpt-5"]})
+        self.assertIn("note: a new Pi session without --model starts with the first of enabledModels (openai/gpt-5) "
+                      "instead of llmctl/local; add llmctl/local to enabledModels or clear enabledModels",
+                      self.report())
+
+    def test_report_without_paths(self):
+        paths = [self.fx.opencode_path, self.fx.hermes_config, self.fx.models_path.parent]
+        for name, prepare in (("other model", lambda: None),
+                              ("running model", lambda: clients.apply(self.host, self.catalog, self.target,
+                                                                      set_default=True))):
+            with self.subTest(name):
+                prepare()
+                with_paths = self.report()
+                lines = self.report(with_paths=False)
+                self.assertEqual(len(lines), len(with_paths))
+                for line in lines:
+                    for path in paths:
+                        self.assertFalse(line.endswith(f" ({path})"), line)
+                self.assertIn("  OpenCode: default vllm-docker/gpt-oss-20b" if name == "other model"
+                              else "  OpenCode: default llamacpp-docker/qwen3.6-35b-a3b, the running model", lines)
+
+    def down_lines(self):
+        return clients.down_lines(self.host, self.catalog, "qwen3.6-35b-a3b")
+
+    def test_down_lines(self):
+        self.set_sticky("llmctl")
+        self.assertEqual(self.down_lines(), [
+            "OpenCode, Hermes and Pi still point at qwen3.6-35b-a3b and get no answer until the next ./llmctl up",
+            "  switch back: OpenCode /models; hermes profile use default; Pi /model",
+        ])
+        self.set_sticky("default")
+        self.assertEqual(self.down_lines(), [
+            "OpenCode and Pi still point at qwen3.6-35b-a3b and get no answer until the next ./llmctl up",
+            "  switch back: OpenCode /models; Pi /model",
+        ])
+        self.fx.write_opencode("openai/gpt-5")
+        self.assertEqual(self.down_lines(), [
+            "Pi still points at qwen3.6-35b-a3b and gets no answer until the next ./llmctl up",
+            "  switch back: Pi /model",
+        ])
+        self.write_settings({"lastChangelogVersion": "1.5.2"})
+        self.assertEqual(self.down_lines(), [])
+
+    def test_down_lines_skip_disabled_and_unreadable(self):
+        self.set_sticky("llmctl")
+        self.host.env["LLMCTL_CLIENTS"] = "hermes,pi"
+        self.fx.settings_path.write_text("{", encoding="utf-8")
+        self.assertEqual(self.down_lines(), [
+            "Hermes still points at qwen3.6-35b-a3b and gets no answer until the next ./llmctl up",
+            "  switch back: hermes profile use default",
+        ])
+
+
+if __name__ == "__main__":
+    unittest.main()

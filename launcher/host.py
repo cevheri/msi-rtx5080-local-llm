@@ -4,6 +4,7 @@ RealHost talks to the machine; the tests use a fake with the same methods.
 """
 
 import os
+import shutil
 import socket
 import subprocess
 import sys
@@ -67,6 +68,8 @@ class Host(Protocol):
     def meminfo(self) -> str: ...
 
     def cdi_specs(self) -> list[str]: ...
+
+    def which(self, name: str) -> str | None: ...
 
 
 class _NoRedirect(urllib.request.HTTPRedirectHandler):
@@ -173,3 +176,7 @@ class RealHost:
                 if path.is_file() and path.suffix in (".yaml", ".yml", ".json"):
                     specs.append(path.read_text())
         return specs
+
+    def which(self, name):
+        """The path of an executable on the PATH of this host's environment, or None."""
+        return shutil.which(name, path=self.env.get("PATH", ""))

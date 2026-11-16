@@ -24,6 +24,10 @@ args = [
   "--override-generation-config", '{"temperature":0.6,"top_p":0.95}',
 ]
 
+[clients]
+output = 16384
+thinking = "always"
+
 [evidence]
 kind = "estimate"
 summary = "The documented vLLM recipe, not run on the reference laptop yet"

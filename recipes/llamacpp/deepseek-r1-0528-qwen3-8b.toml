@@ -23,6 +23,10 @@ args = [
   "--reasoning-format", "deepseek", "--temp", "0.6", "--top-p", "0.95", "--min-p", "0.01",
 ]
 
+[clients]
+output = 16384
+thinking = "always"
+
 [needs]
 gpu_mib = 13174
 ram_gib = 3.0

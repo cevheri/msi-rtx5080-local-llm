@@ -1,0 +1,5 @@
+model: {"provider": "custom:llmctl", "default": "deepseek-r1-8b"}
+providers: {"llmctl": {"name": "llmctl: deepseek-r1-0528-qwen3-8b on vLLM", "api": "http://127.0.0.1:8000/v1", "transport": "chat_completions", "default_model": "deepseek-r1-8b", "discover_models": false, "extra_body": {"max_tokens": 16384}, "models": {"deepseek-r1-8b": {"context_length": 65536}}}}
+model_overrides: {"custom": {"deepseek-r1-8b": {"supports_reasoning": false}}}
+gateway: {"standalone": true}
+platform_toolsets: {"cli": []}

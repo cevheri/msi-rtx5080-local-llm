@@ -164,5 +164,111 @@ class LlamacppRuntimeBehaviourTest(unittest.TestCase):
         self.assertFalse(llamacpp.ready(FakeHost(), self.runtime, self.recipe))
 
 
+def recipe_from(stem, edit=None):
+    data, source = read_toml(RECIPES / f"{stem}.toml", "shipped")
+    data = copy.deepcopy(data)
+    if edit:
+        edit(data)
+    return llamacpp.parse_recipe(data, source, stem)
+
+
+def replace_args(data, old, new):
+    args = data["server"]["args"]
+    for index in range(len(args) - len(old) + 1):
+        if args[index:index + len(old)] == old:
+            data["server"]["args"] = args[:index] + new + args[index + len(old):]
+            return
+    raise AssertionError(f"{old} not in the args")
+
+
+class LlamacppClientRulesTest(unittest.TestCase):
+    def assertRefused(self, stem, edit, *fragments):
+        with self.assertRaises(RecipeError) as ctx:
+            recipe_from(stem, edit)
+        message = str(ctx.exception)
+        self.assertIn(str(RECIPES / f"{stem}.toml"), message)
+        for fragment in fragments:
+            self.assertIn(fragment, message)
+
+    def test_label(self):
+        self.assertEqual(llamacpp.LABEL, "llama.cpp")
+
+    def test_served_name_pattern(self):
+        self.assertTrue(llamacpp.SERVED_NAME.fullmatch("local"))
+        self.assertIsNone(llamacpp.SERVED_NAME.fullmatch("-local"))
+
+    def test_clients_table_required(self):
+        self.assertRefused("qwen3.6-35b-a3b", lambda data: data.pop("clients"), "missing key 'clients'")
+
+    def test_clients_parsed_into_recipe(self):
+        recipe = recipe_from("qwen3.6-35b-a3b")
+        self.assertEqual((recipe.clients.output, recipe.clients.thinking, recipe.clients.default),
+                         (16384, "toggle", "off"))
+
+    def test_clients_keys_are_checked(self):
+        self.assertRefused("qwen3.6-35b-a3b", lambda data: data["clients"].update(outptu=1),
+                           "[clients]", "did you mean 'output'")
+
+    def test_toggle_default_must_match_reasoning_off(self):
+        self.assertRefused("qwen3.6-35b-a3b", lambda data: data["clients"].update(default="on"),
+                           "[clients]", "--reasoning")
+
+    def test_toggle_off_through_template_kwargs(self):
+        def edit(default):
+            def apply(data):
+                replace_args(data, ["--reasoning", "off"], ["--chat-template-kwargs", '{"enable_thinking":false}'])
+                data["clients"]["default"] = default
+            return apply
+        self.assertEqual(recipe_from("qwen3.6-35b-a3b", edit("off")).clients.default, "off")
+        self.assertRefused("qwen3.6-35b-a3b", edit("on"), "[clients]", "--chat-template-kwargs")
+
+    def test_toggle_without_off_flag_is_on(self):
+        def edit(default):
+            def apply(data):
+                replace_args(data, ["--reasoning", "off"], [])
+                data["clients"]["default"] = default
+            return apply
+        self.assertRefused("qwen3.6-35b-a3b", edit("off"), "[clients]", "--reasoning")
+        self.assertEqual(recipe_from("qwen3.6-35b-a3b", edit("on")).clients.default, "on")
+
+    def test_template_kwargs_must_be_a_json_object(self):
+        for bad in ("{not json", "[1]"):
+            with self.subTest(value=bad):
+                self.assertRefused(
+                    "qwen3.6-35b-a3b",
+                    lambda data, b=bad: replace_args(data, ["--reasoning", "off"], ["--chat-template-kwargs", b]),
+                    "--chat-template-kwargs", "JSON object")
+
+    def test_effort_needs_medium_server_effort(self):
+        self.assertRefused("qwen3.8-27b",
+                           lambda data: replace_args(data, ["--reasoning-effort", "medium"], ["--reasoning-effort", "high"]),
+                           "[clients]", "--reasoning-effort")
+        self.assertEqual(recipe_from("qwen3.8-27b", lambda data: replace_args(data, ["--reasoning-effort", "medium"], []))
+                         .clients.thinking, "effort")
+
+    def test_always_needs_high_effort_or_deepseek_format(self):
+        self.assertRefused("k2-horizon-mova-36b",
+                           lambda data: replace_args(data, ["--reasoning-effort", "high"], []),
+                           "[clients]", "--reasoning-effort")
+        for stem in ("k2-horizon-7b", "deepseek-r1-0528-qwen3-8b", "k2-horizon-mova-36b"):
+            with self.subTest(recipe=stem):
+                self.assertEqual(recipe_from(stem).clients.thinking, "always")
+
+    def test_none_allows_no_reasoning_flags(self):
+        for extra in (["--reasoning", "off"], ["--reasoning-effort", "low"], ["--reasoning-format", "none"],
+                      ["--chat-template-kwargs", "{}"]):
+            with self.subTest(extra=extra):
+                self.assertRefused("qwen3-coder-next",
+                                   lambda data, e=extra: data["server"]["args"].extend(e),
+                                   "[clients]", extra[0])
+
+    def test_runtime_served_name_pattern(self):
+        data, source = read_toml(RECIPES / "_runtime.toml", "shipped")
+        data["served_name"] = "lo/cal"
+        with self.assertRaises(RecipeError) as ctx:
+            llamacpp.parse_runtime(data, source)
+        self.assertIn("served_name", str(ctx.exception))
+
+
 if __name__ == "__main__":
     unittest.main()

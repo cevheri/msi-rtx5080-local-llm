@@ -1,0 +1,4 @@
+model: {"provider": "custom:llmctl", "default": "qwen3.5-9b"}
+providers: {"llmctl": {"name": "llmctl: qwen3.5-9b on vLLM", "api": "http://127.0.0.1:8000/v1", "transport": "chat_completions", "default_model": "qwen3.5-9b", "discover_models": false, "extra_body": {"max_tokens": 16384}, "models": {"qwen3.5-9b": {"context_length": 131072}}}}
+model_overrides: {"custom": {"qwen3.5-9b": {"supports_reasoning": false}}}
+gateway: {"standalone": true}

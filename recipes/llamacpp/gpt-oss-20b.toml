@@ -22,6 +22,11 @@ args = [
   "--reasoning-effort", "medium", "--temp", "1.0", "--top-p", "1.0",
 ]
 
+[clients]
+output = 16384
+thinking = "effort"
+efforts = ["low", "medium", "high"]
+
 [needs]
 gpu_mib = 13296
 

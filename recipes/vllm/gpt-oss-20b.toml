@@ -26,6 +26,11 @@ args = [
   "--override-generation-config", '{"temperature":1.0,"top_p":1.0}',
 ]
 
+[clients]
+output = 16384
+thinking = "effort"
+efforts = ["low", "medium", "high"]
+
 [evidence]
 kind = "measured"
 summary = "83.5 tok/s decode in eager mode with 64k context, 15,698 MiB GPU memory, OpenCode session passed"

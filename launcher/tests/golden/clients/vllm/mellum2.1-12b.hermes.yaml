@@ -1,0 +1,4 @@
+model: {"provider": "custom:llmctl", "default": "mellum2.1"}
+providers: {"llmctl": {"name": "llmctl: mellum2.1-12b on vLLM", "api": "http://127.0.0.1:8000/v1", "transport": "chat_completions", "default_model": "mellum2.1", "discover_models": false, "extra_body": {"max_tokens": 16384}, "models": {"mellum2.1": {"context_length": 131072}}}}
+model_overrides: {"custom": {"mellum2.1": {"supports_reasoning": false}}}
+gateway: {"standalone": true}

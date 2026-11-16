@@ -698,7 +698,11 @@ OpenCode entry for the first OpenCode run:
   "modelID": "gemma-4-e4b",
   "name": "Gemma 4 E4B QAT W4A16 smoke test (vLLM)",
   "capabilities": { "tools": true, "input": ["text"], "output": ["text"], "reasoning": { "supported": true } },
-  "limit": { "context": 65536, "output": 16384 }
+  "limit": { "context": 65536, "output": 16384 },
+  "variants": [
+    { "id": "thinking", "body": { "chat_template_kwargs": { "enable_thinking": true } } },
+    { "id": "none", "body": { "chat_template_kwargs": { "enable_thinking": false } } }
+  ]
 }
 ```
 

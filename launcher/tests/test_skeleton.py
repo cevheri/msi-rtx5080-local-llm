@@ -154,6 +154,15 @@ class RealHostTest(unittest.TestCase):
             specs = RealHost(cdi_dirs=(Path(tmp), Path(tmp) / "missing")).cdi_specs()
             self.assertEqual(specs, ["kind: nvidia.com/gpu\n"])
 
+    def test_which_searches_the_host_path(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            binary = Path(tmp, "llmctl-fake-bin")
+            binary.write_text("#!/bin/sh\n")
+            binary.chmod(0o755)
+            host = RealHost(env={"PATH": tmp})
+            self.assertEqual(host.which("llmctl-fake-bin"), str(binary))
+            self.assertIsNone(host.which("llmctl-no-such-bin"))
+
 
 if __name__ == "__main__":
     unittest.main()

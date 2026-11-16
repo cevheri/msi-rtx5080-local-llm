@@ -5,14 +5,13 @@ import re
 import shlex
 from pathlib import Path
 
-from launcher import docker_state, ops
+from launcher import clients, docker_state, ops
 from launcher.catalog import load_catalog, override_dir, resolve
 from launcher.command import LABEL_PREFIX, docker_run_argv
 from launcher.errors import LlmctlError, PreflightError, UsageError
 from launcher.hfcache import hf_home
 from launcher.host import RealHost
 from launcher.model import HostEnv
-from launcher.opencode_config import current_default
 from launcher.runtimes import ADAPTERS
 from launcher.smoke import smoke
 
@@ -43,8 +42,9 @@ def build_parser() -> argparse.ArgumentParser:
     up.add_argument("--runtime")
     up.add_argument("--replace", action="store_true", help="stop the model server that is running first")
     up.add_argument("--dry-run", action="store_true", help="print the docker command and start nothing")
-    up.add_argument("--set-opencode-default", action="store_true",
-                    help="once the server is ready, make it OpenCode's default model (or set LLMCTL_SET_OPENCODE_DEFAULT=1)")
+    up.add_argument("--set-default", action="store_true",
+                    help="once the server is ready, make it the default of every installed client "
+                         "(or set LLMCTL_SET_DEFAULT=1)")
     sub.add_parser("status", help="the model server llmctl started, and its health")
     logs = sub.add_parser("logs", help="the model server's log")
     logs.add_argument("-f", "--follow", action="store_true")
@@ -111,8 +111,11 @@ def _list(host, catalog, runtime_name) -> int:
         entry = catalog.runtimes.get(runtime_label)
         address = f", http://127.0.0.1:{entry.runtime.host_port}/v1" if entry and entry.runtime else ""
         host.out.write(f"running: {container.labels.get(LABEL_PREFIX + 'recipe', '?')} on {runtime_label}{address}\n")
-    _, default, problem = current_default(host.env)
-    host.out.write(f"OpenCode default: {default or problem or 'not set'}\n")
+    target = ops.target_from(catalog, containers)
+    # A running container whose recipe the catalog lacks is still a running model, so no "no model is running".
+    running_known = docker_problem is None and (target is not None or not containers)
+    for line in clients.report(host, catalog, target, with_paths=False, running_known=running_known):
+        host.out.write(line + "\n")
     host.out.write(f"model cache: {home}\noverrides: {override_dir(host.env)}\n")
     return 0
 
@@ -176,6 +179,16 @@ def _check(host, catalog) -> int:
     return 0
 
 
+def set_default_from_env(env) -> bool:
+    """LLMCTL_SET_DEFAULT: unset, empty or 0 is off, 1 is on, anything else is a usage error."""
+    value = env.get("LLMCTL_SET_DEFAULT", "")
+    if value in ("", "0"):
+        return False
+    if value == "1":
+        return True
+    raise UsageError(f"LLMCTL_SET_DEFAULT must be 1 or 0, found '{value}'")
+
+
 def main(argv: list[str], host=None) -> int:
     host = host or RealHost()
     try:
@@ -189,9 +202,9 @@ def main(argv: list[str], host=None) -> int:
         if command == "pull":
             return ops.pull(host, catalog, args.model, args.runtime, yes=args.yes, env_file=args.hf_env_file)
         if command == "up":
-            set_default = args.set_opencode_default or host.env.get("LLMCTL_SET_OPENCODE_DEFAULT") == "1"
+            from_env = set_default_from_env(host.env)
             return ops.up(host, catalog, args.model, args.runtime, replace=args.replace, dry_run=args.dry_run,
-                          set_opencode_default=set_default)
+                          set_default=args.set_default or from_env)
         if command == "status":
             return ops.status(host, catalog)
         if command == "logs":
@@ -199,7 +212,7 @@ def main(argv: list[str], host=None) -> int:
         if command == "test":
             return _test(host, catalog)
         if command == "down":
-            return ops.down(host, remove=args.remove)
+            return ops.down(host, catalog, remove=args.remove)
         return _check(host, catalog)
     except LlmctlError as exc:
         host.err.write(f"error: {exc}\n")

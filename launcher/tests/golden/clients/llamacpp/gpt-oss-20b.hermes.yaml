@@ -1,0 +1,4 @@
+model: {"provider": "custom:llmctl", "default": "local"}
+providers: {"llmctl": {"name": "llmctl: gpt-oss-20b on llama.cpp", "api": "http://127.0.0.1:8080/v1", "transport": "chat_completions", "default_model": "local", "discover_models": false, "extra_body": {"max_tokens": 16384}, "models": {"local": {"context_length": 131072}}}}
+model_overrides: {}
+gateway: {"standalone": true}
