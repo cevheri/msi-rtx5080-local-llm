@@ -1,0 +1,34 @@
+# Measured launch from llamacpp/models.md#1-qwen38-27b.
+schema = 1
+id = "qwen3.8-27b"
+name = "Qwen3.8-27B UD-Q3_K_XL"
+aliases = ["qwen3.8"]
+doc = "llamacpp/models.md#1-qwen38-27b"
+opencode = true
+
+[model]
+repo = "unsloth/Qwen3.8-27B-GGUF"
+revision = "4af51b3542f775b0a8e4b310bfb3f17e01c306c9"
+files = ["Qwen3.8-27B-UD-Q3_K_XL.gguf"]
+size_bytes = 13146393504
+
+[container]
+memory_gib = 16
+
+[server]
+context = 65536
+args = [
+  "-ngl", "all", "-fa", "on", "-ctk", "q8_0", "-ctv", "q8_0", "-np", "1", "--jinja",
+  "--reasoning-effort", "medium", "--temp", "1.0", "--top-p", "0.95", "--top-k", "20",
+  "--min-p", "0",
+]
+
+[needs]
+gpu_mib = 14678
+
+[evidence]
+kind = "measured"
+summary = "36.4 tok/s decode with 64k context, 14,790 MiB GPU peak, OpenCode session passed"
+date = "2026-11-16"
+hardware = "MSI Raider 18 Max HX A2WI, RTX 5080 Laptop GPU 16 GB, 61 GiB RAM"
+record = "research/2026-11-16/llamacpp-qwen3.8-27b/"

@@ -1,0 +1,35 @@
+# Measured launch from llamacpp/models.md#6-qwen3-coder-next.
+schema = 1
+id = "qwen3-coder-next"
+name = "Qwen3-Coder-Next UD-IQ4_XS"
+aliases = ["coder-next"]
+doc = "llamacpp/models.md#6-qwen3-coder-next"
+opencode = true
+
+[model]
+repo = "unsloth/Qwen3-Coder-Next-GGUF"
+revision = "ce09c67b53bc8739eef83fe67b2f5d293c270632"
+files = ["Qwen3-Coder-Next-UD-IQ4_XS.gguf"]
+size_bytes = 38429272064
+
+[container]
+memory_gib = 35
+
+[server]
+context = 131072
+args = [
+  "-ngl", "all", "--n-cpu-moe", "38", "-fa", "on", "-np", "1", "--jinja", "-lm", "none", "-t",
+  "8", "--moe-cache-mib", "1504", "--cache-ram", "4096", "-ctxcp", "8", "--temp", "1.0",
+  "--top-p", "0.95", "--top-k", "40", "--min-p", "0.01",
+]
+
+[needs]
+gpu_mib = 14964
+ram_gib = 31.9
+
+[evidence]
+kind = "measured"
+summary = "71.5 tok/s decode with 128k context and 58.6 after a 101k prompt, 15,076 MiB GPU peak, 31.9 GiB container RAM, OpenCode session passed"
+date = "2026-11-16"
+hardware = "MSI Raider 18 Max HX A2WI, RTX 5080 Laptop GPU 16 GB, 61 GiB RAM"
+record = "research/2026-11-16/llamacpp-qwen3-coder-next/"

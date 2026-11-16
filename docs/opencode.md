@@ -192,10 +192,11 @@ The config above assumes these server settings; the full commands live in [vllm/
 | `llamacpp-docker/qwen3.8-27b` | llama.cpp :8080 | `--alias local` | `-c 65536` |
 | `llamacpp-docker/qwen3.6-35b-a3b` | llama.cpp :8080 | `--alias local` | `-c 131072` |
 | `llamacpp-docker/k2-horizon-mova-36b` | llama.cpp :8080 | `--alias local` | `-c 65536` |
-| `llamacpp-docker/k2-horizon-7b` | llama.cpp :8080 | `--alias local` | `-c 65536` |
+| `llamacpp-docker/k2-horizon-7b` | llama.cpp :8080 | `--alias local` | `-c 81920` |
 | `vllm-docker/groot-19b-a3b` | vLLM :8000 | `--served-model-name groot-19b-a3b` | `--max-model-len 131072` (FP8 KV) |
 | `vllm-docker/gpt-oss-20b` | vLLM :8000 | `--served-model-name gpt-oss-20b` | `--max-model-len 65536` (needs `--gpu-memory-utilization 0.95`, FP8 KV and `TRITON_ATTN`) |
 
+[llmctl](llmctl.md) starts each entry's server with these values, and its tests check every recipe against this config.
 Serving every llama.cpp model as `local` means the entry names, not the server, carry the model identity; it also means a wrong entry still gets an answer from whatever model is loaded, so check the window and thinking settings when you switch.
 If `limit.context` is larger than the server window, OpenCode never compacts in time and the server rejects the request; llama-server answers HTTP 400 `exceed_context_size_error` ([Unsloth Qwen3-Coder-Next page](https://unsloth.ai/docs/models/qwen3-coder-next)).
 If it is smaller, you waste window that the KV budget already paid for.

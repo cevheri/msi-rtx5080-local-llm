@@ -10,6 +10,17 @@ GPU access from containers works on this laptop since 2026-11-15, and all ten pi
 On Ollama 0.40.16, the five small models from the user's LibreDB Studio list (qwen3.5:9b, gemma4:12b, ornith:9b, ministral-3:8b and qwen2.5:7b) fit fully on the GPU at 99-119 tok/s and passed the same OpenCode session ([docs/agent-harness-evidence.md](docs/agent-harness-evidence.md#try-here-first)).
 Figures for every other model are still estimates or third-party numbers until they are measured here.
 
+## Quick start
+
+Start a measured model by name with [llmctl](docs/llmctl.md), which applies the rules below for you and prints the OpenCode model to use:
+
+```bash
+./llmctl list
+./llmctl pull qwen3.6
+./llmctl up qwen3.6
+./llmctl down
+```
+
 ## Machine
 
 | Item | Value |
@@ -32,6 +43,7 @@ The bandwidth figure is NVIDIA's laptop specification ([NVIDIA](https://www.nvid
 
 | Path | What it covers |
 |---|---|
+| [docs/llmctl.md](docs/llmctl.md) | `./llmctl`: start a measured recipe by name, the rules it enforces, the recipe format, overrides for another machine |
 | [docs/model-selection.md](docs/model-selection.md) | Ranked picks with evidence, capability lists, new candidates, exclusions and what to measure first |
 | [docs/host-setup.md](docs/host-setup.md) | NVIDIA Container Toolkit, CDI, Compose GPU syntax, localhost-only ports, memory caps, laptop power, model cache |
 | [docs/opencode.md](docs/opencode.md) | OpenCode v2.3.0 provider config (schema-validated), thinking variants, context budget, known issues, remote trials |
@@ -100,5 +112,5 @@ Before the repository went public on 2026-11-16, a script replaced local paths i
 
 ## License
 
-The documentation and the measurement records are licensed under CC BY 4.0 ([LICENSE](LICENSE)); the scripts (`.sh`, `.py`, `.js`) are licensed under MIT ([LICENSE-CODE](LICENSE-CODE)).
+The documentation and the measurement records are licensed under CC BY 4.0 ([LICENSE](LICENSE)); the scripts (`.sh`, `.py`, `.js`), `llmctl`, `launcher/` and `recipes/` are licensed under MIT ([LICENSE-CODE](LICENSE-CODE)).
 Third-party material that is quoted or linked here keeps its own license.

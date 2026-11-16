@@ -1,0 +1,30 @@
+# Recipe from vllm/models.md#gemma-4-12b-it-qat-w4a16; never run on the reference laptop.
+schema = 1
+id = "gemma-4-12b"
+name = "Gemma 4 12B IT QAT W4A16"
+aliases = ["gemma4-12b"]
+doc = "vllm/models.md#gemma-4-12b-it-qat-w4a16"
+opencode = false
+
+[model]
+repo = "google/gemma-4-12B-it-qat-w4a16-ct"
+revision = "1d2c2d7f2466070e69d6fb3fd5ce9a7d75f2f6ee"
+size_bytes = 10296461612
+served_name = "gemma-4-12b"
+
+[container]
+memory_gib = 32
+
+[server]
+context = 131072
+args = [
+  "--max-num-seqs", "1", "--kv-cache-dtype", "fp8", "--attention-backend", "TRITON_ATTN",
+  "--limit-mm-per-prompt", '{"image":0,"audio":0}', "--enable-auto-tool-choice",
+  "--tool-call-parser", "gemma4", "--reasoning-parser", "gemma4",
+  "--override-generation-config", '{"temperature":1.0,"top_p":0.95,"top_k":64}',
+]
+
+[evidence]
+kind = "estimate"
+summary = "The documented vLLM recipe, not run on the reference laptop yet"
+doc = "vllm/models.md#gemma-4-12b-it-qat-w4a16"

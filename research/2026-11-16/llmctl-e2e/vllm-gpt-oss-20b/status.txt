@@ -1,0 +1,6 @@
+gpt-oss-20b on vllm, container 'vllm', running
+  recipe: shipped file, sha256 cffa67f49088, measured
+  port: 8000/tcp -> 127.0.0.1:8000, health: ready
+  container memory: 5.634GiB / 32GiB, GPU memory in use: 15698 MiB of 16303 MiB
+qwen3.6-35b-a3b on llamacpp, container 'llamacpp', exited
+  recipe: shipped file, sha256 2928c3e78da4, measured

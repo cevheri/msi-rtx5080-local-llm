@@ -30,6 +30,7 @@ Read README.md first: it indexes the documents and lists the rules that apply to
 ## Running things
 
 - Run one model server at a time; host-side heavy commands still go through `heavy`.
+- Start models with `./llmctl up <model>` ([docs/llmctl.md](docs/llmctl.md)); a change in `recipes/` goes with its document section and OpenCode entry in the same change, or `python3 -m unittest discover -s launcher/tests -t .` fails.
 - Ollama runs as `ollama/ollama:0.40.16` with its models in the `ollama-models` volume; a fresh container compiles CUDA kernels for about 25 s before its first answer, so keep `/root/.nv` in a volume too (docs/opencode.md, Ollama notes).
 - Anything that needs sudo is the user's to run: `sudo` through the `!` prefix has no terminal and fails, so hand over a script for a separate terminal (or `pkexec`), and never pipe `sudo apt-get` through `tee` (it stalled once).
 - Ask the user before installs, Docker restarts or large image and model downloads.

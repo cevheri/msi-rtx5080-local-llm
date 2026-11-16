@@ -1,0 +1,18 @@
+#!/usr/bin/env python3
+"""Start a measured local LLM recipe by name: ./llmctl up qwen3.6 (see docs/llmctl.md)."""
+
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+import launcher  # noqa: E402
+
+problem = launcher.python_problem(sys.version_info)
+if problem:
+    print(problem, file=sys.stderr)
+    sys.exit(1)
+
+from launcher.cli import main  # noqa: E402
+
+sys.exit(main(sys.argv[1:]))

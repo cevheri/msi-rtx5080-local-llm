@@ -68,6 +68,7 @@ Every command follows the run template in [README.md](README.md#run-template), a
 
 Dense 27.8B (including vision and the MTP head), Apache-2.0, announced 2026-08-14 ([model card](https://huggingface.co/Qwen/Qwen3.8-27B/raw/main/README.md)).
 It is the strongest agent that fits, and it fits entirely on the GPU at 64k with a 3-bit Unsloth Dynamic quant.
+Start it with `./llmctl up qwen3.8` ([llmctl](../docs/llmctl.md)), which runs the launch below from the pinned file in the cache with the checks and rules applied.
 
 - **GGUF:** [unsloth/Qwen3.8-27B-GGUF](https://huggingface.co/api/models/unsloth/Qwen3.8-27B-GGUF/tree/main), `Qwen3.8-27B-UD-Q3_K_XL.gguf`, 13,146,393,504 B (12.24 GiB).
 - **File history:** Unsloth replaced this file with a Dynamic V3.1 build on 2026-11-12 at the same size (commit "New UD3.1 UD-Q3_K_XL", [commit list](https://huggingface.co/api/models/unsloth/Qwen3.8-27B-GGUF/commits/main)), although the [Unsloth Qwen3.8 page](https://unsloth.ai/docs/models/qwen3.8) says the 3-bit files were not updated.
@@ -121,6 +122,7 @@ docker run -d --name llamacpp \
 
 35B total, 3B active MoE (35.95B with vision), Apache-2.0, released 2026-04-16 ([model card](https://huggingface.co/Qwen/Qwen3.6-35B-A3B/raw/main/README.md)).
 It is the 128k pick with the most mature runtime path; 10.5 GiB of experts sit in pinned RAM, and a 3,200 MiB GPU cache serves the most-used of them.
+Start it with `./llmctl up qwen3.6` ([llmctl](../docs/llmctl.md)), which runs the launch below from the pinned file in the cache with the checks and rules applied.
 
 - **GGUF:** [ggml-org/Qwen3.6-35B-A3B-GGUF](https://huggingface.co/api/models/ggml-org/Qwen3.6-35B-A3B-GGUF?blobs=true), `Qwen3.6-35B-A3B-Q4_K_M.gguf`, 20,542,732,576 B (19.13 GiB).
   Experts are 16.875 GiB, 0.422 GiB per block over 40 blocks, all of which are MoE.
@@ -181,6 +183,7 @@ docker run -d --name llamacpp \
 37.44B total (BF16 safetensors), about 4B active by the vendor's count, Apache-2.0, from IFM, whose HF org is not verified ([model card](https://huggingface.co/IFM/K2-Horizon-MoVA-36B-A4B/raw/main/README.md)).
 It runs only on llama.cpp here: the smallest vLLM build is 20.25 GiB.
 llama.cpp support (`k2-horizon` arch, dedicated chat parser) arrived in b11454 on 2026-10-06, about six weeks before this document ([llama-arch.cpp](https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/src/llama-arch.cpp), [PR #29535](https://github.com/ggml-org/llama.cpp/pull/29535)).
+Start it with `./llmctl up mova` ([llmctl](../docs/llmctl.md)), which runs the launch below from the pinned file in the cache with the checks and rules applied.
 
 - **GGUF:** [bartowski/K2-Horizon-MoVA-36B-A4B-GGUF](https://huggingface.co/api/models/bartowski/K2-Horizon-MoVA-36B-A4B-GGUF?blobs=true), `K2-Horizon-MoVA-36B-A4B-Q4_K_M.gguf`, 22,701,885,664 B (21.14 GiB), built with mainline b11462.
   The GGUF header, read on 2026-11-16, shows 48 blocks (0-2 dense, 3-47 MoE with 100 routed experts, 8 used, and a shared expert), 64 value experts per MoE block (4 used), full attention with 8 KV heads of 128 in every layer and a 250,624-token vocabulary ([plan record](../research/2026-11-16/next-model-plans/plan-k2-horizon-mova.json)); the downloaded file's SHA-256 matched its LFS id.
@@ -239,6 +242,7 @@ docker run -d --name llamacpp \
 9.0B dense (7B core plus untied embeddings and head), Apache-2.0, from the same unverified IFM org ([model card](https://huggingface.co/IFM/K2-Horizon-7B/raw/main/README.md)).
 It is the simplest credible agent here: dense, all on the GPU, the same `k2-horizon` parser as MoVA.
 On 2026-10-01 IFM promoted an anti-doom-loop (FTPO) checkpoint to main ([model card](https://huggingface.co/IFM/K2-Horizon-7B)).
+Start it with `./llmctl up k2-7b` ([llmctl](../docs/llmctl.md)), which runs the launch below from the pinned file in the cache with the checks and rules applied.
 
 - **GGUF:** [bartowski/K2-Horizon-7B-GGUF](https://huggingface.co/api/models/bartowski/K2-Horizon-7B-GGUF?blobs=true), `K2-Horizon-7B-Q8_0.gguf`, 9,573,973,280 B (8.92 GiB).
   It was made on 2026-10-07, after the FTPO promotion, so it most likely carries the released weights (inferred).
@@ -293,6 +297,7 @@ docker run -d --name llamacpp \
 25.2B total, 3.8B active MoE, Apache-2.0, released 2026-04-02 ([model card](https://huggingface.co/google/gemma-4-26B-A4B-it/raw/main/README.md)).
 Google's official QAT Q4_0 GGUF does not fit entirely on the GPU at 64k as first estimated: the file has no separate output head, so llama.cpp puts a second copy of the 577.5 MiB `token_embd` on the GPU, and an all-GPU load at 64k with q8_0 KV would leave about 28 MiB.
 With the experts of 12 of its 30 blocks in pinned RAM and a 2,368 MiB GPU cache for the most-used of them, it runs at 128k with f16 KV and decodes at 148 tok/s (measured).
+Start it with `./llmctl up gemma4-26b` ([llmctl](../docs/llmctl.md)), which runs the launch below from the pinned file in the cache with the checks and rules applied.
 
 - **GGUF:** [google/gemma-4-26B-A4B-it-qat-q4_0-gguf](https://huggingface.co/api/models/google/gemma-4-26B-A4B-it-qat-q4_0-gguf?blobs=true), `gemma-4-26B_q4_0-it.gguf`, 14,439,363,584 B (13.45 GiB), not gated.
   Experts, attention and dense FFN are Q4_0; `token_embd` is Q6_K.
@@ -360,6 +365,7 @@ Until that A/B is done, Google's file stays the default because it is the vendor
 
 79.7B total, 3B active hybrid MoE, Apache-2.0, released 2026-02-03 ([model card](https://huggingface.co/Qwen/Qwen3-Coder-Next/raw/main/README.md)).
 It is the best non-thinking tool caller, at the cost of about 26 GiB of experts in pinned RAM; it ran at 128k on 2026-11-16 (measured below).
+Start it with `./llmctl up coder-next` ([llmctl](../docs/llmctl.md)), which runs the launch below from the pinned file in the cache with the checks and rules applied.
 
 - **GGUF:** [unsloth/Qwen3-Coder-Next-GGUF](https://huggingface.co/api/models/unsloth/Qwen3-Coder-Next-GGUF?blobs=true), `Qwen3-Coder-Next-UD-IQ4_XS.gguf`, 38,429,272,064 B (35.79 GiB), a single file.
   Experts are 33.38 GiB, 0.695 GiB per block over 48 blocks.
@@ -415,6 +421,7 @@ docker run -d --name llamacpp \
 74B total, 9B active hybrid Mamba-2 plus MoE, OpenMDW-1.1 (permissive, commercial use allowed), released 2026-10-15 ([model card](https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB-GGUF/raw/main/README.md), [license](https://raw.githubusercontent.com/OpenMDW/OpenMDW/main/1.1/LICENSE.OpenMDW-1.1)).
 NVIDIA ships one GGUF built for 24 GB machines: IQ2_XXS QAT experts, NVFP4 Mamba, Q8_0 for the rest.
 This laptop is below NVIDIA's stated 32 GB+ hardware floor, so this is not a vendor-supported setup, but it ran at 128k on 2026-11-16 (measured below).
+Start it with `./llmctl up bolt` ([llmctl](../docs/llmctl.md)), which runs the launch below from the pinned file in the cache with the checks and rules applied.
 
 - **GGUF:** [nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB-GGUF](https://huggingface.co/api/models/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB-GGUF/tree/main), `NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB.gguf`, 22,018,326,528 B (20.51 GiB), plus a 1.61 GiB mmproj that is not used.
   The repo has no Q4_K_M file, so `-hf` alone would fall back to the first file; name it with `--hf-file`.
@@ -468,6 +475,7 @@ docker run -d --name llamacpp \
 About 19B total, 3B active, Qwen3.6-style `qwen35moe` architecture, published 2026-10-23 by an anonymous org ([model card](https://huggingface.co/GrootTeam/Groot-19B-A3B-261023/raw/main/README.md)).
 The card metadata says Apache-2.0, but the repo has no LICENSE file, and the pruning method and data are undisclosed.
 It is the fast all-in-VRAM option at 128k, with the same tool format and parser as Qwen3.6; treat its quality as unproven until an A/B against Qwen3.6.
+Start it with `./llmctl up groot` ([llmctl](../docs/llmctl.md)), which runs the launch below from the pinned file in the cache with the checks and rules applied.
 
 - **GGUF:** [GrootTeam/Groot-19B-A3B-261023-GGUF](https://huggingface.co/api/models/GrootTeam/Groot-19B-A3B-261023-GGUF?blobs=true), `Groot-19B-A3B-261023-Q4_K_M.gguf`, 11,657,618,560 B (10.86 GiB), plus a 0.84 GiB mmproj that is not used.
 - **Template difference:** the official GGUF embeds `chat_template.jinja`, which re-emits every past assistant turn's reasoning and ignores `preserve_thinking`, while [bartowski's GGUF](https://huggingface.co/api/models/bartowski/GrootTeam_Groot-19B-A3B-261023-GGUF?blobs=true) (Q4_K_M 11.63 GiB) embeds the `tokenizer_config.json` template, which drops old reasoning unless `preserve_thinking` is true, as the card describes.
@@ -516,6 +524,7 @@ docker run -d --name llamacpp \
 
 21B total, 3.6B active MoE, Apache-2.0, released 2025-08-05 ([model card](https://huggingface.co/openai/gpt-oss-20b/raw/main/README.md)).
 It is the oldest pick and weak on agentic benchmarks, but the most mature and fastest, so it is the pipeline baseline.
+Start it with `./llmctl up gpt-oss` ([llmctl](../docs/llmctl.md)), which runs the launch below from the pinned file in the cache with the checks and rules applied.
 
 - **GGUF:** [ggml-org/gpt-oss-20b-GGUF](https://huggingface.co/api/models/ggml-org/gpt-oss-20b-GGUF?blobs=true), `gpt-oss-20b-MXFP4.gguf`, 12,109,566,624 B (11.28 GiB).
   The ggml-org guide says to always use the original MXFP4 model; K-quants are not smaller ([guide](https://github.com/ggml-org/llama.cpp/discussions/15396)).
@@ -560,6 +569,7 @@ docker run -d --name llamacpp \
 8.19B dense, MIT, released 2025-05-29 ([model card](https://huggingface.co/deepseek-ai/DeepSeek-R1-0528-Qwen3-8B/raw/main/README.md)).
 It is the newest DeepSeek checkpoint that runs on 16 GB; the January 2025 R1 distills are older and also lack tool calling.
 Use it for reasoning or questions next to an agent model, not as an OpenCode agent.
+Start it with `./llmctl up deepseek-r1` ([llmctl](../docs/llmctl.md)), which runs the launch below from the pinned file in the cache with the checks and rules applied.
 
 - **GGUF:** [unsloth/DeepSeek-R1-0528-Qwen3-8B-GGUF](https://huggingface.co/api/models/unsloth/DeepSeek-R1-0528-Qwen3-8B-GGUF/tree/main), `DeepSeek-R1-0528-Qwen3-8B-Q8_0.gguf`, 8,709,519,872 B (8.11 GiB).
 
@@ -607,6 +617,8 @@ These are honorable mentions in [../docs/model-selection.md](../docs/model-selec
 The commands use the same docker flags as above; only the model lines change.
 
 ### Nemotron 3.5 Lightning 30B-A3B (fallback if Bolt does not fit)
+
+Start it with `./llmctl up lightning` ([llmctl](../docs/llmctl.md)), which runs the launch below from the pinned file in the cache with the checks and rules applied.
 
 - **GGUF:** [ggml-org/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-GGUF](https://huggingface.co/api/models/ggml-org/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-GGUF/tree/main), `NVIDIA-Nemotron-3.5-Lightning-30B-A3B-Q4_0.gguf`, 18,898,091,584 B (17.60 GiB).
   The repo also holds three MTP files and BF16 and Q8_0 main files, so name the main file with `--hf-file`; its Q4_K_M file was deleted on 2026-08-14, and the repo was re-uploaded on 2026-11-12 ([plan record](../research/2026-11-16/next-model-plans/plan-nemotron-3.5-lightning.json)).

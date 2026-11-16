@@ -54,6 +54,7 @@ All eight entries, placed together in that provider, validated against a copy of
 
 Rank 9, the required gpt-oss family member and the pipeline baseline ([model-selection.md](../docs/model-selection.md)).
 Run it on llama.cpp for the full 131072 context ([llamacpp/models.md](../llamacpp/models.md)); use vLLM when you want the official checkpoint at 64k.
+Start it with `./llmctl up gpt-oss --runtime vllm` ([llmctl](../docs/llmctl.md)), which runs the launch that started below, serving the pinned snapshot.
 
 | Item | Value |
 |---|---|
@@ -185,6 +186,7 @@ Caveats and open issues:
 
 Rank 8, the fast all-in-VRAM option, on vendor claims only ([model-selection.md](../docs/model-selection.md)).
 The ranking's primary runtime is llama.cpp with the official Q4_K_M ([llamacpp/models.md](../llamacpp/models.md)); this NVFP4 build is the second path and uses the same tool format and parsers as Qwen3.6.
+Start it with `./llmctl up groot --runtime vllm` ([llmctl](../docs/llmctl.md)); its recipe takes the server flags from the block below and is an estimate, so record what happens.
 
 | Item | Value |
 |---|---|
@@ -280,6 +282,7 @@ Caveats and open issues:
 
 Rank 4, but the vLLM path is weak: run the ranking's llama.cpp recipe (bartowski Q8_0, 65536) first ([llamacpp/models.md](../llamacpp/models.md)).
 Use this card only when you need the vLLM server, and expect pre-FTPO weights.
+Start it with `./llmctl up k2-7b --runtime vllm` ([llmctl](../docs/llmctl.md)); its recipe takes the server flags from the block below and is an estimate, so record what happens.
 
 | Item | Value |
 |---|---|
@@ -358,6 +361,7 @@ Caveats and open issues:
 
 Rank 10 through the required-family swap: chat and reasoning only, with no tool calling, so it is not an OpenCode agent model ([model-selection.md](../docs/model-selection.md)).
 llama.cpp Q8_0 is the ranking's primary path ([llamacpp/models.md](../llamacpp/models.md)); vLLM works with online FP8.
+Start it with `./llmctl up deepseek-r1 --runtime vllm` ([llmctl](../docs/llmctl.md)); its recipe takes the server flags from the block below and is an estimate, so record what happens.
 
 | Item | Value |
 |---|---|
@@ -427,6 +431,7 @@ Caveats and open issues:
 
 Honorable mention: the vLLM-native Gemma, fully in VRAM at 128k ([model-selection.md](../docs/model-selection.md)).
 The ranked Gemma (rank 5, 26B-A4B) does not fit vLLM; this is the fallback or sub-agent.
+Start it with `./llmctl up gemma4-12b --runtime vllm` ([llmctl](../docs/llmctl.md)); its recipe takes the server flags from the block below and is an estimate, so record what happens.
 
 | Item | Value |
 |---|---|
@@ -512,6 +517,7 @@ Caveats and open issues:
 ## Qwen3.5-9B NVFP4
 
 Honorable mention: the conservative vLLM-native 9B if every vendor-only small model is rejected ([model-selection.md](../docs/model-selection.md)).
+Start it with `./llmctl up qwen3.5 --runtime vllm` ([llmctl](../docs/llmctl.md)); its recipe takes the server flags from the block below and is an estimate, so record what happens.
 
 | Item | Value |
 |---|---|
@@ -585,6 +591,7 @@ Caveats and open issues:
 
 Honorable mention: a fast, fully in-VRAM JetBrains sub-agent with 128k on either runtime, vendor-only and weaker than Qwen3.5-9B in its own table ([model-selection.md](../docs/model-selection.md)).
 The ranking's preferred file is the official GGUF on llama.cpp ([llamacpp/models.md](../llamacpp/models.md)).
+Start it with `./llmctl up mellum --runtime vllm` ([llmctl](../docs/llmctl.md)); its recipe takes the server flags from the block below and is an estimate, so record what happens.
 
 | Item | Value |
 |---|---|
@@ -645,6 +652,7 @@ Caveats: no test of a quantized community build on the Transformers MoE backend 
 
 Use this first, before any ranked model, to prove the whole chain: Container Toolkit with CDI, image pull, HF cache, vLLM startup on sm_120, tool and reasoning parsers, and the OpenCode provider.
 It is excluded as a daily agent: vendor tau2 is 42.2% and there are no SWE-bench or Terminal-Bench numbers from Google ([README](https://huggingface.co/google/gemma-4-E4B-it/raw/main/README.md), vendor-reported).
+Start it with `./llmctl up gemma4-e4b --runtime vllm` ([llmctl](../docs/llmctl.md)); its recipe takes the server flags from the block below and is an estimate, so record what happens.
 
 | Item | Value |
 |---|---|

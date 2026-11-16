@@ -1,0 +1,29 @@
+# Recipe from vllm/models.md#smoke-test-model-gemma-4-e4b-it; never run on the reference laptop.
+schema = 1
+id = "gemma-4-e4b"
+name = "Gemma 4 E4B IT QAT W4A16 (smoke-test model)"
+aliases = ["gemma4-e4b"]
+doc = "vllm/models.md#smoke-test-model-gemma-4-e4b-it"
+opencode = false
+
+[model]
+repo = "google/gemma-4-E4B-it-qat-w4a16-ct"
+revision = "6cd26aaa2357fb2bad8c51699a7558a4d1a965bb"
+size_bytes = 11546108983
+served_name = "gemma-4-e4b"
+
+[container]
+memory_gib = 32
+
+[server]
+context = 65536
+args = [
+  "--language-model-only", "--max-num-seqs", "2", "--enable-auto-tool-choice",
+  "--tool-call-parser", "gemma4", "--reasoning-parser", "gemma4",
+  "--override-generation-config", '{"temperature":1.0,"top_p":0.95,"top_k":64}',
+]
+
+[evidence]
+kind = "estimate"
+summary = "The documented vLLM recipe, not run on the reference laptop yet"
+doc = "vllm/models.md#smoke-test-model-gemma-4-e4b-it"

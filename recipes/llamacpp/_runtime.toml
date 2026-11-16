@@ -1,0 +1,12 @@
+# Settings shared by every llama.cpp recipe, and by nothing else.
+schema = 1
+runtime = "llamacpp"
+image = "ghcr.io/ggml-org/llama.cpp:server-cuda-b12407"
+container_name = "llamacpp"
+host_port = 8080
+ready_path = "/health"
+start_timeout_s = 300
+opencode_provider = "llamacpp-docker"
+served_name = "local"
+# llmctl itself sets GGML_CUDA_DISABLE_GRAPHS=1 for every llama.cpp container, because CUDA graphs hang
+# RTX 50 laptop GPUs (https://github.com/ggml-org/llama.cpp/issues/27330); an [env] table here may not change it.

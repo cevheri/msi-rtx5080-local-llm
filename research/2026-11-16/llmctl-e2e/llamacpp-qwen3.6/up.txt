@@ -1,0 +1,6 @@
+qwen3.6-35b-a3b on llamacpp: shipped recipe, measured
+waiting for qwen3.6-35b-a3b to load (up to 300 s)
+ready: http://127.0.0.1:8080/v1, served as 'local', context 131072
+OpenCode: opencode -m llamacpp-docker/qwen3.6-35b-a3b
+evidence: 122.5 tok/s decode with 128k context, 15,190 MiB GPU peak, OpenCode session passed (2026-11-16, research/2026-11-16/llamacpp-qwen3.6-35b-a3b/)
+stop with ./llmctl down

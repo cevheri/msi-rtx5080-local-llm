@@ -1,0 +1,36 @@
+== llmctl up qwen3.6 (at 11:32:59)
+up exit=0 after 9 s
+qwen3.6-35b-a3b on llamacpp: shipped recipe, measured
+waiting for qwen3.6-35b-a3b to load (up to 300 s)
+ready: http://127.0.0.1:8080/v1, served as 'local', context 131072
+OpenCode: opencode -m llamacpp-docker/qwen3.6-35b-a3b
+evidence: 122.5 tok/s decode with 128k context, 15,190 MiB GPU peak, OpenCode session passed (2026-11-16, research/2026-11-16/llamacpp-qwen3.6-35b-a3b/)
+stop with ./llmctl down
+== llmctl status (at 11:33:08)
+status exit=0
+qwen3.6-35b-a3b on llamacpp, container 'llamacpp', running
+  recipe: shipped file, sha256 2928c3e78da4, measured
+  port: 8080/tcp -> 127.0.0.1:8080, health: ready
+  container memory: 11.31GiB / 20GiB, GPU memory in use: 15138 MiB of 16303 MiB
+== llmctl test (at 11:33:09)
+test exit=0
+reply: ok ('OK')
+tool call: ok (get_weather {"city":"Paris"})
+decode: 129.1 tok/s (443 tokens)
+recipe evidence: 122.5 tok/s decode with 128k context, 15,190 MiB GPU peak, OpenCode session passed
+== OpenCode session without -m (at 11:33:13)
+opencode exit=0 after 10 s
+     1	def add(a, b):
+     2	    return a + b
+     3	
+     4	
+     5	if __name__ == "__main__":
+     6	    print(add(2, 3))
+tool_use: write completed
+tool_use: read completed
+answer: The file `hello.py` has been created and read back. It contains **6 lines**:  1. `def add(a, b):` 2. `    return a + b` 3. *(blank)* 4. *(blank)* 5. `if __name_
+== llmctl down (at 11:33:23)
+down exit=0
+stopped qwen3.6-35b-a3b in container 'llamacpp'
+llamacpp exited
+112 MiB

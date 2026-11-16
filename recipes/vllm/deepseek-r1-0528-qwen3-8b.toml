@@ -1,0 +1,30 @@
+# Recipe from vllm/models.md#deepseek-r1-0528-qwen3-8b-chat-only; never run on the reference laptop.
+schema = 1
+id = "deepseek-r1-0528-qwen3-8b"
+name = "DeepSeek-R1-0528-Qwen3-8B FP8 per tensor (chat only)"
+aliases = ["deepseek-r1"]
+doc = "vllm/models.md#deepseek-r1-0528-qwen3-8b-chat-only"
+opencode = false
+chat_only = true
+
+[model]
+repo = "deepseek-ai/DeepSeek-R1-0528-Qwen3-8B"
+revision = "6e8885a6ff5c1dc5201574c8fd700323f23c25fa"
+size_bytes = 16388927770
+served_name = "deepseek-r1-8b"
+
+[container]
+memory_gib = 32
+
+[server]
+context = 65536
+args = [
+  "--quantization", "fp8_per_tensor", "--max-num-seqs", "1", "--kv-cache-dtype", "fp8",
+  "--attention-backend", "TRITON_ATTN", "--reasoning-parser", "deepseek_r1",
+  "--override-generation-config", '{"temperature":0.6,"top_p":0.95}',
+]
+
+[evidence]
+kind = "estimate"
+summary = "The documented vLLM recipe, not run on the reference laptop yet"
+doc = "vllm/models.md#deepseek-r1-0528-qwen3-8b-chat-only"

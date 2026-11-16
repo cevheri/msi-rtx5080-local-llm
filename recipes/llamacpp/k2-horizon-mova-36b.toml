@@ -1,0 +1,35 @@
+# Measured launch from llamacpp/models.md#3-k2-horizon-mova-36b-a4b.
+schema = 1
+id = "k2-horizon-mova-36b"
+name = "K2 Horizon MoVA 36B A4B Q4_K_M"
+aliases = ["mova", "k2-mova"]
+doc = "llamacpp/models.md#3-k2-horizon-mova-36b-a4b"
+opencode = true
+
+[model]
+repo = "bartowski/K2-Horizon-MoVA-36B-A4B-GGUF"
+revision = "67c2e8af33a85a9cb168bbb10df0da5020b5c863"
+files = ["K2-Horizon-MoVA-36B-A4B-Q4_K_M.gguf"]
+size_bytes = 22701885664
+
+[container]
+memory_gib = 26
+
+[server]
+context = 65536
+args = [
+  "-ngl", "all", "--n-cpu-moe", "48", "-fa", "on", "-ctk", "q8_0", "-ctv", "q8_0", "-np", "1",
+  "--jinja", "-lm", "none", "-t", "8", "--moe-cache-mib", "1536", "--reasoning-effort", "high",
+  "--temp", "1.0", "--top-p", "0.95",
+]
+
+[needs]
+gpu_mib = 14736
+ram_gib = 19.7
+
+[evidence]
+kind = "measured"
+summary = "37.2 tok/s decode with 64k context, 14,848 MiB GPU peak, 19.7 GiB container RAM, OpenCode session passed"
+date = "2026-11-16"
+hardware = "MSI Raider 18 Max HX A2WI, RTX 5080 Laptop GPU 16 GB, 61 GiB RAM"
+record = "research/2026-11-16/llamacpp-k2-horizon-mova/"

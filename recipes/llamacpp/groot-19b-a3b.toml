@@ -1,0 +1,34 @@
+# Measured launch from llamacpp/models.md#8-groot-19b-a3b-261023.
+schema = 1
+id = "groot-19b-a3b"
+name = "Groot-19B-A3B-261023 Q4_K_M"
+aliases = ["groot"]
+doc = "llamacpp/models.md#8-groot-19b-a3b-261023"
+opencode = true
+
+[model]
+repo = "GrootTeam/Groot-19B-A3B-261023-GGUF"
+revision = "2fa1ec958e3bbf7312cf0af97802ff26bfdc5260"
+files = ["Groot-19B-A3B-261023-Q4_K_M.gguf"]
+size_bytes = 11657618560
+
+[container]
+memory_gib = 16
+
+[server]
+context = 131072
+args = [
+  "-ngl", "all", "-fa", "on", "-np", "1", "--jinja", "--reasoning", "off", "--temp", "0.6",
+  "--top-p", "0.95", "--top-k", "20", "--min-p", "0", "--presence-penalty", "0",
+]
+
+[needs]
+gpu_mib = 13710
+ram_gib = 4.4
+
+[evidence]
+kind = "measured"
+summary = "169.8 tok/s decode with 128k context, 13,822 MiB GPU peak, OpenCode session passed"
+date = "2026-11-16"
+hardware = "MSI Raider 18 Max HX A2WI, RTX 5080 Laptop GPU 16 GB, 61 GiB RAM"
+record = "research/2026-11-16/llamacpp-groot-19b-a3b/"

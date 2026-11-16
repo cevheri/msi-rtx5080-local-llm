@@ -1,0 +1,4 @@
+qwen3.6-35b-a3b on llamacpp, container 'llamacpp', running
+  recipe: shipped file, sha256 2928c3e78da4, measured
+  port: 8080/tcp -> 127.0.0.1:8080, health: ready
+  container memory: 11.31GiB / 20GiB, GPU memory in use: 15138 MiB of 16303 MiB

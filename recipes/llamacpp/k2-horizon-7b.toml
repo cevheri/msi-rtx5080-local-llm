@@ -1,0 +1,35 @@
+# Measured launch from llamacpp/models.md#4-k2-horizon-7b.
+schema = 1
+id = "k2-horizon-7b"
+name = "K2 Horizon 7B Q8_0"
+aliases = ["k2-7b"]
+doc = "llamacpp/models.md#4-k2-horizon-7b"
+opencode = true
+
+[model]
+repo = "bartowski/K2-Horizon-7B-GGUF"
+revision = "0367e1981a5c01c45904b881c5a229694f626085"
+files = ["K2-Horizon-7B-Q8_0.gguf"]
+size_bytes = 9573973280
+
+[container]
+memory_gib = 16
+
+[server]
+context = 81920
+args = [
+  "-ngl", "all", "-fa", "on", "-ctk", "q8_0", "-ctv", "q8_0", "-np", "1", "--jinja",
+  "--chat-template-kwargs", '{"reasoning_effort":"high","tool_call_format":"xml"}', "--temp",
+  "1.0", "--top-p", "0.95",
+]
+
+[needs]
+gpu_mib = 14896
+ram_gib = 5.5
+
+[evidence]
+kind = "measured"
+summary = "66.9 tok/s decode with 80k context, 15,008 MiB GPU peak, OpenCode session passed"
+date = "2026-11-16"
+hardware = "MSI Raider 18 Max HX A2WI, RTX 5080 Laptop GPU 16 GB, 61 GiB RAM"
+record = "research/2026-11-16/llamacpp-k2-horizon-7b/"

@@ -1,0 +1,21 @@
+# Settings shared by every vLLM recipe, and by nothing else.
+# The server runs as root with the model cache mounted read-only, so it cannot write root-owned files into it.
+schema = 1
+runtime = "vllm"
+image = "vllm/vllm-openai:v0.33.0"
+container_name = "vllm"
+host_port = 8000
+ready_path = "/v1/models"
+start_timeout_s = 900
+opencode_provider = "vllm-docker"
+volumes = ["vllm-cache:/root/.cache/vllm", "flashinfer-cache:/root/.cache/flashinfer"]
+# vLLM v0.33.0 claims this share of GPU memory when a recipe does not set --gpu-memory-utilization
+# (https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/config/cache.py); llmctl uses it only for its free-memory check.
+default_gpu_memory_utilization = 0.92
+
+[env]
+HF_HUB_OFFLINE = "1"
+VLLM_NO_USAGE_STATS = "1"
+MAX_JOBS = "2"
+# The model cache is mounted read-only, so code that a --trust-remote-code model brings is copied here instead.
+HF_MODULES_CACHE = "/tmp/hf_modules"

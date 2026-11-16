@@ -1,0 +1,4 @@
+reply: ok ('OK')
+tool call: ok (get_weather {"city":"Paris"})
+decode: 129.1 tok/s (443 tokens)
+recipe evidence: 122.5 tok/s decode with 128k context, 15,190 MiB GPU peak, OpenCode session passed

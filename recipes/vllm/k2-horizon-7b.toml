@@ -1,0 +1,31 @@
+# Recipe from vllm/models.md#k2-horizon-7b-awq-int4; never run on the reference laptop.
+schema = 1
+id = "k2-horizon-7b"
+name = "K2 Horizon 7B AWQ-INT4"
+aliases = ["k2-7b"]
+doc = "vllm/models.md#k2-horizon-7b-awq-int4"
+opencode = false
+
+[model]
+repo = "cyankiwi/K2-Horizon-7B-AWQ-INT4"
+revision = "530d5ceccd8ea660ceaa2a9f3a4bcbb68ba44291"
+size_bytes = 8145038688
+served_name = "k2-horizon-7b"
+
+[container]
+memory_gib = 32
+
+[server]
+context = 65536
+args = [
+  "--trust-remote-code", "--chat-template-content-format", "string", "--max-num-seqs", "1",
+  "--kv-cache-dtype", "fp8", "--attention-backend", "TRITON_ATTN", "--enable-auto-tool-choice",
+  "--tool-call-parser", "k2_horizon", "--reasoning-parser", "k2_horizon",
+  "--default-chat-template-kwargs", '{"reasoning_effort":"high","tool_call_format":"xml"}',
+  "--override-generation-config", '{"temperature":1.0,"top_p":0.95}',
+]
+
+[evidence]
+kind = "estimate"
+summary = "The documented vLLM recipe, not run on the reference laptop yet"
+doc = "vllm/models.md#k2-horizon-7b-awq-int4"

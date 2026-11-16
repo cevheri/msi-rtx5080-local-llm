@@ -1,0 +1,33 @@
+# Measured launch from llamacpp/models.md#9-gpt-oss-20b.
+schema = 1
+id = "gpt-oss-20b"
+name = "gpt-oss-20b MXFP4"
+aliases = ["gpt-oss"]
+doc = "llamacpp/models.md#9-gpt-oss-20b"
+opencode = false
+
+[model]
+repo = "ggml-org/gpt-oss-20b-GGUF"
+revision = "41e8a94d15d62070b36cf4553a0250717ecf46b8"
+files = ["gpt-oss-20b-MXFP4.gguf"]
+size_bytes = 12109566624
+
+[container]
+memory_gib = 16
+
+[server]
+context = 131072
+args = [
+  "-ngl", "all", "-fa", "on", "-ctk", "q8_0", "-ctv", "q8_0", "-np", "1", "--jinja",
+  "--reasoning-effort", "medium", "--temp", "1.0", "--top-p", "1.0",
+]
+
+[needs]
+gpu_mib = 13296
+
+[evidence]
+kind = "measured"
+summary = "166 tok/s decode with 128k context, 13,408 MiB GPU peak, OpenCode session passed with a test entry; the run used -hf, and this revision is the only snapshot in the cache, downloaded on 2026-11-15 before the run"
+date = "2026-11-16"
+hardware = "MSI Raider 18 Max HX A2WI, RTX 5080 Laptop GPU 16 GB, 61 GiB RAM"
+record = "research/2026-11-16/llamacpp-gpt-oss-20b/"

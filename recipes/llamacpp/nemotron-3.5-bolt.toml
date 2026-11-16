@@ -1,0 +1,35 @@
+# Measured launch from llamacpp/models.md#7-nvidia-nemotron-35-bolt-74b-a9b.
+schema = 1
+id = "nemotron-3.5-bolt"
+name = "NVIDIA Nemotron 3.5 Bolt 74B-A9B 24GB GGUF"
+aliases = ["bolt"]
+doc = "llamacpp/models.md#7-nvidia-nemotron-35-bolt-74b-a9b"
+opencode = true
+
+[model]
+repo = "nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB-GGUF"
+revision = "e0fecb69cb3e5e4c5e8a056fa2aec98c78e91246"
+files = ["NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB.gguf"]
+size_bytes = 22018326528
+
+[container]
+memory_gib = 26
+
+[server]
+context = 131072
+args = [
+  "-ngl", "all", "--n-cpu-moe", "60", "-fa", "on", "-np", "1", "--jinja", "-lm", "none", "-t",
+  "8", "--moe-cache-mib", "2816", "-ctxcp", "16", "--reasoning", "off", "--temp", "1.0",
+  "--top-p", "0.95",
+]
+
+[needs]
+gpu_mib = 14952
+ram_gib = 17.8
+
+[evidence]
+kind = "measured"
+summary = "73.5 tok/s decode with 128k context, 15,064 MiB GPU peak, 17.8 GiB container RAM, OpenCode session passed after one recovered parallel-call race"
+date = "2026-11-16"
+hardware = "MSI Raider 18 Max HX A2WI, RTX 5080 Laptop GPU 16 GB, 61 GiB RAM"
+record = "research/2026-11-16/llamacpp-nemotron-3.5-bolt/"

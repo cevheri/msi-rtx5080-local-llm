@@ -1,0 +1,6 @@
+gpt-oss-20b on vllm: shipped recipe, measured
+waiting for gpt-oss-20b to load (up to 900 s)
+ready: http://127.0.0.1:8000/v1, served as 'gpt-oss-20b', context 65536
+OpenCode: opencode -m vllm-docker/gpt-oss-20b
+evidence: 83.5 tok/s decode in eager mode with 64k context, 15,698 MiB GPU memory, OpenCode session passed (2026-11-16, research/2026-11-16/vllm-gpt-oss-20b/)
+stop with ./llmctl down

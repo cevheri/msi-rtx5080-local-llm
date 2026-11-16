@@ -1,0 +1,35 @@
+# Measured launch from llamacpp/models.md, section 2.
+schema = 1
+id = "qwen3.6-35b-a3b"
+name = "Qwen3.6-35B-A3B Q4_K_M"
+aliases = ["qwen3.6"]
+doc = "llamacpp/models.md#2-qwen36-35b-a3b"
+opencode = true
+
+[model]
+repo = "ggml-org/Qwen3.6-35B-A3B-GGUF"
+revision = "52f9f9b8052fb9c8b69bba4a95eda0f319ac3d2a"
+files = ["Qwen3.6-35B-A3B-Q4_K_M.gguf"]
+size_bytes = 20542732576
+
+[container]
+memory_gib = 20
+
+[server]
+context = 131072
+args = [
+  "-ngl", "all", "--n-cpu-moe", "25", "-fa", "on", "-np", "1", "--jinja",
+  "-lm", "none", "-t", "8", "--moe-cache-mib", "3200", "--reasoning", "off",
+  "--temp", "0.6", "--top-p", "0.95", "--top-k", "20", "--min-p", "0", "--presence-penalty", "0",
+]
+
+[needs]
+gpu_mib = 15078
+ram_gib = 14.9
+
+[evidence]
+kind = "measured"
+summary = "122.5 tok/s decode with 128k context, 15,190 MiB GPU peak, OpenCode session passed"
+date = "2026-11-16"
+hardware = "MSI Raider 18 Max HX A2WI, RTX 5080 Laptop GPU 16 GB, 61 GiB RAM"
+record = "research/2026-11-16/llamacpp-qwen3.6-35b-a3b/"

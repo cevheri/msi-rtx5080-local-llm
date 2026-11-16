@@ -1,0 +1,31 @@
+# Recipe from vllm/models.md#groot-19b-a3b-261023-nvfp4; never run on the reference laptop.
+schema = 1
+id = "groot-19b-a3b"
+name = "Groot-19B-A3B-261023 NVFP4"
+aliases = ["groot"]
+doc = "vllm/models.md#groot-19b-a3b-261023-nvfp4"
+opencode = true
+
+[model]
+repo = "GrootTeam/Groot-19B-A3B-261023-NVFP4"
+revision = "8ff73aca9300f4e9835972f0012ef5edbb016a8b"
+size_bytes = 13562080504
+served_name = "groot-19b-a3b"
+
+[container]
+memory_gib = 32
+
+[server]
+context = 131072
+args = [
+  "--language-model-only", "--max-num-seqs", "1", "--kv-cache-dtype", "fp8",
+  "--attention-backend", "TRITON_ATTN", "--enable-auto-tool-choice", "--tool-call-parser",
+  "qwen3_coder", "--reasoning-parser", "qwen3", "--default-chat-template-kwargs",
+  '{"enable_thinking":false}', "--override-generation-config",
+  '{"temperature":0.6,"top_p":0.95,"top_k":20}',
+]
+
+[evidence]
+kind = "estimate"
+summary = "The documented vLLM recipe, not run on the reference laptop yet"
+doc = "vllm/models.md#groot-19b-a3b-261023-nvfp4"
