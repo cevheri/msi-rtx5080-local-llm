@@ -1,0 +1,102 @@
+{
+ "overall": "holds-with-corrections",
+ "summary": "I could not refute any load-bearing runtime claim for this machine. File sizes, the KV arithmetic, the vLLM v0.33.0 registration, parsers and flags, the llama.cpp b12407 architecture support and flags, and the image tag all check out against primary sources read raw on 2026-11-15.\n\nCorrections, all minor:\n(1) About 2.9B parameters are active per token, not 3.4B. GGUF tensor shapes give 1.13B expert and shared, 1.29B attention and GDN, and 0.51B lm_head. The bytes-per-token figure (about 2.06 GB at Q4_K_M) and the roughly 430 tok/s ceiling still stand.\n(2) The llama.cpp VRAM estimate is conservative. The GGUF has 41 blocks; block 40 is the MTP block (0.265 GiB), and llama.cpp skips it unless --mtp is passed. The KV filter covers only the 40 trunk layers, so KV stays at 10 layers. token_embd (0.266 GiB) normally stays in host RAM. Realistic VRAM is about 13.9 GiB at 131072 f16 and about 14.1 GiB at 262144 q8_0, not 14.4 and 14.6.\n(3) The vLLM KV pool comes out a bit smaller than recorded: about 125-128k BF16 and 250-256k FP8, because two sequences of GDN state are subtracted under max-num-seqs 2. 131072 with FP8 KV fits with margin; 131072 with BF16 KV would not.\n(4) Issue #54331 is still OPEN. Its title says TRITON_ATTN and PIECEWISE also crash and only enforce_eager survives. The trigger was sustained high-concurrency offline load, so a single OpenCode user with max-num-seqs 2 has a low but untested risk.\n\nBest realistic configuration: the record's llama.cpp command as written. That is the official Q4_K_M fully on GPU, --no-mmproj, -np 1, -c 131072, f16 KV, -fa on, GGML_CUDA_DISABLE_GRAPHS=1 and thinking off by default. Second choice is vLLM NVFP4 with --language-model-only, FP8 KV, TRITON_ATTN and --max-model-len 131072, falling back to --enforce-eager. Tool calling uses Qwen3-Coder XML through qwen3_coder on vLLM and --jinja on llama.cpp. It should work, but OpenCode has not been tested, and llama.cpp issues #30357 and #30118 are still open and are expected to apply to Groot (inferred, untested).\n\nRaw reads are saved under $SCRATCH/chk_groot/",
+ "verdicts": [
+  {
+   "claim": "Weight sizes: BF16 36.22 GiB; NVFP4 shards 11.78 GiB + mtp.safetensors 0.82 GiB; official GGUF Q4_K_M 11,657,618,560 B (10.86 GiB); mmproj 0.84 GiB",
+   "verdict": "confirmed",
+   "correction": "Confirmed by the HF API with blobs=true. NVFP4 shards are 3.725 + 3.728 + 3.727 + 0.596 = 11.776 GiB, and mtp.safetensors is 0.823 GiB; index total_size is 13,520,896,756 B. The mmproj file is 902,822,016 B (0.841 GiB). Support: direct-statement.",
+   "evidence_url": "https://huggingface.co/api/models/GrootTeam/Groot-19B-A3B-261023-NVFP4?blobs=true"
+  },
+  {
+   "claim": "Vision tower inside the NVFP4 shards is about 0.84 GiB, so --language-model-only weights are 10.94 GiB",
+   "verdict": "confirmed",
+   "correction": "I read the safetensors header of shard 1 by HTTP range. All 333 model.visual tensors are in shard 1, stored as BF16, totalling 893,142,496 B (0.832 GiB). LM-only weights are 11.776 - 0.832 = 10.944 GiB. This is now a direct measurement, not an estimate from the mmproj, so the gap is closed.",
+   "evidence_url": "https://huggingface.co/GrootTeam/Groot-19B-A3B-261023-NVFP4/resolve/main/model-00001-of-00004.safetensors"
+  },
+  {
+   "claim": "KV bytes per token 20,480 BF16 / 10,240 FP8 (10 full-attention layers x 2 KV heads x head_dim 256); GDN state about 0.06 GiB per sequence",
+   "verdict": "confirmed",
+   "correction": "config.json gives layer_types with 10 of 40 layers full_attention, num_key_value_heads 2, head_dim 256, and max_position_embeddings 262144. GDN state: conv is 3 x 8192 x 2 B and SSM is 32 x 128 x 128 x 4 B (float32), so 30 layers come to 64.4 MB, about 0.06 GiB. Support: source-backed.",
+   "evidence_url": "https://huggingface.co/GrootTeam/Groot-19B-A3B-261023/raw/main/config.json"
+  },
+  {
+   "claim": "vLLM NVFP4 --language-model-only KV pool about 2.45 GiB, giving 128.5k BF16 / 257k FP8; --max-model-len 131072 with FP8 KV fits",
+   "verdict": "confirmed",
+   "correction": "Small correction. The budget is 14999 MiB = 14.647 GiB. 14.647 - 10.944 - 1.2 = 2.503 GiB. Subtracting GDN state for 2 sequences (0.12 GiB) leaves 2.38 GiB: about 125k BF16 and 250k FP8, versus 128k / 256k with one sequence. The #54331 thread notes that vLLM pads hybrid attention blocks to about 1056 tokens to match the mamba page, which adds rounding. 131072 FP8 needs 1.25 GiB plus state, so it fits. 131072 BF16 needs 2.5 GiB and does not fit. Support: source-backed.",
+   "evidence_url": "https://github.com/vllm-project/vllm/issues/54331"
+  },
+  {
+   "claim": "vLLM v0.33.0 registers Qwen3_5MoeForConditionalGeneration (registry.py 618-620), Qwen3_5MoeForCausalLM (205), Qwen3_5MoeMTP (740); --language-model-only skips the vision tower",
+   "verdict": "confirmed",
+   "correction": "The line numbers match at tag v0.33.0. arg_utils.py line 1497 defines --language-model-only. In qwen3_5.py, Qwen3_5MoeForConditionalGeneration builds self.visual inside _mark_tower_model(vllm_config, {image, video}), which is the mechanism that drops the tower in LM-only mode. Support: direct-statement.",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/models/qwen3_5.py"
+  },
+  {
+   "claim": "Parsers: qwen3_coder and qwen3_xml both map to Qwen3EngineToolParser; reasoning parser qwen3; --default-chat-template-kwargs, --enable-auto-tool-choice and --attention-backend TRITON_ATTN exist at v0.33.0",
+   "verdict": "confirmed",
+   "correction": "tool_parsers/__init__.py lines 206-219 confirm the mapping; qwen3_json is aliased to hermes and is not the right choice here. reasoning/__init__.py line 168 confirms qwen3. entrypoints/common/cli_args.py lines 104, 123 and 129 define the server flags. TRITON_ATTN is in v1/attention/backends/registry.py. The card asks for vllm>=0.19.1 (README line 81) and uses --tool-call-parser qwen3_coder (line 184). Support: direct-statement.",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/tool_parsers/__init__.py"
+  },
+  {
+   "claim": "sm_120 kernel path: experts NVFP4 weight-only (input_activations null) -> CompressedTensorsW4A4Nvfp4MoEMethod(use_a16=True); auto order FlashInfer, VLLM_CUTLASS, MARLIN; MARLIN expected on sm_120; no W4A4 JIT spike",
+   "verdict": "uncertain",
+   "correction": "The source part is confirmed. In the NVFP4 config.json, group_1 targets experts, shared_expert and lm_head with input_activations null, and group_0 is FP8 static per-tensor W8A8 on linear_attn and self_attn projections. compressed_tensors_moe.py lines 158-159 pass use_a16=(input_quant is None). In oracle/nvfp4.py, select_nvfp4_moe_backend tries TRTLLM, CUTEDSL, CUTEDSL_BATCHED, FLASHINFER_CUTLASS, VLLM_CUTLASS, MARLIN, HUMMING and EMULATION in that order, after prioritize_humming, and picks the first kernel whose is_supported_config passes. That MARLIN is the one picked on sm_120 for an A16 activation key is inferred, not run. The config also declares kv_cache_scheme FP8 per-tensor static; per the #54331 comment, even --kv-cache-dtype auto would then select FP8.",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/layers/fused_moe/oracle/nvfp4.py"
+  },
+  {
+   "claim": "Known issue #54331 (sm_120 hybrid-GDN NVFP4 crash with CUDA graphs) applies; fall back to --enforce-eager",
+   "verdict": "confirmed",
+   "correction": "The issue is OPEN, last updated 2026-10-19. Its title says TRITON_ATTN and PIECEWISE also fail and only enforce_eager survives, so --attention-backend TRITON_ATTN does not mitigate it. The trigger was 7-8 minutes of sustained high-concurrency offline inference on an RTX PRO 6000 running 0.26-0.28. Risk for single-user OpenCode with max-num-seqs 2 is plausible but lower, and untested. Support: direct-statement for the issue, inferred for this machine.",
+   "evidence_url": "https://github.com/vllm-project/vllm/issues/54331"
+  },
+  {
+   "claim": "llama.cpp b12407 supports qwen35moe (llama-arch.cpp line 46); official GGUF arch qwen35moe, context_length 262144; flags --no-mmproj, --chat-template-kwargs, --reasoning, --n-cpu-moe exist; image server-cuda-b12407 exists",
+   "verdict": "confirmed",
+   "correction": "I range-read the GGUF header: general.architecture qwen35moe, context_length 262144, head_count_kv 2, key_length 256, expert_count 128, full_attention_interval 4, file_type 15 (Q4_K_M). arg.cpp at b12407 defines --no-mmproj (line 2565), --n-cpu-moe (2738), --chat-template-kwargs (3571) and --reasoning (3741). The b12407 release was published 2026-11-15T10:04:42Z, and the ghcr manifest server-cuda-b12407 returns HTTP 200. Support: direct-statement.",
+   "evidence_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/src/llama-arch.cpp"
+  },
+  {
+   "claim": "llama.cpp all-on-GPU VRAM about 14.4 GiB at 131072 f16 KV; 262144 q8_0 about 14.6 GiB (tight)",
+   "verdict": "confirmed",
+   "correction": "The estimate is conservative. The GGUF has block_count 41: block 40 is the NextN/MTP block, 0.265 GiB, with a 41st recurrent_layers entry of False. At b12407, nextn_flags() sets TENSOR_SKIP on MTP tensors unless --mtp/load_mtp is used (llama-model.cpp around line 4104). The hybrid KV filter covers only il < n_layer(), so KV stays at 10 layers. token_embd (Q4_K, 0.266 GiB) is normally kept in host RAM (inferred). GPU weights come to about 10.33 GiB, so about 13.9 GiB at 131072 f16 and about 14.1 GiB at 262144 q8_0, plus CUDA context. The compute buffer is still an estimate. Support: source-backed and inferred.",
+   "evidence_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/src/llama-model.cpp"
+  },
+  {
+   "claim": "Tool format is Qwen3-Coder XML; chat_template.jinja differs from the tokenizer_config template (only the latter honours preserve_thinking)",
+   "verdict": "confirmed",
+   "correction": "chat_template.jinja is 7536 chars and the tokenizer_config chat_template is 7764 chars; they are not identical. Both contain <function=, <parameter=, <tool_response> and enable_thinking, but only tokenizer_config contains preserve_thinking. The GGUF embeds a 7536-char template, which is the .jinja one. The NVFP4 repo also ships chat_template.jinja. Which one vLLM applies is still unverified. Support: direct-statement.",
+   "evidence_url": "https://huggingface.co/GrootTeam/Groot-19B-A3B-261023/raw/main/chat_template.jinja"
+  },
+  {
+   "claim": "Per-token read about 3.4B params (1.13B expert + 1.8B attention/GDN + 0.51B lm_head)",
+   "verdict": "refuted",
+   "correction": "GGUF tensor shapes give 1.295B non-expert block params across the 40 trunk blocks, not about 1.8B. Active params are about 1.13 + 1.29 + 0.51 = 2.9B. Q4_K_M bytes read per token are still about 2.06 GB (experts 0.65 GB, GDN and attention about 0.91 GB, output Q6_K 0.42 GB, shared experts 0.08 GB), so the roughly 430 tok/s ceiling and the 150-250 tok/s expectation are unchanged. Support: source-backed.",
+   "evidence_url": "https://huggingface.co/GrootTeam/Groot-19B-A3B-261023-GGUF/resolve/main/Groot-19B-A3B-261023-Q4_K_M.gguf"
+  },
+  {
+   "claim": "llama.cpp open issues #30357 and #30118 likely apply; #27330 needs GGML_CUDA_DISABLE_GRAPHS=1",
+   "verdict": "confirmed",
+   "correction": "All three are OPEN as of 2026-11-15: #30357 updated 2026-10-30, #30118 updated 2026-10-28, #27330 updated 2026-10-28. That they reproduce on Groot is inferred, not tested.",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/issues/30357"
+  },
+  {
+   "claim": "No LICENSE file despite apache-2.0 metadata; serve commands use wrong id Groot/Groot-19B-A3B-261023",
+   "verdict": "confirmed",
+   "correction": "raw/main/LICENSE returns HTTP 404. README lines 114, 165, 178 and 273 use 'Groot/Groot-19B-A3B-261023'.",
+   "evidence_url": "https://huggingface.co/GrootTeam/Groot-19B-A3B-261023/raw/main/README.md"
+  },
+  {
+   "claim": "Community reports: half the speed of Qwen3.6-35B Q4_K_M, English/Chinese only, knowledge loss",
+   "verdict": "confirmed",
+   "correction": "GGUF discussion #3 (2026-11-02) reports half the speed with the same settings; it is unexplained, and the vendor did not address speed. Main repo discussion #4 says the model cannot write Italian and supports only English and Chinese (2026-11-03). Discussion #3 also alleges targeted knowledge shaping. A new discussion #6 on 2026-11-15 reports a positive base64 test.",
+   "evidence_url": "https://huggingface.co/GrootTeam/Groot-19B-A3B-261023-GGUF/discussions/3"
+  },
+  {
+   "claim": "Recommended configuration serves OpenCode with working tool calls and at least 64k context on this machine",
+   "verdict": "uncertain",
+   "correction": "Memory feasibility is confirmed with margin on both runtimes: llama.cpp at 131072 f16 is about 13.9 GiB, and vLLM LM-only FP8 KV holds 250k or more. The parser and flag paths exist at the pinned tags. The tool-call behaviour end to end in OpenCode, the template effects, the speed on this laptop and the Ollama path were not run. Keep llama.cpp Q4_K_M all-on-GPU as first choice and vLLM NVFP4 LM-only FP8 KV as second, and A/B against Qwen3.6-35B-A3B.",
+   "evidence_url": "https://huggingface.co/api/models/GrootTeam/Groot-19B-A3B-261023-GGUF?blobs=true"
+  }
+ ]
+}

@@ -1,0 +1,168 @@
+{
+ "overall": "holds-with-corrections",
+ "summary": "I could not refute the identity of Ternary Bonsai 2 27B. The prism-ml HF org is the one prismml.com links to (huggingface.co/collections/prism-ml/bonsai-2). The dates, Apache-2.0 license, Qwen3.8-27B base config, GGUF byte sizes, context of 262144 and the llama.cpp b11556/b12407 source facts all check out against raw files.\n\nCorrections:\n1. Repo count: the org has 42 models (org overview numModels 42, isVerified false), not 50+.\n2. The whitepaper itself (raw PDF) confirms TB2.1 52.8 and SWE-bench Verified 60.8. Against Qwen3.8-27B FP16 at 69.7 and 80.6 that is about 76% retention, not 98.2%.\n3. The record recommends reasoning_effort medium, but the whitepaper's medium table drops the 20-benchmark average from 83.9 to 79.3, with tau2 at 70.86 (FP16 79.50) and BFCL 75.12.\n4. The card's 14-benchmark table conflicts with the whitepaper's 20-benchmark table:\n   - IQ2_XXS AIME26 57.50 vs 78.6; LiveCodeBench 56.40 vs 70.05; BFCL 70.28 vs 66.1.\n   - 1.72 vs 1.76 bpw; 5.95 vs 5.93 GB.\n5. Vendor decode speeds conflict: RTX 5090 PQ2_0 is 129.9 (card), 142.5 (whitepaper) and 143 (press release).\n6. The template allows zero system messages. It fails only on a second or a non-first one.\n7. KNOWN_ISSUES says \"Last checked 2026-09-23\". The record omits its unreproduced report of crashes with a quantized KV cache at about 200K context, which matters for the 196608 q8_0 maximum.\n8. Fork issue #199 is specific to driver 570 hosts; this machine runs 595.\n9. \"Trained ternary\" rests only on the press release.\n10. The MLX build's vision support is contested between vendor files.\n11. Artificial Analysis has no Bonsai entry.\n\nAll agentic scores remain vendor-reported.",
+ "verdicts": [
+  {
+   "claim": "Real vendor ownership: prism-ml is Prism ML, Inc.'s official HF org, not a re-upload",
+   "verdict": "confirmed",
+   "evidence_url": "https://prismml.com/news/prismml-launches-bonsai-2-27b ; https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-gguf/raw/main/NOTICE.txt",
+   "correction": "Press release (2026-09-17, PASADENA dateline, Caltech researchers) links to huggingface.co/collections/prism-ml/bonsai-2 and github.com/PrismML-Eng/Bonsai-demo. NOTICE.txt reads 'copyright 2026-present Prism ML, Inc.'. Support: direct-statement. The HF org is not verified-badged (isVerified false)."
+  },
+  {
+   "claim": "The HF org prism-ml publishes 50+ repos",
+   "verdict": "refuted",
+   "evidence_url": "https://huggingface.co/api/organizations/prism-ml/overview",
+   "correction": "The org overview gives numModels 42, numSpaces 4. /api/models?author=prism-ml&limit=200 also returns 42."
+  },
+  {
+   "claim": "Dates: createdAt 2026-09-16T23:40:56Z, first commit 'Bonsai2' 2026-09-17, Q2_0 added 2026-10-30, lastModified 2026-11-04",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/prism-ml/Ternary-Bonsai-2-27B-gguf/commits/main",
+   "correction": "Exact values: 'Bonsai2' 2026-09-17T18:44:01Z; 'Add Q2_0 GGUF' 2026-10-30T18:02:13Z; latest commit 2026-11-04T23:05:35Z. Base Qwen/Qwen3.8-27B was created 2026-08-05. Both are within 12 months."
+  },
+  {
+   "claim": "License Apache-2.0; NOTICE asks for (does not require) attribution and carries the Qwen3.8-27B Alibaba notice",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-gguf/raw/main/NOTICE.txt",
+   "correction": "Confirmed verbatim: 'we would appreciate attribution'. The LICENSE file is Apache 2.0, cardData license is apache-2.0, and the base model is also apache-2.0."
+  },
+  {
+   "claim": "Params: 27.36B total = 24.35B backbone + 2.54B embed/head + 0.46B vision; press release says 27.8B; base safetensors total 27,781,427,952",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-gguf/raw/main/README.md ; https://huggingface.co/api/models/Qwen/Qwen3.8-27B",
+   "correction": "Values confirmed. The GGUF API gives a language-only total of 26,895,998,464 (= 24.35 + 2.54). The whitepaper Table 1 gives the vision tower as 0.47B. Base Qwen config has mtp_num_hidden_layers 1 and the Bonsai MLX config has 0. Dropping the MTP layer plausibly explains the 27.78 vs 27.36 gap (inferred)."
+  },
+  {
+   "claim": "Ternary g128 FP16 scales, true 1.72 bpw; 26.2M params kept high precision",
+   "verdict": "uncertain",
+   "evidence_url": "https://raw.githubusercontent.com/PrismML-Eng/Bonsai-demo/main/bonsai-2-27b-whitepaper.pdf",
+   "correction": "Contested within vendor sources. The card and whitepaper section 2.1 say 1.72 bpw. Whitepaper section 2 intro and Tables 7/10/11 say 1.76 bpw at 5.93 GB, while the card says 5.95 GB. HF bytes: PTQ1_0 5,946,648,928. The 26.2M figure (0.0976%) is confirmed in whitepaper Table 2."
+  },
+  {
+   "claim": "Architecture: 64 layers, 16 full-attn (24q/4kv heads, head_dim 256) + 48 GDN (16 key / 48 value heads, dim 128, conv 4), hidden 5120, FFN 17408, vocab 248320, max_pos 262144; MLX model_type prism_hadamard_qwen35, mtp 0",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Qwen/Qwen3.8-27B/raw/main/config.json ; https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-mlx-2bit/raw/main/config.json",
+   "correction": "All values match the raw text_config: layer_types has 64 entries, 16 of them full_attention. The MLX config has top-level model_type prism_hadamard_qwen35, text_config.mtp_num_hidden_layers 0 and components {text, vision: true, mtp: false}."
+  },
+  {
+   "claim": "Context length 262,144 (GGUF context_length)",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/prism-ml/Ternary-Bonsai-2-27B-gguf",
+   "correction": "gguf.context_length is 262144 and the architecture is qwen35. The on-GPU 128k/200k numbers are source-backed arithmetic, not vendor statements. KNOWN_ISSUES lists an unreproduced report of 'Connection resets or crashes with a quantized KV cache at very long contexts (around 200K tokens)', which matters for the 196608 q8_0 maximum."
+  },
+  {
+   "claim": "Modalities: text+image in; vendor MLX build has no vision",
+   "verdict": "uncertain",
+   "evidence_url": "https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-mlx-2bit/raw/main/README.md ; https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-gguf/raw/main/KNOWN_ISSUES.md",
+   "correction": "GGUF image input via mmproj is confirmed (Q8_0 629,246,976 B = 0.586 GiB; BF16 931,145,856 B = 0.867 GiB). The MLX claim is contested. KNOWN_ISSUES says 'The MLX build of the 27B model has no vision support', but the MLX README says 8.60 GB includes a 0.92 GB FP16 vision tower and ships vision_artifact.py, and its config has components.vision true. This does not matter on Linux."
+  },
+  {
+   "claim": "Thinking toggle: default xhigh; enable_thinking false gives an empty think block; reasoning_effort only xhigh|medium|low, else raise; llama.cpp maps 'none' to enable_thinking=false at server-common.cpp 1566-1574",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/prism-ml/Ternary-Bonsai-2-27B-gguf ; https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/tools/server/server-common.cpp",
+   "correction": "Template lines 46-56 and 165-168 read as stated. Note that 'medium' injects no reasoning instruction at all; only xhigh and low add text. The card says 'low' 'is not supported and ... will behave close to xhigh'. Server lines 1566-1574 match exactly. The --reasoning [on|off|auto] and --reasoning-budget flags exist in b12407 common/arg.cpp (lines 3741 and 3771)."
+  },
+  {
+   "claim": "Recommend reasoning_effort 'medium' for OpenCode at little cost",
+   "verdict": "refuted",
+   "evidence_url": "https://raw.githubusercontent.com/PrismML-Eng/Bonsai-demo/main/bonsai-2-27b-whitepaper.pdf",
+   "correction": "The whitepaper's Table 11 (medium effort) gives a 20-benchmark average of 79.3 vs 83.9 at xhigh (FP16 82.6 at medium), tau2-Bench 70.86 (FP16 79.50), AIME25 74.58 and LiveCodeBench v6 80.47. The vendor recommends medium for speed (KNOWN_ISSUES says it is 'about as accurate' at about 16k output budgets), but every headline score is at xhigh. Record this trade-off."
+  },
+  {
+   "claim": "Tool calling: Qwen3-Coder XML format; llama.cpp b12407 chat.cpp 1420-1427 routes to common_chat_params_init_qwen3_coder",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/common/chat.cpp",
+   "correction": "Template line 68 emits '<tool_call>\\n<function=...>\\n<parameter=...>'. Tool calls are rendered with '+' concatenation, so the exclusion string at chat.cpp 1424 does not match. Detection is at lines 1419-1427. Tools are listed as JSON in <tools>, and tool results go in <tool_response> inside a user turn (lines 147-158)."
+  },
+  {
+   "claim": "HTTP 500 unless exactly one leading system message",
+   "verdict": "refuted",
+   "evidence_url": "https://huggingface.co/api/models/prism-ml/Ternary-Bonsai-2-27B-gguf",
+   "correction": "KNOWN_ISSUES does say 'requires exactly one system message', but the template code accepts zero system messages (lines 77-86). It raises only when a system message is not at index 0 (lines 104-106), which also covers a second one. Correct rule: at most one system message, and it must be first. Template lines 135-136 also apply |items to tool_call.arguments, which explains the empty/non-JSON arguments failure."
+  },
+  {
+   "claim": "Vendor KNOWN_ISSUES items are open: malformed/looping tool calls, #112, prompt-cache misses, reasoning_effort 'high' HTTP 500",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-gguf/raw/main/KNOWN_ISSUES.md",
+   "correction": "All items are present, but the page header says 'Last checked: 2026-09-23' (a later commit edited only the F16 note), so the statuses may be stale. Fork issue #112 is still open but was created 2026-08-09, before Bonsai 2, and concerns the fork; whether stock b12407 hits it is unverified."
+  },
+  {
+   "claim": "llama.cpp stock support: PR #29600 merged 2026-10-11, shipped in b11556; b12407 has qwen35, prism.hadamard.* (509-519), GGML_TYPE_Q2_0=42, TYPE_COUNT 44, no PQ2_0/PTQ1_0, CUDA fwht.cu with a 1024 kernel",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/pull/29600 ; https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/ggml/include/ggml.h",
+   "correction": "The PR title is 'Runtime support for Prism Bonsai 2 27B' (author bri-prism), merged 2026-10-11T12:39:17Z. The b11556 release (2026-10-11T13:31:50Z) body reads 'model : support for Prism Bonsai 2 27B (#29600)'. All line references verified; fwht.cu has a case 1024 at line 194 and mmvq.cu references Q2_0."
+  },
+  {
+   "claim": "PrismML fork: latest prism-b12128-d7b2896 (2026-10-31), Linux CUDA 12.4/12.8/13.3 tarballs; #222 CUDA 13.3 segfault open; #199 RTX 5090 sm_120 erratic decode open",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/PrismML-Eng/llama.cpp/issues/199",
+   "correction": "Releases and open states confirmed. #199's title limits it to 'driver 570 hosts'. This machine runs driver 595, so applicability is uncertain."
+  },
+  {
+   "claim": "No vLLM path: registry v0.33.0 has Qwen3_5ForConditionalGeneration (line 617) but nothing Prism/Bonsai/Hadamard; no Bonsai 2 safetensors/AWQ published",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/models/registry.py",
+   "correction": "grep finds only line 617. The prism-ml repo list has AWQ-4bit and -unpacked only for the older Bonsai 27B / Ternary-Bonsai-27B. The whitepaper confirms vendor evals ran on a vLLM server (TP2, DP4) on H100, an internal path that is not published."
+  },
+  {
+   "claim": "Checkpoint sizes: Q2_0 7,626,008,928 B (7.10 GiB), PQ2_0 7,206,168,928 (6.71), PTQ1_0 5,946,648,928 (5.54), F16 50.11 GiB, MLX about 8.02 GiB; gguf-dev holds the old Q2_0 location",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/prism-ml/Ternary-Bonsai-2-27B-gguf?blobs=true",
+   "correction": "All bytes match: F16 is 53,808,408,928 B and MLX sums to 8.0175 GiB. The gguf-dev file is named 'Ternary-Bonsai-2-27B-Q2_0-prism-fork-required.gguf' (same 7,626,008,928 B). Its README says it is the same file now in the main repo and runs on stock b11556+."
+  },
+  {
+   "claim": "Ollama bonsai-2:27b = 27b-q2_0 digest f3c4f4208659, 8.3 GB, 256K, tools/thinking/vision; latest = 9B",
+   "verdict": "confirmed",
+   "evidence_url": "https://ollama.com/library/bonsai-2/tags",
+   "correction": "Confirmed. The page says 'Updated 1 month ago'. The minimum Ollama version is not shown."
+  },
+  {
+   "claim": "Benchmarks (card): BFCL v3 74.92 (FP16 76.74, UD-Q4 75.05, IQ2_XXS 70.28); LCB 90.07; HumanEval+/MBPP+ 95.12/83.07; IFEval/IFBench 91.31/74.00; 14-bench avg 84.78 vs 86.32",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-gguf/raw/main/README.md",
+   "correction": "These match the card verbatim (self-reported). The whitepaper's 20-benchmark Table 10 conflicts with the card's IQ2_XXS column: AIME26 57.50 vs 78.6, LiveCodeBench 56.40 vs 70.05, BFCL 70.28 vs 66.1, MMLU-Redux 88.93 vs 85.79. The card's claim that IQ2_XXS 'falls to 57.5 on AIME26 and 56.4 on LiveCodeBench' is therefore contradicted by Prism's own whitepaper. Bonsai's own column agrees between the two."
+  },
+  {
+   "claim": "Terminal-Bench 2.1 52.8%, SWE-bench Verified 60.8%, tau2 80.2% (via BenchLM; whitepaper not read directly)",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/PrismML-Eng/Bonsai-demo/main/bonsai-2-27b-whitepaper.pdf",
+   "correction": "Read directly in the whitepaper (self-reported, xhigh effort). TB2.1 used Terminus-2 (JSON actions) on 89 tasks; SWE-bench Verified used mini-swe-agent on 500 instances, via Harbor. Qwen3.8-27B FP16 scores 69.7 and 80.6, so retention on long-horizon agentic work is about 76%, far below the 98.2% headline. tau2 is 80.22 vs FP16 82.73. The whitepaper also adds BigCodeBench 58.07 (FP16 61.49)."
+  },
+  {
+   "claim": "BenchLM: 51.6 Estimated, open #27, range 37.29-65.99, 0 independent runs",
+   "verdict": "confirmed",
+   "evidence_url": "https://benchlm.ai/models/ternary-bonsai-2-27b",
+   "correction": "The model page (data as of 2026-11-13) shows 51.64, public rank #90 of 215, 'Reported by Prism ML 23', 'Independent runs 0'. The open #27 rank and the range come from the /best/open-source table per the KB benchlm check. This is a modelled aggregate, not a measurement."
+  },
+  {
+   "claim": "Artificial Analysis or other independent quality data",
+   "verdict": "uncertain",
+   "evidence_url": "https://artificialanalysis.ai/models",
+   "correction": "artificialanalysis.ai/models contains no 'bonsai' string, and /models/ternary-bonsai-2-27b returns 404. No independent AA data exists to cross-check against."
+  },
+  {
+   "claim": "InsiderLLM RTX 3090: 12/47 vs 19/47, tool 28/28, scope 18 vs 28, JSON 47/47; tg128 77.62 (74.38 at d=8192), pp512 1476 vs 1415, Qwen Q4 42.13; peak 8,118 MiB",
+   "verdict": "confirmed",
+   "evidence_url": "https://insiderllm.com/guides/bonsai-2-27b-vs-qwen3-8-27b-rtx-3090/",
+   "correction": "Confirmed (2026-09-24, updated 2026-09-28; fork prism-b10709, temp 0, thinking off, -c 4096). The tested PQ2_0 sha256 3907dc16 matches the current HF LFS hash. Mode-correct was 27 vs 24 in Bonsai's favour, which the record omits. This is a 47-item intent-routing task, not a tool-calling benchmark. The 8,118 MiB peak was at 8k context."
+  },
+  {
+   "claim": "Vendor llama-bench tg128 PQ2_0/PTQ1_0: RTX 5090 129.9/120.5; RTX 4090 81.2/91.1",
+   "verdict": "uncertain",
+   "evidence_url": "https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-gguf/raw/main/README.md ; https://raw.githubusercontent.com/PrismML-Eng/Bonsai-demo/main/bonsai-2-27b-whitepaper.pdf",
+   "correction": "The card values are as quoted. The whitepaper (same 2026-09-16 artifacts) reports RTX 5090 142.5/134.4 and RTX 4090 90.9/96.7, and the press release says 'up to 143 tokens/second on RTX 5090'. Vendor sources conflict by about 10%; treat as contested and self-reported."
+  },
+  {
+   "claim": "Bonsai is trained ternary ('trained using Google v5 TPUs'), so Unsloth's post-training 1-bit caveat does not transfer",
+   "verdict": "uncertain",
+   "evidence_url": "https://prismml.com/news/prismml-launches-bonsai-2-27b",
+   "correction": "The quote appears verbatim in the press release. Neither the card nor the whitepaper describes the training method: they describe a Hadamard rotation followed by 'ternary assignment'. Whether this is QAT or PTQ is unstated, so the non-transfer argument is inferred, not source-backed."
+  },
+  {
+   "claim": "Sampling: thinking temp 1.0/top_p 0.95/top_k 20/min_p 0.05/presence 0.0/rep 1.0; non-thinking 0.7/0.80/20/0.0/1.5/1.0; GGUF carries only temp/top_p/top_k",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-gguf/raw/main/README.md",
+   "correction": "Matches the card and KNOWN_ISSUES. KNOWN_ISSUES also notes that the website and the model card list different sampling settings, and that the card is correct."
+  }
+ ]
+}

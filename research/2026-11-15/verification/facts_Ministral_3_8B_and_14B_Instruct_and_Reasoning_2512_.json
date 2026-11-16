@@ -1,0 +1,120 @@
+{
+ "verdicts": [
+  {
+   "claim": "Official Mistral AI repos; org mistralai verified (isVerified=true, fullname Mistral, 83 models)",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/organizations/mistralai/overview"
+  },
+  {
+   "claim": "HF createdAt 2025-10-31 (14B-R 08:42:28Z, 14B-I 08:43:24Z, 8B-R 08:41:36Z, 8B-I 08:43:35Z), lastModified 2026-07-15, gated=false",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/mistralai/Ministral-3-14B-Reasoning-2512"
+  },
+  {
+   "claim": "Public release 2025-12-02 (blog datePublished 2025-12-02T16:00:00Z; AA releaseDate 2025-12-02), inside the 2025-11-15..2026-11-15 window",
+   "verdict": "confirmed",
+   "evidence_url": "https://mistral.ai/news/mistral-3"
+  },
+  {
+   "claim": "Paper arXiv 2601.08584 dated 2026-01-13; describes Cascade Distillation (pruning plus distillation from Mistral Small 3.1)",
+   "verdict": "confirmed",
+   "evidence_url": "https://arxiv.org/abs/2601.08584"
+  },
+  {
+   "claim": "License apache-2.0 (card tag), with only a third-party-rights clause; no gating",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/mistralai/Ministral-3-14B-Reasoning-2512/raw/main/README.md"
+  },
+  {
+   "claim": "Params: 14B = 13.5B LM + 0.4B vision, API total 13,945,031,680; 8B = 8.4B LM + 0.4B vision, total 8,918,026,240; Instruct FP8 split 12.16B F8_E4M3 + 1.78B BF16 (14B) and 7.42B + 1.50B (8B); Reasoning pure BF16",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/mistralai/Ministral-3-14B-Instruct-2512"
+  },
+  {
+   "claim": "Architecture: Mistral3ForConditionalGeneration, text ministral3; 14B 40 layers/5120/16384/32q/8kv/head_dim 128/vocab 131072; 8B 34 layers/4096/14336; sliding_window null; YaRN factor 16 over 16384 with llama_4_scaling_beta 0.1; rope_theta 1e9 (14B) / 1e6 (8B); Pixtral vision 24 layers hidden 1024",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/mistralai/Ministral-3-14B-Reasoning-2512/raw/main/config.json"
+  },
+  {
+   "claim": "Context length 262144 tokens for all variants including Reasoning",
+   "verdict": "uncertain",
+   "correction": "Contested. config.json (max_position_embeddings 262144) and the card ('Supports a 256k context window') say 256k, but the vendor paper states 'context lengths up to 256k tokens (128k for reasoning models)'. The Reasoning variants' validated context may be 128k; this does not affect the 64k OpenCode target but the record should mark it contested.",
+   "evidence_url": "https://arxiv.org/html/2601.08584"
+  },
+  {
+   "claim": "Modalities text+image in, text out; vLLM recipe text_only option 'Skip loading the vision encoder ... frees VRAM for KV cache'; min_vllm_version 0.11.0",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/vllm-project/recipes/blob/main/models/mistralai/Ministral-3-14B-Instruct-2512.yaml"
+  },
+  {
+   "claim": "Thinking by variant only; no enable_thinking/reasoning_effort kwarg; Reasoning template injects default '# HOW YOU SHOULD THINK AND ANSWER ... [THINK]' system prompt only when messages[0] is not system; template reads reasoning_content",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/mistralai/Ministral-3-14B-Reasoning-2512/raw/main/chat_template.jinja"
+  },
+  {
+   "claim": "Card advises appending SYSTEM_PROMPT.txt to custom system prompts, keeping reasoning traces in context, temperature 1 for Reasoning (examples TEMP 0.7, TOP_P 0.95), Instruct temperature below 0.1",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/mistralai/Ministral-3-14B-Reasoning-2512/raw/main/README.md"
+  },
+  {
+   "claim": "Tool calling: [AVAILABLE_TOOLS]tools|tojson[/AVAILABLE_TOOLS], output [TOOL_CALLS]name[ARGS]args, results [TOOL_RESULTS], no [CALL_ID] in either template; card serve uses --enable-auto-tool-choice --tool-call-parser mistral --reasoning-parser mistral",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/mistralai/Ministral-3-14B-Instruct-2512/raw/main/chat_template.jinja"
+  },
+  {
+   "claim": "vLLM v0.33.0 registers reasoning parser 'mistral' -> MistralParserReasoningAdapter (line 139)",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/reasoning/__init__.py"
+  },
+  {
+   "claim": "llama.cpp b12418 has common/parsers/ministral3.cpp, selected in common/chat.cpp ~line 1271 when template has [ARGS] and no [CALL_ID]",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/blob/b12418/common/chat.cpp"
+  },
+  {
+   "claim": "Official GGUF sizes: 14B Q4_K_M 8.24 / Q5_K_M 9.62 / Q8_0 14.36 / BF16 27.02 GB, mmproj 0.88; 8B 5.20 / 6.06 / 9.03 / 16.99, mmproj 0.86",
+   "verdict": "confirmed",
+   "correction": "Minor: the 8B GGUF rows set size_gb 9.03 (Q8_0) while the 14B rows use Q4_K_M; field is inconsistent, not wrong.",
+   "evidence_url": "https://huggingface.co/api/models/mistralai/Ministral-3-8B-Reasoning-2512-GGUF?blobs=true"
+  },
+  {
+   "claim": "Ollama ministral-3: Instruct-only tags, badges vision and tools, no thinking; 14b 9.1GB, 14b q8_0 15GB, fp16 28GB, 8b q8_0 9.9GB, fp16 18GB, latest 6.0GB, 256K",
+   "verdict": "confirmed",
+   "evidence_url": "https://ollama.com/library/ministral-3/tags"
+  },
+  {
+   "claim": "Benchmarks LiveCodeBench v6 pass@5: 14B-R 64.6 vs Qwen3-14B 59.3; 8B-R 61.6 vs Qwen3-VL-8B-Thinking 58.0 (vendor, same pipeline)",
+   "verdict": "confirmed",
+   "evidence_url": "https://arxiv.org/html/2601.08584"
+  },
+  {
+   "claim": "AIME25 / GPQA Diamond: 14B-R 85.0 / 71.2; 8B-R 78.7 / 66.8, pass@16",
+   "verdict": "confirmed",
+   "correction": "Values match the card (0.850/0.712, 0.787/0.668) but the pass@16 setting comes from the paper (Table 5 text), not the cited README, which states no setting. Cite arxiv.org/html/2601.08584 for the setting. Note the 8B trails Qwen3-VL-8B-Thinking on AIME25 (79.8) and GPQA (67.1).",
+   "evidence_url": "https://arxiv.org/html/2601.08584"
+  },
+  {
+   "claim": "Arena Hard / WildBench: 14B Instruct 0.551 / 68.5; 8B Instruct 0.509 / 66.8 (vendor card)",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/mistralai/Ministral-3-14B-Instruct-2512/raw/main/README.md"
+  },
+  {
+   "claim": "Artificial Analysis (non-reasoning entries, isReasoning=false): Terminal-Bench 2.1 14B 9.7% / 8B 4.1%, Terminal-Bench Hard 4.5% both; tau2 27.2 / 26.6; LiveCodeBench 35.1 / 30.3; SciCode 23.8 / 20.7; IFBench 32.0 / 29.1; GPQA 57.2 / 47.1",
+   "verdict": "confirmed",
+   "evidence_url": "https://artificialanalysis.ai/models/ministral-3-14b"
+  },
+  {
+   "claim": "GSM8K 5-shot (vLLM recipe, lm-eval flexible-extract): 14B 0.8795, 8B 0.8560, MI300X",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/vllm-project/recipes/blob/main/models/mistralai/Ministral-3-14B-Instruct-2512.yaml"
+  },
+  {
+   "claim": "Gap: the vLLM recipe's mistralai/Ministral-3-14B-Instruct-2512-FP8 does not exist (recipe error)",
+   "verdict": "refuted",
+   "correction": "The HF API returns '307 Temporary Redirect' from mistralai/Ministral-3-14B-Instruct-2512-FP8 to mistralai/Ministral-3-14B-Instruct-2512, so it is a renamed-repo alias that resolves to the same official FP8 checkpoint, not a nonexistent repo.",
+   "evidence_url": "https://huggingface.co/api/models/mistralai/Ministral-3-14B-Instruct-2512-FP8"
+  }
+ ],
+ "overall": "holds-with-corrections",
+ "summary": "The identity and capability facts hold on raw reads. The repos are official mistralai (verified org), created on HF 2025-10-31 and announced 2025-12-02, inside the window. License apache-2.0, not gated. Parameter totals and FP8/BF16 splits match the HF API exactly, and every config.json value I checked matches (40/34 layers, 8 KV heads, head_dim 128, all layers full attention, YaRN x16, rope_theta 1e9/1e6). The templates match the record: thinking is chosen by variant with no per-request kwarg, and the default THINK system prompt is injected only when the first message is not a system message. Tool format is [AVAILABLE_TOOLS]/[TOOL_CALLS]name[ARGS]/[TOOL_RESULTS] with no [CALL_ID], which matches llama.cpp b12418's Ministral 3 selector. Every benchmark number matches its source: vendor card and paper tables, Artificial Analysis embedded JSON (Terminal-Bench 2.1 9.7%/4.1%, tau2 27.2/26.6, and the rest), and the vLLM recipe GSM8K. Corrections: (1) Context is contested. The paper says 'up to 256k tokens (128k for reasoning models)', while config.json and the card say 256k for all variants. (2) The pass@16 setting for AIME/GPQA comes from the paper, not the cited README. (3) The gap that calls the -FP8 repo a 'recipe error' is wrong: the HF API 307-redirects it to the main Instruct repo. (4) The GGUF size_gb fields are inconsistent (8B rows give Q8_0, 14B rows give Q4_K_M). Not re-verified: the vLLM issue statuses (#53481, #48945, #66113, #55571 and others) and the cyankiwi/RedHat community checkpoint details. Raw files are in $SCRATCH/mv/."
+}

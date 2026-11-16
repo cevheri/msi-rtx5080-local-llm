@@ -1,0 +1,1 @@
+["-m","/hf/hub/models--unsloth--DeepSeek-R1-0528-Qwen3-8B-GGUF/snapshots/eb48357c179d34dbf515983f798dfb8752a0f261/DeepSeek-R1-0528-Qwen3-8B-Q8_0.gguf","--alias","local","-ngl","all","-fa","on","-c","65536","-ctk","q8_0","-ctv","q8_0","-np","1","--jinja","--reasoning-format","deepseek","--temp","0.6","--top-p","0.95","--min-p","0.01"]

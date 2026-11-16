@@ -1,0 +1,281 @@
+{
+ "review": {
+  "key": "benchlm",
+  "url": "https://benchlm.ai/?source=Open+Weight",
+  "title": "BenchLM LLM Leaderboard (open-weight slice), BenchAlign v5.8",
+  "publisher": "BenchLM (benchlm.ai), independent aggregator site with affiliate/sponsorship revenue",
+  "as_of": "2026-11-13 (page \"Data refreshed November 13, 2026\"; method bench-align-v5.8-2026-09-30; Best Local LLMs page facts \"checked September 30, 2026\")",
+  "source_type": "aggregator",
+  "accessible": true,
+  "access_notes": "curl -A \"Mozilla/5.0\" on the root page returned 200 (520 KB) but the ?source=Open+Weight filter is client side, so server HTML shows the all-model top 25. The public CSV (/api/data/leaderboard?format=csv&mode=bench-align-v5) only has the top 50 rows. The full open-weight ranking (94 rows) was read raw from https://benchlm.ai/best/open-source, which says it is the same BenchAlign v5.8 overall lane filtered to open weights. Per-model ledgers came from https://benchlm.ai/models/<slug> (qwen3-8-27b, qwen3-6-35b-a3b, gemma-4-26b-a4b, gpt-oss-20b, glm-4-7-flash, ternary-bonsai-2-27b, nemotron-3-5-bolt-74b-a9b, lfm2-5-24b-a2b, spark-x2-6-4b, qwen3-8-flash-next, inkling-small). Methodology came from /methodology and the local shortlist from /best/local-llm. The data.benchlm.ai REST API returned 401 invalid_data_key and was not used. HF API was used to check parameter counts. Raw files are in $SCRATCH/src/benchlm/.",
+  "credibility": "medium",
+  "credibility_reason": "BenchLM is transparent: every benchmark row names who ran it and links the source, and it labels rows Supported or Estimated. But for the models that fit this laptop the evidence is thin. Qwen3.6-35B-A3B, Gemma 4 26B-A4B, gpt-oss-20b, GLM-4.7-Flash and Ternary Bonsai 2 27B all show \"Independent runs 0\". Every one of those rows is Estimated, with 90% ranges about 20 to 30 points wide. Across the site, 51% of displayed results are lab-reported. The score is a modelled blend (peer priors up to 60% of the blend for Estimated rows), not a measurement. It also measures general capability, not local quantized quality or speed.",
+  "methodology": "BenchAlign v5.8 overall score, 0-100. It starts from independent external leaderboard families (composite indices and human-preference boards, preference capped at a quarter). It adds a correction of at most 3 points from direct benchmark evidence, scaled by independence. Estimated rows also blend in a lineage prior, the previous estimate and peer models (peers up to 60%). A row is Supported only when two independent families from different evidence classes agree. Lab-reported results \"can inform an Estimated rank\" and \"never make a rank Supported\". The desk statement \"Vendor-run numbers are shown, labeled, and kept out of the rank\" contradicts this, and the model ledgers do mark lab-reported rows as \"Counts\" with reference weights. Ordering is by point estimate, except that an Estimated row with fewer than two source families drops below any row within 2 points under it, so the list is not strictly descending. Category lenses: Coding scored benchmarks are SWE-Rebench, SWE-bench Pro, VulcanBench Frontier v4, FrontierCode 2.0, SWE Multilingual, CursorBench, FrontierSWE v2, SciCode, AA-SciCode, LiveCodeBench (Vals), DeepSWE. Agentic scored benchmarks include Terminal-Bench 4.1/4.0/2.1, AA AutomationBench, AA EnterpriseOps-Gym, AA Tau3 Banking, BrowseComp, HLE w/ tools, GDPval-AA, OSWorld-Verified, JobBench, MCP Atlas, Toolathlon, BFCL v4, tau3-bench, Terminal-Bench 2.1 (Vals). Source shares over 6,733 displayed results: lab-reported 51%, benchmark-run 39%, independent run 6%, third-party table 4%.",
+  "summary": "BenchLM ranks 94 open-weight models (as of 2026-11-13) by a modelled BenchAlign v5.8 score. The top open-weight rows are all large models that cannot run here (Kimi K3 68.4, Kimi K3.1 Pro 70.4, Ling 3.1 Flash 64.7, DeepSeek V4.1 Flash 64.5, Qwen3.8 Max 63.6). Among models that fit this laptop the order is:\n- Qwen3.8-27B: 54.0, open #21, Supported, 90% range 41.45-66.63\n- Ternary Bonsai 2 27B: 51.6, #27, Estimated\n- Qwen3.6-27B: 48.0, #36\n- Qwen3.5-27B: 47.9, #37\n- Qwen3.5-35B-A3B: 45.2, #40\n- Nemotron 3.5 Bolt 74B-A9B: 41.6, #46\n- Gemma 4 26B-A4B: 41.2, #47\n- Qwen3.6-35B-A3B: 42.0, #51\n- GLM-4.7-Flash: 38.7, #54\n- GPT-OSS 20B: 36.9, #56\n- LFM2.5-24B-A2B: 34.4, #58\n- Gemma 4 12B: 34.1, #59\n- Ornith-1.5-9B: 32.5, #62\n- Nemotron 3.5 Lightning NVFP4: 23.1, #85\n\nThis broadly agrees with our pick order (Qwen3.8-27B on top). It does not reliably separate Qwen3.6-35B-A3B, Gemma 4 26B-A4B and Nemotron Bolt: all are Estimated with 0 independent runs and overlapping 20-30 point ranges. Two runnable models rank above some of our picks and have not been evaluated:\n- Ternary Bonsai 2 27B, a 1.76-2.16 bpw Qwen3.8-27B derivative for llama.cpp with 5.93-7.25 GB GGUFs. Every one of its 23 results is self-reported by Prism ML.\n- Nemotron 3.5 Bolt 74B-A9B, which has an official 20.51 GiB 2-bit GGUF.\n\nBenchLM has no local throughput data. Its self-host VRAM lines are calculator estimates for unquantized weights.",
+  "findings": [
+   {
+    "topic": "open-weight ranking date and scope",
+    "claim": "As of 2026-11-13, 94 open-weight models are ranked on the BenchAlign v5.8 overall lane (out of 215 ranked, 1033 tracked). The open-weight leader is Kimi K3 at 68.4 (Supported), #17 overall, while the overall #1 (proprietary) scores 93.65.",
+    "evidence": "documented",
+    "location": "https://benchlm.ai/best/open-source (FAQ text and table)",
+    "target": "models",
+    "relevance": "medium"
+   },
+   {
+    "topic": "best runnable open-weight model on BenchLM",
+    "claim": "Qwen3.8-27B is the highest-ranked open-weight model that fits this laptop: 54.0, open-weight #21, overall #72 of 215, Supported, 90% interval 41.45-66.63. Its ledger has 53 results: 27 reported by Alibaba, 12 from other publishers, 9 benchmark-run, 5 independent (Vals AI).",
+    "evidence": "computed",
+    "location": "https://benchlm.ai/best/open-source ; https://benchlm.ai/models/qwen3-8-27b",
+    "target": "models",
+    "relevance": "high"
+   },
+   {
+    "topic": "Qwen3.8-27B independent vs vendor numbers",
+    "claim": "Alibaba reports Terminal-Bench 2.1 73.0%, SWE-bench Pro 61.7%, DeepSWE 42.2% and OSWorld-Verified 84.3% for Qwen3.8-27B. Vals AI's independent runs give Terminal-Bench 2.1 58.4%, LiveCodeBench 84.0% and SWE-bench 86.0%. The independent TB2.1 is 14.6 points below the vendor figure.",
+    "evidence": "vendor-reported",
+    "location": "https://benchlm.ai/models/qwen3-8-27b (Coding and Agentic ledger rows)",
+    "target": "models",
+    "relevance": "high"
+   },
+   {
+    "topic": "new candidate: Ternary Bonsai 2 27B",
+    "claim": "Ternary Bonsai 2 27B (Prism ML, released 2026-09-17, Apache 2.0, base model Qwen/Qwen3.8-27B) scores 51.6 Estimated (open #27). That is above Qwen3.6-35B-A3B, Gemma 4 26B-A4B and gpt-oss-20b. The GGUF ships PTQ1_0 at 1.76 bpw (5.93 GB) and PQ2_0 at 2.16 bpw (7.25 GB) for llama.cpp/CUDA, with 262K context. All 23 results are self-reported by Prism ML, with 0 independent runs: TB2.1 52.8%, SWE-bench Verified 60.8%, LiveCodeBench v6 90.1%, tau2 80.2%, BFCL v3 74.9%.",
+    "evidence": "vendor-reported",
+    "location": "https://benchlm.ai/models/ternary-bonsai-2-27b ; https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-gguf",
+    "target": "models",
+    "relevance": "high"
+   },
+   {
+    "topic": "new candidate: Nemotron 3.5 Bolt 74B-A9B",
+    "claim": "Nemotron 3.5 Bolt 74B-A9B (released 2026-10-15) scores 41.6 Estimated, open #46, just above Gemma 4 26B-A4B (#47, 41.2) and listed above Qwen3.6-35B-A3B (#51, 42.0). BenchLM's self-host line says '~80GB VRAM (1x H100)', but NVIDIA publishes a 24GB variant whose GGUF is 20.51 GiB plus a 1.61 GiB mmproj (HF API), so it would need partial expert offload on 16 GB. Our model picks list does not include this model; the research records only note that it exists.",
+    "evidence": "computed",
+    "location": "https://benchlm.ai/models/nemotron-3-5-bolt-74b-a9b ; https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB-GGUF",
+    "target": "models",
+    "relevance": "medium"
+   },
+   {
+    "topic": "our MoE picks are thinly evidenced on BenchLM",
+    "claim": "Several picks have 0 independent runs:\n- Qwen3.6-35B-A3B: 42.0 Estimated, 40 of 47 results Alibaba-reported, the rest benchmark-run.\n- Gemma 4 26B-A4B: 41.2 Estimated, 7 of 13 Google-reported.\n- gpt-oss-20b: 36.9 Estimated, 6 of 8 OpenAI-reported.\n- GLM-4.7-Flash: 38.7 Estimated, all 4 Z.AI-reported.\nTheir 90% ranges span roughly 19-29 points, so BenchLM cannot order them.",
+    "evidence": "documented",
+    "location": "https://benchlm.ai/models/qwen3-6-35b-a3b, /models/gemma-4-26b-a4b, /models/gpt-oss-20b, /models/glm-4-7-flash",
+    "target": "models",
+    "relevance": "high"
+   },
+   {
+    "topic": "Qwen3.6-35B-A3B vs Qwen3.8-27B gap",
+    "claim": "BenchLM puts Qwen3.6-35B-A3B (42.0) 12 points below Qwen3.8-27B (54.0), and below the older dense Qwen3.6-27B (48.0) and Qwen3.5-27B (47.9). Vendor rows for Qwen3.6-35B-A3B: SWE-bench Pro 49.5%, SWE Multilingual 67.2%, SWE-bench Verified 73.4%, Terminal-Bench 2.0 51.5%, MCP Atlas 62.8%.",
+    "evidence": "vendor-reported",
+    "location": "https://benchlm.ai/models/qwen3-6-35b-a3b ; https://benchlm.ai/best/open-source",
+    "target": "models",
+    "relevance": "high"
+   },
+   {
+    "topic": "other runnable models in the ranking",
+    "claim": "Other runnable models and their scores, all Estimated:\n- Qwen3.5-35B-A3B: 45.2, Supported (the one exception)\n- LFM2.5-24B-A2B (Liquid AI): 34.4, all 13 results LiquidAI-reported\n- Gemma 4 12B: 34.1\n- Ornith-1.5-35B-A3B: 33.0\n- Ornith-1.5-9B: 32.5\n- ZAYA1-8B: 32.0\n- Nemotron 3 Nano Omni 30B A3B: 31.4\n- DeepSeek R1 Distill Qwen 32B: 30.9\n- Muse Glimmer 30B: 32.2\n- Gemma 4 31B: 28.8\n- Qwen2.5 Coder 32B: 26.3\n- Granite 4.2 8B: 25.9\n- Mistral Small 4: 25.9\n- Nemotron 3.5 Lightning 30B A3B NVFP4: 23.1",
+    "evidence": "computed",
+    "location": "https://benchlm.ai/best/open-source",
+    "target": "models",
+    "relevance": "medium"
+   },
+   {
+    "topic": "suspicious small-model claim",
+    "claim": "Spark-X2.6-4B (SparkLLM, 2026-10-19) scores 39.0 Estimated, above GLM-4.7-Flash and gpt-oss-20b. All 20 of its results are self-reported, including SWE-bench Pro 54.3% for a 4B model. Treat this as unverified.",
+    "evidence": "vendor-reported",
+    "location": "https://benchlm.ai/models/spark-x2-6-4b",
+    "target": "models",
+    "relevance": "low"
+   },
+   {
+    "topic": "ranked-above models that do not fit",
+    "claim": "Some models listed between Qwen3.8-27B and our MoE picks are too large for 16 GB VRAM plus about 40 GiB free RAM:\n- Qwen3.8-Flash-Next: 54.0, 176B total / 6B active per research records; BenchLM says ~160GB VRAM.\n- Inkling-Small: 49.9, 266B params (HF safetensors total 265,956,439,090).\n- Qwen3.5-122B-A10B: 52.2.\n- Nemotron 3.5 Super VL 120B A12B: 48.8.\n- Ling 3.0 Flash: 45.1, 127.5B params on HF.\n- Step 3.7 Flash: 44.5, 201.4B params on HF.\n- Trinity-Large-Thinking, MiMo-V2-Flash and DeepSeek V3.x/R1 are frontier size.",
+    "evidence": "computed",
+    "location": "https://benchlm.ai/best/open-source ; https://huggingface.co/api/models/thinkingmachines/Inkling-Small ; /api/models/inclusionAI/Ling-3.0-flash ; /api/models/stepfun-ai/Step-3.7-Flash",
+    "target": "models",
+    "relevance": "medium"
+   },
+   {
+    "topic": "BenchLM local LLM shortlist is stale",
+    "claim": "https://benchlm.ai/best/local-llm (facts 'checked September 30, 2026') recommends only Qwen3.6-27B (48.03), GPT-OSS 20B (36.86) and Gemma 4 12B (34.1). It omits Qwen3.8-27B even though BenchLM scores it higher (54.0). The page says scores 'are not tests of a local quantization, runtime, computer, context length, or prompt'.",
+    "evidence": "documented",
+    "location": "https://benchlm.ai/best/local-llm",
+    "target": "models",
+    "relevance": "medium"
+   },
+   {
+    "topic": "self-host VRAM figures are estimates",
+    "claim": "Model-page self-host lines are catalog estimates for full-precision weights on datacenter GPUs, for example Bolt 74B-A9B '~80GB VRAM (1x H100)' and Qwen3.8-Flash-Next '~160GB VRAM (2x H100)'. They ignore quantized releases and give no laptop guidance. Its 4-bit arithmetic note says 27B at 4 bits is 13.5 GB decimal for weights only.",
+    "evidence": "computed",
+    "location": "https://benchlm.ai/models/nemotron-3-5-bolt-74b-a9b ; https://benchlm.ai/best/local-llm",
+    "target": "models",
+    "relevance": "low"
+   },
+   {
+    "topic": "no local speed data",
+    "claim": "BenchLM's Tok/s and Latency columns are hosted-API provider metrics (runtime metrics updated 2026-11-12), not local llama.cpp or vLLM measurements. Open-weight models served locally show 'Not measured'. Do not use these numbers for RTX 5080 Laptop throughput.",
+    "evidence": "documented",
+    "location": "https://benchlm.ai/?source=Open+Weight (table columns) ; https://benchlm.ai/methodology",
+    "target": "benchmarking",
+    "relevance": "medium"
+   },
+   {
+    "topic": "methodology inconsistency",
+    "claim": "The methodology desk text says 'Vendor-run numbers are shown, labeled, and kept out of the rank'. The same page also says lab-reported results 'Can inform an Estimated rank', and model ledgers mark lab-reported rows as 'Counts' with reference weights (for example Qwen3.8-27B SWE-bench Pro, Alibaba-reported, 26% ref. weight). So Estimated scores for small open models are driven largely by vendor numbers.",
+    "evidence": "documented",
+    "location": "https://benchlm.ai/methodology ; https://benchlm.ai/models/qwen3-8-27b",
+    "target": "general",
+    "relevance": "medium"
+   },
+   {
+    "topic": "ordering rule",
+    "claim": "Rows are ordered by point estimate, except that an Estimated row backed by fewer than two source families drops below any row within 2 points under it. The open-weight list is therefore not monotonic: Gemma 4 26B-A4B 41.2 (#47) sits above Qwen3.6-35B-A3B 42.0 (#51), and DeepSeek V4 Pro 0813 62.3 sits at #11 below 60.4. Use scores and ranges, not rank position.",
+    "evidence": "documented",
+    "location": "https://benchlm.ai/best/open-source ; CSV orderingMeaning column",
+    "target": "benchmarking",
+    "relevance": "medium"
+   }
+  ],
+  "measurements": [],
+  "conflicts": [
+   {
+    "baseline_claim": "Qwen3.6-35B-A3B is pick #1 (NVIDIA same-harness SWE-bench Verified 70.12 / TB2.1 44.38), ahead of Qwen3.8-27B at #2.",
+    "source_claim": "BenchLM scores Qwen3.8-27B 54.0 (Supported) vs Qwen3.6-35B-A3B 42.0 (Estimated, 0 independent runs), and even ranks the older dense Qwen3.6-27B (48.0) above the 35B-A3B.",
+    "assessment": "The baseline ranks picks by practicality as well as quality, so this is not a direct contradiction. On general capability, BenchLM supports Qwen3.8-27B as the strongest runnable model. Its Qwen3.6-35B-A3B score rests on vendor rows only, with a 27.65-56.35 range, and should not override the NVIDIA same-harness table. Keep the order but note it."
+   },
+   {
+    "baseline_claim": "Artificial Analysis: Qwen3.8-27B Terminal-Bench 2.1 79.8 (xhigh) / 65.2 (medium) / 67.4 (low) / 49.1 (non-reasoning).",
+    "source_claim": "BenchLM shows Alibaba-reported TB2.1 73.0% and an independent Vals AI TB2.1 run at 58.4%.",
+    "assessment": "Different harnesses and effort settings, so these are not a direct conflict. The Vals figure is a second independent TB2.1 point that falls between AA's non-reasoning and medium results. Record all of them with harness and effort."
+   },
+   {
+    "baseline_claim": "gpt-oss-20b SWE-bench Verified 52.44 in NVIDIA's same-harness table (Nemotron 3.5 Lightning card).",
+    "source_claim": "BenchLM shows OpenAI-reported SWE-bench Verified 60.7% for gpt-oss-20b.",
+    "assessment": "Vendor self-report vs third-party same-harness run. Prefer the NVIDIA same-harness figure for comparisons and label 60.7 as OpenAI-reported."
+   },
+   {
+    "baseline_claim": "Qwen3.6-35B-A3B SWE-bench Verified 70.12 (NVIDIA same-harness).",
+    "source_claim": "BenchLM shows Alibaba-reported SWE-bench Verified 73.4% (shown only, not scored).",
+    "assessment": "Small vendor-vs-third-party gap with the same direction. Keep 70.12 as the comparable number."
+   }
+  ],
+  "agreements": [
+   "Qwen3.8-27B is the strongest open-weight model that fits this laptop (BenchLM 54.0 Supported, open #21), consistent with its place among our top picks.",
+   "Qwen3.5-27B and Qwen3.6-27B (47.9, 48.0) score below Qwen3.8-27B (54.0), consistent with the baseline excluding them as superseded.",
+   "Gemma 4 31B (28.8) scores below Gemma 4 26B-A4B (41.2), and Muse Glimmer 30B (32.2), Mistral Small 4 (25.9) and Granite 4.2 8B (25.9) score low, consistent with their exclusion.",
+   "Gemma 4 12B (34.1) and Ornith-1.5-9B (32.5) are close together in the lower tier, consistent with their #7-#8 placement.",
+   "gpt-oss-120b (31.9) is not stronger than smaller picks on BenchLM, so excluding it for RAM costs little.",
+   "BenchLM's local page also says gpt-oss-20b MXFP4 has OpenAI's claim of running within 16GB of memory, consistent with the baseline's 11.28 GiB GGUF / 12.82 GiB safetensors."
+  ],
+  "kb_notes": [
+   {
+    "target_doc": "docs/community-benchmarks.md",
+    "note": "BenchLM (https://benchlm.ai/best/open-source, data as of 2026-11-13, BenchAlign v5.8) is a modelled aggregate score, not a measurement. For runnable models it rests mostly on vendor-reported results: Qwen3.6-35B-A3B, Gemma 4 26B-A4B, gpt-oss-20b, GLM-4.7-Flash and Ternary Bonsai 2 27B all have 0 independent runs, and their 90% ranges are 20-30 points wide."
+   },
+   {
+    "target_doc": "docs/community-benchmarks.md",
+    "note": "BenchLM open-weight scores (2026-11-13) for models that fit a 16 GB laptop GPU with RAM offload:\n- Qwen3.8-27B: 54.0, Supported, range 41.5-66.6\n- Ternary Bonsai 2 27B: 51.6\n- Qwen3.6-27B: 48.0\n- Qwen3.5-35B-A3B: 45.2, Supported\n- Qwen3.6-35B-A3B: 42.0\n- Nemotron 3.5 Bolt 74B-A9B: 41.6\n- Gemma 4 26B-A4B: 41.2\n- GLM-4.7-Flash: 38.7\n- gpt-oss-20b: 36.9\n- Gemma 4 12B: 34.1\n- Ornith-1.5-9B: 32.5\nAll rows not marked Supported are Estimated. Source: https://benchlm.ai/best/open-source"
+   },
+   {
+    "target_doc": "docs/community-benchmarks.md",
+    "note": "Independent Vals AI runs listed on BenchLM give Qwen3.8-27B Terminal-Bench 2.1 58.4%, LiveCodeBench 84.0% and SWE-bench 86.0%, against Alibaba's self-reported TB2.1 73.0% and SWE-bench Pro 61.7% (https://benchlm.ai/models/qwen3-8-27b)."
+   },
+   {
+    "target_doc": "docs/model-selection.md",
+    "note": "Candidate to evaluate: Ternary Bonsai 2 27B (prism-ml/Ternary-Bonsai-2-27B-gguf, Apache 2.0, a Qwen3.8-27B derivative). Its GGUFs are 5.93 GB (PTQ1_0, 1.76 bpw) and 7.25 GB (PQ2_0, 2.16 bpw), so it fits fully on the 16 GB GPU with long context. BenchLM scores it 51.6 Estimated, but all 23 results are self-reported by Prism ML (TB2.1 52.8%, SWE-bench Verified 60.8%). Tool-call quality at ternary precision and the minimum llama.cpp build are unverified (https://benchlm.ai/models/ternary-bonsai-2-27b)."
+   },
+   {
+    "target_doc": "docs/model-selection.md",
+    "note": "Candidate to evaluate: NVIDIA Nemotron 3.5 Bolt 74B-A9B. It is published as a 24GB 2-bit variant: nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB-GGUF, 20.51 GiB GGUF plus 1.61 GiB mmproj per the HF API. It would need partial expert offload on 16 GB. BenchLM scores it 41.6 Estimated, level with Gemma 4 26B-A4B (41.2) and Qwen3.6-35B-A3B (42.0) (https://benchlm.ai/models/nemotron-3-5-bolt-74b-a9b)."
+   },
+   {
+    "target_doc": "docs/model-selection.md",
+    "note": "Do not use BenchLM rank position to order close models. An Estimated row with fewer than two source families drops below rows within 2 points under it, so Gemma 4 26B-A4B (41.2) is listed above Qwen3.6-35B-A3B (42.0) (https://benchlm.ai/methodology)."
+   },
+   {
+    "target_doc": "docs/sources.md",
+    "note": "BenchLM (https://benchlm.ai/?source=Open+Weight): aggregator, credibility medium. Every benchmark row is labelled with who ran it: 51% lab-reported, 39% benchmark-run, 6% independent across 6,733 results. The open-weight filter is client side; read https://benchlm.ai/best/open-source for the full 94-row list. The public CSV holds only the top 50. The REST API needs a Data key. Its Tok/s, latency and self-host VRAM lines are hosted-API metrics and datacenter estimates, not local measurements."
+   },
+   {
+    "target_doc": "llamacpp/models.md",
+    "note": "Ternary Bonsai 2 27B ships llama.cpp-native ternary GGUFs (PTQ1_0 5.93 GB, PQ2_0 7.25 GB, optional mmproj) according to its BenchLM record and HF repo prism-ml/Ternary-Bonsai-2-27B-gguf. Earlier research recorded a llama.cpp minimum of b11556, which is not yet verified."
+   }
+  ],
+  "new_candidates": [
+   {
+    "name": "Ternary Bonsai 2 27B",
+    "hf_repo": "prism-ml/Ternary-Bonsai-2-27B-gguf",
+    "why": "BenchLM scores it 51.6, above every runnable pick except Qwen3.8-27B. It is a 5.93-7.25 GB llama.cpp GGUF derived from Qwen3.8-27B, so it fits fully in 16 GB VRAM with room for KV cache. All scores are self-reported by Prism ML, so it needs local evaluation, including tool calls."
+   },
+   {
+    "name": "NVIDIA Nemotron 3.5 Bolt 74B-A9B (24GB)",
+    "hf_repo": "nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB-GGUF",
+    "why": "BenchLM scores it 41.6, level with Gemma 4 26B-A4B and Qwen3.6-35B-A3B. The official 2-bit GGUF is 20.51 GiB and would run with modest --n-cpu-moe offload. It is not formally evaluated in the baseline."
+   }
+  ],
+  "gaps": [
+   "The full open-weight table with per-category (coding, agentic) scores and parameter columns was not retrievable server side. The CSV holds the top 50 only and the API needs a key, so the per-category ranking of runnable models is not extracted.",
+   "Ternary Bonsai 2 27B: the llama.cpp minimum build, sm_120 support for the PTQ1_0/PQ2_0 types, and tool-call parser behaviour are not verified here.",
+   "Nemotron 3.5 Bolt 74B-A9B-24GB: license, chat template and tool parser, and llama.cpp/vLLM support are not checked.",
+   "DeepSeek-R1-0528-Qwen3-8B and Qwen3-Coder-Next (both baseline picks) were not found in the BenchLM open-weight ranked list, so there is no BenchLM comparison for them.",
+   "BenchLM has no local quantized-quality or throughput data, so nothing here informs laptop tok/s."
+  ]
+ },
+ "check": {
+  "verdicts": [
+   {
+    "item": "Publisher, type, as-of date",
+    "verdict": "confirmed",
+    "evidence": "Raw curl of https://benchlm.ai/best/open-source (200, 504 KB). It says \"Data refreshed | November 13, 2026\", \"94 models are included in this ranking\", \"Models tracked 1033\", and the BenchAlign v5.8 label on every row. The FAQ says Kimi K3 is \"#17 overall, where the first row scores 93.7\". Aggregator is the right type."
+   },
+   {
+    "item": "Qwen3.8-27B 54.0, open #21, Supported, 90% interval 41.45-66.63; ledger 27 Alibaba / 12 other / 9 benchmark-run / 5 independent",
+    "verdict": "confirmed",
+    "evidence": "Open-source table row: \"21|Qwen3.8-27B|Alibaba|...|262K|54|BenchAlign v5.8|Supported|90% interval|41.45–66.63\". Model page: \"Other publishers|12 ... Run by a benchmark|9 ... Independent runs|5\". The page also says \"53 of 919 tracked benchmark slots\"."
+   },
+   {
+    "item": "Qwen3.8-27B Alibaba TB2.1 73.0% / SWE-bench Pro 61.7% vs Vals AI TB2.1 58.4%, LiveCodeBench 84.0%, SWE-bench 86.0%",
+    "verdict": "confirmed",
+    "evidence": "Model page rows: \"Terminal-Bench 2.1|73.0%|...Reported by Alibaba\", \"SWE-bench Pro|61.7%\", \"Terminal-Bench 2.1 (Vals)|58.4%|...Independent run: Vals AI\", \"LiveCodeBench (Vals)|84.0%\", \"SWE-bench (Vals)|86.0%\". The gap is 14.6 points."
+   },
+   {
+    "item": "Ternary Bonsai 2 27B 51.6 Estimated #27; all 23 results Prism ML; TB2.1 52.8%, SWE-bench Verified 60.8%; GGUF 5.93 GB / 7.25 GB",
+    "verdict": "confirmed",
+    "correction": "The BenchLM text quotes 5.93 GB and 7.25 GB, but the raw HF API sizes are PTQ1_0 5,946,648,928 B (5.95 GB / 5.54 GiB) and PQ2_0 7,206,168,928 B (7.21 GB / 6.71 GiB). The repo also has a Q2_0 file (7.63 GB) and an F16 file (53.81 GB), plus mmproj BF16 0.93 GB and Q8_0 0.63 GB. Use the HF byte sizes in the KB.",
+    "evidence": "Table row: \"27|Ternary Bonsai 2 27B|Prism ML|...|51.6|Estimated|Conditional range|37.29–65.99\". Model page: \"Prism ML ran all 23 ... Run by a benchmark|0 ... Independent runs|0\", \"Terminal-Bench 2.1|52.8%\", \"SWE-bench Verified|...|60.8%\". HF API tree read raw."
+   },
+   {
+    "item": "Nemotron 3.5 Bolt 74B-A9B 41.6 Estimated #46; self-host '~80GB VRAM (1x H100)'; official 24GB GGUF 20.51 GiB + 1.61 GiB mmproj",
+    "verdict": "confirmed",
+    "evidence": "Table row: \"46|Nemotron 3.5 Bolt 74B-A9B|NVIDIA|...|256K|41.6|Estimated|Conditional range|27.25–55.95\". Model page: \"needs ~80GB VRAM (1× NVIDIA H100 (80GB))\" and \"NVIDIA ran all 8 ... Independent runs|0\". The review did not mention the all-NVIDIA ledger. The HF API gives the GGUF as 22,018,326,528 B (20.51 GiB) and the mmproj as 1,733,692,736 B (1.61 GiB)."
+   },
+   {
+    "item": "Qwen3.6-35B-A3B 42.0 Estimated #51, range 27.65-56.35, 40 of 47 Alibaba-reported, 0 independent",
+    "verdict": "confirmed",
+    "evidence": "Table row: \"51|Qwen3.6-35B-A3B|...|42|Estimated|Conditional range|27.65–56.35\". Model page: \"Alibaba ran 40 of 47 ... Run by a benchmark|7 ... Independent runs|0\", overall #139 of 215."
+   },
+   {
+    "item": "Other runnable scores: GLM-4.7-Flash 38.7 #54, GPT-OSS 20B 36.9 #56, Gemma 4 26B-A4B 41.2 #47, Qwen3.6-27B 48.0, Qwen3.5-35B-A3B 45.2 Supported #40",
+    "verdict": "confirmed",
+    "evidence": "Table rows: GLM-4.7-Flash 38.7, range 28.99–48.44. GPT-OSS 20B 36.9, range 27.14–46.58. Gemma 4 26B A4B 41.2, range 31.51–50.95 (about 19.4 points wide, which matches the review's \"19-29\"). Qwen3.6-27B 48. Qwen3.5-35B-A3B 45.2, Supported, 90% interval 34.04–56.40. The ledger counts for gpt-oss-20b, Gemma and GLM were not re-read because the gpt-oss page download stalled."
+   },
+   {
+    "item": "Ordering rule and non-monotonic list",
+    "verdict": "confirmed",
+    "evidence": "Methodology line 998: \"an Estimated row backed by fewer than two source families drops below any other row scoring within 2 points under it\". The table also shows it: #47 Gemma 41.2, #48 Trinity-Large-Thinking 43.2, #49 DeepSeek-R1 40.7, #50 DeepSeek V3.1 40.3, #51 Qwen3.6-35B-A3B 42.0."
+   },
+   {
+    "item": "Methodology inconsistency (vendor numbers 'kept out of the rank' vs 'can inform an Estimated rank'); peers up to 60%; 51% lab-reported of 6,733",
+    "verdict": "confirmed",
+    "evidence": "Methodology line 307: \"Vendor-run numbers are shown, labeled, and kept out of the rank.\" Line 346: \"A lab's own result can inform an Estimated rank. It can never make a rank Supported.\" Line 441: \"peers can carry at most 60% of the final blend\". The page also shows \"51%\" and \"6,733\". Qwen3.8-27B ledger rows carry \"Counts | 8% ref. weight\" next to Alibaba rows, so the inconsistency is real. I did not find the review's example of a 26% ref. weight for SWE-bench Pro in my excerpt."
+   },
+   {
+    "item": "Conflicts with baseline",
+    "verdict": "confirmed",
+    "evidence": "Baseline line 80 has the NVIDIA same-harness Qwen3.6-35B-A3B 70.12 / 44.38 and gpt-oss-20b 52.44, and AA Qwen3.8-27B TB2.1 79.8 / 65.2 / 67.4 / 49.1. Picks table: #1 Qwen3.6-35B-A3B, #2 Qwen3.8-27B, ranked by a Borda count over quality, practicality and coverage. The review describes these as harness and vendor-vs-third-party differences, not contradictions, which is fair. Bonsai and Bolt are absent from the picks and honorable mentions, so calling them new candidates is accurate."
+   }
+  ],
+  "credibility_fair": true,
+  "credibility_note": "Medium is fair. Every row names who ran it, and the page labels rows Supported or Estimated, so the source is transparent. But for the models that fit this laptop the scores are mostly modelled from vendor self-reports: 0 independent runs for Qwen3.6-35B-A3B, Ternary Bonsai 2 27B and Nemotron Bolt (Bolt is all NVIDIA-reported), and 20-30 point ranges. The page has no local throughput data.",
+  "overall": "holds-with-corrections",
+  "summary": "I re-read the BenchLM pages raw with curl on 2026-11-15: /best/open-source, the model pages for qwen3-8-27b, qwen3-6-35b-a3b, ternary-bonsai-2-27b and nemotron-3-5-bolt-74b-a9b, /methodology, and the HF API file trees. Every load-bearing score, rank, interval, ledger count, methodology quote and baseline number I checked matched verbatim.\n\nOne correction: the Ternary Bonsai GGUF sizes 5.93 GB and 7.25 GB are BenchLM's catalog text. The HF API gives 5.95 GB (5.54 GiB) for PTQ1_0 and 7.21 GB (6.71 GiB) for PQ2_0, and the repo also has a Q2_0 file at 7.63 GB. The KB should cite the HF byte sizes.\n\nTwo small additions:\n- The Nemotron Bolt ledger is all 8 results NVIDIA-reported, with 0 independent runs.\n- The \"26% ref. weight\" example was not re-located. The Qwen3.8-27B page does show lab-reported rows marked \"Counts\" with 8% and 6% ref. weights, so the inconsistency claim stands.\n\nNot re-verified: the gpt-oss-20b, Gemma 4 26B-A4B and GLM-4.7-Flash ledger counts (the page download stalled), and the /best/local-llm page. Raw files are in $SCRATCH/src/benchlm-check/."
+ }
+}

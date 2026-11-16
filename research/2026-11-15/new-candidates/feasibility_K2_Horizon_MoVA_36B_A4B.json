@@ -1,0 +1,108 @@
+{
+ "overall": "holds-with-corrections",
+ "summary": "I found nothing that refutes the record's runtime conclusions. vLLM v0.33.0 cannot run this model on this 16 GB GPU, and llama.cpp b12407 with bartowski Q4_K_M, q8_0 KV and expert offload is a workable route to 64k context with working K2 Horizon tool parsing. I checked this against live sources: the HF API, raw config.json and README, both GGUF headers (parsed from 24 MB range reads), and vLLM and llama.cpp source at their release tags.\n\nCorrections:\n(1) The BF16 safetensors are 69.75 GiB, not 69.78 (69.78 is the BF16 GGUF). The FP8 checkpoint is 45.04 GiB, not 45.07.\n(2) In the bartowski Q4_K_M, the GPU expert blocks 44-47 are 1.425 GiB, not 1.33. token_embd (0.336 GiB) stays in system RAM. Recomputed VRAM for the recommended command: 1.898 (non-expert tensors) + 3.955 (attn_v_exps) + 1.425 (experts) + 6.375 (KV, q8_0, 64k) + about 1.3 (compute) = 14.95 GiB. With the CUDA context that is about 15.3-15.5 GiB of 15.92 GiB, so it fits but is tight. --n-cpu-moe 46 is the safer choice: it gives 0.71 GiB more headroom.\n(3) With --cpu-moe the maximum context is about 80k with q8_0 KV, not 85k.\n(4) Moving attn_v_exps to the CPU with -ot (inferred, untested) would allow about 115-120k.\n(5) The official IFM GGUF template does not raise an error on assistant history without a reasoning field, unlike the HF main and bartowski templates.\n\nNothing has been run on this machine, so a tool-call smoke test and an OpenCode session are still required.",
+ "verdicts": [
+  {
+   "claim": "Repo IFM/K2-Horizon-MoVA-36B-A4B exists: Apache-2.0, not gated, HF createdAt 2026-09-01, sft_2_2500 promoted to main on 2026-10-01, total 37,444,792,020 BF16 parameters",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/IFM/K2-Horizon-MoVA-36B-A4B?blobs=true",
+   "correction": "Direct statement (HF API): createdAt 2026-09-01T23:01:25Z, gated false, safetensors total 37444792020. The commits API shows 'Promote checkpoint sft_2_2500 to main' on 2026-10-01 and a template change (#11, text content lists) on 2026-10-14."
+  },
+  {
+   "claim": "Architecture: 48 layers, all full attention (sliding_window null), 32 query heads, 8 KV heads, head_dim 128, 100 routed experts top-8, 64 MoVA value experts top-4 in layers 3-47, vocabulary 250,624, max_position_embeddings 524,288",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/IFM/K2-Horizon-MoVA-36B-A4B/raw/main/config.json",
+   "correction": "Raw config.json matches: mlp_only_layers [0,1,2], mova_num_experts 64, mova_num_experts_per_tok 4, use_sliding_window false, tie_word_embeddings false. In vLLM, the MoVA attention uses a standard Attention(num_kv_heads=8, head_dim=128) with a normal KV cache, so value experts change only how V is computed, not the cache size (k2_horizon.py lines 856-864 at v0.33.0)."
+  },
+  {
+   "claim": "KV per token: 196,608 B in BF16 and 98,304 B in FP8; 104,448 B with llama.cpp q8_0, so 64k costs 6.375 GiB",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/IFM/K2-Horizon-MoVA-36B-A4B/raw/main/config.json",
+   "correction": "Source-backed arithmetic: 2 x 48 x 8 x 128 = 98,304 elements. x2 B = 196,608 B. q8_0 at 34 B per 32 elements = 104,448 B. 65,536 x 104,448 B = 6.375 GiB. f16 at 64k = 12.0 GiB."
+  },
+  {
+   "claim": "Checkpoint sizes: BF16 69.78 GiB, FP8 45.07, GPTQ 20.25, AWQ 22.58, NVFP4 34.22, IFM GGUF Q4_K_M 20.83, bartowski Q4_K_M 21.14",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/IFM/K2-Horizon-MoVA-36B-A4B?blobs=true",
+   "correction": "The safetensors byte sums are BF16 74,891,674,376 B = 69.75 GiB (69.78 is the BF16 GGUF) and FP8 48,357,709,120 B = 45.04 GiB. All other sizes match the HF API. The bartowski repo also has IQ4_XS 19.02, Q3_K_M 16.16 and IQ3_XXS 14.71."
+  },
+  {
+   "claim": "vLLM v0.33.0 supports the model natively (registry.py line 147, k2_horizon.py, k2_horizon reasoning and tool parsers), with minimum version v0.30.0 (PR #55063, merged 2026-09-03)",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/models/registry.py",
+   "correction": "registry.py line 147 lists K2HorizonForCausalLM. tool_parsers/__init__.py line 133 and reasoning/__init__.py line 115 register k2_horizon. The model is not in the registry at v0.29.0 and is present at v0.30.0. PR #55063 merged 2026-09-03T08:17Z. The recipe has vram_minimum_gb 90, h200 verified, tp 2. The README serve command omits --chat-template-content-format string; only the recipe includes it."
+  },
+  {
+   "claim": "vLLM does not fit on this machine: every checkpoint leaves a negative KV pool, so max context is 0",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/Siladrim/K2-Horizon-MoVA-36B-A4B-GPTQ-Int4?blobs=true",
+   "correction": "Source-backed: the budget is 14.65 GiB. KV pool = budget - weights - 1.2 GiB: GPTQ 14.65 - 20.25 - 1.2 = -6.8, AWQ -9.1, NVFP4 -20.8, FP8 -31.6, BF16 -56.3. Even the weights alone exceed the budget, so neither BF16 nor FP8 KV changes the result. GGUF in vLLM is an out-of-tree plugin that is not in the image. Expert offload is ruled out by #66264 (open)."
+  },
+  {
+   "claim": "Quantized v_experts (GPTQ, AWQ) are likely to break vLLM's MoVA path",
+   "verdict": "uncertain",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/models/k2_horizon.py",
+   "correction": "Inferred, and moot here. Lines 923-935 stack expert.weight and call fused_mova_impl with use_fp8_w8a8 and use_int4_w4a16 set to False (lines 896-901). The GPTQ checkpoint keeps only 1.44B parameters in BF16, which implies its v_experts are quantized. The author of issue #55512 describes the upstream code as supporting 'fp8/int8/int4', so this claim is contested. It was not tested."
+  },
+  {
+   "claim": "llama.cpp b12407 supports the model: arch 'k2-horizon' at src/llama-arch.cpp line 178, src/models/k2-horizon.cpp, and common/parsers/k2-horizon.cpp selected at chat.cpp around line 1334; PR #29535 merged 2026-10-06 = b11454; #30335 and #31683 included",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/common/chat.cpp",
+   "correction": "llama-arch.cpp line 178. The chat.cpp detection is at lines 1334-1337 and keys on <|ifm|im_start|> plus <ifm|tool_calls>. The merge commit of #29535 is identical to tag b11454. Parser lines 51-53 accept </ifm|think> at medium/low effort (#30335, merged 2026-11-12). The graph uses standard build_attn with full KV and no unusual ops (softplus, argsort_top_k). The image builds 120a-real for CUDA 12.8 (ggml-cuda CMakeLists line 65)."
+  },
+  {
+   "claim": "GGUF tensor split (bartowski Q4_K_M): FFN experts 14.9 GiB, attn_v_exps 3.96 GiB, other about 2 GiB; --n-cpu-moe matches only ffn_*_exps, so attn_v_exps stays on the GPU",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/bartowski/K2-Horizon-MoVA-36B-A4B-GGUF/resolve/main/K2-Horizon-MoVA-36B-A4B-Q4_K_M.gguf",
+   "correction": "From the parsed header (798 tensors, 21.132 GiB): ffn_exps 14.943, attn_v_exps 3.955, other 2.234 GiB. Of the 'other' tensors, output.weight is 0.490 GiB (Q6_K) and token_embd is 0.336 GiB, and token_embd stays in system RAM in llama.cpp. LLM_FFN_EXPS_REGEX '\\.ffn_(up|down|gate|gate_up)_(ch|)exps' (common.h line 1286) does not match blk.N.attn_v_exps."
+  },
+  {
+   "claim": "Recommended config (bartowski Q4_K_M, -c 65536, -np 1, q8_0 KV, --n-cpu-moe 44) uses about 15.2 GiB VRAM and about 13.6 GiB RAM, so it fits",
+   "verdict": "uncertain",
+   "evidence_url": "https://huggingface.co/bartowski/K2-Horizon-MoVA-36B-A4B-GGUF/resolve/main/K2-Horizon-MoVA-36B-A4B-Q4_K_M.gguf",
+   "correction": "Source-backed: GPU expert blocks 44-47 are 1.425 GiB (not 1.33) and RAM experts are 13.518 GiB. VRAM = 1.898 (non-expert tensors without token_embd) + 3.955 + 1.425 + 6.375 + about 1.3 compute (estimate) = 14.95 GiB. With the CUDA context (about 0.3-0.5 GiB) that is about 15.3-15.5 GiB of 15.92 GiB. It probably fits with about 0.4-0.6 GiB of margin, but it is unmeasured. Safer: --n-cpu-moe 46 (GPU experts 0.712 GiB, about 14.24 GiB plus context). The speed cost is small: about 0.06 GB more RAM reads per token."
+  },
+  {
+   "claim": "With --cpu-moe, context reaches about 85k with q8_0 KV; 128k is not reachable without q4_0 KV",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/common/common.h",
+   "correction": "Slightly optimistic. Fixed VRAM is 5.853 + 1.3 + 0.4 (context) = 7.55 GiB, which leaves about 8.37 GiB = about 86k tokens before margin, so about 80k is realistic. Inferred option: moving the value experts to the CPU as well (-ot 'attn_v_exps=CPU') frees 3.955 GiB, which allows about 115-120k with q8_0. Decode would read about 0.27 GB per token from RAM, and prefill would slow further (#25859). This is untested. 128k with q8_0 needs 12.75 GiB of KV, so it still does not fit."
+  },
+  {
+   "claim": "Tool calling works through llama.cpp: the dedicated parser handles xml, xml_typed and json and tool_choice=required, and injects an empty reasoning_content into assistant history",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/common/parsers/k2-horizon.cpp",
+   "correction": "Parser lines 12-18 inject reasoning_content. Line 26 reads tool_call_format (default xml). Lines 109-169 build the per-tool PEG grammar and handle required. Line 183 makes the grammar lazy. Object-argument conversion (func_args_not_string, chat.cpp line 1541) is applied when the template probes as supporting object arguments, which is inferred for this template. Not run with OpenCode."
+  },
+  {
+   "claim": "A real thinking-off switch exists only with the official IFM GGUF's embedded template (enable_thinking); bartowski's template lacks it; llama.cpp honours --reasoning off only when the template contains enable_thinking",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/IFM/K2-Horizon-MoVA-36B-A4B-GGUF/resolve/main/K2-Horizon-MoVA-36B-A4B-Q4_K_M.gguf",
+   "correction": "The IFM GGUF template (43,040 chars) has enable_thinking at line 872 and emits an empty <ifm|think></ifm|think> block. The bartowski (51,034 chars) and HF main templates have none. The IFM GGUF template also has no 'missing a thinking field' raise. The vendor's results all use high effort, so thinking-off quality is unknown. The IFM Q4_K_M was uploaded 2026-09-22T15:22Z, before mainline support. Its header has the same 798 tensors, types and k2-horizon keys as bartowski's (general.name Checkpoint_0002500), so loading on b12407 is likely but untested."
+  },
+  {
+   "claim": "Docker command for llama.cpp server-cuda-b12407 is valid for this machine",
+   "verdict": "uncertain",
+   "evidence_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/.devops/cuda.Dockerfile",
+   "correction": "The flags match the baseline: -e GGML_CUDA_DISABLE_GRAPHS=1 comes before the image, the port is bound to 127.0.0.1, and -np 1. --device nvidia.com/gpu=all needs the NVIDIA Container Toolkit and CDI spec, which are not installed yet. Suggested change: --n-cpu-moe 46 instead of 44 for headroom. Not run."
+  },
+  {
+   "claim": "Decode speed bound about 58-69 tok/s near empty context (GPU about 2.4 GB/token, RAM experts 1.17 GB/token), about 25-40 tok/s in practice",
+   "verdict": "uncertain",
+   "evidence_url": "https://huggingface.co/bartowski/K2-Horizon-MoVA-36B-A4B-GGUF/resolve/main/K2-Horizon-MoVA-36B-A4B-Q4_K_M.gguf",
+   "correction": "Inferred. GPU reads are 1.898 (non-expert tensors) + 0.247 (4 of 64 value experts) + 0.114 (8 of 100 experts in GPU blocks) = 2.26 GiB = 2.43 GB, or 2.7 ms. RAM experts are 8/100 x 13.518 GiB = 1.16 GB, or 11.6-14.5 ms at 80-100 GB/s. That gives about 58-70 tok/s, consistent with the record. The practical figure is a guess, and the DDR5 DIMM speed is unverified."
+  },
+  {
+   "claim": "Independent AA scores: TB2.1 56.6, tau3-Banking 32.0, AutomationBench 26.1, Progress Index 281",
+   "verdict": "confirmed",
+   "evidence_url": "https://artificialanalysis.ai/models/k2-horizon-mova-36b-a4b",
+   "correction": "Taken from the reviewed artificialanalysis.json check, which matched the raw AA JSON (terminalBench21 0.5655, tauBanking 0.3196, automationBench 0.2610, chart value 280.70). Not re-fetched in this lane."
+  },
+  {
+   "claim": "OpenCode fit: good, via llama.cpp with 64k context and working tool calls",
+   "verdict": "uncertain",
+   "evidence_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/common/parsers/k2-horizon.cpp",
+   "correction": "Feasible on paper: 64k with q8_0 KV fits, and the parser and history workaround exist at b12407. Nothing has been run here. Remaining risks: VRAM margin (use --n-cpu-moe 46), always-on high reasoning at temperature 1.0 makes turns long, the q8_0 KV decode penalty (#27623), and slow prefill with experts in RAM (#25859). Best realistic configuration: bartowski Q4_K_M, -c 65536, -np 1, -fa on, q8_0 KV, --n-cpu-moe 46, reasoning_effort high. Fallback for more context: --cpu-moe at about 80k, or -ot attn_v_exps=CPU at about 115k (untested)."
+  }
+ ]
+}

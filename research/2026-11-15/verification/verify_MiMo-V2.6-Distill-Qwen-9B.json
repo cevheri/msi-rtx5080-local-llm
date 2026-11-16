@@ -1,0 +1,242 @@
+{
+ "name": "MiMo-V2.6-Distill-Qwen-9B (Xiaomi MiMo)",
+ "hf_repo": "XiaomiMiMo/MiMo-V2.6-Distill-Qwen-9B",
+ "within_last_12_months": true,
+ "official_org": {
+  "value": "Xiaomi MiMo (HF org XiaomiMiMo, fullname 'Xiaomi MiMo', 30 models, isVerified=false in the HF org API). It is the org that has hosted every Xiaomi MiMo release since MiMo-7B (2025-04). Sibling vendor card MiMo-V2.6-Pro-RL links the vendor blog https://mimo.xiaomi.com/mimo-v2-6. The card's legal contact is mimo-legal@xiaomi.com and it cites the MiMo-V2.6 technical report (arXiv 2610.11959, 2026-10-08). The vendor blog page is rendered by JS and showed no text to curl or a headless browser, so a direct vendor-site link to the 9B repo is not confirmed.",
+  "source_url": "https://huggingface.co/api/organizations/XiaomiMiMo/overview",
+  "support": "source-backed"
+ },
+ "release_date": {
+  "value": "2026-09-21 (HF createdAt 2026-09-21T18:18:40Z, weights uploaded 2026-09-21T20:34Z, README last edited 2026-10-28; chat template unchanged since upload). The technical report was published 2026-10-08. Inside the 2025-11-15..2026-11-15 window.",
+  "source_url": "https://huggingface.co/api/models/XiaomiMiMo/MiMo-V2.6-Distill-Qwen-9B/commits/main",
+  "support": "direct-statement"
+ },
+ "license": {
+  "value": "MIT (card tag 'license: mit'). The card adds a 'Use Restrictions' list: no unlawful, military or malicious-cyber use, no autonomous high-risk actions without human oversight. The card says this notice 'does not amend the applicable model licence or impose additional licence conditions'. The base model Qwen3.5-9B is Apache 2.0.",
+  "source_url": "https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Distill-Qwen-9B/raw/main/README.md",
+  "support": "direct-statement"
+ },
+ "params": {
+  "value": "9.41B total, all active (dense). The HF API safetensors total is 9,409,813,744 BF16 params and the 4 shards sum to 18,819,720,848 bytes (17.53 GiB). This includes the Qwen3.5 vision tower, about 0.46B params or 0.91 GB, which matches the bartowski mmproj-bf16 size of 0.92 GB. Text-only BF16 is about 17.9 GB (bartowski bf16 GGUF 17.92 GB). The MTP head of Qwen3.5-9B (9.65B total) is NOT shipped: config says mtp_num_hidden_layers 1, but the index has 0 mtp tensors.",
+  "source_url": "https://huggingface.co/api/models/XiaomiMiMo/MiMo-V2.6-Distill-Qwen-9B?blobs=true",
+  "support": "direct-statement"
+ },
+ "architecture": {
+  "value": "Qwen3_5ForConditionalGeneration (model_type qwen3_5). This is an SFT of Qwen/Qwen3.5-9B on 77.4B tokens of MiMo-generated data. It is a hybrid of Gated DeltaNet and attention: 32 layers, full_attention_interval 4, so 24 linear_attention (GDN) layers and 8 full_attention layers (layers 3, 7, ..., 31). Full attention has 16 Q heads, 4 KV heads, head_dim 256 and an output gate. GDN: 16 key heads and 32 value heads, dim 128, conv kernel 4, SSM state fp32. hidden 4096, intermediate 12288, vocab 248320, untied embeddings, mRoPE theta 1e7 with partial rotary 0.25. The vision tower has 27 layers at width 1152. The card describes it as an 'SFT checkpoint as a starting point for open research in agentic RL' (not RL-tuned).",
+  "source_url": "https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Distill-Qwen-9B/raw/main/config.json",
+  "support": "direct-statement"
+ },
+ "context_length": {
+  "value": "262,144 native: max_position_embeddings and tokenizer model_max_length are 262144, and GGUF context_length is 262144. No YaRN or extended context is stated on the card. Ollama lists 256K.",
+  "source_url": "https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Distill-Qwen-9B/raw/main/config.json",
+  "support": "direct-statement"
+ },
+ "modalities": {
+  "value": "Input is text, image and video, output is text (pipeline_tag image-text-to-text, Qwen3VLProcessor). The template also renders audio placeholders, but the config has no audio encoder. There is no official text-only checkpoint. The text-only path is vLLM --language-model-only, or GGUF without the mmproj. Community text-only builds exist only in MLX (xunlinkx/*-Text-*).",
+  "source_url": "https://huggingface.co/api/models/XiaomiMiMo/MiMo-V2.6-Distill-Qwen-9B",
+  "support": "direct-statement"
+ },
+ "thinking": {
+  "mode": "toggle",
+  "how_to_toggle": "Thinking is ON by default. The template ends generation with '<|im_start|>assistant\\n' and the model opens <think> itself. With enable_thinking=false the template appends '<think></think>'. vLLM: per request extra_body {\"chat_template_kwargs\": {\"enable_thinking\": false}}; server-wide --default-chat-template-kwargs '{\"enable_thinking\": false}' (the flag exists in v0.33.0 vllm/entrypoints/common/cli_args.py). The vLLM 'mimo' parser (vllm/parser/mimo.py) reads enable_thinking from chat_template_kwargs, default True. llama.cpp: per request chat_template_kwargs {\"enable_thinking\": false}, or server-wide --reasoning-budget 0. The ggml-org GGUF template pre-fills '<think>\\n' when thinking is on. Ollama: native API 'think': false, or /set nothink in the CLI. The card's own example uses SGLang --reasoning-parser mimo with chat_template_kwargs enable_thinking True. Template quirk: past assistant turns re-render reasoning only from message.reasoning_content, so a client that sends back vLLM's 'reasoning' field gets empty <think></think> in history.",
+  "source_url": "https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Distill-Qwen-9B/raw/main/chat_template.jinja",
+  "support": "direct-statement"
+ },
+ "tool_calling": {
+  "supported": "yes",
+  "format": "Compact Qwen-style XML without newlines: <tool_call><function=NAME><parameter=ARG>value</parameter></function></tool_call>. Tools are rendered as a system turn 'You are provided with the following tools:\\n\\n<tools>\\n{json}...\\n</tools>'. Tool results are rendered as role 'tool' ChatML turns. In vLLM v0.33.0 the dedicated parser is 'mimo' (Rust MiMoToolParser reuses the Qwen3-Coder grammar with trim_parameter_newlines=false and a compact MiMo structural tag). Use mimo, not qwen3_coder or qwen3_xml, because the Qwen3-Coder grammar expects newlines between the tags.",
+  "evidence": "The template renders the tools list (render_tools macro, emitted when 'tools' is defined) and renders assistant tool_calls in the compact XML form. The card tags 'tool-use' and 'agentic' and reports Toolathlon-Verified 35.2 and Terminal Bench 2.1 37.1. The 9B template is byte-identical to XiaomiMiMo/MiMo-V2.6-Flash-MOPD's template except for {% generation %} tags. vLLM's own recipe for that family uses --tool-call-parser mimo --enable-auto-tool-choice --reasoning-parser mimo (recipes/models/XiaomiMiMo/MiMo-V2.6-Flash-RL.yaml at tag v0.33.0). llama.cpp issue #29319 (closed 2026-09-23) showed that the original template was mis-detected as Qwen3-Coder and tool calls never closed. It was fixed by PR #29257 in b11102 (2026-09-22), and the exclusion is still present at b12418 common/chat.cpp:1420-1428.",
+  "source_url": "https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Distill-Qwen-9B/raw/main/chat_template.jinja",
+  "support": "direct-statement"
+ },
+ "checkpoints": [
+  {
+   "repo": "XiaomiMiMo/MiMo-V2.6-Distill-Qwen-9B",
+   "format": "safetensors BF16 (with vision); no official quantized build exists in the XiaomiMiMo org",
+   "size_gb": 18.82,
+   "official": true,
+   "publisher": "Xiaomi MiMo",
+   "source_url": "https://huggingface.co/api/models/XiaomiMiMo/MiMo-V2.6-Distill-Qwen-9B?blobs=true"
+  },
+  {
+   "repo": "ggml-org/MiMo-V2.6-Distill-Qwen-9B-GGUF",
+   "format": "GGUF Q8_0 9.53 GB + mmproj Q8_0 0.62 GB. The embedded chat template is patched: tool-call arguments are emitted as JSON so llama.cpp uses its generic parser, and '<think>\\n' is pre-filled. Interim fix noted in the README.",
+   "size_gb": 9.53,
+   "official": false,
+   "publisher": "ggml-org",
+   "source_url": "https://huggingface.co/api/models/ggml-org/MiMo-V2.6-Distill-Qwen-9B-GGUF?blobs=true"
+  },
+  {
+   "repo": "bartowski/MiMo-V2.6-Distill-Qwen-9B-GGUF",
+   "format": "GGUF imatrix with the original template: Q4_K_M 5.84, Q5_K_M 6.88, Q6_K 7.79, Q6_K_L 8.11, Q8_0 9.55, bf16 17.92 GB; mmproj bf16/f16 0.92 GB. About 956k downloads.",
+   "size_gb": 8.11,
+   "official": false,
+   "publisher": "bartowski",
+   "source_url": "https://huggingface.co/api/models/bartowski/MiMo-V2.6-Distill-Qwen-9B-GGUF?blobs=true"
+  },
+  {
+   "repo": "cyankiwi/MiMo-V2.6-Distill-Qwen-9B-AWQ-BF16-INT4",
+   "format": "compressed-tensors AWQ W4A16 int4, group 32, asymmetric. GDN layers, lm_head and the vision tower are kept in BF16. MIT.",
+   "size_gb": 8.99,
+   "official": false,
+   "publisher": "cyankiwi",
+   "source_url": "https://huggingface.co/api/models/cyankiwi/MiMo-V2.6-Distill-Qwen-9B-AWQ-BF16-INT4?blobs=true"
+  },
+  {
+   "repo": "letechlead/MiMo-V2.6-Distill-Qwen-9B-INT4-W4A16-AutoRound",
+   "format": "AutoRound int4 W4A16",
+   "size_gb": 8.98,
+   "official": false,
+   "publisher": "letechlead",
+   "source_url": "https://huggingface.co/api/models/letechlead/MiMo-V2.6-Distill-Qwen-9B-INT4-W4A16-AutoRound?blobs=true"
+  },
+  {
+   "repo": "AxionML/MiMo-V2.6-Distill-Qwen-9B-NVFP4",
+   "format": "compressed-tensors NVFP4 W4A4. Only the MLPs are quantized; attention, GDN, embeddings and lm_head stay BF16.",
+   "size_gb": 11.87,
+   "official": false,
+   "publisher": "AxionML",
+   "source_url": "https://huggingface.co/api/models/AxionML/MiMo-V2.6-Distill-Qwen-9B-NVFP4?blobs=true"
+  },
+  {
+   "repo": "ycui7/MiMo-V2.6-Distill-Qwen-9B-NVFP4-MTP",
+   "format": "NVFP4 with an MTP head. The MTP head is not in the source repo, so it was presumably grafted from Qwen3.5-9B (unverified).",
+   "size_gb": 7.91,
+   "official": false,
+   "publisher": "ycui7",
+   "source_url": "https://huggingface.co/api/models/ycui7/MiMo-V2.6-Distill-Qwen-9B-NVFP4-MTP?blobs=true"
+  },
+  {
+   "repo": "prithivMLmods/MiMo-V2.6-Distill-Qwen-9B-FP8",
+   "format": "compressed-tensors FP8 W8A8 (channel/token dynamic); vision tower BF16",
+   "size_gb": 13.52,
+   "official": false,
+   "publisher": "prithivMLmods",
+   "source_url": "https://huggingface.co/api/models/prithivMLmods/MiMo-V2.6-Distill-Qwen-9B-FP8?blobs=true"
+  },
+  {
+   "repo": "lovedheart/MiMo-V2.6-Distill-Qwen-9B-FP8",
+   "format": "FP8",
+   "size_gb": 11.91,
+   "official": false,
+   "publisher": "lovedheart",
+   "source_url": "https://huggingface.co/api/models/lovedheart/MiMo-V2.6-Distill-Qwen-9B-FP8?blobs=true"
+  }
+ ],
+ "vllm": {
+  "arch_supported": "Yes. Qwen3_5ForConditionalGeneration -> ('qwen3_5', 'Qwen3_5ForConditionalGeneration') is at vllm/model_executor/models/registry.py:617 at tag v0.33.0, and Qwen3_5ForCausalLM is at line 204.",
+  "min_version": "Not stated by the vendor; the card only gives an SGLang command. The mimo tool and reasoning parsers are present in v0.33.0. The vLLM recipe for the MiMo-V2.6 Flash family sets min_vllm_version 0.31.0 and image v0.31.0, so 0.31.0 is the inferred minimum for the 'mimo' parsers. Use v0.33.0.",
+  "best_checkpoint": "cyankiwi/MiMo-V2.6-Distill-Qwen-9B-AWQ-BF16-INT4 (8.99 GB / 8.37 GiB), served with --language-model-only",
+  "tool_call_parser": "mimo (vllm/tool_parsers/__init__.py:153 at v0.33.0 -> mimo_tool_parser.MiMoToolParser, structural_tag_model 'mimo'). qwen3_coder and qwen3_xml are not recommended: the grammar expects newlines, and qwen3_xml has open issue #51679, where it consumes </think>.",
+  "reasoning_parser": "mimo (vllm/reasoning/__init__.py:119 at v0.33.0 -> MiMoParserReasoningAdapter). The output field is 'reasoning'.",
+  "serve_command": "docker run --rm --gpus all --ipc=host -p 8000:8000 -v $HOME/.cache/huggingface:/root/.cache/huggingface vllm/vllm-openai:v0.33.0 cyankiwi/MiMo-V2.6-Distill-Qwen-9B-AWQ-BF16-INT4 --served-model-name mimo-v2.6-9b --language-model-only --max-model-len 131072 --kv-cache-dtype fp8 --gpu-memory-utilization 0.92 --max-num-seqs 4 --enable-auto-tool-choice --tool-call-parser mimo --reasoning-parser mimo   (No vendor or recipe command exists for the 9B; this one is assembled from the Flash recipe's parser args. For BF16 KV, drop --kv-cache-dtype and keep --max-model-len 131072. Requires NVIDIA Container Toolkit.)",
+  "quant_on_sm120": "AWQ/W4A16 compressed-tensors (pack-quantized int4, group 32) goes through vLLM's mixed-precision linear kernel selection, which is Marlin on sm_80+. Sm_120 support for Marlin is inferred and was not read in source. NVFP4 builds would use the SM120 b12x / FlashInfer path, with the reported ~52 GiB host-RAM first-start JIT (workaround MAX_JOBS=2). FP8 W8A8 builds use CUTLASS FP8 on sm_120 (inferred). Online --quantization fp8 from the 17.5 GiB BF16 checkpoint is not recommended: the load-time peak was not verified, and the resulting size is like the 11-13 GB FP8 builds.",
+  "weights_gib": 8.37,
+  "kv_bytes_per_token_bf16": 32768,
+  "kv_math": "Budget 16303 MiB x 0.92 = 14999 MiB = 14.65 GiB. KV per token = 2 x 8 full-attention layers x 4 KV heads x 256 head_dim x 2 B = 32,768 B (BF16), 16,384 B (FP8). GDN state is fixed per sequence: 24 layers x (32 x 128 x 128 x 4 B fp32 = 2 MiB recurrent + 8192 x 3 x 2 B conv) = about 49 MiB/seq, which is negligible for 1-4 sequences. cyankiwi AWQ INT4 with vision: 14.65 - 8.37 - 1.2 = 5.08 GiB pool -> 166k tokens BF16 KV, 333k FP8 -> capped at 262,144. With --language-model-only (minus about 0.85 GiB vision): 5.93 GiB -> about 194k BF16, 262,144 FP8 (cap). AxionML NVFP4 11.06 GiB: 2.39 GiB pool -> 78k BF16 / 156k FP8. ycui7 NVFP4-MTP 7.36 GiB: 6.09 GiB -> 199k BF16 / 262k FP8. prithivMLmods FP8 12.59 GiB: 0.86 GiB -> 28k BF16 / 56k FP8 (with --language-model-only about 1.71 GiB -> 56k / 112k). BF16 original 17.53 GiB: does not fit.",
+  "est_max_context_tokens": 262144,
+  "fits": "yes",
+  "known_issues": "No open vLLM issue names this model; searches for 'MiMo Distill' and 'mimo tool_call' were run on 2026-11-15. Related: #51679 (open), qwen3_xml parser swallows </think> on qwen3_5 models, so avoid qwen3_xml. #39273 (open), ngram speculative decoding corrupts output on hybrid GDN Qwen3.5 models, so do not use ngram spec decode. #46669 (open) concerns MiMo V2.5-Pro spec-decode output. The Flash recipe notes tool-call repetition in the MiMo-V2.6 RL release, fixed by MOPD; whether the 9B SFT is affected is unknown. FP8 KV on sm_120 may move attention off FlashAttention 2 to another backend (inferred).",
+  "sources": [
+   "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/model_executor/models/registry.py",
+   "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/tool_parsers/__init__.py",
+   "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/reasoning/__init__.py",
+   "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/parser/mimo.py",
+   "https://github.com/vllm-project/vllm/blob/v0.33.0/rust/src/parser/src/tool/mimo.rs",
+   "https://github.com/vllm-project/vllm/blob/v0.33.0/recipes/models/XiaomiMiMo/MiMo-V2.6-Flash-RL.yaml",
+   "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/engine/arg_utils.py",
+   "https://huggingface.co/cyankiwi/MiMo-V2.6-Distill-Qwen-9B-AWQ-BF16-INT4/raw/main/config.json",
+   "https://github.com/vllm-project/vllm/issues/51679",
+   "https://github.com/vllm-project/vllm/issues/39273"
+  ]
+ },
+ "llamacpp": {
+  "arch_supported": "Yes. GGUF architecture 'qwen35' is LLM_ARCH_QWEN35 in src/llama-arch.cpp:45 and src/models/qwen35.cpp at b12418. The MiMo template is excluded from the Qwen3-Coder XML parser since b11102 (PR #29257, released 2026-09-22), so it falls back to the generic template-derived parser.",
+  "gguf_repo": "ggml-org/MiMo-V2.6-Distill-Qwen-9B-GGUF (Q8_0, patched template), or bartowski Q6_K_L with --jinja",
+  "quant": "Q8_0",
+  "file_gib": 8.88,
+  "est_vram_gib": 13.9,
+  "est_ram_gib": 1,
+  "est_context_tokens": 262144,
+  "offload_plan": "Fully on GPU with -ngl 99 and no mmproj (text only). Q8_0 8.88 GiB + KV q8_0 at 262,144 tokens (8 layers x 2 x 4 x 256 x 1 B = 16 KiB/token -> 4.0 GiB) + about 1 GiB compute = about 13.9 GiB of the 15.8 GiB free. With F16 KV use -c 131072 (4 GiB): about 13.9 GiB. GDN state is about 49 MiB per slot. --n-cpu-moe is not applicable because the model is dense.",
+  "server_command": "docker run --rm --gpus all -p 8080:8080 -v $HOME/models:/models ghcr.io/ggml-org/llama.cpp:server-cuda13 -hf ggml-org/MiMo-V2.6-Distill-Qwen-9B-GGUF:Q8_0 --no-mmproj -ngl 99 -c 262144 -np 1 -ctk q8_0 -ctv q8_0 -fa on --jinja --reasoning-format deepseek --temp 0.6 --top-p 0.95 --top-k 20 --host 0.0.0.0 --port 8080",
+  "tool_calling_note": "Works with --jinja on b11102 or later according to the maintainer's closure of #29319. The ggml-org GGUF also embeds a patched template that serializes tool arguments as JSON ('selects the differential parser instead of the Qwen XML parser, whose mandatory newlines do not match MiMo output'). The README says the patch is interim. Bartowski GGUFs carry the original template, which is also handled after b11102. Open #29931: tool-call JSON corruption at long context on the MiMo-V2.6 Flash with RPC and MTP; same family, different model.",
+  "sources": [
+   "https://huggingface.co/ggml-org/MiMo-V2.6-Distill-Qwen-9B-GGUF/raw/main/README.md",
+   "https://huggingface.co/api/models/ggml-org/MiMo-V2.6-Distill-Qwen-9B-GGUF",
+   "https://github.com/ggml-org/llama.cpp/issues/29319",
+   "https://github.com/ggml-org/llama.cpp/pull/29257",
+   "https://github.com/ggml-org/llama.cpp/blob/b12418/common/chat.cpp",
+   "https://github.com/ggml-org/llama.cpp/issues/29931"
+  ]
+ },
+ "ollama": {
+  "tag": "mimo-v2.6:9b (= latest, digest 4af06b564ed4, 6.6-8.7 GB depending on platform). Other tags: 9b-q4_K_M 6.6 GB, 9b-q8_0 10 GB, 9b-gguf-bf16 19 GB, MLX-only 9b-nvfp4 8.7 GB, 9b-mxfp8 11 GB, 9b-mlx-bf16 19 GB",
+  "size_gb": 6.6,
+  "capabilities": "vision, tools, thinking; input Text, Image. 93.3K downloads, updated about 1 week before 2026-11-15. The page lists 'ollama launch opencode --model mimo-v2.6'.",
+  "context": "256K context window per tag. Ollama's default is 4k on GPUs under 24 GiB, so set OLLAMA_CONTEXT_LENGTH=65536 or higher (q8_0 with 128k uses about 14 GiB).",
+  "source_url": "https://ollama.com/library/mimo-v2.6/tags"
+ },
+ "benchmarks": [
+  {
+   "name": "SWE-bench Verified",
+   "score": "61.1 (Qwen3.5-9B base: 60.0)",
+   "setting": "avg@3, harness not disclosed, SFT checkpoint",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Distill-Qwen-9B"
+  },
+  {
+   "name": "SWE-bench Pro",
+   "score": "44.6 (base 32.0)",
+   "setting": "avg@3, harness not disclosed",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Distill-Qwen-9B"
+  },
+  {
+   "name": "Terminal-Bench 2.1",
+   "score": "37.1 (base 27.0)",
+   "setting": "avg@1",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Distill-Qwen-9B"
+  },
+  {
+   "name": "Toolathlon-Verified",
+   "score": "35.2 (base 25.9)",
+   "setting": "avg@1",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Distill-Qwen-9B"
+  },
+  {
+   "name": "AutomationBench v1.0.6",
+   "score": "30.3 (base 5.0)",
+   "setting": "avg@1",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Distill-Qwen-9B"
+  },
+  {
+   "name": "MiMo Code (mini), internal",
+   "score": "51.6 (base 19.5)",
+   "setting": "avg@3, internal eval set",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Distill-Qwen-9B"
+  }
+ ],
+ "speed_notes": "Inferred, not measured. Text-only decode reads about 8.0 GB per token for the AWQ INT4 build (int4 linears plus BF16 lm_head about 2 GB and BF16 GDN projections). At 896 GB/s that gives an upper bound of about 110 tok/s. Q8_0 GGUF reads about 9.5 GB, upper bound about 94 tok/s. Q4_K_M reads about 5.8 GB, upper bound about 150 tok/s. Expect roughly 50-70% of these bounds in practice, and lower at the 80-140 W laptop power limit. Long contexts stay cheap because only 8 of 32 layers keep KV and GDN state is constant. No MTP speculative decoding with the official weights (no MTP tensors), and avoid ngram spec decode (vLLM #39273). No measured RTX 50-series reports for this model were found.",
+ "opencode_fit": {
+  "verdict": "good",
+  "recommended_runtime": "vLLM v0.33.0 Docker (llama.cpp server-cuda13 or Ollama mimo-v2.6:9b as simpler alternatives)",
+  "recommended_checkpoint": "cyankiwi/MiMo-V2.6-Distill-Qwen-9B-AWQ-BF16-INT4 for vLLM; ggml-org/MiMo-V2.6-Distill-Qwen-9B-GGUF Q8_0 for llama.cpp",
+  "recommended_context": "131072 (BF16 KV) or up to 262144 with FP8 / q8_0 KV; at least 64k for OpenCode",
+  "caveats": "The vendor calls it an SFT research checkpoint, not RL-tuned, with only +1.1 SWE-V over base Qwen3.5-9B; all scores are self-reported with an undisclosed harness. There is no official quantized build, so quant quality depends on community quantizers. Use the 'mimo' parsers, not qwen3_coder. Thinking is on by default; disable it with chat_template_kwargs for faster edits. In OpenCode v2.3.0, explicitly enable tools for the vLLM provider (built-in discovery starts with tools disabled; see issue #60202 on tool_choice). The template drops prior reasoning unless it comes back as reasoning_content. The Use Restrictions notice forbids autonomous high-risk actions without oversight, though it is described as informational. Org is not HF-verified, but it is the long-standing Xiaomi MiMo org."
+ },
+ "gaps": [
+  "The vendor blog https://mimo.xiaomi.com/mimo-v2-6 is a JS-only page and rendered empty to curl and a headless browser, so a vendor-site link to the 9B repo and the exact announcement date could not be read. The technical report arXiv 2610.11959 is dated 2026-10-08.",
+  "No independent benchmarks were found (Artificial Analysis returned 404 for the probed slugs). Aider, BFCL, tau2 and LiveCodeBench scores are not reported on the card.",
+  "Marlin W4A16 kernel availability on sm_120 in v0.33.0 is inferred, not read in source. Online FP8 load-time peak memory for a 17.5 GiB BF16 checkpoint on a 16 GB GPU was not verified.",
+  "The quality of community quants (cyankiwi AWQ, AxionML/ycui7 NVFP4) is not measured; the provenance of the ycui7 MTP head is unknown.",
+  "Whether the 9B SFT shows the tool-call repetition that the vLLM recipe reports for MiMo-V2.6 RL checkpoints is unknown.",
+  "No end-to-end test of vLLM 'mimo' parser output with OpenCode v2.3.0 exists; no measured tokens/s on RTX 50-series.",
+  "The Ollama tag's per-platform quant mapping (6.6-8.7 GB range on :latest) is not confirmed from a manifest; assumed q4_K_M on CUDA."
+ ]
+}

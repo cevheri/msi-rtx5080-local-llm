@@ -1,0 +1,208 @@
+{
+ "lane": "mistral-granite-cogito",
+ "mac_setup_notes": "Sources: $HOME/projects/libredb/libredb-studio/docs/llms/methodology.md, setup.md, model-tuning.md, README.md, and the shipped profile file src/lib/agent/model-tuning/measured-profiles.json (all read-only). Hardware: Apple M5 Max, 64 GB unified memory, 2 TB SSD, macOS high-power mode on AC (methodology.md \"The machine\"). Per apple.com/macbook-pro/specs (fetched 2026-11-16), 64 GB is sold only with the 40-core-GPU M5 Max, which has 614 GB/s memory bandwidth. The 32-core variant has 460 GB/s and comes only with 36 GB. Against this laptop's 896 GB/s that is 1.46x more bandwidth here for a model that sits fully in VRAM (estimate). Runtime: Ollama 0.32.13 and 0.33.0 through the OpenAI-compatible /v1 endpoint. The engine version changed results for gemma4:12b (5/5 on 0.32.13, 1/5 on 0.33.0), so results are claims about a tag on a named engine. The stated measurement date is 22-23 August 2026, but granite4.2 was released 2026-08-25 and its Ollama tag shows \"updated 2 months ago\", so at least some lane results come after that date or from a tag rebuilt since. Harness: LibreDB Studio Agent mode, embedded SQLite sample, six surfaces x 5 consecutive passes = 30/30 per model. Per-turn limit: 90 s, the shipped default. All eight lane models were measured at 90 s and none is among the nine models with 150 s. Sampling is forced to temperature 0, top_p 1 for every lane model, overriding the Ollama tag defaults (ministral-3 0.15, magistral 0.7/0.95, granite4.2 1.0/0.95). Think settings: magistral runs with reasoning left on (its plan cell takes 5 s). suppressPlanReasoning and suppressAgentReasoning are false for all lane models, so granite4.2:8b ran with its template default, which is thinking on. Context: no lane page states a context bound. On a 64 GB Mac, Ollama's VRAM rule (>= 48 GiB gives 256k) probably applied, capped at each model's maximum, but this is not recorded. Only qwen3.6 pages mention OLLAMA_CONTEXT_LENGTH=32768. On this laptop Ollama defaults to 4k (docs.ollama.com/context-length), so the harness and OpenCode both need OLLAMA_CONTEXT_LENGTH set. Harness crutches that OpenCode does not provide: granite4.1:8b needs refusalExamples=true and retryEmptyTurn=true (24/30 at defaults). magistral:24b needs reportReminderLimit=2, and the profile JSON also has retryUnreadStop=true, which its doc page does not mention. cogito:32b needs planStatementRetries=1, and that is load-bearing: without it the plan cell is 4/5. Durations are whole agent runs (median and slowest run), not tok/s. The methodology calls them a best case and says the pass/fail column is the transferable part. Sustained-load throttling was re-measured away on a rested machine. Correctness of the SQL is largely unchecked, the harness uses one small database, and a fallback prose tool protocol exists for endpoints without native tool calls (setup.md).",
+ "models": [
+  {
+   "tag": "ministral-3:8b",
+   "underlying_model": "Mistral AI Ministral 3 8B Instruct 2512 (mistralai/Ministral-3-8B-Instruct-2512), dense 8.9B incl. 0.4B Pixtral vision tower, 34 layers, 8 KV heads, head_dim 128",
+   "family_page": "$HOME/projects/libredb/libredb-studio/docs/llms/mistral/ministral-3.md",
+   "mac_result": "30/30. Median run 13s, slowest 26s. Per-surface medians: Investigate 16s, Optimize 22s, Assess 4s, Operate 14s, Analyze 13s, Plan 5s. 90 s per-turn limit, no settings beyond the compiled defaults (temp 0, top_p 1, ceiling 12). Every cell passed on its first attempt, and the whole model took 12 minutes to measure. Ollama 0.32.13/0.33.0 (measured on the M5 Max, libredb-studio; mistral/ministral-3.md lines 15, 29; measured-profiles.json).",
+   "kb_status": "excluded: docs/model-selection.md line 305 groups Ministral 3 (8B and 14B) under 'Weak or missing agentic scores'. The verification record has AA Terminal-Bench 9.7% for the 14B.",
+   "fit_here": "all-in-vram",
+   "fit_detail": "Weights 6,022,221,312 B = 5.61 GiB (Ollama blob, Q4_K_M, includes vision). KV 139,264 B/token at f16: 64k = 8.5 GiB f16 (total about 14.8 GiB with buffers, too tight against 15.47 GiB) or 4.25 GiB q8_0 (total about 10.5 GiB). 128k with q8_0 is about 14.8 GiB, tight. Nothing goes to the CPU, so RAM need is only the page cache (estimate).",
+   "speed_here_vs_mac": "Faster (estimate). Fully in VRAM, decode is bandwidth-bound: the ceiling is about 896/6.0 = 149 tok/s here against 614/6.0 = 102 tok/s on the Mac, about 1.46x. CUDA prefill should also beat Metal. The harness's 13s median is a whole run, so expect a similar or shorter run, not a 1.46x-shorter one.",
+   "best_runtime_here": "Ollama is fine because it fits whole, and it is the runtime the 30/30 evidence comes from: OLLAMA_CONTEXT_LENGTH=65536, OLLAMA_FLASH_ATTENTION=1, OLLAMA_KV_CACHE_TYPE=q8_0. For OpenCode at 128k, use llama.cpp with the official GGUF, -c 131072 -fa on --cache-type-k q8_0 --cache-type-v q8_0, plus GGML_CUDA_DISABLE_GRAPHS=1.",
+   "recommendation": "try-here-first",
+   "reason": "Cheapest reliable tool-caller in the lane: 30/30 at defaults with no harness crutches, a short tail (26s), and a comfortable fit at 64k with q8_0 KV. The KB's weak coding scores still argue against making it the main OpenCode model, but it is a strong candidate for a fast sub-agent or tool-loop model and should be smoke-tested in OpenCode.",
+   "ollama_tag_facts": "Q4_K_M (config file_type), 6.0 GB (6,022,221,312 B), 256K context, Text+Image input, badges: vision, tools. Parser 'ministral', default temperature 0.15. Digest 1922accd5827, the same as :latest. https://ollama.com/library/ministral-3/tags ; https://registry.ollama.ai/v2/library/ministral-3/manifests/8b",
+   "opencode_suitability": "Native tools (Ollama tools badge, 'ministral' parser), no thinking in the Instruct tag, 256k native context, so 64k-128k is reachable in VRAM with q8_0 KV. The libredb evidence is strong on tool-call reliability in a short multi-tool loop: 30/30, first attempt, defaults. It says nothing about long-context coding edits. Independent coding-agent scores are low (AA TB 9.7% for the 14B, KB verification record).",
+   "sources": [
+    "$HOME/projects/libredb/libredb-studio/docs/llms/mistral/ministral-3.md",
+    "$HOME/projects/libredb/libredb-studio/src/lib/agent/model-tuning/measured-profiles.json",
+    "https://ollama.com/library/ministral-3/tags",
+    "https://registry.ollama.ai/v2/library/ministral-3/manifests/8b",
+    "https://huggingface.co/mistralai/Ministral-3-14B-Reasoning-2512/raw/main/config.json",
+    "$HOME/projects/llm/research/2026-11-15/verification/feasibility_Ministral_3_8B_and_14B_Instruct_and_Reasoning_2512_.json",
+    "$HOME/projects/llm/docs/model-selection.md",
+    "https://www.apple.com/macbook-pro/specs/"
+   ]
+  },
+  {
+   "tag": "ministral-3:14b",
+   "underlying_model": "Mistral AI Ministral 3 14B Instruct 2512 (mistralai/Ministral-3-14B-Instruct-2512), dense 13.9B incl. vision, 40 layers, 8 KV heads, head_dim 128",
+   "family_page": "$HOME/projects/libredb/libredb-studio/docs/llms/mistral/ministral-3.md",
+   "mac_result": "30/30. Median run 16s, slowest 56s. Per-surface medians: Investigate 19s, Optimize 27s, Assess 34s, Operate 13s, Analyze 15s, Plan 8s. 90 s turn limit, compiled defaults, every cell passed on its first attempt (measured on the M5 Max, libredb-studio; mistral/ministral-3.md line 16). The page itself says the 8b is the one to take.",
+   "kb_status": "excluded: model-selection.md line 305, 'Weak or missing agentic scores' (AA Terminal-Bench 9.7% for the 14B, per the KB feasibility record).",
+   "fit_here": "all-in-vram",
+   "fit_detail": "Weights 9,082,522,240 B = 8.46 GiB (Q4_K_M, includes vision). KV 163,840 B/token: 64k = 10 GiB f16 (does not fit) or 5 GiB q8_0, about 14.2 GiB total with buffers, tight but inside 15.47 GiB. The KB feasibility record estimates 13.8 GiB for the llama.cpp official Q4_K_M at 64k q8_0. 128k only fits with q4_0 KV (estimate).",
+   "speed_here_vs_mac": "Faster (estimate), if KV is quantized so nothing spills. The decode ceiling is about 896/9.1 = 98 tok/s against 67 on the Mac (1.46x). If Ollama spills a layer because of f16 KV, it becomes slower.",
+   "best_runtime_here": "Ollama with OLLAMA_CONTEXT_LENGTH=65536, OLLAMA_FLASH_ATTENTION=1 and OLLAMA_KV_CACHE_TYPE=q8_0 (mandatory: with f16 KV at 64k Ollama will offload layers to the CPU). llama.cpp is the KB's preferred path: official GGUF Q4_K_M, -c 65536, -fa on, q8_0 KV, --no-mmproj to drop vision.",
+   "recommendation": "worth-trying",
+   "reason": "Also 30/30 at defaults, but slower and with a longer tail (56s) than the 8b on the Mac, and its 64k fit is tight here. It only earns its extra 3 GB if the 8b fails OpenCode's harder edits.",
+   "ollama_tag_facts": "Q4_K_M, 9.1 GB (9,082,522,240 B), 256K context, Text+Image input, badges: vision, tools. Parser 'ministral', temperature 0.15, digest 4760c35aeb9d. https://ollama.com/library/ministral-3/tags ; https://registry.ollama.ai/v2/library/ministral-3/manifests/14b",
+   "opencode_suitability": "Native tools, no thinking (Instruct), 256k native. The libredb evidence gives 30/30 at defaults, so tool-call reliability in an agent loop is first-hand confirmed. Coding-agent quality is weak by independent scores.",
+   "sources": [
+    "$HOME/projects/libredb/libredb-studio/docs/llms/mistral/ministral-3.md",
+    "https://ollama.com/library/ministral-3/tags",
+    "https://registry.ollama.ai/v2/library/ministral-3/manifests/14b",
+    "$HOME/projects/llm/research/2026-11-15/verification/feasibility_Ministral_3_8B_and_14B_Instruct_and_Reasoning_2512_.json",
+    "$HOME/projects/llm/docs/model-selection.md"
+   ]
+  },
+  {
+   "tag": "magistral:24b",
+   "underlying_model": "Mistral AI Magistral Small 2506 (mistralai/Magistral-Small-2506), dense 23.6B, 40 layers, 8 KV heads, head_dim 128, max_position_embeddings 40960",
+   "family_page": "$HOME/projects/libredb/libredb-studio/docs/llms/mistral/magistral.md",
+   "mac_result": "30/30. Median run 22s, slowest 47s. Per-surface medians: Investigate 24s, Optimize 30s, Assess 18s, Operate 20s, Analyze 29s, Plan 5s. 90 s turn limit, reasoning left on. It needed reportReminderLimit=2 (analyze was 2/5 on the defaults), and measured-profiles.json also sets retryUnreadStop=true, which the page does not mention (measured on the M5 Max, libredb-studio; mistral/magistral.md lines 15, 25-30).",
+   "kb_status": "not evaluated. It is also outside the KB's 12-month release window (June 2025). The comparable dense 24B Devstral Small 2 is excluded for not reaching 64k (model-selection.md line 302).",
+   "fit_here": "partial-offload",
+   "fit_detail": "Weights 14,333,907,488 B = 13.35 GiB (Q4_K_M). KV 163,840 B/token: even 8k f16 (1.25 GiB) plus buffers is about 15.3 GiB, at the edge. At its full 40,960 the KV is 6.25 GiB f16 or 3.1 GiB q8_0, so the total is 16.5-20 GiB and about 15-30% of the layers go to the CPU (1.5-4 GiB of RAM). 64k is impossible because the model is capped at 40,960 positions (estimate).",
+   "speed_here_vs_mac": "Slower (estimate). With 2-4 GiB of weights read from DDR5 (about 60-80 GB/s effective) per token, decode drops to about 15-25 tok/s, against a Mac ceiling of about 614/14.3 = 43 tok/s. Reasoning-heavy runs will stretch accordingly, and the 90 s turn limit becomes a real risk.",
+   "best_runtime_here": "For the libredb harness only: llama.cpp with an IQ4_XS/Q3_K_M GGUF, -c 32768, q8_0 KV and -fa on, to stay fully in VRAM. With Ollama, use OLLAMA_CONTEXT_LENGTH=32768 and q8_0 KV and accept a small spill. Not for OpenCode.",
+   "recommendation": "skip-here",
+   "reason": "Hard 40,960-token context limit (HF config; the Ollama tag says 39K, and the readme recommends 40k max) means it cannot meet OpenCode's 64k floor, and on 16 GB it does not fit whole even at 32k with Q4_K_M. Its harness pass also relied on two extra harness settings.",
+   "ollama_tag_facts": "Q4_K_M, 14 GB (14,333,907,488 B), 39K context, text only, badges: tools, thinking. Ships a system-prompt layer (reasoning prompt), params temperature 0.7, top_p 0.95, digest 27bcbbf6d324, the same as magistral:24b-small-2506-q4_K_M. https://ollama.com/library/magistral/tags ; https://registry.ollama.ai/v2/library/magistral/manifests/24b",
+   "opencode_suitability": "Tools and thinking per the Ollama badges, but the 40,960 context cap fails the 64k OpenCode requirement outright. Tool reliability in libredb is good only with a second report reminder and an unread-stop retry. Those are harness crutches with no OpenCode equivalent.",
+   "sources": [
+    "$HOME/projects/libredb/libredb-studio/docs/llms/mistral/magistral.md",
+    "$HOME/projects/libredb/libredb-studio/src/lib/agent/model-tuning/measured-profiles.json",
+    "https://ollama.com/library/magistral/tags",
+    "https://ollama.com/library/magistral",
+    "https://registry.ollama.ai/v2/library/magistral/manifests/24b",
+    "https://huggingface.co/mistralai/Magistral-Small-2506/raw/main/config.json"
+   ]
+  },
+  {
+   "tag": "granite4.1:8b",
+   "underlying_model": "IBM Granite 4.1 8B (ibm-granite/granite-4.1-8b, HF createdAt 2026-04-06), dense 8.8B, 40 layers, 8 KV heads, head_dim 128, 131072 positions",
+   "family_page": "$HOME/projects/libredb/libredb-studio/docs/llms/granite/granite4.1.md",
+   "mac_result": "30/30. Median run 11s, slowest 22s. Per-surface medians: Investigate 6s, Optimize 10s, Assess 7s, Operate 11s, Analyze 16s, Plan 5s. 90 s turn limit. At the defaults it was only 24/30 (Investigate 3/5, Optimize 2/5, Operate 4/5) and needs refusalExamples=true plus retryEmptyTurn=true: it sometimes returns an empty turn, and it cannot always build a correctly shaped tool object (measured on the M5 Max, libredb-studio; granite/granite4.1.md lines 14, 21-25; measured-profiles.json).",
+   "kb_status": "not evaluated (Granite 4.1 does not appear in the KB; only Granite 4.2 8B is listed, as excluded).",
+   "fit_here": "all-in-vram",
+   "fit_detail": "Weights 5,347,914,400 B = 4.98 GiB (Q4_K_M). KV 163,840 B/token: 64k = 10 GiB f16 (about 15.5 GiB total, does not fit cleanly) or 5 GiB q8_0, about 10.5 GiB total. 128k only with q4_0 KV (estimate).",
+   "speed_here_vs_mac": "Faster (estimate): the decode ceiling is about 896/5.35 = 167 tok/s against 115 on the Mac. The 11s median run should be similar or shorter.",
+   "best_runtime_here": "Ollama with OLLAMA_CONTEXT_LENGTH=65536, OLLAMA_FLASH_ATTENTION=1 and OLLAMA_KV_CACHE_TYPE=q8_0. llama.cpp with the official GGUF works the same.",
+   "recommendation": "worth-trying",
+   "reason": "Fastest in the lane on the Mac and fits easily, but its 30/30 depends on two harness-side corrections (worked refusal examples, empty-turn retry), so its raw tool-call reliability is 24/30. OpenCode will not re-ask an empty turn, so expect failures in OpenCode that the harness hides.",
+   "ollama_tag_facts": "Q4_K_M, 5.3 GB (5,347,914,400 B), 128K context, text only, badge: tools (no thinking). Template layer present (6,843 B), digest 444af1c4b2fe. https://ollama.com/library/granite4.1/tags ; https://registry.ollama.ai/v2/library/granite4.1/manifests/8b",
+   "opencode_suitability": "Native tools, no thinking, 128k native, so 64k fits in VRAM with q8_0 KV. Reliability caveat from libredb: empty turns and malformed tool objects at the defaults (24/30), which only harness-specific settings fixed.",
+   "sources": [
+    "$HOME/projects/libredb/libredb-studio/docs/llms/granite/granite4.1.md",
+    "$HOME/projects/libredb/libredb-studio/src/lib/agent/model-tuning/measured-profiles.json",
+    "https://ollama.com/library/granite4.1/tags",
+    "https://registry.ollama.ai/v2/library/granite4.1/manifests/8b",
+    "https://huggingface.co/ibm-granite/granite-4.1-8b/raw/main/config.json"
+   ]
+  },
+  {
+   "tag": "granite4.1:30b",
+   "underlying_model": "IBM Granite 4.1 30B (ibm-granite/granite-4.1-30b), dense 28.9B, 64 layers, 8 KV heads, head_dim 128, 131072 positions",
+   "family_page": "$HOME/projects/libredb/libredb-studio/docs/llms/granite/granite4.1.md",
+   "mac_result": "30/30 at the compiled defaults. Median run 26s, slowest 52s. Per-surface medians: Investigate 16s, Optimize 42s, Assess 21s, Operate 31s, Analyze 26s, Plan 26s. 90 s turn limit (measured on the M5 Max, libredb-studio; granite/granite4.1.md lines 15, 30).",
+   "kb_status": "not evaluated",
+   "fit_here": "partial-offload",
+   "fit_detail": "Weights 17,490,240,736 B = 16.29 GiB (Q4_K_M) already exceed 15.47 GiB. KV 262,144 B/token: 64k = 16 GiB f16 or 8 GiB q8_0. Total at 64k with q8_0 KV is about 25 GiB, so about 38 of 64 layers go on the GPU and about 26 layers (about 6.6 GiB of weights plus their KV) on the CPU. RAM need is about 10 GiB of the 40 GiB free (estimate).",
+   "speed_here_vs_mac": "Slower (estimate). Dense with about 40% of its layers in DDR5: about 7 GB read from RAM per token at about 70 GB/s gives about 9 tok/s, against a Mac ceiling of about 614/17.5 = 35 tok/s, so roughly 3x slower decode. The 90 s turn limit is at risk.",
+   "best_runtime_here": "Not a good fit for any runtime here. If tried, use llama.cpp with -ngl tuned for a dense spill, q8_0 KV and -c 32768. --n-cpu-moe does not apply (dense). An IQ3 quant (about 12-13 GB) could fit whole at short context.",
+   "recommendation": "skip-here",
+   "reason": "Dense 29B that does not fit 16 GB VRAM even before KV. It offers nothing the 8b or ministral-3:8b cannot do on this harness, at several times the latency here.",
+   "ollama_tag_facts": "Q4_K_M, 17 GB (17,490,240,736 B), 128K context, text only, badge: tools, digest 3f3e5df8a021. https://ollama.com/library/granite4.1/tags ; https://registry.ollama.ai/v2/library/granite4.1/manifests/30b",
+   "opencode_suitability": "Native tools, no thinking, 128k native. libredb shows 30/30 at defaults (better raw reliability than the 8b), but on this machine it would run largely at DDR5 speed.",
+   "sources": [
+    "$HOME/projects/libredb/libredb-studio/docs/llms/granite/granite4.1.md",
+    "https://ollama.com/library/granite4.1/tags",
+    "https://registry.ollama.ai/v2/library/granite4.1/manifests/30b",
+    "https://huggingface.co/ibm-granite/granite-4.1-30b/raw/main/config.json"
+   ]
+  },
+  {
+   "tag": "granite4.2:8b",
+   "underlying_model": "IBM Granite 4.2 8B (ibm-granite/granite-4.2-8b, released 2026-08-25), dense 8.79B, 40 layers, 8 KV heads, head_dim 128, 131072 positions, thinking on by default",
+   "family_page": "$HOME/projects/libredb/libredb-studio/docs/llms/granite/granite4.2.md",
+   "mac_result": "30/30 at the compiled defaults. Median run 46s, slowest 1:56. The page has Investigate 28s, Optimize 1:12, Assess 1:29, Operate 19s, Analyze 45s, Plan 33s, while measured-profiles.json gives different medians (34s/67s/140s/26s/37s/33s), a discrepancy between page and profile. 90 s turn limit. Assess re-read 4/5 on a second sitting, with one run lost to the clock (measured on the M5 Max, libredb-studio; granite/granite4.2.md lines 14, 34-37). Thinking was not suppressed.",
+   "kb_status": "excluded: model-selection.md line 305, 'Weak or missing agentic scores'. The KB verification record has AA TB2.1 18.4%, AA TB4.0 0%, tau-Banking 7.6% and AA Intelligence Index 5.1, while the KB feasibility record says it would serve OpenCode with 64k (vLLM NVFP4 or llama.cpp Q6_K, qwen3_coder parser).",
+   "fit_here": "all-in-vram",
+   "fit_detail": "Weights 5,347,917,952 B = 4.98 GiB (Q4_K_M). KV 163,840 B/token: 64k = 5 GiB q8_0, about 10.5 GiB total. f16 KV at 64k (10 GiB) is too tight (estimate).",
+   "speed_here_vs_mac": "Faster per token (estimate, ceiling about 167 vs 115 tok/s), but its runs are dominated by thinking length, so the 46s median comes down by at most about 1.46x. The Assess tail near the clock remains a risk.",
+   "best_runtime_here": "llama.cpp or vLLM, as in the KB feasibility record (official Q6_K GGUF with q8_0 KV at 64k, or vLLM NVFP4 with FP8 KV and the qwen3_coder tool parser), because the Ollama tag looks unable to do native tools (see ollama_tag_facts). With Ollama: OLLAMA_CONTEXT_LENGTH=65536, q8_0 KV, and verify the tools call first.",
+   "recommendation": "skip-here",
+   "reason": "Same footprint as granite4.1:8b at about 4x the Mac median, a thin Assess cell, and weak independent agentic scores. The libredb page itself says to take 4.1. The current Ollama tag also has no template layer and no tools badge, so whether the 30/30 came through native tool calls is unclear.",
+   "ollama_tag_facts": "Q4_K_M, 5.3 GB (5,347,917,952 B), 128K context, text only. The library page shows NO tools or thinking badge, and the manifest has NO template layer (only model, license, params), though the GGUF embeds tokenizer.chat_template with tool markup (range-read of the blob header). Params temperature 1, top_p 0.95. Digest f586c02fdecd, the same as :latest. Tag 'updated 2 months ago', after the methodology's stated 22-23 August measurement date. https://ollama.com/library/granite4.2/tags ; https://registry.ollama.ai/v2/library/granite4.2/manifests/8b",
+   "opencode_suitability": "The model supports tools (qwen3_coder XML format) and toggleable thinking (enable_thinking default true, reasoning_effort low/high). Native tool calls through the Ollama tag are unverified because the tag has no template or tools capability. libredb may have driven it through its prose tool-protocol fallback (inference, not confirmed in the docs). Thinking-on runs are slow.",
+   "sources": [
+    "$HOME/projects/libredb/libredb-studio/docs/llms/granite/granite4.2.md",
+    "$HOME/projects/libredb/libredb-studio/src/lib/agent/model-tuning/measured-profiles.json",
+    "https://ollama.com/library/granite4.2/tags",
+    "https://ollama.com/library/granite4.2",
+    "https://registry.ollama.ai/v2/library/granite4.2/manifests/8b",
+    "$HOME/projects/llm/research/2026-11-15/verification/verify_IBM_Granite_4.2_8B.json",
+    "$HOME/projects/llm/research/2026-11-15/verification/feasibility_IBM_Granite_4.2_8B.json",
+    "$HOME/projects/llm/docs/model-selection.md"
+   ]
+  },
+  {
+   "tag": "cogito:14b",
+   "underlying_model": "Deep Cogito Cogito v1 Preview Qwen 14B (deepcogito/cogito-v1-preview-qwen-14B, HF createdAt 2025-03-31), Qwen2.5-14B base, dense 14.8B, 48 layers, 8 KV heads, head_dim 128, hybrid reasoning",
+   "family_page": "$HOME/projects/libredb/libredb-studio/docs/llms/cogito/cogito.md",
+   "mac_result": "30/30 at the compiled defaults. Median run 11s, slowest 20s, the shortest slowest-run on the whole roster. Per-surface medians: Investigate 4s, Optimize 13s, Assess 18s, Operate 13s, Analyze 8s, Plan 6s. 90 s turn limit. The whole sweep took ten minutes, every cell on its first attempt (measured on the M5 Max, libredb-studio; cogito/cogito.md lines 16, 21-23, 32). The README names it 'the steadiest'.",
+   "kb_status": "not evaluated (also outside the KB's 12-month release window)",
+   "fit_here": "all-in-vram-short-context",
+   "fit_detail": "Weights 8,985,277,984 B = 8.37 GiB (Q4_K_M). KV 196,608 B/token: 32k = 6 GiB f16 (about 14.9 GiB, tight) or 3 GiB q8_0 (about 12 GiB). 64k = 6 GiB q8_0, about 15 GiB with buffers, at the 15.47 GiB edge, or 3 GiB q4_0, about 12 GiB. In practice 64k needs q4_0 KV or a small spill (estimate).",
+   "speed_here_vs_mac": "Faster (estimate) while it stays fully in VRAM: decode ceiling about 896/9.0 = 100 tok/s against 68 on the Mac. If Ollama spills 1-3 layers at 64k q8_0, it drops to roughly Mac speed or below.",
+   "best_runtime_here": "For the libredb harness (short prompts): Ollama with OLLAMA_CONTEXT_LENGTH=32768, flash attention and q8_0 KV. For OpenCode at 64k: llama.cpp with -c 65536 -fa on --cache-type-k q8_0 --cache-type-v q8_0 and an exact VRAM check, or q4_0 V cache.",
+   "recommendation": "worth-trying",
+   "reason": "The steadiest and among the fastest on the user's harness at defaults, and it fits at 32k. But it is an April-2025 Qwen2.5 derivative, 64k is at the VRAM edge, and its coding-agent quality is likely below the KB's 2026 picks. Good as a reliable tool-loop or sub-agent model, not as a main OpenCode coder.",
+   "ollama_tag_facts": "Q4_K_M, 9.0 GB (8,985,277,984 B), 128K context, text only, badge: tools. Template layer 1,482 B, digest d0cac86a2347, the same as cogito:14b-v1-preview-qwen-q4_K_M. https://ollama.com/library/cogito/tags ; https://registry.ollama.ai/v2/library/cogito/manifests/14b",
+   "opencode_suitability": "Native tools (badge). Thinking is opt-in by system prompt ('deep thinking subroutine'), so it runs off by default. The 128k claim sits on a Qwen2.5 base with no rope_scaling in the config. The libredb evidence is the strongest in the lane for tool-call reliability: 30/30, first attempts, tightest tail.",
+   "sources": [
+    "$HOME/projects/libredb/libredb-studio/docs/llms/cogito/cogito.md",
+    "$HOME/projects/libredb/libredb-studio/docs/llms/README.md",
+    "https://ollama.com/library/cogito/tags",
+    "https://ollama.com/library/cogito",
+    "https://registry.ollama.ai/v2/library/cogito/manifests/14b",
+    "https://huggingface.co/deepcogito/cogito-v1-preview-qwen-14B/raw/main/config.json"
+   ]
+  },
+  {
+   "tag": "cogito:32b",
+   "underlying_model": "Deep Cogito Cogito v1 Preview Qwen 32B (deepcogito/cogito-v1-preview-qwen-32B), Qwen2.5-32B base, dense 32.8B, 64 layers, 8 KV heads, head_dim 128",
+   "family_page": "$HOME/projects/libredb/libredb-studio/docs/llms/cogito/cogito.md",
+   "mac_result": "30/30. Median run 23s, slowest 39s. Per-surface medians: Investigate 21s, Optimize 23s, Assess 32s, Operate 31s, Analyze 23s, Plan 4s. 90 s turn limit. It needs planStatementRetries=1, and that is load-bearing: one of the five plan passes wrote its statement only after being asked, and without the ask the cell is 4/5 (measured on the M5 Max, libredb-studio; cogito/cogito.md lines 17, 36-38). The page says it 'buys nothing' over the 14b.",
+   "kb_status": "not evaluated",
+   "fit_here": "partial-offload",
+   "fit_detail": "Weights 19,848,503,584 B = 18.49 GiB (Q4_K_M), above VRAM before any KV. KV 262,144 B/token: 64k = 8 GiB q8_0, about 27 GiB in total. About 35 of 64 layers go on the GPU and about 29 layers (about 8.4 GiB of weights) on the CPU. RAM need is about 12 GiB (estimate).",
+   "speed_here_vs_mac": "Much slower (estimate): about 9 GB read from DDR5 per token gives about 7 tok/s, against a Mac ceiling of about 614/19.85 = 31 tok/s, so 3-4x slower decode. It would likely hit the 90 s turn limit.",
+   "best_runtime_here": "None recommended. llama.cpp with a dense -ngl split is the least bad. --n-cpu-moe does not apply.",
+   "recommendation": "skip-here",
+   "reason": "Dense 33B that cannot fit 16 GB. It has the same verdicts as the 14b on the user's harness and depends on a plan-statement retry that OpenCode does not provide.",
+   "ollama_tag_facts": "Q4_K_M, 20 GB on the tags page (19,848,503,584 B; libredb lists it as 19 GB), 128K context, text only, badge: tools, digest 0b4aab772f57. https://ollama.com/library/cogito/tags ; https://registry.ollama.ai/v2/library/cogito/manifests/32b",
+   "opencode_suitability": "Native tools and opt-in reasoning, but the plan-surface weakness (discusses the plan without writing the statement) is the kind of failure OpenCode would surface as a non-action. Runs at DDR5 speed here.",
+   "sources": [
+    "$HOME/projects/libredb/libredb-studio/docs/llms/cogito/cogito.md",
+    "$HOME/projects/libredb/libredb-studio/src/lib/agent/model-tuning/measured-profiles.json",
+    "https://ollama.com/library/cogito/tags",
+    "https://registry.ollama.ai/v2/library/cogito/manifests/32b",
+    "https://huggingface.co/deepcogito/cogito-v1-preview-qwen-32B/raw/main/config.json"
+   ]
+  }
+ ],
+ "kb_implications": [
+  "Ministral 3 8B and 14B are excluded in docs/model-selection.md line 305 for 'weak or missing agentic scores', but the user's own harness has both at 30/30 at the compiled defaults, every cell on its first attempt (measured on the M5 Max, libredb-studio). Move them from Excluded to Honorable mentions as 'reliable tool-calling sub-agent, fits fully in VRAM'. Keep them out of the top 10 for coding: AA TB 9.7% still stands, and the harness does not test code edits. Add an Ollama alternative line, ministral-3:8b (6.0 GB, Q4_K_M) with OLLAMA_CONTEXT_LENGTH=65536 and q8_0 KV, to llamacpp/models.md or the honorable-mention row.",
+  "Granite 4.2 8B: the exclusion holds. The harness passes it, but at a 46s median and 1:56 slowest run, its Assess cell re-read 4/5, and the libredb page itself recommends granite4.1:8b instead. Add a caveat that the current Ollama granite4.2:8b tag has no template layer and no tools or thinking badge (checked live 2026-11-16), so serve it on llama.cpp or vLLM (qwen3_coder parser) as the KB feasibility record already says, not through Ollama.",
+  "Add to Excluded, with the reasons now measured: Magistral Small 2506 (magistral:24b), because max_position_embeddings is 40,960 (HF config, Ollama shows 39K), so it cannot meet the 64k OpenCode floor. Granite 4.1 30B (17.5 GB) and Cogito v1 32B (19.85 GB), because they are dense, exceed 16 GB VRAM before KV, and would run at DDR5 speed. The last two pass the user's harness, so the reason is fit, not quality.",
+  "Granite 4.1 8B (2026-04, inside the KB window) is absent from the KB. Record it as evaluated: it is the fastest in the lane on the user's harness but needs harness-side retries (24/30 at the defaults: empty turns and malformed tool objects), which predicts OpenCode failures. At most a trial candidate behind ministral-3:8b.",
+  "Cogito v1 14B is outside the KB's 12-month window (2025-03), but it is the steadiest model on the user's roster (30/30, 11s median, 20s slowest). If the KB keeps a 'proven tool-loop fallback' slot, it qualifies at 32k context in VRAM. 64k needs q4_0 KV or a 1-3 layer spill.",
+  "None of the lane's eight tags is a KB top-10 pick, so this lane neither confirms nor contradicts the current ranking. The harness covers some KB picks only through other lanes (for example gpt-oss:20b at a 37s median and 169s slowest, qwen3.6:35b, gemma4:26b, glm-4.7-flash).",
+  "Add a transfer note to docs/opencode.md 'Ollama notes' or docs/community-benchmarks.md. The libredb runs used a 64 GB M5 Max, where Ollama's default context is 256k, against 4k on this 16 GB GPU. The KV cache must therefore be budgeted explicitly here (OLLAMA_CONTEXT_LENGTH, OLLAMA_FLASH_ATTENTION=1, OLLAMA_KV_CACHE_TYPE=q8_0). Durations are whole-run figures from a 614 GB/s machine, about 1.46x less bandwidth than the RTX 5080 Laptop's 896 GB/s for models that fit fully in VRAM, and they get worse once a model spills to DDR5."
+ ],
+ "gaps": [
+  "The context length used on the Mac is not recorded for any lane model. It was probably Ollama's 256k default for 48 GiB or more, capped at each model's maximum, but this is unverified.",
+  "Whether granite4.2:8b used native tool calls or libredb's prose tool-protocol fallback is not stated anywhere I read. The current Ollama tag lacks a template layer and the tools badge. The run ledgers (.workflow-data) were not inspected.",
+  "Measurement-date inconsistency: methodology.md says 22-23 August 2026, but Granite 4.2 was released 2026-08-25 and its Ollama tag shows 'updated 2 months ago'. I could not confirm which digest was measured.",
+  "granite4.2:8b per-surface medians differ between the doc page (28s/1:12/1:29/19s/45s/33s) and measured-profiles.json (34s/67s/140s/26s/37s/33s). magistral:24b has retryUnreadStop=true in the profile but not on its page.",
+  "The configured DDR5 speed on this laptop is unverified, so every spill-speed estimate (granite4.1:30b, cogito:32b, magistral:24b) assumes about 60-80 GB/s effective.",
+  "The Ollama mistral3 blob sizes include the vision tower, and the compute-buffer overhead (about 0.5-1 GiB) is assumed, so the tight 64k fits (ministral-3:14b, cogito:14b) need a real VRAM check once the GPU is free.",
+  "No OpenCode test exists for any lane model. The libredb evidence covers a short-context SQL tool loop, not code editing or long sessions.",
+  "Ollama is not pulled here, so nothing in this lane was measured on this laptop."
+ ]
+}

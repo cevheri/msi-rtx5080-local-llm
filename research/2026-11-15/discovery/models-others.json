@@ -1,0 +1,667 @@
+{
+ "summary": "I checked every name the lead listed. All of them exist on their vendors' own Hugging Face orgs, and most have Ollama library pages too. Two of them come from orgs Hugging Face has not verified (ornith-ai and RecursiveSI), so treat their self-reported benchmarks with extra care. Raon and SenseNova have no Ollama library page.\n\nFor OpenCode on this 16 GB RTX 5080 Laptop, the strongest picks outside Qwen, Gemma, Nemotron, DeepSeek and gpt-oss are below.\n\n- **Ornith-1.5-9B, best fit for vLLM.** MIT license, Qwen3.5 architecture, thinking can be switched on or off, tool calling works. The vendor's NVFP4 checkpoint is 8.82 GB, and vLLM 0.19.1 or later serves it with --tool-call-parser qwen3_xml --reasoning-parser qwen3 (https://huggingface.co/ornith-ai/Ornith-1.5-9B, https://huggingface.co/ornith-ai/Ornith-1.5-9B-NVFP4). It self-reports SWE-bench Verified 70.6 and Terminal-Bench 2.1 46.2.\n- **Ornith-1.5-35B-A3B and Flint 40B-A2.5B, best fit for llama.cpp or Ollama.** Both are MoE models whose 4-bit files (21.7 GB and 22.9 GB) exceed 16 GB of VRAM, so they need some expert layers in system RAM. Both are tagged in Ollama with tools and thinking, at 23 GB each (https://ollama.com/library/ornith-1.5, https://ollama.com/library/flint).\n- **MiMo-V2.6-Distill-Qwen-9B (Xiaomi, MIT).** A credible second 9B option, Ollama mimo-v2.6:9b at 6.6 GB.\n\nMeta has released no new Llama in the window. Its new open model is Muse Glimmer 30B: dense, Apache 2.0, with dedicated vLLM parsers named muse_glimmer since v0.28.0 (https://github.com/vllm-project/recipes/blob/main/models/meta-models/Muse-Glimmer-30B.yaml). Even its smallest 4-bit file (16.76 GB) is larger than this GPU, so it only runs with partial CPU offload, and that will be slow for a dense model.\n\nOther usable models in the window:\n- GLM-4.7-Flash (30B-A3B, MIT, parsers glm47 and glm45, Ollama 19 GB).\n- Devstral Small 2 24B (Apache 2.0, tool calling, no thinking, Ollama 15 GB, which leaves almost no KV room).\n- IBM Granite 4.2 8B and 30B (Apache 2.0, dense, thinking can be switched on or off, tool parser qwen3_coder). The 8B has an official MXFP4 build of 5.88 GB.\n- Ternary Bonsai 2 27B (a Qwen3.8-27B derivative, Q2_0 7.63 GB, runs on stock llama.cpp b11556 or later).\n\nModels that need forks or are unmerged:\n- KRAFTON Raon-1 mini and nano need KRAFTON's own vLLM and llama.cpp forks.\n- SenseNova-Loop-9B-Preview needs an unmerged vLLM pull request (#64832).\n\nThe Docker images can't run Flint, Ripple or LFM3 yet. vLLM v0.32.0 does not include them: Flint first appears in v0.33.0rc3, and Ripple (Ricursive) and LFM3 only in main or the nightly image. llama.cpp master (b12418) does include flint, muse-glimmer, ricursive, lfm3 and qwen35moe.\n\nThese do not fit this machine: Ripple-65B (dense, Ollama 39 GB), Ornith-1.5-122B (Ollama 73 GB), Mistral Small 4 119B, GLM-5.3-Flash (321B), MiniMax-M3.1-Flash, Step-3.7-Flash, Ling-3.1-flash, Kimi and Hy4. LFM3-1.7B fits but its own card says it is not recommended for agentic coding.\n\nAll benchmark numbers here are vendor self-reported.",
+ "models": [
+  {
+   "name": "Ornith-1.5-9B",
+   "vendor": "Ornith (ornith-ai, HF org not verified)",
+   "family": "Ornith 1.5 (Qwen3.5/Gemma4-derived, continued pretraining)",
+   "hf_repo": "ornith-ai/Ornith-1.5-9B",
+   "release_date": "2026-08-18 (HF createdAt)",
+   "license": "MIT",
+   "architecture": "dense, Qwen3_5 hybrid attention (8 of 32 layers full attention, full_attention_interval 4)",
+   "total_params_b": 9.65,
+   "active_params_b": 9.65,
+   "context_length": "262,144 native (YaRN to ~1M documented)",
+   "modalities": "text+image in (HF tags image-text-to-text, mmproj in GGUF), text out",
+   "thinking": "toggle",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "NVFP4 (ModelOpt) ornith-ai/Ornith-1.5-9B-NVFP4 8.82 GB",
+    "GGUF Q4_K_M 5.78 GB / Q5_K_M 6.64 / Q6_K 7.56 / Q8_0 9.79 GB (ornith-ai/Ornith-1.5-9B-GGUF)",
+    "DFlash draft repo ornith-ai/Ornith-1.5-9B-DFlash",
+    "Ollama ornith-1.5:9b 6.6 GB, 256K, badges tools/thinking/vision"
+   ],
+   "vllm": "vLLM >= 0.19.1; card command: vllm serve ornith-ai/Ornith-1.5-9B --max-model-len 262144 --gpu-memory-utilization 0.90 --enable-prefix-caching --enable-auto-tool-choice --tool-call-parser qwen3_xml --reasoning-parser qwen3 (https://huggingface.co/ornith-ai/Ornith-1.5-9B). Qwen3_5 archs are in vLLM registry since at least v0.27.0.",
+   "llamacpp_ollama": "llama.cpp arch qwen35 (in master); ollama run ornith-1.5:9b; card also shows llama-server -hf ornith-ai/Ornith-1.5-9B-GGUF",
+   "fit_16gb": "vLLM fits: NVFP4 weights 8.82 GB; KV = 8 full-attn layers x 2 x 4 KV heads x 256 x 2 B = 32 KiB/token, so ~4 GB left at 0.90 util covers roughly 100-128K tokens (source-backed arithmetic, overhead estimated)",
+   "coding_agent_evidence": "Vendor self-reported: SWE-bench Verified 70.6, SWE-bench Pro 47.5, Terminal-Bench 2.1 (Terminus-2) 46.2 vs Qwen3.5-9B 53.2 / 31.3 / 21.3 (https://huggingface.co/ornith-ai/Ornith-1.5-9B)",
+   "sources": [
+    "https://huggingface.co/ornith-ai/Ornith-1.5-9B",
+    "https://huggingface.co/api/models/ornith-ai/Ornith-1.5-9B-NVFP4?blobs=true",
+    "https://huggingface.co/api/models/ornith-ai/Ornith-1.5-9B-GGUF?blobs=true",
+    "https://ollama.com/library/ornith-1.5"
+   ],
+   "confidence": "medium",
+   "notes": "Default turn opens with <think>; chat template has enable_thinking. Org isVerified=false on HF despite millions of GGUF downloads; benchmarks unverified by third parties. Card ships an OpenCode provider snippet."
+  },
+  {
+   "name": "Ornith-1.5-35B-A3B",
+   "vendor": "Ornith (ornith-ai, HF org not verified)",
+   "family": "Ornith 1.5",
+   "hf_repo": "ornith-ai/Ornith-1.5-35B-A3B",
+   "release_date": "2026-08-18 (HF createdAt)",
+   "license": "MIT",
+   "architecture": "MoE, Qwen3_5Moe hybrid attention (10 of 40 layers full attention)",
+   "total_params_b": 35.95,
+   "active_params_b": 3,
+   "context_length": "262,144 native",
+   "modalities": "text+image in, text out",
+   "thinking": "toggle",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "NVFP4 ornith-ai/Ornith-1.5-35B-A3B-NVFP4 23.42 GB",
+    "FP8 ornith-ai/Ornith-1.5-35B-A3B-FP8",
+    "GGUF Q4_K_M 21.71 / Q5_K_M 25.35 / Q6_K 29.21 / Q8_0 37.8 GB",
+    "Ollama ornith-1.5:35b 23 GB, 256K"
+   ],
+   "vllm": "vLLM >= 0.19.1; vllm serve ornith-ai/Ornith-1.5-35B-A3B ... --enable-auto-tool-choice --tool-call-parser qwen3_xml --reasoning-parser qwen3 --trust-remote-code (card shows TP=2 on 80 GB GPUs)",
+   "llamacpp_ollama": "llama.cpp arch qwen35moe (master); llama-server -hf ornith-ai/Ornith-1.5-35B-A3B-GGUF -c 262144; ollama run hf.co/ornith-ai/Ornith-1.5-35B-A3B-GGUF or ornith-1.5:35b",
+   "fit_16gb": "Does not fit vLLM on 16 GB (NVFP4 23.42 GB). Needs llama.cpp/Ollama with some experts in RAM: Q4_K_M 21.7 GB total; KV only 20 KiB/token (10 full layers x 2 x 2 x 256 x 2 B), so 128K ctx ~2.7 GB",
+   "coding_agent_evidence": "Vendor self-reported: SWE-bench Verified 79, SWE-bench Pro 59.6, Terminal-Bench 2.1 Terminus-2 67.8, TB2.1 Claude Code 68.5; card compares Qwen3.6-35B-A3B 73.4/49.5/52.5 (https://huggingface.co/ornith-ai/Ornith-1.5-35B-A3B)",
+   "sources": [
+    "https://huggingface.co/ornith-ai/Ornith-1.5-35B-A3B",
+    "https://huggingface.co/api/models/ornith-ai/Ornith-1.5-35B-A3B-GGUF?blobs=true",
+    "https://ollama.com/library/ornith-1.5/tags"
+   ],
+   "confidence": "medium",
+   "notes": "Strongest coding claims in this lane for a size that is usable here, but self-reported by an unverified org. Ornith-1.0 (June 2026) superseded."
+  },
+  {
+   "name": "MiMo-V2.6-Distill-Qwen-9B",
+   "vendor": "Xiaomi MiMo",
+   "family": "MiMo V2.6",
+   "hf_repo": "XiaomiMiMo/MiMo-V2.6-Distill-Qwen-9B",
+   "release_date": "2026-09-21 (HF createdAt)",
+   "license": "MIT (plus non-binding use-restriction notice)",
+   "architecture": "dense, Qwen3.5-9B fine-tune (qwen3_5)",
+   "total_params_b": 9.41,
+   "active_params_b": 9.41,
+   "context_length": "Ollama lists 256K; base Qwen3.5 262,144 (inferred)",
+   "modalities": "text+image in (image-text-to-text), text out",
+   "thinking": "toggle",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "No vendor-quantized HF repo found",
+    "Ollama mimo-v2.6:9b q4_K_M 6.6 GB, :9b-nvfp4 8.7 GB, :9b-mxfp8 11 GB, :9b-gguf-bf16 19 GB"
+   ],
+   "vllm": "Card shows only SGLang: sglang serve --reasoning-parser mimo. vLLM has a 'mimo' reasoning and tool parser (registered in vllm/reasoning and vllm/tool_parsers). The template emits <tool_call><function=..><parameter=..> XML, so qwen3_xml or qwen3_coder should parse it (inferred). Thinking via chat_template_kwargs enable_thinking.",
+   "llamacpp_ollama": "ollama run mimo-v2.6:9b (badges tools, thinking, vision)",
+   "fit_16gb": "vLLM fits only with quantization: BF16 18.8 GB does not fit; online FP8 ~9.5 GB or NVFP4 (Ollama 8.7 GB) leaves ~4 GB KV at 32 KiB/token (same Qwen3.5-9B layout), ~100K tokens (inferred)",
+   "coding_agent_evidence": "Vendor: SWE Verified 61.1, SWE Pro 44.6, Terminal Bench 2.1 37.1, Toolathlon-Verified 35.2 (SFT checkpoint; https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Distill-Qwen-9B)",
+   "sources": [
+    "https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Distill-Qwen-9B",
+    "https://ollama.com/library/mimo-v2.6/tags",
+    "https://raw.githubusercontent.com/vllm-project/vllm/main/vllm/tool_parsers/__init__.py"
+   ],
+   "confidence": "medium",
+   "notes": "Released as an SFT research starting point. Larger MiMo-V2.6 Flash (310B) and Pro do not fit."
+  },
+  {
+   "name": "Flint",
+   "vendor": "Recursive Superintelligence, Inc. (RecursiveSI, HF org not verified)",
+   "family": "Flint",
+   "hf_repo": "RecursiveSI/flint",
+   "release_date": "2026-10-21 (HF createdAt)",
+   "license": "Apache-2.0",
+   "architecture": "MoE trained from scratch; 49 layers (2 dense + 47 MoE), 256 routed experts top-6 + shared; 35 SWA (513) + 14 full-attention layers",
+   "total_params_b": 39.8,
+   "active_params_b": 2.5,
+   "context_length": "262,144",
+   "modalities": "text only",
+   "thinking": "always",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "GGUF NVFP4 RecursiveSI/flint-nvfp4-gguf 22.86 GB",
+    "GGUF Q4_1 RecursiveSI/flint-int4-gguf 25.99 GB",
+    "MLX int4 RecursiveSI/flint-int4 22.57 GB",
+    "Ollama flint:40b 23 GB (nvfp4 gguf), flint:40b-a2b-q4_1 26 GB, 256K"
+   ],
+   "vllm": "Card ships only an SGLang kit (lmsysorg/sglang:v0.5.16-cu130 base, --tool-call-parser flint --reasoning-parser flint --grammar-backend flint). vLLM: FlintForCausalLM is in v0.33.0rc3 and main registry, not v0.32.0; no 'flint' tool/reasoning parser found in vLLM main.",
+   "llamacpp_ollama": "llama.cpp arch 'flint' in master (b12418); card: llama-server -m flint-nvfp4.gguf -fa on --jinja; ollama run flint",
+   "fit_16gb": "Needs llama.cpp/Ollama with experts in RAM: NVFP4 GGUF 22.9 GB total; KV 14 full layers x 2 x 4 x 128 x 2 B = 28 KiB/token, 128K ~3.7 GB (source-backed)",
+   "coding_agent_evidence": "Vendor self-reported: Terminal-Bench 2.1 54.9, SWE-bench Verified 74.2, SWE-bench Pro v2 89.7 (https://huggingface.co/RecursiveSI/flint)",
+   "sources": [
+    "https://huggingface.co/RecursiveSI/flint",
+    "https://huggingface.co/RecursiveSI/flint/raw/main/sglang/serve_h200.sh",
+    "https://huggingface.co/RecursiveSI/flint-nvfp4-gguf",
+    "https://ollama.com/library/flint/tags",
+    "https://raw.githubusercontent.com/ggml-org/llama.cpp/master/src/llama-arch.cpp"
+   ],
+   "confidence": "medium",
+   "notes": "Template has no thinking switch; card says preserve reasoning_content in history and budget >=32K output tokens. Only 2.5B active makes CPU expert offload practical."
+  },
+  {
+   "name": "Muse-Glimmer-30B",
+   "vendor": "Meta (Meta Superintelligence Lab, HF org meta-models 'Meta Inc.', verified)",
+   "family": "Muse",
+   "hf_repo": "meta-models/Muse-Glimmer-30B",
+   "release_date": "2026-08-09 (HF createdAt; card 'August 2026')",
+   "license": "Apache-2.0",
+   "architecture": "dense 52-layer transformer, [L,L,L,G] attention with 2048 SWA, 32 Q / 2 KV heads, plus 1.8B ViT-G/14 encoder",
+   "total_params_b": 29.6,
+   "active_params_b": 29.6,
+   "context_length": "131,072+",
+   "modalities": "text+image in, text out",
+   "thinking": "always",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "GGUF KQuant-17GB Q4_K_M 16.76 GB, KQuant-Dynamic Q4_K_XL 19.65 GB, mmproj 1.4 GB, DFlash drafter 1.63 GB (meta-models/Muse-Glimmer-30B-GGUF)",
+    "DFlash assistant meta-models/Muse-Glimmer-30B-assistant 5.11 GB",
+    "Ollama muse-glimmer:30b 18 GB, :30b-nvfp4 17 GB, 128K",
+    "Third-party in vLLM recipe: Inferact/Muse-Glimmer-30B-NVFP4-W4A4 25.42 GB, RedHatAI FP8-block 33 GB"
+   ],
+   "vllm": "min vLLM 0.28.0 (image vllm/vllm-openai:v0.28.0), --generation-config auto --enable-auto-tool-choice --tool-call-parser muse_glimmer --reasoning-parser muse_glimmer; one tool call per message (https://github.com/vllm-project/recipes/blob/main/models/meta-models/Muse-Glimmer-30B.yaml)",
+   "llamacpp_ollama": "llama.cpp arch muse-glimmer in master; ollama run muse-glimmer:30b (tools, thinking, vision)",
+   "fit_16gb": "Does not fit fully: smallest file 16.76 GB > 16 GB VRAM; vLLM NVFP4 needs ~31 GB per recipe. Only llama.cpp/Ollama with partial layer offload to RAM, which is slow for a dense model",
+   "coding_agent_evidence": "Vendor: SWE-Bench Verified 76.0, SWE-Bench Pro 51.2, TerminalBench 2.1 (terminus2) 51.7, MCP Atlas 75.5 (https://huggingface.co/meta-models/Muse-Glimmer-30B)",
+   "sources": [
+    "https://huggingface.co/meta-models/Muse-Glimmer-30B",
+    "https://huggingface.co/api/organizations/meta-models/overview",
+    "https://raw.githubusercontent.com/vllm-project/recipes/main/models/meta-models/Muse-Glimmer-30B.yaml",
+    "https://ollama.com/library/muse-glimmer/tags"
+   ],
+   "confidence": "high",
+   "notes": "Reasoning strength low/medium/high/xhigh set via template variable or system prompt (default high); no off switch in template. Card targets 24 GB / 32 GB hardware."
+  },
+  {
+   "name": "GLM-4.7-Flash",
+   "vendor": "Z.ai (zai-org)",
+   "family": "GLM",
+   "hf_repo": "zai-org/GLM-4.7-Flash",
+   "release_date": "2026-01-19 (HF createdAt)",
+   "license": "MIT",
+   "architecture": "MoE (glm4_moe_lite, MLA kv_lora_rank 512), 64 routed experts top-4 + 1 shared, 47 layers",
+   "total_params_b": 31.2,
+   "active_params_b": 3,
+   "context_length": "202,752 (config); Ollama 198K",
+   "modalities": "text",
+   "thinking": "toggle",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "No vendor-quantized repo found under zai-org",
+    "Ollama glm-4.7-flash q4_K_M 19 GB, q8_0 32 GB"
+   ],
+   "vllm": "Card: vllm serve zai-org/GLM-4.7-Flash --tool-call-parser glm47 --reasoning-parser glm45 --enable-auto-tool-choice (MTP spec optional). At release it needed vLLM main; Glm4MoeLiteForCausalLM is in v0.27.0+ registry",
+   "llamacpp_ollama": "ollama run glm-4.7-flash (badges tools, thinking)",
+   "fit_16gb": "Needs llama.cpp/Ollama with experts in RAM: q4_K_M 19 GB; 3B active (inferred from '30B-A3B' on card)",
+   "coding_agent_evidence": "Vendor: SWE-bench Verified 59.2, tau2-Bench 79.5, LCB v6 64.0 (https://huggingface.co/zai-org/GLM-4.7-Flash)",
+   "sources": [
+    "https://huggingface.co/zai-org/GLM-4.7-Flash",
+    "https://huggingface.co/zai-org/GLM-4.7-Flash/raw/main/config.json",
+    "https://ollama.com/library/glm-4.7-flash/tags"
+   ],
+   "confidence": "high",
+   "notes": "Template has enable_thinking and clear_thinking; card asks for Preserved Thinking in multi-turn agent tasks. Still the latest GLM small enough for this machine: GLM-5.3-Flash is 321B."
+  },
+  {
+   "name": "Devstral-Small-2-24B-Instruct-2512",
+   "vendor": "Mistral AI",
+   "family": "Devstral",
+   "hf_repo": "mistralai/Devstral-Small-2-24B-Instruct-2512",
+   "release_date": "2025-11-28 (HF createdAt)",
+   "license": "Apache-2.0",
+   "architecture": "dense 24B (Mistral Small 3.1 base), 40 layers, 8 KV heads x 128",
+   "total_params_b": 24,
+   "active_params_b": 24,
+   "context_length": "256K (card); config max_position_embeddings 393,216",
+   "modalities": "text+image in (Ollama vision badge), text out",
+   "thinking": "no",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "HF weights are FP8 natively (51.6 GB repo includes consolidated copy)",
+    "No mistralai GGUF repo for Devstral Small 2 found (only 2505/2507 GGUF)",
+    "Ollama devstral-small-2:24b q4_K_M 15 GB, q8_0 26 GB"
+   ],
+   "vllm": "Card: vllm serve mistralai/Devstral-Small-2-24B-Instruct-2512 --tool-call-parser mistral --enable-auto-tool-choice; mistral_common >= 1.8.6",
+   "llamacpp_ollama": "ollama run devstral-small-2 (badges tools, vision)",
+   "fit_16gb": "Tight or no: FP8 ~24 GB does not fit vLLM; Ollama q4_K_M 15 GB leaves almost no KV room at 160 KiB/token (40 x 2 x 8 x 128 x 2 B), so expect partial offload or short context",
+   "coding_agent_evidence": "Vendor: SWE-bench Verified 68.0, SWE-bench Multilingual 55.7, Terminal Bench 2 22.5 (https://huggingface.co/mistralai/Devstral-Small-2-24B-Instruct-2512)",
+   "sources": [
+    "https://huggingface.co/mistralai/Devstral-Small-2-24B-Instruct-2512",
+    "https://ollama.com/library/devstral-small-2/tags"
+   ],
+   "confidence": "high",
+   "notes": "Non-thinking tool-calling coder. It is the latest small Devstral; Mistral released no newer small dense coder in the window."
+  },
+  {
+   "name": "granite-4.2-8b",
+   "vendor": "IBM",
+   "family": "Granite 4.2",
+   "hf_repo": "ibm-granite/granite-4.2-8b",
+   "release_date": "2026-08-07 HF createdAt (card says August 25, 2026)",
+   "license": "Apache-2.0",
+   "architecture": "dense GraniteForCausalLM, 40 layers, 8 KV heads",
+   "total_params_b": 8.79,
+   "active_params_b": 8.79,
+   "context_length": "128K native, extension to 512K",
+   "modalities": "text",
+   "thinking": "toggle",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "MXFP4 ibm-granite/granite-4.2-8b-mxfp4 5.88 GB",
+    "Ollama granite4.2 (8b tags exist; 30b q4_K_M 18 GB)"
+   ],
+   "vllm": "Card: vllm serve ibm-granite/granite-4.2-8b --max-model-len 131072 --reasoning-parser granite_thinking_parser --reasoning-parser-plugin ./granite_thinking_parser.py --tool-call-parser qwen3_coder (enable-auto-tool-choice implied)",
+   "llamacpp_ollama": "llama.cpp arch granite; ollama.com/library/granite4.2",
+   "fit_16gb": "vLLM fits: MXFP4 5.88 GB or online FP8 ~9 GB; KV 160 KiB/token, so ~45K tokens BF16 KV or ~90K with fp8 KV at 0.90 util (inferred)",
+   "coding_agent_evidence": "Vendor table (8B column): SWE-Bench Verified 47.67, Terminal-Bench 2.1 20.56, BFCL v4 52.39 (https://huggingface.co/ibm-granite/granite-4.2-8b)",
+   "sources": [
+    "https://huggingface.co/ibm-granite/granite-4.2-8b",
+    "https://huggingface.co/api/models/ibm-granite/granite-4.2-8b-mxfp4?blobs=true",
+    "https://ollama.com/library/granite4.2"
+   ],
+   "confidence": "high",
+   "notes": "Modes: thinking, non-thinking (enable_thinking=False), low-effort. Reasoning parser is a plugin file shipped in the repo."
+  },
+  {
+   "name": "granite-4.2-30b",
+   "vendor": "IBM",
+   "family": "Granite 4.2",
+   "hf_repo": "ibm-granite/granite-4.2-30b",
+   "release_date": "2026-08-07 HF createdAt (card August 25, 2026)",
+   "license": "Apache-2.0",
+   "architecture": "dense GraniteForCausalLM, 64 layers",
+   "total_params_b": 29.28,
+   "active_params_b": 29.28,
+   "context_length": "128K native, extension to 512K",
+   "modalities": "text",
+   "thinking": "toggle",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "MXFP4 ibm-granite/granite-4.2-30b-mxfp4 16.76 GB",
+    "Ollama granite4.2:30b q4_K_M 18 GB, q3_K_M 14 GB"
+   ],
+   "vllm": "Same as 8B: --reasoning-parser granite_thinking_parser (plugin) --tool-call-parser qwen3_coder",
+   "llamacpp_ollama": "ollama run granite4.2:30b",
+   "fit_16gb": "Does not fit fully: MXFP4 16.76 GB and Q4_K_M 18 GB exceed VRAM; dense, so offload is slow",
+   "coding_agent_evidence": "Vendor: SWE-Bench Verified 57, Terminal-Bench 2.1 29.24, BFCL v4 61.39 (https://huggingface.co/ibm-granite/granite-4.2-30b)",
+   "sources": [
+    "https://huggingface.co/ibm-granite/granite-4.2-30b",
+    "https://ollama.com/library/granite4.2/tags"
+   ],
+   "confidence": "high",
+   "notes": "Weaker agentic-coding scores than Ornith/Muse/Flint at similar or larger size."
+  },
+  {
+   "name": "Raon-1-mini-preview",
+   "vendor": "KRAFTON AI",
+   "family": "Raon-1",
+   "hf_repo": "KRAFTON/Raon-1-mini-preview",
+   "release_date": "2026-10-21 (HF createdAt)",
+   "license": "Apache-2.0 (gated click-through)",
+   "architecture": "hybrid MoE trained from scratch: 18 linear (Raon Delta Attention) + 7 full attention layers, 128 experts, 6 routed + 1 shared",
+   "total_params_b": 28.8,
+   "active_params_b": 4.3,
+   "context_length": "262,144",
+   "modalities": "text",
+   "thinking": "always",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "Main repo is MXFP8 32.7 GB",
+    "NVFP4 KRAFTON/Raon-1-mini-preview-nvfp4 17.54 GB",
+    "GGUF IQ4_XS 16.07 / Q4_K_M 19.69 / Q8_0 30.69 GB; DFlash2 draft",
+    "No Ollama library page (ollama.com/library/raon returns 404)"
+   ],
+   "vllm": "Not in upstream vLLM registry; needs KRAFTON fork git+https://github.com/krafton-ai/vllm.git@raon-1-mini-preview, --reasoning-parser raon_1 --enable-auto-tool-choice --tool-call-parser raon_1 (beta); RTX 5090 32 GB NVFP4 profile documented",
+   "llamacpp_ollama": "Card: build from KRAFTON llama.cpp branch, upstream support pending; GGUF arch raon1 not in llama.cpp master",
+   "fit_16gb": "Not practical in stock Docker images: NVFP4 17.5 GB > 16 GB in vLLM fork; IQ4_XS 16.1 GB GGUF needs fork llama.cpp with expert offload",
+   "coding_agent_evidence": "Vendor: SWE-Verified 70.8 (mini-SWE-agent), LiveCodeBench v6 81.6, BFCL v4 59.8, Terminal-Bench Lite 47.0 (https://huggingface.co/KRAFTON/Raon-1-mini-preview)",
+   "sources": [
+    "https://huggingface.co/KRAFTON/Raon-1-mini-preview",
+    "https://huggingface.co/api/models/KRAFTON/Raon-1-mini-preview-gguf?blobs=true",
+    "https://huggingface.co/api/models/KRAFTON/Raon-1-mini-preview-nvfp4"
+   ],
+   "confidence": "high",
+   "notes": "Card: designed for thinking mode, disabling not recommended. Card names OpenCode support. Preview status plus fork-only runtimes."
+  },
+  {
+   "name": "Raon-1-nano",
+   "vendor": "KRAFTON AI",
+   "family": "Raon-1",
+   "hf_repo": "KRAFTON/Raon-1-nano",
+   "release_date": "2026-10-29 (HF createdAt)",
+   "license": "Apache-2.0",
+   "architecture": "dense, 3.1B incl. 1.5B per-layer embedding (1.5B effective), MoE-to-dense distilled from Raon-1 mini, MTP head",
+   "total_params_b": 3.1,
+   "active_params_b": 1.5,
+   "context_length": "262,144",
+   "modalities": "text",
+   "thinking": "always",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "GGUF KRAFTON/Raon-1-nano-gguf Q4_K_M 2.08 / Q6_K 2.65 / Q8_0 3.39 GB (+MTP variants)"
+   ],
+   "vllm": "Fork only: vllm @ git+https://github.com/krafton-ai/vllm.git@raon-1-nano; --reasoning-parser raon_1 --enable-auto-tool-choice --tool-call-parser raon_1",
+   "llamacpp_ollama": "GGUF arch raon1nano, not in llama.cpp master; no Ollama library page",
+   "fit_16gb": "Fits easily (3.4 GB Q8_0) but only via forks",
+   "coding_agent_evidence": "None for coding; card targets office/mobile tool use",
+   "sources": [
+    "https://huggingface.co/KRAFTON/Raon-1-nano",
+    "https://huggingface.co/api/models/KRAFTON/Raon-1-nano-gguf?blobs=true"
+   ],
+   "confidence": "high",
+   "notes": "Not a coding-agent candidate; listed because the lead asked."
+  },
+  {
+   "name": "SenseNova-Loop-9B-Preview",
+   "vendor": "SenseTime (sensenova)",
+   "family": "SenseNova Loop",
+   "hf_repo": "sensenova/SenseNova-Loop-9B-Preview",
+   "release_date": "2026-10-28 HF createdAt (card news 2026-10-30)",
+   "license": "Apache-2.0",
+   "architecture": "looped decoder: 32 distinct layers, layers 4-27 run twice (56 executions), two-stream mHC, 3:1 linear/full hybrid attention",
+   "total_params_b": 9.66,
+   "active_params_b": 14.6,
+   "context_length": "trained up to 262,144",
+   "modalities": "text+image in, text out",
+   "thinking": "toggle",
+   "tool_calling": "unknown",
+   "official_quantized": [
+    "None from vendor; MTP available",
+    "No Ollama library page (404)"
+   ],
+   "vllm": "Needs unmerged vLLM PR #64832 (https://github.com/vllm-project/vllm/pull/64832) or SGLang PR #47281; parser names not given in card",
+   "llamacpp_ollama": "No sensenova_loop arch in llama.cpp master; third-party GGUFs tag arch qwen35 (cannot reproduce the loop, inferred)",
+   "fit_16gb": "BF16 19.3 GB does not fit; no supported quantized path in stock images",
+   "coding_agent_evidence": "Card shows a chart only (Terminal Bench 2.1, tau3-Banking, AutomationBench); no numbers in text",
+   "sources": [
+    "https://huggingface.co/sensenova/SenseNova-Loop-9B-Preview"
+   ],
+   "confidence": "medium",
+   "notes": "active_params_b holds the card's '~14.6B inference parameters'. Preview; not runnable in stock Docker images today."
+  },
+  {
+   "name": "Ternary-Bonsai-2-27B",
+   "vendor": "Prism ML (prism-ml)",
+   "family": "Bonsai 2",
+   "hf_repo": "prism-ml/Ternary-Bonsai-2-27B-gguf",
+   "release_date": "2026-09-16 (HF createdAt)",
+   "license": "Apache-2.0",
+   "architecture": "Qwen3.8-27B (dense hybrid attention, ~75% linear) with ternary g128 weights",
+   "total_params_b": 26.9,
+   "active_params_b": 26.9,
+   "context_length": "262K",
+   "modalities": "text+image in (mmproj), text out",
+   "thinking": "toggle",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "PTQ1_0 5.95 GB and PQ2_0 7.21 GB (Prism llama.cpp fork)",
+    "Q2_0 7.63 GB (stock llama.cpp b11556+)",
+    "Ollama bonsai-2:27b 8.3 GB; also 9b 3.2 GB, 4b, 2b"
+   ],
+   "vllm": "Not supported; card lists llama.cpp (CUDA/Metal/CPU) and MLX only",
+   "llamacpp_ollama": "llama.cpp arch qwen35; Q2_0 runs on mainline from b11556; ollama run bonsai-2:27b (tools, thinking, vision)",
+   "fit_16gb": "Fits llama.cpp fully: 7.6 GB weights leaves ~7 GB for KV and context",
+   "coding_agent_evidence": "Vendor: 'coding level with the baseline (89.42)' across its 14 thinking-mode benchmark average; no SWE-bench/Terminal-Bench numbers in card",
+   "sources": [
+    "https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-gguf",
+    "https://huggingface.co/api/models/prism-ml/Ternary-Bonsai-2-27B-gguf?blobs=true",
+    "https://ollama.com/library/bonsai-2/tags"
+   ],
+   "confidence": "medium",
+   "notes": "'toggle' is inferred from the Qwen3.8 base plus Ollama's thinking badge, not from a Bonsai doc. A 2-bit compression of the Qwen lane's 27B, worth trying against Qwen Q4."
+  },
+  {
+   "name": "Apriel-1.6-15b-Thinker",
+   "vendor": "ServiceNow AI",
+   "family": "Apriel",
+   "hf_repo": "ServiceNow-AI/Apriel-1.6-15b-Thinker",
+   "release_date": "2025-11-28 (HF createdAt)",
+   "license": "MIT",
+   "architecture": "dense 14.9B, Llava (Mistral text backbone), 48 layers",
+   "total_params_b": 14.86,
+   "active_params_b": 14.86,
+   "context_length": "config max_position_embeddings 262,400",
+   "modalities": "text+image in, text out",
+   "thinking": "always",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "None found; no Ollama library page (ollama.com/library/apriel 404)"
+   ],
+   "vllm": "unknown; card serve command and parsers not checked",
+   "llamacpp_ollama": "unknown",
+   "fit_16gb": "BF16 29.7 GB does not fit; FP8 ~15 GB too tight for vLLM; would need a 4-bit GGUF (inferred)",
+   "coding_agent_evidence": "Vendor: Tau2 Telecom 69, IFBench 69; card also reports BFCL v3 (https://huggingface.co/ServiceNow-AI/Apriel-1.6-15b-Thinker)",
+   "sources": [
+    "https://huggingface.co/ServiceNow-AI/Apriel-1.6-15b-Thinker"
+   ],
+   "confidence": "low",
+   "notes": "Low priority. SuperApriel-15B-Instruct (2026-04) has a 100 GB repo and was not evaluated."
+  },
+  {
+   "name": "Mistral-Small-4-119B-2603",
+   "vendor": "Mistral AI",
+   "family": "Mistral Small",
+   "hf_repo": "mistralai/Mistral-Small-4-119B-2603",
+   "release_date": "2026-01-23 (HF createdAt)",
+   "license": "Apache-2.0",
+   "architecture": "MoE (mistral4, MLA), 128 experts top-4",
+   "total_params_b": 119,
+   "active_params_b": 6.5,
+   "context_length": "262,144",
+   "modalities": "text+image in, text out",
+   "thinking": "toggle",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "FP8 native (241.9 GB repo)",
+    "NVFP4 mistralai/Mistral-Small-4-119B-2603-NVFP4",
+    "No vendor GGUF found"
+   ],
+   "vllm": "min vLLM 0.20.0; --tool-call-parser mistral --enable-auto-tool-choice --reasoning-parser mistral; reasoning appears when reasoning_effort='high' (vLLM recipe)",
+   "llamacpp_ollama": "llama.cpp arch mistral4 exists in master",
+   "fit_16gb": "Does not fit practically: even 4-bit is about 60-70 GB (inferred), more than the ~40 GB RAM free plus 16 GB VRAM",
+   "coding_agent_evidence": "not collected",
+   "sources": [
+    "https://raw.githubusercontent.com/vllm-project/recipes/main/models/mistralai/Mistral-Small-4-119B-2603.yaml",
+    "https://huggingface.co/mistralai/Mistral-Small-4-119B-2603/raw/main/config.json"
+   ],
+   "confidence": "medium",
+   "notes": "Listed because it is MoE <=120B with small active params. Exclude for this machine."
+  }
+ ],
+ "facts": [
+  {
+   "topic": "Meta",
+   "claim": "Muse Glimmer 30B is published by Meta Superintelligence Lab under HF org meta-models (fullname 'Meta Inc.', isVerified true), Apache 2.0, released August 2026.",
+   "source_url": "https://huggingface.co/meta-models/Muse-Glimmer-30B",
+   "source_date": "2026-08-09",
+   "support": "direct-statement",
+   "notes": "Org check: https://huggingface.co/api/organizations/meta-models/overview"
+  },
+  {
+   "topic": "Meta",
+   "claim": "No new meta-llama model was created between 2025-11-15 and 2026-11-15. The newest meta-llama repos are Llama 4 and Guard (April 2025).",
+   "source_url": "https://huggingface.co/api/models?author=meta-llama&sort=createdAt&direction=-1&limit=100",
+   "source_date": "2026-11-15",
+   "support": "source-backed"
+  },
+  {
+   "topic": "vLLM",
+   "claim": "vLLM support for Muse Glimmer shipped in v0.28.0 with dedicated muse_glimmer tool and reasoning parsers. The recipe says the NVFP4 build needs ~31 GB and that the DFlash drafter is unsupported on a single 32 GB RTX 5090.",
+   "source_url": "https://raw.githubusercontent.com/vllm-project/recipes/main/models/meta-models/Muse-Glimmer-30B.yaml",
+   "source_date": "2026-09-09",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "vLLM",
+   "claim": "Latest vLLM releases: v0.32.0 (2026-10-18) and v0.33.0rc3 (2026-11-02). The Docker Hub vllm/vllm-openai nightly tag was updated 2026-11-15.",
+   "source_url": "https://api.github.com/repos/vllm-project/vllm/releases?per_page=12",
+   "source_date": "2026-11-15",
+   "support": "direct-statement",
+   "notes": "Docker: https://hub.docker.com/v2/repositories/vllm/vllm-openai/tags"
+  },
+  {
+   "topic": "vLLM",
+   "claim": "FlintForCausalLM is absent from the v0.32.0 registry and present in v0.33.0rc3 and main. RicursiveForCausalLM (Ripple) and Lfm3ForCausalLM are in main only. Raon and SenseNova Loop are absent from main.",
+   "source_url": "https://raw.githubusercontent.com/vllm-project/vllm/main/vllm/model_executor/models/registry.py",
+   "source_date": "2026-11-15",
+   "support": "source-backed",
+   "notes": "Compared with https://raw.githubusercontent.com/vllm-project/vllm/v0.32.0/vllm/model_executor/models/registry.py and v0.33.0rc3"
+  },
+  {
+   "topic": "vLLM",
+   "claim": "vLLM main registers tool parsers muse_glimmer, mimo, glm47, mistral, granite4, olmo3, qwen3_coder, qwen3_xml and ripple. There is no flint or raon tool parser.",
+   "source_url": "https://raw.githubusercontent.com/vllm-project/vllm/main/vllm/tool_parsers/__init__.py",
+   "source_date": "2026-11-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "llama.cpp",
+   "claim": "llama.cpp master (latest release b12418, 2026-11-15) has arch entries flint, muse-glimmer, ricursive, lfm3, qwen35, qwen35moe, mistral4 and granite. There is no raon or sensenova_loop arch.",
+   "source_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/master/src/llama-arch.cpp",
+   "source_date": "2026-11-15",
+   "support": "source-backed"
+  },
+  {
+   "topic": "Ornith",
+   "claim": "Ornith-1.5 builds on Ornith-1.0, which was developed on top of Qwen3.5 and Gemma4. The 9B and 35B-A3B checkpoints use the Qwen3_5 / Qwen3_5Moe architecture, and the license is MIT.",
+   "source_url": "https://huggingface.co/ornith-ai/Ornith-1.5-35B-A3B",
+   "source_date": "2026-08-18",
+   "support": "direct-statement",
+   "notes": "ornith-ai org isVerified=false: https://huggingface.co/api/organizations/ornith-ai/overview"
+  },
+  {
+   "topic": "Ornith",
+   "claim": "Ornith-1.5 cards require vLLM >= 0.19.1 and serve with --enable-auto-tool-choice --tool-call-parser qwen3_xml --reasoning-parser qwen3. They are reasoning-by-default, with enable_thinking in the chat template.",
+   "source_url": "https://huggingface.co/ornith-ai/Ornith-1.5-9B",
+   "source_date": "2026-08-23",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "Ornith",
+   "claim": "Ornith-1.5-122B (released 2026-10-16) is a Qwen3_5Moe model with 256 experts and top-8 routing. Ollama ornith-1.5:122b is 73 GB, too large for 16 GB VRAM plus ~40 GB free RAM.",
+   "source_url": "https://ollama.com/library/ornith-1.5/tags",
+   "source_date": "2026-11-15",
+   "support": "source-backed",
+   "notes": "config: https://huggingface.co/ornith-ai/Ornith-1.5-122B/raw/main/config.json"
+  },
+  {
+   "topic": "Flint",
+   "claim": "Flint is from Recursive Superintelligence, Inc. (HF org RecursiveSI, not verified): Apache 2.0, 39.8B total and ~2.5B active MoE trained from scratch, 262,144 context, text only.",
+   "source_url": "https://huggingface.co/RecursiveSI/flint",
+   "source_date": "2026-10-21",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "Flint",
+   "claim": "The official Flint serving kit is SGLang (base lmsysorg/sglang:v0.5.16-cu130) with --tool-call-parser flint --reasoning-parser flint --grammar-backend flint. The card says Transformers modeling code is not included yet.",
+   "source_url": "https://huggingface.co/RecursiveSI/flint/raw/main/sglang/serve_h200.sh",
+   "source_date": "2026-10-21",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "Ripple",
+   "claim": "Ripple-65B-Preview is from Ricursive Intelligence (verified org, not Recursive): a 65B dense model, Apache 2.0, up to 1,048,576 context, Terminal-Bench 2.1 80.5 self-reported. The NVFP4 repo is 57.2 GB and Ollama ripple-preview:65b is 39 GB, so it does not fit this GPU.",
+   "source_url": "https://huggingface.co/ricursiveAI/Ripple-65B-Preview",
+   "source_date": "2026-11-04",
+   "support": "direct-statement",
+   "notes": "Ollama: https://ollama.com/library/ripple-preview/tags ; NVFP4 size from HF API blobs"
+  },
+  {
+   "topic": "MiMo",
+   "claim": "MiMo-V2.6-Distill-Qwen-9B is an SFT of Qwen3.5-9B by Xiaomi MiMo under the MIT license. It reports SWE Verified 61.1 and Terminal Bench 2.1 37.1. The card's quickstart uses SGLang --reasoning-parser mimo.",
+   "source_url": "https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Distill-Qwen-9B",
+   "source_date": "2026-09-21",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "MiMo",
+   "claim": "MiMo-V2.6-Flash-RL is 310.8B params (178 GB repo): it does not fit.",
+   "source_url": "https://huggingface.co/api/models/XiaomiMiMo/MiMo-V2.6-Flash-RL",
+   "source_date": "2026-09-21",
+   "support": "source-backed"
+  },
+  {
+   "topic": "Liquid",
+   "claim": "LFM3-1.7B (LFM Open License v1.0) is a tri-hybrid model for local agents, but its card says it is not recommended for agentic coding. Ollama lfm3:1.7b is 1.1 GB.",
+   "source_url": "https://huggingface.co/LiquidAI/LFM3-1.7B",
+   "source_date": "2026-10-23",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "KRAFTON",
+   "claim": "Raon-1 mini preview is a 28.8B total / 4.3B active MoE trained from scratch. It needs KRAFTON's vLLM fork (parsers raon_1) and a llama.cpp branch: 'upstream support is pending'.",
+   "source_url": "https://huggingface.co/KRAFTON/Raon-1-mini-preview",
+   "source_date": "2026-11-12",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "SenseNova",
+   "claim": "SenseNova-Loop-9B-Preview (Apache 2.0, released 2026-10-30) needs unmerged vLLM PR #64832 or SGLang PR #47281.",
+   "source_url": "https://huggingface.co/sensenova/SenseNova-Loop-9B-Preview",
+   "source_date": "2026-11-14",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "Bonsai",
+   "claim": "Ternary-Bonsai-2-27B is derived from Qwen3.8-27B. Its Q2_0 GGUF (7.63 GB) runs in mainline llama.cpp from b11556, and the PTQ1_0 (5.95 GB) and PQ2_0 (7.21 GB) packings need Prism's fork. It is not available for vLLM.",
+   "source_url": "https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-gguf",
+   "source_date": "2026-11-04",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "Z.ai",
+   "claim": "The newest GLM small enough for this machine is GLM-4.7-Flash (30B-A3B, MIT). GLM-5.3-Flash (2026-08-25) is 321B parameters, and no GLM 'Air' was released after GLM-4.5-Air (July 2025).",
+   "source_url": "https://huggingface.co/api/models?author=zai-org&sort=createdAt&direction=-1&limit=100",
+   "source_date": "2026-11-15",
+   "support": "source-backed",
+   "notes": "Size from https://huggingface.co/api/models/zai-org/GLM-5.3-Flash"
+  },
+  {
+   "topic": "Mistral",
+   "claim": "In the window Mistral released Devstral-Small-2-24B and Devstral-2-123B (2025-11-28), Mistral-Small-4-119B (2026-01, 6.5B active), Mistral-Medium-3.5-128B, Mistral-Large-4-1T and Leanstral. No new Magistral appeared after Magistral-Small-2509, and the Ministral-3 repos are dated 2025-10-31 (2512 naming).",
+   "source_url": "https://huggingface.co/api/models?author=mistralai&sort=createdAt&direction=-1&limit=100",
+   "source_date": "2026-11-15",
+   "support": "source-backed"
+  },
+  {
+   "topic": "IBM",
+   "claim": "Granite 4.2 (3B/8B/30B dense, Apache 2.0) adds built-in thinking with a non-thinking switch. The vLLM command uses --reasoning-parser granite_thinking_parser with a plugin file and --tool-call-parser qwen3_coder.",
+   "source_url": "https://huggingface.co/ibm-granite/granite-4.2-8b",
+   "source_date": "2026-10-20",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "Microsoft",
+   "claim": "Microsoft's only in-window Phi release was Phi-4-reasoning-vision-15B (2026-01-23). Its other 2026 releases (Fara1.5, AesCode, FrogNano) are not general coding agents, so no Phi successor targets coding agents.",
+   "source_url": "https://huggingface.co/api/models?author=microsoft&search=phi&sort=createdAt&direction=-1",
+   "source_date": "2026-11-15",
+   "support": "source-backed"
+  },
+  {
+   "topic": "Too large",
+   "claim": "In-window releases from MiniMax (M3.1-Flash 220B), Moonshot (Kimi K2.7-Code ~1T, K3, K3.1-Pro), StepFun (Step-3.7-Flash 201B, Step-5-Preview), inclusionAI (Ling-3.1-flash 572B), Tencent (Hy4-preview 780B) and LG (K-EXAONE 750B) do not fit this machine.",
+   "source_url": "https://huggingface.co/api/models/MiniMaxAI/MiniMax-M3.1-Flash",
+   "source_date": "2026-11-15",
+   "support": "source-backed",
+   "notes": "Sizes via HF API safetensors totals per repo"
+  },
+  {
+   "topic": "Other",
+   "claim": "EXAONE-4.5-33B (2026-04) uses a custom 'exaone' license with 262,144 context. Olmo-3.1-32B-Think (2025-12, Apache 2.0) has only 65,536 context. ByteDance Seed-OSS-36B dates from Aug 2025 (outside the window), and Baidu's only in-window ERNIE text release is ERNIE-5.5-Flash-Base.",
+   "source_url": "https://huggingface.co/LGAI-EXAONE/EXAONE-4.5-33B",
+   "source_date": "2026-07-06",
+   "support": "source-backed",
+   "notes": "Olmo config: https://huggingface.co/allenai/Olmo-3.1-32B-Think/raw/main/config.json ; Seed-OSS and ERNIE via HF API search"
+  },
+  {
+   "topic": "Ollama",
+   "claim": "Ollama library pages exist with tools and thinking badges for ornith-1.5, flint, muse-glimmer, mimo-v2.6, lfm3, ripple-preview, bonsai-2 and glm-4.7-flash. devstral-small-2 and ministral-3 show tools without thinking. raon and sensenova-loop return 404.",
+   "source_url": "https://ollama.com/library/flint",
+   "source_date": "2026-11-15",
+   "support": "direct-statement"
+  }
+ ],
+ "gaps": [
+  "Flint in vLLM: the model class is in v0.33.0rc3 and main, but I found no 'flint' tool or reasoning parser in vLLM main, so tool calling through vLLM is unverified. Recursive's documented path is its SGLang kit.",
+  "Benchmarks for Ornith, Flint, Muse Glimmer, Ripple and Raon are vendor self-reported. ornith-ai and RecursiveSI are unverified HF orgs. I found no independent leaderboard confirmation.",
+  "Not checked: NVFP4 and MXFP4 kernel support on sm_120 (RTX 5080 Laptop) in vLLM, for Ornith-1.5-9B-NVFP4 and granite-4.2-8b-mxfp4. The 'fits' estimates assume these kernels work on consumer Blackwell.",
+  "MiMo-V2.6-Distill-Qwen-9B has no vendor vLLM command. The parser choice (mimo vs qwen3_xml) is inferred from the template's XML tool format.",
+  "Muse Glimmer: no official quant smaller than 16.76 GB was found, and no tok/s figure exists for 16 GB cards.",
+  "Apriel-1.6 vLLM parsers and quantized builds were not checked. SuperApriel-15B was not examined.",
+  "SenseNova-Loop-9B-Preview: tool-calling support and parser names are not stated in text. Benchmarks exist only as an image.",
+  "Ollama tag sizes come from regex scraping of ollama.com tag pages, so a few size-to-tag pairings could be misaligned. The bonsai-2 default tag shows 3.2 GB (the 9b tag).",
+  "Did not cover the Hy-Memory-30B-A3B, Hy-SimulMT, Fara1.5-27B, tmax-27b (AllenAI, Qwen3.6-27B fine-tune) and Nemotron-Cascade-2-30B-A3B cards in depth. Nemotron belongs to the NVIDIA lane.",
+  "Granite 4.2 card release date (August 25, 2026) differs from the HF createdAt (2026-08-07)."
+ ]
+}

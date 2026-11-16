@@ -1,0 +1,72 @@
+{
+ "overall": "holds",
+ "summary": "I could not refute any runtime claim in the record. I checked every load-bearing value against live primary sources.\n\n**Weight sizes (HF API `?blobs=true`).** They match the record exactly:\n- BF16: 17,583,228,032 B (16.376 GiB)\n- FP8: 9,617,279,064 B (8.957 GiB)\n- MXFP4: 5,878,533,232 B (5.475 GiB)\n- NVFP4: 6,127,633,104 B (5.707 GiB)\n- GGUF Q6_K: 7,216,480,384 B (6.721 GiB)\n\n**Model config (config.json).** GraniteForCausalLM, 40 layers, 8 KV heads, head_dim 128 (4096/32), no sliding window, `rope_scaling` null, `max_position_embeddings` 131072. That gives 163,840 B/token of KV cache in BF16 and 81,920 B in FP8.\n\n**vLLM context on the NVFP4 build.** The KV pool is 14.647 - 5.707 - 1.2 = 7.740 GiB, which holds 50,729 tokens in BF16 or 101,458 in FP8. The record's 50,725 and 101,450 differ only by rounding.\n\n**llama.cpp context.** Q6_K weights 6.72 GiB plus q8_0 KV at 64K (5.31 GiB) plus 0.8 GiB of buffers comes to 12.83 GiB, as the record says.\n\n**vLLM v0.33.0 source.**\n- `GraniteForCausalLM` is registered (registry.py line 131).\n- The reasoning parsers `granite_thinking_parser` and `nemotron_v3` are present.\n- The tool parsers `qwen3_coder`, `granite4` and `granite` are present. `granite_toolcall_parser` is absent; its PR #65216 was merged 2026-11-03, after the release.\n- The IBM model card (README lines 367-368) says to use `qwen3_coder` and names `nemotron_v3` as an alternative.\n\n**MXFP4 kernel claim.** Confirmed in source:\n- The CUDA MXFP4 kernel order starts with `FlashInferMxFp4LinearKernel`.\n- Its `is_supported` check only requires device capability 100 or higher plus cutedsl, so it is selected on sm_120.\n- It then hard-codes `backend='cute-dsl'` with `use_nvfp4=False`.\n- PR #51783, which would fix this, is still open.\n- `VLLM_DISABLED_KERNELS` is honoured during kernel selection, so the record's workaround is valid.\n\n**NVFP4 kernel order.** Matches the record: CuteDsl, then Cutlass, then B12x. The checkpoint is compressed-tensors `nvfp4-pack-quantized` with `lm_head` left unquantized.\n\n**Open sm_120 issues.** No open issue names Granite on sm_120. The closest open issue, #66423 (a segfault with a reasoning parser on SM120 NVFP4), involves an MoE `flashinfer_cutlass` path and a maintainer could not reproduce it. It does not apply to this dense model.\n\n**FP8 KV backend.** FLASH_ATTN is tried first on sm_120 and accepts FP8 KV only if `flash_attn_supports_kv_cache_dtype` allows it. FA2 normally does not, so FlashInfer (next in the list) would be chosen. This is inferred, not run.\n\n**llama.cpp b12418.** In `common/chat.cpp`, lines 1422-1427 route templates that contain `<function=` to `common_chat_params_init_qwen3_coder`. The IBM chat template contains `<function=`, `<parameter=`, `enable_thinking`, `low_effort` and `reasoning_content`.\n\n**Verdict.** The model should serve OpenCode with working tool calls and 64K context on this machine.\n- vLLM: the NVFP4 build with FP8 KV and `--max-model-len 65536` (headroom to about 100K), or the FP8 build with FP8 KV at about 58K.\n- llama.cpp: the official Q6_K GGUF with q8_0 KV at 64K.\n\n**What remains unproven.** Nothing was run on the machine. Untested points are the FlashInfer cute-dsl NVFP4 runtime on sm_120, the FP8-KV FlashInfer path, and whether the image ships cutedsl or b12x.",
+ "verdicts": [
+  {
+   "claim": "Checkpoint weight sizes: BF16 17.583 GB, FP8 9.617 GB, MXFP4 5.879 GB, NVFP4 6.128 GB (5.707 GiB), official GGUF Q6_K 7.216 GB",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/ibm-granite/granite-4.2-8b-nvfp4?blobs=true"
+  },
+  {
+   "claim": "Architecture: 40 full-attention layers, 8 KV heads, head_dim 128, max_position_embeddings 131072, no rope_scaling",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/ibm-granite/granite-4.2-8b/raw/main/config.json"
+  },
+  {
+   "claim": "KV cache costs 163,840 B/token in BF16 and 81,920 B in FP8; NVFP4 build gets about 50.7K tokens (BF16 KV) or about 101.4K (FP8 KV) in vLLM",
+   "verdict": "confirmed",
+   "correction": "Exact values are 50,729 and 101,458 tokens; the record's 50,725 and 101,450 are rounding differences.",
+   "evidence_url": "https://huggingface.co/ibm-granite/granite-4.2-8b/raw/main/config.json"
+  },
+  {
+   "claim": "vLLM v0.33.0 registers GraniteForCausalLM and has the parsers granite_thinking_parser, nemotron_v3 and qwen3_coder, but not granite_toolcall_parser (PR #65216 merged 2026-11-03)",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/reasoning/__init__.py"
+  },
+  {
+   "claim": "The IBM card says to use qwen3_coder as the tool parser and names nemotron_v3 as an alternative reasoning parser",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/ibm-granite/granite-4.2-8b/raw/main/README.md"
+  },
+  {
+   "claim": "MXFP4 on sm_120: FlashInferMxFp4LinearKernel is chosen first (its check is capability 100 or higher plus cutedsl) and hard-codes cute-dsl, so it likely fails; VLLM_DISABLED_KERNELS works around it",
+   "verdict": "confirmed",
+   "correction": "The kernel selection is confirmed in source. The actual runtime failure is inferred, not run. PR #51783 (the fix) is still open.",
+   "evidence_url": "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/model_executor/kernels/linear/mxfp4/flashinfer.py"
+  },
+  {
+   "claim": "NVFP4 on sm_120 works through FlashInferCuteDslNvFp4LinearKernel (kernel order CuteDsl, then Cutlass, then B12x)",
+   "verdict": "uncertain",
+   "correction": "The kernel order is confirmed in source (linear/__init__.py lines 592-606). Runtime success on sm_120 has not been tested. No open issue names a Granite NVFP4 failure; #66423 is MoE-specific and could not be reproduced.",
+   "evidence_url": "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/model_executor/kernels/linear/__init__.py"
+  },
+  {
+   "claim": "--kv-cache-dtype fp8 works on sm_120 in v0.33.0",
+   "verdict": "uncertain",
+   "correction": "FLASH_ATTN is tried first and accepts FP8 KV only when flash_attn_supports_kv_cache_dtype allows it, which FA2 likely does not. FLASHINFER would then be picked. This is inferred, not run.",
+   "evidence_url": "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/platforms/cuda.py"
+  },
+  {
+   "claim": "llama.cpp b12418 routes the Granite 4.2 template to the Qwen3-Coder handler, so tool calls work",
+   "verdict": "confirmed",
+   "correction": "Routing is confirmed in source (common/chat.cpp lines 1422-1427). Not tested end to end.",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/blob/b12418/common/chat.cpp"
+  },
+  {
+   "claim": "llama.cpp with the official Q6_K GGUF and q8_0 KV at 64K needs about 12.83 GiB of VRAM",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/ibm-granite/granite-4.2-8b-GGUF?blobs=true"
+  },
+  {
+   "claim": "Real context limit is 128K, not the card's 512K",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/ibm-granite/granite-4.2-8b/raw/main/config.json"
+  },
+  {
+   "claim": "Overall: usable with OpenCode with working tool calls and at least 64K context on this machine",
+   "verdict": "confirmed",
+   "correction": "This holds on paper. No end-to-end run was done.",
+   "evidence_url": "https://huggingface.co/ibm-granite/granite-4.2-8b/raw/main/README.md"
+  }
+ ]
+}

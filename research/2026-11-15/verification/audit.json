@@ -1,0 +1,67 @@
+{
+ "verdict": "ready-with-fixes",
+ "summary": "I opened 40+ refs: 11 HF API blob listings, 10 raw cards and configs, 18 GitHub issues, llama.cpp b12418 arg.cpp and graph.cuh, 3 ghcr manifests, the Ollama tags pages and the Artificial Analysis R1-8B page. I also grepped the vLLM v0.33.0 clone.\n\n**What holds**\n- **Weight sizes:** every load-bearing size matches the HF API byte totals. Qwen3.6 Q4_K_M 19.13, Gemma 26B QAT 13.45, gpt-oss MXFP4 11.28, Lightning Q4_0 17.60, GLM Q4_K_M 17.05, Qwen3.8 UD-Q3_K_XL 12.24, Coder-Next UD-IQ4_XS 35.79, R1-8B Q8_0 8.11, Gemma 12B W4A16 9.56 (all GiB).\n- **KV arithmetic:** re-derived from the configs and correct. Qwen3.6 20 KiB/token, Qwen3.8 64 KiB, GLM MLA 576 x 47 x 2 = 54,144 B, R1 144 KiB.\n- **Benchmarks:** NVIDIA's same-harness table matches (README line 149/151): 70.12/44.38, 57.40/37.22, 52.44/15.17, 51.56/24.58. So do Qwen3.8 TB2.1 73.0 / Pro 61.7, Qwen3.6 73.4 / 51.5 and SkillsBench via OpenCode, Ornith 70.6 / 46.2, GLM 59.2 / 79.5, and AA R1-8B tau2 0 / TB-Hard 0.0152.\n- **Parsers and flags:** every parser name and the --reasoning-effort-map, --language-model-only, --cpu-offload-params, --attention-backend and fp8_per_tensor flags exist at v0.33.0.\n- **Images:** server-cuda-b12407 returns HTTP 200 and server-cuda-b12418 returns 404.\n- **Issues:** every cited issue is open.\n- **OpenCode config:** final/opencode.json validates against the cached schema with 0 errors.\n- **Challenger refutations:** all of them were carried into the final text correctly. That covers vLLM offload #66264, Gemma 26B headroom 79k-129k, force_nonempty_content being a no-op in llama.cpp, the Qwen3.6 sampling split, the Qwen3.8 AutoRound 15.59 GiB and the --moe-cache-mib semantics.\n- **Coverage:** all the must-cover families are present.\n- **Dashes:** I found no em or en dash on inspection. The final text was not saved to disk, so this check was visual, not a grep.\n\n**What needs fixing**\n- **Blocking:** the `-e GGML_CUDA_DISABLE_GRAPHS=1` placement breaks the llama-server command (issue 1).\n- **Contradictions:** the decision summary contradicts entry 4 about the primary runtime, and Qwen3.5-9B is listed both as excluded and as an honorable mention.\n- **Wrong reasons and overclaims:** the #28581 rationale, the \"smallest checkpoint\" figure for Qwen3.6 and the \"only DeepSeek on 16 GB\" claim.\n- **Usability:** the OpenCode title and compaction agents are pinned to Ornith, which breaks whenever another model is the one being served.",
+ "issues": [
+  {
+   "where": "top10 rank 1 and rank 2 parsers_or_flags (Qwen3.6, Qwen3.8)",
+   "problem": "`-e GGML_CUDA_DISABLE_GRAPHS=1` is written in the llama-server argument list, after -hf/-c. Anything after the image name goes to llama-server, and in llama-server `-e` is `--escape` (a boolean flag; arg.cpp line 1832). `GGML_CUDA_DISABLE_GRAPHS=1` then becomes an unknown positional, and the parser throws `error: invalid argument` (arg.cpp line 843), so the server does not start. The env var itself is correct: graph.cuh line 66 reads it with getenv.",
+   "fix": "Move the variable to a docker flag that comes before the image: `docker run ... -e GGML_CUDA_DISABLE_GRAPHS=1 ghcr.io/ggml-org/llama.cpp:server-cuda-b12407 -hf ...`. State this explicitly in the runtime_guidance llama.cpp topic.",
+   "evidence_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12418/common/arg.cpp"
+  },
+  {
+   "where": "top10 ranks 3, 4, 5, 6, 9, 10 parsers_or_flags",
+   "problem": "runtime_guidance and risks say to always pass GGML_CUDA_DISABLE_GRAPHS=1 on this laptop: #27330 is open and a 2026-10-12 comment reproduces it on Ubuntu 26.04 with driver 595.99.02. Yet only ranks 1 and 2 include it. The Gemma 26B, gpt-oss, Coder-Next, Lightning, GLM and R1 llama.cpp commands omit it.",
+   "fix": "Add the docker-level `-e GGML_CUDA_DISABLE_GRAPHS=1` to every llama.cpp command, or say once that every llama.cpp command needs it.",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/issues/27330"
+  },
+  {
+   "where": "decision_summary vs top10 rank 4 runtime",
+   "problem": "The decision summary says vLLM is the primary runtime for gpt-oss-20b, Ornith and Gemma 12B, and that these are the only models fitting 14.65 GiB at 64k or more. Entry 4 says 'Primary: llama.cpp server-cuda-b12407' and treats vLLM as the option. On vLLM at 0.92, gpt-oss-20b also does not reach 64k: 27.6k with BF16 KV and 55k with FP8. It needs 0.95, which breaks the stated budget rule.",
+   "fix": "Reword the summary: 'vLLM is the primary runtime for Ornith-1.5-9B and Gemma 4 12B; gpt-oss-20b runs primarily on llama.cpp (131k), with vLLM as an option at 64k that needs --gpu-memory-utilization 0.95 plus FP8 KV.'"
+  },
+  {
+   "where": "top10 rank 5 parsers_or_flags; runtime_guidance 'llama.cpp image and flags'; risks (server-cuda13)",
+   "problem": "#28581 is the reason given for avoiding server-cuda13, but it does not support that. The issue covers a local build with nvcc 13.2 (V13.2.78) on an RTX 5060 Ti. The failing types are iq1_s, iq2_s and iq3_s; iq4_xs and iq3_xxs pass. server-cuda13 is built on CUDA 13.5.0, and the challenger reports the miscompile fixed in 13.2.2 and later. 'Must use the CUDA 12.8 image: #28581 miscompiles IQ quants under nvcc 13.2.0/13.2.1' is therefore a wrong reason. The real reason for server-cuda is the NVIDIA_REQUIRE_CUDA check, which has no GeForce brand clause (inferred).",
+   "fix": "Drop the #28581 rationale for the image choice. Keep server-cuda-b12407 because server-cuda13 is probably refused on GeForce (inferred). Keep a softer note: 'if UD-IQ4_XS contains IQ3_S/IQ2_S tensors, sanity-check output (#28581 affected nvcc 13.2 builds)'.",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/issues/28581"
+  },
+  {
+   "where": "top10 rank 10 why / decision_summary",
+   "problem": "The text calls R1-0528-Qwen3-8B 'the only DeepSeek checkpoint that runs on 16 GB'. That overclaims. DeepSeek's own R1-Distill-Qwen-7B (7.6B), R1-Distill-Llama-8B (8.0B) and R1-Distill-Qwen-14B (14.8B) all exist (HF createdAt 2025-01-20) and fit in 16 GB at 4 to 8 bit.",
+   "fix": "Say 'the newest DeepSeek checkpoint that runs on 16 GB (the January 2025 R1 distills are older and also lack tool calling)'.",
+   "evidence_url": "https://huggingface.co/api/models/deepseek-ai/DeepSeek-R1-Distill-Qwen-14B"
+  },
+  {
+   "where": "opencode.config_snippet agents.title / agents.compaction",
+   "problem": "The title and compaction agents are pinned to vllm-docker/ornith-1.5-9b#none. The notes say only one container runs at a time. When the gemma-4-12b or gpt-oss-20b container is the one being served, every title and compaction request goes to a model id that vLLM is not serving and fails (404). The schema validates, but the config breaks in use.",
+   "fix": "Remove the agents block, or tell the user to repoint agents.title and agents.compaction to '<served model>#none' each time they switch. Another option is to serve every model under one --served-model-name, such as 'local', with a single model entry. gpt-oss has no #none variant, so for gpt-oss use the model itself."
+  },
+  {
+   "where": "opencode.notes (Qwen3.8 reasoning_effort)",
+   "problem": "'For Qwen3.8 set reasoning_effort to medium' gives no mechanism. The llama.cpp pattern only defines enable_thinking variants, and entry 2's command does not pass --reasoning-effort.",
+   "fix": "Add a variant such as {\"id\":\"medium\",\"body\":{\"chat_template_kwargs\":{\"enable_thinking\":true,\"reasoning_effort\":\"medium\"}}}, or add `--reasoning-effort medium` to the llama-server command. The flag exists at b12418 per the platform lane."
+  },
+  {
+   "where": "top10 rank 1 runtime",
+   "problem": "'vLLM is not viable: the smallest checkpoint is 19.4 GiB'. The candidate record lists Intel AutoRound int4 at 18.75 GiB language-model-only (20.02 GiB total) as smaller than the 19.40 GiB NVFP4. The conclusion holds, but the number is wrong.",
+   "fix": "Say 'the smallest vLLM checkpoint (Intel AutoRound int4, 18.75 GiB language-model-only) exceeds the 14.65 GiB budget'."
+  },
+  {
+   "where": "excluded[Qwen3.5-9B] vs honorable_mentions[Qwen3.5-9B]",
+   "problem": "Qwen3.5-9B appears both in excluded and in honorable mentions, with overlapping text.",
+   "fix": "Keep it only under honorable mentions, as the conservative Ornith swap, and delete the excluded row."
+  },
+  {
+   "where": "top10 rank 6 est_context",
+   "problem": "The wording '--n-cpu-moe 16 keeps 16 MoE layers on GPU and 7 in RAM' gets the semantics wrong, although the numbers are right. N counts block indices from 0, not MoE layers. Lightning's 52 blocks follow the pattern MEMEM*EMEMEM*..., so blocks 0 to 15 contain 7 MoE layers, which go to RAM, and 16 MoE layers stay on the GPU. Someone tuning N by MoE count would pick the wrong value.",
+   "fix": "Say: '--n-cpu-moe 16 moves the experts of blocks 0-15 (7 of the 23 MoE layers, about 4.7 GiB) to RAM; N counts all hybrid blocks, not only MoE layers.'",
+   "evidence_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/raw/main/config.json"
+  },
+  {
+   "where": "top10 rank 2 caveats (#27623)",
+   "problem": "#27623's title claims a decode collapse above about 80K context for Qwen3.8-27B. On 2026-08-26 the reporter retracted the cliff as a measurement artifact, because pp time had been counted in the decode rate. The q8_0 vs f16 penalty (5.9 vs 13.3 tok/s, sm_89) comes from a later comment. The final text's use of the issue is acceptable, but its context cap of 'up to about 88k' rests on unmeasured headroom.",
+   "fix": "Keep '#27623 (q8_0 KV decode penalty, from a comment; the >80K cliff in the title was retracted)'. Present 65536 as the tested-safe target and 88k as an untested estimate.",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/issues/27623"
+  }
+ ]
+}

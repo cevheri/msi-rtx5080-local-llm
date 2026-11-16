@@ -1,0 +1,261 @@
+{
+ "name": "Ternary Bonsai 2 27B (Prism ML, ternary derivative of Qwen3.8-27B)",
+ "hf_repo": "prism-ml/Ternary-Bonsai-2-27B-gguf",
+ "exists_as_described": true,
+ "within_last_12_months": true,
+ "official_org": {
+  "value": "Prism ML, Inc. (Pasadena, Caltech spin-out). The HF org prism-ml publishes the whole Bonsai line (50+ repos). NOTICE.txt: 'copyright 2026-present Prism ML, Inc.'. Many community derivatives (abliterated / heretic / MTP repacks) exist but are not vendor files.",
+  "source_url": "https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-gguf/raw/main/NOTICE.txt ; https://huggingface.co/api/models?author=prism-ml ; https://prismml.com/news/prismml-launches-bonsai-2-27b",
+  "support": "direct-statement"
+ },
+ "release_date": {
+  "value": "HF createdAt 2026-09-16T23:40:56Z, first commit 'Bonsai2' 2026-09-17; press release dated 2026-09-17. Q2_0 file for stock llama.cpp added 2026-10-30; lastModified 2026-11-04.",
+  "source_url": "https://huggingface.co/api/models/prism-ml/Ternary-Bonsai-2-27B-gguf ; https://huggingface.co/api/models/prism-ml/Ternary-Bonsai-2-27B-gguf/commits/main ; https://prismml.com/news/prismml-launches-bonsai-2-27b",
+  "support": "direct-statement"
+ },
+ "license": {
+  "value": "Apache-2.0 (cardData license apache-2.0; LICENSE file is Apache 2.0). No use restrictions. NOTICE asks (not requires) attribution 'Created using Bonsai by Prism ML' and carries the Qwen3.8-27B Apache-2.0 notice (Alibaba Cloud).",
+  "source_url": "https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-gguf/raw/main/LICENSE ; https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-gguf/raw/main/NOTICE.txt",
+  "support": "direct-statement"
+ },
+ "params": {
+  "value": "Dense, 27.36B total = 24.35B language backbone (64 blocks) + 2.54B embedding/LM head + 0.46B vision tower (card). Active = total (dense). Press release says 27.8B; base Qwen3.8-27B safetensors total is 27,781,427,952. Ternary {-1,0,+1} g128 with FP16 scales, true 1.72 bpw; 26.2M params (GDN recurrent path + norms) kept high precision.",
+  "source_url": "https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-gguf/raw/main/README.md ; https://huggingface.co/api/models/Qwen/Qwen3.8-27B",
+  "support": "direct-statement"
+ },
+ "architecture": {
+  "value": "Unchanged Qwen3.8-27B hybrid (GGUF arch 'qwen35'; MLX config model_type 'prism_hadamard_qwen35'): 64 layers, full_attention_interval 4 -> 16 full-attention layers (GQA 24 q heads, 4 KV heads, head_dim 256) + 48 Gated DeltaNet linear-attention layers (16 key heads, 48 value heads, dim 128, conv kernel 4); hidden 5120, FFN 17408, vocab 248320, max_position_embeddings 262144. Weights stored in a blockwise-Hadamard-rotated basis (block 1024); runtime must apply the matching FWHT to activations (prism.hadamard.* GGUF keys). Vendor MLX config has mtp_num_hidden_layers 0.",
+  "source_url": "https://huggingface.co/Qwen/Qwen3.8-27B/raw/main/config.json ; https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-mlx-2bit/raw/main/config.json ; https://huggingface.co/api/models/prism-ml/Ternary-Bonsai-2-27B-gguf",
+  "support": "direct-statement"
+ },
+ "context_length": {
+  "value": "262,144 tokens (GGUF context_length 262144). On this GPU with stock llama.cpp: 128k with q8_0 KV comfortable, about 200k q8_0 max, about 96k-110k with f16 KV.",
+  "source_url": "https://huggingface.co/api/models/prism-ml/Ternary-Bonsai-2-27B-gguf ; https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-gguf/raw/main/README.md",
+  "support": "direct-statement"
+ },
+ "modalities": {
+  "value": "Text + image input, text output. Vision tower ships separately as mmproj (Q8_0 0.586 GiB, BF16 0.867 GiB). Text-only path: load only the language GGUF and pass --no-mmproj (with -hf llama-server otherwise auto-fetches mmproj). Vendor MLX build has no vision.",
+  "source_url": "https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-gguf/raw/main/README.md ; https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-gguf/raw/main/KNOWN_ISSUES.md",
+  "support": "direct-statement"
+ },
+ "thinking": {
+  "mode": "toggle",
+  "how_to_toggle": "Thinks by default at reasoning_effort 'xhigh'. Template: enable_thinking false -> empty <think></think>; reasoning_effort accepts only xhigh|medium|low, anything else raises ('high' -> HTTP 500, open); 'low' barely shortens thinking; vendor recommends 'medium'. llama.cpp b12407: per request chat_template_kwargs {\"enable_thinking\":false} or top-level reasoning_effort:\"none\" (server-common.cpp 1566-1574 maps none to enable_thinking=false, other values go to template kwargs); server default off via --chat-template-kwargs '{\"enable_thinking\":false}'; keep --reasoning auto (--reasoning on overrides client 'none'); thinking budget in chat_template_kwargs is ignored, use --reasoning-budget N. Ollama: think:false/true on /api/chat. vLLM: not applicable.",
+  "source_url": "https://huggingface.co/api/models/prism-ml/Ternary-Bonsai-2-27B-gguf (gguf.chat_template lines 46-56, 165-168) ; https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/tools/server/server-common.cpp ; https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-gguf/raw/main/KNOWN_ISSUES.md ; https://ollama.com/library/bonsai-2",
+  "support": "direct-statement"
+ },
+ "tool_calling": {
+  "supported": "yes",
+  "format": "Qwen3-Coder XML: <tool_call><function=NAME><parameter=ARG>value</parameter></function></tool_call> with newlines; tools as JSON in <tools>; results as <tool_response> in a user turn. llama.cpp b12407 common/chat.cpp lines 1420-1427 detect it as 'Qwen3-Coder' and use common_chat_params_init_qwen3_coder.",
+  "evidence": "Template has native tool rendering. Vendor BFCL v3 74.92 vs 76.74 FP16 (self-reported, thinking). Vendor KNOWN_ISSUES (open): malformed/looping tool calls ('// // //') as a model limitation; HTTP 500/400 on empty or non-JSON tool arguments (fork #112); HTTP 500 unless exactly one leading system message; prompt-cache misses in tool loops (preserve_thinking defaults true). Independent InsiderLLM RTX 3090 routing test (thinking off, temp 0): Bonsai PQ2_0 12/47 vs Qwen3.8-27B UD-Q4_K_XL 19/47; tool field tied 28/28, valid JSON 47/47, scope 18 vs 28. Unsloth's '1-bit not for agentic use' concerns post-training IQ1 quants; Bonsai is trained ternary ('trained using Google v5 TPUs', press release), so it does not transfer directly, but no independent agentic benchmark exists.",
+  "source_url": "https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-gguf/raw/main/KNOWN_ISSUES.md ; https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/common/chat.cpp ; https://insiderllm.com/guides/bonsai-2-27b-vs-qwen3-8-27b-rtx-3090/",
+  "support": "source-backed"
+ },
+ "checkpoints": [
+  {
+   "repo": "prism-ml/Ternary-Bonsai-2-27B-gguf : Ternary-Bonsai-2-27B-Q2_0.gguf",
+   "format": "GGUF Q2_0 (ggml type 42), 2.25 bpw, Hadamard metadata; stock llama.cpp >= b11556. 7,626,008,928 B = 7.10 GiB",
+   "size_gb": 7.1,
+   "official": true,
+   "publisher": "Prism ML",
+   "source_url": "https://huggingface.co/api/models/prism-ml/Ternary-Bonsai-2-27B-gguf?blobs=true"
+  },
+  {
+   "repo": "prism-ml/Ternary-Bonsai-2-27B-gguf : Ternary-Bonsai-2-27B-PQ2_0.gguf",
+   "format": "GGUF PQ2_0 (Prism type), 2.13 bpw; PrismML fork only. 7,206,168,928 B = 6.71 GiB",
+   "size_gb": 6.71,
+   "official": true,
+   "publisher": "Prism ML",
+   "source_url": "https://huggingface.co/api/models/prism-ml/Ternary-Bonsai-2-27B-gguf?blobs=true"
+  },
+  {
+   "repo": "prism-ml/Ternary-Bonsai-2-27B-gguf : Ternary-Bonsai-2-27B-PTQ1_0.gguf",
+   "format": "GGUF PTQ1_0 (Prism dense-trit type), 1.75 bpw; fork only. 5,946,648,928 B = 5.54 GiB",
+   "size_gb": 5.54,
+   "official": true,
+   "publisher": "Prism ML",
+   "source_url": "https://huggingface.co/api/models/prism-ml/Ternary-Bonsai-2-27B-gguf?blobs=true"
+  },
+  {
+   "repo": "prism-ml/Ternary-Bonsai-2-27B-gguf : Ternary-Bonsai-2-27B-F16.gguf",
+   "format": "GGUF F16, stock >= b11556. 50.11 GiB (does not fit)",
+   "size_gb": 50.11,
+   "official": true,
+   "publisher": "Prism ML",
+   "source_url": "https://huggingface.co/api/models/prism-ml/Ternary-Bonsai-2-27B-gguf?blobs=true"
+  },
+  {
+   "repo": "prism-ml/Ternary-Bonsai-2-27B-gguf : Ternary-Bonsai-2-27B-mmproj-Q8_0.gguf",
+   "format": "GGUF mmproj Q8_0 0.586 GiB (BF16 0.867 GiB)",
+   "size_gb": 0.586,
+   "official": true,
+   "publisher": "Prism ML",
+   "source_url": "https://huggingface.co/api/models/prism-ml/Ternary-Bonsai-2-27B-gguf?blobs=true"
+  },
+  {
+   "repo": "prism-ml/Ternary-Bonsai-2-27B-mlx-2bit",
+   "format": "MLX 2-bit g128 (Apple only), about 8.02 GiB",
+   "size_gb": 8.02,
+   "official": true,
+   "publisher": "Prism ML",
+   "source_url": "https://huggingface.co/api/models/prism-ml/Ternary-Bonsai-2-27B-mlx-2bit?blobs=true"
+  },
+  {
+   "repo": "prism-ml/Ternary-Bonsai-2-27B-gguf-dev",
+   "format": "Old location of the same Q2_0 file (moved to main repo)",
+   "size_gb": 7.1,
+   "official": true,
+   "publisher": "Prism ML",
+   "source_url": "https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-gguf-dev/raw/main/README.md"
+  }
+ ],
+ "vllm": {
+  "fits": "no",
+  "arch_supported": "No. registry.py at v0.33.0 lists Qwen3_5ForConditionalGeneration (line 617) but nothing Prism/Bonsai/Hadamard. No Bonsai 2 27B safetensors or AWQ checkpoint is published (only for the older Bonsai 27B). GGUF is an out-of-tree plugin not in the image, and the Prism types plus Hadamard activation transform are unsupported.",
+  "best_checkpoint": "none",
+  "known_issues": "Card says vendor benchmarks used 'EvalScope + vLLM on H100', implying an internal unpublished vLLM path.",
+  "kv_bytes_per_token_bf16": 65536,
+  "kv_math": "Reference only: 2 x 16 full-attn layers x 4 KV heads x 256 x 2 B = 65,536 B/token BF16 (32,768 FP8). Not applicable: no loadable checkpoint.",
+  "sources": [
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/models/registry.py",
+   "https://huggingface.co/api/models?author=prism-ml",
+   "https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-gguf/raw/main/README.md"
+  ]
+ },
+ "llamacpp": {
+  "arch_supported": "Yes for Q2_0 and F16 in stock b12407: PR #29600 'model: support for Prism Bonsai 2 27B' merged 2026-10-11, shipped as b11556. At b12407: llama-arch.cpp has qwen35 (line 45) and prism.hadamard.* keys (509-519); ggml.h has GGML_TYPE_Q2_0=42, TYPE_COUNT 44, no PQ2_0/PTQ1_0; ggml-cuda has Q2_0 in mmvq/mmq/convert/getrows and fwht.cu with a 1024-wide kernel. PQ2_0/PTQ1_0 are rejected by stock; they need the PrismML fork (latest prism-b12128-d7b2896, 2026-10-31, prebuilt Linux CUDA 12.4/12.8/13.3 tarballs, no Docker image found). Fork caveats: CUDA 13.3 Linux binaries segfault (#222 open); RTX 5090 sm_120 prebuilt tarballs decode erratically (#199 open, build with 120a-real).",
+  "gguf_repo": "prism-ml/Ternary-Bonsai-2-27B-gguf (Ternary-Bonsai-2-27B-Q2_0.gguf)",
+  "quant": "Q2_0 for the stock image; PQ2_0 only with a self-built fork image",
+  "file_gib": 7.1,
+  "est_vram_gib": 12.7,
+  "est_ram_gib": 2,
+  "est_context_tokens": 131072,
+  "offload_plan": "All on GPU (-ngl 99), dense, no --n-cpu-moe. 15.92 GiB - 0.11 idle. Weights 7.10 GiB. KV/token: 2 x 16 x 4 x 256 = 32,768 elements -> f16 65,536 B, q8_0 34,816 B. GDN state per sequence: 48 x 48 x 128 x 128 x 4 B = 144 MiB + conv 5.6 MiB, about 0.15 GiB. Compute buffers about 1.0-1.3 GiB (estimated). 131072 q8_0 = 4.25 GiB -> about 12.7 GiB total (fits). 131072 f16 = 8.0 GiB -> about 16.5 GiB (no). 262144 q8_0 = 8.5 GiB -> about 17.0 GiB (no). About 7.36 GiB free for KV -> q8_0 about 227k, f16 about 120k theoretical; use q8_0 196608 or f16 98304 as safe maxima. Context checkpoints and --cache-ram use host RAM.",
+  "server_command": "docker run --rm --name bonsai2 --device nvidia.com/gpu=all -e GGML_CUDA_DISABLE_GRAPHS=1 --memory 24g -p 127.0.0.1:8080:8080 -v $HOME/.cache/huggingface:/root/.cache/huggingface ghcr.io/ggml-org/llama.cpp:server-cuda-b12407 -hf prism-ml/Ternary-Bonsai-2-27B-gguf --hf-file Ternary-Bonsai-2-27B-Q2_0.gguf --no-mmproj --host 0.0.0.0 --port 8080 -ngl 99 -fa on -c 131072 -ctk q8_0 -ctv q8_0 -np 1 --cache-ram 16384 --jinja --reasoning auto --chat-template-kwargs '{\"reasoning_effort\":\"medium\"}' --temp 1.0 --top-p 0.95 --top-k 20 --min-p 0.05 --presence-penalty 0.0 --repeat-penalty 1.0 -n 32768",
+  "tool_calling_note": "Routes to llama.cpp's Qwen3-Coder XML parser (same family as Qwen3.5/3.6, so baseline issues #30357 and #30118 may apply). Vendor-open issues: malformed/looping tool calls, HTTP 500 on reasoning_effort 'high', HTTP 500 unless exactly one leading system message, HTTP 400/500 on empty tool args (send '{}'), prompt-cache misses in tool loops. Use output limits of 16384+ or thinking ends with empty answers. --spec-type ngram-* has no effect.",
+  "sources": [
+   "https://github.com/ggml-org/llama.cpp/pull/29600",
+   "https://github.com/ggml-org/llama.cpp/releases/tag/b11556",
+   "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/src/llama-arch.cpp",
+   "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/ggml/include/ggml.h",
+   "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/ggml/src/ggml-cuda/fwht.cu",
+   "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/common/chat.cpp",
+   "https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-gguf/raw/main/README.md",
+   "https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-gguf/raw/main/KNOWN_ISSUES.md",
+   "https://github.com/PrismML-Eng/llama.cpp/releases",
+   "https://github.com/PrismML-Eng/llama.cpp/issues/199",
+   "https://github.com/PrismML-Eng/llama.cpp/issues/222"
+  ]
+ },
+ "ollama": {
+  "tag": "bonsai-2:27b (same digest f3c4f4208659 as bonsai-2:27b-q2_0); bonsai-2:latest is the 9B",
+  "size_gb": 8.3,
+  "context": "256K context window per library; set OLLAMA_CONTEXT_LENGTH=65536+ (default 4k under 24 GiB)",
+  "capabilities": "tools, thinking, vision. 8.3 GB = Q2_0 7.63 GB + mmproj Q8_0 0.63 GB. Minimum Ollama version not stated.",
+  "source_url": "https://ollama.com/library/bonsai-2/tags"
+ },
+ "benchmarks": [
+  {
+   "name": "InsiderLLM 47-item intent-routing split",
+   "score": "12/47 Bonsai PQ2_0 vs 19/47 Qwen3.8-27B UD-Q4_K_XL; tool 28 vs 28, scope 18 vs 28, valid JSON 47/47 both",
+   "self_reported": false,
+   "setting": "RTX 3090, fork on upstream b10709, temp 0, thinking off, 2026-09-24",
+   "source_url": "https://insiderllm.com/guides/bonsai-2-27b-vs-qwen3-8-27b-rtx-3090/"
+  },
+  {
+   "name": "llama-bench tg128 / pp512 (independent)",
+   "score": "77.62 tok/s tg128 d=0 (74.38 at d=8192), pp512 1476; Qwen3.8-27B Q4 42.13 / 1415; peak VRAM 8,118 MiB at 8k",
+   "self_reported": false,
+   "setting": "RTX 3090, PQ2_0, fork build",
+   "source_url": "https://insiderllm.com/guides/bonsai-2-27b-vs-qwen3-8-27b-rtx-3090/"
+  },
+  {
+   "name": "BenchLM BenchAlign v5.8 (modelled)",
+   "score": "51.6 Estimated, open #27, range 37.29-65.99, 0 independent runs",
+   "self_reported": true,
+   "setting": "aggregate of Prism-reported rows, 2026-11-13",
+   "source_url": "https://benchlm.ai/models/ternary-bonsai-2-27b"
+  },
+  {
+   "name": "Terminal-Bench 2.1",
+   "score": "52.8%",
+   "self_reported": true,
+   "setting": "Prism whitepaper via BenchLM; harness not verified",
+   "source_url": "https://benchlm.ai/models/ternary-bonsai-2-27b"
+  },
+  {
+   "name": "SWE-bench Verified",
+   "score": "60.8%",
+   "self_reported": true,
+   "setting": "Prism whitepaper via BenchLM",
+   "source_url": "https://benchlm.ai/models/ternary-bonsai-2-27b"
+  },
+  {
+   "name": "tau2-bench",
+   "score": "80.2%",
+   "self_reported": true,
+   "setting": "Prism via BenchLM",
+   "source_url": "https://benchlm.ai/models/ternary-bonsai-2-27b"
+  },
+  {
+   "name": "BFCL v3",
+   "score": "74.92 (FP16 76.74, UD-Q4_K_XL 75.05, IQ2_XXS 70.28)",
+   "self_reported": true,
+   "setting": "EvalScope + vLLM H100, thinking",
+   "source_url": "https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-gguf/raw/main/README.md"
+  },
+  {
+   "name": "LiveCodeBench",
+   "score": "90.07 (FP16 90.05)",
+   "self_reported": true,
+   "setting": "EvalScope + vLLM H100, thinking",
+   "source_url": "https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-gguf/raw/main/README.md"
+  },
+  {
+   "name": "HumanEval+ / MBPP+",
+   "score": "95.12 / 83.07 (FP16 93.29 / 83.86)",
+   "self_reported": true,
+   "setting": "EvalScope + vLLM H100, thinking",
+   "source_url": "https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-gguf/raw/main/README.md"
+  },
+  {
+   "name": "IFEval / IFBench",
+   "score": "91.31 / 74.00 (FP16 91.50 / 71.00)",
+   "self_reported": true,
+   "setting": "EvalScope + vLLM H100, thinking",
+   "source_url": "https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-gguf/raw/main/README.md"
+  },
+  {
+   "name": "14-benchmark thinking average",
+   "score": "84.78 (98.2% of FP16 86.32); press release 20-benchmark 83.9 vs 85.4",
+   "self_reported": true,
+   "setting": "EvalScope + vLLM H100",
+   "source_url": "https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-gguf/raw/main/README.md"
+  },
+  {
+   "name": "Vendor llama-bench tg128 PQ2_0 / PTQ1_0",
+   "score": "RTX 5090 129.9 / 120.5; RTX 4090 81.2 / 91.1 tok/s",
+   "self_reported": true,
+   "setting": "fork kernels, batch 1, depth 0",
+   "source_url": "https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-gguf/raw/main/README.md"
+  }
+ ],
+ "sampling": "Card: thinking temperature=1.0, top_p=0.95, top_k=20, min_p=0.05, presence_penalty=0.0, repetition_penalty=1.0; non-thinking temperature=0.7, top_p=0.80, top_k=20, min_p=0.0, presence_penalty=1.5, repetition_penalty=1.0. GGUF carries temp/top_p/top_k only; set min_p and penalties explicitly. Default effort xhigh; use medium; keep output limit >= 16384. Unsloth has no Bonsai page.",
+ "speed_notes": "Inferred. Stock Q2_0 reads about 7.63 GB per token: ceiling 896/7.63 = about 117 tok/s. Independent RTX 3090 (936 GB/s) PQ2_0 reached 77.6 tok/s, about 60% of its ceiling. Stock Q2_0 kernel efficiency on sm_120 is unmeasured, the laptop runs at 140 W, and GGML_CUDA_DISABLE_GRAPHS=1 adds launch overhead: estimate 45-75 tok/s decode at short context, roughly 1.5-2x Qwen3.8-27B UD-Q3_K_XL. Prefill speculative, about 1000-2000 tok/s.",
+ "opencode_fit": {
+  "verdict": "usable",
+  "recommended_runtime": "llama.cpp stock image ghcr.io/ggml-org/llama.cpp:server-cuda-b12407 with the Q2_0 file (Ollama bonsai-2:27b as fallback)",
+  "recommended_checkpoint": "prism-ml/Ternary-Bonsai-2-27B-gguf / Ternary-Bonsai-2-27B-Q2_0.gguf (7.10 GiB)",
+  "recommended_context": "131072 with q8_0 KV (about 12.7 GiB VRAM), or 98304 with f16 KV",
+  "caveats": "Fits fully on GPU at 128k, Apache-2.0, about 2x faster decode than a Q4 27B. But every agentic score is Prism-reported with 0 independent runs; the one independent quality test shows a regression vs Qwen3.8-27B Q4 (12/47 vs 19/47). Vendor lists open malformed/looping tool calls and template HTTP 500s (effort 'high', extra or non-leading system message, empty tool args). Default xhigh thinking is long. Stock image runs only Q2_0, not PQ2_0/PTQ1_0; fork sm_120 prebuilt binaries have an open erratic-decode issue. Treat as a speed/context alternative to pick #2 Qwen3.8-27B, ranked only after an on-machine tool-call smoke test and a short agentic comparison."
+ },
+ "gaps": [
+  "No independent agentic or tool-calling benchmark; TB2.1/SWE-bench/tau2 come via BenchLM from the whitepaper PDF, not read directly.",
+  "Stock Q2_0 quality vs PQ2_0 is not stated; vendor benchmarks were run with an internal vLLM path, not llama.cpp.",
+  "Stock Q2_0 + FWHT decode speed on sm_120 unmeasured; speed numbers are inferred.",
+  "Whether OpenCode v2.3.0 sends multiple/non-leading system messages or reasoning_effort 'high' is unverified; either triggers HTTP 500 with this template.",
+  "Compute buffer size estimated, not measured.",
+  "Minimum Ollama version not found; Ollama sizes are decimal GB from the library page.",
+  "Announcement parameter count (27.8B) differs from the card (27.36B); suite size 20 vs 14."
+ ]
+}

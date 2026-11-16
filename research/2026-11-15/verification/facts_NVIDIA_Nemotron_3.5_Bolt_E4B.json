@@ -1,0 +1,131 @@
+{
+ "verdicts": [
+  {
+   "claim": "Official NVIDIA ownership; bare id nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B does not exist; real repos -BF16 and -4GB",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-BF16",
+   "correction": "API author=nvidia, HTTP 200 for -BF16 and -4GB, 401 for bare id. The research.nvidia.com blog returns 200 and is dated October 23, 2026."
+  },
+  {
+   "claim": "createdAt 2026-10-05T04:25:48Z (-BF16), 2026-10-05T04:26:43Z (-4GB); public release 2026-10-23; inside the 12-month window",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-BF16/raw/main/README.md",
+   "correction": "The README says 'Hugging Face 10/23/2026' (line 243) and 'GA (10/23/2026)' (line 298). lastModified is 2026-10-23T17:12:03Z."
+  },
+  {
+   "claim": "License: other / openmdw-1.1, permissive, patent/copyright litigation termination, no output restrictions; Gemma 4 base under Apache-2.0; ready for commercial use",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/OpenMDW/OpenMDW/main/1.1/LICENSE.OpenMDW-1.1",
+   "correction": "The card front-matter shows license: other and license_name: openmdw-1.1 (lines 3-5) and the Apache-2.0 note (line 200). The license text has 'free of charge ... without restriction' at line 13 and the litigation termination at line 24."
+  },
+  {
+   "claim": "8B (4B effective); safetensors total 7,996,156,490 BF16; dense, enable_moe_block false",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-BF16?blobs=true",
+   "correction": "The per-component breakdown from the safetensors header was not re-derived."
+  },
+  {
+   "claim": "Architecture: Gemma4ForConditionalGeneration; 42 layers, hidden 2560, 8 Q heads, 2 KV heads, head_dim 256, global_head_dim 512, sliding window 512, full layers at 5,11,17,23,29,35,41, num_kv_shared_layers 18, PLE 256, vocab 262144, softcap 30",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-BF16/raw/main/config.json"
+  },
+  {
+   "claim": "Checkpoint sizes: BF16 15,882,494,698 + 110,118,048 B; -4GB Q4_K_M 6,180,446,208 B with no mmproj; RedHatAI NVFP4 11,553 MB",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-4GB?blobs=true",
+   "correction": "RedHatAI safetensors total 11,553,469,908 B (10.76 GiB). The -4GB repo file list has only the single GGUF plus docs and media."
+  },
+  {
+   "claim": "Context: max_position_embeddings 65536; card says input and output up to 64K; Ollama tags show 128K for e4b GGUF tags and 64K for MLX tags",
+   "verdict": "confirmed",
+   "evidence_url": "https://ollama.com/library/nemotron-3.5-bolt/tags",
+   "correction": "Contested status is correct. config.json 65536 versus Ollama's 128K on the e4b 7.2/7.9 GB tags, and the 74B entry shows 25GB/256K."
+  },
+  {
+   "claim": "Modalities: card says Text / text; checkpoint has vision and audio towers; HF tag image-text-to-text; RedHatAI lists Text/Image/Audio input",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-BF16/raw/main/README.md",
+   "correction": "Minor nuance: the HF API pipeline_tag is 'text-generation'. 'image-text-to-text' appears only in the tags list, next to 'text-generation'. README line 93 has 'Text / text', and config has vision_config and audio_config. RedHatAI README line 29 has 'Text / Image / Audio'."
+  },
+  {
+   "claim": "Thinking toggle via enable_thinking (template default false, emits <|think|>); preserve_thinking; conversational_mode; card says thinking is on by default",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-BF16/raw/main/chat_template.jinja",
+   "correction": "Template line 206 has 'enable_thinking | default(false)', and line 214 emits '<|think|>'. README line 345 says 'thinking enabled (the default)'. RedHatAI README line 82 says 'the template default is off'. The conflict is real."
+  },
+  {
+   "claim": "Tool calling supported in Gemma 4 native format (<|tool>declaration, <|tool_call>call:, <|tool_response>); card uses --tool-call-parser gemma4 --reasoning-parser gemma4; template rejects stray tool messages",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-BF16/raw/main/chat_template.jinja",
+   "correction": "The markers sit at template lines 189, 229 and 300. The parser flags are at README lines 139-140, and the stray-tool caveat is at README line 683. The vLLM and llama.cpp source-level parser claims were not re-checked in this pass."
+  },
+  {
+   "claim": "Card pins vllm/vllm-openai:v0.31.0; 'Mamba cache dtype FP16' copy-paste error",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-BF16/raw/main/README.md",
+   "correction": "README lines 119 and 310 name v0.31.0, and line 314 mentions the Mamba cache."
+  },
+  {
+   "claim": "BFCL-v3 68.51 (BF16) / 67.31 (Q4_K_M); Gemma4 E4B 66.39; Qwen3.5-4B 70.95; reasoning mode, NeMo Gym",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-BF16/raw/main/README.md",
+   "correction": "Vendor self-reported (README line 213). The note at line 231 says reasoning mode, and line 233 says NeMo Gym."
+  },
+  {
+   "claim": "Tau2-Bench 55.10 / 52.32; Qwen3.5-4B 75.06; Gemma4 E4B 38.50",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-BF16/raw/main/README.md",
+   "correction": "Self-reported (line 216). Qwen3.5-4B at Q4_K_M is 61.74."
+  },
+  {
+   "claim": "ToolSandbox 68.77 / 74.13",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-BF16/raw/main/README.md",
+   "correction": "Self-reported (line 215). Qwen3.5-4B scores higher in both groups: 69.54 and 74.51."
+  },
+  {
+   "claim": "When2Call Multi-Turn 63.36 / 60.50, setting 'NVIDIA internal benchmark, not yet released'",
+   "verdict": "refuted",
+   "evidence_url": "https://github.com/NVIDIA/When2Call",
+   "correction": "The scores are correct (README line 214). The setting text is unsupported: the card does not say 'internal' or 'not yet released' anywhere. When2Call is a public NVIDIA benchmark (GitHub NVIDIA/When2Call, created 2025-04-25), and the multi-turn variant is simply unlinked in the table. The setting should read 'NeMo Gym, reasoning mode, self-reported'."
+  },
+  {
+   "claim": "IFBench 63.79 / 64.00 self-reported",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-BF16/raw/main/README.md",
+   "correction": "Line 220. The table links this row to Artificial Analysis, but the value is NVIDIA's own NeMo Gym number."
+  },
+  {
+   "claim": "Artificial Analysis IFBench 61.1% for 'Nemotron 3.5 Bolt E4B 4GB'; tau2 and LiveCodeBench null",
+   "verdict": "confirmed",
+   "evidence_url": "https://artificialanalysis.ai/models/nemotron-3-5-bolt-e4b-4gb",
+   "correction": "The page data has ifbench 0.610884 on the entry named 'Nemotron 3.5 Bolt E4B 4GB (Reasoning)', with tau2 null and livecodebench null. This is independent and is about 2.9 points below NVIDIA's 64.00 for the same Q4_K_M build. The Intelligence Index and Terminal-Bench nulls were not individually re-read."
+  },
+  {
+   "claim": "RULER 64K 86.99, LongBench v2 48K 50.50 (BF16); RULER without reasoning",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-BF16/raw/main/README.md",
+   "correction": "Lines 222, 224 and 231. Self-reported. Qwen3.5-4B is higher on both (95.15 and 59.93)."
+  },
+  {
+   "claim": "RedHatAI third-party: BF16 59.6/71.3/93.5, NVFP4 47.0/67.7/93.2 on GPQA Diamond / MMLU-Pro / GSM8K; Inspect, vLLM, B200; recovery 78.8% / 94.9% / 99.7%",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/RedHatAI/NVIDIA-Nemotron-3.5-Bolt-E4B-NVFP4/raw/main/README.md",
+   "correction": "Confirmed from RedHatAI README lines 91-131. Note that this is not vendor-independent of the quantizer: RedHatAI publishes the NVFP4 build itself. GPQA has a stderr of about 3.5 points on 198 items."
+  },
+  {
+   "claim": "NVIDIA blog: '64k context', 'agentic coding is often not the best fit for a fast home assistant', 133.4 and 106.2 tok/s on RTX 5070, DFlash up to 21% over the Gemma-4-E4B MTP drafter",
+   "verdict": "confirmed",
+   "evidence_url": "https://research.nvidia.com/labs/nemotron/NVIDIA-Nemotron-3.5-Bolt-E4B-4GB/",
+   "correction": "All strings were found in the raw HTML. The VRAM, TTFT and RTX Spark figures were not individually re-checked."
+  },
+  {
+   "claim": "No SWE-bench / Terminal-Bench / LiveCodeBench / Aider scores from NVIDIA",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-BF16/raw/main/README.md",
+   "correction": "The card's benchmark table (lines 206-227) has no coding benchmark. The card also says the BF16 release is 'intended primarily for customization and post-training rather than direct production inference'. The record omits this, and it supports using the -4GB GGUF for deployment."
+  }
+ ],
+ "overall": "holds-with-corrections",
+ "summary": "I could not refute the identity facts, the architecture, the license, the dates or any benchmark value. All of them match the raw sources: HF API, config.json, README.md, chat_template.jinja, the OpenMDW license file, the RedHatAI card, the Artificial Analysis page data, the NVIDIA research blog and the Ollama tags page.\n\nOne item is refuted. The When2Call row is labelled 'NVIDIA internal benchmark, not yet released', but the card never says that, and When2Call is a public NVIDIA benchmark (github.com/NVIDIA/When2Call, 2025-04-25). The scores 63.36 and 60.50 themselves are correct.\n\nMinor nuances:\n- The HF pipeline_tag is text-generation. image-text-to-text appears only among the tags.\n- The AA 61.1% IFBench entry is the '(Reasoning)' variant of the 4GB build.\n- The BF16 card says that repo is meant mainly for post-training rather than production inference.\n\nConfirmed conflicts that should stay flagged:\n- Thinking default: the card says on, the template says default(false).\n- Context: config says 65536, Ollama shows 128K on the GGUF tags.\n\nNot re-checked in this pass: the vLLM and llama.cpp source-line parser claims, the KV arithmetic, Docker image tags, the turintech builds, and the blog's VRAM/TTFT numbers beyond the tok/s values."
+}

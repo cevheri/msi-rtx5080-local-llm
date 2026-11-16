@@ -1,0 +1,193 @@
+{
+ "label": "k2-7b-f16kv-40k",
+ "base": "http://127.0.0.1:8080/v1",
+ "model": "local",
+ "started": "2026-11-16T03:26:42+0300",
+ "models": [
+  "local"
+ ],
+ "ok_test": {
+  "content": "OK",
+  "reasoning_chars": 151,
+  "finish": "stop",
+  "usage": {
+   "completion_tokens": 39,
+   "prompt_tokens": 15,
+   "total_tokens": 54,
+   "prompt_tokens_details": {
+    "cached_tokens": 0
+   }
+  },
+  "seconds": 0.57
+ },
+ "tool_test": {
+  "finish": "tool_calls",
+  "calls": [
+   {
+    "name": "get_weather",
+    "arguments": "{\"city\":\"Paris\"}"
+   }
+  ],
+  "content": "",
+  "seconds": 0.64
+ },
+ "decode_runs": [
+  {
+   "ttft_s": 0.034,
+   "total_s": 20.709,
+   "usage": {
+    "completion_tokens": 1394,
+    "prompt_tokens": 36,
+    "total_tokens": 1430,
+    "prompt_tokens_details": {
+     "cached_tokens": 2
+    }
+   },
+   "stream_pieces": 1392,
+   "decode_tok_s": 67.4,
+   "server_timings": {
+    "prompt_n": 34,
+    "prompt_per_second": 1552.7950310559006,
+    "predicted_n": 1394,
+    "predicted_per_second": 67.3755105641705,
+    "cache_n": 2
+   }
+  },
+  {
+   "ttft_s": 0.077,
+   "total_s": 22.358,
+   "usage": {
+    "completion_tokens": 1500,
+    "prompt_tokens": 36,
+    "total_tokens": 1536,
+    "prompt_tokens_details": {
+     "cached_tokens": 6
+    }
+   },
+   "stream_pieces": 1499,
+   "decode_tok_s": 67.3,
+   "server_timings": {
+    "prompt_n": 30,
+    "prompt_per_second": 1815.9806295399517,
+    "predicted_n": 1500,
+    "predicted_per_second": 67.27986345105126,
+    "cache_n": 6
+   }
+  },
+  {
+   "ttft_s": 0.079,
+   "total_s": 22.408,
+   "usage": {
+    "completion_tokens": 1500,
+    "prompt_tokens": 36,
+    "total_tokens": 1536,
+    "prompt_tokens_details": {
+     "cached_tokens": 6
+    }
+   },
+   "stream_pieces": 1499,
+   "decode_tok_s": 67.1,
+   "server_timings": {
+    "prompt_n": 30,
+    "prompt_per_second": 1830.9429356118399,
+    "predicted_n": 1500,
+    "predicted_per_second": 67.13155078987725,
+    "cache_n": 6
+   }
+  }
+ ],
+ "decode_tok_s_median": 67.3,
+ "long_prompt": [
+  {
+   "target_tokens": 8000,
+   "first": {
+    "ttft_s": 1.888,
+    "total_s": 2.981,
+    "usage": {
+     "completion_tokens": 64,
+     "prompt_tokens": 8085,
+     "total_tokens": 8149,
+     "prompt_tokens_details": {
+      "cached_tokens": 4
+     }
+    },
+    "stream_pieces": 64,
+    "decode_tok_s": 57.7,
+    "server_timings": {
+     "prompt_n": 8081,
+     "prompt_per_second": 4451.794627987856,
+     "predicted_n": 64,
+     "predicted_per_second": 57.66242039382517,
+     "cache_n": 4
+    }
+   },
+   "repeat_same_prompt": {
+    "ttft_s": 0.03,
+    "total_s": 1.107,
+    "usage": {
+     "completion_tokens": 64,
+     "prompt_tokens": 8085,
+     "total_tokens": 8149,
+     "prompt_tokens_details": {
+      "cached_tokens": 8084
+     }
+    },
+    "stream_pieces": 64,
+    "decode_tok_s": 58.5,
+    "server_timings": {
+     "prompt_n": 1,
+     "prompt_per_second": 59.5699052838506,
+     "predicted_n": 64,
+     "predicted_per_second": 58.4730731498145,
+     "cache_n": 8084
+    }
+   }
+  },
+  {
+   "target_tokens": 30000,
+   "first": {
+    "ttft_s": 9.929,
+    "total_s": 11.45,
+    "usage": {
+     "completion_tokens": 64,
+     "prompt_tokens": 30261,
+     "total_tokens": 30325,
+     "prompt_tokens_details": {
+      "cached_tokens": 8067
+     }
+    },
+    "stream_pieces": 64,
+    "decode_tok_s": 41.4,
+    "server_timings": {
+     "prompt_n": 22194,
+     "prompt_per_second": 2245.329287140831,
+     "predicted_n": 64,
+     "predicted_per_second": 41.42221532582517,
+     "cache_n": 8067
+    }
+   },
+   "repeat_same_prompt": {
+    "ttft_s": 0.07,
+    "total_s": 1.588,
+    "usage": {
+     "completion_tokens": 64,
+     "prompt_tokens": 30261,
+     "total_tokens": 30325,
+     "prompt_tokens_details": {
+      "cached_tokens": 30260
+     }
+    },
+    "stream_pieces": 64,
+    "decode_tok_s": 41.5,
+    "server_timings": {
+     "prompt_n": 1,
+     "prompt_per_second": 39.36852879807881,
+     "predicted_n": 64,
+     "predicted_per_second": 41.5152130191708,
+     "cache_n": 30260
+    }
+   }
+  }
+ ],
+ "finished": "2026-11-16T03:28:06+0300"
+}

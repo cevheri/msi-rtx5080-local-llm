@@ -1,0 +1,110 @@
+{
+ "overall": "holds-with-corrections",
+ "summary": "I tried to refute the identity and capability facts and could not. Almost every load-bearing value matched live primary sources.\n\n**What matched**\n- **HF API:** createdAt 2026-01-19T06:28:10Z, author zai-org, license:mit, not gated, 31,221,488,576 params, 48 shards totalling 62.44 GB.\n- **Org API:** isVerified=false, 154 models, 23,495 followers.\n- **config.json:** every architecture value in the record.\n- **Chat template:** enable_thinking and clear_thinking logic, and the GLM XML tool format.\n- **Card:** all seven benchmark numbers and their sampling settings.\n- **Artificial Analysis:** all independent numbers, the deprecated flag pointing to glm-5, releaseDate 2026-01-19, and the weights URL.\n- **vLLM source at tags:** glm4_moe_lite.py is missing at v0.14.1 and present at v0.15.0 (published 2026-01-29). registry.py lines 125 and 730 match. glm45 and glm47 map to the same tool and reasoning parsers. cuda.py picks TRITON_MLA then FLASHINFER_MLA_SPARSE_SM120 when device_capability.major is 12.\n- **Commit and issues:** commit 71832ba is dated 2026-01-19. Issues #67684, #67471, #60703 and #65944 are open with the stated dates and titles.\n- **llama.cpp:** PRs #18936, #18980 and #19067 are merged on the stated dates. The template at b12418 is byte-identical to the HF one.\n- **Ollama:** the blob is 19,019,269,280 bytes. The page shows 198K, the tools and thinking badges, digest 4475827791a2, and the 'ollama launch opencode' line.\n- **Z.ai docs:** 'GLM-4.7-Flash: Small but Powerful', 200K context, 128K max output, and 'Lightweight, Completely Free'.\n\n**Arithmetic I re-ran:** about 3.57B active and 27.8B routed-expert parameters. KV cache is 576 x 47 x 2 = 54,144 B/token at BF16.\n\n**Corrections, both minor**\n1. The card asks for Preserved Thinking only for multi-turn agentic tasks, naming tau2-Bench and Terminal Bench 2 under its evaluation settings. It does not name clear_thinking or recommend it generally.\n2. The vendor 'GPQA' 75.2 is not labelled Diamond. Comparing it with AA's GPQA Diamond 58.1 is still a fair self-reported versus independent conflict.\n\n**Gap I noticed (not a refutation):** the template iterates tool-call arguments with `.items()`, so arguments must arrive as a mapping. A JSON string would break rendering unless the server parses it.\n\n**Not checked:** llama.cpp line numbers, the unsloth, bartowski and Intel quant sizes, PR #30489, #30196 and #31968 speed figures, and the release dates of 2026-01-19 and 2026-01-29 against AA's model list.",
+ "verdicts": [
+  {
+   "claim": "Official vendor repo zai-org (Z.ai), isVerified=false, 154 models, ~23.5k followers; card links to z.ai blog and docs",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/organizations/zai-org/overview"
+  },
+  {
+   "claim": "HF createdAt 2026-01-19T06:28:10Z, lastModified 2026-01-29, inside the 2025-11-15..2026-11-15 window; AA releaseDate 2026-01-19",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/zai-org/GLM-4.7-Flash"
+  },
+  {
+   "claim": "License MIT (tag license:mit, frontmatter license: mit), not gated",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/zai-org/GLM-4.7-Flash/raw/main/README.md"
+  },
+  {
+   "claim": "31.22B total (BF16 31,221,485,568 + F32 3,008), card says 30B-A3B, ~3.6B active, 27.8B routed expert params",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/zai-org/GLM-4.7-Flash",
+   "correction": "Rechecked from config: non-expert params about 1.83B (excluding input embedding) plus 4 x 9.44M x 46 = 1.74B routed, so about 3.57B active; 64 x 9.44M x 46 = 27.8B routed."
+  },
+  {
+   "claim": "Architecture: Glm4MoeLiteForCausalLM, 47 layers, first_k_dense_replace 1, 64 experts top-4, 1 shared, moe_intermediate 1536, hidden 2048, 20 heads, q_lora 768, kv_lora 512, qk_nope 192, qk_rope 64, v_head 256, 1 nextn layer, vocab 154880, rope_theta 1e6, rope_scaling null; MLA KV 54,144 B/token BF16",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/zai-org/GLM-4.7-Flash/raw/main/config.json"
+  },
+  {
+   "claim": "Context 202,752 max_position_embeddings; Z.ai docs 200K context and 128K max output; Ollama 198K; AA 200,000",
+   "verdict": "confirmed",
+   "evidence_url": "https://docs.z.ai/guides/llm/glm-4.7"
+  },
+  {
+   "claim": "Text-only modality, pipeline_tag text-generation, no vision tower",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/zai-org/GLM-4.7-Flash"
+  },
+  {
+   "claim": "Thinking on by default; generation prompt emits <think> unless enable_thinking is defined and false (then </think>); clear_thinking keeps past reasoning; by default reasoning is kept only after the last user message",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/zai-org/GLM-4.7-Flash/raw/main/chat_template.jinja"
+  },
+  {
+   "claim": "The card asks for clear_thinking=false (Preserved Thinking) on multi-turn agentic tasks",
+   "verdict": "uncertain",
+   "evidence_url": "https://huggingface.co/zai-org/GLM-4.7-Flash/raw/main/README.md",
+   "correction": "The card says 'For multi-turn agentic tasks (τ²-Bench and Terminal Bench 2), please turn on Preserved Thinking mode' under Evaluation Parameters. It does not mention clear_thinking, and it is an evaluation setting, not a general deployment instruction."
+  },
+  {
+   "claim": "Tool calling supported: template renders a '# Tools' block with tojson inside <tools>, the <tool_call>name<arg_key>..</arg_key><arg_value>..</arg_value></tool_call> format, and <|observation|><tool_response> for results",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/zai-org/GLM-4.7-Flash/raw/main/chat_template.jinja",
+   "correction": "Note: the template calls tc.arguments.items(), so arguments must be a mapping, not a JSON string."
+  },
+  {
+   "claim": "llama.cpp models/templates/GLM-4.7-Flash.jinja at b12418 is byte-identical to the HF template",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/blob/b12418/models/templates/GLM-4.7-Flash.jinja"
+  },
+  {
+   "claim": "Vendor benchmarks: SWE-bench Verified 59.2 (Qwen3-30B-A3B-Thinking-2507 22.0, GPT-OSS-20B 34.0), tau2 79.5, LCB v6 64.0, BrowseComp 42.8, GPQA 75.2, HLE 14.4, with the stated settings (SWE/TB temp 0.7 top-p 1.0 16384; tau2 temp 0, 16384, extra Retail/Telecom prompt, Airline fixes from the Opus 4.5 report; default temp 1.0 top-p 0.95 131072)",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/zai-org/GLM-4.7-Flash/raw/main/README.md",
+   "correction": "All self-reported. The card's GPQA is not labelled Diamond. The card's .eval_results contains only gpqa.yaml and hle.yaml."
+  },
+  {
+   "claim": "AA independent results: Terminal-Bench Hard 22.0% reasoning / 3.8% non-reasoning; tau2 98.8% / 91.8%; GPQA 58.1% / 45.2%; IFBench 60.8%; AA-LCR 41.7%; HLE 7.6%; marked deprecated in favour of GLM-5; modelWeightsSourceUrl is the zai-org repo",
+   "verdict": "confirmed",
+   "evidence_url": "https://artificialanalysis.ai/models/glm-4-7-flash"
+  },
+  {
+   "claim": "vLLM: arch in registry.py lines 125 and 730 at v0.33.0; glm4_moe_lite.py first appears in v0.15.0 (2026-01-29), 404 at v0.14.1; added by commit 71832ba (PR #31386, 2026-01-19); glm45 and glm47 map to the same tool and reasoning parsers",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/model_executor/models/registry.py"
+  },
+  {
+   "claim": "vLLM v0.33.0 cuda.py selects TRITON_MLA then FLASHINFER_MLA_SPARSE_SM120 for device_capability.major == 12",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/platforms/cuda.py"
+  },
+  {
+   "claim": "Open vLLM issues #67684 (2026-11-14), #67471 (2026-11-13), #60703, #65944 as described",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/vllm-project/vllm/issues/67684"
+  },
+  {
+   "claim": "llama.cpp PRs #18936 (2026-01-19), #18980 gating fix (2026-01-21), #19067 V-less cache (2026-01-25)",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/pull/18936"
+  },
+  {
+   "claim": "Ollama glm-4.7-flash latest blob 19,019,269,280 bytes, digest 4475827791a2, 198K, tools and thinking badges, 'ollama launch opencode --model glm-4.7-flash', 2.2M downloads",
+   "verdict": "confirmed",
+   "evidence_url": "https://registry.ollama.ai/v2/library/glm-4.7-flash/manifests/latest"
+  },
+  {
+   "claim": "Official checkpoint is 48 BF16 safetensors shards totalling 62.44 GB",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/zai-org/GLM-4.7-Flash/tree/main"
+  },
+  {
+   "claim": "Community quant sizes (unsloth, bartowski, Intel AutoRound, QuantTrio, NVFP4 builds) and speed figures from llama.cpp PRs #30489, #30196, #31968",
+   "verdict": "uncertain",
+   "correction": "Not re-checked in this pass."
+  }
+ ]
+}

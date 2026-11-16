@@ -1,0 +1,101 @@
+{
+ "overall": "holds-with-corrections",
+ "summary": "The record's runtime claims survive the adversarial check. HF API sizes, config-derived KV math (147,456 B/token BF16; vLLM FP8 build pool 5.0005e9 B gives ~33.9k BF16-KV / ~67.8k FP8-KV tokens; INT4 ~56.5k/113k; llama.cpp Q8_0+q8_0 KV at 64k = 13.7 GiB), the deepseek_v3 parser RuntimeError, missing tool tokens, the vLLM docs marking R1 tools unsupported, and the llama.cpp doc and template claims are all confirmed. Two corrections. (1) In v0.33.0, '--quantization fp8' on a BF16 checkpoint is deprecated: get_quant_config logs a warning and switches to fp8_per_tensor (Fp8Config itself raises ValueError for online use), so the command should say '--quantization fp8_per_tensor'. Online FP8 builds each layer from the meta device as it loads, so peak load memory is not a risk. (2) '--kv-cache-dtype fp8' does not run on FlashAttention 2 on sm_120: flash_attn_supports_kv_cache_dtype allows FP8 only on sm90 (FA3/FA4) and sm100 (FA4), so vLLM falls back to FlashInfer (order FLASH_ATTN, FLASHINFER, TRITON_ATTN). Expect a possible FlashInfer first-start compile. The 64k setting leaves only ~3% headroom. Ollama's refusal of tools for deepseek-r1:8b moves from inferred to source-backed: the 8b template has no Tools variable, and server/images.go only grants the tools capability when the template contains 'tools' or 'tool_call'. llama.cpp b12418 has no dedicated R1 tool handler in chat.cpp and relies on the auto-parser, so whether it recognises R1's tool-call text is still untraced. Verdict 'unsuitable for OpenCode' holds. Best realistic configuration: unsloth Q8_0 on llama.cpp, 64k context, q8_0 KV, --jinja, with tool calls mechanically possible but unproven. Gaps: Artificial Analysis scores not re-checked; INT4 AutoRound Marlin path on sm_120 not checked; no end-to-end tool-call run.",
+ "verdicts": [
+  {
+   "claim": "Weight sizes: official BF16 16.38 GB (15.26 GiB); JamAndTea FP8 9.43 GB; Intel INT4 6.10 GB; unsloth/bartowski Q8_0 8.71 GB, Q6_K 6.73, Q4_K_M 5.03, BF16 16.39 GB",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/deepseek-ai/DeepSeek-R1-0528-Qwen3-8B?blobs=true",
+   "correction": "Exact bytes: 16,381,516,796; 9,438,581,960; 6,103,917,400; Q8_0 8,709,519,872 (unsloth) / 8,709,517,696 (bartowski)."
+  },
+  {
+   "claim": "Architecture Qwen3ForCausalLM, 36 full-attention layers, 8 KV heads, head_dim 128, max_position_embeddings 131072 via YaRN x4 over 32768; KV 147,456 B/token BF16",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/deepseek-ai/DeepSeek-R1-0528-Qwen3-8B/raw/main/config.json"
+  },
+  {
+   "claim": "vLLM FP8 budget: pool 4.66 GiB, ~33.9k BF16-KV / ~67.9k FP8-KV tokens; INT4 ~56.5k / ~113k",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/JamAndTeaStudios/DeepSeek-R1-0528-Qwen3-8B-FP8-Dynamic?blobs=true",
+   "correction": "Recomputed: 15,727,591,424 - 9,438,581,960 - 1,288,490,189 = 5,000,519,275 B, giving 33,912 (BF16 KV) and 67,823 (FP8 KV) tokens, not 67,866. --max-model-len 65536 has only ~3% headroom over a 1.2 GiB reserve estimate."
+  },
+  {
+   "claim": "Serve command uses '--quantization fp8' for online dynamic FP8 on v0.33.0",
+   "verdict": "refuted",
+   "evidence_url": "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/model_executor/model_loader/weight_utils.py",
+   "correction": "In v0.33.0, Fp8Config raises ValueError for online use ('no longer supports online quantization. Please use --quantization fp8_per_tensor'). get_quant_config catches '--quantization fp8' on a checkpoint without a quant config, logs a deprecation warning and switches to fp8_per_tensor, so it still starts. Use '--quantization fp8_per_tensor'. Online FP8 (online/fp8.py, uses_meta_device=True, layerwise processing) materializes each layer as it loads, so peak load memory is not a concern."
+  },
+  {
+   "claim": "Attention on sm_120 is FlashAttention 2 (implied to apply with --kv-cache-dtype fp8)",
+   "verdict": "refuted",
+   "evidence_url": "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/v1/attention/backends/fa_utils.py",
+   "correction": "flash_attn_supports_kv_cache_dtype returns True for FP8 only on sm90 (FA3/FA4) or sm100 (FA4), not sm_120. With FP8 KV, the backend order (cuda.py: FLASH_ATTN, FLASHINFER, TRITON_ATTN) selects FlashInfer, which lists fp8 KV support. Expect a possible FlashInfer compile on first start. BF16 KV stays on FA2."
+  },
+  {
+   "claim": "sm_120 CUTLASS FP8 GEMM kernels exist in v0.33.0",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/vllm-project/vllm/tree/v0.33.0/csrc/quantization/w8a8/cutlass/c3x"
+  },
+  {
+   "claim": "Qwen3ForCausalLM registered (registry line 202); deepseek_r1 reasoning parser registered; docs mark DeepSeek R1 series tool calling unsupported; enable_thinking harmlessly filtered",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/vllm-project/vllm/blob/v0.33.0/docs/features/reasoning_outputs.md"
+  },
+  {
+   "claim": "deepseek_v3 tool parser raises RuntimeError at init because <｜tool▁calls▁begin｜> etc. are absent from this tokenizer",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/tool_parsers/deepseekv3_tool_parser.py",
+   "correction": "tokenizer.json lookup: the three tool tokens are absent from vocab and added_tokens; parser lines 67-78 raise RuntimeError. Note that <tool_call> (Hermes) is an added token (id 151657), but nothing shows the model emits it."
+  },
+  {
+   "claim": "Official chat template never renders tools and has no enable_thinking; generation prompt ends at <｜Assistant｜>",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/deepseek-ai/DeepSeek-R1-0528-Qwen3-8B/raw/main/tokenizer_config.json"
+  },
+  {
+   "claim": "vLLM issues #19001 open, #59738 open, #44841 closed, #19729 closed",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/vllm-project/vllm/issues/19001",
+   "correction": "Also open and relevant: #61215 (/v1/systemone noise for thinking-only Qwen3 checkpoints, 2026-10-12)."
+  },
+  {
+   "claim": "llama.cpp: qwen3 arch supported, latest release b12419; docs say DeepSeek R1 WIP/reluctant; llama-cpp-deepseek-r1.jinja ships in models/templates; chat.cpp warns about templates that do not describe tools",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/blob/b12418/docs/function-calling.md"
+  },
+  {
+   "claim": "unsloth GGUF embedded template renders tools (sglang R1 tool template); bartowski template does not",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/unsloth/DeepSeek-R1-0528-Qwen3-8B-GGUF",
+   "correction": "In b12418, chat.cpp has no dedicated DeepSeek R1 tool-call handler (only V3.2/V4/V4.1). Parsing R1's multi-token tool-call text depends on the generic auto-parser (chat-auto-parser-*.cpp), which was not traced, so llama.cpp tool calling stays mechanically possible but unproven."
+  },
+  {
+   "claim": "llama.cpp VRAM plan: Q8_0 + q8_0 KV at 65536 = 13.7 GiB; Q8_0 + f16 KV = 17.9 GiB does not fit; Q4_K_M + q8_0 KV at 131072 = 15.0 GiB",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/unsloth/DeepSeek-R1-0528-Qwen3-8B-GGUF?blobs=true"
+  },
+  {
+   "claim": "Ollama deepseek-r1:8b template has no .Tools; tool requests probably refused (inferred)",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/ollama/ollama/blob/v0.40.16/server/images.go",
+   "correction": "Now source-backed: template blob sha256:c5ad996bda6e (556 B) has no Tools variable, and images.go grants the tools capability only if the template contains 'tools' or 'tool_call', so tool requests fail with a 'does not support tools' error. Model blob 5,225,373,760 B. Ollama v0.40.17-rc0 is a pre-release."
+  },
+  {
+   "claim": "Artificial Analysis tau2 0%, Terminal-Bench Hard 1.5%, other AA scores",
+   "verdict": "uncertain",
+   "evidence_url": "https://artificialanalysis.ai/models/deepseek-r1-qwen3-8b",
+   "correction": "Not re-checked in this pass."
+  },
+  {
+   "claim": "INT4 AutoRound runs through GPTQ/Marlin on sm_120",
+   "verdict": "uncertain",
+   "correction": "Not verified; remains inferred."
+  },
+  {
+   "claim": "Verdict: unsuitable as OpenCode agent backend; best path llama.cpp unsloth Q8_0 at 64k q8_0 KV",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/vllm-project/vllm/blob/v0.33.0/docs/features/reasoning_outputs.md",
+   "correction": "vLLM command fix: --quantization fp8_per_tensor; FP8 KV runs on FlashInfer, not FA2. List under 'thinking, no tool calling'."
+  }
+ ]
+}

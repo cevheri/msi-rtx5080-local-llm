@@ -1,0 +1,77 @@
+{
+ "verdicts": [
+  {
+   "claim": "Weight sizes: openai/gpt-oss-120b main checkpoint 65,248,893,184 B = 60.77 GiB; ggml-org gpt-oss-120b-MXFP4.gguf 63,387,346,208 B = 59.03 GiB; bartowski MXFP4_MOE 2 shards 63.39 GB; unsloth UD-Q4_K_XL 63.02 GB",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/openai/gpt-oss-120b?blobs=true",
+   "correction": "Re-summed live: openai main shards 65,248,893,184 B (60.768 GiB); ggml-org MXFP4 63,387,346,208 B (59.03 GiB, repo lastModified 2026-11-12); bartowski 39,815,567,520 + 23,571,779,104 B; unsloth UD-Q4_K_XL 49,866,326,912 + 13,149,984,480 B. All match."
+  },
+  {
+   "claim": "config.json: GptOssForCausalLM, 36 layers alternating 18 full / 18 sliding (window 128), 8 KV heads, head_dim 64, 128 experts top-4, max_position_embeddings 131072 (YaRN x32 from 4096), MXFP4 experts with BF16 attention/router/embeddings",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/openai/gpt-oss-120b/raw/main/config.json"
+  },
+  {
+   "claim": "KV bytes per token 36,864 B BF16 (18 full layers x 2 x 8 x 64 x 2), 18,432 B FP8; 131072 tokens = 4.5 GiB BF16",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/openai/gpt-oss-120b/raw/main/config.json",
+   "correction": "Arithmetic verified. In llama.cpp at b12418 the SWA cache is sized to window plus ubatch (not full context) unless --swa-full is set, so the ~0.08 GiB SWA figure is consistent."
+  },
+  {
+   "claim": "vLLM: does not fit (14.65 - 60.77 - 1.2 = -47.3 GiB); CPU offload via --cpu-offload-gb / --cpu-offload-params exists but is not viable",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/engine/arg_utils.py",
+   "correction": "Both flags present at v0.33.0 (arg_utils.py lines 1470-1472). Offloading ~47 GiB would exceed ~40 GiB free RAM and stream over PCIe each step; verdict 'fits: no' stands."
+  },
+  {
+   "claim": "vLLM v0.33.0: GptOssForCausalLM registered (registry.py line 128), tool parser 'openai' -> GptOssToolParser (tool_parsers/__init__.py line 194), reasoning parser 'openai_gptoss' (reasoning/__init__.py line 71), MXFP4 oracle demotes OAI Triton below Marlin on capability family 120",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/layers/fused_moe/oracle/mxfp4.py",
+   "correction": "mxfp4.py line 426: 'if current_platform.is_cuda() and current_platform.is_device_capability_family(120): # Consumer Blackwell: the OAI Triton kernels run but their 99KB shared memory budget caps them...'. Moot because the model does not fit."
+  },
+  {
+   "claim": "llama.cpp expert/non-expert split: 1.576 GiB experts per layer, 56.7 GiB experts total, 2.3 GiB non-expert",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/ggml-org/gpt-oss-120b-GGUF/resolve/main/gpt-oss-120b-MXFP4.gguf",
+   "correction": "Parsed the actual GGUF header (HTTP range read, 687 tensors): expert tensors incl. biases = 61,073,326,080 B = 56.88 GiB, 1.58 GiB per layer; non-expert = 2.14 GiB (attention weights are Q8_0 in this GGUF, not BF16). So --n-cpu-moe 32 puts 32 x 1.58 = 50.6 GiB in RAM; GPU side ~4 x 1.58 + ~2.1 GiB (token_embd stays on CPU, ~0.6 GiB) so VRAM is slightly below the 13.4 GiB estimate. Conclusions unchanged."
+  },
+  {
+   "claim": "llama.cpp b12418 flags --load-mode, --n-cpu-moe, --moe-cache-mib, --reasoning-effort, --swa-full, --ctx-checkpoints exist",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12418/tools/server/README.md",
+   "correction": "README lines 74, 81, 82, 241, 55, 167. Note README line 2213: '--fit' assumes host (CPU) memory is unlimited, so --fit (default on) will not protect against the RAM shortfall."
+  },
+  {
+   "claim": "Official guide 16 GB recipe is --n-cpu-moe 32 and 5090 gets about 30 t/s with --n-cpu-moe 21; compute buffers 2.7 GB",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/discussions/15396",
+   "correction": "Guide line 729: 'llama-server -hf ggml-org/gpt-oss-120b-GGUF --ctx-size 32768 --jinja -ub 4096 -b 4096 --n-cpu-moe 32' (32k context and -ub 4096, not 64k). Line 819 confirms the 5090 30 t/s remark. The record's 64k/-ub 2048 variant is its own extrapolation (inferred), not the guide's."
+  },
+  {
+   "claim": "llama.cpp tool calling works via --jinja with the gpt-oss template; known open issues #30377, #27783, OpenCode #58019",
+   "verdict": "uncertain",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/issues/30781",
+   "correction": "Cited issues verified open (#30377 updated 2026-11-14, #27783 2026-11-14, OpenCode #58019 2026-11-02). Missed: open llama.cpp #30781 (2026-10-18): the gpt-oss template line 12 '{%- if param_spec['items'] -%}' makes any tool with an array parameter lacking 'items' fail with HTTP 500 'Function is not a bool value'. The pattern is still present in models/templates/openai-gpt-oss-120b.jinja at b12418 and in the chat template embedded in ggml-org gpt-oss-120b-MXFP4.gguf (checked header bytes). Agent/MCP tool schemas can hit this; workaround is --chat-template-file with \"'items' in param_spec\". Whether OpenCode v2.3.0 built-in tools emit such schemas was not established."
+  },
+  {
+   "claim": "Feasibility on this machine: MARGINAL; ~49-52 GiB of experts in RAM vs ~40 GiB free; only clean after closing apps; do not run through heavy (32 GB slice)",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/ggml-org/gpt-oss-120b-GGUF/resolve/main/gpt-oss-120b-MXFP4.gguf",
+   "correction": "GGUF header gives 50.6 GiB of experts at --n-cpu-moe 32 (48.9 GiB at 31). With 61 GiB usable and ~20 GiB in use by desktop, the shortfall is ~10 GiB; mmap page eviction from NVMe is the expected failure mode. The heavy.slice 32 GB cap would kill or thrash it."
+  },
+  {
+   "claim": "Speed estimate ~15-20 t/s decode at short context",
+   "verdict": "uncertain",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/discussions/15396",
+   "correction": "Arithmetic re-derived: 4 active experts x 1.58 GiB/128 = ~53 MB per CPU layer per token; 32 layers = ~1.69 GB/token. The 5090 reference (21 CPU layers = 1.11 GB/token at 30 t/s) implies ~33 GB/s effective, giving ~20 t/s if this laptop's DDR5 matches; unmeasured, and only valid when all expert pages are resident."
+  },
+  {
+   "claim": "vLLM open issues #58825, #65770, #66989, #67603, #55754",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/vllm-project/vllm/issues/65770",
+   "correction": "All open; titles and update dates match the record."
+  }
+ ],
+ "overall": "holds-with-corrections",
+ "summary": "The record mostly holds. I could not refute any of its runtime claims. Weight sizes, the config and the KV arithmetic (36,864 B/token BF16) all re-verified exactly. The vLLM \"does not fit\" verdict is correct (-47.3 GiB). The v0.33.0 registry, the parser names and the sm_120 Marlin demotion for MXFP4 are confirmed at the tag.\n\nCorrections:\n(1) I parsed the real GGUF header with a range read. Experts total 56.88 GiB (1.58 GiB per layer) and non-expert tensors 2.14 GiB, because attention is Q8_0 in this GGUF, not BF16. With --n-cpu-moe 32 that puts about 50.6 GiB in RAM. The conclusions do not change.\n(2) The guide's 16 GB recipe is 32k context with -ub 4096. The 64k variant is the record's own extrapolation.\n(3) The record missed open llama.cpp issue #30781: the gpt-oss template returns HTTP 500 for any tool whose array parameter has no 'items'. The bug is still in the b12418 template and in the template embedded in the ggml-org GGUF. Workaround: --chat-template-file with \"'items' in param_spec\".\n(4) llama.cpp's --fit assumes unlimited host RAM, so it will not prevent the RAM shortfall.\n\nRealistic best configuration: llama.cpp server-cuda13, ggml-org MXFP4 GGUF, -c 65536, --n-cpu-moe 31 or 32, q8_0 KV optional, and a patched template if OpenCode or MCP tool schemas include arrays without items. It only works with about 52 GiB of free RAM, i.e. most desktop apps closed, and gives an estimated 15-20 t/s.\n\nGaps:\n- No measured speed on this laptop.\n- Not checked whether OpenCode v2.3.0's built-in tool schemas trigger #30781.\n- Not checked whether llama.cpp CPU repack buffers for MXFP4 bypass mmap and raise anonymous RAM use.\n\nScratch files: $SCRATCH/v120/ and $SCRATCH/parse_gguf.py"
+}

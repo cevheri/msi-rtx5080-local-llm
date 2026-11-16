@@ -1,0 +1,113 @@
+{
+ "key": "deepseek-r1-0528-qwen3-8b",
+ "repo": "unsloth/DeepSeek-R1-0528-Qwen3-8B-GGUF",
+ "file": "DeepSeek-R1-0528-Qwen3-8B-Q8_0.gguf",
+ "size_bytes": 8709519872,
+ "header_ok": true,
+ "header_facts": "GGUF v3, 399 tensors, 37 keys, header 6.0 MB (fit in the 32 MiB range fetch). arch qwen3, 36 blocks, dense (0 experts, all 36 blocks dense, so --n-cpu-moe does not apply). Attention: full attention in all 36 layers, no sliding window, no SSM; 32 query heads, 8 KV heads, key_length 128, value_length 128. embedding 4096, FFN 12288, vocab 151,936 (gpt2/qwen2 tokenizer, bos 151643, eos 151645, add_bos false). Native context 131072 via YaRN: rope.scaling.type yarn, factor 4.0, original_context_length 32768, freq_base 1e6 (same as the upstream config.json, so YaRN is applied statically at every length). Tensor bytes 8.106 GiB, all Q8_0 apart from tiny F32 norms. Per-block expert GiB: 0 for every block. Non-expert GPU weights 7.490 GiB (6.874 GiB block tensors + 0.616 GiB output/norm). token_embd 0.616 GiB, stays in host memory. Embedded chat template is Unsloth's (adapted from the sglang deepseekr1 tool template): generation prompt is a bare <\uff5cAssistant\uff5c> with no forced <think>, history strips everything up to </think>, and tools are injected into the system prompt.",
+ "kv_math": "Per token: 36 layers x 8 KV heads x (128 + 128) x 1.0625 B (q8_0) = 78,336 B = 76.5 KiB (f16: 147,456 B = 144 KiB). At 65,536 tokens: q8_0 4.781 GiB = 4,896 MiB (script output: 4.781 GiB); f16 9.000 GiB = 9,216 MiB. No sliding-window, recurrent or MLA state. Largest q8_0 context that keeps 500 MiB free: (15,341 - 112 desktop - 7,670 weights - 819 overhead) MiB = 6,740 MiB of KV = about 90k tokens; so 81,920 fits (KV 6,120 MiB, peak 14,721 MiB) but 98,304 (KV 7,344 MiB, peak 15,945 MiB) and 128k (KV 9,792 MiB) do not. f16 KV fits only up to about 47k (32,768: KV 4,608 MiB, peak 13,209 MiB).",
+ "recommended": {
+  "context": 65536,
+  "kv_type": "q8_0",
+  "n_cpu_moe": null,
+  "moe_cache_mib": null,
+  "load_mode": "mmap",
+  "threads": null,
+  "vram_breakdown": "All 36 layers on the GPU (-ngl all). Weights without token_embd 7.490 GiB = 7,670 MiB; KV q8_0 at 65,536 = 4,896 MiB; CUDA context + compute buffers at -ub 512 about 0.8 GiB = 819 MiB (dense model with a 152k vocab, smaller than the 248k-vocab Qwen3.8-27B that measured 0.79 GiB, so 0.8 is conservative; logits buffer 512 x 151,936 x 4 B = 297 MiB is inside it). CUDA total 13,385 MiB; plus desktop 112 MiB = nvidia-smi peak 13,497 MiB; free 15,841 - 13,497 = 2,344 MiB (1,844 MiB above the 500 MiB floor).",
+  "predicted_peak_mib": 13497,
+  "predicted_free_mib": 2344,
+  "memory_cap": "16g",
+  "predicted_container_ram_gib": 6,
+  "server_args": [
+   "-m",
+   "MODEL_PATH",
+   "--alias",
+   "local",
+   "-ngl",
+   "all",
+   "-fa",
+   "on",
+   "-c",
+   "65536",
+   "-ctk",
+   "q8_0",
+   "-ctv",
+   "q8_0",
+   "-np",
+   "1",
+   "--jinja",
+   "--reasoning-format",
+   "deepseek",
+   "--temp",
+   "0.6",
+   "--top-p",
+   "0.95",
+   "--min-p",
+   "0.01"
+  ]
+ },
+ "alternative": "f16 KV at 32k to size the q8_0 decode penalty of #27623 on this model: same args with -c 32768 and without -ctk/-ctv (f16 default); KV 4,608 MiB, CUDA 7,670 + 4,608 + 819 = 13,097 MiB, predicted nvidia-smi peak 13,209 MiB (2,632 MiB free). Run the 8000 and 30000 probes on both and compare decode at 30k depth. If capacity matters more than speed, q8_0 at -c 81920 also fits (peak 14,721 MiB, 1,120 MiB free), but the model card caps generation at 64K so the gain is small.",
+ "thinking": "always. The model always opens with <think> (model card: \"It is not required to add <think>\\n at the beginning\"), and the template has no enable_thinking or reasoning_effort switch. At b12407 there is no specialized R1 handler: common/chat.cpp falls through to the autoparser, and the workaround in common/chat-diff-analyzer.cpp lines 40-49 (\"old Qwen/Deepseek thinking template\", triggered by content.split('</think>') with no reasoning_content in the template, both verified in this GGUF's template) sets TAG_BASED reasoning with <think> / </think>, so --reasoning-format deepseek (also the auto default) puts the thoughts in reasoning_content. Server default flag: --reasoning-format deepseek; leave --reasoning at auto. Per request there is no off switch: chat_template_kwargs enable_thinking false or reasoning_effort \"none\" do not change the template and only flip the parser's enable_thinking, which risks leaking the <think> block into content, so do not send them. The only per-request control is a cap: \"reasoning_budget_tokens\": N (alias thinking_budget_tokens, tools/server/server-common.cpp lines 1588-1598), or server-wide --reasoning-budget N.",
+ "per_request_thinking_on": "",
+ "tool_calling": "None; chat and reasoning only. The official tokenizer_config.json template never references tools (checked: 'tools' absent). The Unsloth GGUF template injects a tool list into the system prompt in the R1 <\uff5ctool\u2581calls\u2581begin\uff5c> format, but llama.cpp b12407 has no specialized parser for it: the autoparser's \"DeepSeek-R1-Distill-Qwen\" workaround (chat-diff-analyzer.cpp about line 103) only triggers on the string {{'<\uff5cAssistant\uff5c><\uff5ctool\u2581calls\u2581begin\uff5c>... which this template does not contain (verified), so tool format detection is left to generic diff analysis and is unverified. docs/function-calling.md at b12407 line 18 still lists \"DeepSeek R1 (WIP / seems reluctant to call any tools?)\". Expect the probe's tool test to return text (finish_reason stop) or at best an unreliable parse. OpenCode entry sets tools false.",
+ "sampling": "temperature 0.6, top_p 0.95 (DeepSeek model card: benchmarks and web/app use T 0.6, top-p 0.95; max generation length 64K); min_p 0.01 from Unsloth's R1-0528 guide. No system prompt required (supported since 0528). Set max_tokens generously in probes because the model reasons at length.",
+ "opencode_entry": "{\"deepseek-r1-0528-qwen3-8b\": {\"modelID\": \"local\", \"name\": \"DeepSeek-R1-0528-Qwen3-8B Q8_0 (llama.cpp, chat only)\", \"capabilities\": {\"tools\": false, \"input\": [\"text\"], \"output\": [\"text\"], \"reasoning\": {\"supported\": true}}, \"limit\": {\"context\": 65536, \"output\": 32768}}}",
+ "probe_long_tokens": "8000,30000",
+ "expected_speed": "Decode about 60-90 tok/s at short depth, falling to about 45-70 tok/s near 30k with q8_0 KV (estimate). Reasoning: all weights on the GPU, 7.49 GiB read per token; at roughly 896 GB/s for a 256-bit GDDR7 laptop part the ceiling is about 110 tok/s, and dense Q8_0 typically reaches 60-80% of it. Cross-check against this laptop: Qwen3.8-27B (12.24 GiB file) measured 36 tok/s at 64k; scaling by weight bytes gives about 55 tok/s as a floor, and a plain-attention 8B with no recurrent layers should do better. At 30k depth the q8_0 KV adds about 2.2 GiB read per token and the #27623 q8_0-to-f16 conversion penalty, so decode drops; the f16 alternative run will show how much. Prefill should be several thousand tok/s (estimate). Thinking makes wall time long: hundreds to thousands of reasoning tokens per answer.",
+ "issues": [
+  {
+   "id": "#27330",
+   "state": "open (updated 2026-10-28)",
+   "note": "CUDA graphs hang sm_120 laptops; keep -e GGML_CUDA_DISABLE_GRAPHS=1 (the lead adds it)."
+  },
+  {
+   "id": "#27623",
+   "state": "open (updated 2026-10-22)",
+   "note": "q8_0 KV decode penalty on CUDA; applies to this recipe's -ctk/-ctv q8_0; the f16 32k alternative measures it."
+  },
+  {
+   "id": "PR #31802",
+   "state": "open, unmerged (updated 2026-11-15)",
+   "note": "Fused q8_0 KV dequant fix; not in b12407."
+  },
+  {
+   "id": "docs/function-calling.md (b12407 line 18)",
+   "state": "unchanged",
+   "note": "Still lists DeepSeek R1 tool calling as WIP; consistent with tools false."
+  }
+ ],
+ "kb_discrepancies": [
+  "Memory estimate counts token_embd on the GPU: models.md says 8.11 + 4.78 + 0.8 = 13.7 GiB, but token_embd (0.616 GiB per the header) stays in host memory, so the CUDA total is 7.49 + 4.78 + 0.8 = 13.07 GiB (13,385 MiB) and the nvidia-smi peak about 13,497 MiB; the At a glance row 'about 13.7' should read about 13.2 including the desktop.",
+  "'f16 KV at 64k (17.9 GiB)' has the same token_embd error: 7.49 + 9.0 + 0.8 = 17.3 GiB; the conclusion (does not fit) stands.",
+  "Context headroom is unstated: q8_0 fits up to about 90k (81,920 gives a 14,721 MiB peak), not only 64k; 64k remains the sensible target because the model card caps generation at 64K.",
+  "Native context is not recorded: the GGUF and upstream config.json carry YaRN factor 4 over 32,768 to 131,072, applied statically at all lengths.",
+  "Thinking mechanism: the recipe implies a DeepSeek R1 format, but at b12407 there is no R1 handler; reasoning extraction comes from the autoparser's generic 'old Qwen/Deepseek thinking template' workaround (common/chat-diff-analyzer.cpp lines 40-49). --reasoning-format deepseek is equal to the auto default, so the flag is harmless but redundant.",
+  "'llama.cpp has no dedicated R1 tool handler' is true in effect but imprecise: b12407 has an autoparser 'DeepSeek-R1-Distill-Qwen' tool workaround, whose trigger string is absent from this Unsloth template, so it does not apply to this file.",
+  "The recipe cites function-calling.md and chat.cpp at b12418 while the image is b12407; the R1 WIP line is the same at b12407.",
+  "Unsloth template defect not recorded: when an assistant history message has tool_calls and null content, the template emits a stray literal '}' line after the tool call; harmless while tools are not used.",
+  "Docker block is stale against the lead's conventions: it uses -hf with -e HF_TOKEN and a /root HF cache and no --user; the lead now passes the cached file with -m and runs anonymously. The 16g cap is still adequate."
+ ],
+ "risks": [
+  "Long reasoning: the 0528 generation reasons at length (the parent R1-0528 averaged 23K tokens per AIME question per the card); probes with small max_tokens end with finish_reason length and empty content. Use max_tokens of at least 8192 for smoke tests or cap with reasoning_budget_tokens.",
+  "Sending enable_thinking false or reasoning_effort none (for example from an OpenCode variant copied from the Qwen entries) may push the <think> block into content; the entry deliberately has no variants.",
+  "RAM: predicted container peak about 6 GiB during the 8k and 30k probes (process about 2 GiB + host token_embd 0.62 GiB + cached prompt states, 30k tokens of q8_0 KV = 2.2 GiB), worst case about 10.6 GiB if the 8,192 MiB --cache-ram fills; mmap page cache of the 8.1 GiB file is reclaimable but may show in docker stats during load. 16g leaves margin.",
+  "Static YaRN factor 4 may cost a little quality on short prompts compared with unscaled RoPE; it is DeepSeek's shipped config, so keep it.",
+  "The Unsloth repo was last modified 2025-06-16 (sha eb48357c); if it is re-uploaded, re-check the template.",
+  "The 0.8 GiB overhead is carried over from the Qwen3.6/3.8 measurements; actual may be lower for this smaller vocab, which only increases the margin."
+ ],
+ "sources": [
+  "$HOME/projects/llm/llamacpp/models.md section 10 and At a glance table",
+  "$HOME/projects/llm/llamacpp/README.md (KV quantization, Thinking control, Prompt cache, Tool calling, Known issues)",
+  "$HOME/projects/llm/docs/opencode.md (validated config, DeepSeek tools false note)",
+  "GGUF header: $SCRATCH/headers/deepseek-r1-0528-qwen3-8b/head.gguf, parsed with gguf_plan.py at 65536 and q8_0",
+  "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/common/chat.cpp (no R1 specialized template; autoparser fallback)",
+  "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/common/chat-diff-analyzer.cpp lines 36-115 (thinking and R1-Distill workarounds)",
+  "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/common/arg.cpp (--reasoning-format, --reasoning, --reasoning-budget, -ngl all, --cache-ram, -lm)",
+  "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/tools/server/server-common.cpp lines 1550-1598 (enable_thinking, reasoning_effort none, reasoning_budget_tokens)",
+  "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/docs/function-calling.md line 18",
+  "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/src/llama-arch.cpp line 38 (qwen3)",
+  "gh api repos/ggml-org/llama.cpp/issues/27330, 27623, 31802 (read 2026-11-16)",
+  "https://huggingface.co/deepseek-ai/DeepSeek-R1-0528-Qwen3-8B/raw/main/config.json, README.md, tokenizer_config.json",
+  "https://huggingface.co/api/models/unsloth/DeepSeek-R1-0528-Qwen3-8B-GGUF (lastModified 2025-06-16)"
+ ]
+}

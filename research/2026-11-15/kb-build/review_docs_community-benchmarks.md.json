@@ -1,0 +1,63 @@
+{
+ "file": "$HOME/projects/llm/docs/community-benchmarks.md",
+ "checked_claims": 34,
+ "fixes": [
+  {
+   "what": "Depth table and issue-thread table: the Qwen3.8-27B row 'UD-Q3_K_XL, RTX 4080 SUPER, tg32 40.92 / 32.49 at 81920' was wrong. Those numbers come from a 2x RTX 3090 run of UD-Q4_K_XL (layer split, 250 W, b10603). I split the row in two. The real 4080 SUPER row is UD-Q3_K_XL, about 38-39 tok/s at zero context and 33.1 at 68K, prefill about 1300 tok/s at 91K, plus the retraction and its 32.4 tok/s at 91K. The 3090 row is separate and carries its own comment link. I also removed the unsourced '736 GB/s' and the '1300-1500' prefill range.",
+   "why": "The #27623 issue body and comment 5398821159 (fetched via gh and the audit copy) show that a different reporter measured 40.92/32.49 on 2x RTX 3090 with UD-Q4_K_XL.",
+   "source": "https://github.com/ggml-org/llama.cpp/issues/27623"
+  },
+  {
+   "what": "RTX 5090 row: added build b10615 and pointed the link at the specific comment.",
+   "why": "Precision: comment 5406012488 gives tg32 76.48 / 59.34 and llama-server 60.03 / 2342.15.",
+   "source": "https://github.com/ggml-org/llama.cpp/issues/27623#issuecomment-5406012488"
+  },
+  {
+   "what": "Calculator comparison table, Qwen3.8 baseline cell: 'measured 40.92' on the 4080 SUPER becomes 'about 38-39 at zero context'.",
+   "why": "Same misattribution as above.",
+   "source": "https://github.com/ggml-org/llama.cpp/issues/27623"
+  },
+  {
+   "what": "q8_0 KV paragraph: added per-comment links for the RTX 2000 Ada, RTX 4090 and 4080 SUPER reports, and added the 4090 commenter's matching penalty.",
+   "why": "The sentence carried load-bearing claims with no link.",
+   "source": "https://github.com/ggml-org/llama.cpp/issues/27623#issuecomment-5752465933"
+  },
+  {
+   "what": "New-candidates table: the old text said Nanbeige4.3-33B, K2 Horizon MoVA and K2 Horizon 7B were 'not yet checked for fit or runtime support'. That is replaced with the verified state. Both runtimes support the architectures natively (vLLM v0.33.0 registry; llama.cpp PR #29535 merged 2026-10-06, b11454). No vLLM checkpoint of Nanbeige or MoVA fits 16 GB. Nanbeige's tokenizer fix, PR #31986, is still open (checked live). K2 7B Q8_0 at 8.92 GiB fits at 64k with q8_0 KV (estimate).",
+   "why": "kb/newcand records written during this run supersede the stale claim. I checked PR states live with gh.",
+   "source": "kb/newcand/*.json; https://github.com/ggml-org/llama.cpp/pull/31986"
+  },
+  {
+   "what": "Takeaway 5: '23 offloaded layers' becomes 'UD-Q6_K_XL with --n-cpu-moe 23'.",
+   "why": "--n-cpu-moe moves the experts of N blocks to RAM. It does not move whole layers, so the old wording was technically wrong.",
+   "source": "https://www.reddit.com/r/LocalLLaMA/comments/1sdu8oz/bartowski_vs_unsloth_for_gemma_4/oem5j5k/"
+  },
+  {
+   "what": "u/grumd section: 'All models are from the Qwen3.5 generation' becomes 'runs date from April 2026, so the Qwen entries are the Qwen3.5 generation'.",
+   "why": "The table also lists GLM-4.7-Flash, Nemotron-3-Super and Devstral, which are not Qwen3.5 models.",
+   "source": "kb/reviews/reddit-18-models.json"
+  },
+  {
+   "what": "Calculator section intro and summary: 'each one marks ... does not fit' and 'they do not model sliding-window KV, model-specific quants' were softened to 'CanIRun, ModelFit and Periscale' and 'most of them', with a note that Twoody models spill but not tensor placement.",
+   "why": "The Twoody review shows it models sliding-window KV and real file sizes, and it labels the Gemma 26B config as 'Runs'.",
+   "source": "kb/reviews/twoody-calculator.json"
+  },
+  {
+   "what": "Unsloth B200 NVFP4 speed bullet: added the (vendor-reported) label.",
+   "why": "Rule 7: third-party numbers need an evidence label."
+  },
+  {
+   "what": "Maintenance: added PR #31986 to the items to re-check.",
+   "why": "The new-candidate note now depends on it."
+  }
+ ],
+ "remaining_concerns": [
+  "The baseline estimate column in the calculator comparison table (e.g. gpt-oss ceiling about 240, Gemma 26B 150-220, GLM 40-80 with --n-cpu-moe 18 vs config 20) comes from per-model verify records. I spot-checked it (it matches) but did not re-derive every row.",
+  "The upstream record verify_Qwen3.8-27B.json still has the 4080 SUPER / 40.92 misattribution. Other KB docs that copied it (llamacpp/models.md, model-selection.md, llamacpp/benchmarking.md) may carry the same error and should be grepped for '40.92'.",
+  "Nick Lothian SQL-benchmark details (data date range, the per-model scores) and the TechFuelHQ coding eval grid were checked only against the review checks, not re-fetched.",
+  "Maintenance bullet calls the RTX 5090 Laptop 'same GB203M chip'. This is consistent with NVIDIA's spec table (896 GB/s, 10496 cores) but the chip name was not verified from a primary source in this pass.",
+  "The doc contains no docker commands, so the port, restart-policy and memory-cap rules did not apply. Relative links point to opencode.md, sources.md, model-selection.md, ../llamacpp/README.md, ../llamacpp/benchmarking.md, ../llamacpp/models.md, ../vllm/README.md and ../vllm/benchmarking.md. These are all planned KB files, though model-selection.md, llamacpp/models.md and vllm/README.md do not exist on disk yet."
+ ],
+ "verdict": "ready-with-concerns",
+ "used_playwright": false
+}

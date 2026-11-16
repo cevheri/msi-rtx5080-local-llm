@@ -1,0 +1,108 @@
+{
+ "verdicts": [
+  {
+   "claim": "Checkpoint weight sizes (official BF16 55.56 GB / 51.75 GiB; RedHatAI INT4 18.12 GiB; nvidia NVFP4 20.42 GiB; cyankiwi AWQ 21.02 GB)",
+   "verdict": "confirmed",
+   "correction": "HF API ?blobs=true safetensors sums: Qwen/Qwen3.8-27B 55,563,006,776 B (51.75 GiB); RedHatAI/Qwen3.8-27B-INT4 19,452,788,048 B (18.12 GiB); nvidia/Qwen3.8-27B-NVFP4 21,921,697,280 B (20.42 GiB); RedHatAI MXFP4 18.47 GiB; cyankiwi 21,018,000,928 B (19.57 GiB). All match.",
+   "evidence_url": "https://huggingface.co/api/models/RedHatAI/Qwen3.8-27B-INT4?blobs=true"
+  },
+  {
+   "claim": "RedHatAI/Qwen3.8-27B-INT4 (18.12 GiB) is the smallest vLLM-native build",
+   "verdict": "refuted",
+   "correction": "Smaller vLLM-loadable builds exist: avyukth/Qwen3.8-27B-AWQ-INT4 18,568,390,152 B (17.29 GiB), mattbucci/Qwen3.8-27B-AWQ 17.41 GiB, pearsonkyle GPTQ-W4A16 18.08 GiB, grevinden/qwen3.8-27b-w4a16-autoround-rtx3090 16,744,667,960 B (15.59 GiB). None changes the verdict: even 15.59 GiB exceeds the whole 14.65 GiB budget before the 1.2 GiB reserve; dropping vision (~0.8 GiB) still leaves about 14.8 GiB of weights. vLLM does not fit (source-backed arithmetic).",
+   "evidence_url": "https://huggingface.co/api/models/grevinden/qwen3.8-27b-w4a16-autoround-rtx3090?blobs=true"
+  },
+  {
+   "claim": "Architecture: 64 layers, full_attention_interval 4 (16 full-attention layers), 4 KV heads, head_dim 256, GDN 16 QK / 48 V heads x 128, max_position_embeddings 262144",
+   "verdict": "confirmed",
+   "correction": "config.json text_config: layer_types has 16 full_attention and 48 linear_attention; num_key_value_heads 4; head_dim 256; linear_num_key_heads 16; linear_num_value_heads 48; mamba_ssm_dtype float32; max_position_embeddings 262144; vocab 248320; tie_word_embeddings false; mtp_num_hidden_layers 1.",
+   "evidence_url": "https://huggingface.co/Qwen/Qwen3.8-27B/raw/main/config.json"
+  },
+  {
+   "claim": "KV bytes per token 65,536 B BF16 / 32 KiB FP8; GDN state ~151 MB per sequence; 2 GiB pool = 32.8k BF16 / 65.5k FP8",
+   "verdict": "confirmed",
+   "correction": "2 x 16 x 4 x 256 x 2 = 65,536 B. q8_0 in llama.cpp = 34,816 B/token. GDN SSM state 48 x 48 x 128 x 128 x 4 B = 151 MB. llama.cpp b12418 llama-model.cpp filters the hybrid KV to il < n_layer(), so the MTP block (blk.64) adds no KV in the main context.",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/blob/b12418/src/llama-model.cpp"
+  },
+  {
+   "claim": "vLLM v0.33.0: Qwen3_5ForConditionalGeneration and Qwen3_5MTP registered (lines 617, 739); qwen3_coder and qwen3_xml tool parsers; qwen3 reasoning parser; --cpu-offload-gb and --language-model-only flags exist",
+   "verdict": "confirmed",
+   "correction": "registry.py at v0.33.0 lines 617 and 739; tool_parsers/__init__.py lines 206 (qwen3_coder) and 217 (qwen3_xml); reasoning/__init__.py line 168 'qwen3'; arg_utils.py lines 1470 (--cpu-offload-gb), 1472 (--cpu-offload-params), 1497 (--language-model-only).",
+   "evidence_url": "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/model_executor/models/registry.py"
+  },
+  {
+   "claim": "vLLM recipe: min_vllm_version 0.17.0, verified image vllm/vllm-openai:qwen38 (fork in the 0.27 range), 1x RTX 5090 needs --enforce-eager and 32K context with Inferact NVFP4, default tool parser qwen3_coder",
+   "verdict": "confirmed",
+   "correction": "Recipe lines 26-28, 49-59, 83-87, 202-220.",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/recipes/main/models/Qwen/Qwen3.8-27B.yaml"
+  },
+  {
+   "claim": "vLLM verdict: does not fit on 16 GB (est_max_context 0)",
+   "verdict": "confirmed",
+   "correction": "Budget 14.65 GiB - 1.2 reserve = 13.45 GiB for weights+KV; smallest build found is 15.59 GiB. Only --cpu-offload-gb paths remain (slow, inferred).",
+   "evidence_url": "https://huggingface.co/api/models/grevinden/qwen3.8-27b-w4a16-autoround-rtx3090?blobs=true"
+  },
+  {
+   "claim": "GGUF files exist with stated sizes: unsloth UD-Q3_K_XL 13.15 GB (12.24 GiB), UD-IQ4_XS 14.35 GB (13.37 GiB), UD-IQ3_S 12.04 GB, UD-Q4_K_M 16.56 GB; ggml-org Q4_K_M 19.4 GB; bartowski IQ4_XS 15.48 GB, Q3_K_M 13.40 GB; lmstudio Q4_K_M 16.81 GB; mmproj ~0.93 GB",
+   "verdict": "confirmed",
+   "correction": "Exact: Qwen3.8-27B-UD-Q3_K_XL.gguf 13,146,393,504 B; Qwen3.8-27B-UD-IQ4_XS.gguf 14,352,911,264 B; UD-IQ3_S 12,040,883,104 B; UD-Q4_K_M 16,564,259,744 B; mmproj-BF16.gguf 931,146,432 B. Also available: UD-IQ3_XXS 10,934,860,704 B (10.18 GiB).",
+   "evidence_url": "https://huggingface.co/api/models/unsloth/Qwen3.8-27B-GGUF/tree/main"
+  },
+  {
+   "claim": "llama.cpp GPU weight estimate for UD-Q3_K_XL ~11.6 GiB because token_embd (~0.7 GiB) stays on CPU",
+   "verdict": "confirmed",
+   "correction": "Parsed GGUF header (range read): token_embd.weight is Q3_K 0.509 GiB (not ~0.7), output.weight Q5_K 0.814 GiB, tensor total 12.233 GiB, so GPU weights about 11.72 GiB. general.architecture=qwen35, block_count=65 (64 + 1 MTP/nextn layer blk.64 of about 0.33 GiB, which is in the file and loaded with -ngl all). UD-IQ4_XS: total 13.357 GiB, GPU about 12.85 GiB (record said 12.7).",
+   "evidence_url": "https://huggingface.co/unsloth/Qwen3.8-27B-GGUF/resolve/main/Qwen3.8-27B-UD-Q3_K_XL.gguf"
+  },
+  {
+   "claim": "llama.cpp context: UD-Q3_K_XL ~46.8k f16 / ~88k q8_0 / ~94k f8_e4m3; -c 65536 q8_0 total ~15.1-15.3 GiB; UD-IQ4_XS ~54k at q8_0",
+   "verdict": "confirmed",
+   "correction": "Slightly optimistic. Same method with measured tensor sizes: 15.81 GiB usable - 11.72 weights - 1.35 overhead = 2.74 GiB KV room: f16 45k, q8_0 84.5k, f8_e4m3 90k. 64k q8_0 = 2.125 GiB, total about 15.2 GiB, margin about 0.6 GiB (fits, inferred). UD-IQ4_XS: room 1.61 GiB, q8_0 about 49.7k (not 54k), f16 about 26k. Compute-buffer size is unmeasured.",
+   "evidence_url": "https://huggingface.co/api/models/unsloth/Qwen3.8-27B-GGUF/tree/main"
+  },
+  {
+   "claim": "llama.cpp b12418 supports qwen35 and the Qwen3-Coder tool-call template; flags -ngl all, --no-mmproj, -fa on, --fit, --ctx-checkpoints, --reasoning-effort, f8_e4m3 KV exist",
+   "verdict": "confirmed",
+   "correction": "llama-arch.cpp line 45 LLM_ARCH_QWEN35 'qwen35'; chat.cpp lines 1420-1427 select common_chat_params_init_qwen3_coder when <tool_call>, <function=, <parameter= are present. The template embedded in the unsloth GGUF (9993 chars) contains all three markers plus reasoning_effort and preserve_thinking, and not the excluded no-newline pattern. arg.cpp: kv_cache_types includes GGML_TYPE_F8_E4M3 (line 285); -ngl accepts 'all' (line 2786); --no-mmproj line 2565. Note: every bNNNNN tag including b12418 is flagged prerelease=true on GitHub; the latest non-prerelease is v1.0.0 (2026-11-13).",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/blob/b12418/common/chat.cpp"
+  },
+  {
+   "claim": "Docker image :server-cuda is CUDA 12.8.1 and :server-cuda13 is CUDA 13.5.0; default build covers sm_120",
+   "verdict": "confirmed",
+   "correction": ".github/workflows/docker.yml at b12418 lines 93-96; ggml-cuda CMakeLists appends 120a-real to the default arch list (line 65).",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/blob/b12418/.github/workflows/docker.yml"
+  },
+  {
+   "claim": "Recommended llama.cpp setup needs no extra stability workaround on this laptop GPU",
+   "verdict": "uncertain",
+   "correction": "Missing caveat: open llama.cpp #27330 reports CUDA-graph GPU hangs (Xid 8, RC watchdog) with Qwen3.8-27B on an RTX 5090 Laptop (GB203M, sm_120), and a 2026-10-12 comment reproduces it on Ubuntu 26.04 with driver 595.99.02, the exact driver here. Workaround: GGML_CUDA_DISABLE_GRAPHS=1 (add -e GGML_CUDA_DISABLE_GRAPHS=1 to docker run; some speed cost). Also #28581: IQ1_S/IQ2_S/IQ3_S CUDA kernels miscompile with nvcc 13.2.0/13.2.1 on sm_120 (including an RTX 5080); UD-Q3_K_XL holds 3.29 GiB of IQ3_S tensors. The official Docker images use 12.8.1 and 13.5.0, so they should be unaffected (inferred), but a local build with CUDA 13.2.0/13.2.1 would give garbage output.",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/issues/27330"
+  },
+  {
+   "claim": "q8_0 KV is the right choice for 64k; its speed penalty is contested",
+   "verdict": "uncertain",
+   "correction": "Still contested. #27623 (2026-09-16) measured q8_0 KV at 5.9 vs f16 at 13.3 tok/s on sm_89, and a follow-up comment attributes this to the MMA FA kernel being f16-only (full-KV dequant per step). The fix PR #31802 (fused q8_0/q4_0/f8_e4m3 KV dequant in MMA FA) is still open, so the penalty probably applies to b12418 and v1.0.0. If q8_0 is slow, a real f16-KV path to 64k is UD-IQ3_XXS (10.18 GiB file, about 9.7 GiB on GPU): 15.81 - 9.7 - 1.35 = 4.8 GiB, about 78k tokens at f16 (inferred, lower quality).",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/pull/31802"
+  },
+  {
+   "claim": "Speed references: RTX 4080 SUPER UD-Q3_K_XL 38-42 tok/s and 32.4 at 91K; the 80K cliff was retracted; RTX 5090 reported on b10615",
+   "verdict": "confirmed",
+   "correction": "Issue #27623 comments show tg32 40.92 at depth 0, 32.49 at d81920, and a 2026-08-26 correction that the collapse came from a prefill-inclusive metric; the RTX 5090 b10615 report is present. Projections to this 140 W laptop GPU remain inferred.",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/issues/27623"
+  },
+  {
+   "claim": "Ollama qwen3.8:27b = q4_K_M 18 GB; does not fit in 16 GB VRAM",
+   "verdict": "confirmed",
+   "correction": "Tags page lists 27b latest 18GB, 27b-q4_K_M 18GB, 27b-mtp-q4_K_M 18GB, 27b-q8_0 30GB, bf16 56GB; nvfp4/mlx/mxfp8/dflash2 are MLX-only.",
+   "evidence_url": "https://ollama.com/library/qwen3.8/tags"
+  },
+  {
+   "claim": "Overall verdict: good for OpenCode via llama.cpp, unsloth UD-Q3_K_XL, -c 65536, q8_0 KV, working tool calls",
+   "verdict": "confirmed",
+   "correction": "Holds on memory and tool-template grounds, with about 0.6 GiB VRAM headroom (inferred, unmeasured). Add GGML_CUDA_DISABLE_GRAPHS=1 for this laptop and driver, use the official Docker image rather than a CUDA 13.2.0/13.2.1 local build, and treat q8_0 KV decode speed as unverified. vLLM is not an option on 16 GB.",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/issues/27330"
+  }
+ ],
+ "overall": "holds-with-corrections",
+ "summary": "The core feasibility claims hold, and the corrections are small. vLLM cannot fit Qwen3.8-27B on 16 GB, but the reason given is slightly off: RedHat INT4 (18.12 GiB) is not the smallest vLLM-native build. AWQ builds at 17.29 GiB and 17.41 GiB and an AutoRound build at 15.59 GiB exist, and none fits the 13.45 GiB left after the 1.2 GiB runtime reserve. The llama.cpp recommendation is feasible: unsloth UD-Q3_K_XL, 13,146,393,504 B, at -c 65536 with q8_0 KV. Parsing the GGUF header shows: architecture qwen35, block_count 65 (including the MTP layer, which adds no KV cache), token_embd Q3_K 0.509 GiB and about 11.72 GiB of weights on the GPU. That leaves about 2.74 GiB for KV, which is about 84k tokens at q8_0 (the record says 88k) or 45k at f16. A 64k context needs about 15.2 GiB in total. For UD-IQ4_XS, q8_0 gives about 49.7k, not 54k. The tool-calling path is confirmed: chat.cpp at b12418 selects the Qwen3-Coder parser for the template embedded in the GGUF. vLLM v0.33.0 registers the architecture and the qwen3_coder and qwen3 parsers. Missing caveats: (1) llama.cpp #27330 reports CUDA-graph GPU hangs with this model on an RTX 5090 Laptop, the same GB203M die, and one comment reproduces it on Ubuntu 26.04 with driver 595.99.02, the exact setup here. Recommend -e GGML_CUDA_DISABLE_GRAPHS=1. (2) #28581: the IQ*_S CUDA kernels are miscompiled by nvcc 13.2.0/13.2.1, and UD-Q3_K_XL holds 3.29 GiB of IQ3_S tensors. The Docker images, built on 12.8.1 and 13.5.0, should be unaffected. (3) The q8_0 KV slowdown is still unresolved: fix PR #31802 is open. If q8_0 turns out slow, the fallback is UD-IQ3_XXS with f16 KV at about 78k tokens. (4) The b12xxx builds are GitHub pre-releases; the latest stable is v1.0.0 (2026-11-13). Gaps: none of this was measured on the actual hardware, so the compute-buffer size and real VRAM headroom are unknown. The speed projections are inferred, and quality at Q3 is unmeasured. Scratch files: $SCRATCH/v38s/gguf_head.py and $SCRATCH/v38dl/"
+}

@@ -1,0 +1,77 @@
+{
+ "overall": "holds-with-corrections",
+ "summary": "I could not refute any of the runtime or memory claims, and every load-bearing number matched a live re-read. One correction: the record says the current chat template allows a system message after any role. It does not. The 2026-07-15 template raises 'Unexpected role' when a system message follows an assistant or tool message. A user message is allowed anywhere, and consecutive same-role messages are merged. Whether OpenCode ever sends a mid-conversation system message is unverified.\n\nWeight sizes (HF API, blobs=true) match:\n- Official FP8 HF shards: 24.02 GiB.\n- androiddrew W4A16: 13.994 GiB.\n- unsloth IQ4_XS: 12,780,424,352 B (11.903 GiB).\n- Q4_K_M: 13.35 GiB.\n- UD-IQ3_XXS: 8.764 GiB.\n- bartowski IQ4_XS: 11.883 GiB.\n- mmproj F16: 0.818 GiB.\n- Ollama model layer: 15,177,370,240 B.\n\nconfig.json:\n- 40 layers, 8 KV heads, head_dim 128.\n- sliding_window null and no layer_types, so all 40 layers use full attention.\n- max_position_embeddings 393216.\n- That gives 163,840 B per token in BF16 and 81,920 B in FP8.\n\nvLLM arithmetic:\n- Budget 14.65 GiB, minus 13.994 GiB weights, minus 1.2 GiB reserve, leaves -0.54 GiB.\n- With --language-model-only (vision about 0.82 GiB), the pool is 0.27 GiB: about 1.8k tokens BF16 or 3.6k FP8.\n- At 0.97 utilisation the pool is 1.07 GiB: about 7.0k BF16 or 14.0k FP8.\n\nllama.cpp IQ4_XS arithmetic:\n- 11.903 GiB file, minus the 0.352 GiB token_embd kept on the CPU (llama-model.cpp at v1.0.0 always places the input layer on the CPU), leaves 11.55 GiB on the GPU.\n- Usable VRAM 15.81 GiB minus 1.4 GiB reserve leaves 2.86 GiB of KV room: about 18.7k f16, 35.3k q8_0 or 66.7k q4_0.\n\nCode checks at the release tags:\n- Mistral3ForConditionalGeneration is at registry.py:541 in v0.33.0.\n- The 'mistral' tool parser is at tool_parsers/__init__.py:169.\n- --language-model-only exists (arg_utils.py:1497).\n- The Ministral-3 recipe confirms the text_only feature.\n- LLM_ARCH_MISTRAL3 is in llama.cpp v1.0.0 (released 2026-11-13, now the latest release). PR #17945 was merged 2025-12-12.\n- test-chat.cpp lines 2703 and 6910 cover the Ministral-3 and Devstral-2507 templates, not 2512.\n\nAll the vLLM issues the record cites have the stated titles and open state. #44911, llama.cpp #19647 and #19851 are closed. Searches for Devstral with sm_120 or 5090 found no issues.\n\nVerdict: with vLLM it does not fit. The best realistic configuration is llama.cpp server-cuda13 with IQ4_XS, the current template passed by --chat-template-file, -fa on, and q8_0 KV at 32k. Reaching OpenCode's 64k needs q4_0 KV (about 66.7k, tight) or 3-bit weights. So 'usable' only holds with a context or quality compromise.\n\nGaps:\n- No end-to-end OpenCode test.\n- No measured speed.\n- OpenCode's mid-conversation system-message behaviour against this template is not checked.\n- The compressed-tensors W4A16 kernel path on sm_120 was not read at the tag.",
+ "verdicts": [
+  {
+   "claim": "Checkpoint weight sizes: official FP8 25.79 GB, androiddrew AWQ 15.03 GB (13.99 GiB), unsloth IQ4_XS 12.78 GB, Q4_K_M 14.33 GB, UD-IQ3_XXS 9.41 GB, bartowski IQ4_XS 12.76 GB, mmproj 0.88 GB, Ollama blob 15.18 GB",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/unsloth/Devstral-Small-2-24B-Instruct-2512-GGUF?blobs=true ; https://huggingface.co/api/models/androiddrew/Devstral-Small-2-24B-Instruct-2512-AWQ-4bit?blobs=true ; https://registry.ollama.ai/v2/library/devstral-small-2/manifests/24b"
+  },
+  {
+   "claim": "KV bytes per token: 40 full-attention layers x 8 KV heads x head_dim 128 gives 163,840 B BF16 and 81,920 B FP8; max_position_embeddings 393216",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/mistralai/Devstral-Small-2-24B-Instruct-2512/raw/main/config.json"
+  },
+  {
+   "claim": "vLLM does not fit: best case is about 7k BF16 or 14k FP8 context (AWQ, --language-model-only, utilisation 0.97); nothing reaches 64k",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/androiddrew/Devstral-Small-2-24B-Instruct-2512-AWQ-4bit?blobs=true",
+   "correction": "Recomputed (source-backed arithmetic): 15.443 - 13.176 - 1.2 = 1.067 GiB pool, which gives 6,993 tokens BF16 or 13,986 FP8."
+  },
+  {
+   "claim": "vLLM v0.33.0 registers Mistral3ForConditionalGeneration, has the 'mistral' tool parser and the --language-model-only flag",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/models/registry.py"
+  },
+  {
+   "claim": "W4A16 compressed-tensors runs on sm_120 through Marlin-class kernels",
+   "verdict": "uncertain",
+   "evidence_url": "",
+   "correction": "Not read at the tag. It is moot, because the model does not fit under vLLM anyway."
+  },
+  {
+   "claim": "llama.cpp IQ4_XS: 11.54 GiB on the GPU, KV room 2.87 GiB, about 35k tokens with q8_0 KV or about 66.8k with q4_0",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/v1.0.0/src/llama-model.cpp",
+   "correction": "Recomputed: 11.903 - 0.352 = 11.551 GiB on the GPU, 15.811 - 1.4 - 11.551 = 2.86 GiB of KV room, which gives 35.3k tokens q8_0, 66.7k q4_0 and 18.7k f16."
+  },
+  {
+   "claim": "llama.cpp supports the mistral3 architecture in released builds, and the attn_factor fix PR #17945 is merged; v1.0.0 is a stable release from 2026-11-13",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/releases/tag/v1.0.0"
+  },
+  {
+   "claim": "llama.cpp tool parsing is covered by tests only for the Devstral-2507 and Ministral-3-Reasoning templates, not the exact 2512 template",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/v1.0.0/tests/test-chat.cpp"
+  },
+  {
+   "claim": "The current chat template (2026-07-15) merges consecutive same-role messages and allows system or user after any role",
+   "verdict": "refuted",
+   "evidence_url": "https://huggingface.co/mistralai/Devstral-Small-2-24B-Instruct-2512/raw/main/chat_template.jinja",
+   "correction": "It merges consecutive same-role messages except system and tool. A system message is allowed only after a system or user message. After an assistant or tool message the template raises 'Unexpected role'. A user message is allowed after any role. A client that injects a system message mid-conversation will still fail."
+  },
+  {
+   "claim": "Tools are rendered as [AVAILABLE_TOOLS]...[/AVAILABLE_TOOLS], calls are emitted as [TOOL_CALLS]name[ARGS]json, and there is no THINK handling",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/mistralai/Devstral-Small-2-24B-Instruct-2512/raw/main/chat_template.jinja"
+  },
+  {
+   "claim": "The cited vLLM issues (#66113, #59212, #48318, #48975, #58145, #55754, #67520, #55571) are open, and #44911 plus llama.cpp #19647 and #19851 are closed",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/vllm-project/vllm/issues/66113"
+  },
+  {
+   "claim": "Ollama q4_K_M leaves under 8k of context fully on the GPU",
+   "verdict": "confirmed",
+   "evidence_url": "https://registry.ollama.ai/v2/library/devstral-small-2/manifests/24b",
+   "correction": "Inferred: the 14.13 GiB blob leaves about 0.6 to 0.7 GiB, roughly 4k f16 or 8k q8_0."
+  },
+  {
+   "claim": "Verdict 'usable' for OpenCode with llama.cpp IQ4_XS at 32k and q8_0 KV",
+   "verdict": "uncertain",
+   "evidence_url": "",
+   "correction": "32k is below OpenCode's 64k guidance. Reaching 64k needs q4_0 KV (about 66.7k, tight) or 3-bit weights. The verdict should read 'usable with context or quality compromise'. End-to-end tool calling through OpenCode was not tested."
+  }
+ ]
+}

@@ -1,0 +1,95 @@
+{
+ "overall": "holds-with-corrections",
+ "summary": "I could not refute the core claim. Qwen3-Coder-Next does not fit in vLLM on 16 GB. With llama.cpp, unsloth UD-IQ4_XS and expert offload (about 25.7 GiB of experts in RAM), it serves OpenCode at 131k context with native Qwen3-Coder XML tool parsing. I re-read the config, the HF sizes and the GGUF tensor table from a range read of the header (843 tensors, experts 33.375 GiB at 0.6953 GiB per layer, non-expert 2.41 GiB), and they match the record exactly.\n\nThree corrections apply to the recommended command.\n(1) Image: the GHCR :server-cuda13 image (CUDA 13.5.0, currently b12407) sets NVIDIA_REQUIRE_CUDA=cuda>=13.5. Its brand fallbacks list nvidia, nvidiartx, quadro and others for driver 595, but not GeForce. Host driver 595.99 reports CUDA 13.2, so the NVIDIA Container Toolkit will probably refuse to start the container unless NVIDIA_DISABLE_REQUIRE=1 is set (inferred). Use :server-cuda (CUDA 12.8.1, built with 120a-real) instead.\n(2) IQ3_S tensors: 20.6 GiB of the experts in UD-IQ4_XS are IQ3_S tensors, not IQ4_XS. Open issue #28581 reports IQ1_S/IQ2_S/IQ3_S garbage output on sm_120, including an RTX 5080, when llama.cpp is built with nvcc 13.2.0 or 13.2.1. The official images use 12.8.1 or 13.5.0, which are not in the affected range, so this hits only source builds against the CUDA 13.2 toolkit that matches this host's driver. Still, run a coherence smoke test after first start.\n(3) OOM fallback: with -ngl and --n-cpu-moe pinned, --fit refuses to adjust (#31974), and a VMM-pool OOM during prefill then aborts the server. At 262144 context the record's 'same split holds' is marginal: about 14.8 GiB plus CUDA context on about 15.8 GiB free. Use --n-cpu-moe 38 for 256K, or omit -ngl and --n-cpu-moe and let --fit choose. The record's VRAM figure of 14.3 GiB assumed F16 KV while its command uses q8_0. With q8_0 at 131k the total is about 13.2 GiB plus CUDA context. Speed figures are bandwidth arithmetic only. Prefill may be lower than 2-4k tok/s, because with mmap the expert uploads come from pageable memory and #25859 reports serial H2D copies leaving the GPU idle.",
+ "verdicts": [
+  {
+   "claim": "Checkpoint sizes: Intel int4 AutoRound 43.52 GB (40.53 GiB), RedHatAI NVFP4 47.57 GB (44.30 GiB), official GGUF Q4_K_M 48.41 GB (45.09 GiB), unsloth UD-IQ4_XS 38.43 GB (35.79 GiB), UD-Q3_K_XL 33.79 GiB, UD-Q4_K_XL 46.20 GiB, unsloth Q4_K_M 45.20 GiB",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/unsloth/Qwen3-Coder-Next-GGUF?blobs=true",
+   "correction": "All match the HF API sums to 0.01 GiB. The official Qwen Q4_K_M is 45.09 GiB. The 45.19 GiB figure in the record is unsloth's Q4_K_M (45.20)."
+  },
+  {
+   "claim": "config.json: Qwen3NextForCausalLM, 48 layers, full_attention_interval 4, 2 KV heads, head_dim 256, 512 experts, top-10, moe_intermediate 512, hidden 2048, max_position_embeddings 262144, rope_scaling null",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Qwen/Qwen3-Coder-Next/raw/main/config.json"
+  },
+  {
+   "claim": "KV bytes per token: 2 x 12 x 2 x 256 x 2 = 24,576 B BF16 (12,288 FP8); 6.0 GiB at 262144 BF16; DeltaNet state about 72 MiB per sequence (36 x 32 x 128 x 128 x 4 B)",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Qwen/Qwen3-Coder-Next/raw/main/config.json",
+   "correction": "Arithmetic is correct (source-backed). The conv state, 36 x 8192 x 3 elements, is negligible."
+  },
+  {
+   "claim": "vLLM: does not fit (budget 14.65 GiB - 1.2 GiB = 13.45 GiB < 40.53 GiB smallest 4-bit checkpoint); est_max_context 0",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/Intel/Qwen3-Coder-Next-int4-AutoRound?blobs=true"
+  },
+  {
+   "claim": "vLLM v0.33.0 registers Qwen3NextForCausalLM (registry.py:118) and Qwen3NextMTP (735); qwen3_coder parser at tool_parsers/__init__.py:206 and qwen3_xml at 217",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/models/registry.py"
+  },
+  {
+   "claim": "Cited vLLM issues #34322, #57699, #65774, #57541, #59248, #62320, #66423 exist, are open and are described correctly",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/vllm-project/vllm/issues/66423"
+  },
+  {
+   "claim": "llama.cpp b12418 supports qwen3next (llama-arch.cpp:42), and chat.cpp:1420-1427 selects the Qwen3-Coder XML handler for this template",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12418/common/chat.cpp",
+   "correction": "The official chat_template.jinja (line 85) and unsloth's embedded template (6055 chars) both contain <tool_call>, <function= and <parameter=. Neither contains the excluded no-newline pattern, so the handler matches."
+  },
+  {
+   "claim": "UD-IQ4_XS tensor split: experts 33.38 GiB (0.695 GiB/layer), non-expert 2.41 GiB (embd/out 0.55, other 1.71, shared experts 0.15)",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/unsloth/Qwen3-Coder-Next-GGUF/resolve/main/Qwen3-Coder-Next-UD-IQ4_XS.gguf",
+   "correction": "Confirmed by my own range read of the header: 33.375 / 0.5456 / 1.714 / 0.1498 GiB, uniform 0.6953 GiB per layer. The expert tensors are 20.63 GiB IQ3_S plus 12.75 GiB IQ4_XS. The record omits the IQ3_S share, and it matters on sm_120 (see the IQ3_S claim)."
+  },
+  {
+   "claim": "Recommended image ghcr.io/ggml-org/llama.cpp:server-cuda13 runs on this host",
+   "verdict": "uncertain",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/blob/b12418/.github/workflows/docker.yml",
+   "correction": "The image config (amd64 digest sha256:f00630f4..., label version b12407, created 2026-11-15) sets NVIDIA_REQUIRE_CUDA=cuda>=13.5. Its brand,driver>=595 fallbacks list unknown, grid, tesla, nvidia, quadro, quadrortx, nvidiartx and others, but no GeForce brand. The host driver reports CUDA 13.2, so the container toolkit's requirement check will probably reject it (inferred). Starting it would need NVIDIA_DISABLE_REQUIRE=1 plus CUDA minor-version compatibility (13.5 runtime on a 13.2 driver; the build ships 120a-real SASS, so no PTX JIT is needed). Prefer :server-cuda (CUDA 12.8.1, cuda>=12.8 satisfied, 120a-real in the default arch list in ggml-cuda/CMakeLists.txt:65)."
+  },
+  {
+   "claim": "UD-IQ4_XS output is correct on RTX 50 (sm_120)",
+   "verdict": "uncertain",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/issues/28581",
+   "correction": "Open issue #28581 (also seen on an RTX 5080 with driver 595.91) reports garbage output from IQ1_S/IQ2_S/IQ3_S tensors on sm_120. The cause is an nvcc miscompile in 13.2.0 and 13.2.1, fixed in 13.2.2 and later. Fix PR #28784 was closed without merging, but CUDA 12.9 and 13.3+ builds are reported correct. The official images (12.8.1 / 13.5.0) fall outside the bad range, so this is a risk only for a source build with the CUDA 13.2 toolkit. Smoke-test coherence after first start."
+  },
+  {
+   "claim": "llama.cpp VRAM about 14.3 GiB at 131072 ctx with --n-cpu-moe 37; 262144 ctx with q8_0 KV fits at the same split",
+   "verdict": "uncertain",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/issues/31974",
+   "correction": "The 14.3 GiB figure used F16 KV (3.0 GiB), but the command sets q8_0 (1.59 GiB at 131072), which gives about 13.2 GiB plus about 0.4 GiB of CUDA context. At 262144 with q8_0 (3.19 GiB) the total is about 14.8 GiB plus context against about 15.8 GiB free, which is marginal. With -ngl pinned, --fit refuses to adjust (common.h:504; #31974), and a VMM-pool OOM in mul_mat_q during prefill hard-aborts the server. For 256K use --n-cpu-moe 38, or omit -ngl and --n-cpu-moe so --fit decides."
+  },
+  {
+   "claim": "RAM use 37 x 0.695 = 25.7 GiB of experts in system RAM, comfortable versus about 40 GiB free; Q4_K_M with about 35-36 GiB in RAM is tight",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/unsloth/Qwen3-Coder-Next-GGUF/resolve/main/Qwen3-Coder-Next-UD-IQ4_XS.gguf"
+  },
+  {
+   "claim": "llama.cpp flags --n-cpu-moe, --cpu-moe, --moe-cache-mib, --fit, -ngl all, --ctx-checkpoints, --cache-ram exist at b12418; --jinja is on by default",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12418/common/arg.cpp",
+   "correction": "arg.cpp:2731, 2738, 2748, 2781 ('auto' or 'all'), 2860, 1677, 1695; common.h:675 use_jinja=true."
+  },
+  {
+   "claim": "Ollama qwen3-coder-next:latest = q4_K_M ca06e9e4087c 52GB, q8_0 85GB, 256K context, Text input",
+   "verdict": "confirmed",
+   "evidence_url": "https://ollama.com/library/qwen3-coder-next/tags"
+  },
+  {
+   "claim": "Speed: decode ceiling about 100-110 tok/s, realistic 30-50 tok/s; prefill about 2-4k tok/s",
+   "verdict": "uncertain",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/issues/25859",
+   "correction": "These are inferred bandwidth figures only, and no measurement exists. Prefill is probably optimistic. With mmap the CPU-resident expert weights are pageable rather than pinned, and #25859 (open) reports serial expert H2D copies leaving the GPU idle in single-GPU -ncmoe prefill."
+  },
+  {
+   "claim": "Verdict: good fit for OpenCode with working tool calls and at least 64k context via llama.cpp + UD-IQ4_XS + expert offload",
+   "verdict": "confirmed",
+   "correction": "This holds with the corrections above. Use ghcr.io/ggml-org/llama.cpp:server-cuda (CUDA 12.8.1), -c 131072 -ctk q8_0 -ctv q8_0 -fa on --n-cpu-moe 37 (38 for 262144), or let --fit choose. Enable tools explicitly in the OpenCode provider config (#60202). vLLM is not viable on this GPU."
+  }
+ ]
+}

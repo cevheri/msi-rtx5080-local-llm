@@ -1,0 +1,496 @@
+{
+ "review": {
+  "key": "twoody-calculator",
+  "url": "https://www.twoody.com/local-llm-calculator/rtx-5080",
+  "title": "A local LLM on the RTX 5080 (Twoody local LLM calculator)",
+  "publisher": "Twoody (Osmove SASU, France), vendor of a private-beta local AI desktop app",
+  "as_of": "Page dateModified 2026-11-01 (JSON-LD); figures reviewed 2026-10-16; model catalogue checked on Hugging Face 2026-10-15; data.json version 2026-10-16.1",
+  "source_type": "calculator-estimate",
+  "accessible": true,
+  "access_notes": "Raw curl (UA Mozilla/5.0) returned HTTP 200 for the page (78714 bytes), the main calculator page /local-llm-calculator (method section), the server-rendered results endpoint /local-llm-calculator/results?device=rtx-5080&memory=64, and the CC BY 4.0 data file https://www.twoody.com/local-llm-calculator/data.json (46760 bytes, parsed with python3 -I). Copies are in $SCRATCH/src/twoody-calculator/. The calculation runs on the server, and the client JS does no computation, so the exact speed-range formula cannot be read. The RTX 5080 reference value was cross-checked against llama.cpp discussion #15013.",
+  "credibility": "medium",
+  "credibility_reason": "The method is transparent: it publishes its formula constants and the per-device anchor numbers as CC BY 4.0 JSON, and its anchor (RTX 5080 tg128 184.68 t/s) matches llama.cpp discussion #15013 exactly. Every per-model speed is still an extrapolation from one LLaMA 2 7B Q4_0 run on a desktop card, scaled by bytes read per token. The site is a vendor page that funnels to a beta waitlist. It has no laptop GPUs, its runtime model is llama.cpp Q4 at short context only, and some fit labels are inconsistent: Gemma 4 26B is marked 'Runs' at 15.5 of 14.6 GB.",
+  "summary": "The page is a server-side calculator for the DESKTOP RTX 5080 (16 GB, 960 GB/s), with a 32 GB or 64 GB system RAM assumption. Memory is computed as GGUF file + vision file + 0.3 GiB vision buffers + KV cache at the app's context window (8k to 64k depending on system RAM; q8_0 for hybrid models, f16 otherwise) + sliding-window KV + recurrent state + 0.3 GiB work buffers. The usable VRAM shown is 14.6 GB of 16. Decode speed = the device's measured llama.cpp tg128 on LLaMA 2 7B Q4_0 (184.68 t/s for the RTX 5080 desktop, from discussion #15013), scaled by bytes read per token, with gpu_efficiency 0.85 and cpu_efficiency 0.55. The page reports a range and claims median error 4.5% and max error 23% on 20 held-out measurements. Every per-model number is an estimate, and the page says so. The page lists 38 of 62 models as fitting. Its top pick is Qwen3 14B (66-95 t/s est.). Gemma 4 26B-A4B QAT Q4_0 is listed at 15.5 GB with 100+ t/s. gpt-oss-20b is listed at 12 GB with 100+ t/s. Partial-offload estimates at 64 GB RAM: Qwen3.6-35B-A3B Q4_K_M 27-54 t/s, Qwen3.6-35B-A3B 3-bit 65-129 t/s, GLM-4.7-Flash 45-78 t/s, Qwen3.8-27B Q4_K_M 3.1-6.3 t/s. The page has no laptop variant and no vLLM numbers. It is useful as a coarse sanity check and for its open KV/memory formula. It is not a measurement source.",
+  "methodology": "Memory: the app's own formula. Speed: per-device anchor from public llama.cpp benchmark threads (CUDA #15013, Vulkan #10879, Apple #4167, gpt-oss #15396) on LLaMA 2 7B Q4_0 (3.8226 GB), scaled by what each model reads per token (active parameters for MoE), with efficiency factors. Spilled models are blended with a CPU path (DDR5 PC anchor 89.6 GB/s). Bandwidths come from NVIDIA and Apple specs. Prompt processing is shown as '20 pages' = 14000 tokens. The site validated against 20 published measurements it did not use (median 4.5%, max 23%). The validation set is not published.",
+  "findings": [
+   {
+    "topic": "hardware handling",
+    "claim": "The calculator only knows the desktop 'GeForce RTX 5080 (16 GB)': bandwidth 960, tg 184.68, pp 9487.7, measured=true, source llama.cpp discussion #15013. No laptop or mobile GPU entries exist among its 64 devices.",
+    "evidence": "documented",
+    "location": "data.json devices[id=rtx-5080]",
+    "target": "hardware",
+    "relevance": "high"
+   },
+   {
+    "topic": "anchor verification",
+    "claim": "The anchor matches llama.cpp discussion #15013 exactly: 'RTX 5080 16 GB / GDDR7 / 256 bit 9487.70 ± 21.89 184.68 ± 0.05' (pp512 / tg128, LLaMA 2 7B Q4_0, commit 8a4280c). A second table row in the same thread reads 8297.36 / 181.99.",
+    "evidence": "measured",
+    "location": "github.com/ggml-org/llama.cpp/discussions/15013",
+    "target": "llamacpp",
+    "relevance": "high"
+   },
+   {
+    "topic": "closest laptop analog",
+    "claim": "The desktop RTX 5070 Ti in the same data has 896 GB/s (the laptop RTX 5080's spec bandwidth) and measured tg128 182.43 / pp512 8419.56 on LLaMA 2 7B Q4_0. Decode on that model is nearly bandwidth-bound across the two cards (184.68 vs 182.43), so a laptop decode about 0.93-0.99x desktop is plausible if clocks hold at 140 W. Prompt processing should drop more, because it is compute and power bound.",
+    "evidence": "computed",
+    "location": "data.json devices rtx-5070-ti, rtx-5080",
+    "target": "hardware",
+    "relevance": "high"
+   },
+   {
+    "topic": "memory formula",
+    "claim": "Memory = file + vision file + 0.3 GiB vision buffers (322122547.2 B) + KV cache (kv_bytes_per_token x context; x0.53125 for q8_0 on hybrid models, f16 otherwise) + sliding-window KV (bytes_per_token x window) + recurrent state + 0.3 GiB work buffers.",
+    "evidence": "documented",
+    "location": "data.json method",
+    "target": "general",
+    "relevance": "high"
+   },
+   {
+    "topic": "memory validation",
+    "claim": "The site states that llama.cpp measured 7.4 GB for Qwen3.5 9B at 32k context, 'as computed'. This is a single-point self-validation.",
+    "evidence": "vendor-reported",
+    "location": "/local-llm-calculator#methode",
+    "target": "llamacpp",
+    "relevance": "low"
+   },
+   {
+    "topic": "usable VRAM",
+    "claim": "On RTX 5080 the page budgets '14.6 GB' usable of 16 GB, which is close to the baseline vLLM 0.92 utilization budget of 14.65 GiB. Units are labelled GB, and the reverse-engineered values look GiB-like.",
+    "evidence": "documented",
+    "location": "results?device=rtx-5080&memory=64",
+    "target": "hardware",
+    "relevance": "medium"
+   },
+   {
+    "topic": "context assumption",
+    "claim": "Context is 8k to 64k depending on system RAM. At 64 GB RAM the results say 'conversations of 64k tokens'. All speeds are for short-context decode, not agentic 64k-128k prompts.",
+    "evidence": "documented",
+    "location": "/local-llm-calculator and results endpoint",
+    "target": "general",
+    "relevance": "high"
+   },
+   {
+    "topic": "speed formula",
+    "claim": "Speed = device tg on LLaMA 2 7B Q4_0 (3.8226 GB) scaled by bytes read per token, with gpu_efficiency 0.85 and cpu_efficiency 0.55. It is shown as a range. The site claims median error 4.5% and max 23% on 20 held-out published measurements; the set is not listed.",
+    "evidence": "vendor-reported",
+    "location": "data.json method; /local-llm-calculator#methode",
+    "target": "benchmarking",
+    "relevance": "medium"
+   },
+   {
+    "topic": "speed display cap",
+    "claim": "Speeds above 100 t/s are shown only as '100+ tokens/s', so gpt-oss-20b, Gemma 4 26B-A4B and the small models get no usable number.",
+    "evidence": "documented",
+    "location": "rtx-5080 page table",
+    "target": "benchmarking",
+    "relevance": "medium"
+   },
+   {
+    "topic": "fit label inconsistency",
+    "claim": "Gemma 4 26B (A4B) QAT Q4_0 is labelled 'Runs - close other apps' at '15.5 of 14.6 GB', which exceeds the page's own usable budget. The baseline fits it all on GPU only with q8_0 KV at 64k on a 16303 MiB laptop GPU with about 112 MiB idle use.",
+    "evidence": "documented",
+    "location": "results?device=rtx-5080&memory=64",
+    "target": "models",
+    "relevance": "medium"
+   },
+   {
+    "topic": "model files",
+    "claim": "File sizes in data.json match the baseline: gpt-oss-20b MXFP4 11.28 GiB, Gemma 4 26B-A4B Q4_0 QAT 13.45 GiB (+1.11 GiB vision), Qwen3.6-35B-A3B Q4_K_M 19.02 GiB (+0.84 GiB vision), GLM-4.7-Flash Q4_K 16.99 GiB, Qwen3.8-27B Q4_K_M 17.67 GiB, Gemma 4 12B Q4_0 QAT 6.50 GiB.",
+    "evidence": "documented",
+    "location": "data.json models",
+    "target": "models",
+    "relevance": "medium"
+   },
+   {
+    "topic": "KV bytes per token",
+    "claim": "The per-token KV sizes (f16) in data.json are useful cross-checks: Qwen3.6-35B-A3B 20480 (hybrid), Qwen3.8-27B 65536 (hybrid), Gemma 4 26B-A4B 10240 global + 102400 sliding (window 1024), Gemma 4 12B 8192 + 163840 sliding (window 1024), gpt-oss-20b 24576 + 24576 sliding (window 128), GLM-4.7-Flash 54144, Qwen3-Coder-30B-A3B 98304, Devstral Small 2 163840.",
+    "evidence": "documented",
+    "location": "data.json models[].kv_bytes_per_token, sliding_window",
+    "target": "models",
+    "relevance": "medium"
+   },
+   {
+    "topic": "top pick",
+    "claim": "The site names Qwen3 14B (11.2 GB, 66-95 t/s est.) as 'strongest that runs comfortably' on the RTX 5080. The ranking uses an internal tier ('basic' to 'frontier') and is not based on coding or agent benchmarks.",
+    "evidence": "opinion",
+    "location": "rtx-5080 page",
+    "target": "models",
+    "relevance": "low"
+   },
+   {
+    "topic": "partial offload estimates",
+    "claim": "At 64 GB RAM, spilled-model estimates are: Qwen3.6-35B-A3B Q4_K_M 21.2 GB 27-54 t/s; Qwen3.6-35B-A3B 3-bit 16.8 GB 65-129 t/s; GLM-4.7-Flash 18.1 GB 45-78 t/s; Nemotron 3 Nano 30B-A3B 21.4 GB 18-36 t/s; Qwen3-Coder-30B-A3B 19.1 GB 34-59 t/s; Qwen3-Next-80B-A3B 46.3 GB 13-25 t/s; gpt-oss-120b 59.9 GB 7.6-13 t/s. Dense spills: Qwen3.8-27B 21.4 GB 3.1-6.3 t/s, Gemma 4 31B 19.4 GB 5.3-7.7 t/s, Devstral Small 2 16.1 GB 14-20 t/s.",
+    "evidence": "computed",
+    "location": "results?device=rtx-5080&memory=64",
+    "target": "llamacpp",
+    "relevance": "medium"
+   },
+   {
+    "topic": "offload model",
+    "claim": "The offload model does not say whether it splits by layer or by expert. Its CPU anchor is a generic DDR5 PC at 89.6 GB/s, below this host's 102.4 GB/s spec. The baseline's llama.cpp --n-cpu-moe expert placement is a different configuration, so these MoE numbers are only order-of-magnitude.",
+    "evidence": "documented",
+    "location": "data.json devices cpu-ddr5",
+    "target": "llamacpp",
+    "relevance": "medium"
+   },
+   {
+    "topic": "quantization",
+    "claim": "All figures assume llama.cpp GGUF Q4_K_M, Q4_0 QAT, MXFP4, or 3-bit for Qwen3.6 35B. There are no vLLM, NVFP4, AWQ or FP8 numbers, and no unsloth UD quants such as the baseline's Qwen3.8-27B UD-Q3_K_XL (12.24 GiB, all on GPU).",
+    "evidence": "documented",
+    "location": "data.json models[].quant",
+    "target": "vllm",
+    "relevance": "medium"
+   },
+   {
+    "topic": "runtime of the vendor app",
+    "claim": "The Twoody app uses Vulkan on Windows and runs on the CPU on Linux. The page's speeds are 'estimates for a model running on the card, not measurements made with Twoody'.",
+    "evidence": "documented",
+    "location": "rtx-5080 page",
+    "target": "general",
+    "relevance": "low"
+   },
+   {
+    "topic": "DGX Spark anchor",
+    "claim": "data.json lists the DGX Spark at 273 GB/s, tg 56.74 / pp 3661.37 on LLaMA 2 7B Q4_0 (from #15013), which is useful context for the user's DGX numbers.",
+    "evidence": "measured",
+    "location": "data.json devices dgx-spark",
+    "target": "benchmarking",
+    "relevance": "low"
+   }
+  ],
+  "measurements": [
+   {
+    "model": "LLaMA 2 7B Q4_0 (llama.cpp reference)",
+    "gpu": "RTX 5080 desktop (960 GB/s)",
+    "runtime": "llama.cpp CUDA (discussion #15013, commit 8a4280c, contributor lhl)",
+    "quant": "Q4_0",
+    "settings": "llama-bench pp512 / tg128, ngl 99",
+    "prompt_tok_s": "9487.70 ± 21.89",
+    "gen_tok_s": "184.68 ± 0.05",
+    "measured_or_estimated": "measured"
+   },
+   {
+    "model": "LLaMA 2 7B Q4_0",
+    "gpu": "RTX 5070 Ti desktop (896 GB/s, same bandwidth as laptop RTX 5080 spec)",
+    "runtime": "llama.cpp CUDA (#15013)",
+    "quant": "Q4_0",
+    "settings": "pp512 / tg128",
+    "prompt_tok_s": "8419.56",
+    "gen_tok_s": "182.43",
+    "measured_or_estimated": "measured"
+   },
+   {
+    "model": "LLaMA 2 7B Q4_0",
+    "gpu": "DGX Spark (273 GB/s)",
+    "runtime": "llama.cpp CUDA (#15013)",
+    "quant": "Q4_0",
+    "settings": "pp512 / tg128",
+    "prompt_tok_s": "3661.37",
+    "gen_tok_s": "56.74",
+    "measured_or_estimated": "measured"
+   },
+   {
+    "model": "Qwen3 14B",
+    "gpu": "RTX 5080 desktop",
+    "runtime": "llama.cpp (Twoody formula)",
+    "quant": "Q4_K_M",
+    "vram": "11.2 GB",
+    "settings": "32-64k ctx f16 KV",
+    "gen_tok_s": "66-95",
+    "measured_or_estimated": "estimated"
+   },
+   {
+    "model": "Gemma 4 26B-A4B",
+    "gpu": "RTX 5080 desktop",
+    "runtime": "llama.cpp (Twoody formula)",
+    "quant": "Q4_0 QAT",
+    "vram": "15.5 GB (over 14.6 budget)",
+    "gen_tok_s": "100+",
+    "prompt_tok_s": "14000 tok in 2 s",
+    "measured_or_estimated": "estimated"
+   },
+   {
+    "model": "gpt-oss-20b",
+    "gpu": "RTX 5080 desktop",
+    "runtime": "llama.cpp (Twoody formula)",
+    "quant": "MXFP4",
+    "vram": "12 GB",
+    "gen_tok_s": "100+",
+    "prompt_tok_s": "14000 tok in 2 s",
+    "measured_or_estimated": "estimated"
+   },
+   {
+    "model": "Gemma 4 12B",
+    "gpu": "RTX 5080 desktop",
+    "runtime": "llama.cpp (Twoody formula)",
+    "quant": "Q4_0 QAT",
+    "vram": "7.6 GB",
+    "gen_tok_s": "81-117",
+    "measured_or_estimated": "estimated"
+   },
+   {
+    "model": "Qwen3.5 9B",
+    "gpu": "RTX 5080 desktop",
+    "runtime": "llama.cpp (Twoody formula)",
+    "quant": "Q4_K_M",
+    "vram": "7.9 GB",
+    "gen_tok_s": "79-158",
+    "measured_or_estimated": "estimated"
+   },
+   {
+    "model": "Ministral 3 14B",
+    "gpu": "RTX 5080 desktop",
+    "runtime": "llama.cpp (Twoody formula)",
+    "quant": "Q4_K_M",
+    "vram": "11.6 GB",
+    "gen_tok_s": "71-103",
+    "measured_or_estimated": "estimated"
+   },
+   {
+    "model": "Phi-4 14B",
+    "gpu": "RTX 5080 desktop",
+    "runtime": "llama.cpp (Twoody formula)",
+    "quant": "Q4_K_M",
+    "vram": "11.9 GB",
+    "gen_tok_s": "65-94",
+    "measured_or_estimated": "estimated"
+   },
+   {
+    "model": "DeepSeek-R1 8B (0528 Qwen3 8B)",
+    "gpu": "RTX 5080 desktop",
+    "runtime": "llama.cpp (Twoody formula)",
+    "quant": "Q4_K_M",
+    "vram": "7.2 GB",
+    "gen_tok_s": "100+",
+    "measured_or_estimated": "estimated"
+   },
+   {
+    "model": "Qwen3.6-35B-A3B",
+    "gpu": "RTX 5080 desktop + 64 GB RAM (partial CPU)",
+    "runtime": "llama.cpp (Twoody formula)",
+    "quant": "Q4_K_M",
+    "vram": "21.2 GB total",
+    "settings": "64k ctx q8_0 KV",
+    "gen_tok_s": "27-54",
+    "prompt_tok_s": "14000 tok in 4 s",
+    "measured_or_estimated": "estimated"
+   },
+   {
+    "model": "Qwen3.6-35B-A3B",
+    "gpu": "RTX 5080 desktop + 64 GB RAM (partial CPU)",
+    "runtime": "llama.cpp (Twoody formula)",
+    "quant": "3-bit (IQ3, 14.68 GiB file)",
+    "vram": "16.8 GB total",
+    "settings": "64k ctx q8_0 KV",
+    "gen_tok_s": "65-129",
+    "measured_or_estimated": "estimated"
+   },
+   {
+    "model": "GLM-4.7-Flash",
+    "gpu": "RTX 5080 desktop + 64 GB RAM (partial CPU)",
+    "runtime": "llama.cpp (Twoody formula)",
+    "quant": "Q4_K",
+    "vram": "18.1 GB total",
+    "gen_tok_s": "45-78",
+    "measured_or_estimated": "estimated"
+   },
+   {
+    "model": "Nemotron 3 Nano 30B-A3B",
+    "gpu": "RTX 5080 desktop + 64 GB RAM (partial CPU)",
+    "runtime": "llama.cpp (Twoody formula)",
+    "quant": "Q4_K_M",
+    "vram": "21.4 GB total",
+    "gen_tok_s": "18-36",
+    "measured_or_estimated": "estimated"
+   },
+   {
+    "model": "Qwen3-Coder-30B-A3B",
+    "gpu": "RTX 5080 desktop + 64 GB RAM (partial CPU)",
+    "runtime": "llama.cpp (Twoody formula)",
+    "quant": "Q4_K_M",
+    "vram": "19.1 GB total",
+    "gen_tok_s": "34-59",
+    "measured_or_estimated": "estimated"
+   },
+   {
+    "model": "Qwen3.8-27B",
+    "gpu": "RTX 5080 desktop + 64 GB RAM (partial CPU)",
+    "runtime": "llama.cpp (Twoody formula)",
+    "quant": "Q4_K_M",
+    "vram": "21.4 GB total",
+    "gen_tok_s": "3.1-6.3",
+    "measured_or_estimated": "estimated"
+   },
+   {
+    "model": "Gemma 4 31B",
+    "gpu": "RTX 5080 desktop + 64 GB RAM (partial CPU)",
+    "runtime": "llama.cpp (Twoody formula)",
+    "quant": "Q4_0 QAT",
+    "vram": "19.4 GB total",
+    "gen_tok_s": "5.3-7.7",
+    "measured_or_estimated": "estimated"
+   },
+   {
+    "model": "Devstral Small 2 24B",
+    "gpu": "RTX 5080 desktop + 64 GB RAM (partial CPU)",
+    "runtime": "llama.cpp (Twoody formula)",
+    "quant": "Q4_K_M",
+    "vram": "16.1 GB total",
+    "gen_tok_s": "14-20",
+    "measured_or_estimated": "estimated"
+   },
+   {
+    "model": "Qwen3-Next-80B-A3B",
+    "gpu": "RTX 5080 desktop + 64 GB RAM (partial CPU)",
+    "runtime": "llama.cpp (Twoody formula)",
+    "quant": "Q4_K_M",
+    "vram": "46.3 GB total",
+    "gen_tok_s": "13-25",
+    "measured_or_estimated": "estimated"
+   },
+   {
+    "model": "gpt-oss-120b",
+    "gpu": "RTX 5080 desktop + 64 GB RAM (partial CPU)",
+    "runtime": "llama.cpp (Twoody formula)",
+    "quant": "MXFP4",
+    "vram": "59.9 GB total",
+    "gen_tok_s": "7.6-13",
+    "measured_or_estimated": "estimated"
+   }
+  ],
+  "conflicts": [
+   {
+    "baseline_claim": "Gemma 4 26B-A4B QAT Q4_0 (13.45 GiB) fits all on GPU with 64k q8_0 KV on the 16303 MiB laptop GPU.",
+    "source_claim": "The page computes 15.5 GB with f16 KV plus 1.11 GiB vision weights and 0.3 GiB vision buffers, against a 14.6 GB budget, and still labels it 'Runs - close other apps'.",
+    "assessment": "These do not truly conflict, because the configurations differ: the source loads the vision projector and uses f16 KV, while the baseline uses text-only with q8_0 KV. The source's label is internally inconsistent. The takeaway is to keep the mmproj off and use q8_0 KV on 16 GB."
+   },
+   {
+    "baseline_claim": "Desktop RTX 5080 llama.cpp gpt-oss-20b is about 205 tok/s tg128 (ggml-org guide).",
+    "source_claim": "gpt-oss-20b on RTX 5080: '100+ tokens/s' (display cap).",
+    "assessment": "These are consistent, because the source caps its display at 100+. The source adds no information."
+   },
+   {
+    "baseline_claim": "Qwen3.8-27B pick: unsloth UD-Q3_K_XL, 12.24 GiB, all on GPU, 64k q8_0 KV.",
+    "source_claim": "Qwen3.8-27B Q4_K_M 21.4 GB total spills to CPU at 3.1-6.3 t/s (est.).",
+    "assessment": "Different quant. The source supports the baseline's choice of a sub-4-bit quant for the dense 27B on 16 GB, because Q4_K_M spill would be unusable for agentic work."
+   },
+   {
+    "baseline_claim": "Qwen3.6-35B-A3B Q4_K_M with --n-cpu-moe 21 (about 9 GiB of experts in RAM) at 128k context is the top pick.",
+    "source_claim": "Qwen3.6-35B-A3B Q4_K_M partial CPU: 27-54 t/s est. at 64k. The 3-bit build (14.68 GiB file) is estimated at 65-129 t/s.",
+    "assessment": "Both are estimates with an unspecified offload strategy. They suggest that a Q3/IQ3 build fully on GPU may roughly double decode versus Q4 with expert offload, and that is worth measuring. Measure both on the laptop before choosing."
+   }
+  ],
+  "agreements": [
+   "File sizes match the baseline: gpt-oss-20b MXFP4 11.28 GiB, Gemma 4 26B-A4B QAT Q4_0 13.45 GiB, Qwen3.6-35B-A3B Q4_K_M 19.02 GiB, GLM-4.7-Flash 16.99 GiB.",
+   "The usable VRAM budget of about 14.6 GB of 16 GB is close to the baseline vLLM default of 0.92 utilization (14.65 GiB).",
+   "The desktop RTX 5080 is 960 GB/s; the source uses only desktop numbers, which matches the baseline warning that desktop figures are not laptop figures.",
+   "q8_0 KV and hybrid-model KV savings are treated as the norm on 16 GB cards.",
+   "Dense 24-32B models at Q4_K_M spill out of 16 GB and drop to single-digit or low-teens t/s, so the baseline correctly prefers MoE or sub-4-bit dense models."
+  ],
+  "kb_notes": [
+   {
+    "target_doc": "docs/community-benchmarks.md",
+    "note": "Twoody's RTX 5080 calculator (https://www.twoody.com/local-llm-calculator/rtx-5080, figures reviewed 2026-10-16) gives estimates, not measurements, and covers only the desktop RTX 5080 (960 GB/s). It scales one llama.cpp anchor (LLaMA 2 7B Q4_0, tg128 184.68 t/s, pp512 9487.70 t/s, from llama.cpp discussion #15013) by bytes read per token, with efficiency 0.85, and displays anything above 100 t/s as '100+'."
+   },
+   {
+    "target_doc": "docs/community-benchmarks.md",
+    "note": "For a laptop proxy, use the desktop RTX 5070 Ti row in llama.cpp discussion #15013: it has the laptop RTX 5080's spec bandwidth of 896 GB/s and measured tg128 182.43 t/s and pp512 8419.56 t/s on LLaMA 2 7B Q4_0. That is close to the desktop 5080 for decode. Prompt processing on the 140 W laptop is expected to be lower. Treat both as upper bounds until measured on this machine (source: https://www.twoody.com/local-llm-calculator/data.json)."
+   },
+   {
+    "target_doc": "docs/model-selection.md",
+    "note": "Twoody's estimate for Qwen3.6-35B-A3B on a desktop RTX 5080 with 64 GB RAM at 64k context is 27-54 t/s for Q4_K_M with CPU spill, versus 65-129 t/s for a 3-bit build (14.68 GiB file) that nearly fits in VRAM. Both are formula estimates, so benchmark Q4_K_M with --n-cpu-moe against an IQ3 build fully on GPU before settling (https://www.twoody.com/local-llm-calculator/results?device=rtx-5080&memory=64)."
+   },
+   {
+    "target_doc": "llamacpp/models.md",
+    "note": "Per-token f16 KV sizes published by Twoody (CC BY 4.0, https://www.twoody.com/local-llm-calculator/data.json) can be used to cross-check context budgets: Qwen3.6-35B-A3B 20480 B, Qwen3.8-27B 65536 B (both hybrid, so only some layers hold KV), Gemma 4 26B-A4B 10240 B global plus 102400 B sliding (window 1024), Gemma 4 12B 8192 B global plus 163840 B sliding (window 1024), gpt-oss-20b 24576 B plus 24576 B sliding (window 128), GLM-4.7-Flash 54144 B. q8_0 KV is 0.53125 times f16."
+   },
+   {
+    "target_doc": "llamacpp/README.md",
+    "note": "A simple VRAM budget that matches Twoody's published method: GGUF file + mmproj (if vision is loaded) + about 0.3 GiB vision buffers + KV (bytes_per_token x context, x0.53125 for q8_0) + sliding-window KV + recurrent state + about 0.3 GiB compute buffers. Leaving the mmproj out saves about 1.1 GiB on Gemma 4 26B-A4B and about 0.85 GiB on Qwen3.6 (https://www.twoody.com/local-llm-calculator/data.json)."
+   },
+   {
+    "target_doc": "docs/sources.md",
+    "note": "Twoody local LLM calculator, https://www.twoody.com/local-llm-calculator/rtx-5080 (vendor: Osmove SASU, page modified 2026-11-01, data 2026-10-16.1, CC BY 4.0 JSON at /local-llm-calculator/data.json). Type: calculator-estimate, desktop GPUs only, llama.cpp GGUF Q4 only. Credibility: medium. Its anchor numbers trace to llama.cpp discussion #15013, and per-model speeds are extrapolations. Use it for sanity checks, not as evidence."
+   },
+   {
+    "target_doc": "docs/model-selection.md",
+    "note": "Calculators that rank by fit and generic quality tier (Twoody names Qwen3 14B as the 'strongest that runs comfortably' on RTX 5080) do not reflect coding-agent ability. Model picks for OpenCode should come from SWE-bench and Terminal-Bench evidence, not from such calculators."
+   }
+  ],
+  "new_candidates": [],
+  "gaps": [
+   "The page has no laptop RTX 5080 entry: all speeds are desktop 960 GB/s extrapolations.",
+   "The exact speed-range formula is computed on the server and not published (the client JS does no computation). The 20 held-out validation measurements are not listed.",
+   "The offload strategy for spilled models (by layer or by expert) is unspecified, so the MoE partial-offload numbers cannot be mapped to --n-cpu-moe.",
+   "There are no vLLM, NVFP4, AWQ or FP8 figures, and no long-context (128k) or prompt-processing figures beyond '20 pages in N s'.",
+   "No numbers are shown above 100 t/s, which hides the differences between gpt-oss-20b, Gemma 4 26B-A4B and the small models.",
+   "The units are labelled GB, but the reverse-engineered memory totals look GiB-like, which is ambiguous."
+  ]
+ },
+ "check": {
+  "verdicts": [
+   {
+    "item": "Publisher, type, as-of: Twoody / Osmove SASU, calculator-estimate, dateModified 2026-11-01, figures reviewed 2026-10-16, catalogue 2026-10-15, data.json 2026-10-16.1, CC BY 4.0",
+    "verdict": "confirmed",
+    "evidence": "Raw curl (UA Mozilla/5.0) HTTP 200, page 78714 B, data.json 46760 B. JSON-LD '\"dateModified\": \"2026-11-01\"'; footer '© 2026 Osmove SASU'; page text 'Figures reviewed on October 16, 2026'; data.json version '2026-10-16.1', reviewed_on '2026-10-16', catalogue_verified_on '2026-10-15', license 'CC BY 4.0'."
+   },
+   {
+    "item": "Anchor: RTX 5080 desktop tg128 184.68 / pp512 9487.70 on LLaMA 2 7B Q4_0, from llama.cpp discussion #15013, commit 8a4280c, contributor lhl",
+    "verdict": "confirmed",
+    "evidence": "data.json rtx-5080: bandwidth 960, tg 184.68, pp 9487.7, measured true. #15013 raw text: 'RTX 5080 16 GB / GDDR7 / 256 bit 9487.70 ± 21.89 184.68 ± 0.05 8a4280c @Hedede'. The second table has '8297.36 ± 9.50 181.99 ± 0.42 8a4280c @Hedede'.",
+    "correction": "The contributor is @Hedede, not lhl. @lhl submitted the RTX 4090 row just above it (commit 2241453). Fix the measurement row's runtime field."
+   },
+   {
+    "item": "Laptop proxy: RTX 5070 Ti desktop at 896 GB/s, tg128 182.43 / pp512 8419.56, and no laptop or mobile GPUs among the 64 devices",
+    "verdict": "confirmed",
+    "evidence": "data.json rtx-5070-ti: bandwidth 896, tg 182.43, pp 8419.56. #15013: '8419.56 ± 35.50 182.43 ± 0.09 933414c @TinyServal'. A search of the device JSON for 'laptop' or 'mobile' found no device entry. The 0.93-0.99x laptop decode ratio is the reviewer's own inference, and the review correctly marks it 'computed'."
+   },
+   {
+    "item": "Memory formula constants: 0.3 GiB work and vision buffers (322122547.2 B), q8_0 factor 0.53125, gpu_efficiency 0.85, cpu_efficiency 0.55, reference model 3.8226 GB, document_tokens 14000",
+    "verdict": "confirmed",
+    "evidence": "These are the exact values in the data.json 'method' object. The main page says: 'Checked against 20 published measurements that were not used to build it: median error 4.5 %, largest 23 %'. It also says: 'Measured with llama.cpp, Qwen3.5 9B with a conversation of 32k tokens takes 7.4 GB, as computed.'"
+   },
+   {
+    "item": "Usable budget '14.6 GB', and Gemma 4 26B (A4B) shown as '15.5 of 14.6 GB' with the label 'Runs — close other apps' and '100+ tokens/s'",
+    "verdict": "confirmed",
+    "evidence": "Results endpoint (device=rtx-5080, memory=64) reads: 'Gemma 4 26B (A4B)|...|15.5 of 14.6 GB|Runs — close other apps|100+ tokens/s|feels instant|20 pages in 2 s'. The static page reads 'Needs 15.5 GB of memory|Runs — close other apps'. The fit-label inconsistency is real. My recomputation does not give exactly 15.5 at 64k f16 KV (about 15.9 GiB), so the context the app applies to Gemma is not certain."
+   },
+   {
+    "item": "Units are labelled GB but look GiB-like",
+    "verdict": "confirmed",
+    "evidence": "Qwen3.6 35B-A3B Q4_K_M, recomputed from data.json: file 20419565568 + vision 902822144 + 2 x 322122547 + q8_0 KV (20480 x 0.53125 x 65536) + state 62914560 = about 22.74e9 B. That is 21.18 GiB, which matches the displayed '21.2 of 14.6 GB'. In decimal GB it would be 22.7. So the displayed values are GiB."
+   },
+   {
+    "item": "Partial-offload estimates at 64 GB RAM (Qwen3.6-35B-A3B Q4_K_M 27-54, 3-bit 65-129, GLM-4.7-Flash 45-78, Nemotron 3 Nano 30B-A3B 18-36, Qwen3-Coder-30B-A3B 34-59, Qwen3-Next 13-25, gpt-oss-120b 7.6-13, Qwen3.8-27B 3.1-6.3, Gemma 4 31B 5.3-7.7, Devstral Small 2 14-20 t/s)",
+    "verdict": "confirmed",
+    "evidence": "Every value and memory total matches the results endpoint verbatim, for example 'Qwen3.6 35B-A3B (4 bits)|...|21.2 of 14.6 GB|Partly on the processor: much slower|27–54 tokens/s', 'Qwen3.8 27B|...|21.4 of 14.6 GB|...|3.1–6.3 tokens/s' and 'Devstral Small 2 24B|...|16.1 of 14.6 GB|...|14–20 tokens/s'.",
+    "correction": "Minor: the 3-bit Qwen3.6 row carries the badge 'Measured by Twoody'. Going by the page's own wording, this badge refers to the app's memory and tools testing ('one of the models it has measured with its memory, its tools and your documents'), not to a speed measurement. The speed stays an estimate."
+   },
+   {
+    "item": "Top pick Qwen3 14B 11.2 GB 66-95 t/s, and 38 of 62 models fit",
+    "verdict": "confirmed",
+    "evidence": "Static page: 'The strongest model that runs comfortably there is Qwen3 14B, which writes 66–95 tokens/s' and '38 of the 62 models the calculator knows ... run well there'. Results: 'Qwen3 14B ... 11.2 of 14.6 GB'.",
+    "correction": "The static rtx-5080 page states 'The tables assume 32 GB of memory in the PC beside the card'. The 64 GB figures come only from the results endpoint. KB notes should name the RAM setting for each figure."
+   },
+   {
+    "item": "File sizes match the baseline (gpt-oss-20b 11.28 GiB, Gemma 4 26B-A4B 13.45 GiB + 1.11 GiB vision, Qwen3.6-35B-A3B Q4_K_M 19.02 GiB + 0.84 GiB, GLM-4.7-Flash 16.99 GiB, Qwen3.8-27B 17.67 GiB, Gemma 4 12B 6.50 GiB, 3-bit 14.68 GiB)",
+    "verdict": "confirmed",
+    "evidence": "Converted from data.json file_bytes: 12109566624, 14439363584 (+1194828160), 20419565568 (+902822144), 18244193920, 18973870528, 6975879296, 15761446528. All match the stated GiB values. The baseline lists Gemma 4 26B-A4B at 13.45 GiB."
+   },
+   {
+    "item": "KV bytes per token and sliding windows (Qwen3.6-35B-A3B 20480, Qwen3.8-27B 65536, Gemma 4 26B 10240 + 102400/1024, Gemma 4 12B 8192 + 163840/1024, gpt-oss-20b 24576 + 24576/128, GLM-4.7-Flash 54144, Qwen3-Coder-30B 98304, Devstral Small 2 163840)",
+    "verdict": "confirmed",
+    "evidence": "These values are verbatim in data.json models[].kv_bytes_per_token and sliding_window."
+   },
+   {
+    "item": "Conflicts with the baseline (Gemma 26B fit, gpt-oss-20b display cap, Qwen3.8-27B quant, Qwen3.6 offload versus 3-bit)",
+    "verdict": "confirmed",
+    "evidence": "Baseline rows 67-69 and line 81 of current-knowledge.md: Qwen3.6 Q4_K_M with --n-cpu-moe 21; Qwen3.8-27B UD-Q3_K_XL at 12.24 GiB; Gemma 4 26B QAT Q4_0 at 13.45 GiB with 64k q8_0 KV; desktop gpt-oss-20b about 205 tok/s. The source's configurations differ: it loads the vision projector, uses f16 KV for non-hybrid models, uses Q4_K_M for the dense 27B, and its offload strategy is unspecified. The reviewer correctly treats these as configuration differences, not true contradictions. None is a real factual conflict."
+   }
+  ],
+  "credibility_fair": true,
+  "credibility_note": "A 'medium' rating is fair. The constants and anchors are published openly and trace exactly to llama.cpp #15013. The page labels every per-model speed as an estimate. The validation set (20 measurements) is not published, it is a vendor funnel page, and it covers desktop GPUs only.",
+  "overall": "holds-with-corrections",
+  "summary": "I re-fetched the RTX 5080 page, the results endpoint (64 GB), the main calculator page, data.json and llama.cpp discussion #15013 with raw curl (copies in $SCRATCH/src/twoody-check/). Nearly every number in the review matches verbatim: dates, the formula constants, the 14.6 GB budget, 'Gemma 4 26B 15.5 of 14.6 GB', and all the partial-offload ranges and file sizes. The units being GiB despite the GB label is confirmed by recomputing Qwen3.6 Q4_K_M as 21.18 GiB. Corrections: (1) the RTX 5080 #15013 row was submitted by @Hedede, not lhl; (2) the static rtx-5080 page assumes 32 GB system RAM, and the 64 GB numbers come only from the results endpoint; (3) the 'Measured by Twoody' badge on the 3-bit Qwen3.6 row refers to the app's memory and tools testing, not speed. No baseline conflict is a true factual conflict. The credibility rating of medium is fair."
+ }
+}

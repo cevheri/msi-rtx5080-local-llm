@@ -1,0 +1,146 @@
+{
+ "overall": "holds-with-corrections",
+ "summary": "I couldn't refute any of the Mac results, Ollama tag sizes or quants, the M5 Max bandwidth figure, or the KB line mappings. All five family pages match the record cell for cell. The registry blob sizes, file_type, model_type, family, renderer and requires fields all match, and so do the params. apple.com confirms 614 GB/s, and that 64 GB is only offered on the 40-core-GPU M5 Max. Six things need correcting:\n(1) Tag drift is mostly refuted. For nemotron3:33b, nemotron-3-nano:30b and nemotron-3.5-lightning:30b, the GGUF manifest that a Linux pull gets today has the same model blob and config as the older quant-specific tags (33b-q4_K_M 6 months old, 30b-a3b-q4_K_M 11 months old, lightning 30b-a3b-q4_K_M 3 months old). The 4-week and 1-month re-pushes added MLX variants to the index; they did not change the GGUF weights.\n(2) The '87% of the bandwidth ceiling' for gpt-oss-20b is a misquote. The KB says 166 tok/s is 87% of a bandwidth-scaled desktop estimate of about 190 tok/s. The KB's bandwidth ceiling is about 240 tok/s, which puts 166 tok/s at about 69%.\n(3) The nemotron3:33b encoder share is about 3 GiB, not 5. The Omni blob is 25.74 GiB against 22.60 GiB for the text-only Ollama nano blob, and the record's own mmproj is 1.62-2.79 GiB. The 20.88 GiB ggml-org file uses a smaller quant mix than Ollama.\n(4) Some citations point to the wrong lines: methodology.md:155-162 and 164-179 do not exist (the file has 137 lines; the content is at 45-67). gpt-oss also has a plan 15 s / median 31 s figure in measured-profiles.json against 16 s / 37 s on its page.\n(5) Nemotron 3 Nano Omni is not completely absent from the KB. It appears once, as a BenchLM score of 31.4 in research/2026-11-15/source-reviews/benchlm.json. It has not been evaluated.\n(6) The KB says NVIDIA lists OpenCode among 'supported harnesses', not 'training harnesses'.\nThe Ollama 4k default under 24 GiB of VRAM is now confirmed live. The same docs page says 48 GiB or more of VRAM gives a 256k default, so the Mac's default context was probably large, not 4k.",
+ "verdicts": [
+  {
+   "item": "Mac setup notes (M5 Max 64 GB, Ollama 0.32.13/0.33.0, 22-23 Aug 2026, temperature 0/top_p 1, five passes on six surfaces, thermal re-measure, gemma4:12b engine flip)",
+   "verdict": "confirmed",
+   "evidence": "methodology.md:10 (22-23 August 2026), :47-50 (M5 Max, 64 GB, 2 TB, high-power, Ollama 0.32.13 and 0.33.0), :57-62 (gemma4:12b 5/5 to 1/5 with the same digest), :81-90 (3.5 h sweep, thermal, re-measured). measured-profiles.json measuredAgainst.defaults.sampling = temperature 0, topP 1, turnTimeoutMs 90000.",
+   "correction": "The line refs are wrong. The file has only 137 lines, so methodology.md:155-162 and :164-179 do not exist. Use methodology.md:45-50 for the machine and :52-67 for the engine note."
+  },
+  {
+   "item": "Mac speed reference: 64 GB M5 Max = 40-core GPU at 614 GB/s; 896/614 = 1.46x",
+   "verdict": "confirmed",
+   "evidence": "apple.com/macbook-pro/specs (fetched and redirected to /liquid-retina-xdr-display/specs/): 'M5 Max with 32-core GPU 36GB unified memory', 'M5 Max with 40-core GPU 48GB, 64GB, or 128GB', '40-core GPU ... 614GB/s memory bandwidth', 32-core 460GB/s. 896/614 = 1.459."
+  },
+  {
+   "item": "Doc inconsistency: README nine 150 s models (incl. glm-4.7-flash) vs methodology six",
+   "verdict": "confirmed",
+   "evidence": "README.md:15-17 lists nine models including glm-4.7-flash:latest. methodology.md:99-103 names six (qwen3.5:9b, gemma4:12b, lightning, nano, muse-glimmer, qwen3.6:27b) and omits glm. measured-profiles.json sets glm turnTimeoutMs 150000."
+  },
+  {
+   "item": "Shipped settings per model from measured-profiles.json",
+   "verdict": "confirmed",
+   "evidence": "glm: retryUnreadStop true, suppressPlanReasoning true, reportReminderLimit 2, turnTimeoutMs 150000. gpt-oss: suppressAgentReasoning true, perWorkflow query-optimization 0.8/0.9, retryUnreadStop true, no turnTimeoutMs. nano and lightning: only turnTimeoutMs 150000. nemotron3: retryUnreadStop true, refusalExamples true, no turnTimeoutMs."
+  },
+  {
+   "item": "gpt-oss:20b Mac result (30/30, median 37 s, slowest 2:49, per-surface times, reasoning suppressed, optimize 0.8/0.9)",
+   "verdict": "confirmed",
+   "evidence": "openai/gpt-oss.md:14 (13 GB, 19/78/142/30/31/16 s, 37 s, 2:49), :23-33 (suppression, 4 of 6 surfaces lost without it, temp 0.8/topP 0.9), :37-41 (assess once 1/5); README.md:48.",
+   "correction": "measured-profiles.json 'measured' gives plan 15 s and a 31-second median, against 16 s / 37 s on the page and README. It also says optimize read 3/5, 4/5, then 5/5 under these settings ('the marginal cell'), and that the earlier assess 1/5 came from reasoning written into the tool-call arguments. Mention both."
+  },
+  {
+   "item": "gpt-oss:20b Ollama tag facts",
+   "verdict": "confirmed",
+   "evidence": "registry manifest 20b: model blob 13,793,422,816 B (12.85 GiB); manifest sha256 prefix f38aa0c53da5 matches the tags page; config {model_type 20.9B, file_type MXFP4, requires 0.30.0}; params {temperature 1}. Template lines 4-9: a level gives 'Reasoning: <level>'; unset or true gives 'Reasoning: medium'; think=false gives no line. Library: 14GB, 128K, Text, 1 month ago; badges cloud/thinking/tools. https://ollama.com/library/gpt-oss/tags, https://registry.ollama.ai/v2/library/gpt-oss/manifests/20b"
+  },
+  {
+   "item": "gpt-oss:20b fit arithmetic (Ollama 12.85 GiB + 1.5 GiB 64k KV + overhead, tight vs 15.47 GiB)",
+   "verdict": "confirmed",
+   "evidence": "12 full-attention layers x 8 KV heads x 64 dim x 2 (K,V) x 2 B = 24 KiB/token; 65536 x 24 KiB = 1.5 GiB. This matches twoody's 24576 B full plus 24576 B sliding (community-benchmarks.md:219). Total about 14.9-15.4 GiB (estimate)."
+  },
+  {
+   "item": "gpt-oss:20b speed: 166 tok/s is about 87% of the bandwidth ceiling",
+   "verdict": "refuted",
+   "evidence": "llamacpp/models.md:391: '166 tok/s ... is about 87% of' the bandwidth-scaled estimate of about 190 tok/s (desktop 204.85 x 0.933). community-benchmarks.md:202 gives 'bandwidth ceiling about 240'.",
+   "correction": "Say: 166 tok/s is about 87% of the desktop-scaled estimate (about 190) and about 69% of the KB's bandwidth ceiling (about 240) (measured on this laptop vs estimate). The 1.46x faster-than-Mac conclusion still holds."
+  },
+  {
+   "item": "nemotron-3.5-lightning:30b Mac result",
+   "verdict": "confirmed",
+   "evidence": "nvidia/nemotron-3.5-lightning.md:15 (25 GB, 4/20/57/38/9/144 s, 29 s, 2:25), :24-28 (plan 4/5 at 90, cold-load model-timeout, zero tools), :35-38 (67 s to 144 s, both model-stopped); profile has turnTimeoutMs 150000 only."
+  },
+  {
+   "item": "nemotron-3.5-lightning:30b Ollama tag facts",
+   "verdict": "confirmed",
+   "evidence": "Registry 30b: model 25,430,738,944 B (23.68 GiB); config nemotron_h_moe, 32.9B, Q4_K_M, renderer/parser nemotron-3.5-nano, requires 0.32.9; params {draft_num_predict 2, temperature 1, top_p 0.95}. Library: '19GB - 25GB', 1M, Text, 14b60fc91804, 1 month ago; badges thinking/tools. https://ollama.com/library/nemotron-3.5-lightning/tags",
+   "correction": "The tags page digest 14b60fc91804 is the multi-variant index digest. The GGUF v2 manifest hashes to e6905fffe2e2."
+  },
+  {
+   "item": "Tag drift: nemotron3, nemotron-3-nano and lightning re-pushed after Aug, so today's pull may not be the measured build",
+   "verdict": "refuted",
+   "evidence": "The GGUF v2 manifests were compared. nemotron3:33b and 33b-q4_K_M (6 months ago) have the same model blob 02025860ddde and the same config de7e7edd5b20. nemotron-3-nano:30b and 30b-a3b-q4_K_M (11 months ago) have the same blob a70437c41b3b, config 12bee8c08a36 and params. lightning:30b and 30b-a3b-q4_K_M (3 months ago; release Aug 11 2026 per models-nvidia.json) have the same blob 5c19f6282f4f, template, params and config 7101a4a1d9e3. The recent dates come from MLX variants added to the index (19/18/21 GB MLX entries). The page disk sizes (25/24/27 GB) match the GGUF blobs, not MLX.",
+   "correction": "The GGUF weights and config a Linux pull gets today are byte-identical to the quant-specific tags that predate the measurements, at least for nano and nemotron3. Lightning's q4_K_M tag is about 3 months old, so close to the Aug 22-23 measurements. Recommend pulling the explicit quant tags (e.g. nemotron3:33b-q4_K_M) and recording the digests. Drop the 'may not be the measured build' warning, or reduce it to Lightning only."
+  },
+  {
+   "item": "nemotron-3.5-lightning fit arithmetic (6 KiB/token KV; about 13.5-14 GiB of layers on GPU; KB recipe Q4_0 --n-cpu-moe 16)",
+   "verdict": "confirmed",
+   "evidence": "6 attention layers x 2 KV heads x 128 x 2 x 2 B = 6 KiB/token; models-nvidia.json summary says 'about 6 KiB per token'. llamacpp/models.md:433-440: Q4_0 18,898,091,584 B (17.60 GiB), --n-cpu-moe 16, about 4.7 GiB experts, GPU about 15.2 GiB at 128k."
+  },
+  {
+   "item": "nemotron-3.5-lightning OpenCode: 'NVIDIA lists OpenCode among its training harnesses'",
+   "verdict": "refuted",
+   "evidence": "models-nvidia.json:30: 'NVIDIA blog lists OpenCode among supported harnesses.'",
+   "correction": "Replace 'training harnesses' with 'supported harnesses'."
+  },
+  {
+   "item": "nemotron-3.5-lightning speed reasoning (slower on Ollama, similar to slower on llama.cpp; KB 60-110 tok/s)",
+   "verdict": "uncertain",
+   "evidence": "community-benchmarks.md:207: '60-110, ceiling about 170'. The direction is right because the model spills to DDR5. 'Roughly similar' on llama.cpp has no Mac tok/s to compare against."
+  },
+  {
+   "item": "glm-4.7-flash:latest Mac result",
+   "verdict": "confirmed",
+   "evidence": "zhipu/glm-4.7-flash.md:14 (19 GB, 14/38/58/39/37/5 s, 34 s, 1:25), :23-27 (plan 0/5 at 90 s, zero tools, 5-7 s suppressed), :32-36 (second reminder), :38-42 (agent-side suppression 0/3). retryUnreadStop comes only from the profile JSON."
+  },
+  {
+   "item": "glm-4.7-flash Ollama tag facts",
+   "verdict": "confirmed",
+   "evidence": "Registry latest: model 19,019,269,280 B (17.71 GiB); config glm4moelite, 29.9B, Q4_K_M, renderer/parser glm-4.7, requires 0.15.0; manifest sha 4475827791a2 matches the tags page (latest = q4_K_M, 5 months ago); 198K, Text; badges thinking/tools.",
+   "correction": "The params blob also has repeat_penalty 1: {min_p 0.01, repeat_penalty 1, temperature 1, top_p 0.95}."
+  },
+  {
+   "item": "glm-4.7-flash fit (54,144 B/token KV, 64k = 3.3 GiB f16, about 11 GiB of layers on GPU) and KB recipe",
+   "verdict": "confirmed",
+   "evidence": "llamacpp/models.md:446 (MLA 54,144 B/token, 3.30 GiB at 64k; --n-cpu-moe 20, 18g); community-benchmarks.md:209 (twoody 45-78, KB 40-80); vllm/models.md GLM row over budget."
+  },
+  {
+   "item": "nemotron3:33b Mac result",
+   "verdict": "confirmed",
+   "evidence": "nvidia/nemotron3.md:15 (27 GB, 12/49/20/18/29/14 s, 21 s, 1:59), :24-37 (retry when stopped with nothing read; refusal repeated seven times), :41-50 (5/5, 5/5, 4/5, 4/5, 3/5; 150 s turn 3/5; 20x variance; assess 3/5)."
+  },
+  {
+   "item": "nemotron3:33b Ollama tag facts and encoder share (about 5 GiB of vision/audio encoders)",
+   "verdict": "refuted",
+   "evidence": "Blob 27,638,621,088 B (25.74 GiB), nemotron_h_omni, 33.0B, Q4_K_M, renderer nemotron-3-nano: confirmed. Badges audio/thinking/tools/vision. But the text-only Ollama nemotron-3-nano:30b blob is 22.60 GiB, a difference of about 3.1 GiB. The ggml-org Omni mmproj is 1.62 (Q8_0) or 2.79 GiB (BF16) per the HF tree API. The ggml-org Q4_K_M text file (20.88 GiB) uses a smaller quant mix than Ollama's Q4_K_M (unsloth's Q4_K_M is 22.89 GiB).",
+   "correction": "The encoders are about 3 GiB of the Ollama blob, not 5. The GPU/RAM split figures (about 13.5-14 GiB on GPU, about 11.5-12 GiB in RAM) are unaffected. The 'skip-here' reasoning should say 'plus about 3 GiB of encoders'."
+  },
+  {
+   "item": "nemotron3:33b KB status 'absent from discovery and model-selection'",
+   "verdict": "uncertain",
+   "evidence": "Absent from models-nvidia.json and model-selection.md (confirmed by grep). It does appear once, in research/2026-11-15/source-reviews/benchlm.json: 'Nemotron 3 Nano Omni 30B A3B: 31.4'.",
+   "correction": "Say 'not evaluated; mentioned only as a BenchLM score (31.4)'."
+  },
+  {
+   "item": "nemotron-3-nano:30b Mac result",
+   "verdict": "confirmed",
+   "evidence": "nvidia/nemotron-3-nano.md:15 (24 GB, 11 s/2:08/51/32/1:22/33 s, 46 s, 3:10), :26-29 (optimize 3/5 at 90, timeouts with tools called). Profile 'measured': losses at 147 s and 90 s."
+  },
+  {
+   "item": "nemotron-3-nano:30b Ollama tag facts and fit",
+   "verdict": "confirmed",
+   "evidence": "Registry 30b: 24,271,924,224 B (22.60 GiB), nemotron_h_moe, 31.6B, Q4_K_M, renderer nemotron-3-nano; params {temperature 1, top_p 1}; library '18GB - 24GB', 1M, badges thinking/tools. HF: unsloth Q4_0 16.96 GiB, ggml-org Q4_K_M 20.88 GiB. Twoody 18-36 t/s in research/2026-11-15/source-reviews/twoody-calculator.json."
+  },
+  {
+   "item": "KB status mapping (gpt-oss rank 9; Lightning and GLM honorable; nano superseded only in discovery; Bolt rank 7 with AA TB 4.0 0)",
+   "verdict": "confirmed",
+   "evidence": "model-selection.md:53 and :185-199 (rank 9, 'weak independent agentic scores', 'cannot be turned off'); :287 GLM and :288 Lightning honorable; :342 and :345 changes table; :305 excludes only the Nano 4B; :166 Bolt 'TB 4.0 0'; models-nvidia.json:72 nano 'Superseded'; community-benchmarks.md:161 SQL 15 / about 79k tokens."
+  },
+  {
+   "item": "Ollama 4k default context on GPUs under 24 GiB (listed as not re-verified)",
+   "verdict": "confirmed",
+   "evidence": "https://docs.ollama.com/context-length (fetched 2026-11-16): '< 24 GiB VRAM: 4k context; 24-48 GiB: 32k; >= 48 GiB: 256k'; recommends at least 64000 for agents and coding tools.",
+   "correction": "Remove this from gaps. The same page means the 64 GB Mac probably ran with a 32k or 256k default rather than 4k (estimate), consistent with qwen3.6.md:69 needing an explicit 32768 cap."
+  },
+  {
+   "item": "Ollama version pinning: ollama/ollama:0.33.0 and 0.32.13 exist on Docker Hub",
+   "verdict": "confirmed",
+   "evidence": "hub.docker.com/v2/repositories/ollama/ollama/tags/0.33.0 and /0.32.13 both return tag objects. KB opencode.md cites Ollama v0.40.16 source."
+  },
+  {
+   "item": "Recommendations (gpt-oss already in plan; Lightning try-here-first; GLM worth-trying; nemotron3 and nano skip-here)",
+   "verdict": "uncertain",
+   "evidence": "These follow from the confirmed evidence. They are judgments, not facts, and nothing here contradicts them. The 'skip-here' for nemotron3 should use the corrected encoder size of about 3 GiB."
+  }
+ ]
+}

@@ -1,0 +1,308 @@
+{
+ "missing_models": [
+  {
+   "name": "KAT-Coder-V2.5-Dev (Kwaipilot)",
+   "hf_repo": "Kwaipilot/KAT-Coder-V2.5-Dev",
+   "source_url": "https://huggingface.co/Kwaipilot/KAT-Coder-V2.5-Dev",
+   "why": "This is an agentic-coding fine-tune of the Qwen3.5-35B-A3B MoE, created 2026-07-23 under Apache-2.0. The HF API reports Qwen3_5MoeForConditionalGeneration with 34.66B params, and the language weights are text-only. In Kwaipilot's in-house table, where every model was re-run in one vLLM/SGLang pipeline, it scores SWE-bench Verified 69.40 against 64.40 for Qwen3.6-35B-A3B and 35.80 for Gemma4-26B-A4B, and Terminal-Bench 2.1 41.02. The card documents `--tool-call-parser qwen3_coder --reasoning-parser qwen3`. Like Qwen3.6-35B-A3B, it is a direct llama.cpp expert-offload candidate. Whether a GGUF exists is unverified."
+  },
+  {
+   "name": "Qwen3.5-27B (dense)",
+   "hf_repo": "Qwen/Qwen3.5-27B",
+   "source_url": "https://huggingface.co/api/models/Qwen/Qwen3.5-27B",
+   "why": "Created 2026-02-24, Apache-2.0, 27.78B params, 1.67M downloads. The Qwen lane names it, but it is not in the merged candidate list. KAT's same-harness table puts it at SWE-bench Verified 68.60, above Qwen3.6-35B-A3B at 64.40. It is a fallback if Qwen3.8-27B GGUF quants misbehave."
+  },
+  {
+   "name": "Ministral 3 (3B/8B/14B, Instruct and Reasoning, 2512)",
+   "hf_repo": "mistralai/Ministral-3-14B-Reasoning-2512",
+   "source_url": "https://huggingface.co/api/models?author=mistralai&search=Ministral-3&limit=30",
+   "why": "Mistral released these as official Apache-2.0 repos, with official GGUF repos, all created 2025-10-31 (release name 2512, so inside the window). They come in separate Reasoning and Instruct variants, which gives clean with-thinking and without-thinking pairs from a non-Chinese vendor. The 8B (8.92B params) and 14B (13.95B) sizes should fit 16 GB as GGUF, and the 8B likely fits in vLLM. Only the platform-vllm and vllm-tools lanes mention them (parser `mistral`), and they are missing from the merged list."
+  },
+  {
+   "name": "Laguna XS 2.1 (underspecified in the merged list)",
+   "hf_repo": "poolside/Laguna-XS-2.1",
+   "source_url": "https://huggingface.co/poolside/Laguna-XS-2.1",
+   "why": "The merged list marks thinking and tools as unknown, but the card states both. It is a 33B-A3B MoE under OpenMDW-1.1 with 262,144 context and interleaved thinking that can be toggled per request. The vLLM flags are `--tool-call-parser poolside_v1 --reasoning-parser poolside_v1`, and `poolside_v1` is present in vllm/tool_parsers/__init__.py on main. Vendor scores: SWE-bench Verified 70.9 and Terminal-Bench 2.0 37.5. The card warns that a vLLM build without PR #47311 silently drops tool calls; on older builds it says to use `glm47`. The Ollama `laguna-xs-2.1:latest` tag is 20 GB, and the card cites llama.cpp PR #25165. It has 587k downloads, the most of any third-party coder in this size class."
+  },
+  {
+   "name": "FrogNano-4B-2609 (Microsoft)",
+   "hf_repo": "microsoft/FrogNano-4B-2609",
+   "source_url": "https://huggingface.co/microsoft/FrogNano-4B-2609",
+   "why": "An RL-only coding-agent fine-tune of Qwen3.5-4B, created 2026-09-17 and modified 2026-11-12, Apache-2.0, evaluated at about 131K context. It fits vLLM in BF16 (about 9.3 GB). Caveat: it was trained and evaluated only with Microsoft's 5-tool Leaf harness, and per the card it is Python-centric. Treat it as an optional small-agent comparator, not a core pick."
+  },
+  {
+   "name": "North Mini Code 1.0 (Cohere): official W4A16 build not evaluated",
+   "hf_repo": "CohereLabs/North-Mini-Code-1.0-w4a16",
+   "source_url": "https://huggingface.co/api/models?author=CohereLabs&sort=createdAt&direction=-1",
+   "why": "A 30B-A3B coder released 2026-06-05 under Apache-2.0, with 256K context and 64K max output. Poolside's table lists it at SWE-bench Verified 67.6 and Terminal-Bench 2.0 36.0. Official w4a16 (2026-06-16) and fp8 builds plus an eagle draft exist. The tool parser is presumably one of the cohere_command3/4 parsers, which are present in the vLLM registry, but the card only documents the Transformers chat template."
+  },
+  {
+   "name": "EXAONE 4.5 33B (LG)",
+   "hf_repo": "LGAI-EXAONE/EXAONE-4.5-33B",
+   "source_url": "https://huggingface.co/api/models?author=LGAI-EXAONE&sort=createdAt&direction=-1",
+   "why": "A dense 34.35B model created 2026-04-04, with official AWQ (2026-04-22), FP8 and GGUF builds. The license is 'other' (the EXAONE license, likely non-commercial; this needs checking). It does not fit 16 GB fully, so it is a low priority. Listed here so that its absence from the study is a deliberate choice."
+  },
+  {
+   "name": "Trinity-Mini (Arcee)",
+   "hf_repo": "arcee-ai/Trinity-Mini",
+   "source_url": "https://huggingface.co/api/models/arcee-ai/Trinity-Mini",
+   "why": "A 26.1B AfmoeForCausalLM MoE, created 2025-12-01 and modified 2026-05-28, with official W4A16, FP8-Block and NVFP4 builds from 2026-03. The 4-bit build may fit or nearly fit 16 GB in vLLM. Its tool-calling and parser status and its license ('other') are unverified."
+  },
+  {
+   "name": "Granite Switch 4.1 8B/30B (IBM)",
+   "hf_repo": "ibm-granite/granite-switch-4.1-8b",
+   "source_url": "https://huggingface.co/api/models?author=ibm-granite&sort=createdAt&direction=-1",
+   "why": "New in October 2026: created 2026-10-14, Apache-2.0, 8.78B params, GraniteSwitchForCausalLM, with GGUF builds from 2026-10-22. The study only covers Granite 4.2. Need to check what 'switch' means (probably a thinking toggle), whether vLLM v0.33.0 supports the architecture, and which parser it uses (vLLM registers `granite4`)."
+  },
+  {
+   "name": "Qwen3.8-27B official and NVIDIA quantized builds plus a draft model",
+   "hf_repo": "nvidia/Qwen3.8-27B-NVFP4",
+   "source_url": "https://huggingface.co/api/models/nvidia/Qwen3.8-27B-NVFP4",
+   "why": "NVIDIA published an NVFP4 build on 2026-09-04 at 21.92 GB of safetensors, and Qwen's official FP8 build (2026-08-13) is 30.87 GB, so neither fits 16 GB in vLLM. This confirms the Qwen lane's conclusion that Qwen3.8-27B needs llama.cpp. Also relevant: tencent/Qwen3.8-27B-DSpine-b16 (2026-11-07, a 2.0B DSpineDraftModel) is a speculative-decoding draft. Its runtime support is unverified, and it matters only if Qwen3.8-27B is chosen."
+  },
+  {
+   "name": "Older but still-current small models outside the window",
+   "hf_repo": "nvidia/NVIDIA-Nemotron-Nano-12B-v2",
+   "source_url": "https://huggingface.co/api/models/nvidia/NVIDIA-Nemotron-Nano-12B-v2",
+   "why": "None of these were evaluated by any lane, and all are flagged as older than 12 months or borderline: NVIDIA-Nemotron-Nano-12B-v2 (2025-08-21), baidu/ERNIE-4.5-21B-A3B-Thinking (2025-09-08, Apache-2.0, 21.8B MoE), ByteDance-Seed/Seed-OSS-36B-Instruct (2025-08-20; vLLM has a seed_oss parser) and moonshotai/Kimi-Linear-48B-A3B-Instruct (2025-10-30). Each should be dismissed explicitly rather than silently."
+  }
+ ],
+ "unanswered_questions": [
+  "vLLM v0.33.0 on sm_120: does a real 16 GB start of gpt-oss-20b (MXFP4) succeed, which MoE backend gets picked (Marlin, Triton or b12x), and how many KV tokens fit at gpu_memory_utilization 0.92? Lanes cite recipe 'vram_minimum 16', but sm120 is not in the verified list.",
+  "Does an NVFP4 model run in the stock vllm/vllm-openai:v0.33.0 image on sm_120 without a hand-installed b12x? Does the first-start FlashInfer JIT (about 52 GiB host RAM) happen for Ornith-1.5-9B-NVFP4 and similar models, and do MAX_JOBS=2 plus a persistent cache volume avoid the OOM on this 64 GB laptop?",
+  "Are vllm-gguf-plugin and vllm-bnb-plugin absent from the v0.33.0 image? If so, GGUF models must go through llama.cpp or Ollama rather than vLLM.",
+  "Is the v0.33.0 default frontend Rust or Python? Which tool and reasoning parsers does it support, and does it reject OpenCode's requests (for example an empty tools array returning 400)?",
+  "Does the tool_choice default-to-auto logic (protocol.py check_tool_usage) ship in v0.33.0, or only on main? This decides whether OpenCode v2.3.0 issue #60202 (omitted tool_choice) breaks tool calls against the released image.",
+  "Does v0.33.0 include vLLM PR #47311, the poolside_v1 fix needed for Laguna XS 2.1? Does it include the qwen3 reasoning-parser fixes (#53284, #48753), and is there a workaround for Qwen 3.6/3.8 'System message must be at the beginning' (#41114) with OpenCode's prompts?",
+  "What is OpenCode v2.3.0's actual system-prompt plus tool-schema token count? It sets the minimum workable --max-model-len and Ollama num_ctx. The only number found is Ollama's 'at least 64k' statement.",
+  "What is the exact OpenCode v2 config for a custom openai-compatible provider with capabilities.tools, limit.context and limit.output, compatibility.reasoningField 'reasoning', and per-variant body.chat_template_kwargs.enable_thinking or reasoning_effort? It needs to be validated end to end against vLLM in Docker reached from the host (127.0.0.1:8000).",
+  "Which llama.cpp image should be used: server-cuda (CUDA 12.8.1) or server-cuda13 (CUDA 13.5.0)? The docker-nvidia lane says CUDA 13.3-13.5 containers on driver 595 (CUDA 13.2) rely on minor-version compatibility with PTX caveats, which conflicts with the llama.cpp lane's 'both run natively'.",
+  "Does llama.cpp b12418 still reject OpenCode's unanchored '^ses' subagent schema pattern (#58019)? Are the old --no-mmap and --mlock flags from the gpt-oss guide rejected, now that -lm/--load-mode replaces them?",
+  "What are the real tokens/s and maximum context on this RTX 5080 Laptop (140 W) with 24-core CPU RAM offload for Qwen3.6-35B-A3B Q4_K_M, Nemotron 3.5 Lightning Q4_0 and Gemma 4 26B-A4B QAT Q4_0, using --n-cpu-moe or --moe-cache-mib? No primary source gives these.",
+  "How much host RAM is really free while the desktop runs (about 41 GiB) for Qwen3-Coder-Next Q4_K_M (48.4 GB) and gpt-oss-120b (63.4 GB) with mmap? Can either run without heavy swap, and is the machine's `heavy` 32 GB slice cap relevant to running the containers?",
+  "Ollama v0.40.16: is OLLAMA_CONTEXT_LENGTH (or the num_ctx Modelfile route) honoured over /v1? Given that tool_choice is unsupported on /v1, do the Ollama tags for qwen3.6, gemma4, nemotron-3.5-lightning, laguna-xs-2.1 and gpt-oss tool-call reliably from OpenCode?",
+  "What is the exact Compose recipe? The choices are 'gpus: all' or deploy.resources.reservations.devices versus CDI ('devices: nvidia.com/gpu=all'), plus --ipc=host or shm_size, the HF cache volume, and the FlashInfer/Triton/torch.compile cache volumes so restarts are fast.",
+  "Does vLLM exploit Gemma 4 unified K=V on global layers? This decides whether Gemma 4 12B gets about 128K or about 200K of context in 16 GB."
+ ],
+ "suspicious_claims": [
+  {
+   "lane": "models-gemma vs platform-vllm / platform-vllm-tools",
+   "claim": "The latest vLLM release is v0.32.0 (2026-10-18).",
+   "why": "Docker Hub tag vllm/vllm-openai:v0.33.0 exists, last_updated 2026-11-02, digest sha256:d825baf9... (https://hub.docker.com/v2/repositories/vllm/vllm-openai/tags/v0.33.0, checked this run). The Gemma lane's version claim is stale. The models-nvidia lane says Dory 'needs vLLM v0.33.0, still rc', and models-others says Flint 'first appears in v0.33.0rc3'. Both should be rechecked against the v0.33.0 release (GitHub release object tagged v0.33.0rc3 but named v0.33.0)."
+  },
+  {
+   "lane": "sweep-registries",
+   "claim": "No stable vllm/vllm-openai release tag on Docker Hub; the Nemotron-3.5-Bolt-E4B card pins vllm/vllm-openai:v0.31.0.",
+   "why": "The v0.33.0 tag exists (see above). The models-nvidia lane instead says the Bolt card installs b12x by hand inside a nightly image. Re-read the Bolt card to settle which image it actually documents."
+  },
+  {
+   "lane": "platform-vllm",
+   "claim": "Nemotron-3-Nano-4B BF16 is 10 GB.",
+   "why": "The HF API blobs for nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16 sum to 7.95 GB of safetensors, which matches the models-nvidia lane's 8 GB."
+  },
+  {
+   "lane": "platform-vllm",
+   "claim": "Qwen3.5-9B RedHatAI FP8-dynamic is 11 GB.",
+   "why": "The HF API blobs for RedHatAI/Qwen3.5-9B-FP8-dynamic sum to 14.01 GB, which matches the models-qwen lane's 14.0 GB. At that size it is too tight for vLLM on 16 GB."
+  },
+  {
+   "lane": "platform-vllm",
+   "claim": "Gemma-4-12B google qat-w4a16-ct is 9 GB.",
+   "why": "The HF API blobs sum to 10.26 GB, which matches the models-gemma lane."
+  },
+  {
+   "lane": "platform-vllm vs models-gemma",
+   "claim": "The Gemma-4-26B-A4B NVFP4 recipe gives vram_minimum 16 GB.",
+   "why": "RedHatAI/gemma-4-26B-A4B-it-NVFP4 has 16.42 GB of safetensors (verified this run), more than the card's usable 15.9 GiB. The recipe minimum is not credible for a 16 GB card, so treat this model as llama.cpp-only."
+  },
+  {
+   "lane": "models-nvidia vs sweep-registries",
+   "claim": "Nemotron 3.5 Bolt E4B fits easily in vLLM (sweep), and the release dates are 2026-10-23 for Bolt E4B and 2026-10-15 for Bolt 74B (nvidia).",
+   "why": "The BF16 safetensors are 15.99 GB (verified), so it does not fit vLLM in BF16. HF createdAt is 2026-10-05 for E4B and 2026-10-07 for 74B-A9B-24GB, and the 74B repo is 24.08 GB of safetensors. The lanes disagree on both fit and dates; the later dates are probably announcement dates."
+  },
+  {
+   "lane": "models-others vs platform-vllm-tools",
+   "claim": "Ornith-1.5-9B uses --tool-call-parser qwen3_xml, while the Qwen3.5-family recipes and KAT-Coder (also Qwen3.5-based) use qwen3_coder.",
+   "why": "Both parsers exist in the registry, but they differ in streaming and robustness. Confirm which one the Ornith card actually states. The merged list also calls Ornith 'Qwen3.5/Gemma4-derived', which is self-contradictory."
+  },
+  {
+   "lane": "models-others",
+   "claim": "Granite 4.2 uses tool parser qwen3_coder.",
+   "why": "vLLM registers dedicated granite and granite4 tool parsers. Confirm the parser from the IBM card or recipe."
+  },
+  {
+   "lane": "platform-vllm-tools vs models-deepseek-openai",
+   "claim": "gpt-oss function calling: the recipe (2026-05) says only tool_choice=auto, while tool_calling.md (2026-11) exempts gpt-oss from the required/named check.",
+   "why": "This is an unresolved contradiction, and #65770 (gpt-oss 500 errors) is open. It must be tested on v0.33.0 with OpenCode. Also, 'reasoning_effort none turns thinking off' is stated generically, but gpt-oss is listed as thinking 'always' (harmony low/medium/high), so confirm what 'none' does for gpt-oss."
+  },
+  {
+   "lane": "platform-llamacpp-ollama vs platform-docker-nvidia",
+   "claim": "Both llama.cpp CUDA images (12.8.1 and 13.5.0) run natively on sm_120.",
+   "why": "The host driver 595 is CUDA 13.2. The docker-nvidia lane says CUDA 13.3-13.5 containers need minor-version compatibility, which has PTX/JIT caveats. server-cuda13 may fail or fall back. Default to server-cuda (12.8) until tested."
+  },
+  {
+   "lane": "models-deepseek-openai",
+   "claim": "llama.cpp guide shows about 205 tok/s for gpt-oss-20b on RTX 5080.",
+   "why": "That figure is for the desktop RTX 5080 (960 GB/s, 360 W). The laptop has 896 GB/s and 140 W, so do not quote it as this machine's number."
+  },
+  {
+   "lane": "sweep-leaderboards / models-gemma / models-qwen",
+   "claim": "Vendor agentic scores (Gemma 4 26B-A4B SWE-bench Verified 17.4 vs 57.40; Qwen3.6-35B-A3B 73.4).",
+   "why": "A third same-harness source, the KAT card's in-house vLLM runs, gives Gemma4-26B-A4B 35.80, Qwen3.6-35B-A3B 64.40, Gemma4-31B 58.60 and Qwen3-Coder-30B 31.80, and says harness tool mismatches (MultiEdit, context overflow) explain the gaps. Vendor numbers should not drive the ranking without this caveat."
+  },
+  {
+   "lane": "models-others",
+   "claim": "Muse-Glimmer-30B vLLM NVFP4 needs about 31 GB per recipe, and thinking is 'always'.",
+   "why": "A 29.6B dense NVFP4 checkpoint should be about 17-18 GB, so 31 GB is probably a recipe vram_minimum, not the weight size. The thinking mode and the muse_glimmer parser behaviour need a card re-read."
+  },
+  {
+   "lane": "models-nvidia",
+   "claim": "Cascade-2's card says it does not currently support OpenCode.",
+   "why": "This is unusual and load-bearing for excluding the model. Quote the exact card sentence with its URL."
+  },
+  {
+   "lane": "models-others",
+   "claim": "Ternary-Bonsai-2-27B Q2_0 (7.6 GB) fits llama.cpp fully and supports thinking and tools.",
+   "why": "These come from Ollama scraping and a third-party org (prism-ml). Tool-call quality at ternary precision and the stated llama.cpp minimum b11556 are unverified."
+  },
+  {
+   "lane": "models-nvidia",
+   "claim": "The Nemotron 3.5 Lightning card links a ggml-org Q4_K_M that does not exist.",
+   "why": "If true, the GGUF to use is Q4_0 (18.9 GB) from ggml-org, or a community Q4_K_M. Recheck the repo file listing before recommending a file."
+  }
+ ],
+ "recommended_shortlist": [
+  {
+   "name": "gpt-oss-20b",
+   "hf_repo": "openai/gpt-oss-20b",
+   "runtime": "vLLM v0.33.0 (parsers openai / openai_gptoss); alt llama.cpp ggml-org/gpt-oss-20b-GGUF, Ollama gpt-oss:20b",
+   "reason": "The best member of the must-cover gpt-oss family, and the only strong agentic MoE whose weights (13.76 GB, verified) fit 16 GB in vLLM. Always thinks, with tools. KV headroom and the sm_120 MXFP4 path must be measured."
+  },
+  {
+   "name": "Gemma 4 12B IT (QAT W4A16)",
+   "hf_repo": "google/gemma-4-12B-it-qat-w4a16-ct",
+   "runtime": "vLLM (gemma4 tool and reasoning parsers)",
+   "reason": "The best Gemma for vLLM on 16 GB: an official Google 4-bit build at 10.26 GB (verified) that leaves room for a long context. Thinking toggle and native tools, Apache-2.0."
+  },
+  {
+   "name": "Gemma 4 26B-A4B IT (QAT Q4_0 GGUF)",
+   "hf_repo": "google/gemma-4-26B-A4B-it-qat-q4_0-gguf",
+   "runtime": "llama.cpp server-cuda / Ollama gemma4:26b",
+   "reason": "The strongest Gemma that can run here. 14.44 GB, so it may fit almost fully on the GPU or with light expert offload. MoE representative for Gemma, with thinking toggle and tools."
+  },
+  {
+   "name": "Qwen3.6-35B-A3B",
+   "hf_repo": "Qwen/Qwen3.6-35B-A3B",
+   "runtime": "llama.cpp (ggml-org GGUF Q4_K_M 20.5 GB, --n-cpu-moe) / Ollama qwen3.6",
+   "reason": "The best-documented Qwen MoE agentic coder. Small KV per token makes long context cheap. Thinking toggle and tools, with parsers qwen3_coder / qwen3 if served by vLLM."
+  },
+  {
+   "name": "Qwen3.8-27B (IQ4_XS / Q3 GGUF)",
+   "hf_repo": "Qwen/Qwen3.8-27B",
+   "runtime": "llama.cpp fully on GPU at about 13-14.4 GB GGUF",
+   "reason": "The newest and highest vendor-scored Qwen and the top trending model. The official FP8 is 30.87 GB and NVIDIA's NVFP4 is 21.92 GB, both verified, so it is GGUF-only here. Tests a dense model at a low-bit quant."
+  },
+  {
+   "name": "Qwen3.5-9B",
+   "hf_repo": "Qwen/Qwen3.5-9B",
+   "runtime": "vLLM with a community 4-bit build (about 9.1-9.4 GB; FP8-dynamic at 14.01 GB is too tight); alt llama.cpp Q8_0",
+   "reason": "The best official Qwen that fits fully on the GPU. Thinking toggle and tools, hybrid attention with cheap KV. Small-model baseline for the family."
+  },
+  {
+   "name": "Qwen3-Coder-30B-A3B-Instruct",
+   "hf_repo": "Qwen/Qwen3-Coder-30B-A3B-Instruct",
+   "runtime": "llama.cpp / Ollama with expert offload",
+   "reason": "Non-thinking tool-calling baseline that OpenCode's own docs cite as an example. Older (2025-07), but it is the reference for a 'no thinking, tools' setup."
+  },
+  {
+   "name": "Qwen3-Coder-Next",
+   "hf_repo": "Qwen/Qwen3-Coder-Next",
+   "runtime": "llama.cpp --cpu-moe (Q4_K_M 48.4 GB)",
+   "reason": "The strongest non-thinking Qwen coder (80B-A3B), and a stress test of how much RAM can be used for experts. It may be ruled out by the 41 GiB free-RAM limit."
+  },
+  {
+   "name": "NVIDIA Nemotron 3.5 Lightning 30B-A3B",
+   "hf_repo": "nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16",
+   "runtime": "llama.cpp (ggml-org GGUF Q4_0 18.9 GB, partial expert offload) / Ollama nemotron-3.5-lightning",
+   "reason": "The best Nemotron for agentic coding, with very small KV (about 6 KiB per token) for long context. Thinking toggle and tools."
+  },
+  {
+   "name": "NVIDIA Nemotron 3 Nano 4B",
+   "hf_repo": "nvidia/NVIDIA-Nemotron-3-Nano-4B-FP8",
+   "runtime": "vLLM (qwen3_coder plus the nano_v3 reasoning plugin, or nemotron_v3)",
+   "reason": "A Nemotron that fits fully in vLLM (BF16 7.95 GB verified; the FP8 build is smaller) with 256K context. Fast small agent with thinking toggle and tools."
+  },
+  {
+   "name": "NVIDIA Nemotron 3.5 Bolt E4B (GGUF)",
+   "hf_repo": "nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-4GB",
+   "runtime": "llama.cpp / Ollama nemotron-3.5-bolt",
+   "reason": "The newest small Nemotron (2026-10-05). BF16 is 15.99 GB, too big for vLLM, but the GGUF fits easily. Gemma-4-E4B base with gemma4 parsers."
+  },
+  {
+   "name": "Laguna XS 2.1",
+   "hf_repo": "poolside/Laguna-XS-2.1",
+   "runtime": "llama.cpp / Ollama laguna-xs-2.1 (20 GB); vLLM poolside_v1 parsers only if offload were possible",
+   "reason": "A purpose-built local agentic coder (33B-A3B, 262K context, interleaved thinking toggle, tools) with 587k downloads. Vendor scores SWE-bench Verified 70.9 and Terminal-Bench 2.0 37.5."
+  },
+  {
+   "name": "KAT-Coder-V2.5-Dev",
+   "hf_repo": "Kwaipilot/KAT-Coder-V2.5-Dev",
+   "runtime": "llama.cpp (community GGUF; existence to verify) with expert offload",
+   "reason": "A Qwen3.5-35B-A3B coding fine-tune, Apache-2.0. Highest of the small models in a third-party same-harness table (SWE-bench Verified 69.40). Thinking and tools with qwen3_coder / qwen3."
+  },
+  {
+   "name": "GLM-4.7-Flash",
+   "hf_repo": "zai-org/GLM-4.7-Flash",
+   "runtime": "llama.cpp / Ollama glm-4.7-flash (19 GB) with expert offload",
+   "reason": "A strong non-Qwen 30B-A3B MoE, MIT, thinking toggle and tools (glm47 / glm45). Diversifies the MoE tier."
+  },
+  {
+   "name": "Devstral Small 2 24B",
+   "hf_repo": "mistralai/Devstral-Small-2-24B-Instruct-2512",
+   "runtime": "llama.cpp (Q4 about 15 GB, short context or partial offload)",
+   "reason": "Best non-thinking dense coding agent with tools from a Western vendor. Highest small row on the official SWE-bench board (56.4). Tests the dense model at its KV limit."
+  },
+  {
+   "name": "Ministral 3 14B Reasoning / 8B Reasoning",
+   "hf_repo": "mistralai/Ministral-3-14B-Reasoning-2512",
+   "runtime": "llama.cpp (official GGUF); 8B in vLLM (mistral parser)",
+   "reason": "Official Apache-2.0 Reasoning and Instruct pairs that fit 16 GB. Clean coverage of thinking versus non-thinking at the dense 8-14B tier, which no lane ranked."
+  },
+  {
+   "name": "Ornith-1.5-9B (NVFP4)",
+   "hf_repo": "ornith-ai/Ornith-1.5-9B-NVFP4",
+   "runtime": "vLLM (8.82 GB NVFP4)",
+   "reason": "The strongest self-reported 9B agentic coder that fits fully in vLLM (SWE-bench Verified 70.6 claimed). Also exercises NVFP4 on sm_120. The org is unverified, so verify the claims and parser."
+  },
+  {
+   "name": "MiMo-V2.6-Distill-Qwen-9B",
+   "hf_repo": "XiaomiMiMo/MiMo-V2.6-Distill-Qwen-9B",
+   "runtime": "vLLM (online FP8) / Ollama mimo-v2.6:9b",
+   "reason": "A credible 9B alternative from a major vendor (Xiaomi, MIT, 2026-09-21) with thinking toggle and tools. The parser choice needs verification."
+  },
+  {
+   "name": "IBM Granite 4.2 8B",
+   "hf_repo": "ibm-granite/granite-4.2-8b",
+   "runtime": "vLLM (official MXFP4 5.88 GB or FP8)",
+   "reason": "An enterprise Apache-2.0 dense 8B with thinking toggle and tools. Small, fast fallback, and a test of MXFP4 on sm_120 for a dense model."
+  },
+  {
+   "name": "gpt-oss-120b",
+   "hf_repo": "openai/gpt-oss-120b",
+   "runtime": "llama.cpp --n-cpu-moe 32 (63.4 GB GGUF)",
+   "reason": "Covers the large gpt-oss member for completeness. The official ggml-org 16 GB recipe exists, but RAM is likely insufficient with the desktop running. Verify it or rule it out explicitly."
+  },
+  {
+   "name": "DeepSeek-R1-0528-Qwen3-8B",
+   "hf_repo": "deepseek-ai/DeepSeek-R1-0528-Qwen3-8B",
+   "runtime": "Ollama deepseek-r1:8b / llama.cpp GGUF",
+   "reason": "The only DeepSeek model that runs on this machine (every V3.2/V4/V4.1 model is 160 GB or more). Always thinks with no tool calling, so it is the 'thinking, no tools' example and not an OpenCode agent pick."
+  },
+  {
+   "name": "Gemma 4 E4B IT",
+   "hf_repo": "google/gemma-4-E4B-it-qat-w4a16-ct",
+   "runtime": "vLLM (gemma4 parsers)",
+   "reason": "A tiny Gemma 4 for fast tool-calling smoke tests of the Docker, vLLM and OpenCode pipeline before downloading larger models. Weak at agentic work (Tau2 42.2)."
+  }
+ ]
+}

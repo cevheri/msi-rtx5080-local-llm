@@ -1,0 +1,120 @@
+{
+ "verdicts": [
+  {
+   "claim": "Official NVIDIA repo (HF org nvidia isVerified=true), Model Developer NVIDIA Corporation, HF blog 'Nemotron 3 Nano 4B: A Compact Hybrid Model for Efficient Local AI' published 2026-03-17",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/organizations/nvidia/overview",
+   "correction": "API author=nvidia; org JSON isVerified true; blog HTML datePublished 2026-03-17T23:17:07Z, title matches (https://huggingface.co/blog/nvidia/nemotron-3-nano-4b)."
+  },
+  {
+   "claim": "createdAt 2026-03-07T01:23:35Z, lastModified 2026-03-20, card Release Date 3/16/2026, AA releaseDate 2026-03-16; inside 2025-11-15..2026-11-15",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16",
+   "correction": "All values match. Card also lists 'Model Dates: Dec 2025 - Jan 2026' (training window), not mentioned in the record."
+  },
+  {
+   "claim": "License: other / nvidia-nemotron-open-model-license, 'ready for commercial use', guardrail circumvention advisory",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16/raw/main/README.md",
+   "correction": "Front matter and lines 75 and 574 match. Full license text not read (also not by me)."
+  },
+  {
+   "claim": "Dense, 3.97B params (3,973,556,832 BF16), single model.safetensors 7,947,142,640 B, compressed from Nemotron-Nano-9B-v2 via Nemotron Elastic",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16?blobs=true",
+   "correction": "Matches. Note the card itself contradicts itself, saying both 'trained from scratch by NVIDIA' (line 69) and 'compressed from NVIDIA-Nemotron-Nano-9B-v2' (line 71, base_model tag)."
+  },
+  {
+   "claim": "Architecture: NemotronHForCausalLM, 42 layers, pattern with 21 M / 4 * / 17 -, hidden 3136, 40 Q heads, 8 KV heads, head_dim 128, mamba 96x80, ssm_state 128, n_groups 8, conv 4, relu2 12544, vocab 131072, untied, max_position_embeddings 262144",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16/raw/main/config.json",
+   "correction": "Every value matches raw config.json; KV 2x4x8x128x2=16384 B/token and 262144 tokens = 4.0 GiB check out; Mamba state about 84 MB/seq fp32 matches the ~80 MiB figure."
+  },
+  {
+   "claim": "Context 262144 native, card 'Context length up to 262K'; text-in text-out only; English",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16/raw/main/README.md",
+   "correction": "Card lines 144-154 and language: en confirmed. AA also lists text-in/text-out, 262k."
+  },
+  {
+   "claim": "Thinking on by default; enable_thinking toggle; generation prompt '<|im_start|>assistant\\n<think>\\n' vs '<|im_start|>assistant\\n<think></think>'; recommended temp 1.0/top_p 0.95 reasoning, 0.6/0.95 tool calling",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16/raw/main/chat_template.jinja",
+   "correction": "Template lines 12, 199-202 and card line 204/208 match. Card prose says reasoning 'can be controlled via a system prompt', but the template has no /think or /no_think handling; enable_thinking is the only mechanism. llama.cpp/Ollama toggles remain untested (record already says inferred)."
+  },
+  {
+   "claim": "Tool calling supported in Qwen3-Coder XML format <tool_call><function=..><parameter=..>, <tool_response> results; template reads message.reasoning_content; truncate_history_thinking default True",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16/raw/main/chat_template.jinja",
+   "correction": "Template lines 92, 107, 13, 148-156, 185-187 match. llama.cpp byte-identity and vLLM source claims were not re-checked in this pass."
+  },
+  {
+   "claim": "Checkpoints: FP8 5.27 GB (2 shards), official GGUF Q4_K_M only 2.84 GB, ggml-org Q8_0 4.23 GB + BF16 7.96 GB",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/nvidia/NVIDIA-Nemotron-3-Nano-4B-FP8?blobs=true",
+   "correction": "FP8 3,982,036,144 + 1,285,019,664 = 5.267 GB; nvidia GGUF single Q4_K_M 2,837,072,864 B; ggml-org Q8_0 4,233,681,088 B and BF16 7,957,649,728 B (createdAt 2026-03-16). Unsloth/bartowski/lmstudio sizes not re-checked."
+  },
+  {
+   "claim": "Ollama nemotron-3-nano:4b 2.8 GB, 256K context, tools and thinking badges, :latest is the 30B",
+   "verdict": "confirmed",
+   "evidence_url": "https://ollama.com/library/nemotron-3-nano/tags",
+   "correction": "Tags 4b, 4b-q8_0, 4b-bf16, 4b-nvfp4, 4b-mxfp8, 4b-mlx(-bf16) exist; :latest 18-24 GB = 30B. Badges tools, thinking; no vision."
+  },
+  {
+   "claim": "BFCL v3 61.1 (FP8 60.6), reasoning off and on",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Nano-4B-FP8/raw/main/README.md",
+   "correction": "Vendor self-reported; identical 61.1 in both reasoning tables of the BF16 card. FP8 60.6 in both FP8 tables."
+  },
+  {
+   "claim": "tau2 Airline/Retail/Telecom 28.0/34.8/24.9 off; 33.3/39.8/33.0 on; FP8 on 25.3/33.3/30.9",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Nano-4B-FP8/raw/main/README.md",
+   "correction": "Vendor self-reported, exact match. FP8 reasoning-off values (26.0/38.6/24.6) not in record but consistent."
+  },
+  {
+   "claim": "LiveCodeBench v5 51.8 (FP8 52.9), reasoning on",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Nano-4B-FP8/raw/main/README.md",
+   "correction": "Vendor self-reported. BF16 card labels it only 'LCB'; the v5 label comes from the FP8 card."
+  },
+  {
+   "claim": "IFEval prompt/instruction 82.8/88.0 off, 87.9/92.0 on",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16/raw/main/README.md",
+   "correction": "Vendor self-reported, exact match (lines 91-92, 109-110). Evaluation harness NeMo-Skills and Orak per card."
+  },
+  {
+   "claim": "RULER 128k 91.1 (Q4_K_M 91.2), reasoning off",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Nano-4B-GGUF/raw/main/README.md",
+   "correction": "Vendor self-reported, GGUF card line 95: 91.1 / 91.0 (FP8) / 91.2 (Q4_K_M)."
+  },
+  {
+   "claim": "Artificial Analysis Intelligence Index 2 (v5.0.1), no public API so no speed",
+   "verdict": "confirmed",
+   "evidence_url": "https://artificialanalysis.ai/models/nvidia-nemotron-3-nano-4b",
+   "correction": "Page text: 'scores 2 on the Artificial Analysis Intelligence Index ... (median: 3)', 'Intelligence Index v5.0.1', 'No publicly available API'. The v4.1 score of 9 on localized pages was not checked."
+  },
+  {
+   "claim": "NVIDIA blog measured on RTX 4070 with llama.cpp Q4_K_M and reports 18 tok/s on Jetson Orin Nano",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/blog/nvidia/nemotron-3-nano-4b",
+   "correction": "Blog contains 'RTX 4070 using Llama.cpp with Q4_K_M' and '18 tokens/s, up to 2x higher throughput'. Device attribution of 18 tok/s to Orin Nano not re-read in context."
+  },
+  {
+   "claim": "Intended use: edge NPCs, voice assistants, IoT; supported hardware includes GeForce RTX",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16/raw/main/README.md",
+   "correction": "Card lines 121 and 161."
+  },
+  {
+   "claim": "Card vLLM command needs vllm>=0.15.1 and uses --max-model-len 262144",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16/raw/main/README.md",
+   "correction": "Card lines 234 and 250. Recipe min version 0.11.2 not re-checked."
+  }
+ ],
+ "overall": "holds",
+ "summary": "I tried to refute the record's identity, capability and benchmark facts and could not refute any of them. Sources I read directly: the raw HF API, README, config.json and chat_template.jinja for nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16, the FP8 and GGUF cards, the HF blog page, the Ollama tags and library pages, and the Artificial Analysis page.\n\n- **Repo and dates:** the repo is NVIDIA's own, in the verified 'nvidia' org. Created 2026-03-07, card release date 2026-03-16, blog published 2026-03-17. All fall inside the window.\n- **Size, architecture, license:** the params (3,973,556,832), the architecture values, the 262144 context, text-only I/O and the license tag all match.\n- **Thinking:** the enable_thinking toggle (default True) and both generation prompts match.\n- **Tool calling:** the Qwen3-Coder XML tool-call format matches the template.\n- **Benchmarks:** every benchmark number matches its cited card exactly: BFCL 61.1/60.6, tau2, LCB 51.8/52.9, IFEval, and RULER 91.1/91.0/91.2. All of these are vendor self-reported from NeMo-Skills. The AA Index of 2 (v5.0.1, no public API) is confirmed and independent.\n- **Checkpoints and Ollama:** the FP8, official GGUF and ggml-org GGUF sizes and the Ollama tags and capabilities are confirmed.\n\nMinor caveats for the record:\n1. The card contradicts itself, saying both 'trained from scratch' and 'compressed from Nano-9B-v2'.\n2. The card says reasoning is controlled 'via a system prompt', but the template has no /think or /no_think handling. enable_thinking is the only working toggle.\n3. 'LiveCodeBench v5' is labeled only 'LCB' on the BF16 card. The v5 label comes from the FP8 card.\n\nNot re-verified here:\n- the vLLM and llama.cpp source-code claims: registry, parsers, test-chat.cpp and template byte-identity\n- the unsloth, bartowski and lmstudio GGUF sizes\n- the AA v4.1 score of 9\n- the full license text\n\nWorking files are in $SCRATCH/fc4b/."
+}

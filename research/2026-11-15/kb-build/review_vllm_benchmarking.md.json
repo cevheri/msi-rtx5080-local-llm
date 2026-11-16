@@ -1,0 +1,56 @@
+{
+ "file": "$HOME/projects/llm/vllm/benchmarking.md",
+ "checked_claims": 31,
+ "fixes": [
+  {
+   "what": "Line 81: 'the server has already reserved about 14.65 GiB' now says 'about 14.65 GiB at the default 0.92, or more where a recipe raises it (gpt-oss-20b recipe uses 0.95)'",
+   "why": "The verified gpt-oss-20b recipe uses --gpu-memory-utilization 0.95, so 14.65 GiB is not the reservation for every server",
+   "source": "ver/synthesis.json, ver/verify_gpt-oss-20b.json, vllm/config/cache.py L215 at v0.33.0"
+  },
+  {
+   "what": "bench sweep: added that sweep sets VLLM_SERVER_DEV_MODE=1 itself for the servers it starts",
+   "why": "sweep/server.py L52-53 passes env=os.environ | {VLLM_SERVER_DEV_MODE: 1}; the old text implied the user had to set it",
+   "source": "vllm/benchmarks/sweep/server.py at v0.33.0"
+  },
+  {
+   "what": "S5 include_reasoning bullet: says the warning is in the docs' Responses API section and marks its application to openai-chat as an inference",
+   "why": "The cli.md warning (L703-705) sits under the openai-responses backend section, not in general guidance",
+   "source": "docs/benchmarking/cli.md L670-705 at v0.33.0"
+  },
+  {
+   "what": "SQL benchmark caveats: added inline sources (openai-tool-call.ts, issue #4, benchmark.ts, result files, write-up), said the 300 s timeout was used by the author's local small-model runs, and added the 1 to 3 task run-to-run variance with its source and 'run it three times'",
+   "why": "The caveats had no inline sources. The review check corrected the timeout: local runs used 300 s, not the 120 s default",
+   "source": "kb/reviews/reddit-small-local.json (review and check), kb/reviews/reddit-18-models.json, src/reddit-small-local/benchmark.ts L63-71"
+  },
+  {
+   "what": "Desktop RTX 5080 sentence: 360 W now links to NVIDIA's desktop page, and 960 GB/s is labeled 'as modelled by community calculators'",
+   "why": "NVIDIA's desktop page does not print the bandwidth, so the figure needed its evidence label and a source",
+   "source": "docs/community-benchmarks.md L14-20, docs/sources.md L25"
+  },
+  {
+   "what": "Before-a-run step 6: linked the claim that the heavy wrapper does not cap Docker containers to host-setup.md",
+   "why": "Load-bearing claim had no link",
+   "source": "kb/current-knowledge.md Machine section, docs/host-setup.md L205"
+  },
+  {
+   "what": "Dev-mode security warning: quoted the exact log text and linked vllm/entrypoints/serve/__init__.py",
+   "why": "The old citation (envs.py, api_router.py) did not contain the warning",
+   "source": "vllm/entrypoints/serve/__init__.py L45 at v0.33.0"
+  },
+  {
+   "what": "New subsection 'OpenCode's real prompt size': read vllm:request_prompt_tokens_sum/_count before and after one OpenCode turn",
+   "why": "docs/opencode.md L174 says the exact prompt figure 'needs one logged request; see vllm/benchmarking.md', but this file had no such procedure. The histogram is observed once per finished request with its full num_prompt_tokens",
+   "source": "vllm/v1/metrics/loggers.py L863-871, L1318-1320 at v0.33.0"
+  }
+ ],
+ "remaining_concerns": [
+  "vllm/README.md and vllm/models.md do not exist yet, so the links to them, and the served names, tokenizer repos, --max-num-seqs values (Gemma 2, Ornith 4) and max-model-len values this file quotes, need a cross-check once those files are written. They match ver/synthesis.json today.",
+  "The SQL benchmark GitHub URLs (apps/cli/src/openai-tool-call.ts, issues/4, data/benchmarks) come from the review records' paths and were not opened live in this pass.",
+  "The new histogram procedure is derived from source and has not been run; mean prompt size is an average if OpenCode sends more than one request per turn.",
+  "Whether the v0.33.0 image ships pandas (needed for S5 custom dataset) and datasets (BFCL) is still unverified; the document already says so.",
+  "Verified without running anything (as the doc already states): bench serve defaults (backend, endpoint, num-prompts 1000, request-rate inf, max-concurrency None, random 1024/128/0.0, seed 0, num-warmups 0, percentile defaults ttft,tpot,itl and 99, --model from /v1/models, tokenizer fallback, result filename format), Dockerfile ENTRYPOINT [vllm, serve] for vllm-openai target, gpu_memory_utilization 0.92, enable_prefix_caching True, mamba align semantics, VLLM_SERVER_DEV_MODE and /reset_prefix_cache, KV log line text, five /metrics names, tool_choice auto default, latency.py 32/128/8 defaults, sweeps 3 runs and cache resets, GuideLLM recommendation, prefix-cache warning text, BFCL multi-turn unsupported, prefix_repetition and custom options, --no-enable-prefix-caching via BooleanOptionalAction, and the SQL benchmark CLI usage string. Each was checked against the local v0.33.0 clone (commit 4ba787e) or the review records.",
+  "Rule checks: no U+2013 or U+2014, no emoji, one sentence per prose line, Last verified line, Sources and Maintenance sections present, no published ports or restart policies in commands, and the client container has --memory 8g --memory-swap 8g."
+ ],
+ "verdict": "ready-with-concerns",
+ "used_playwright": false
+}

@@ -1,0 +1,57 @@
+{
+ "verdicts": [
+  {
+   "item": "Mac setup notes (M5 Max 64 GB = 40-core 614 GB/s; Ollama 0.32.13/0.33.0; 22-23 Aug 2026; gemma4:12b engine-drift case; rested-machine re-measure; best-case timings; tuning defaults; 179,999 ms timeout max)",
+   "verdict": "confirmed",
+   "evidence": "apple.com/macbook-pro/specs: 'M5 Max with 32-core GPU 36GB unified memory; M5 Max with 40-core GPU 48GB, 64GB, or 128GB', 40-core '614GB/s', 32-core '460GB/s'. methodology.md:10 (22-23 August 2026), :47 (M5 Max 64 GB), :50, :57-58 (gemma4:12b 5/5 to 1/5 on 0.33.0), :70 (best case), :88 (rested machine). model-tuning.md:116-126 defaults (ceiling 12, reminders 1, suppress*Reasoning false), :152-153 (no-entry model gets one plan ask and one unread-stop answer), :53 (turnTimeoutMs <=179999). setup.md:95 area: prose tool protocol decided per endpoint."
+  },
+  {
+   "item": "qwen2.5:7b Mac result and Ollama facts",
+   "verdict": "confirmed",
+   "evidence": "qwen2.5.md table: 4.7 GB, 6/10/5/9/5/2 s, median 6 s, slowest 21 s, all 5/5; one plan ask never spent; 'fastest model measured here'. Registry manifest 7b: model layer 4,683,073,952 bytes sha256:2bada8a74506, template 1482. ollama.com/library/qwen2.5/tags: 'qwen2.5:7b latest 845dbda0ea48 4.7GB 32K Text'."
+  },
+  {
+   "item": "qwen2.5:14b Mac result and Ollama facts",
+   "verdict": "confirmed",
+   "evidence": "qwen2.5.md: 17/35/1:03/18/13/1 s, median 18 s, slowest 1:05 (an assess run), 'Nothing. Measured at the defaults'. Manifest 14b: 8,988,110,688 bytes sha256:2049f5674b1e; tags page 7cdf5a0187d5 9.0GB 32K. Nuance: per model-tuning.md:152-153 a no-entry model is still offered one plan ask by default, so 'pure defaults' includes that ask; the page simply reports none was needed."
+  },
+  {
+   "item": "qwen2.5:32b Mac result and Ollama facts",
+   "verdict": "confirmed",
+   "evidence": "qwen2.5.md: 19/28/29/28/16/3 s, median 20 s, slowest 36 s; 'One plan ask, and this one is load-bearing ... Remove the ask and the cell is 4/5'. Manifest 32b: 19,851,336,288 bytes sha256:eabc98a9bcbf; tags page 9f13ba1299af 20GB 32K; page lists 19 GB."
+  },
+  {
+   "item": "qwen2.5-coder:14b Mac result and Ollama facts",
+   "verdict": "confirmed",
+   "evidence": "qwen2.5-coder.md: 29/34/21/17/10/1 s, median 20 s, slowest 37 s, 'every cell closed on its first attempt', one plan ask never spent, 'one data point'. Manifest: 8,988,110,784 bytes sha256:ac9bc7a69dab, template 1615 (vs 1482 for qwen2.5). Tags page 9ec8897f747e 9.0GB 32K."
+  },
+  {
+   "item": "qwq:32b Mac result and Ollama facts",
+   "verdict": "confirmed",
+   "evidence": "qwq.md: 69/189/208/75/70/61 s, median 76 s, slowest 6:00, 'Nothing' needed, no turn exceeded 90 s, roughly a dozen turns in 208 s, 150 s named as first fix, 'six other models on this list carry one'. Manifest: 19,851,336,480 bytes sha256:7ccc6415b2c7; params blob {repeat_penalty 1, temperature 0.6, top_k 40, top_p 0.95}. Tags page 009cb3f08d74 20GB 40K. ollama.com/library/qwq shows one capability span 'tools' (line 401); the two 'thinking' hits are description text, not a badge."
+  },
+  {
+   "item": "Fit arithmetic at 15.47 GiB and 64k",
+   "verdict": "confirmed",
+   "evidence": "KV per token: 7b 28x4x128x2x2 = 56 KiB (64k = 3.5 GiB); 14b 48x8x128x4 = 192 KiB (32k f16 6 GiB, 64k q8_0 about 6.4 GiB, total 14.8 GiB plus compute = 15.3-15.8 GiB, at the limit); 32b 64x8x128x4 = 256 KiB (64k f16 16 GiB). 18.49 GiB weights cannot fit in 15.47 GiB. Per-layer split about 0.29 GiB weights + 0.25 GiB (f16) or 0.13 GiB (q8_0) KV gives about 26-34 layers resident, matching the record. Layer split ignores the separate output/embedding tensors (about 0.6+ GiB), which slightly lowers the resident count, within the record's ranges."
+  },
+  {
+   "item": "Speed reasoning (bandwidth scaling and DDR5 spill)",
+   "verdict": "confirmed",
+   "evidence": "614 GB/s verified on apple.com. 7b: 4.68 GB -> 896/4.68 = 191, 614/4.68 = 131, matches '190 vs 130'. 32B spill: about 9.9 GB from DDR5 at 60-80 GB/s gives about 6-8 tok/s, consistent with 5-8. qwq 208 s / ~12 turns = ~17 s per turn, as stated.",
+   "correction": "For qwen2.5:14b the record's '107 vs 73 tok/s theoretical' divides GB/s by GiB (8.37). With bytes (8.99 GB) the ceilings are about 100 vs 68 tok/s; the 1.46x ratio and the 85-90 tok/s expectation are unaffected."
+  },
+  {
+   "item": "KB status mapping (not evaluated; community-benchmarks rows; vLLM parser mention)",
+   "verdict": "confirmed",
+   "evidence": "grep -i 'qwen2.5|qwq' docs/model-selection.md, README.md, llamacpp/models.md, vllm/models.md: no hits. Devstral exclusion at model-selection.md:246/303. community-benchmarks.md:75-77 (14b 94.48-97.02, coder 93.41-94.89, 7b 176.61-180.02 tok/s) and :301 (both qwen2.5-coder failed Tools, 14b 5/8). llamacpp/benchmarking.md:296 qwen2.5:14b row. platform-vllm-tools.json: hermes covers Qwen2.5 and QwQ-32B, deepseek_r1 for QwQ-32B. opencode.md:190 64k floor."
+  },
+  {
+   "item": "Recommendations (7b try-here-first, 14b and coder worth-trying, 32b and qwq skip-here)",
+   "verdict": "confirmed",
+   "evidence": "Follow from the verified sizes, fit arithmetic and Mac results; no contrary evidence found."
+  }
+ ],
+ "overall": "holds-with-corrections",
+ "summary": "I found nothing that refutes the qwen-older record. The Mac results for all five tags match the libredb pages (qwen/qwen2.5.md, qwen/qwen2.5-coder.md, qwen/qwq.md) cell for cell. The Ollama facts also match: layer byte sizes, tag ids, 32K/40K context, the qwq params blob and the 'tools'-only badge on qwq, checked against the live registry manifests and the ollama.com tag pages. apple.com confirms that a 64 GB M5 Max is the 40-core part at 614 GB/s. The fit arithmetic checks out, and so does the KB status mapping: none of the five appears in model-selection.md, only in the community-benchmarks rows :75-77 and :301. One small correction: the 14b decode ceilings divide GB/s by GiB. Computed in bytes they are about 100 vs 68 tok/s, not 107 vs 73. The ratio and the 85-90 tok/s laptop estimate do not change. One nuance on qwen2.5:14b: 'pure defaults' still includes the one plan ask that the default offers a model with no entry (model-tuning.md:152-153)."
+}

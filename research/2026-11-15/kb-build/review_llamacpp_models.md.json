@@ -1,0 +1,41 @@
+{
+ "file": "$HOME/projects/llm/llamacpp/models.md",
+ "checked_claims": 52,
+ "fixes": [
+  {
+   "what": "Groot memory line: the 13.9-14.4 GiB figure was labelled 'with the CUDA context', but that is the sum of weights 10.86 + KV 2.50 + 0.06 recurrent + 0.5-1.0 compute. It now reads 'plus about 0.4 GiB CUDA context'. The 262144 q8_0 case now gives KV 2.66 GiB and about 15.0 of 15.92 GiB including the CUDA context.",
+   "why": "The arithmetic contradicted its own label and understated VRAM at 256k.",
+   "source": "ranking rank 8 est_context; kb/newcand/groot-19b-a3b.json"
+  },
+  {
+   "what": "Nanbeige IQ2_M with q4_0 KV at 64k: changed 'about 15.2 GiB' to 'about 15.5-15.7 of 15.92 GiB including the CUDA context'.",
+   "why": "The authoritative ranking gives 15.5-15.7. The record's 15.2 leaves out the CUDA context.",
+   "source": "ranking new_candidates_assessment Nanbeige; kb/newcand/nanbeige4.3-33b.json"
+  },
+  {
+   "what": "Groot sampling line cited only 'card, README lines 86-88' without a link. It now links the model card raw README.",
+   "why": "Rule 7: every load-bearing claim needs an inline source link.",
+   "source": "https://huggingface.co/GrootTeam/Groot-19B-A3B-261023/raw/main/README.md"
+  },
+  {
+   "what": "Groot tool-calling line: added the chat.cpp b12407 link for routing to the Qwen3-Coder parser.",
+   "why": "The claim had no source.",
+   "source": "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/common/chat.cpp"
+  },
+  {
+   "what": "Groot 'altered verbatim path text' risk: the vague 'community reports' wording is replaced by the specific report (Polish words in file paths changed even when copying verbatim), linked to HF discussion #5 (open, 2026-11-01), which I checked live.",
+   "why": "The claim had no source.",
+   "source": "https://huggingface.co/GrootTeam/Groot-19B-A3B-261023/discussions/5"
+  }
+ ],
+ "remaining_concerns": [
+  "The table's GPU column is not consistent: some rows include about 0.4 GiB CUDA context (Qwen3.8 15.2, Bolt 14.8) and others follow the ranking values that leave it out (Groot 13.9-14.4, K2 7B 14.5, DeepSeek 13.7). I left the values as the authoritative ranking gives them; the lead may want one convention.",
+  "Qwen3.6 (20g vs about 16g) and Bolt (20g vs 16g) use a larger --memory cap than the ranking. The file justifies this with the 8 GiB default --cache-ram, confirmed at common.h cache_ram_mib = 8192, and 20g matches llamacpp/README.md. I kept the file's values.",
+  "Artificial Analysis scores (TB2.1, tau3) were checked against the research records and the ranking, not re-read live, because AA pages are rendered by JavaScript.",
+  "vllm/models.md is linked three times but does not exist yet. It is a planned KB document, so the links are correct once it is written.",
+  "A few minor figures still have no inline link: the Bolt LiLiCorr drafter size of 0.93 GiB, and the REAP-pruned Bolt GGUF at 12.46 GiB in the rejected table.",
+  "Nothing was run on this laptop. All VRAM, context and speed figures stay estimates or inferences and are labelled that way."
+ ],
+ "verdict": "ready-with-concerns",
+ "used_playwright": false
+}

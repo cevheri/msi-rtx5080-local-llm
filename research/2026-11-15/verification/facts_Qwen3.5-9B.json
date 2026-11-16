@@ -1,0 +1,128 @@
+{
+ "overall": "holds-with-corrections",
+ "summary": "I could not refute any identity or capability fact in the Qwen3.5-9B record. The repo is Qwen's own: the HF API gives author Qwen and createdAt 2026-02-27T12:58:26Z, inside the window. License is apache-2.0 and the LICENSE file is Apache 2.0. Safetensors total is 9,653,104,368 params, and the shard sizes add up to 19,306,310,880 bytes. All config.json values match the record: 32 layers, of which 8 are full attention; 4 KV heads; head_dim 256; GDN 16 QK / 32 V heads; max_position_embeddings 262144; untied embeddings; 1 MTP layer; a 27-layer vision tower. The chat template matches the cited lines: tools block at 45-53, XML tool_call replay at 105-127, enable_thinking switch at 149-152. Card line 955 confirms /think and /nothink are not supported. Every benchmark number matches its cited card: Qwen card LCB v6 65.6 (gpt-oss-20b 74.6), BFCL-V4 66.1, TAU2 79.1. Ornith card: SWE-V 53.2, SWE-Pro 31.3, TB2.1 21.3 / 18.9, Toolathlon 29.6. MiMo card: SWE-V 60.0, SWE-Pro 32.0, TB2.1 27.0, Toolathlon 25.9. RedHatAI NVFP4 and FP8 recovery numbers also match. The vLLM v0.33.0 mappings and the vLLM recipe (min_vllm_version 0.17.0, qwen3_coder, qwen3, --language-model-only, YaRN to 1,010,000) are confirmed. Three corrections: (1) The Qwen card does not say its benchmark table was run in thinking mode, so the BFCL 'thinking mode' setting is inferred. (2) The Ornith and MiMo numbers come from model vendors fine-tuning or competing with this model; they are not independent. The MiMo values are said to come from the MiMo-V2.6 technical report, and the MiMo harness is not stated. (3) The Ollama tag list leaves out 9b-mtp-nvfp4 (7.6GB) and 9b-mlx-bf16 (19GB). The card highlight mentions 'sparse Mixture-of-Experts' for the Qwen3.5 family, but this 9B config has no experts, and the recipe says dense, so 'Dense' stands. I did not re-check the llama.cpp, memory-arithmetic or speed claims. Raw files are in $SCRATCH/fc95/.",
+ "verdicts": [
+  {
+   "claim": "Official Qwen repo; org overview isVerified=false, 469 models, ~116k followers, team plan",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/organizations/Qwen/overview"
+  },
+  {
+   "claim": "HF createdAt 2026-02-27T12:58:26Z, lastModified 2026-03-02; card citation February 2026, blog qwen.ai/blog?id=qwen3.5; inside 2025-11-15..2026-11-15",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/Qwen/Qwen3.5-9B"
+  },
+  {
+   "claim": "License apache-2.0 with LICENSE file in repo",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Qwen/Qwen3.5-9B/raw/main/README.md"
+  },
+  {
+   "claim": "Params: card 9B; safetensors total 9,653,104,368 (BF16 9,653,100,528 + F32 3,840); BF16 checkpoint 19.31 GB; dense",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/Qwen/Qwen3.5-9B?blobs=true",
+   "correction": "Dense is backed by config.json (no expert fields) and by the vLLM recipe (architecture: dense). The card's highlights line about 'Gated Delta Networks combined with sparse Mixture-of-Experts' is family-level boilerplate and does not apply to this model. I did not re-read the vision and MTP split (0.849 / 0.453 GiB) from the safetensors headers."
+  },
+  {
+   "claim": "Architecture: Qwen3_5ForConditionalGeneration; 32 layers 3 linear + 1 full, interval 4; 16 Q / 4 KV heads, head_dim 256, partial rotary 0.25; GDN 16 QK / 32 V heads dim 128, conv 4, mamba_ssm_dtype float32; hidden 4096, FFN 12288, vocab 248320, untied, 1 MTP, 27-layer ViT hidden 1152",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Qwen/Qwen3.5-9B/raw/main/config.json"
+  },
+  {
+   "claim": "Context 262,144 native, up to 1,010,000 with YaRN factor 4.0 via --hf-overrides and VLLM_ALLOW_LONG_MAX_MODEL_LEN=1; card advises at least 128K",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Qwen/Qwen3.5-9B/raw/main/README.md"
+  },
+  {
+   "claim": "Modalities text/image/video in, text out (image-text-to-text); --language-model-only text-only command in card",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Qwen/Qwen3.5-9B/raw/main/README.md"
+  },
+  {
+   "claim": "Thinking on by default; template lines 149-152 emit empty think when enable_thinking false; /think and /nothink not supported (card line 955); chat_template_kwargs enable_thinking false",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Qwen/Qwen3.5-9B/raw/main/chat_template.jinja"
+  },
+  {
+   "claim": "Tool calling in Qwen3-Coder XML format; template tools block lines 45-53 and tool_call replay lines 105-127; card 'Qwen3.5 excels in tool calling' and --tool-call-parser qwen3_coder",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Qwen/Qwen3.5-9B/raw/main/chat_template.jinja"
+  },
+  {
+   "claim": "vLLM v0.33.0: registry line 617 Qwen3_5ForConditionalGeneration, 204 Qwen3_5ForCausalLM, 739 Qwen3_5MTP; tool_parsers line 206 qwen3_coder -> Qwen3EngineToolParser, qwen3_xml alias; reasoning line 168 qwen3 -> Qwen3ParserReasoningAdapter",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/tool_parsers/__init__.py"
+  },
+  {
+   "claim": "vLLM recipe: provider Qwen, model_id Qwen/Qwen3.5-9B, min_vllm_version 0.17.0, qwen3_coder/qwen3 parsers, MTP spec decoding, --language-model-only",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/vllm-project/recipes/blob/main/models/Qwen/Qwen3.5-9B.yaml"
+  },
+  {
+   "claim": "BFCL-V4 66.1 (Qwen card, thinking mode)",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Qwen/Qwen3.5-9B",
+   "correction": "The value is right and vendor self-reported. The card does not say this table was run in thinking mode; the thinking-mode label is inferred from the comparison columns (Thinking models) and from thinking being the default."
+  },
+  {
+   "claim": "TAU2-Bench 79.1 (Qwen card)",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Qwen/Qwen3.5-9B",
+   "correction": "Self-reported. Per the card footnote, the airline domain used the fixes from the Claude Opus 4.5 system card."
+  },
+  {
+   "claim": "LiveCodeBench v6 65.6, gpt-oss-20b 74.6 in same table",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Qwen/Qwen3.5-9B"
+  },
+  {
+   "claim": "SWE-bench Verified 53.2 (Ornith card, OpenHands, temp 1.0, 256k)",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/ornith-ai/Ornith-1.5-9B",
+   "correction": "This comes from a competitor fine-tune's own table (Ornith-1.5-9B), so it is not independent; Ornith also notes it modified the Qwen chat template for its evals. The footnote gives temp 1.0, top_p 0.95."
+  },
+  {
+   "claim": "SWE-bench Verified 60.0 (MiMo-V2.6-Distill card, avg@3, harness not stated)",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Distill-Qwen-9B",
+   "correction": "The card says the numbers are 'as reported in the MiMo-V2.6 technical report'. It is not independent: Xiaomi is fine-tuning this exact base."
+  },
+  {
+   "claim": "SWE-bench Pro 31.3 (Ornith) / 32.0 (MiMo)",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/ornith-ai/Ornith-1.5-9B"
+  },
+  {
+   "claim": "Terminal-Bench 2.1 21.3 (Ornith Terminus-2) / 18.9 (Ornith Claude Code) / 27.0 (MiMo avg@1)",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/ornith-ai/Ornith-1.5-9B"
+  },
+  {
+   "claim": "Toolathlon-Verified 29.6 (Ornith) / 25.9 (MiMo)",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Distill-Qwen-9B"
+  },
+  {
+   "claim": "RedHatAI NVFP4: MMLU-Pro 81.2 vs 82.9 (98.1%), GSM8K 95.7 vs 95.9, mean tokens 6,455 vs 5,029; Inspect, vLLM nightly, B200; GPTQ block 128; vision and MTP BF16; created 2026-11-05",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/RedHatAI/Qwen3.5-9B-NVFP4"
+  },
+  {
+   "claim": "RedHatAI FP8-dynamic: MMLU-Pro 82.4 vs 82.5, IFEval prompt-strict 88.9 vs 90.3; lm-eval, vllm 0.18.1; linear_attn, embed, lm_head, visual ignored",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/RedHatAI/Qwen3.5-9B-FP8-dynamic",
+   "correction": "The recipe's IGNORE_LAYERS list does not name MTP; the claim that MTP was left in BF16 is not stated there and was not verified."
+  },
+  {
+   "claim": "Ollama qwen3.5 badges vision/tools/thinking; 9b 6.6GB, 9b-q8_0 10GB, 9b-bf16 19GB, mtp-q4_K_M 9.0GB, mtp-q8_0 13GB, nvfp4 7.2GB, mxfp8 11GB, mlx 8.9GB; 256K window; 'ollama launch opencode --model qwen3.5'",
+   "verdict": "confirmed",
+   "evidence_url": "https://ollama.com/library/qwen3.5/tags",
+   "correction": "The list is incomplete: it leaves out qwen3.5:9b-mtp-nvfp4 (7.6GB) and qwen3.5:9b-mlx-bf16 (19GB)."
+  },
+  {
+   "claim": "llama.cpp b12418 chat.cpp line 1420 Qwen3.5 detection, LLM_ARCH_QWEN35; GGUF sizes; memory and speed arithmetic",
+   "verdict": "uncertain",
+   "correction": "Not re-checked in this fact-check lane, which covered identity and capability only."
+  }
+ ]
+}

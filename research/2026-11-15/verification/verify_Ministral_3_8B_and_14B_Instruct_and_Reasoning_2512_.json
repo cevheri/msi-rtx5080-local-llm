@@ -1,0 +1,371 @@
+{
+ "name": "Ministral 3 (8B and 14B, Instruct and Reasoning, 2512)",
+ "hf_repo": "mistralai/Ministral-3-14B-Reasoning-2512",
+ "official_org": {
+  "value": "Mistral AI. The HF org 'mistralai' is verified (isVerified=true, fullname 'Mistral', 83 models). The vendor blog 'Introducing Mistral 3' and the model cards link to each other.",
+  "source_url": "https://huggingface.co/api/organizations/mistralai/overview",
+  "support": "direct-statement"
+ },
+ "release_date": {
+  "value": "Public release 2025-12-02: the mistral.ai/news/mistral-3 page has datePublished 2025-12-02T16:00:00Z, the ggml-org GGUFs were created 2025-12-02, and Artificial Analysis lists releaseDate 2025-12-02. The HF createdAt of the main repos is 2025-10-31 (14B-Reasoning 08:42:28Z, 14B-Instruct 08:43:24Z, 8B-Reasoning 08:41:36Z, 8B-Instruct 08:43:35Z). Those repos were created while still private. The repos were last modified 2026-07-15. The paper is arXiv 2601.08584 (2026-01-13). The 2025-12-02 release falls inside 2025-11-15..2026-11-15.",
+  "source_url": "https://mistral.ai/news/mistral-3",
+  "support": "direct-statement"
+ },
+ "within_last_12_months": true,
+ "license": {
+  "value": "apache-2.0 (card tag 'license: apache-2.0'). The card text says 'Open-source license allowing usage and modification for both commercial and non-commercial purposes' and adds only 'You must not use this model in a manner that infringes ... any third party's rights'. There is no use-based restriction and no gating (gated=false in the API).",
+  "source_url": "https://huggingface.co/mistralai/Ministral-3-14B-Reasoning-2512/raw/main/README.md",
+  "support": "direct-statement"
+ },
+ "params": {
+  "value": "Both sizes are dense, so all parameters are active. 14B: the card says 13.5B language model plus 0.4B vision encoder; the HF API safetensors total is 13,945,031,680. 8B: the card says 8.4B LM plus 0.4B vision; the API total is 8,918,026,240. The Instruct repos store weights in FP8: 14B has 12.16B F8_E4M3 plus 1.78B BF16, 8B has 7.42B F8_E4M3 plus 1.50B BF16. The Reasoning repos are pure BF16.",
+  "source_url": "https://huggingface.co/api/models/mistralai/Ministral-3-14B-Reasoning-2512",
+  "support": "direct-statement"
+ },
+ "architecture": {
+  "value": "The class is Mistral3ForConditionalGeneration (model_type mistral3; the text model is ministral3) with a Pixtral vision tower: 24 layers, hidden 1024, 0.4B parameters. 14B text: 40 layers, hidden 5120, FFN 16384, 32 query heads, 8 KV heads, head_dim 128, vocab 131072, untied embeddings. 8B text: 34 layers, hidden 4096, FFN 14336, 32 query heads, 8 KV heads, head_dim 128. Every layer uses full GQA attention (sliding_window null). There are no Mamba, linear or MLA layers. RoPE is YaRN with factor 16 over an original 16384 (plus llama_4_scaling beta 0.1); rope_theta is 1e9 on the 14B and 1e6 on the 8B. The paper describes 'Cascade Distillation' (pruning plus distillation).",
+  "source_url": "https://huggingface.co/mistralai/Ministral-3-14B-Reasoning-2512/raw/main/config.json",
+  "support": "direct-statement"
+ },
+ "context_length": {
+  "value": "262144 tokens (max_position_embeddings 262144; YaRN factor 16 x original 16384). The card says 'Supports a 256k context window'. Ollama lists 256K.",
+  "source_url": "https://huggingface.co/mistralai/Ministral-3-14B-Reasoning-2512/raw/main/config.json",
+  "support": "direct-statement"
+ },
+ "modalities": {
+  "value": "Input is text plus images; output is text. Text-only paths exist: vLLM v0.33.0 has --language-model-only, which the vLLM recipe lists as 'text_only: Skip loading the vision encoder ... frees VRAM for KV cache'. In llama.cpp, leave out the mmproj file (--no-mmproj). No text-only checkpoint exists from Mistral; one community build does (ppetermann/Ministral-3-8B-Instruct-2512-textonly-NVFP4, unverified).",
+  "source_url": "https://github.com/vllm-project/recipes/blob/main/models/mistralai/Ministral-3-14B-Instruct-2512.yaml",
+  "support": "direct-statement"
+ },
+ "thinking": {
+  "mode": "separate-variant",
+  "how_to_toggle": "There is no per-request switch. Thinking is chosen by variant: the *-Reasoning-2512 models think, the *-Instruct-2512 models do not. Neither chat template has an enable_thinking or reasoning_effort kwarg. In the Reasoning template, a default system prompt ('# HOW YOU SHOULD THINK AND ANSWER ... [THINK]...[/THINK]') is inserted ONLY when the first message is not a system message. OpenCode always sends its own system prompt, so the card's advice applies: append SYSTEM_PROMPT.txt (the THINK instructions) to your custom system prompt, or the model may not think. vLLM: --reasoning-parser mistral puts the [THINK] text into the 'reasoning' field. The card recommends keeping reasoning traces in multi-turn context; the template accepts reasoning/reasoning_content on assistant turns. llama.cpp: a dedicated Ministral 3 handler (common/parsers/ministral3.cpp) extracts [THINK]...[/THINK] when reasoning_format is not none. Ollama: the library has Instruct tags only, so there is no thinking. Recommended sampling: Reasoning temperature 1.0 (card) or 0.7/top_p 0.95 (card examples); Instruct temperature below 0.1.",
+  "source_url": "https://huggingface.co/mistralai/Ministral-3-14B-Reasoning-2512/raw/main/chat_template.jinja",
+  "support": "direct-statement"
+ },
+ "tool_calling": {
+  "supported": "yes",
+  "format": "Mistral v13 tekken control tokens: [AVAILABLE_TOOLS]<json>[/AVAILABLE_TOOLS] in the prompt, and output [TOOL_CALLS]name[ARGS]{json} (no [CALL_ID]), with results in [TOOL_RESULTS].",
+  "evidence": "Both the Instruct and Reasoning chat_template.jinja render tools: \"set available_tools = '[AVAILABLE_TOOLS]' + (tools|tojson) + '[/AVAILABLE_TOOLS]'\", which is emitted before the last user turn. The card says 'Agentic: Offers best-in-class agentic capabilities with native function calling and JSON outputting'. The card serve commands use --enable-auto-tool-choice --tool-call-parser mistral. The paper says tool execution was enabled during online preference optimisation, and the reasoning SFT data includes tool use. The official GGUFs embed the same template (6206 chars; it contains [SYSTEM_PROMPT], [TOOL_CALLS] and [ARGS] but no [CALL_ID]), which matches llama.cpp's detection rule for its Ministral 3 handler.",
+  "source_url": "https://huggingface.co/mistralai/Ministral-3-14B-Instruct-2512/raw/main/chat_template.jinja",
+  "support": "direct-statement"
+ },
+ "checkpoints": [
+  {
+   "repo": "mistralai/Ministral-3-14B-Reasoning-2512",
+   "format": "BF16 safetensors (HF shards 27.89 GB; plus a duplicate consolidated.safetensors of 27.89 GB in Mistral format)",
+   "size_gb": 27.89,
+   "official": true,
+   "publisher": "mistralai",
+   "source_url": "https://huggingface.co/api/models/mistralai/Ministral-3-14B-Reasoning-2512?blobs=true"
+  },
+  {
+   "repo": "mistralai/Ministral-3-14B-Instruct-2512",
+   "format": "FP8 E4M3, static activation scale (vision tower, projector and lm_head kept in BF16); HF shards 15.73 GB = 14.65 GiB",
+   "size_gb": 15.73,
+   "official": true,
+   "publisher": "mistralai",
+   "source_url": "https://huggingface.co/api/models/mistralai/Ministral-3-14B-Instruct-2512?blobs=true"
+  },
+  {
+   "repo": "mistralai/Ministral-3-14B-Instruct-2512-BF16",
+   "format": "BF16 safetensors",
+   "size_gb": 27.89,
+   "official": true,
+   "publisher": "mistralai",
+   "source_url": "https://huggingface.co/api/models/mistralai/Ministral-3-14B-Instruct-2512-BF16?blobs=true"
+  },
+  {
+   "repo": "mistralai/Ministral-3-8B-Reasoning-2512",
+   "format": "BF16 safetensors",
+   "size_gb": 17.84,
+   "official": true,
+   "publisher": "mistralai",
+   "source_url": "https://huggingface.co/api/models/mistralai/Ministral-3-8B-Reasoning-2512?blobs=true"
+  },
+  {
+   "repo": "mistralai/Ministral-3-8B-Instruct-2512",
+   "format": "FP8 E4M3 static; HF shards 10.42 GB = 9.70 GiB",
+   "size_gb": 10.42,
+   "official": true,
+   "publisher": "mistralai",
+   "source_url": "https://huggingface.co/api/models/mistralai/Ministral-3-8B-Instruct-2512?blobs=true"
+  },
+  {
+   "repo": "mistralai/Ministral-3-14B-Reasoning-2512-GGUF",
+   "format": "GGUF Q4_K_M 8.24 GB / Q5_K_M 9.62 / Q8_0 14.36 / BF16 27.02; mmproj BF16 0.88",
+   "size_gb": 8.24,
+   "official": true,
+   "publisher": "mistralai",
+   "source_url": "https://huggingface.co/api/models/mistralai/Ministral-3-14B-Reasoning-2512-GGUF?blobs=true"
+  },
+  {
+   "repo": "mistralai/Ministral-3-14B-Instruct-2512-GGUF",
+   "format": "GGUF Q4_K_M 8.24 GB / Q5_K_M 9.62 / Q8_0 14.36 / BF16 27.02; mmproj BF16 0.88",
+   "size_gb": 8.24,
+   "official": true,
+   "publisher": "mistralai",
+   "source_url": "https://huggingface.co/api/models/mistralai/Ministral-3-14B-Instruct-2512-GGUF?blobs=true"
+  },
+  {
+   "repo": "mistralai/Ministral-3-8B-Reasoning-2512-GGUF",
+   "format": "GGUF Q4_K_M 5.20 GB / Q5_K_M 6.06 / Q8_0 9.03 / BF16 16.99; mmproj 0.86",
+   "size_gb": 9.03,
+   "official": true,
+   "publisher": "mistralai",
+   "source_url": "https://huggingface.co/api/models/mistralai/Ministral-3-8B-Reasoning-2512-GGUF?blobs=true"
+  },
+  {
+   "repo": "mistralai/Ministral-3-8B-Instruct-2512-GGUF",
+   "format": "GGUF Q4_K_M 5.20 GB / Q5_K_M 6.06 / Q8_0 9.03 / BF16 16.99; mmproj 0.86",
+   "size_gb": 9.03,
+   "official": true,
+   "publisher": "mistralai",
+   "source_url": "https://huggingface.co/api/models/mistralai/Ministral-3-8B-Instruct-2512-GGUF?blobs=true"
+  },
+  {
+   "repo": "ggml-org/Ministral-3-14B-Reasoning-2512-GGUF",
+   "format": "GGUF Q8_0 14.36 GB + mmproj Q8_0 0.47 GB",
+   "size_gb": 14.36,
+   "official": false,
+   "publisher": "ggml-org",
+   "source_url": "https://huggingface.co/api/models/ggml-org/Ministral-3-14B-Reasoning-2512-GGUF?blobs=true"
+  },
+  {
+   "repo": "ggml-org/Ministral-3-14B-Instruct-2512-GGUF",
+   "format": "GGUF Q8_0 14.36 GB + mmproj Q8_0 0.47 GB",
+   "size_gb": 14.36,
+   "official": false,
+   "publisher": "ggml-org",
+   "source_url": "https://huggingface.co/api/models/ggml-org/Ministral-3-14B-Instruct-2512-GGUF?blobs=true"
+  },
+  {
+   "repo": "ggml-org/Ministral-3-8B-Reasoning-2512-GGUF",
+   "format": "GGUF Q8_0 9.03 GB + mmproj 0.46 GB",
+   "size_gb": 9.03,
+   "official": false,
+   "publisher": "ggml-org",
+   "source_url": "https://huggingface.co/api/models/ggml-org/Ministral-3-8B-Reasoning-2512-GGUF?blobs=true"
+  },
+  {
+   "repo": "ggml-org/Ministral-3-8B-Instruct-2512-GGUF",
+   "format": "GGUF Q8_0 9.03 GB + mmproj 0.46 GB",
+   "size_gb": 9.03,
+   "official": false,
+   "publisher": "ggml-org",
+   "source_url": "https://huggingface.co/api/models/ggml-org/Ministral-3-8B-Instruct-2512-GGUF?blobs=true"
+  },
+  {
+   "repo": "RedHatAI/Ministral-3-14B-Instruct-2512-NVFP4",
+   "format": "NVFP4 W4A4 (llm-compressor). Only the MLPs are FP4; attention, embeddings, lm_head and vision stay BF16 (read from the safetensors header). Single consolidated.safetensors of 13.42 GB = 12.50 GiB",
+   "size_gb": 13.42,
+   "official": false,
+   "publisher": "RedHatAI",
+   "source_url": "https://huggingface.co/api/models/RedHatAI/Ministral-3-14B-Instruct-2512-NVFP4/tree/main"
+  },
+  {
+   "repo": "RedHatAI/Ministral-3-14B-Instruct-2512-FP8-dynamic",
+   "format": "FP8 dynamic; model.safetensors 17.83 GB (plus consolidated 15.73 GB)",
+   "size_gb": 17.83,
+   "official": false,
+   "publisher": "RedHatAI",
+   "source_url": "https://huggingface.co/api/models/RedHatAI/Ministral-3-14B-Instruct-2512-FP8-dynamic/tree/main"
+  },
+  {
+   "repo": "cyankiwi/Ministral-3-14B-Reasoning-2512-AWQ-4bit",
+   "format": "compressed-tensors pack-quantized W4A16 group 32 (vision, projector and lm_head unquantized); HF shards 9.68 GiB (10.39 GB) plus a duplicate consolidated 9.69 GiB",
+   "size_gb": 10.39,
+   "official": false,
+   "publisher": "cyankiwi",
+   "source_url": "https://huggingface.co/api/models/cyankiwi/Ministral-3-14B-Reasoning-2512-AWQ-4bit?blobs=true"
+  },
+  {
+   "repo": "cyankiwi/Ministral-3-8B-Reasoning-2512-AWQ-4bit",
+   "format": "compressed-tensors W4A16; HF shards 6.69 GiB (7.18 GB) plus a duplicate consolidated",
+   "size_gb": 7.18,
+   "official": false,
+   "publisher": "cyankiwi",
+   "source_url": "https://huggingface.co/api/models/cyankiwi/Ministral-3-8B-Reasoning-2512-AWQ-4bit?blobs=true"
+  },
+  {
+   "repo": "cyankiwi/Ministral-3-14B-Instruct-2512-AWQ-4bit",
+   "format": "compressed-tensors W4A16; same sizes as the 14B Reasoning AWQ",
+   "size_gb": 10.39,
+   "official": false,
+   "publisher": "cyankiwi",
+   "source_url": "https://huggingface.co/api/models/cyankiwi/Ministral-3-14B-Instruct-2512-AWQ-4bit?blobs=true"
+  },
+  {
+   "repo": "unsloth/Ministral-3-14B-Instruct-2512-GGUF",
+   "format": "GGUF (multiple quants; per-file sizes not pulled)",
+   "official": false,
+   "publisher": "unsloth",
+   "source_url": "https://huggingface.co/api/models?author=unsloth&search=Ministral-3"
+  },
+  {
+   "repo": "unsloth/Ministral-3-14B-Reasoning-2512-GGUF",
+   "format": "GGUF (multiple quants)",
+   "official": false,
+   "publisher": "unsloth",
+   "source_url": "https://huggingface.co/api/models?author=unsloth&search=Ministral-3"
+  },
+  {
+   "repo": "bartowski/mistralai_Ministral-3-14B-Reasoning-2512-GGUF",
+   "format": "GGUF (multiple quants)",
+   "official": false,
+   "publisher": "bartowski",
+   "source_url": "https://huggingface.co/api/models?author=bartowski&search=Ministral-3"
+  },
+  {
+   "repo": "lmstudio-community/Ministral-3-14B-Reasoning-2512-GGUF",
+   "format": "GGUF",
+   "official": false,
+   "publisher": "lmstudio-community",
+   "source_url": "https://huggingface.co/api/models?author=lmstudio-community&search=Ministral-3"
+  },
+  {
+   "repo": "unsloth/Ministral-3-14B-Instruct-2512-FP8",
+   "format": "FP8, 15.73 GB (same as official)",
+   "size_gb": 15.73,
+   "official": false,
+   "publisher": "unsloth",
+   "source_url": "https://huggingface.co/api/models/unsloth/Ministral-3-14B-Instruct-2512-FP8?blobs=true"
+  }
+ ],
+ "vllm": {
+  "arch_supported": "Yes. At tag v0.33.0, vllm/model_executor/models/registry.py line 541 maps 'Mistral3ForConditionalGeneration' to (mistral3, Mistral3ForConditionalGeneration), and line 178 maps 'Ministral3ForCausalLM' to MistralForCausalLM. --language-model-only exists in v0.33.0 arg_utils.py (line 1497).",
+  "min_version": "Card: vllm >= 0.12.0 with mistral_common >= 1.8.6. The vLLM recipe says min_vllm_version 0.11.0. v0.33.0 is fine.",
+  "best_checkpoint": "Thinking: cyankiwi/Ministral-3-14B-Reasoning-2512-AWQ-4bit (9.68 GiB, W4A16 Marlin), or the 8B Reasoning AWQ for more context. No thinking: the official mistralai/Ministral-3-8B-Instruct-2512 (FP8, 9.70 GiB). The official 14B Instruct FP8 (14.65 GiB) and the 14B BF16 checkpoints do NOT fit.",
+  "serve_command": "8B Instruct (official FP8, no thinking): docker run --gpus all --ipc=host -p 8000:8000 -v ~/.cache/huggingface:/root/.cache/huggingface -e VLLM_DISABLED_KERNELS=FlashInferFP8ScaledMMLinearKernel vllm/vllm-openai:v0.33.0 mistralai/Ministral-3-8B-Instruct-2512 --tokenizer-mode mistral --config-format mistral --load-format mistral --language-model-only --max-model-len 65536 --kv-cache-dtype fp8 --attention-backend TRITON_ATTN --enable-auto-tool-choice --tool-call-parser mistral --served-model-name ministral-3-8b-instruct\n14B Reasoning (community AWQ, thinking): docker run --gpus all --ipc=host -p 8000:8000 -v ~/.cache/huggingface:/root/.cache/huggingface vllm/vllm-openai:v0.33.0 cyankiwi/Ministral-3-14B-Reasoning-2512-AWQ-4bit --tokenizer-mode mistral --language-model-only --gpu-memory-utilization 0.95 --max-model-len 65536 --kv-cache-dtype fp8 --attention-backend TRITON_ATTN --enable-auto-tool-choice --tool-call-parser mistral --reasoning-parser mistral --served-model-name ministral-3-14b-reasoning\n(The card and recipe base command is: vllm serve <repo> --tokenizer_mode mistral --config_format mistral --load_format mistral --enable-auto-tool-choice --tool-call-parser mistral [--reasoning-parser mistral].)",
+  "tool_call_parser": "mistral (v0.33.0 vllm/tool_parsers/__init__.py: 'mistral' -> mistral_tool_parser.MistralToolParser)",
+  "reasoning_parser": "mistral (v0.33.0 vllm/reasoning/__init__.py line 139: 'mistral' -> MistralParserReasoningAdapter, built on vllm/parser/mistral.py, which detects [THINK] special tokens for v13+ tokenizers)",
+  "quant_on_sm120": "In the v0.33.0 source, W4A16 compressed-tensors (AWQ-style) runs on MarlinLinearKernel, whose get_min_capability is 75, so sm_120 is supported (inferred from source). FP8 static (the official Instruct) runs on the FP8 scaled-mm path; open issue #55571 reports Xid 13 / illegal memory access on SM120 under sustained FP8 load with FlashInferFP8ScaledMMLinearKernel, and VLLM_DISABLED_KERNELS=FlashInferFP8ScaledMMLinearKernel avoids it. NVFP4 (RedHatAI) would use the SM120 FP4 kernels but leaves only about 1.8 GiB for KV cache.",
+  "weights_gib": 9.7,
+  "kv_bytes_per_token_bf16": 139264,
+  "kv_math": "Budget 16303 MiB x 0.92 = 14999 MiB = 14.65 GiB; reserve 1.2 GiB. KV per token, BF16: 14B = 2 x 40 layers x 8 x 128 x 2 = 163,840 B (160 KiB); 8B = 2 x 34 x 8 x 128 x 2 = 139,264 B (136 KiB). FP8 KV halves both. All layers are full attention, so cost is linear in context.\n- 8B Instruct FP8 official, 9.70 GiB: KV pool 3.74 GiB, giving 28.8k (BF16) / 57.7k (FP8). With --language-model-only (minus about 0.80 GiB vision): 4.54 GiB, giving 35.0k / 70.0k.\n- 8B Reasoning AWQ, 6.69 GiB: 6.76 GiB, giving 52.1k / 104.2k. Language-only: 7.56 GiB, giving 58.3k / 116.5k.\n- 14B Reasoning or Instruct AWQ, 9.68 GiB: 3.77 GiB, giving 24.7k / 49.4k. Language-only (minus 0.82): 4.59 GiB, giving 30.1k / 60.1k. At gpu-mem-util 0.95 (15.13 GiB) and language-only: 5.07 GiB, giving about 33k / 66k.\n- 14B NVFP4 RedHat, 12.50 GiB: 0.95 GiB, giving 6.2k / 12.4k. Language-only: 1.77 GiB, giving 11.6k / 23.2k.\n- 14B Instruct FP8 official, 14.65 GiB: does not fit (pool -1.2 GiB; -0.38 GiB language-only).\n- 14B or 8B Reasoning BF16 (25.97 / 16.61 GiB): does not fit.",
+  "est_max_context_tokens": 70000,
+  "fits": "yes",
+  "known_issues": "Open vLLM issues:\n- #53481 (open, mistral label): the FLASHINFER attention backend gives degenerate output for Mistral3 on sm_120 (reproduced on an RTX 5090) with any KV dtype. Forcing --kv-cache-dtype fp8 removes FLASH_ATTN from the candidates, so auto-selection lands on FlashInfer. The workaround is --attention-backend TRITON_ATTN. Fix PR #53754 is still unmerged.\n- #48945 (open): 'Ministral is broken with --kv-cache-dtype fp8' (the same root cause).\n- #66113 (open, 2026-11-06): Ministral-3 FP8 with --config-format hf builds the vision tower as FP8, so image embeddings are zero. Use the mistral config format, or --language-model-only.\n- #64309 (open): thinking_token_budget never triggers for [THINK] Mistral models.\n- #67520 (open, 2026-11-13): mistral parser tests fail on main after tool_choice=None was normalised to 'none'; it is a main-branch regression, so check v0.34.\n- #58145 (open): the Mistral grammar path rebuilds the tool parser on the event loop on every request (a latency cost).\n- #55571 (open): FP8 Xid on SM120 (see above).\nClosed: #29968 (streaming tool calls), #40318 (text-only startup).",
+  "sources": [
+   "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/model_executor/models/registry.py",
+   "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/reasoning/__init__.py",
+   "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/tool_parsers/__init__.py",
+   "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/parser/mistral.py",
+   "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/engine/arg_utils.py",
+   "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/model_executor/kernels/linear/mixed_precision/marlin.py",
+   "https://github.com/vllm-project/recipes/blob/main/models/mistralai/Ministral-3-14B-Instruct-2512.yaml",
+   "https://github.com/vllm-project/recipes/blob/main/models/mistralai/Ministral-3-8B-Reasoning-2512.yaml",
+   "https://huggingface.co/mistralai/Ministral-3-14B-Reasoning-2512/raw/main/README.md",
+   "https://github.com/vllm-project/vllm/issues/53481",
+   "https://github.com/vllm-project/vllm/issues/48945",
+   "https://github.com/vllm-project/vllm/issues/66113",
+   "https://github.com/vllm-project/vllm/issues/64309",
+   "https://github.com/vllm-project/vllm/issues/67520",
+   "https://github.com/vllm-project/vllm/issues/55571",
+   "https://github.com/vllm-project/vllm/pull/53754"
+  ]
+ },
+ "llamacpp": {
+  "arch_supported": "Yes. llama.cpp src/llama-arch.cpp at b12418 has LLM_ARCH_MISTRAL3 'mistral3', and the official GGUF header reads general.architecture=mistral3. A dedicated chat handler, common/parsers/ministral3.cpp, is selected in common/chat.cpp line 1271 when the template has [SYSTEM_PROMPT], [TOOL_CALLS] and [ARGS] but no [CALL_ID]. It handles [THINK] reasoning, parallel tool calls and a lazy grammar triggered on [TOOL_CALLS]. tests/test-chat.cpp tests the models/templates/mistralai-Ministral-3-14B-Reasoning-2512.jinja template. b12418 (2026-11-15) is marked prerelease, like every bNNNN build.",
+  "gguf_repo": "mistralai/Ministral-3-14B-Reasoning-2512-GGUF (or -Instruct-2512-GGUF for no thinking)",
+  "quant": "Q4_K_M (7.67 GiB). Q5_K_M (8.96 GiB) fits about 64k only just. For the 8B, Q8_0 (8.41 GiB).",
+  "file_gib": 7.67,
+  "est_vram_gib": 13.8,
+  "est_ram_gib": 1,
+  "est_context_tokens": 65536,
+  "offload_plan": "Everything on the GPU (-ngl 99). The model is dense, so --n-cpu-moe does not apply. Leave out mmproj for text-only use. VRAM = GGUF + q8_0 KV (14B: 160 KiB x 34/64 = 85 KiB/token; 8B: 72.25 KiB/token) + about 0.8 GiB compute. 14B Q4_K_M: 32k 11.1 GiB, 64k 13.8 GiB, 80k about 15.1 GiB (tight), 96k 16.4 GiB (no). 14B Q5_K_M at 64k: 15.1 GiB (tight). 14B Q8_0 at 32k: 16.8 GiB (no). 8B Q8_0 at 64k: 13.7 GiB. 8B Q4_K_M at 128k: 14.7 GiB. With F16 KV, 14B Q4_K_M at 64k needs 18.5 GiB (no), so q8_0 KV is required.",
+  "server_command": "docker run --gpus all -p 8080:8080 -v ~/models:/models ghcr.io/ggml-org/llama.cpp:server-cuda13 -m /models/Ministral-3-14B-Reasoning-2512-Q4_K_M.gguf --jinja -ngl 99 -c 65536 -fa on -ctk q8_0 -ctv q8_0 --temp 0.7 --top-p 0.95 --host 0.0.0.0 --port 8080 --alias ministral-3-14b-reasoning  (for the Instruct GGUF, use --temp 0.1)",
+  "tool_calling_note": "--jinja (on by default) uses the embedded template. The official GGUF embeds the full 6206-char template with [AVAILABLE_TOOLS], [TOOL_CALLS] and [ARGS] and no [CALL_ID], so the dedicated Ministral 3 PEG parser is used: tool calls come back as OpenAI tool_calls, and reasoning comes back in reasoning_content. Not tested end to end on this machine.",
+  "sources": [
+   "https://github.com/ggml-org/llama.cpp/blob/b12418/src/llama-arch.cpp",
+   "https://github.com/ggml-org/llama.cpp/blob/b12418/common/chat.cpp",
+   "https://github.com/ggml-org/llama.cpp/blob/b12418/common/parsers/ministral3.cpp",
+   "https://huggingface.co/api/models/mistralai/Ministral-3-14B-Reasoning-2512-GGUF?blobs=true",
+   "https://huggingface.co/mistralai/Ministral-3-14B-Reasoning-2512-GGUF/resolve/main/Ministral-3-14B-Reasoning-2512-Q4_K_M.gguf (header range-read)"
+  ]
+ },
+ "ollama": {
+  "tag": "ministral-3:14b (= 14b-instruct-2512-q4_K_M); also ministral-3:8b / latest (8b-instruct-2512-q4_K_M), plus q8_0 and fp16 tags",
+  "size_gb": 9.1,
+  "context": "The library lists 256K. Ollama's default num_ctx is 4k on GPUs under 24 GiB, so set num_ctx to 65536 or more for OpenCode.",
+  "capabilities": "Badges: vision and tools. There is no thinking badge and no Reasoning variant in the library. Sizes: 14b q4_K_M 9.1 GB, 14b q8_0 15 GB, 14b fp16 28 GB, 8b q4_K_M 6.0 GB, 8b q8_0 9.9 GB, 8b fp16 18 GB. The page says 'Updated 11 months ago' and shows 1.6M downloads.",
+  "source_url": "https://ollama.com/library/ministral-3/tags"
+ },
+ "benchmarks": [
+  {
+   "name": "LiveCodeBench v6 (pass@5)",
+   "score": "14B Reasoning 64.6 (vs Qwen3-14B thinking 59.3); 8B Reasoning 61.6 (vs Qwen3-VL-8B-Thinking 58.0)",
+   "setting": "Mistral internal harness, same pipeline for all models",
+   "self_reported": true,
+   "source_url": "https://arxiv.org/html/2601.08584"
+  },
+  {
+   "name": "AIME25 / GPQA Diamond",
+   "score": "14B Reasoning 85.0 / 71.2; 8B Reasoning 78.7 / 66.8",
+   "setting": "pass@16, Mistral harness",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/mistralai/Ministral-3-14B-Reasoning-2512/raw/main/README.md"
+  },
+  {
+   "name": "Arena Hard / WildBench",
+   "score": "14B Instruct 0.551 / 68.5; 8B Instruct 0.509 / 66.8",
+   "setting": "vendor card",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/mistralai/Ministral-3-14B-Instruct-2512/raw/main/README.md"
+  },
+  {
+   "name": "Terminal-Bench 2.1 (Artificial Analysis)",
+   "score": "14B 9.7%, 8B 4.1%; Terminal-Bench Hard 4.5% for both",
+   "setting": "AA independent run of the non-reasoning entries 'Ministral 3 14B' and 'Ministral 3 8B' (isReasoning=false)",
+   "self_reported": false,
+   "source_url": "https://artificialanalysis.ai/models/ministral-3-14b"
+  },
+  {
+   "name": "tau2-bench (Artificial Analysis)",
+   "score": "14B 27.2%, 8B 26.6%",
+   "setting": "AA independent, non-reasoning entries",
+   "self_reported": false,
+   "source_url": "https://artificialanalysis.ai/models/ministral-3-8b"
+  },
+  {
+   "name": "LiveCodeBench (Artificial Analysis)",
+   "score": "14B 35.1%, 8B 30.3%",
+   "setting": "AA independent, non-reasoning entries. This differs from the vendor's 64.6, which is for the Reasoning variant at pass@5.",
+   "self_reported": false,
+   "source_url": "https://artificialanalysis.ai/models/ministral-3-14b"
+  },
+  {
+   "name": "SciCode / IFBench / GPQA (Artificial Analysis)",
+   "score": "14B 23.8 / 32.0 / 57.2; 8B 20.7 / 29.1 / 47.1",
+   "setting": "AA independent, non-reasoning entries; AA Intelligence Index value embedded for the 14B is about 10.0 (the current-version index shows 'Unknown')",
+   "self_reported": false,
+   "source_url": "https://artificialanalysis.ai/models/ministral-3-14b"
+  },
+  {
+   "name": "GSM8K 5-shot (vLLM recipe verification)",
+   "score": "14B Instruct 0.8795, 8B Instruct 0.8560 (flexible-extract)",
+   "setting": "vLLM recipe, MI300X, lm-eval",
+   "self_reported": false,
+   "source_url": "https://github.com/vllm-project/recipes/blob/main/models/mistralai/Ministral-3-14B-Instruct-2512.yaml"
+  }
+ ],
+ "speed_notes": "Inferred bandwidth ceilings use 896 GB/s divided by the bytes read per token; the model is dense, so all weights are read for every token. 14B Q4_K_M (8.24 GB) gives a ceiling of about 109 tok/s, roughly 65-80 tok/s in practice. 14B AWQ in vLLM (about 9.5 GB of language-model weights) gives about 94 tok/s. 8B Instruct FP8 (about 9.6 GB without vision) gives about 94 tok/s. 8B AWQ (about 6.3 GB) gives about 140 tok/s. 8B Q8_0 (9.03 GB) gives about 99 tok/s. TRITON_ATTN, which is required for FP8 KV on sm_120, was reported in vLLM #53481 as having 'no decode cost vs the healthy backends' (64-67 tok/s on the 3B on an RTX PRO card). There are no measured RTX 5080 numbers. Artificial Analysis API speeds (Mistral's cloud, not local) are 73 tok/s for the 14B and 83 tok/s for the 8B. Prefill of 30-60k-token OpenCode prompts on a 14B dense model will take several seconds per cold turn; prefix caching helps.",
+ "opencode_fit": {
+  "verdict": "weak",
+  "recommended_runtime": "llama.cpp (server-cuda13) with the official GGUF; vLLM v0.33.0 is the alternative for the 8B Instruct FP8 or the 14B Reasoning AWQ, with --language-model-only, FP8 KV and --attention-backend TRITON_ATTN",
+  "recommended_checkpoint": "Thinking: mistralai/Ministral-3-14B-Reasoning-2512-GGUF Q4_K_M. No thinking: mistralai/Ministral-3-14B-Instruct-2512-GGUF Q4_K_M. In vLLM, mistralai/Ministral-3-8B-Instruct-2512 (FP8) or cyankiwi/Ministral-3-14B-Reasoning-2512-AWQ-4bit.",
+  "recommended_context": "64k (65536) with q8_0/FP8 KV. About 80k is the ceiling for the 14B Q4_K_M in llama.cpp; the 8B Q4_K_M reaches about 128k.",
+  "caveats": "1. Independent agentic scores are low: AA Terminal-Bench 2.1 is 9.7% (14B) and 4.1% (8B), and tau2 is about 27%. Mistral publishes no SWE-bench, Terminal-Bench or BFCL numbers. This is a general edge model, not a coding agent; Devstral is Mistral's coding line.\n2. Thinking can only be switched by choosing the variant, never per request. OpenCode's system prompt replaces the template's default THINK system prompt, so append SYSTEM_PROMPT.txt or the Reasoning model may answer without thinking.\n3. vLLM on sm_120: FP8 KV auto-selects the FlashInfer backend, which gives garbage for Mistral3 (#53481/#48945 open), so --attention-backend TRITON_ATTN is mandatory. BF16 KV auto-selects FLASH_ATTN and works.\n4. The official 14B Instruct FP8 (14.65 GiB) does not fit in vLLM.\n5. The card asks for Instruct temperature below 0.1 and Reasoning temperature 0.7-1.0; set this per model in OpenCode.\n6. OpenCode v2.3.0's vLLM discovery starts models with tools disabled; enable capabilities.tools by hand.\n7. Ollama has Instruct only, with a 4k default context."
+ },
+ "gaps": [
+  "No vendor-reported SWE-bench Verified/Pro, Terminal-Bench, BFCL, tau2 or Aider numbers exist for any Ministral 3 variant; independent AA numbers cover only the non-reasoning (Instruct) entries, and the AA page for 'ministral-3-14b-reasoning' returns 404.",
+  "The AA Intelligence Index value (about 10.0 for the 14B) came from embedded page JSON; the rendered page shows 'Unknown' for the current index version, so the version that value belongs to is unclear.",
+  "No measured RTX 5080 / sm_120 throughput for Ministral 3 8B or 14B; speed figures are bandwidth arithmetic only.",
+  "I did not confirm that the community AWQ checkpoints (cyankiwi) load cleanly in v0.33.0 with --tokenizer-mode mistral and the HF config format, or that the duplicate consolidated.safetensors is skipped by the default loader; the quality loss of the AWQ builds is not published.",
+  "Did not verify whether the Reasoning model still emits [THINK] without the THINK system prompt (OpenCode supplies its own system prompt); behaviour is inferred from the template and card guidance.",
+  "Did not verify the llama.cpp reasoning-budget or no-think behaviour for this handler, or whether Ollama can run the mistralai Reasoning GGUFs via hf.co/ pulls (architecture mistral3 support in Ollama's engine not checked).",
+  "Per-file sizes for the unsloth, bartowski and lmstudio-community GGUF repos were not pulled; the official mistralai GGUFs were used for the arithmetic.",
+  "The vLLM recipe references mistralai/Ministral-3-14B-Instruct-2512-FP8, which does not exist in the HF API listing (recipe error).",
+  "OpenCode v2.3.0 interplay with the mistral tool parser (tool_choice omitted, issue #60202; tool-call ID format) was not tested."
+ ]
+}

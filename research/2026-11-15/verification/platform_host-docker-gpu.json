@@ -1,0 +1,146 @@
+{
+ "summary": "All five host prerequisites are resolved from primary sources.\n\n(1) NVIDIA Container Toolkit. The official guide pins NVIDIA_CONTAINER_TOOLKIT_VERSION=1.20.1-1. The stable apt repo also serves 1.20.2-1. v1.20.2 is a signed git tag dated 2026-11-06, with a CHANGELOG entry that lists only bug fixes and dependency bumps. It has no GitHub release object and is not in the docs release notes, so the latest GitHub release is still v1.20.1 (2026-09-19). Ubuntu 26.04 is listed for amd64 and arm64 on the Platform Support page. Configure Docker with `sudo nvidia-ctk runtime configure --runtime=docker` followed by `sudo systemctl restart docker`. As a CDI alternative, toolkit 1.18 and later generates /var/run/cdi/nvidia.yaml automatically through nvidia-cdi-refresh, and Docker Engine 28.3.0 and later has CDI on by default, so `--device nvidia.com/gpu=all` works. NVIDIA's troubleshooting page says that on systemd-cgroup-driver hosts (which this host is), `systemctl daemon-reload` can make containers that got their GPU through the legacy `--gpus` hook lose it (\"Failed to initialize NVML: Unknown Error\"). CDI is one of the documented mitigations, so CDI is recommended for long-running vLLM containers. The CUDA release notes map CUDA 13.2 to driver branch R595 and say 13.x applications run on drivers 580 or newer under minor-version compatibility. So nvidia/cuda:13.0.3-base-ubuntu24.04 (the CUDA version of the vLLM v0.33.0 image) and 13.2.1 are safe verification images. 13.3, 13.4 and 13.5 images map to R610, R615 and R620 and rely on minor-version compatibility. That is relevant to llama.cpp :server-cuda13, which is built on CUDA 13.5.\n\n(2) Compose. `gpus: all` requires Compose 2.30.0 or later, and the host's v5.7.1 is newer. `deploy.resources.reservations.devices` requires `capabilities`. CDI uses `devices: [\"nvidia.com/gpu=all\"]`. The vLLM v0.33.0 docs use `--ipc=host` (or `--shm-size`), mount ~/.cache/huggingface at /root/.cache/huggingface, and mount a volume at /root/.cache/vllm for the torch.compile/Triton/AOT cache.\n\n(3) Memory safety. With the systemd driver on cgroup v2, the default container cgroup parent is system.slice (/sys/fs/cgroup/system.slice/docker-<id>.scope). Containers are created by dockerd, not by the CLI, so `heavy docker run` caps only the docker CLI process. Containers need their own limit: `--memory` / `--memory-swap` (equal values mean no swap), Compose `mem_limit` / `memswap_limit` or `deploy.resources.limits.memory`, or `--cgroup-parent=<name>.slice`. Under the systemd driver that must be a slice name, and it is resolved in the system manager's tree, not under the user's heavy.slice.\n\n(4) Intel Core Ultra 9 290HX Plus (ark SKU 245960): up to DDR5 6400 MT/s, 2 channels, 256 GB max, no ECC, 24 cores / 24 threads, PCIe 5.0 and 4.0 with 24 lanes, launched Q1'26. The page lists no max bandwidth. Arithmetic gives 2 x 8 B x 6400 MT/s = 102.4 GB/s peak, which supports the 80-100 GB/s practical estimate.\n\n(5) Laptop. RTD3 fine-grained power control is the default on Ampere-or-newer notebooks. The GPU stays active while a CUDA application runs and powers down when idle. PRIME render offload env vars cover GLX/Vulkan/EGL only, and CUDA containers do not need them (inferred).",
+ "resolved": [
+  {
+   "question": "Official apt install commands for NVIDIA Container Toolkit (keyring, list, version pin)",
+   "answer": "Install the prerequisites (ca-certificates, curl, gnupg2). Then: curl gpgkey | gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg. Fetch https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list, rewrite it with sed to add signed-by, and tee it to /etc/apt/sources.list.d/nvidia-container-toolkit.list. Run apt-get update, export NVIDIA_CONTAINER_TOOLKIT_VERSION=1.20.1-1, and install nvidia-container-toolkit, nvidia-container-toolkit-base, libnvidia-container-tools and libnvidia-container1 pinned to that version. The list file resolves to 'deb https://nvidia.github.io/libnvidia-container/stable/deb/$(ARCH) /' (generic, no per-Ubuntu-release path). Exact commands are in snippets.",
+   "support": "direct-statement",
+   "source_url": "https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html"
+  },
+  {
+   "question": "Which toolkit version: 1.20.1-1 (docs) or 1.20.2-1 (repo)?",
+   "answer": "The docs pin 1.20.1-1, and the docs release notes stop at 1.20.1. The stable amd64 Packages index lists Versions 1.19.1-1, 1.20.0-1, 1.20.1-1 and 1.20.2-1 (nvidia-container-toolkit_1.20.2-1_amd64.deb). GitHub has a signed annotated tag v1.20.2 ('NVIDIA Container Toolkit v1.20.2 release', tagger date 2026-11-06), but the latest GitHub release object is v1.20.1 (2026-09-19). The v1.20.2 CHANGELOG lists only fixes and dependency bumps: 'void' volume-mount device in CDI spec, driver params file mounted read-only, runc 1.5.2, go-nvml, nri, and the nvsdm lib in the toolkit container. Recommendation: either version works. Use 1.20.2-1 to get the latest bug fixes from the stable repo, or 1.20.1-1 to match the documented pin. No 1.20.2 change touches Docker or GPU injection on a single-GPU laptop.",
+   "support": "source-backed",
+   "source_url": "https://nvidia.github.io/libnvidia-container/stable/deb/amd64/Packages ; https://github.com/NVIDIA/nvidia-container-toolkit/blob/v1.20.2/CHANGELOG.md ; https://github.com/NVIDIA/nvidia-container-toolkit/releases"
+  },
+  {
+   "question": "Ubuntu 26.04 row in supported platforms",
+   "answer": "Ubuntu 26.04: amd64/x86_64 X, ppc64le blank, arm64/aarch64 X (same as Ubuntu 24.04). The page says recent releases are 'tested and expected to work' on the listed distributions.",
+   "support": "direct-statement",
+   "source_url": "https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/supported-platforms.html"
+  },
+  {
+   "question": "Docker runtime configuration and restart",
+   "answer": "Run 'sudo nvidia-ctk runtime configure --runtime=docker' (it modifies /etc/docker/daemon.json so Docker can use the NVIDIA Container Runtime), then 'sudo systemctl restart docker'. Since 1.20.1, the command preserves existing Docker feature flags when enabling CDI (PR #2049).",
+   "support": "direct-statement",
+   "source_url": "https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html"
+  },
+  {
+   "question": "CDI alternative for Docker",
+   "answer": "Since toolkit v1.18.0, the systemd units nvidia-cdi-refresh.path and nvidia-cdi-refresh.service generate /var/run/cdi/nvidia.yaml automatically on toolkit or driver install and on reboot. List the devices with 'nvidia-ctk cdi list'. Regenerate with 'sudo systemctl restart nvidia-cdi-refresh.service' or 'sudo nvidia-ctk cdi generate --output=/var/run/cdi/nvidia.yaml'. Docker has CDI enabled by default since Engine 28.3.0, with spec dirs /etc/cdi and /var/run/cdi, and runs CDI devices with 'docker run --device=vendor.com/class=device-name', so 'docker run --device nvidia.com/gpu=all' works on Engine 29.9.3 without the nvidia runtime. A second route goes through the NVIDIA runtime: 'docker run --runtime=nvidia -e NVIDIA_VISIBLE_DEVICES=nvidia.com/gpu=all'.",
+   "support": "direct-statement",
+   "source_url": "https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/cdi-support.html ; https://github.com/moby/moby/blob/master/docs/reference/dockerd.md#configure-cdi-devices ; https://github.com/docker/docs/blob/main/data/cli/engine/docker_container_run.yaml"
+  },
+  {
+   "question": "Why prefer CDI on this host (systemd cgroup driver)",
+   "answer": "NVIDIA troubleshooting: when GPUs are injected by the NVIDIA Container Runtime Hook (the Docker --gpus flag, or the NVIDIA runtime in legacy mode), on systems where systemd manages container cgroups 'reloading the systemd unit files (systemctl daemon-reload) is sufficient to trigger container updates and cause a loss of GPU access' ('Failed to initialize NVML: Unknown Error'). Mitigations: the cgroupfs driver, explicit --device nodes, or CDI injection. This host uses cgroup v2 with the systemd driver, so CDI suits long-running servers. Package upgrades (apt) commonly run daemon-reload (inferred).",
+   "support": "direct-statement",
+   "source_url": "https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/troubleshooting.html"
+  },
+  {
+   "question": "Verification image whose CUDA version the 595 driver supports",
+   "answer": "CUDA release notes Table 2: CUDA 13.2 corresponds to R595 (13.0 to R580, 13.1 to R590, 13.3 to R610, 13.4 to R615, 13.5 to R620). Table 3: 13.x minor version compatibility needs a driver of 580 or newer. The note says 13.x applications run on drivers 580 or newer, but newer-minor features need the matching driver. Use nvidia/cuda:13.0.3-base-ubuntu24.04 (2026-04-14, the same CUDA as the vLLM v0.33.0 image) or 13.2.1-base-ubuntu24.04 (2026-04-20). Ubuntu 26.04 base tags exist only from 13.3.0 onward (13.3.0 to 13.5.0-base-ubuntu26.04), which is newer than R595 and relies on minor-version compatibility. NVIDIA's own sample is 'sudo docker run --rm --runtime=nvidia --gpus all ubuntu nvidia-smi'.",
+   "support": "source-backed",
+   "source_url": "https://docs.nvidia.com/cuda/cuda-toolkit-release-notes/index.html ; https://hub.docker.com/v2/repositories/nvidia/cuda/tags?name=base-ubuntu24.04 ; https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/sample-workload.html"
+  },
+  {
+   "question": "Compose 'gpus: all' minimum version and syntax",
+   "answer": "The Compose services spec 'gpus' is 'equivalent to a device request with an implicit gpu capability' and can be the string 'all'. docs data/summary.yaml: 'Compose gpus: requires Docker Compose 2.30.0 and later'. The host runs Compose v5.7.1 (GitHub release 2026-11-11; v5.0.0 released 2025-12-02), which is newer than 2.30.0.",
+   "support": "direct-statement",
+   "source_url": "https://github.com/docker/docs/blob/main/content/reference/compose-file/services.md#gpus ; https://github.com/docker/docs/blob/main/data/summary.yaml"
+  },
+  {
+   "question": "deploy.resources.reservations.devices syntax",
+   "answer": "devices entries take capabilities (required, e.g. [gpu]), driver (nvidia), count (int or 'all'; all if omitted), device_ids (mutually exclusive with count) and options. Omitting capabilities 'returns an error on service deployment'.",
+   "support": "direct-statement",
+   "source_url": "https://github.com/docker/docs/blob/main/content/manuals/compose/how-tos/gpu-support.md ; https://github.com/docker/docs/blob/main/content/reference/compose-file/deploy.md#devices"
+  },
+  {
+   "question": "CDI device syntax in Compose",
+   "answer": "services.<svc>.devices can 'rely on the CDI syntax to let the container runtime select a device', for example devices: [\"vendor1.com/device=gpu\"]. For NVIDIA that is \"nvidia.com/gpu=all\" (device name from 'nvidia-ctk cdi list').",
+   "support": "direct-statement",
+   "source_url": "https://github.com/docker/docs/blob/main/content/reference/compose-file/services.md#devices"
+  },
+  {
+   "question": "ipc: host vs shm_size for vLLM; cache volumes",
+   "answer": "vLLM v0.33.0 docs: 'You can either use the ipc=host flag or --shm-size flag to allow the container to access the host's shared memory. vLLM uses PyTorch, which uses shared memory to share data between processes'. The official example uses --ipc=host and -v ~/.cache/huggingface:/root/.cache/huggingface. Mount a named volume at /root/.cache/vllm (VLLM_CACHE_ROOT default ~/.cache/vllm) to reuse the inductor, Triton and AOT compile artifacts across containers. A non-root run (--user 2000:0) mounts under /home/vllm/.cache instead. docker run --ipc values include 'host' (use the host IPC namespace). Ollama's documented volume is ollama:/root/.ollama. llama.cpp uses -v /path/to/models:/models.",
+   "support": "direct-statement",
+   "source_url": "https://github.com/vllm-project/vllm/blob/v0.33.0/docs/getting_started/installation/gpu.cuda.inc.md ; https://github.com/vllm-project/vllm/blob/v0.33.0/docs/deployment/docker.md ; https://github.com/ollama/ollama/blob/v0.40.16/docs/docker.mdx"
+  },
+  {
+   "question": "Where container cgroups live with cgroup v2 + systemd driver; does 'heavy docker run' cap the container?",
+   "answer": "dockerd reference: if native.cgroupdriver is omitted, systemd is used on cgroup v2 hosts with systemd. The default cgroup parent is 'system.slice for the systemd cgroup driver'. runmetrics: the container cgroup is '/sys/fs/cgroup/system.slice/docker-<longid>.scope/ on cgroup v2, systemd driver'. The container is created by the root dockerd (the client only talks to the daemon), so it sits under system.slice, not under the user's heavy.slice that wraps the docker CLI. 'heavy docker run' caps only the CLI client process, so the container's RAM is not capped.",
+   "support": "source-backed",
+   "source_url": "https://github.com/moby/moby/blob/master/docs/reference/dockerd.md#default-cgroup-parent ; https://github.com/docker/docs/blob/main/content/manuals/engine/containers/runmetrics.md"
+  },
+  {
+   "question": "How to cap container RAM",
+   "answer": "Use docker run -m/--memory (hard limit) together with --memory-swap. Equal values give no swap. If --memory-swap is unset, the container may also use swap equal to --memory, and -1 means unlimited swap. Compose: mem_limit plus memswap_limit, or deploy.resources.limits.memory (they must be consistent). Without -m, an OOM can kill host processes. Docker lowers the OOM priority of the daemon, not of containers. Do not use --oom-kill-disable without -m. --cgroup-parent: under the systemd driver it 'should be a slice name' and its dashes encode the path (user-a-b.slice becomes user.slice/user-a.slice/user-a-b.slice/docker-<id>.scope). Rootful dockerd resolves it in the system manager, so a system slice such as /etc/systemd/system/llm.slice with MemoryMax would group all LLM containers under one cap (inferred). The user's --user heavy.slice (user@1000.service tree) cannot be targeted by rootful Docker (inferred).",
+   "support": "source-backed",
+   "source_url": "https://github.com/docker/docs/blob/main/content/manuals/engine/containers/resource_constraints.md ; https://github.com/docker/docs/blob/main/content/reference/compose-file/services.md#memswap_limit ; https://github.com/moby/moby/blob/master/docs/reference/dockerd.md#default-cgroup-parent"
+  },
+  {
+   "question": "Intel Core Ultra 9 290HX Plus memory specification",
+   "answer": "Intel ark SKU 245960: Memory Types 'Up to DDR5 6400 MT/s'; Max # of Memory Channels '2'; Max Memory Size 256 GB; ECC 'No'; Total Cores 24, Threads 24; PCIe '5.0 and 4.0', max 24 lanes; Launch Q1'26. Max Memory Bandwidth is not listed. Arithmetic: 2 channels x 64 bit (8 B) x 6400 MT/s = 102.4 GB/s theoretical peak, so 80-100 GB/s sustained is a reasonable estimate. The DIMMs' actual configured speed on this laptop is unverified (check with 'sudo dmidecode -t memory').",
+   "support": "source-backed",
+   "source_url": "https://www.intel.com/content/www/us/en/products/sku/245960/intel-core-ultra-9-processor-290hx-plus-36m-cache-up-to-5-50-ghz/specifications.html"
+  },
+  {
+   "question": "Laptop notes: RTD3, PRIME, nvidia-smi in containers",
+   "answer": "NVIDIA driver 595.99.02 README, chapter 22: RTD3 is enabled by default (NVreg_DynamicPowerManagement=0x03, which means fine-grained) on Ampere-or-newer notebooks with supported ACPI. The GPU 'will remain in an active state if a CUDA application is running' and powers down when idle, so the first CUDA call after idle wakes it (small latency, inferred). Video memory may be powered off only below a 200 MB usage threshold. Chapter 35: PRIME render offload (__NV_PRIME_RENDER_OFFLOAD=1, __GLX_VENDOR_LIBRARY_NAME=nvidia) is for GLX/Vulkan/EGL rendering. Headless CUDA in containers does not use it (inferred). nvidia-smi inside a container needs the 'utility' driver capability. The default when NVIDIA_DRIVER_CAPABILITIES is unset is 'utility, compute', and CUDA base images set these variables.",
+   "support": "source-backed",
+   "source_url": "https://download.nvidia.com/XFree86/Linux-x86_64/595.99.02/README/dynamicpowermanagement.html ; https://download.nvidia.com/XFree86/Linux-x86_64/595.99.02/README/primerenderoffload.html ; https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/docker-specialized.html"
+  }
+ ],
+ "gaps": [
+  "No source date is visible on the NVIDIA toolkit docs pages (the copyright reads 2020-2026). The install guide still pins 1.20.1-1. No GitHub release object or docs release note exists for 1.20.2.",
+  "Not verified whether llama.cpp :server-cuda13 (CUDA 13.5 / R620) ships sm_120 SASS or only PTX. If it ships PTX only, driver 595 (CUDA 13.2) could fail to JIT it, so :server-cuda (CUDA 12.8.1) is the safer llama.cpp image on this driver until tested (inferred).",
+  "Not verified from Docker docs that 'docker run --gpus' with the default runc runtime still uses the legacy prestart hook rather than JIT-CDI. The NVIDIA docs say the runtime picks JIT-CDI in 'auto' mode only when the nvidia runtime is used.",
+  "FlashInfer and Triton JIT cache paths inside the vLLM image (for example ~/.cache/flashinfer) were not confirmed, and it is not known whether VLLM_CACHE_ROOT covers the FlashInfer JIT output.",
+  "The configured DIMM speed and module type in this laptop (DDR5-6400 SODIMM or CSODIMM, or lower) are unknown. The bandwidth figure is a theoretical peak.",
+  "Rootful vs rootless Docker on this host was not checked. The cgroup-parent and slice reasoning assumes rootful dockerd.",
+  "Whether a system-level slice with MemoryMax combined with --cgroup-parent is enforced as an aggregate cap was inferred from the dockerd and systemd slice semantics, not tested."
+ ],
+ "snippets": [
+  {
+   "purpose": "Install NVIDIA Container Toolkit on Ubuntu 26.04 (official apt steps; pin 1.20.1-1 per the docs, or 1.20.2-1 which is in the stable repo)",
+   "content": "sudo apt-get update && sudo apt-get install -y --no-install-recommends ca-certificates curl gnupg2\ncurl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg \\\n  && curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | \\\n    sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \\\n    sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list\nsudo apt-get update\nexport NVIDIA_CONTAINER_TOOLKIT_VERSION=1.20.1-1   # or 1.20.2-1 (stable repo, tag v1.20.2 2026-11-06)\nsudo apt-get install -y \\\n    nvidia-container-toolkit=${NVIDIA_CONTAINER_TOOLKIT_VERSION} \\\n    nvidia-container-toolkit-base=${NVIDIA_CONTAINER_TOOLKIT_VERSION} \\\n    libnvidia-container-tools=${NVIDIA_CONTAINER_TOOLKIT_VERSION} \\\n    libnvidia-container1=${NVIDIA_CONTAINER_TOOLKIT_VERSION}",
+   "source_url": "https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html"
+  },
+  {
+   "purpose": "Configure Docker runtime, restart, verify (legacy --gpus path) with a CUDA image the R595 driver supports",
+   "content": "sudo nvidia-ctk runtime configure --runtime=docker\nsudo systemctl restart docker\nsudo docker run --rm --runtime=nvidia --gpus all ubuntu nvidia-smi\ndocker run --rm --gpus all nvidia/cuda:13.0.3-base-ubuntu24.04 nvidia-smi",
+   "source_url": "https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html ; https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/sample-workload.html"
+  },
+  {
+   "purpose": "CDI path (recommended on a systemd-cgroup host): check the auto-generated spec, then run with a CDI device (Docker Engine 28.3.0 and later has CDI on by default)",
+   "content": "sudo systemctl status nvidia-cdi-refresh.path nvidia-cdi-refresh.service\nnvidia-ctk cdi list                      # expect nvidia.com/gpu=0, nvidia.com/gpu=all ...\n# regenerate if needed:\nsudo systemctl restart nvidia-cdi-refresh.service   # or: sudo nvidia-ctk cdi generate --output=/var/run/cdi/nvidia.yaml\ndocker info | grep -i -A3 cdi\ndocker run --rm --device nvidia.com/gpu=all nvidia/cuda:13.0.3-base-ubuntu24.04 nvidia-smi\n# via the NVIDIA runtime instead:\ndocker run --rm --runtime=nvidia -e NVIDIA_VISIBLE_DEVICES=nvidia.com/gpu=all ubuntu nvidia-smi -L",
+   "source_url": "https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/cdi-support.html ; https://github.com/moby/moby/blob/master/docs/reference/dockerd.md#configure-cdi-devices"
+  },
+  {
+   "purpose": "Compose: three equivalent GPU forms (gpus requires Compose 2.30.0 or later; capabilities is required in deploy form; CDI via devices)",
+   "content": "services:\n  vllm-a:            # short form, Compose >= 2.30.0\n    image: vllm/vllm-openai:v0.33.0\n    gpus: all\n  vllm-b:            # deploy device reservation\n    image: vllm/vllm-openai:v0.33.0\n    deploy:\n      resources:\n        reservations:\n          devices:\n            - driver: nvidia\n              count: all          # or device_ids: ['0'] (not both)\n              capabilities: [gpu]\n  vllm-c:            # CDI device (no nvidia runtime needed; survives daemon-reload)\n    image: vllm/vllm-openai:v0.33.0\n    devices:\n      - nvidia.com/gpu=all",
+   "source_url": "https://github.com/docker/docs/blob/main/content/reference/compose-file/services.md ; https://github.com/docker/docs/blob/main/content/manuals/compose/how-tos/gpu-support.md"
+  },
+  {
+   "purpose": "Compose vLLM service with ipc host, HF and compile caches, and a hard RAM cap (assembled from the vLLM and Compose docs; limits are example values)",
+   "content": "services:\n  vllm:\n    image: vllm/vllm-openai:v0.33.0\n    devices: [\"nvidia.com/gpu=all\"]     # or gpus: all\n    ipc: host                          # or: shm_size: \"16gb\"\n    ports: [\"8000:8000\"]\n    environment:\n      HF_TOKEN: ${HF_TOKEN}\n      MAX_JOBS: \"2\"                    # limits FlashInfer JIT parallelism (lead from PR #66864)\n    volumes:\n      - ${HOME}/.cache/huggingface:/root/.cache/huggingface\n      - vllm-cache:/root/.cache/vllm   # VLLM_CACHE_ROOT: inductor/Triton/AOT artifacts\n    mem_limit: 32g\n    memswap_limit: 32g                 # equal to mem_limit = no swap\n    command: [\"--model\", \"Qwen/Qwen3-0.6B\"]\nvolumes:\n  vllm-cache: {}",
+   "source_url": "https://github.com/vllm-project/vllm/blob/v0.33.0/docs/getting_started/installation/gpu.cuda.inc.md ; https://github.com/vllm-project/vllm/blob/v0.33.0/docs/deployment/docker.md ; https://github.com/docker/docs/blob/main/content/reference/compose-file/services.md#memswap_limit"
+  },
+  {
+   "purpose": "docker run RAM cap (heavy does NOT cap containers: they live in system.slice/docker-<id>.scope under dockerd)",
+   "content": "# verify placement:\ncat /sys/fs/cgroup/system.slice/docker-$(docker inspect -f '{{.Id}}' <ctr>).scope/memory.max\n# per-container hard cap, no swap:\ndocker run --memory=32g --memory-swap=32g --device nvidia.com/gpu=all --ipc=host ... \n# shared cap for all LLM containers via a system slice (inferred; systemd driver wants a slice name):\n# /etc/systemd/system/llm.slice\n#   [Slice]\n#   MemoryMax=32G\nsudo systemctl daemon-reload   # note: with legacy --gpus injection this can drop GPU access in running containers; CDI avoids it\ndocker run --cgroup-parent=llm.slice --memory=32g --memory-swap=32g ...\n# Compose: cgroup_parent: llm.slice",
+   "source_url": "https://github.com/moby/moby/blob/master/docs/reference/dockerd.md#default-cgroup-parent ; https://github.com/docker/docs/blob/main/content/manuals/engine/containers/runmetrics.md ; https://github.com/docker/docs/blob/main/content/manuals/engine/containers/resource_constraints.md"
+  },
+  {
+   "purpose": "Official vLLM docker run example (v0.33.0 docs)",
+   "content": "docker run --runtime nvidia --gpus all \\\n    -v ~/.cache/huggingface:/root/.cache/huggingface \\\n    --env \"HF_TOKEN=$HF_TOKEN\" \\\n    -p 8000:8000 \\\n    --ipc=host \\\n    vllm/vllm-openai:latest \\\n    --model Qwen/Qwen3-0.6B",
+   "source_url": "https://github.com/vllm-project/vllm/blob/v0.33.0/docs/getting_started/installation/gpu.cuda.inc.md"
+  },
+  {
+   "purpose": "NVIDIA systemd-driver GPU-loss issue (why CDI)",
+   "content": "\"On systems where systemd is used to manage the cgroups of the container, reloading the systemd unit files (systemctl daemon-reload) is sufficient to trigger container updates and cause a loss of GPU access.\" Workarounds: \"exec-opts\": [\"native.cgroupdriver=cgroupfs\"], explicit --device nodes, or \"Use the Container Device Interface (CDI) to inject devices into a container.\"",
+   "source_url": "https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/troubleshooting.html"
+  }
+ ]
+}

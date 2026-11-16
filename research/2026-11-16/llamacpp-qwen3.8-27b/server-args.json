@@ -1,0 +1,1 @@
+["-m","/hf/hub/models--unsloth--Qwen3.8-27B-GGUF/snapshots/4af51b3542f775b0a8e4b310bfb3f17e01c306c9/Qwen3.8-27B-UD-Q3_K_XL.gguf","--alias","local","-ngl","all","-fa","on","-c","65536","-ctk","q8_0","-ctv","q8_0","-np","1","--jinja","--reasoning-effort","medium","--temp","1.0","--top-p","0.95","--top-k","20","--min-p","0"]

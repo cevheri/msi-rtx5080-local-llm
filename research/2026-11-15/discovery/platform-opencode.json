@@ -1,0 +1,320 @@
+{
+ "summary": "OpenCode moved to github.com/anomalyco/opencode. The user's v2.3.0 was released 2026-11-13 (https://github.com/anomalyco/opencode/releases/tag/v2.3.0). V2 changed the config shape: the top-level key is now `providers` (was `provider`), `npm` became `package`, `options` became `settings`/`headers`/`body`, `tool_call` became `capabilities.tools`, and `small_model` became `agents.title.model` (https://opencode.ai/docs/migrate-v1/). V1 syntax is still accepted and normalized, but `reasoning`, `attachment`, `temperature` and boolean `interleaved` on a model are now ignored with a warning. V2 has built-in discovery for Ollama (127.0.0.1:11434), LM Studio (:1234) and vLLM (127.0.0.1:8000/v1). For vLLM, discovery reads `max_model_len` as the context limit. It cannot see tool support, so discovered vLLM models start with tools disabled (https://opencode.ai/docs/providers/, https://opencode.ai/docs/models/). The source code confirms this: `tools: spec.tools ?? false` (https://raw.githubusercontent.com/anomalyco/opencode/dev/packages/core/src/plugin/provider/local.ts). For an agentic coding setup on vLLM in Docker, the dependable pattern is a custom provider using `@opencode/ai/providers/openai-compatible`. Set `capabilities.tools: true`, set `limit.context` to the vLLM `--max-model-len`, and set a realistic `limit.output`. Without explicit values OpenCode assumes 200k context and 32k output for a model it does not know. You can optionally turn off built-in discovery with `\"plugins\": [\"-opencode.provider.vllm\"]`. For reasoning models, `compatibility.reasoningField` names the streamed field. Current vLLM calls it `reasoning`; the old name was `reasoning_content` (https://raw.githubusercontent.com/vllm-project/vllm/main/docs/features/reasoning_outputs.md). OpenCode's default when unset is the field seen in the stream, otherwise `reasoning_content`. Open V2 bugs relevant to local servers: #60202, where V2 omits `tool_choice: \"auto\"` (reproduced; fix PR #60219 not merged). This only matters on servers that need it, because current vLLM main defaults `tool_choice` to `auto` when tools are sent. Also open: #58019, where the subagent tool schema pattern `^ses` gives HTTP 400 on older llama.cpp builds (fix PR #58053 not merged); #55378, where reasoning-only empty turns end silently; and #50814, where tool calls come out as literal text after compaction. OpenCode V2 docs give no minimum context and no list of recommended local models. Ollama's OpenCode page says OpenCode needs 64k or more context (https://docs.ollama.com/integrations/opencode). Ollama's own default is only 4k on GPUs with less than 24 GiB VRAM (https://docs.ollama.com/context-length), so on this 16 GB card `OLLAMA_CONTEXT_LENGTH` must be raised. An official OpenCode Docker image exists at ghcr.io/anomalyco/opencode, and tags 2.3.0 and latest resolve (https://opencode.ai/docs/).",
+ "facts": [
+  {
+   "topic": "opencode-version",
+   "claim": "OpenCode repo is now anomalyco/opencode (default branch dev); latest release v2.3.0 published 2026-11-13; v2.0.0..v2.3.0 tags exist, V1 line continued to v1.19.5 (2026-10-28).",
+   "source_url": "https://api.github.com/repos/anomalyco/opencode/releases?per_page=40",
+   "source_date": "2026-11-13",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "config-shape-v2",
+   "claim": "V2 renames provider->providers, npm->package (AI SDK packages get 'aisdk:' prefix), api->settings.baseURL, provider options split into settings/headers/body; model tool_call/modalities -> capabilities.tools/input/output; id->modelID; variants object -> array with id.",
+   "source_url": "https://opencode.ai/docs/migrate-v1/",
+   "source_date": "live 2026-11-15 (V2 docs)",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "config-shape-v2",
+   "claim": "V1 provider-model fields release_date, attachment, reasoning, temperature, experimental and boolean interleaved are accepted but ignored in V2 with a warning; V1 syntax otherwise normalized without warning.",
+   "source_url": "https://opencode.ai/docs/migrate-v1/",
+   "source_date": "live 2026-11-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "custom-provider",
+   "claim": "Custom OpenAI-compatible provider: providers.<id> with name, env, package '@opencode/ai/providers/openai-compatible' (or '/responses'), settings.baseURL, optional settings.apiKey, headers, body, models map; provider ID + models key form the selector, e.g. acme/qwen3-coder.",
+   "source_url": "https://opencode.ai/docs/providers/",
+   "source_date": "live 2026-11-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "model-fields",
+   "claim": "Model entry fields: modelID, name, family, type, releaseDate, package, settings, headers, body, capabilities (tools, input, output, temperature support, reasoning), compatibility, variants, cost, limit (context, input, output), disabled.",
+   "source_url": "https://opencode.ai/docs/providers/",
+   "source_date": "live 2026-11-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "fallback-limits",
+   "claim": "For a model not in the models.dev catalog OpenCode assumes JSON tool support, text+image input, text output, 200,000-token context and 32,000-token output; docs say set accurate capabilities and limit values for local servers.",
+   "source_url": "https://opencode.ai/docs/models/",
+   "source_date": "live 2026-11-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "vllm-discovery",
+   "claim": "OpenCode auto-discovers vLLM at http://127.0.0.1:8000/v1: checks /health, reads /v1/models, uses max_model_len as context limit, includes only models owned_by 'vllm'; discovered models advertise text only, no tools, no vision.",
+   "source_url": "https://opencode.ai/docs/models/",
+   "source_date": "live 2026-11-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "vllm-discovery",
+   "claim": "Source confirms discovered local models get capabilities.tools = spec.tools ?? false, and vLLM plugin does not set tools; the transform removes existing models under the provider ID before re-adding discovered ones.",
+   "source_url": "https://raw.githubusercontent.com/anomalyco/opencode/dev/packages/core/src/plugin/provider/local.ts",
+   "source_date": "vllm.ts last commit 2026-10-05",
+   "support": "direct-statement",
+   "notes": "Whether a user models override under providers.vllm survives this transform was not verified; safer to use a distinct custom provider ID with capabilities.tools true (inferred)."
+  },
+  {
+   "topic": "vllm-discovery",
+   "claim": "Built-in discovery can be disabled per runtime with plugins entries '-opencode.provider.vllm', '-opencode.provider.ollama', '-opencode.provider.lmstudio'.",
+   "source_url": "https://opencode.ai/docs/models/",
+   "source_date": "live 2026-11-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "v2.3.0-changes",
+   "claim": "v2.3.0: local model discovery (Ollama, LM Studio, vLLM) waits up to 15 s per request instead of 1 s; fixed saved API keys omitted from local discovery; added freeform tool input on compatible models; LM Studio decision-model support.",
+   "source_url": "https://github.com/anomalyco/opencode/releases/tag/v2.3.0",
+   "source_date": "2026-11-13",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "v2.2.x-changes",
+   "claim": "v2.2.6 keeps legacy custom providers whose models set only part of limit (e.g. only limit.context) instead of silently dropping the provider; v2.2.5 adds percentage compaction buffer and stops converting reasoning to plain text on model switch; v2.2.0 preserves reasoning after OpenAI Chat finish reason.",
+   "source_url": "https://api.github.com/repos/anomalyco/opencode/releases?per_page=40",
+   "source_date": "2026-10-27 to 2026-11-06",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "default-model",
+   "claim": "Default model set by root 'model' in provider/model form; root default does not retain a #variant; session selection via /models overrides it and does not rewrite config; one-off runs use 'opencode run --model provider/model'.",
+   "source_url": "https://opencode.ai/docs/models/",
+   "source_date": "live 2026-11-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "small-model",
+   "claim": "small_model is deprecated in the V2 schema; it maps to the model of the hidden built-in 'title' agent; native V2 uses agents.title.model. Compaction model can be set with agents.compaction.model.",
+   "source_url": "https://opencode.ai/docs/migrate-v1/",
+   "source_date": "live 2026-11-15",
+   "support": "direct-statement",
+   "notes": "Schema https://opencode.ai/config.json marks small_model, provider, tools, mode deprecated; compaction agent model from https://opencode.ai/docs/compaction/"
+  },
+  {
+   "topic": "config-locations",
+   "claim": "Global config ~/.config/opencode/opencode.json(c); project opencode.json(c) or .opencode/opencode.json(c), searched from cwd to root, merged farthest to closest, .opencode files override direct files; /etc/opencode overrides all on Linux; non-conflicting settings preserved.",
+   "source_url": "https://opencode.ai/docs/config/",
+   "source_date": "live 2026-11-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "env-vars",
+   "claim": "Config substitution uses {env:VAR} (empty string if unset) and {file:path} (relative to config dir, absolute or ~/).",
+   "source_url": "https://opencode.ai/docs/config/",
+   "source_date": "live 2026-11-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "reasoning",
+   "claim": "compatibility.reasoningField names the assistant-message field carrying reasoning (recognizes reasoning, reasoning_content, reasoning_text or custom); unset uses the field seen in the stream, else reasoning_content; requireReasoning re-sends it on prior assistant messages, defaulting true when reasoningField is set.",
+   "source_url": "https://opencode.ai/docs/models/",
+   "source_date": "live 2026-11-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "reasoning",
+   "claim": "Current vLLM returns reasoning in the 'reasoning' field; 'reasoning_content' is the old name and clients reading it may silently get empty values.",
+   "source_url": "https://raw.githubusercontent.com/vllm-project/vllm/main/docs/features/reasoning_outputs.md",
+   "source_date": "doc last commit 2026-11-05",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "reasoning",
+   "claim": "For a vLLM-served thinking model, setting compatibility.reasoningField to 'reasoning' in OpenCode is the matching configuration.",
+   "source_url": "https://opencode.ai/docs/models/",
+   "support": "inferred",
+   "notes": "Combines the two docs above; not an OpenCode example."
+  },
+  {
+   "topic": "reasoning-variants",
+   "claim": "Reasoning variants come from capabilities.reasoning (supported, toggle, effort, budget) in models.dev v2 shape or from a variants array; each variant can carry settings, headers, body; select with provider/model#variant.",
+   "source_url": "https://opencode.ai/docs/models/",
+   "source_date": "live 2026-11-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "compatibility",
+   "claim": "Other OpenAI Chat quirk switches: maxTokensField (max_completion_tokens default vs max_tokens), streamUsage (default true), requireFinishReason (default true), requireAssistantAfterTool (default true for Mistral-family IDs).",
+   "source_url": "https://opencode.ai/docs/models/",
+   "source_date": "live 2026-11-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "timeouts",
+   "claim": "Provider settings.headerTimeout (default 5 min) and chunkTimeout (default 15 min between chunks) in ms or false; relevant for slow local prefill on long contexts.",
+   "source_url": "https://opencode.ai/docs/providers/",
+   "source_date": "live 2026-11-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "compaction",
+   "claim": "Auto compaction keeps compaction.buffer free (default 15%, at least 16k tokens) and keeps ~15000 recent tokens; it cannot help when fixed instructions and tool schemas fill most of the window (doc example: 128k = 120k fixed + 8k conversation).",
+   "source_url": "https://opencode.ai/docs/compaction/",
+   "source_date": "live 2026-11-15",
+   "support": "direct-statement",
+   "notes": "Implication: with a 32k local window, 16k buffer leaves little room; 64k+ is needed (inferred)."
+  },
+  {
+   "topic": "local-context",
+   "claim": "OpenCode V2 docs state no minimum context length and no recommended local model list; V1 docs only advised raising Ollama num_ctx to 16k-32k if tool calls fail and suggested Qwen-Coder or DeepSeek-Coder variants for tool calling.",
+   "source_url": "https://opencode.ai/v1/docs/providers.md",
+   "source_date": "V1 docs live 2026-11-15",
+   "support": "direct-statement",
+   "notes": "V2 docs checked: providers, models, config, compaction, agents, tools, troubleshooting."
+  },
+  {
+   "topic": "ollama-integration",
+   "claim": "Ollama's OpenCode page: 'OpenCode requires a context length of 64k or higher'; launch via 'ollama launch opencode' (inline config, does not overwrite ~/.config/opencode/opencode.json); 'ollama launch opencode --config' configures without starting; example model qwen3.5.",
+   "source_url": "https://docs.ollama.com/integrations/opencode",
+   "source_date": "doc commit 2026-06-25",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "ollama-context",
+   "claim": "Ollama default context is 4k on <24 GiB VRAM, 32k on 24-48 GiB, 256k on >=48 GiB; agents and coding tools should use at least 64000; set OLLAMA_CONTEXT_LENGTH=64000 on serve.",
+   "source_url": "https://docs.ollama.com/context-length",
+   "source_date": "live 2026-11-15",
+   "support": "direct-statement",
+   "notes": "This machine has 16 GB VRAM, so the default would be 4k (source-backed)."
+  },
+  {
+   "topic": "issue-tool-choice",
+   "claim": "Open issue #60202 (label reproduced, 2026-10-29): V2 does not send tool_choice 'auto' to openai-compatible providers; on gateways that only parse tool calls when tool_choice is explicit, raw <tool_call> text lands in content and the turn ends silently. Fix PR #60219 open, not merged. Workaround body.tool_choice='auto' broke compaction in #58821.",
+   "source_url": "https://github.com/anomalyco/opencode/issues/60202",
+   "source_date": "2026-10-29",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "issue-tool-choice",
+   "claim": "Current vLLM main defaults an omitted tool_choice to 'auto' when tools are present, so #60202 should not affect a recent vLLM image; older or gateway-wrapped vLLM may differ.",
+   "source_url": "https://raw.githubusercontent.com/vllm-project/vllm/main/vllm/entrypoints/openai/chat_completion/protocol.py",
+   "source_date": "main as of 2026-11-15",
+   "support": "contested",
+   "notes": "Code read on main; release containing it and the reporter's gateway version not verified. Verify end to end on the chosen vllm/vllm-openai tag."
+  },
+  {
+   "topic": "vllm-tool-flags",
+   "claim": "vLLM tool calling needs --enable-auto-tool-choice and --tool-call-parser; tool_choice auto/required/none and named supported; --tool-strict-level can force structural-tag constraints because most agent clients do not set strict.",
+   "source_url": "https://raw.githubusercontent.com/vllm-project/vllm/main/docs/features/tool_calling.md",
+   "source_date": "main as of 2026-11-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "issue-llamacpp",
+   "claim": "Open issue #58019 (reproduced): V2 subagent tool schema pattern '^ses' makes older llama.cpp (b9879, Docker Model Runner) return HTTP 400 'Pattern must start with ^ and end with $'; still reproduced on v2.2.5; fix PR #58053 open, not merged.",
+   "source_url": "https://github.com/anomalyco/opencode/issues/58019",
+   "source_date": "2026-10-22, last comment 2026-11-02",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "issue-empty-turn",
+   "claim": "Open issue #55378 (reproduced): a step ending with reasoning only (no text, no tool call, finish stop) is settled silently and the agent stops; reported on 2.0.29 through 2.2.5.",
+   "source_url": "https://github.com/anomalyco/opencode/issues/55378",
+   "source_date": "2026-10-14",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "issue-compaction-text-tools",
+   "claim": "Open issue #50814: after summary compaction, models may imitate the '[Assistant tool call]: name(input)' text format, tools never run; still reported on v2.2.6.",
+   "source_url": "https://github.com/anomalyco/opencode/issues/50814",
+   "source_date": "2026-09-23, comment 2026-11-09",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "issue-ollama-small-ctx",
+   "claim": "Issue #62765 (closed not_planned): raw <function=read> tool-call text with qwen3-coder:30b on Ollama attributed by maintainers' bot to too-small context plus V1 config shape; advice OLLAMA_CONTEXT_LENGTH=32768 and V2 config.",
+   "source_url": "https://github.com/anomalyco/opencode/issues/62765",
+   "source_date": "2026-11-08",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "lmstudio-reasoning",
+   "claim": "Open issue #63921 (v2.3.0): LM Studio discovery drops server-reported reasoning capabilities; thinking variants need hand-written capabilities/variants config.",
+   "source_url": "https://github.com/anomalyco/opencode/issues/63921",
+   "source_date": "2026-11-14",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "docker-image",
+   "claim": "Official OpenCode Docker images are published with versioned tags, e.g. ghcr.io/anomalyco/opencode:2.0.0; manifests for 2.3.0 and latest returned HTTP 200 from ghcr.io.",
+   "source_url": "https://opencode.ai/docs/",
+   "source_date": "checked 2026-11-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "install",
+   "claim": "V2 install: curl -fsSL https://opencode.ai/v2/install | bash, or npm install -g @opencode/cli; logs at ~/.local/share/opencode/log/opencode.log.",
+   "source_url": "https://opencode.ai/docs/",
+   "source_date": "live 2026-11-15",
+   "support": "direct-statement",
+   "notes": "Log path from https://opencode.ai/docs/troubleshooting/"
+  },
+  {
+   "topic": "agents",
+   "claim": "Built-in visible agents: build (default), plan, general (subagent), explore (subagent); hidden compaction, title, summary agents; agents/subagents can pin their own model via provider/model#variant.",
+   "source_url": "https://opencode.ai/docs/agents/",
+   "source_date": "live 2026-11-15",
+   "support": "direct-statement"
+  }
+ ],
+ "snippets": [
+  {
+   "purpose": "V2 documented generic OpenAI-compatible local server (use for vLLM/llama.cpp in Docker with explicit tools and limits)",
+   "content": "{\n  \"$schema\": \"https://opencode.ai/config.json\",\n  \"model\": \"local/coder\",\n  \"providers\": {\n    \"local\": {\n      \"name\": \"Local server\",\n      \"package\": \"@opencode/ai/providers/openai-compatible\",\n      \"settings\": {\n        \"baseURL\": \"http://127.0.0.1:1234/v1\",\n      },\n      \"models\": {\n        \"coder\": {\n          \"modelID\": \"model-name-on-server\",\n          \"capabilities\": {\n            \"tools\": true,\n            \"input\": [\"text\"],\n            \"output\": [\"text\"],\n          },\n          \"limit\": {\n            \"context\": 32768,\n            \"output\": 8192,\n          },\n        },\n      },\n    },\n  },\n}",
+   "source_url": "https://opencode.ai/docs/models/"
+  },
+  {
+   "purpose": "V2 built-in vLLM / LM Studio discovery endpoint override (discovered vLLM models have tools disabled)",
+   "content": "{\n  \"$schema\": \"https://opencode.ai/config.json\",\n  \"providers\": {\n    \"lmstudio\": {\n      \"settings\": { \"baseURL\": \"http://gpu-host:1234/v1\" },\n    },\n    \"vllm\": {\n      \"settings\": { \"baseURL\": \"http://gpu-host:8000/v1\" },\n    },\n  },\n}\n\n// select a discovered model:\n{ \"model\": \"vllm/Qwen/Qwen3-Coder-30B-A3B-Instruct\" }\n// authenticated vLLM:\n{ \"providers\": { \"vllm\": { \"settings\": { \"baseURL\": \"http://127.0.0.1:9000/v1\", \"apiKey\": \"{env:VLLM_API_KEY}\" } } } }\n// disable discovery:\n{ \"plugins\": [\"-opencode.provider.vllm\"] }",
+   "source_url": "https://opencode.ai/docs/models/"
+  },
+  {
+   "purpose": "V2 Ollama remote/port override (discovery uses native /api/tags and /api/show under same prefix)",
+   "content": "{\n  \"providers\": {\n    \"ollama\": {\n      \"settings\": {\n        \"baseURL\": \"http://127.0.0.1:5678/v1\",\n        \"apiKey\": \"{env:OLLAMA_API_KEY}\",\n      },\n    },\n  },\n}\n// select: { \"model\": \"ollama/gemma3:4b\" }",
+   "source_url": "https://opencode.ai/docs/models/"
+  },
+  {
+   "purpose": "Ollama's own OpenCode manual config (V1 shape, still accepted by V2) and 64k note",
+   "content": "{\n  \"$schema\": \"https://opencode.ai/config.json\",\n  \"provider\": {\n    \"ollama\": {\n      \"npm\": \"@ai-sdk/openai-compatible\",\n      \"name\": \"Ollama\",\n      \"options\": {\n        \"baseURL\": \"http://localhost:11434/v1\"\n      },\n      \"models\": {\n        \"qwen3.5\": {\n          \"name\": \"qwen3.5\"\n        }\n      }\n    }\n  }\n}\n// \"OpenCode requires a context length of 64k or higher.\"  Launch: ollama launch opencode   |  OLLAMA_CONTEXT_LENGTH=64000 ollama serve (https://docs.ollama.com/context-length)",
+   "source_url": "https://docs.ollama.com/integrations/opencode"
+  },
+  {
+   "purpose": "V1 llama.cpp llama-server example (V1 docs; V2 equivalent is package/settings shape)",
+   "content": "{\n  \"$schema\": \"https://opencode.ai/config.json\",\n  \"provider\": {\n    \"llama.cpp\": {\n      \"npm\": \"@ai-sdk/openai-compatible\",\n      \"name\": \"llama-server (local)\",\n      \"options\": {\n        \"baseURL\": \"http://127.0.0.1:8080/v1\"\n      },\n      \"models\": {\n        \"qwen3-coder:a3b\": {\n          \"name\": \"Qwen3-Coder: a3b-30b (local)\",\n          \"limit\": {\n            \"context\": 128000,\n            \"output\": 65536\n          }\n        }\n      }\n    }\n  }\n}",
+   "source_url": "https://opencode.ai/v1/docs/providers.md"
+  },
+  {
+   "purpose": "V1 -> V2 provider migration example",
+   "content": "// V1\n{ \"provider\": { \"acme\": { \"npm\": \"@ai-sdk/openai-compatible\", \"api\": \"https://llm.example.com/v1\", \"options\": { \"apiKey\": \"{env:ACME_API_KEY}\" } } } }\n// V2\n{ \"providers\": { \"acme\": { \"package\": \"aisdk:@ai-sdk/openai-compatible\", \"settings\": { \"baseURL\": \"https://llm.example.com/v1\", \"apiKey\": \"{env:ACME_API_KEY}\" } } } }",
+   "source_url": "https://opencode.ai/docs/migrate-v1/"
+  },
+  {
+   "purpose": "Reasoning field and compatibility quirks for an OpenAI-compatible local reasoner",
+   "content": "{\n  \"providers\": {\n    \"local\": {\n      \"compatibility\": { \"streamUsage\": false },\n      \"models\": {\n        \"reasoner\": {\n          \"compatibility\": { \"reasoningField\": \"reasoning_content\", \"maxTokensField\": \"max_tokens\" },\n        },\n      },\n    },\n  },\n}",
+   "source_url": "https://opencode.ai/docs/models/"
+  },
+  {
+   "purpose": "Variant with body fields (pattern usable for per-request toggles such as disabling thinking)",
+   "content": "{\n  \"providers\": {\n    \"opencode\": {\n      \"models\": {\n        \"deepseek-v4.1-flash\": {\n          \"variants\": [{ \"id\": \"review\", \"body\": { \"thinking\": { \"type\": \"disabled\" }, \"temperature\": 0.2 } }],\n        },\n      },\n    },\n  },\n  \"agents\": {\n    \"reviewer\": { \"model\": \"opencode/deepseek-v4.1-flash#review\" },\n  },\n}",
+   "source_url": "https://opencode.ai/docs/migrate-v1/"
+  },
+  {
+   "purpose": "INFERRED recommended shape for this machine: Docker vLLM on :8000 as a distinct custom provider with tools on, vLLM 'reasoning' field, limits matched to --max-model-len; values in angle brackets to be filled from the model lane",
+   "content": "{\n  \"$schema\": \"https://opencode.ai/config.json\",\n  \"model\": \"vllm-docker/coder\",\n  \"plugins\": [\"-opencode.provider.vllm\"],\n  \"agents\": { \"title\": { \"model\": \"vllm-docker/coder\" } },\n  \"providers\": {\n    \"vllm-docker\": {\n      \"name\": \"vLLM (Docker)\",\n      \"package\": \"@opencode/ai/providers/openai-compatible\",\n      \"settings\": { \"baseURL\": \"http://127.0.0.1:8000/v1\", \"apiKey\": \"{env:VLLM_API_KEY}\", \"headerTimeout\": 600000 },\n      \"models\": {\n        \"coder\": {\n          \"modelID\": \"<served-model-name>\",\n          \"capabilities\": { \"tools\": true, \"input\": [\"text\"], \"output\": [\"text\"] },\n          \"compatibility\": { \"reasoningField\": \"reasoning\" },\n          \"limit\": { \"context\": <same as --max-model-len, e.g. 65536>, \"output\": 16384 }\n        }\n      }\n    }\n  }\n}",
+   "source_url": "https://opencode.ai/docs/models/"
+  }
+ ],
+ "gaps": [
+  "The OpenCode V2 docs do not say how many tokens OpenCode's own system prompt and tool schemas take. Pages checked: providers, models, config, compaction, agents, tools, troubleshooting, migrate-v1. So the smallest workable local context window has to be measured. Ollama's 64k figure is the only number from a vendor.",
+  "Not verified: whether a `models` override under the built-in `vllm` provider ID (for example `capabilities.tools: true`) survives the discovery transform. The source removes the provider's models and re-adds the discovered ones, and the order relative to the config merge was not traced. The recommended snippet avoids the question by using a separate custom provider ID.",
+  "Not checked: which vllm/vllm-openai release tag first contains the `tool_choice` default-to-auto logic. Issue #60202 should be retested end to end on the vLLM image that gets chosen.",
+  "Not tested: whether current llama.cpp releases still reject the unanchored `^ses` schema pattern (#58019). The report names build b9879; newer ggml-org/llama.cpp releases were not checked.",
+  "Not shown: the exact V2 syntax for a vLLM thinking on/off variant (for example `body.chat_template_kwargs.enable_thinking` for Qwen, or `reasoning_effort` for gpt-oss). The docs only describe variants generically, with settings/headers/body.",
+  "The docs have no 'recommended local models' list for OpenCode V2. Models named in examples (Qwen3-Coder-30B-A3B-Instruct, gemma-4-26b-a4b, gemma3:4b, qwen3:8b) are illustrations, not endorsements.",
+  "Could not list all GHCR tags for ghcr.io/anomalyco/opencode because the first page returned 1000 tags. I checked only that 2.3.0, 2.0.0 and latest exist. The image's entrypoint and how it reaches a host-side vLLM (network mode) are not documented on the intro page."
+ ]
+}

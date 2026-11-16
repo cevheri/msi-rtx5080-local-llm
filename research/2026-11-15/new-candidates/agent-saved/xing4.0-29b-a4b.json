@@ -1,0 +1,143 @@
+{
+  "name": "Xing4.0-29B-A4B",
+  "hf_repo": "XingChen-AGI/Xing4.0-29B-A4B",
+  "exists_as_described": true,
+  "within_last_12_months": true,
+  "official_org": {
+    "value": "XingChen-AGI (HF org, not HF-verified; GitHub org created 2026-08-27, not verified). It is China Telecom Artificial Intelligence Technology Co., Ltd. (TeleAI, the TeleChat team): the LICENSE says 'Copyright (c) 2026 China Telecom AI Technology Co., Ltd.', and the card cites the TeleChat3-MoE report (arXiv 2512.24157) and links teleai.com.cn. HF users wangc0427 ('wang chao', who uploaded both org avatars) and ShuangyongSong ('Samuel Song', a co-author of the TeleChat reports) are members of both Tele-AI and XingChen-AGI. The Tele-AI/TeleChat3 GitHub README does not link to Xing.",
+    "source_url": "https://huggingface.co/api/users/wangc0427/overview",
+    "support": "source-backed"
+  },
+  "release_date": {
+    "value": "HF createdAt 2026-09-16T06:44:40Z (lastModified 2026-11-10T11:45:38Z); the GitHub README news says it was open-sourced 2026-09-17. llama.cpp and SGLang mainline support merged 2026-11-05.",
+    "source_url": "https://huggingface.co/api/models/XingChen-AGI/Xing4.0-29B-A4B?blobs=true",
+    "support": "direct-statement"
+  },
+  "license": {
+    "value": "Apache-2.0: the standard Apache 2.0 text with a China Telecom copyright line and no extra use clauses in the LICENSE file. The GitHub README adds a non-binding disclaimer: do not use it for activities that endanger national or social security, or for internet services that have not passed security review and filing.",
+    "source_url": "https://huggingface.co/XingChen-AGI/Xing4.0-29B-A4B/raw/main/LICENSE",
+    "support": "direct-statement"
+  },
+  "params": {
+    "value": "29B total / 4B active according to the card. The HF safetensors count is 31,215,031,088 including the MTP (nextn) block; 64 routed experts plus 1 shared expert, top-4.",
+    "source_url": "https://huggingface.co/XingChen-AGI/Xing4.0-29B-A4B/raw/main/README.md",
+    "support": "direct-statement"
+  },
+  "architecture": {
+    "value": "Xing4_0ForCausalLM (custom_code, model_type xing4_0), a DeepSeek-V3-style MoE plus mHC. 40 layers, of which the first 2 are dense (first_k_dense_replace 2, intermediate 9216) and 38 are MoE (moe_intermediate 1024, 64 routed, 1 shared, top-4, sigmoid noaux_tc, routed_scaling 2.0). Every layer uses full MLA attention: 32 heads, q_lora_rank 768, kv_lora_rank 512, qk_nope 128, qk_rope 64, v_head 128. mHC hyper-connections use hc_mult 4 with 20 Sinkhorn iterations. There is 1 MTP layer (num_nextn_predict_layers 1). hidden 3584, vocab 131072, untied embeddings. There are no sliding-window, linear-attention or Mamba layers.",
+    "source_url": "https://huggingface.co/XingChen-AGI/Xing4.0-29B-A4B/raw/main/config.json",
+    "support": "direct-statement"
+  },
+  "context_length": {
+    "value": "max_position_embeddings 262144: YaRN factor 64 over original 4096, and GGUF xing4_0.context_length 262144. The card says 256K native, 'extensible to 512K', but no 512K config is published.",
+    "source_url": "https://huggingface.co/XingChen-AGI/Xing4.0-29B-A4B/raw/main/config.json",
+    "support": "direct-statement"
+  },
+  "modalities": {
+    "value": "Text-only (en, zh), pipeline_tag text-generation, no vision tower.",
+    "source_url": "https://huggingface.co/api/models/XingChen-AGI/Xing4.0-29B-A4B?blobs=true",
+    "support": "direct-statement"
+  },
+  "thinking": {
+    "mode": "toggle",
+    "how_to_toggle": "The chat template reads enable_thinking: when it is undefined or true, the generation prompt is '<_bot><think>\\n'; when false it is '<_bot></think>'. Thinking is ON by default. vLLM (plugin): per request extra_body chat_template_kwargs {\"enable_thinking\": false}, server default --default-chat-template-kwargs '{\"enable_thinking\":false}', and reasoning parser xing4_0. llama.cpp b12407: per request body chat_template_kwargs {\"enable_thinking\": false}, or server-wide --chat-template-kwargs '{\"enable_thinking\":false}'. Whether --reasoning off maps to this template is inferred, not tested. Ollama: there is no library tag and no Xing renderer, so the think parameter is unknown. The vendor says the model is tuned mainly for thinking mode and non-thinking is weaker (HF discussion #5).",
+    "source_url": "https://huggingface.co/XingChen-AGI/Xing4.0-29B-A4B/raw/main/chat_template.jinja",
+    "support": "direct-statement"
+  },
+  "tool_calling": {
+    "supported": "yes",
+    "format": "A custom XML-tag format, not Hermes JSON and not qwen3_coder: <tool_call>{name}<param_key>{k}</param_key><param_value>{v}</param_value>...</tool_call>. Tools are listed as JSON inside <tools></tools> in the system turn, and results go back as <_observation><tool_response>...</tool_response>. <tool_call>, </tool_call>, <tool_response>, </tool_response>, <think> and </think> are special tokens (ids 9-14); <param_key> and <param_value> are not.",
+    "evidence": "chat_template.jinja lines 30-45 and 80-103; the vLLM plugin's xing4_0 tool parser accepts JSON, name+JSON and tag forms (plugin README). The card says it is 'format-aligned with agent frameworks such as OpenCode, Claude Code, OpenClaw, and Hermes' (README line 75), which is vendor-reported. llama.cpp PR #31589 added no chat handler (common/ untouched), and common/parsers at b12407 has no xing file, so tool calls go through the generic auto-parser (chat-diff-analyzer TAG_WITH_TAGGED). That mode seems able to describe this format (key prefix '<param_key>', key suffix '</param_key><param_value>', closer '</param_value>'), but this is inferred and untested. Independent counter-evidence: HF discussion #15 (2026-10-29), where a user of vLLM FP8 says write and edit tool calls fail every time while read works. A responder traced this to thinking plus max_tokens truncation inside <param_value> (2048 tokens: 5/5 truncated; 8192: 5/5 ok) and to occasionally dropping the <tool_call> wrapper at temperature 1.0. The original user says it still fails with 65k output.",
+    "source_url": "https://huggingface.co/XingChen-AGI/Xing4.0-29B-A4B/discussions/15",
+    "support": "contested"
+  },
+  "checkpoints": [
+    {"repo": "XingChen-AGI/Xing4.0-29B-A4B", "format": "safetensors BF16 (12 shards)", "size_gb": 62.43, "official": true, "publisher": "XingChen-AGI", "source_url": "https://huggingface.co/api/models/XingChen-AGI/Xing4.0-29B-A4B?blobs=true"},
+    {"repo": "XingChen-AGI/Xing4.0-29B-A4B-FP8", "format": "safetensors FP8 E4M3, 30.89 GiB", "size_gb": 33.17, "official": true, "publisher": "XingChen-AGI", "source_url": "https://huggingface.co/api/models/XingChen-AGI/Xing4.0-29B-A4B-FP8?blobs=true"},
+    {"repo": "XingChen-AGI/Xing4.0-29B-A4B-w8a8", "format": "safetensors W8A8, 32.74 GiB", "size_gb": 35.15, "official": true, "publisher": "XingChen-AGI", "source_url": "https://huggingface.co/api/models/XingChen-AGI/Xing4.0-29B-A4B-w8a8?blobs=true"},
+    {"repo": "XingChen-AGI/Xing4.0-29B-A4B-GGUF", "format": "GGUF iq2_M-slim 10.99 GiB (only file fully on GPU at 128k q8_0 KV); iq3_xxs 13.03; iq3_m 14.39; iq4_xs 17.02; iq4_nl 17.88; IQ4_NL 18.72; q5_0 19.01; q6_k 25.03; q8_0 31.82 GiB; no Q4_K_M", "size_gb": 11.8, "official": true, "publisher": "XingChen-AGI", "source_url": "https://huggingface.co/api/models/XingChen-AGI/Xing4.0-29B-A4B-GGUF?blobs=true"},
+    {"repo": "bartowski/XingChen-AGI_Xing4.0-29B-A4B-GGUF", "format": "GGUF made with mainline b12174, imatrix with tool-calling calibration: Q4_K_M 18.68 GiB, Q4_K_S 17.59, IQ4_XS 16.75, Q3_K_M 15.00, IQ3_XXS 13.44, Q2_K 11.96, IQ2_M 11.67 GiB", "size_gb": 20.05, "official": false, "publisher": "bartowski", "source_url": "https://huggingface.co/api/models/bartowski/XingChen-AGI_Xing4.0-29B-A4B-GGUF?blobs=true"},
+    {"repo": "mradermacher/Xing4.0-29B-A4B-i1-GGUF", "format": "GGUF imatrix (2026-11-09, after the mainline merge): i1-Q4_K_M 17.65 GiB, i1-IQ4_XS 15.64, i1-Q3_K_M 13.99", "size_gb": 18.95, "official": false, "publisher": "mradermacher", "source_url": "https://huggingface.co/api/models/mradermacher/Xing4.0-29B-A4B-i1-GGUF?blobs=true"},
+    {"repo": "Venastine-Research/Xing4.0-29B-A4B-GGUF", "format": "GGUF made 2026-09-17, before the mainline merge (fork era), so mainline compatibility is unverified: Q4_K_M 17.65 GiB, IQ3_M 12.23, IQ3_XXS 10.79, IQ2_M 9.22 GiB; most downloaded (27,529)", "size_gb": 18.95, "official": false, "publisher": "Venastine-Research", "source_url": "https://huggingface.co/api/models/Venastine-Research/Xing4.0-29B-A4B-GGUF?blobs=true"}
+  ],
+  "vllm": {
+    "fits": "no",
+    "arch_supported": "No. vLLM v0.33.0 registry.py has no Xing4_0 entry (only TeleChat/TeleChat2/TeleChat3). Support is only through the out-of-tree XingChen-AGI/xing4-vllm-plugin (v0.1.0, vendored from vLLM commit 2e09247 of 2026-08-06, which is 4266 commits behind v0.33.0; imports re-audited against main f147949 in 2026-10). It must be pip-installed into the image, so the stock vllm/vllm-openai:v0.33.0 image needs a derived image. The vendor also publishes quay.io/xingchen-agi/xingchen-inference-vllm:v0.29.1rc1-xing4_0. v0.33.0 does ship vllm/model_executor/layers/mhc.py, which the plugin uses.",
+    "best_checkpoint": "None fits. The smallest vLLM-loadable checkpoint is official FP8 at 30.89 GiB. No AWQ, GPTQ or NVFP4 build exists for the base model (kingjones777 NVFP4 is for the Intent variant only).",
+    "weights_gib": 30.89,
+    "kv_bytes_per_token_bf16": 46080,
+    "kv_math": "MLA: (kv_lora_rank 512 + qk_rope 64) x 2 B x 40 layers = 46,080 B/token BF16, 23,040 B/token FP8. Budget 14.65 GiB - 30.89 GiB FP8 weights - 1.2 GiB reserve = -17.44 GiB KV pool, so it does not load. BF16 (58.14 GiB) is worse. The plugin also states that mHC (hc_mult > 1) requires bfloat16 activations.",
+    "est_max_context_tokens": 0,
+    "min_version": "Not in-tree in any vLLM release. The plugin was tested at commit 2e09247 (2026-08); compatibility with v0.33.0 is unverified.",
+    "quant_on_sm120": "Not applicable: nothing fits. FP8 W8A8 on sm_120 would use the CUTLASS FP8 path, but the weights exceed VRAM.",
+    "tool_call_parser": "xing4_0 (plugin only)",
+    "reasoning_parser": "xing4_0 (plugin only)",
+    "serve_command": "Not recommended on this machine. Vendor reference: vllm serve XingChen-AGI/Xing4.0-29B-A4B --trust-remote-code --enable-auto-tool-choice --tool-call-parser xing4_0 --reasoning-parser xing4_0 --speculative-config '{\"method\":\"mtp\",\"num_speculative_tokens\":1}' (TP 2 in the README)",
+    "known_issues": "HF discussion #15: write and edit tool calls fail in agent harnesses on vLLM FP8, attributed to thinking-mode token doubling plus max_tokens truncation inside <param_value>. MoE CPU offload in vLLM is not viable on this machine (#66264 in the baseline).",
+    "sources": [
+      "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/models/registry.py",
+      "https://github.com/XingChen-AGI/xing4-vllm-plugin",
+      "https://github.com/XingChen-AGI/xing4-vllm-plugin/blob/main/pyproject.toml",
+      "https://github.com/XingChen-AGI/Xing4.0-29B-A4B",
+      "https://huggingface.co/api/models/XingChen-AGI/Xing4.0-29B-A4B-FP8?blobs=true"
+    ]
+  },
+  "llamacpp": {
+    "arch_supported": "Yes. LLM_ARCH_XING4_0 'xing4_0' is at src/llama-arch.cpp line 93 at tag b12407 (commit e574a17). PR #31589 (author shuxiaoqiong) merged 2026-11-05T16:47:27Z as 45b6604; b12407 is 251 commits ahead of it, and both b12173 and b12174 already contain it. Follow-up commits touching src/models/xing4-0.cpp: #31683 (kv shift fix, 2026-11-05) and #31927 (MTP hidden states, 2026-11-09), both in b12418. MTP tensors (block 40) are skipped unless --mtp/load_mtp is set. MLA KV is K-only (llama-kv-cache.cpp: has_v = !is_mla). There is no dedicated chat parser, so the generic auto-parser applies.",
+    "gguf_repo": "bartowski/XingChen-AGI_Xing4.0-29B-A4B-GGUF (Q4_K_M); all-on-GPU alternative: XingChen-AGI/Xing4.0-29B-A4B-GGUF xing4_0-29b-iq2_M-slim.gguf",
+    "quant": "Q4_K_M (bartowski, 18.68 GiB, mainline b12174 build)",
+    "file_gib": 18.68,
+    "offload_plan": "Parsed from GGUF headers (HTTP range read of tensor info). Q4_K_M has 15.40 GiB of expert tensors and 3.28 GiB of non-expert tensors; token_embd 0.47 GiB stays on host and the MTP block 40 (0.90 GiB) is not loaded, so 17.31 GiB would be on GPU with no offload. Expert tensors per block are about 0.37-0.64 GiB. --n-cpu-moe 18 puts 6.63 GiB of experts in RAM and leaves 10.68 GiB of weights on GPU; plus 128k q8_0 KV 2.99 GiB plus about 1.0 GiB compute = about 14.7 GiB VRAM. --n-cpu-moe 14 gives 12.16 GiB on GPU, 5.16 GiB in RAM, with 64k q8_0 KV 1.49 GiB = about 14.65 GiB. KV per token: 40 layers x 576 x 2 B = 46,080 B f16 (64k 2.81 GiB, 128k 5.62, 256k 11.25) or 24,480 B q8_0 (64k 1.49, 128k 2.99, 256k 5.98). All-on-GPU options: official iq2_M-slim puts 10.00 GiB on GPU (+2.99 KV at 128k q8_0 + 1.0) = about 14.0 GiB; bartowski IQ3_XXS puts 12.08 GiB on GPU (+1.49 at 64k q8_0 + 1.0) = about 14.6 GiB. Official iq4_xs (17.02 GiB) has a 2.22 GiB MTP block; with --n-cpu-moe 13 at 128k q8_0 it fits with about 3.8 GiB in RAM.",
+    "est_vram_gib": 14.7,
+    "est_ram_gib": 7.1,
+    "est_context_tokens": 131072,
+    "server_command": "docker run --rm --device nvidia.com/gpu=all -e GGML_CUDA_DISABLE_GRAPHS=1 --memory 48g -p 127.0.0.1:8080:8080 -v $HOME/.cache/huggingface:/root/.cache/huggingface ghcr.io/ggml-org/llama.cpp:server-cuda-b12407 -hf bartowski/XingChen-AGI_Xing4.0-29B-A4B-GGUF:Q4_K_M --host 0.0.0.0 --port 8080 -a xing4.0-29b-a4b -c 131072 -np 1 -fa on -ngl 99 --n-cpu-moe 18 -ctk q8_0 --jinja --temp 0.8 --top-p 0.95 --repeat-penalty 1.05 --chat-template-kwargs '{\"enable_thinking\":false}'",
+    "tool_calling_note": "Untested. The template's <tool_call>name<param_key>..</param_key><param_value>..</param_value></tool_call> format must be recognised by the b12407 auto-parser (TAG_WITH_TAGGED). Smoke-test with a multi-argument write tool and check that message.tool_calls is populated and not leaked into content. If thinking is on, set OpenCode limit.output to 16k or more because the model drafts file contents in reasoning (HF discussion #15). -ctv does nothing for MLA, which has no V cache. Whether q8_0 K with FA works for head size 576 on CUDA must be confirmed at startup; fallback is f16 KV at 64k (2.81 GiB), which still fits with --n-cpu-moe 18. The baseline caveats about GGML_CUDA_DISABLE_GRAPHS=1 and -np 1 apply.",
+    "sources": [
+      "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/src/llama-arch.cpp",
+      "https://github.com/ggml-org/llama.cpp/pull/31589",
+      "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/src/models/xing4-0.cpp",
+      "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/src/llama-kv-cache.cpp",
+      "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/common/chat-diff-analyzer.cpp",
+      "https://huggingface.co/bartowski/XingChen-AGI_Xing4.0-29B-A4B-GGUF",
+      "https://huggingface.co/XingChen-AGI/Xing4.0-29B-A4B-GGUF"
+    ]
+  },
+  "ollama": {
+    "tag": "none (no ollama.com/library/xing4 entry: HTTP 404 for /library/xing4 and /library/xing4.0; search shows only an unrelated rooido/XingAI 2.0 GB upload)",
+    "capabilities": "Unknown. Ollama v0.40.16 pins llama.cpp b12177 (LLAMA_CPP_VERSION), which is after the merge, so hf.co/ GGUF pulls may load. Ollama has no Xing renderer or parser in model/parsers, so tool calls and think handling are unverified and unlikely to parse.",
+    "context": "Needs OLLAMA_CONTEXT_LENGTH=65536 or more (baseline).",
+    "source_url": "https://raw.githubusercontent.com/ollama/ollama/v0.40.16/LLAMA_CPP_VERSION"
+  },
+  "benchmarks": [
+    {"name": "SWE-bench Verified", "score": "75.00 (Qwen3.6-35B-A3B 76.00, Gemma4-26B-A4B 53.00 in the same table)", "self_reported": true, "setting": "SWE-agent, temp 1.0, top_p 0.95, rep 1.05, 210K context, BF16", "source_url": "https://huggingface.co/XingChen-AGI/Xing4.0-29B-A4B/raw/main/README.md"},
+    {"name": "Terminal-Bench 2.1", "score": "57.50 (Qwen3.6 51.50, Gemma4 30.00)", "self_reported": true, "setting": "terminus-2, temp 0.8, max_tokens 64K, mean of 3 runs. The vendor's Qwen3.6 figure (51.5) differs from NVIDIA's same-harness 44.38 in the baseline.", "source_url": "https://huggingface.co/XingChen-AGI/Xing4.0-29B-A4B/raw/main/README.md"},
+    {"name": "SWE-bench Multilingual", "score": "66.00 (Qwen3.6 67.20)", "self_reported": true, "setting": "SWE-agent, 210K", "source_url": "https://huggingface.co/XingChen-AGI/Xing4.0-29B-A4B/raw/main/README.md"},
+    {"name": "Tau3-Bench", "score": "64.63 (Qwen3.6 67.20, Gemma4 58.90)", "self_reported": true, "setting": "official harness, pass^1 mean of 4 runs", "source_url": "https://huggingface.co/XingChen-AGI/Xing4.0-29B-A4B/raw/main/README.md"},
+    {"name": "Claw-Eval", "score": "76.55", "self_reported": true, "setting": "official harness, mean of 3", "source_url": "https://huggingface.co/XingChen-AGI/Xing4.0-29B-A4B/raw/main/README.md"},
+    {"name": "DeepresearchBII", "score": "60.80", "self_reported": true, "setting": "OpenCode harness with Exa MCP, 256K", "source_url": "https://huggingface.co/XingChen-AGI/Xing4.0-29B-A4B/raw/main/README.md"},
+    {"name": "IFBench / AIME2026 / AA.LCR", "score": "69.67 / 90.00 / 61.00", "self_reported": true, "setting": "vendor harness", "source_url": "https://huggingface.co/XingChen-AGI/Xing4.0-29B-A4B/raw/main/README.md"},
+    {"name": "Perplexity (llama.cpp)", "score": "bf16 8.8403, q8_0 8.8616, iq4_nl 9.1281", "self_reported": true, "setting": "PR author's measurement, corpus unstated", "source_url": "https://github.com/ggml-org/llama.cpp/pull/31589"},
+    {"name": "Independent leaderboards", "score": "none found: artificialanalysis.ai model pages return 404; not listed on OpenRouter /api/v1/models; gradually.ai says there are too few independent results for an index (lead only)", "self_reported": false, "setting": "checked 2026-11-15", "source_url": "https://artificialanalysis.ai/models/xing4-0-29b-a4b"}
+  ],
+  "sampling": "Card: coding/agent temp 0.8, top_p 0.95, repetition_penalty 1.05; reasoning/general temp 1.0, top_p 0.95, rep 1.05. generation_config.json and GGUF general.sampling.* hold temp 1.0, top_p 0.95, penalty_repeat 1.05. The vendor's vLLM example also sets skip_special_tokens false. HF discussion #15 suggests temperature 0 for tool-heavy turns (not vendor guidance). No Unsloth guide or GGUF exists; only unsloth-zoo fine-tuning support is mentioned.",
+  "speed_notes": "Inferred, not measured. Q4_K_M with --n-cpu-moe 18 reads per token about 2.45 GB of non-expert weights plus 0.56 GB of GPU experts from VRAM (3.4 ms at 896 GB/s) and about 0.45 GB of experts from DDR5 (about 5.6 ms at 80 GB/s), so the bound is about 110 tok/s; expect about 40-70 tok/s. iq2_M-slim fully on GPU reads about 2.6 GB/token, a 345 tok/s bound. The PR's H800 tg128 of only 159 tok/s (iq4_nl) suggests mHC (4 streams, 20 Sinkhorn iterations per layer) adds launch and compute overhead, so expect perhaps 70-110 tok/s on this laptop. MTP speculative decoding (--mtp) is possible but untested.",
+  "opencode_fit": {
+    "verdict": "usable",
+    "recommended_runtime": "llama.cpp server-cuda-b12407",
+    "recommended_checkpoint": "bartowski/XingChen-AGI_Xing4.0-29B-A4B-GGUF:Q4_K_M with --n-cpu-moe 18 (128k q8_0 KV); for all-on-GPU speed, XingChen-AGI/Xing4.0-29B-A4B-GGUF iq2_M-slim (quality at about 2.8 bpw unmeasured)",
+    "recommended_context": "131072 (q8_0 K cache); 65536 with f16 KV if q8_0 MLA K fails",
+    "caveats": "It runs on stock llama.cpp b12407 with Q4 offload similar to the Qwen3.6-35B-A3B pick (18.68 vs 19.13 GiB). Vendor benchmarks are strong but all self-reported, and no independent evaluation exists. Tool calls use a non-standard XML-tag format that llama.cpp handles only through the generic auto-parser (untested), and a public report says write and edit tool calls fail in agent harnesses (vLLM FP8). The vendor says non-thinking mode is weaker, while thinking roughly doubles tokens for file writes. vLLM is impossible on 16 GB (FP8 30.89 GiB, plugin only). The org is not HF-verified, though it is tied to China Telecom TeleAI staff. Treat it as a candidate to measure with an OpenCode tool-call smoke test before ranking it."
+  },
+  "gaps": [
+    "No on-machine test: llama.cpp auto-parser handling of the <param_key>/<param_value> tool format at b12407 is unverified.",
+    "Whether -ctk q8_0 with -fa on works for MLA head size 576 on CUDA sm_120 in b12407 is unverified.",
+    "Venastine-Research GGUFs predate the mainline merge; compatibility with b12407 is unknown.",
+    "Quality loss of iq2_M-slim and IQ3_XXS versus Q4_K_M is unmeasured (only the PR perplexity for bf16/q8_0/iq4_nl).",
+    "Compatibility of the vLLM plugin with v0.33.0 is unverified (moot on 16 GB).",
+    "No independent coding or agent benchmark; the vendor's Qwen3.6 TB2.1 figure (51.5) is higher than NVIDIA's same-harness 44.38, so cross-table comparison is unsafe.",
+    "Ollama behaviour (load, tools, think) is unverified; there is no library tag.",
+    "The 512K extension has no published config or rope settings.",
+    "Whether the KV cache covers 40 or 41 layers (MTP block) depends on --mtp; the arithmetic assumes 40."
+  ]
+}

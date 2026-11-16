@@ -1,0 +1,119 @@
+{
+ "verdicts": [
+  {
+   "claim": "Repo is official Qwen (not a re-upload); org isVerified=false; GitHub QwenLM/Qwen3-Coder links it",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/organizations/Qwen/overview",
+   "correction": "I confirmed the org API values live: isVerified false, 469 models, 116473 followers, plan team. The model API reports author=Qwen. I did not re-read the GitHub README link at line 86."
+  },
+  {
+   "claim": "createdAt 2025-07-31T07:04:55Z, lastModified 2025-12-03 (config.json commit), template and parser updates on 2025-08-07 and 2025-08-21, outside the 2025-11-15..2026-11-15 window",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/Qwen/Qwen3-Coder-30B-A3B-Instruct/commits/main",
+   "correction": "The commit list matches exactly: '2025-12-03 Update config.json', '2025-08-21 Update chat_template and tool_parser (#22)', '2025-08-07 Update chat_template in tokenizer_config.json (#14)'. within_last_12_months=false is correct."
+  },
+  {
+   "claim": "License apache-2.0 with a LICENSE file in the repo",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Qwen/Qwen3-Coder-30B-A3B-Instruct/raw/main/README.md",
+   "correction": "README lines 3-4: 'license: apache-2.0' and license_link to blob/main/LICENSE. The LICENSE file appears in the siblings list and was created by the 2025-07-31 commit 'Create LICENSE'."
+  },
+  {
+   "claim": "30.5B total / 3.3B active; safetensors total 30,532,122,624; BF16 56.87 GiB",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/Qwen/Qwen3-Coder-30B-A3B-Instruct?blobs=true",
+   "correction": "README line 28 states this, the API total is 30532122624, and the 16 shards sum to 56.873 GiB."
+  },
+  {
+   "claim": "Architecture: Qwen3MoeForCausalLM, 48 layers all full attention, 32Q/4KV heads, head_dim 128, hidden 2048, 128 experts top-8, moe_intermediate 768, vocab 151936, untied, rope_theta 1e7, max_pos 262144",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Qwen/Qwen3-Coder-30B-A3B-Instruct/raw/main/config.json",
+   "correction": "Every value matches the raw config.json. Also in that file: sliding_window null, use_sliding_window false, mlp_only_layers [], decoder_sparse_step 1, rope_scaling null."
+  },
+  {
+   "claim": "Context 262,144 native, extendable to 1M with YaRN; rope_scaling null",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Qwen/Qwen3-Coder-30B-A3B-Instruct/raw/main/README.md",
+   "correction": "README lines 18 and 33 say this. The Unsloth -1M-GGUF repo was not re-checked."
+  },
+  {
+   "claim": "Text-only modality, pipeline_tag text-generation",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/Qwen/Qwen3-Coder-30B-A3B-Instruct",
+   "correction": "The repo has no vision or processor files."
+  },
+  {
+   "claim": "Non-thinking only; nothing to toggle; template contains no <think>",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Qwen/Qwen3-Coder-30B-A3B-Instruct/raw/main/chat_template.jinja",
+   "correction": "README line 35 has the quoted NOTE. 'grep -c think' on chat_template.jinja returns 0. The Ollama library page shows only the 'tools' capability label."
+  },
+  {
+   "claim": "Tool calling: Qwen3-Coder XML (<tools> list, <tool_call><function=..><parameter=..>), tool results in <tool_response> inside a user turn, default system prompt when tools are present",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Qwen/Qwen3-Coder-30B-A3B-Instruct/raw/main/chat_template.jinja",
+   "correction": "Confirmed in chat_template.jinja: lines 27-28 add the default 'You are Qwen...' system prompt only when tools are present and no system message is given; lines 32-33 open '# Tools ... <tools>'; line 66 gives the <tool_call><function=...> format; lines 99-105 wrap role=tool messages in '<|im_start|>user' plus <tool_response>. The repo also ships qwen3coder_tool_parser.py."
+  },
+  {
+   "claim": "vLLM v0.33.0: Qwen3MoeForCausalLM registered at registry.py line 203; qwen3_coder and qwen3_xml map to Qwen3EngineToolParser",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/tool_parsers/__init__.py",
+   "correction": "Read at the v0.33.0 tag: registry.py line 203; __init__.py lines 206-219."
+  },
+  {
+   "claim": "llama.cpp b12418 has common/parsers/qwen3-coder.cpp",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/blob/b12418/common/parsers/qwen3-coder.cpp",
+   "correction": "The file exists at tag b12418 (10316 bytes). I did not re-verify the chat.cpp line ~1420 claim or the supports_thinking=false detail."
+  },
+  {
+   "claim": "FP8 official checkpoint 29.03 GiB / 31.18 GB",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/Qwen/Qwen3-Coder-30B-A3B-Instruct-FP8?blobs=true",
+   "correction": "author=Qwen, createdAt 2025-07-31T08:14:11Z, 29.035 GiB."
+  },
+  {
+   "claim": "Vendor benchmarks from the card image: Terminal-Bench 31.3, SWE-bench Verified 51.6 (OpenHands 500 and 100 turns), SWE-bench Live 20.7, SWE-bench Multilingual 34.7, Aider-Polyglot 33.3, BFCL-v3 62.2, TAU-Bench Retail 68.7 / Airline 48.0",
+   "verdict": "confirmed",
+   "evidence_url": "https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen3-Coder/qwen3-coder-30a3-main.jpg",
+   "correction": "I downloaded the image and read it: every value matches and all are vendor self-reported. The image is titled 'Qwen3-Coder-Flash'. The record omits these values from the same image: Multi-SWE-bench mini 19.5, Multi-SWE-bench flash 19.3, Spider2 21.4, WebArena 43.5, Mind2Web 51.0. 'Terminal-Bench (v1)' is the record's own label, because the image says only 'Terminal-Bench'."
+  },
+  {
+   "claim": "SWE-bench leaderboard entry 'OpenHands + Qwen3-Coder-30B-A3B-Instruct' 51.6, 2025-08-05, checked=false, orgs Qwen/OpenHands",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/SWE-bench/swe-bench.github.io/master/data/leaderboards.json",
+   "correction": "This is a self-submitted, unchecked entry and does not independently confirm the vendor figure."
+  },
+  {
+   "claim": "EntroPO + R2E derivative 52.2 (1 attempt) / 60.4 (2+ attempts), checked=false",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/SWE-bench/swe-bench.github.io/master/data/leaderboards.json",
+   "correction": "Date 2025-09-01, org 42-b3yond-6ug. Correctly labelled as a derivative."
+  },
+  {
+   "claim": "Kwaipilot KAT-Coder-V2.5-Dev card (2026-07): SWE-V 31.80, Multilingual 20.67, SWE-bench Pro 19.84, Terminal-Bench 2.1 13.50 (10.11/16.90), PinchBench 72.3",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Kwaipilot/KAT-Coder-V2.5-Dev/raw/main/README.md",
+   "correction": "The values match; the card was created 2026-07-23. Caveats: (a) the column header is 'Qwen3-Coder-30B', not the full repo name. (b) Kwaipilot is an interested competitor, and each model was run once in its own harness. Its README line 163 says such deviations come from 'mismatches between model tool preference and the allowed toolset', so 'independent' should read 'third-party, competitor-run, single run'. (c) The same table also gives Scicode 18.27 for this model. The KAT-Code-Bench value for Qwen3-Coder-30B was cut off in my read."
+  },
+  {
+   "claim": "vLLM issue #48753 open, 2026-07-15, the tool parser strips whitespace",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/vllm-project/vllm/issues/48753",
+   "correction": "I did not re-check the other issues (#65774, #45439, #56263, #67513, #46924, #65560, #66423)."
+  },
+  {
+   "claim": "Ollama qwen3-coder:30b tags (q4_K_M default, q8_0, fp16) with only the tools badge",
+   "verdict": "confirmed",
+   "evidence_url": "https://ollama.com/library/qwen3-coder/tags",
+   "correction": "Tags 30b, 30b-a3b-q4_..., 30b-a3b-q8_0 and 30b-a3b-fp16 are present. I did not re-check the digest 06c1097efce0 or the sizes."
+  },
+  {
+   "claim": "Third-party quant repo sizes (QuantTrio, stelterlab, cyankiwi, Intel, NVFP4, ggml-org, unsloth, lmstudio) and the ggml-org repo dates 2026-10-22 / 2026-11-12",
+   "verdict": "uncertain",
+   "correction": "Not re-checked in this pass."
+  }
+ ],
+ "overall": "holds-with-corrections",
+ "summary": "No claim was refuted. I read the HF API, config.json, README.md and chat_template.jinja raw, plus the vendor benchmark image, the SWE-bench leaderboards.json, the Kwaipilot README, vLLM v0.33.0 source, the llama.cpp b12418 file and the Ollama pages. Identity (Qwen org, isVerified=false), dates (created 2025-07-31, outside the window), apache-2.0, 30.5B/3.3B, the config values, 262k native context, text-only, non-thinking (no 'think' in the template), the XML tool format, the vLLM parser mapping and every listed vendor benchmark number all match their sources.\n\nThree corrections. First, the Kwaipilot numbers should be called 'competitor-run, single-run, own harness', not 'independent same-harness'; its card says tool-set mismatches depress scores, and its column is labelled only 'Qwen3-Coder-30B'. Second, the vendor image is titled Qwen3-Coder-Flash and has five more values for this model that the record omits: Multi-SWE-bench mini 19.5, flash 19.3, Spider2 21.4, WebArena 43.5, Mind2Web 51.0. Third, the 'v1' Terminal-Bench label is the record's own inference. The SWE-bench leaderboard entry of 51.6 is self-submitted and unchecked, so it does not corroborate the vendor figure.\n\nNot re-checked: third-party quant sizes, most of the vLLM issue numbers, the Ollama digest and sizes, the chat.cpp line reference, and the GitHub README line 86. Working files are in $SCRATCH/qc30/"
+}

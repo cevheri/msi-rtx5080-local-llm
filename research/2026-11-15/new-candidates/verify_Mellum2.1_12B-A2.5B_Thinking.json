@@ -1,0 +1,274 @@
+{
+ "name": "Mellum2.1 12B-A2.5B Thinking (JetBrains)",
+ "hf_repo": "JetBrains/Mellum2.1-12B-A2.5B-Thinking",
+ "exists_as_described": true,
+ "within_last_12_months": true,
+ "official_org": {
+  "value": "JetBrains (HF org JetBrains, author field 'JetBrains'; announced on the JetBrains AI blog by Bulat Salimzianov). Sibling official repos: JetBrains/Mellum2.1-12B-A2.5B-Thinking-GGUF (2026-10-07) and JetBrains/Mellum2.1-12B-A2.5B-Thinking-MTP (2026-10-30, same weights plus MTP head).",
+  "source_url": "https://huggingface.co/api/models?author=JetBrains&sort=createdAt&direction=-1 ; https://blog.jetbrains.com/ai/2026/10/mellum2-1-gets-to-work-a-fast-open-model-for-coding-agents/",
+  "support": "direct-statement"
+ },
+ "release_date": {
+  "value": "HF createdAt 2026-09-20T10:52:55Z (repo created before going public), lastModified 2026-10-07T23:08:12Z; public announcement 2026-10-08 (JetBrains AI blog RSS pubDate Thu, 08 Oct 2026 12:00:00 +0000). Predecessor Mellum2 open-sourced June 2026 (HF 2026-05-26).",
+  "source_url": "https://huggingface.co/api/models/JetBrains/Mellum2.1-12B-A2.5B-Thinking ; https://blog.jetbrains.com/ai/feed/",
+  "support": "direct-statement"
+ },
+ "license": {
+  "value": "Apache-2.0 (card YAML license: apache-2.0, 'Released under the Apache 2.0 license'; not gated). No restrictions beyond Apache-2.0. Community FP8 by liodon-ai is tagged 'other'; voves FP8, cyankiwi AWQ, FP8Enjoyer NVFP4 and the official GGUF repo are apache-2.0.",
+  "source_url": "https://huggingface.co/JetBrains/Mellum2.1-12B-A2.5B-Thinking/raw/main/README.md",
+  "support": "direct-statement"
+ },
+ "params": {
+  "value": "12,149,923,072 total (HF safetensors metadata, all BF16); card: 12B total, 2.5B active. From config: active per token about 1.39B expert (8 of 64 x 3 x 2304 x 896 x 28) + 0.59B attention + 0.23B lm_head + 0.23B embedding lookup = about 2.4B.",
+  "source_url": "https://huggingface.co/api/models/JetBrains/Mellum2.1-12B-A2.5B-Thinking?blobs=true",
+  "support": "direct-statement"
+ },
+ "architecture": {
+  "value": "MellumForCausalLM, model_type mellum. 28 layers, hidden 2304, all MLPs sparse MoE: 64 experts, top-8, moe_intermediate_size 896, softmax gating with norm_topk_prob. GQA 32 Q / 4 KV heads, head_dim 128, q/k norm. 3 of every 4 layers sliding_attention (window 1024, plain RoPE theta 5e5); 7 full_attention layers (3,7,...,27) with YaRN factor 16 over original 8192. Vocab 98,304, untied embeddings, BF16. Same architecture as Mellum2. Text only.",
+  "source_url": "https://huggingface.co/JetBrains/Mellum2.1-12B-A2.5B-Thinking/raw/main/config.json",
+  "support": "direct-statement"
+ },
+ "context_length": {
+  "value": "131,072 (max_position_embeddings 131072; tokenizer model_max_length 131072; card). Vendor agentic evals ran at 114K context.",
+  "source_url": "https://huggingface.co/JetBrains/Mellum2.1-12B-A2.5B-Thinking/raw/main/config.json",
+  "support": "direct-statement"
+ },
+ "modalities": {
+  "value": "Text in, text out. No vision tower; --language-model-only not needed. Tokenizer also has FIM tokens inherited from Mellum.",
+  "source_url": "https://huggingface.co/JetBrains/Mellum2.1-12B-A2.5B-Thinking/raw/main/tokenizer_config.json",
+  "support": "direct-statement"
+ },
+ "thinking": {
+  "mode": "toggle",
+  "how_to_toggle": "Thinking on by default (card: 'Mellum2.1 is a thinking model'; the model opens <think> itself). chat_template.jinja appends an empty '<think>\\n\\n</think>\\n\\n' when enable_thinking is false. vLLM v0.33.0: --reasoning-parser qwen3 (vendor command; registered), per request chat_template_kwargs {\"enable_thinking\": false} or server --default-chat-template-kwargs. llama.cpp b12407: --reasoning on|off|auto or --chat-template-kwargs, per request chat_template_kwargs. Ollama: 'think': false (inferred). All vendor benchmarks are in thinking mode; non-thinking quality is undocumented. The template keeps reasoning_content only for assistant turns after the last real user message.",
+  "source_url": "https://huggingface.co/JetBrains/Mellum2.1-12B-A2.5B-Thinking/raw/main/chat_template.jinja",
+  "support": "direct-statement"
+ },
+ "tool_calling": {
+  "supported": "yes",
+  "format": "Hermes/Qwen style: tools as JSON in <tools></tools> in the system turn; the model emits <tool_call>{\"name\":...,\"arguments\":{...}}</tool_call>; results come back as <tool_response> in a user turn. <tool_call>, <tool_response>, <think> are added tokens 23-24 and 29-32.",
+  "evidence": "Chat template tool block; card serving command '--enable-auto-tool-choice --tool-call-parser hermes'; 'hermes' is registered in vllm/tool_parsers/__init__.py at v0.33.0; RL included tool use and SWE in real repos with shell and file tools. Vendor BFCL v4 62.3, ToolHop 49.1, WorkBench 44.6 (self-reported). No independent OpenCode test found.",
+  "source_url": "https://huggingface.co/JetBrains/Mellum2.1-12B-A2.5B-Thinking/raw/main/README.md",
+  "support": "direct-statement"
+ },
+ "checkpoints": [
+  {
+   "repo": "JetBrains/Mellum2.1-12B-A2.5B-Thinking",
+   "format": "safetensors BF16, 22.63 GiB",
+   "official": true,
+   "publisher": "JetBrains",
+   "size_gb": 24.3,
+   "source_url": "https://huggingface.co/api/models/JetBrains/Mellum2.1-12B-A2.5B-Thinking?blobs=true"
+  },
+  {
+   "repo": "JetBrains/Mellum2.1-12B-A2.5B-Thinking-MTP",
+   "format": "safetensors BF16 + 0.857 GB MTP head; needs vLLM >= 0.33 and transformers >= 5.20",
+   "official": true,
+   "publisher": "JetBrains",
+   "size_gb": 25.16,
+   "source_url": "https://huggingface.co/api/models/JetBrains/Mellum2.1-12B-A2.5B-Thinking-MTP?blobs=true"
+  },
+  {
+   "repo": "JetBrains/Mellum2.1-12B-A2.5B-Thinking-GGUF (Q8_0)",
+   "format": "GGUF Q8_0 12.04 GiB, KLD 0.008",
+   "official": true,
+   "publisher": "JetBrains",
+   "size_gb": 12.93,
+   "source_url": "https://huggingface.co/api/models/JetBrains/Mellum2.1-12B-A2.5B-Thinking-GGUF?blobs=true"
+  },
+  {
+   "repo": "JetBrains/Mellum2.1-12B-A2.5B-Thinking-GGUF (Q6_K)",
+   "format": "GGUF Q6_K 10.13 GiB, KLD 0.020",
+   "official": true,
+   "publisher": "JetBrains",
+   "size_gb": 10.88,
+   "source_url": "https://huggingface.co/api/models/JetBrains/Mellum2.1-12B-A2.5B-Thinking-GGUF?blobs=true"
+  },
+  {
+   "repo": "JetBrains/Mellum2.1-12B-A2.5B-Thinking-GGUF (Q4_K_M)",
+   "format": "GGUF Q4_K_M 7.52 GiB, KLD 0.075, vendor-recommended",
+   "official": true,
+   "publisher": "JetBrains",
+   "size_gb": 8.07,
+   "source_url": "https://huggingface.co/api/models/JetBrains/Mellum2.1-12B-A2.5B-Thinking-GGUF?blobs=true"
+  },
+  {
+   "repo": "JetBrains/Mellum2.1-12B-A2.5B-Thinking-GGUF (MXFP4_MOE)",
+   "format": "GGUF MXFP4_MOE 6.55 GiB, KLD 0.115",
+   "official": true,
+   "publisher": "JetBrains",
+   "size_gb": 7.03,
+   "source_url": "https://huggingface.co/api/models/JetBrains/Mellum2.1-12B-A2.5B-Thinking-GGUF?blobs=true"
+  },
+  {
+   "repo": "JetBrains/Mellum2.1-12B-A2.5B-Thinking-GGUF (mtp draft head)",
+   "format": "GGUF BF16 MTP head 1.65 GiB; combined files in mtp/; needs llama.cpp b11747+",
+   "official": true,
+   "publisher": "JetBrains",
+   "size_gb": 1.77,
+   "source_url": "https://huggingface.co/api/models/JetBrains/Mellum2.1-12B-A2.5B-Thinking-GGUF?blobs=true"
+  },
+  {
+   "repo": "cyankiwi/Mellum2.1-12B-A2.5B-Thinking-AWQ-INT4",
+   "format": "compressed-tensors W4A16 group 32 (attention + experts), 7.15 GiB, apache-2.0",
+   "official": false,
+   "publisher": "cyankiwi",
+   "size_gb": 7.68,
+   "source_url": "https://huggingface.co/api/models/cyankiwi/Mellum2.1-12B-A2.5B-Thinking-AWQ-INT4?blobs=true"
+  },
+  {
+   "repo": "voves/Mellum2.1-12B-A2.5B-Thinking-FP8",
+   "format": "compressed-tensors FP8 W8A8 dynamic, 11.76 GiB, apache-2.0",
+   "official": false,
+   "publisher": "voves",
+   "size_gb": 12.63,
+   "source_url": "https://huggingface.co/api/models/voves/Mellum2.1-12B-A2.5B-Thinking-FP8?blobs=true"
+  },
+  {
+   "repo": "FP8Enjoyer/Mellum2.1-12B-A2.5B-Thinking-NVFP4",
+   "format": "compressed-tensors NVFP4 weight-only (W4A16 Marlin), 6.68 GiB",
+   "official": false,
+   "publisher": "FP8Enjoyer",
+   "size_gb": 7.17,
+   "source_url": "https://huggingface.co/api/models/FP8Enjoyer/Mellum2.1-12B-A2.5B-Thinking-NVFP4?blobs=true"
+  },
+  {
+   "repo": "bartowski/Mellum2.1-12B-A2.5B-Thinking-GGUF",
+   "format": "GGUF imatrix quants (sizes not checked)",
+   "official": false,
+   "publisher": "bartowski",
+   "source_url": "https://huggingface.co/api/models?search=Mellum2.1"
+  }
+ ],
+ "vllm": {
+  "fits": "yes",
+  "arch_supported": "Yes, via the Transformers backend. registry.py:759 at v0.33.0 maps \"MellumForCausalLM\" to (\"transformers\", \"TransformersMoEForCausalLM\"). The native mellum.py was removed by PR #59679 (2026-10-02, B200 parity). base.py:691-693 sets per_layer_sliding_window from layer_types. Transformers has had models/mellum since v5.16.1. v0.33.0 allows transformers >=5.16.1,<5.21.0, and PR #61983 handles Mellum's MTP config alias. The image's exact transformers version was not read.",
+  "best_checkpoint": "cyankiwi/Mellum2.1-12B-A2.5B-Thinking-AWQ-INT4 (7.15 GiB). voves FP8 (11.76 GiB) for higher fidelity with FP8 KV. Official BF16 (22.63 GiB) does not fit. MXFP4 checkpoints are rejected by the Transformers backend (base.py:164-170).",
+  "quant_on_sm120": "W4A16 compressed-tensors MoE goes to Marlin MoE (inferred). FP8 W8A8 is supported on sm_120 (inferred, not exercised). NVFP4 weight-only uses Marlin and avoids the #46268 JIT RAM spike. MXFP4 is not supported on this backend.",
+  "weights_gib": 7.15,
+  "kv_bytes_per_token_bf16": 14336,
+  "kv_math": "Budget 16303 MiB x 0.92 = 14999 MiB = 14.65 GiB. KV per token (7 full layers) = 2 x 7 x 4 x 128 x 2 = 14,336 B BF16 (7,168 B FP8). Sliding layers: 21 x 2 x 4 x 128 x 2 x 1024 = 42 MiB (0.041 GiB) per sequence. AWQ-INT4: 14.65 - 7.15 - 1.2 = 6.30 GiB pool, which gives 468,579 tokens BF16 or 940,230 FP8, capped at 131,072; one 128k sequence uses 1.79 GiB. voves FP8: 1.69 GiB pool, which gives 123,298 tokens BF16, or 249,668 FP8 (capped at 131,072; FP8 KV needs TRITON_ATTN). NVFP4: 6.77 GiB pool, 503,781 tokens BF16. BF16 official: 14.65 - 22.63 - 1.2 < 0, does not fit.",
+  "est_max_context_tokens": 131072,
+  "min_version": "Mellum2 support from PR #43992 (2026-05); Transformers-backend path since #59679 (2026-10-02). MTP: vLLM >= 0.33 with transformers >= 5.20 (vendor card; PR #61270).",
+  "tool_call_parser": "hermes",
+  "reasoning_parser": "qwen3",
+  "serve_command": "docker run --rm --device nvidia.com/gpu=all --ipc=host --memory 24g -p 127.0.0.1:8000:8000 -v $HOME/.cache/huggingface:/root/.cache/huggingface vllm/vllm-openai:v0.33.0 cyankiwi/Mellum2.1-12B-A2.5B-Thinking-AWQ-INT4 --served-model-name mellum2.1 --max-model-len 131072 --gpu-memory-utilization 0.92 --max-num-seqs 4 --reasoning-parser qwen3 --enable-auto-tool-choice --tool-call-parser hermes --generation-config vllm",
+  "known_issues": "No open vLLM issue mentions Mellum (search 2026-11-15). Community quantized checkpoints have not been verified on the Transformers MoE backend on sm_120. generation_config.json has no sampling values, so set them in each request. The transformers version in the image is unverified; only MTP needs >= 5.20.",
+  "sources": [
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/models/registry.py",
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/models/transformers/base.py",
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/requirements/common.txt",
+   "https://github.com/vllm-project/vllm/pull/59679",
+   "https://github.com/vllm-project/vllm/pull/61983",
+   "https://github.com/vllm-project/vllm/pull/61270",
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/tool_parsers/__init__.py",
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/reasoning/__init__.py",
+   "https://huggingface.co/JetBrains/Mellum2.1-12B-A2.5B-Thinking/raw/main/README.md",
+   "https://huggingface.co/JetBrains/Mellum2.1-12B-A2.5B-Thinking-MTP/raw/main/README.md"
+  ]
+ },
+ "llamacpp": {
+  "arch_supported": "Yes. LLM_ARCH_MELLUM 'mellum' at src/llama-arch.cpp:174 at both b12407 and b12418. src/models/mellum.cpp handles SWA (pattern 4, plain RoPE on SWA layers) and the MTP block; the arch was added in #23966 (2026-06-01). #30584 caused an 8x CUDA slowdown (issue #30704, still open). It was reverted by #30733 and replaced by the per-expert POOL_1D rescaling in #30861 (merged 2026-10-21). --split-mode tensor is denied for Mellum (#31081). The CUDA pool_1d kernel is still serial at b12407 (optimisation PR #31855 open), which adds a small decode overhead (inferred).",
+  "gguf_repo": "JetBrains/Mellum2.1-12B-A2.5B-Thinking-GGUF",
+  "quant": "Q6_K with f16 KV (Q8_0 with q8_0 KV for maximum fidelity; Q4_K_M for maximum speed)",
+  "file_gib": 10.13,
+  "est_vram_gib": 12.74,
+  "est_ram_gib": 0,
+  "est_context_tokens": 131072,
+  "offload_plan": "Everything on the GPU, no --n-cpu-moe. KV f16 for the 7 full layers is 131,072 x 14,336 B = 1.75 GiB (q8_0 about 0.93); the SWA cache is about 0.06 GiB; compute is about 0.8 GiB. At 128k: Q4_K_M 10.1 (f16 KV) or 9.3 (q8_0 KV) GiB; Q6_K 12.7 or 11.9; Q8_0 14.65 or 13.8 (Q8_0 with f16 KV is too tight).",
+  "server_command": "docker run --rm --device nvidia.com/gpu=all --memory 16g -e GGML_CUDA_DISABLE_GRAPHS=1 -p 127.0.0.1:8080:8080 -v $HOME/.cache/huggingface:/root/.cache/huggingface ghcr.io/ggml-org/llama.cpp:server-cuda-b12407 -hf JetBrains/Mellum2.1-12B-A2.5B-Thinking-GGUF:Q6_K -ngl 99 -c 131072 -np 1 -fa on --jinja --temp 0.6 --top-p 0.95 --top-k 20 --host 0.0.0.0 --port 8080",
+  "tool_calling_note": "Hermes-style <tool_call> JSON with --jinja; extraction by the llama.cpp auto-parser is inferred, not tested. In OpenCode, set reasoningField to reasoning_content. MTP draft gave only 1.00-1.10x in PR #30612 (M2 Max), so skip it.",
+  "sources": [
+   "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/src/llama-arch.cpp",
+   "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/src/models/mellum.cpp",
+   "https://github.com/ggml-org/llama.cpp/issues/30704",
+   "https://github.com/ggml-org/llama.cpp/pull/30861",
+   "https://github.com/ggml-org/llama.cpp/pull/31081",
+   "https://github.com/ggml-org/llama.cpp/pull/31855",
+   "https://huggingface.co/JetBrains/Mellum2.1-12B-A2.5B-Thinking-GGUF/raw/main/README.md"
+  ]
+ },
+ "ollama": {
+  "tag": "No official library model (ollama.com/library/mellum2.1 returns 404). Vendor path: ollama run hf.co/JetBrains/Mellum2.1-12B-A2.5B-Thinking-GGUF:Q4_K_M. Community tags: decadence/mellum2.1:12b-a2.5b-thinking-q4_k_m (8.1GB) and :12b-a2.5b-thinking-q6_k (11GB), 6 downloads.",
+  "capabilities": "The community page shows tools and thinking badges. Ollama v0.40.16 pins llama.cpp b12177, which includes LLM_ARCH_MELLUM, so it probably loads (inferred).",
+  "context": "128K listed on the tags. Set OLLAMA_CONTEXT_LENGTH to 65536 or more (the default is 4k).",
+  "size_gb": 8.1,
+  "source_url": "https://ollama.com/decadence/mellum2.1/tags ; https://raw.githubusercontent.com/ollama/ollama/v0.40.16/LLAMA_CPP_VERSION"
+ },
+ "benchmarks": [
+  {
+   "name": "SWE-bench Verified",
+   "score": "47.0",
+   "self_reported": true,
+   "setting": "Pi v0.73.1 harness, thinking, temp 1.0, 114K ctx; same harness Qwen3.5-9B 50.0, Gemma 4 E4B 23.0",
+   "source_url": "https://huggingface.co/JetBrains/Mellum2.1-12B-A2.5B-Thinking/raw/main/README.md"
+  },
+  {
+   "name": "Terminal-Bench 2.1",
+   "score": "17.4",
+   "self_reported": true,
+   "setting": "same harness; Qwen3.5-9B 21.7. Not comparable to the NVIDIA/AA tables in the baseline",
+   "source_url": "https://huggingface.co/JetBrains/Mellum2.1-12B-A2.5B-Thinking/raw/main/README.md"
+  },
+  {
+   "name": "SWE-bench Pro",
+   "score": "28.0",
+   "self_reported": true,
+   "setting": "same harness; Qwen3.5-9B 38.0",
+   "source_url": "https://huggingface.co/JetBrains/Mellum2.1-12B-A2.5B-Thinking/raw/main/README.md"
+  },
+  {
+   "name": "LiveCodeBench v6",
+   "score": "82.0",
+   "self_reported": true,
+   "setting": "greedy, thinking; Qwen3.5-9B 75.4",
+   "source_url": "https://huggingface.co/JetBrains/Mellum2.1-12B-A2.5B-Thinking/raw/main/README.md"
+  },
+  {
+   "name": "BFCL v4",
+   "score": "62.3",
+   "self_reported": true,
+   "setting": "Qwen3.5-9B 58.5",
+   "source_url": "https://huggingface.co/JetBrains/Mellum2.1-12B-A2.5B-Thinking/raw/main/README.md"
+  },
+  {
+   "name": "ToolHop / WorkBench",
+   "score": "49.1 / 44.6",
+   "self_reported": true,
+   "setting": "Qwen3.5-9B 52.0 / 39.7",
+   "source_url": "https://huggingface.co/JetBrains/Mellum2.1-12B-A2.5B-Thinking/raw/main/README.md"
+  },
+  {
+   "name": "IFEval / GPQA Diamond / MMLU-Redux / AIME 25-26",
+   "score": "90.6 / 64.6 / 87.8 / 83.3",
+   "self_reported": true,
+   "setting": "greedy",
+   "source_url": "https://huggingface.co/JetBrains/Mellum2.1-12B-A2.5B-Thinking/raw/main/README.md"
+  },
+  {
+   "name": "llama-bench tg128 / pp4096 (independent user, speed only)",
+   "score": "44.7 / 1165 tok/s",
+   "self_reported": false,
+   "setting": "RTX 3050 6 GB, MXFP4_MOE, -ncmoe 13, q8_0 KV, b11580; not representative of RTX 5080",
+   "source_url": "https://github.com/ggml-org/llama.cpp/issues/30704"
+  }
+ ],
+ "sampling": "Card quickstart and GGUF card: temperature 0.6, top_p 0.95, top_k 20, max_tokens up to 81,920. The card says the agentic evals used temperature 1.0. generation_config.json has no sampling values. There is no Unsloth repo.",
+ "speed_notes": "Inferred: about 2.21B active weight params are read per token. Q4_K_M at 0.66 B/param is 1.47 GB, a ceiling of 610 tok/s at 896 GB/s. Q6_K is about 1.8 GB (about 495 tok/s ceiling) and Q8_0 is 2.35 GB (381). At 64k context the f16 KV read adds 0.94 GB per token (Q6_K ceiling about 326). At 40-60% efficiency, decode should be roughly 150-300 tok/s; ModelFit estimates 235 for Q4_K_M on the desktop 5080, unmeasured. The serial CUDA pool_1d (#31855 open) adds overhead. The vendor claims MTP gives about 1.6x in vLLM.",
+ "opencode_fit": {
+  "verdict": "usable",
+  "recommended_runtime": "llama.cpp with the official JetBrains GGUF, everything on the GPU; vLLM with cyankiwi AWQ-INT4 is the second choice",
+  "recommended_checkpoint": "JetBrains/Mellum2.1-12B-A2.5B-Thinking-GGUF:Q6_K (10.13 GiB)",
+  "recommended_context": "131072",
+  "caveats": "This is a real JetBrains Apache-2.0 release. It fits entirely in 16 GB with 128k context and should decode fast. By the vendor's own table it trails Qwen3.5-9B, which is only an honorable mention in the baseline: SWE-V 47 vs 50, TB2.1 17.4 vs 21.7, SWE-Pro 28 vs 38. It is far below the top picks. There is no independent quality benchmark. It is a thinking-first model, so keep thinking on. Good as a fast sub-agent, not as the primary agent."
+ },
+ "gaps": [
+  "No independent quality benchmark (the Artificial Analysis page returns 404; BenchLM copies vendor numbers).",
+  "The transformers version inside the vLLM v0.33.0 image was not read.",
+  "Community quantized checkpoints were not verified on the vLLM Transformers MoE backend on sm_120.",
+  "llama.cpp tool-call and reasoning extraction for the Mellum template was not verified; issue #30704 is still open.",
+  "Ollama arch and tool support is inferred from the pinned llama.cpp b12177.",
+  "No measured speed on an RTX 50 GPU.",
+  "The Mellum2 tech report (arXiv 2605.31268) was not read."
+ ]
+}

@@ -1,0 +1,101 @@
+{
+ "overall": "holds-with-corrections",
+ "summary": "I could not refute any identity fact. Re-read live on 2026-11-15, these all match the record: the repo is official under the verified mistralai org, created 2025-11-28 and announced 2025-12-09; it is Apache-2.0; it has 24.01B params (BF16 + F8_E4M3); config values (40 layers, 8 KV heads, head_dim 128, sliding_window null, YaRN factor 48, max_pos 393216); a 256K stated context; image + text input; no thinking mode; [AVAILABLE_TOOLS]/[TOOL_CALLS] tool calling; the commit history; the vendor benchmarks 68.0/55.7/22.5; the independent SWE-bench mini-SWE-agent 1.17.2 score of 56.4; the llama.cpp issues and PR; and the Ollama manifest and badges. Two corrections. (1) The current chat template does NOT allow 'system or user after any role': a system message after assistant or tool raises an exception, and a tool message may only follow assistant or tool. OpenCode clients that insert mid-conversation system messages after tool results would still fail. (2) The repo is not actually gated (API gated=false); the card only carries an extra_gated_description privacy note. I could not confirm the AA Terminal-Bench 2.1 (29.6%), Terminal-Bench Hard (16.7%) and TB 4.0 numbers in the raw page JSON: no terminal-bench keys appeared near the Devstral Small 2 block. Only tau2 0.2339 and LiveCodeBench 0.3481 were found there, and that same block also names Qwen3.8 27B, so the attribution risk stays. Scope: identity and capability facts only. I did not re-check the vLLM and llama.cpp memory arithmetic, the checkpoint sizes or the vLLM issue list.",
+ "verdicts": [
+  {
+   "claim": "Official Mistral AI repo; org mistralai isVerified=true",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/organizations/mistralai/overview"
+  },
+  {
+   "claim": "HF createdAt 2025-11-28T11:27:11Z; blog datePublished 2025-12-09T12:00Z; inside 2025-11-15..2026-11-15 window",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/mistralai/Devstral-Small-2-24B-Instruct-2512 ; https://mistral.ai/news/devstral-2-vibe-cli"
+  },
+  {
+   "claim": "Commit history: temp 0.15 generation_config 2025-12-22; [THINK] tokens replaced 2026-06-30; template 'update to match mistral-common' 2026-07-15",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/mistralai/Devstral-Small-2-24B-Instruct-2512/commits/main"
+  },
+  {
+   "claim": "License Apache 2.0 (front matter, tag license:apache-2.0); Devstral 2 123B under modified MIT per blog",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/mistralai/Devstral-Small-2-24B-Instruct-2512/raw/main/README.md"
+  },
+  {
+   "claim": "Only extra condition is a gating note pointing to Mistral's privacy policy",
+   "verdict": "confirmed",
+   "correction": "The card front matter has extra_gated_description (privacy policy link), but the HF API reports gated=false, so downloads are not actually gated.",
+   "evidence_url": "https://huggingface.co/api/models/mistralai/Devstral-Small-2-24B-Instruct-2512"
+  },
+  {
+   "claim": "Safetensors total 24,011,361,280 (BF16 1,781,550,080 + F8_E4M3 22,229,811,200); GGUF total 23,572,403,200; card says 24 billion",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/unsloth/Devstral-Small-2-24B-Instruct-2512-GGUF?expand[]=gguf"
+  },
+  {
+   "claim": "Architecture: Mistral3ForConditionalGeneration, ministral3 text 40 layers, hidden 5120, inter 32768, 32 heads, 8 KV, head_dim 128, vocab 131072, untied, sliding_window null, YaRN factor 48 orig 8192 theta 1e8, llama_4_scaling_beta 0.1, FP8 static with vision/projector/lm_head unconverted; Pixtral vision 24 layers hidden 1024",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/mistralai/Devstral-Small-2-24B-Instruct-2512/raw/main/config.json"
+  },
+  {
+   "claim": "Context 256k stated (card and blog); card vLLM command --max-model-len 262144 --tensor-parallel-size 2; config max_position_embeddings 393216; GGUF and Ollama show 384K",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/mistralai/Devstral-Small-2-24B-Instruct-2512/raw/main/README.md"
+  },
+  {
+   "claim": "Modalities: text + image in, text out; Ollama shows 'Text, Image', badges vision and tools, no thinking badge; 2.8M downloads, updated 11 months ago; manifest model blob 15,177,370,240 B, params blob 21 B",
+   "verdict": "confirmed",
+   "evidence_url": "https://ollama.com/library/devstral-small-2 ; https://registry.ollama.ai/v2/library/devstral-small-2/manifests/24b"
+  },
+  {
+   "claim": "No thinking mode; chat template has no THINK handling",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/mistralai/Devstral-Small-2-24B-Instruct-2512/raw/main/chat_template.jinja"
+  },
+  {
+   "claim": "Tool calling: template lines 36-41 build [AVAILABLE_TOOLS]tools|tojson[/AVAILABLE_TOOLS] (emitted before the first user turn), line 182 emits [TOOL_CALLS] then name[ARGS]args; card says 'Devstral Small 2 supports tool calling'",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/mistralai/Devstral-Small-2-24B-Instruct-2512/raw/main/chat_template.jinja"
+  },
+  {
+   "claim": "Current template merges consecutive same-role messages and allows system or user after any role",
+   "verdict": "refuted",
+   "correction": "The merge logic exists (lines ~71-102), but role-order checks (lines 122-143) only allow: after system -> user/assistant/system; after user -> assistant/system/user; after assistant -> assistant/user/tool (NOT system); after tool -> assistant/tool/user (NOT system). A system message after an assistant or tool turn raises 'Unexpected role'. The conversation must also start with user or system.",
+   "evidence_url": "https://huggingface.co/mistralai/Devstral-Small-2-24B-Instruct-2512/raw/main/chat_template.jinja"
+  },
+  {
+   "claim": "Older template embedded in Dec-2025 GGUFs raises 'roles must alternate'; llama.cpp #19647 (OpenCode) and #19851 (mini-swe-agent)",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/issues/19647 ; https://github.com/ggml-org/llama.cpp/issues/19851 ; https://huggingface.co/api/models/unsloth/Devstral-Small-2-24B-Instruct-2512-GGUF?expand[]=gguf"
+  },
+  {
+   "claim": "llama.cpp PR #17945 mistral3 attn_factor fix merged 2025-12-12",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/pull/17945"
+  },
+  {
+   "claim": "Vendor SWE-bench Verified 68.0%, SWE-bench Multilingual 55.7%, Terminal Bench 2 22.5% (self-reported, scaffold unspecified)",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/mistralai/Devstral-Small-2-24B-Instruct-2512/raw/main/README.md"
+  },
+  {
+   "claim": "Official SWE-bench Verified leaderboard 56.4%, mini-SWE-agent 1.17.2, checked=true, 2025-12-09, 86.9 calls/instance, model_release_date 20251209; Devstral 2 123B 53.8% same harness",
+   "verdict": "confirmed",
+   "correction": "The leaderboard file lists the row under 'Verified' with agent mini-SWE-agent (a bash-only agent). It is not labeled 'bash-only' in the file.",
+   "evidence_url": "https://raw.githubusercontent.com/SWE-bench/swe-bench.github.io/master/data/leaderboards.json"
+  },
+  {
+   "claim": "AA tau2-bench 23.4% and LiveCodeBench 34.8%",
+   "verdict": "confirmed",
+   "correction": "Values 0.2339 and 0.3481 appear in the JSON block named 'Devstral Small 2' (slug devstral-small-2). That window also names Qwen3.8 27B, so attribution rests on proximity.",
+   "evidence_url": "https://artificialanalysis.ai/models/devstral-small-2"
+  },
+  {
+   "claim": "AA Terminal-Bench 2.1 29.6%, Terminal-Bench Hard 16.7%, Terminal-Bench 4.0 0%",
+   "verdict": "uncertain",
+   "correction": "In the raw HTML fetched on 2026-11-15, no terminalbench-type key or matching value (0.296 / 0.167) appears near the Devstral Small 2 block. The only '16.7' strings are SVG path data. Treat these three numbers as unverified.",
+   "evidence_url": "https://artificialanalysis.ai/models/devstral-small-2"
+  }
+ ]
+}

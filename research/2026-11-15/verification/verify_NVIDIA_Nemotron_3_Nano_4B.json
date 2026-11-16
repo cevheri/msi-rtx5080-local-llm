@@ -1,0 +1,236 @@
+{
+ "name": "NVIDIA Nemotron 3 Nano 4B",
+ "hf_repo": "nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16",
+ "official_org": {
+  "value": "NVIDIA. The HF org 'nvidia' has isVerified=true (https://huggingface.co/api/organizations/nvidia/overview). NVIDIA staff announced the model on the HF blog under the nvidia org, 'Nemotron 3 Nano 4B: A Compact Hybrid Model for Efficient Local AI', published 2026-03-17 (https://huggingface.co/blog/nvidia/nemotron-3-nano-4b). The card names NVIDIA Corporation as Model Developer.",
+  "source_url": "https://huggingface.co/api/organizations/nvidia/overview",
+  "support": "direct-statement"
+ },
+ "release_date": {
+  "value": "The HF API gives the BF16 repo createdAt 2026-03-07T01:23:35Z (made public later) and lastModified 2026-03-20. The card says 'Release Date: 3/16/2026', the HF blog announcement is dated 2026-03-17, and Artificial Analysis lists 2026-03-16. All of these fall inside the 2025-11-15..2026-11-15 window.",
+  "source_url": "https://huggingface.co/api/models/nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16",
+  "support": "direct-statement"
+ },
+ "within_last_12_months": true,
+ "license": {
+  "value": "The card front matter has license: other and license_name: nvidia-nemotron-open-model-license, linking to https://www.nvidia.com/en-us/agreements/enterprise-software/nvidia-nemotron-open-model-license/. The card says 'This model is ready for commercial use.' It also says: 'We advise against circumvention of any provided safety guardrails contained in the Model without a substantially similar guardrail.' I did not read the full license text this pass, so attribution and guardrail-termination clauses are unverified.",
+  "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16/raw/main/README.md",
+  "support": "direct-statement"
+ },
+ "params": {
+  "value": "Dense model with 3.97B total parameters, all active. The card states '3.97 x 10^9'. The HF API safetensors total is 3,973,556,832 BF16 parameters. Pruned and distilled from Nemotron-Nano-9B-v2 with Nemotron Elastic.",
+  "source_url": "https://huggingface.co/api/models/nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16",
+  "support": "direct-statement"
+ },
+ "architecture": {
+  "value": "NemotronHForCausalLM (model_type nemotron_h), a Mamba2-Transformer hybrid with 42 layers. hybrid_override_pattern 'M-M-M-MM-M-M*-M-M*-M-M-M*-M-M-MM*-MMM-M-M-' gives 21 Mamba2 layers, 4 full-attention layers ('*') and 17 MLP layers ('-'). Values from config.json: hidden_size 3136; attention 40 query heads, 8 KV heads, head_dim 128, sliding_window null; Mamba 96 heads x head_dim 80, ssm_state_size 128, n_groups 8, conv_kernel 4; relu2 MLP with intermediate size 12544; vocab 131072; untied embeddings; max_position_embeddings 262144.",
+  "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16/raw/main/config.json",
+  "support": "direct-statement"
+ },
+ "context_length": {
+  "value": "262144 tokens native (config max_position_embeddings 262144; card says 'Context length up to 262K'). The card reports RULER at 128k as 91.1. There is no extended or YaRN mode beyond this.",
+  "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16/raw/main/config.json",
+  "support": "direct-statement"
+ },
+ "modalities": {
+  "value": "Text in, text out only. The card lists Input Type(s) Text and Output Text, and there is no vision tower. Officially English, plus code.",
+  "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16/raw/main/README.md",
+  "support": "direct-statement"
+ },
+ "thinking": {
+  "mode": "toggle",
+  "how_to_toggle": "Thinking is on by default. chat_template.jinja sets enable_thinking to True when it is not defined. With thinking on, the generation prompt is '<|im_start|>assistant\\n<think>\\n'; with thinking off it is '<|im_start|>assistant\\n<think></think>'.\n\nvLLM v0.33.0: send \"chat_template_kwargs\": {\"enable_thinking\": false} on each request. To change the server default, use --default-chat-template-kwargs '{\"enable_thinking\": false}' (the flag exists in vllm/entrypoints/common/cli_args.py at v0.33.0). The built-in nemotron_v3 parser at v0.33.0 (vllm/parser/nemotron_v3.py) reads enable_thinking and moves text into content when thinking is off, so the nano_v3 plugin is not needed.\n\nllama.cpp: per request, send the same chat_template_kwargs. Server-wide, use --chat-template-kwargs '{\"enable_thinking\":false}' or --reasoning-budget 0.\n\nOllama: set \"think\": false in /api/chat, or /set nothink in the CLI.\n\nThe card recommends temperature 1.0 and top_p 0.95 for reasoning, and temperature 0.6 and top_p 0.95 for tool calling. The llama.cpp and Ollama mechanisms are inferred from the generic features of each runtime and were not tested on this model.",
+  "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16/raw/main/chat_template.jinja",
+  "support": "direct-statement"
+ },
+ "tool_calling": {
+  "supported": "yes",
+  "format": "Qwen3-Coder style XML: <tool_call><function=NAME><parameter=ARG>value</parameter></function></tool_call>. Tool results come back wrapped in <tool_response> inside a user turn.",
+  "evidence": "Chat template: when tools are passed, it renders a '# Tools' section in the system turn with a <tools><function><name>/<description>/<parameters>... list and instructs the model on the XML call format. It also renders assistant tool_calls and tool messages in history.\n\nCard: the vLLM command uses --enable-auto-tool-choice --tool-call-parser qwen3_coder, and the vLLM recipe lists the same flags.\n\nllama.cpp: this chat_template.jinja is byte-identical to models/templates/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16.jinja in llama.cpp at b12418 (diff is empty). tests/test-chat.cpp at b12418 runs tool-call parse tests on that template, with and without thinking.\n\nPost-training data on the card includes Nemotron-Agentic-v1, SWE-Gym, SWE-smith and tool-calling corpora. The vendor reports BFCL v3 61.1.",
+  "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16/raw/main/chat_template.jinja",
+  "support": "direct-statement"
+ },
+ "checkpoints": [
+  {
+   "repo": "nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16",
+   "format": "safetensors BF16 (single model.safetensors)",
+   "size_gb": 7.95,
+   "official": true,
+   "publisher": "nvidia",
+   "source_url": "https://huggingface.co/api/models/nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16?blobs=true"
+  },
+  {
+   "repo": "nvidia/NVIDIA-Nemotron-3-Nano-4B-FP8",
+   "format": "safetensors ModelOpt FP8 (quant_algo FP8, kv_cache_quant_algo FP8; Mamba in/out proj of some layers, the attention layers and lm_head left in BF16)",
+   "size_gb": 5.27,
+   "official": true,
+   "publisher": "nvidia",
+   "source_url": "https://huggingface.co/api/models/nvidia/NVIDIA-Nemotron-3-Nano-4B-FP8?blobs=true"
+  },
+  {
+   "repo": "nvidia/NVIDIA-Nemotron-3-Nano-4B-GGUF",
+   "format": "GGUF Q4_K_M only",
+   "size_gb": 2.84,
+   "official": true,
+   "publisher": "nvidia",
+   "source_url": "https://huggingface.co/api/models/nvidia/NVIDIA-Nemotron-3-Nano-4B-GGUF?blobs=true"
+  },
+  {
+   "repo": "ggml-org/Nemotron-3-Nano-4B-GGUF",
+   "format": "GGUF Q8_0 (BF16 also 7.96 GB)",
+   "size_gb": 4.23,
+   "official": false,
+   "publisher": "ggml-org",
+   "source_url": "https://huggingface.co/api/models/ggml-org/Nemotron-3-Nano-4B-GGUF?blobs=true"
+  },
+  {
+   "repo": "unsloth/NVIDIA-Nemotron-3-Nano-4B-GGUF",
+   "format": "GGUF UD-Q4_K_XL 3.13 GB, Q4_K_M 2.90, Q5_K_M 3.16, Q6_K 4.06, Q8_0 4.23, UD-Q8_K_XL 5.63, BF16 7.96, plus IQ2-Q3 variants",
+   "size_gb": 4.23,
+   "official": false,
+   "publisher": "unsloth",
+   "source_url": "https://huggingface.co/api/models/unsloth/NVIDIA-Nemotron-3-Nano-4B-GGUF?blobs=true"
+  },
+  {
+   "repo": "bartowski/nvidia_Nemotron-3-Nano-4B-GGUF",
+   "format": "GGUF Q4_K_M 2.98, Q5_K_M 3.21, Q6_K 4.01, Q8_0 4.23, bf16 7.96, plus IQ2-Q4 variants",
+   "size_gb": 4.23,
+   "official": false,
+   "publisher": "bartowski",
+   "source_url": "https://huggingface.co/api/models/bartowski/nvidia_Nemotron-3-Nano-4B-GGUF?blobs=true"
+  },
+  {
+   "repo": "lmstudio-community/NVIDIA-Nemotron-3-Nano-4B-GGUF",
+   "format": "GGUF Q4_K_M 2.84, Q6_K 3.93, Q8_0 4.23",
+   "size_gb": 4.23,
+   "official": false,
+   "publisher": "lmstudio-community",
+   "source_url": "https://huggingface.co/api/models/lmstudio-community/NVIDIA-Nemotron-3-Nano-4B-GGUF?blobs=true"
+  },
+  {
+   "repo": "unsloth/NVIDIA-Nemotron-3-Nano-4B-FP8",
+   "format": "safetensors FP8 mirror (both a 2-shard and a 10-shard set listed; about 5.27 GB per set)",
+   "size_gb": 5.27,
+   "official": false,
+   "publisher": "unsloth",
+   "source_url": "https://huggingface.co/api/models/unsloth/NVIDIA-Nemotron-3-Nano-4B-FP8?blobs=true"
+  }
+ ],
+ "vllm": {
+  "arch_supported": "Yes. vllm/model_executor/models/registry.py at tag v0.33.0, line 186: \"NemotronHForCausalLM\": (\"nemotron_h\", \"NemotronHForCausalLM\").",
+  "min_version": "The model card says vllm>=0.15.1. The vLLM recipe gives min_vllm_version 0.11.2 and recommends 0.28.0. The two vendor sources conflict, but both are well below v0.33.0.",
+  "best_checkpoint": "nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16 (7.95 GB). The full 262144 context fits even with BF16 KV, so FP8 is not needed for memory. FP8 (5.27 GB) is the speed option, with near-identical vendor scores except Tau2 reasoning-on (Airline 33.3 to 25.3, Retail 39.8 to 33.3).",
+  "serve_command": "docker run --gpus all --ipc=host -p 8000:8000 -v ~/.cache/huggingface:/root/.cache/huggingface vllm/vllm-openai:v0.33.0 nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16 --served-model-name nemotron3-nano-4b --trust-remote-code --max-model-len 262144 --max-num-seqs 4 --mamba-ssm-cache-dtype float32 --enable-auto-tool-choice --tool-call-parser qwen3_coder --reasoning-parser nemotron_v3 --async-scheduling\n\nThe card command uses the plugin instead (--reasoning-parser-plugin nano_v3_reasoning_parser.py --reasoning-parser nano_v3); the plugin still imports in v0.33.0. For FP8, swap in nvidia/NVIDIA-Nemotron-3-Nano-4B-FP8 and add --kv-cache-dtype fp8. Requires the NVIDIA Container Toolkit, which is not yet installed on this host.",
+  "tool_call_parser": "qwen3_coder. It is registered in vllm/tool_parsers/__init__.py at v0.33.0 and maps to qwen3_engine_tool_parser.Qwen3EngineToolParser.",
+  "reasoning_parser": "nemotron_v3 (built in at v0.33.0: vllm/reasoning/__init__.py lines 143-145, implemented in vllm/parser/nemotron_v3.py, which handles enable_thinking=false). The alternative is the card's plugin nano_v3 (nano_v3_reasoning_parser.py, a subclass of DeepSeekR1ReasoningParser; both base classes still exist at v0.33.0).",
+  "quant_on_sm120": "BF16 needs no quantized kernels. For FP8, v0.33.0 ships CUTLASS sm120 FP8 kernels: csrc/quantization/w8a8/cutlass/c3x/scaled_mm_sm120_fp8.cu and scaled_mm_blockwise_sm120_fp8.cu. That the ModelOpt per-tensor FP8 path dispatches to them on sm_120 is inferred. The Mamba2 path uses Triton kernels. FP8 KV with the FA2 backend on sm_120 may force a different attention backend (inferred, unverified).",
+  "weights_gib": 7.4,
+  "kv_bytes_per_token_bf16": 16384,
+  "kv_math": "Budget: 16303 MiB x 0.92 = 14999 MiB = 14.65 GiB.\n\nBF16 checkpoint: 7,947,142,640 B = 7.40 GiB. Pool = 14.65 - 7.40 - 1.2 = 6.05 GiB.\nKV per token = 2 x 4 full-attention layers x 8 KV heads x 128 x 2 B = 16384 B in BF16, or 8192 B in FP8.\nBF16 KV: 6.05 GiB / 16 KiB = about 396k tokens. FP8 KV: about 792k tokens. Both are capped at 262144 (that full context uses 4.0 GiB of BF16 KV).\n\nMamba2 state per sequence, with mamba_ssm_cache_dtype float32: 21 layers x (96 x 80 x 128 x 4 B SSM + (7680 + 2 x 8 x 128) x 3 x 2 B conv) = about 80 MiB. For max_num_seqs 8 that is about 0.62 GiB, leaving about 5.4 GiB of KV, which is still more than 262144 tokens at BF16. Mamba prefix-cache states could add more (unverified).\n\nFP8 checkpoint: 5.27 GB = 4.91 GiB. Pool = 8.54 GiB, which is about 560k tokens in BF16 KV and 1.12M in FP8 KV, also capped at 262144.",
+  "est_max_context_tokens": 262144,
+  "fits": "yes",
+  "known_issues": "Open vLLM issues found:\n- #39103 (open): --reasoning-config makes the nemotron_v3 parser return content null. Do not use --reasoning-config.\n- #43728 (open): thinking vs enable_thinking kwarg-name mismatch across parsers causes content:null. Use enable_thinking for this model.\n- #37431 (open): Mamba-2 Triton illegal instruction on SM121 (DGX Spark) with NVFP4. Seen on sm_121, not reported on sm_120.\n- #63175 (open): ReplaySSM drift. Only applies with the opt-in --use-replayssm flag.\nI found no open issue specific to Nemotron-3-Nano-4B tool calling or to sm_120.\n\nThe chat template reads message.reasoning_content, while v0.33.0 returns 'reasoning'. History thinking is truncated by default anyway, so impact is low (inferred).\n\nThe recipe's hardware list (H100/H200/B200/Arc) does not include consumer Blackwell. The card lists 'GeForce RTX'.",
+  "sources": [
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/models/registry.py",
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/reasoning/__init__.py",
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/parser/nemotron_v3.py",
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/tool_parsers/__init__.py",
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/entrypoints/common/cli_args.py",
+   "https://github.com/vllm-project/recipes/blob/main/models/nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16.yaml",
+   "https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16/raw/main/README.md",
+   "https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Nano-4B-FP8/raw/main/hf_quant_config.json",
+   "https://github.com/vllm-project/vllm/issues/39103",
+   "https://github.com/vllm-project/vllm/issues/43728",
+   "https://github.com/vllm-project/vllm/issues/37431"
+  ]
+ },
+ "llamacpp": {
+  "gguf_repo": "ggml-org/Nemotron-3-Nano-4B-GGUF (Q8_0). Alternatives: unsloth/NVIDIA-Nemotron-3-Nano-4B-GGUF UD-Q8_K_XL, or the official nvidia/NVIDIA-Nemotron-3-Nano-4B-GGUF Q4_K_M.",
+  "quant": "Q8_0",
+  "file_gib": 3.94,
+  "arch_supported": "Yes. src/models/nemotron-h.cpp is present at b12418. ggml-org has published a GGUF since 2026-03-16, and the NVIDIA card gives a llama-server command. Note that b12418 is flagged prerelease on GitHub. The latest full release is v1.0.0 (2026-11-13, commit 2d8a325), which also contains this support (inferred).",
+  "offload_plan": "Fully on GPU with -ngl 999. This is a dense model, so no --n-cpu-moe is needed.",
+  "est_vram_gib": 9.2,
+  "est_ram_gib": 1,
+  "est_context_tokens": 262144,
+  "server_command": "docker run --gpus all -p 8080:8080 -v ~/.cache/llama.cpp:/root/.cache/llama.cpp ghcr.io/ggml-org/llama.cpp:server-cuda13 -hf ggml-org/Nemotron-3-Nano-4B-GGUF:Q8_0 -ngl 999 -c 262144 -np 1 --jinja --temp 0.6 --top-p 0.95 --host 0.0.0.0 --port 8080 (Optional: -ctk q8_0 -ctv q8_0 cuts KV to about 2.1 GiB.)",
+  "tool_calling_note": "The model's chat_template.jinja is byte-identical to llama.cpp's models/templates/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16.jinja. At b12418, tests/test-chat.cpp (around line 2834) tests <tool_call><function=...><parameter=...> parsing on it with thinking on and off. So --jinja tool calling should work (source-backed, not run here).\n\nVRAM math: Q8_0 3.94 GiB + f16 KV at 262144 = 4 attention layers x 2 x 8 x 128 x 2 B x 262144 = 4.0 GiB + about 80 MiB recurrent state + 0.5 to 1 GiB compute buffers = about 8.6 to 9.2 GiB.",
+  "sources": [
+   "https://huggingface.co/api/models/ggml-org/Nemotron-3-Nano-4B-GGUF?blobs=true",
+   "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12418/models/templates/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16.jinja",
+   "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12418/tests/test-chat.cpp",
+   "https://github.com/ggml-org/llama.cpp/releases/tag/v1.0.0",
+   "https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Nano-4B-GGUF/raw/main/README.md"
+  ]
+ },
+ "ollama": {
+  "tag": "nemotron-3-nano:4b (same digest family as 4b-q4_K_M; 4b-q8_0 is 4.2 GB, 4b-bf16 is 8.0 GB)",
+  "size_gb": 2.8,
+  "context": "256K listed per tag. Ollama defaults to 4k on GPUs under 24 GiB, so set OLLAMA_CONTEXT_LENGTH=65536 or higher, or pass num_ctx.",
+  "capabilities": "tools, thinking (model-level badges). Text input only. The :latest tag points to the 30B-A3B model, not the 4B.",
+  "source_url": "https://ollama.com/library/nemotron-3-nano/tags"
+ },
+ "benchmarks": [
+  {
+   "name": "BFCL v3",
+   "score": "61.1 (FP8 60.6)",
+   "setting": "reasoning off and on, NeMo-Skills",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Nano-4B-FP8/raw/main/README.md"
+  },
+  {
+   "name": "tau2-bench Airline / Retail / Telecom",
+   "score": "28.0 / 34.8 / 24.9 (reasoning off); 33.3 / 39.8 / 33.0 (reasoning on); FP8 reasoning on: 25.3 / 33.3 / 30.9",
+   "setting": "NeMo-Skills",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Nano-4B-FP8/raw/main/README.md"
+  },
+  {
+   "name": "LiveCodeBench v5",
+   "score": "51.8 (FP8 52.9)",
+   "setting": "reasoning on",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Nano-4B-FP8/raw/main/README.md"
+  },
+  {
+   "name": "IFEval prompt / instruction",
+   "score": "82.8 / 88.0 (off); 87.9 / 92.0 (on)",
+   "setting": "NeMo-Skills",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16/raw/main/README.md"
+  },
+  {
+   "name": "RULER 128k",
+   "score": "91.1 (Q4_K_M 91.2)",
+   "setting": "reasoning off",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Nano-4B-GGUF/raw/main/README.md"
+  },
+  {
+   "name": "Artificial Analysis Intelligence Index",
+   "score": "2 (v5.0.1). Localized AA pages show 9 under v4.1, so the value depends on index version. Output speed is not measured (no public API).",
+   "setting": "independent, AA harness",
+   "self_reported": false,
+   "source_url": "https://artificialanalysis.ai/models/nvidia-nemotron-3-nano-4b"
+  }
+ ],
+ "speed_notes": "Inferred bandwidth ceilings at 896 GB/s for single-stream decode: BF16 7.95 GB gives at most about 113 tok/s; FP8 5.27 GB about 170 tok/s; Q8_0 4.23 GB about 212 tok/s; Q4_K_M 2.9 GB about 309 tok/s. Real throughput is likely 60 to 80% of these. Only 4 attention layers and a fixed Mamba state mean decode speed barely drops at long context, and the model compute is roughly 2 x 4B FLOPs per token, so prefill should be very fast. I found no measured RTX 50-series numbers. NVIDIA's blog measured TTFT and VRAM on an RTX 4070 with llama.cpp Q4_K_M and reports 18 tok/s on Jetson Orin Nano 8GB (https://huggingface.co/blog/nvidia/nemotron-3-nano-4b). GPUprix numbers are analytical estimates, not measurements. The laptop GPU at 80 to 140 W may not sustain full bandwidth.",
+ "opencode_fit": {
+  "verdict": "weak",
+  "recommended_runtime": "vLLM v0.33.0 (vllm/vllm-openai:v0.33.0) with qwen3_coder + nemotron_v3. Alternative: llama.cpp server-cuda13 with --jinja.",
+  "recommended_checkpoint": "nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16 (or -FP8 for speed). For llama.cpp, ggml-org/Nemotron-3-Nano-4B-GGUF Q8_0.",
+  "recommended_context": "262144 (fits fully on GPU at BF16 KV). 131072 is enough in practice.",
+  "caveats": "Mechanically everything works: tool-calling template, an official vLLM parser, the full 256K context in about 11.5 GiB, and a fast model. Agentic coding quality is the problem.\n\n- NVIDIA positions it for edge NPCs, voice assistants and IoT, not coding agents.\n- No SWE-bench, Terminal-Bench or Aider results are published.\n- Vendor scores are modest (BFCL v3 61, tau2 25 to 40), and the AA Intelligence Index v5 score is 2.\n- Expect weak multi-step repo edits. It is better as a fast sub-agent or small-task model.\n- OpenCode v2.3.0 starts vLLM-discovered models with tools disabled, so enable capabilities.tools manually.\n- Pass enable_thinking through chat_template_kwargs, or set the server default with --default-chat-template-kwargs.\n- On Ollama, raise the 4k default context.\n- NVIDIA's newer compact Nemotron 3.5 Bolt (e4b, on Ollama) probably supersedes this model for local coding and should be compared."
+ },
+ "gaps": [
+  "I did not read the full NVIDIA Nemotron Open Model License text, so restrictions beyond the card's statements are unverified.",
+  "No vendor or independent SWE-bench Verified/Pro, Terminal-Bench or Aider score exists for this model, as far as my searches found.",
+  "Artificial Analysis Intelligence Index conflicts across page versions: 2 on v5.0.1 versus 9 on v4.1 localized pages. AA does not measure output speed for this model.",
+  "I found no measured decode speed on any RTX 50-series GPU. The speed figures are bandwidth arithmetic only.",
+  "vLLM's actual Mamba state allocation (prefix-cache mode, block-size alignment) on v0.33.0 is not computed exactly. The 80 MiB per sequence figure is from config arithmetic.",
+  "Whether the ModelOpt FP8 checkpoint and FP8 KV cache choose working kernels and attention backend on sm_120 in v0.33.0 is inferred from kernel files, not tested.",
+  "Release-date sources disagree in minor ways: HF createdAt 2026-03-07 (private-then-public), card 2026-03-16, HF blog 2026-03-17.",
+  "vLLM min version conflict: the card says >=0.15.1 and the recipe says >=0.11.2.",
+  "llama.cpp tool calling for this exact model is backed by an identical template under test, not by a live run. The b12418 builds are marked prerelease. v1.0.0 (2026-11-13) is the latest full release."
+ ]
+}

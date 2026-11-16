@@ -1,0 +1,510 @@
+{
+ "summary": "I checked everything in this lane against live sources on 2026-11-15. gpt-oss-20b is the only model from these two families that is both strong at agentic coding and runs fully on the 16 GB RTX 5080 Laptop. It is a 21B-total / 3.6B-active MoE with MXFP4 experts, Apache-2.0, 128k context, harmony format and low/medium/high reasoning effort. The repo is 13.76 GB (https://huggingface.co/openai/gpt-oss-20b) and the ggml-org GGUF is 12.11 GB. OpenAI reports 60.7 on SWE-bench Verified at high effort (https://arxiv.org/html/2508.10925v1). In vLLM, serve it with `--tool-call-parser openai --enable-auto-tool-choice` and `--reasoning-parser openai_gptoss`. The parser names are confirmed in v0.32.0 source and docs (https://github.com/vllm-project/vllm/blob/v0.32.0/docs/features/tool_calling.md). The weights leave only about 1 to 2 GiB for KV cache, so plan for roughly 32k to 64k tokens of context in vLLM, not the full 131k; this is my estimate. For Ollama or llama.cpp: gpt-oss:20b is 14 GB, and the llama.cpp guide has a measured RTX 5080 benchmark of about 205 tok/s generation (https://github.com/ggml-org/llama.cpp/discussions/15396). On sm_120 (consumer Blackwell), vLLM v0.32.0 does not use the datacenter FlashInfer TRTLLM MXFP4 kernels. The source comment deliberately prefers the Marlin weight-only MXFP4 MoE kernel over the OpenAI Triton kernels because of the 99 KB shared-memory limit, and an SM12x-native \"b12x\" backend is opt-in via `--moe-backend b12x` (https://github.com/vllm-project/vllm/blob/v0.32.0/vllm/model_executor/layers/fused_moe/oracle/mxfp4.py). The official vLLM gpt-oss recipe still says RTX 5090 support is \"actively being worked on\". Its Blackwell env var applies only to compute capability 10.0, and in Chat Completions only `tool_choice=auto` is supported (https://github.com/vllm-project/recipes/blob/main/OpenAI/GPT-OSS.md). gpt-oss-120b (117B/5.1B, 65 GB, GGUF 63.39 GB) can only run with llama.cpp `--n-cpu-moe 32` on 16 GB VRAM. That leaves about 50+ GB of expert weights in system RAM, which does not fit the roughly 40 GiB free while the desktop is running; it is marginal even with apps closed. OpenAI has published no new general-purpose gpt-oss checkpoint since August 2025, only gpt-oss-safeguard (September 2025, a safety classifier, not for coding). DeepSeek released a lot in the window: V3.2/V3.2-Speciale/Math-V2 (685B, ~690 GB), V4-Flash (284B/13B, 159.6 GB), V4-Pro (1.6T), V4.1-Flash and V4.1-Flash-1017 (552B backbone, 510 GB, multimodal, no Jinja template) and OCR-2 (3.4B). None of the general models can run on this machine; RAM plus VRAM is about 77 GiB. DeepSeek's only small chat models are still the older R1 distills (January and May 2025, MIT). They always think, and their official chat templates do not pass tool definitions to the model (they only render past tool calls). vLLM's reasoning table marks the DeepSeek R1 series (parser `deepseek_r1`) as not supporting tool calling. So they are weak choices for OpenCode agent work, though usable as reasoning or chat models through Ollama deepseek-r1:8b/14b (5.2/9.0 GB).",
+ "models": [
+  {
+   "name": "gpt-oss-20b",
+   "vendor": "OpenAI",
+   "family": "gpt-oss",
+   "hf_repo": "openai/gpt-oss-20b",
+   "release_date": "2025-08-05 (HF createdAt 2025-08-04, lastModified 2025-08-26; older than window but still the family's current release)",
+   "total_params_b": 21,
+   "active_params_b": 3.6,
+   "architecture": "MoE, 24 layers, 32 experts, 4 active per token, alternating sliding-window (128) and full attention, 8 KV heads x head_dim 64; MXFP4 MoE weights, BF16 attention/router/embeddings (config.json)",
+   "context_length": "131072 (max_position_embeddings; YaRN factor 32 from 4096); Ollama lists 128K",
+   "license": "Apache-2.0",
+   "modalities": "text in, text out",
+   "thinking": "always",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "Native MXFP4 checkpoint: root safetensors 13.76 GB (HF API blobs)",
+    "ggml-org/gpt-oss-20b-GGUF gpt-oss-20b-MXFP4.gguf 12.11 GB (plus eagle3 draft GGUF 0.92 GB Q8_0)",
+    "Ollama gpt-oss:20b = gpt-oss:latest, 14GB, 128K"
+   ],
+   "vllm": "Supported. Parsers per vLLM v0.32.0 docs/source: --tool-call-parser openai --enable-auto-tool-choice, --reasoning-parser openai_gptoss. Recipe docker: docker run --gpus all -p 8000:8000 --ipc=host vllm/vllm-openai --model openai/gpt-oss-20b. On sm_120 the MXFP4 MoE auto-selects MARLIN (weight-only, BF16 activations), Triton kernels opt-in, SM12x-native b12x via --moe-backend b12x; FlashInfer TRTLLM MXFP4 is SM100-only. Recipe's VLLM_USE_FLASHINFER_MOE_MXFP4_MXFP8=1 is only set for compute cap 10.0. Chat Completions: function calling supported, only tool_choice=auto; built-in browser/python tools only on Responses API. Sources: https://github.com/vllm-project/recipes/blob/main/OpenAI/GPT-OSS.md , https://github.com/vllm-project/vllm/blob/v0.32.0/vllm/model_executor/layers/fused_moe/oracle/mxfp4.py",
+   "fit_16gb": "vLLM fits but tight: weights ~13.8 GB (12.8 GiB) on 15.9 GiB; KV is 24 KiB/token BF16 (12 full-attention layers x 2 x 8 x 64 x 2 B) or ~12 KiB with --kv-cache-dtype fp8, so at gpu-memory-utilization ~0.92 expect roughly 32k-64k tokens (inferred, must be measured; full 131k not expected). llama.cpp/Ollama: 12.11 GB GGUF fully on GPU; guide lists RTX 5080 16GB at ~205 tok/s tg128 and ~5.5k tok/s pp32768; guide's 16 GB (V100) section restricts to --ctx-size 32768.",
+   "coding_agent_evidence": "OpenAI model card (self-reported, high reasoning): SWE-bench Verified 60.7, Tau-Bench Retail 54.8, Tau-Bench Airline 38.0, Aider Polyglot 34.2 (low/medium: SWE-V 37.4/53.2). https://arxiv.org/html/2508.10925v1",
+   "llamacpp_ollama": "llama.cpp: llama-server -hf ggml-org/gpt-oss-20b-GGUF --ctx-size 32768 --jinja -ub 4096 -b 4096 (16 GB section), --chat-template-kwargs '{\"reasoning_effort\": \"high\"}', --temp 1.0 --top-p 1.0. Ollama: gpt-oss:20b (14GB, tools+thinking badges).",
+   "confidence": "high",
+   "notes": "Harmony format is mandatory. Reasoning effort low/medium/high (template default medium; set via system prompt 'Reasoning: high' or reasoning_effort kwarg). Recipe known issue: openai_harmony vocab download error, fixed by setting TIKTOKEN_ENCODINGS_BASE. vLLM recipe header still says RTX 5090 support is in progress, so sm_120 behaviour should be verified locally.",
+   "sources": [
+    "https://huggingface.co/openai/gpt-oss-20b",
+    "https://huggingface.co/openai/gpt-oss-20b/raw/main/config.json",
+    "https://huggingface.co/api/models/openai/gpt-oss-20b?blobs=true",
+    "https://github.com/vllm-project/recipes/blob/main/OpenAI/GPT-OSS.md",
+    "https://github.com/vllm-project/vllm/blob/v0.32.0/docs/features/tool_calling.md",
+    "https://github.com/vllm-project/vllm/blob/v0.32.0/vllm/reasoning/__init__.py",
+    "https://github.com/vllm-project/vllm/blob/v0.32.0/vllm/model_executor/layers/fused_moe/oracle/mxfp4.py",
+    "https://github.com/ggml-org/llama.cpp/discussions/15396",
+    "https://huggingface.co/ggml-org/gpt-oss-20b-GGUF",
+    "https://ollama.com/library/gpt-oss/tags",
+    "https://arxiv.org/html/2508.10925v1"
+   ]
+  },
+  {
+   "name": "gpt-oss-120b",
+   "vendor": "OpenAI",
+   "family": "gpt-oss",
+   "hf_repo": "openai/gpt-oss-120b",
+   "release_date": "2025-08-05 (HF createdAt 2025-08-04; older, still current)",
+   "total_params_b": 117,
+   "active_params_b": 5.1,
+   "architecture": "MoE, 36 layers, 128 experts, 4 active, alternating sliding/full attention, MXFP4 MoE weights",
+   "context_length": "131072",
+   "license": "Apache-2.0",
+   "modalities": "text",
+   "thinking": "always",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "Native MXFP4: root safetensors 65.25 GB",
+    "ggml-org/gpt-oss-120b-GGUF gpt-oss-120b-MXFP4.gguf 63.39 GB",
+    "Ollama gpt-oss:120b 65GB, 128K"
+   ],
+   "vllm": "Same flags as 20b (--tool-call-parser openai --enable-auto-tool-choice, --reasoning-parser openai_gptoss); vLLM needs the whole model in GPU memory (single 80 GB GPU per the model card), so it is not viable on 16 GB.",
+   "fit_16gb": "Does not fit vLLM. llama.cpp guide for 16 GB VRAM: llama-server -hf ggml-org/gpt-oss-120b-GGUF --ctx-size 32768 --jinja -ub 4096 -b 4096 --n-cpu-moe 32, which keeps 32 of 36 MoE layers (~50+ GB of the 63.4 GB GGUF) in system RAM (inferred). With 61 GiB usable and ~40 GiB free while the desktop runs, that does not fit without closing most apps or paging from NVMe; marginal at best.",
+   "coding_agent_evidence": "OpenAI model card (self-reported, high): SWE-bench Verified 62.4, Tau-Bench Retail 67.8, Airline 49.2, Aider Polyglot 44.4. https://arxiv.org/html/2508.10925v1",
+   "llamacpp_ollama": "llama.cpp --n-cpu-moe 32 (16 GB VRAM) per guide; Ollama gpt-oss:120b 65GB.",
+   "confidence": "high",
+   "notes": "Guide tip: minimum VRAM for 120B with all MoE layers on CPU is about 8 GB; a 5090 gets ~30 t/s with --n-cpu-moe 21. RAM, not VRAM, is the limit here.",
+   "sources": [
+    "https://huggingface.co/openai/gpt-oss-120b",
+    "https://huggingface.co/openai/gpt-oss-120b/raw/main/config.json",
+    "https://huggingface.co/api/models/ggml-org/gpt-oss-120b-GGUF?blobs=true",
+    "https://github.com/ggml-org/llama.cpp/discussions/15396",
+    "https://ollama.com/library/gpt-oss/tags",
+    "https://arxiv.org/html/2508.10925v1"
+   ]
+  },
+  {
+   "name": "gpt-oss-safeguard-20b",
+   "vendor": "OpenAI",
+   "family": "gpt-oss",
+   "hf_repo": "openai/gpt-oss-safeguard-20b",
+   "release_date": "2025-09-18 (HF createdAt; lastModified 2026-01-14)",
+   "total_params_b": 21,
+   "active_params_b": 3.6,
+   "architecture": "Fine-tune of gpt-oss-20b, MXFP4 MoE",
+   "context_length": "128K (Ollama)",
+   "license": "Apache-2.0",
+   "modalities": "text",
+   "thinking": "always",
+   "tool_calling": "unknown",
+   "official_quantized": [
+    "Native MXFP4 13.76 GB",
+    "Ollama gpt-oss-safeguard:20b 14GB"
+   ],
+   "vllm": "Card tagged vllm; same harmony format as gpt-oss.",
+   "fit_16gb": "Same footprint as gpt-oss-20b.",
+   "coding_agent_evidence": "None; the card says it is intended for safety classification use cases.",
+   "llamacpp_ollama": "Ollama gpt-oss-safeguard:20b / :120b (65GB)",
+   "confidence": "high",
+   "notes": "Not a coding model: a policy-following safety classifier. Listed only to record that this is the only gpt-oss-family release after August 2025.",
+   "sources": [
+    "https://huggingface.co/openai/gpt-oss-safeguard-20b",
+    "https://ollama.com/library/gpt-oss-safeguard/tags"
+   ]
+  },
+  {
+   "name": "DeepSeek-R1-0528-Qwen3-8B",
+   "vendor": "DeepSeek",
+   "family": "DeepSeek-R1 distill",
+   "hf_repo": "deepseek-ai/DeepSeek-R1-0528-Qwen3-8B",
+   "release_date": "2025-05-29 (older than window; still DeepSeek's newest small chat model)",
+   "total_params_b": 8.19,
+   "active_params_b": 8.19,
+   "architecture": "Dense, Qwen3-8B architecture, 36 layers, 8 KV heads x 128",
+   "context_length": "131072 (YaRN factor 4 over 32768 in config.json); Ollama 128K",
+   "license": "MIT",
+   "modalities": "text",
+   "thinking": "always",
+   "tool_calling": "no",
+   "official_quantized": [
+    "None from DeepSeek; BF16 only (16.38 GB)",
+    "Ollama deepseek-r1:8b = deepseek-r1:latest, 5.2GB, 128K"
+   ],
+   "vllm": "--reasoning-parser deepseek_r1; the vLLM reasoning table marks the DeepSeek R1 series as Tool Calling: not supported. https://github.com/vllm-project/vllm/blob/v0.32.0/docs/features/reasoning_outputs.md",
+   "fit_16gb": "BF16 16.4 GB does not fit vLLM on 16 GB; needs a community FP8/AWQ quant (not vendor). Ollama Q4 5.2 GB fits with plenty of room (KV ~144 KiB/token BF16, ~4.5 GiB for 32k, inferred).",
+   "coding_agent_evidence": "Vendor card (self-reported): LiveCodeBench (2408-2505) 60.5, AIME24 86.0; no SWE-bench/BFCL numbers for the 8B.",
+   "llamacpp_ollama": "Ollama deepseek-r1:8b (5.2GB); Ollama shows a 'tools' badge on the deepseek-r1 page, but that is Ollama's own template, not DeepSeek's.",
+   "confidence": "medium",
+   "notes": "The official chat template renders past assistant tool_calls and tool outputs but never injects tool definitions, so tool calling through vLLM with the HF template is not usable (source-backed from tokenizer_config.json). Card: system prompt supported; it is not necessary to prefill <think>.",
+   "sources": [
+    "https://huggingface.co/deepseek-ai/DeepSeek-R1-0528-Qwen3-8B",
+    "https://huggingface.co/deepseek-ai/DeepSeek-R1-0528-Qwen3-8B/raw/main/tokenizer_config.json",
+    "https://huggingface.co/deepseek-ai/DeepSeek-R1-0528-Qwen3-8B/raw/main/config.json",
+    "https://ollama.com/library/deepseek-r1",
+    "https://github.com/vllm-project/vllm/blob/v0.32.0/docs/features/reasoning_outputs.md"
+   ]
+  },
+  {
+   "name": "DeepSeek-R1-Distill-Qwen-14B",
+   "vendor": "DeepSeek",
+   "family": "DeepSeek-R1 distill",
+   "hf_repo": "deepseek-ai/DeepSeek-R1-Distill-Qwen-14B",
+   "release_date": "2025-01-20 (older, outside window)",
+   "total_params_b": 14.77,
+   "active_params_b": 14.77,
+   "architecture": "Dense Qwen2.5-14B base, 48 layers, 8 KV heads x 128",
+   "context_length": "131072 max_position_embeddings; Ollama 128K",
+   "license": "MIT",
+   "modalities": "text",
+   "thinking": "always",
+   "tool_calling": "no",
+   "official_quantized": [
+    "None (BF16 ~29.5 GB)",
+    "Ollama deepseek-r1:14b 9.0GB"
+   ],
+   "vllm": "--reasoning-parser deepseek_r1; no tool calling per the vLLM reasoning table.",
+   "fit_16gb": "BF16 does not fit; Ollama Q4 9.0 GB fits with ~5 GB for KV (192 KiB/token BF16, so ~24k tokens, inferred).",
+   "coding_agent_evidence": "No agentic benchmarks on the card (reasoning/LiveCodeBench only, January 2025).",
+   "llamacpp_ollama": "Ollama deepseek-r1:14b",
+   "confidence": "high",
+   "notes": "The template forces '<think>\\n' and has no tool definitions; the card advises temperature 0.6 and no system prompt, both a poor match for OpenCode.",
+   "sources": [
+    "https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-14B",
+    "https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-14B/raw/main/tokenizer_config.json",
+    "https://ollama.com/library/deepseek-r1/tags"
+   ]
+  },
+  {
+   "name": "DeepSeek-R1-Distill-Qwen-32B",
+   "vendor": "DeepSeek",
+   "family": "DeepSeek-R1 distill",
+   "hf_repo": "deepseek-ai/DeepSeek-R1-Distill-Qwen-32B",
+   "release_date": "2025-01-20 (older)",
+   "total_params_b": 32.76,
+   "active_params_b": 32.76,
+   "architecture": "Dense Qwen2.5-32B base",
+   "context_length": "131072 / Ollama 128K",
+   "license": "MIT",
+   "modalities": "text",
+   "thinking": "always",
+   "tool_calling": "no",
+   "official_quantized": [
+    "None",
+    "Ollama deepseek-r1:32b 20GB"
+   ],
+   "vllm": "--reasoning-parser deepseek_r1",
+   "fit_16gb": "Does not fit 16 GB VRAM even at Q4 (20 GB); Ollama/llama.cpp partial CPU offload only, slow (inferred).",
+   "coding_agent_evidence": "None agentic.",
+   "llamacpp_ollama": "Ollama deepseek-r1:32b",
+   "confidence": "high",
+   "notes": "The template forces thinking and has no tool definitions.",
+   "sources": [
+    "https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-32B",
+    "https://ollama.com/library/deepseek-r1/tags"
+   ]
+  },
+  {
+   "name": "DeepSeek-R1-Distill-Qwen-7B",
+   "vendor": "DeepSeek",
+   "family": "DeepSeek-R1 distill",
+   "hf_repo": "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B",
+   "release_date": "2025-01-20 (older)",
+   "total_params_b": 7.62,
+   "active_params_b": 7.62,
+   "architecture": "Dense Qwen2.5-Math-7B base",
+   "context_length": "Ollama 128K",
+   "license": "MIT",
+   "modalities": "text",
+   "thinking": "always",
+   "tool_calling": "no",
+   "official_quantized": [
+    "Ollama deepseek-r1:7b 4.7GB"
+   ],
+   "vllm": "--reasoning-parser deepseek_r1; BF16 ~15.2 GB, too tight for 16 GB with KV",
+   "fit_16gb": "Ollama Q4 fits easily; vLLM BF16 marginal/no.",
+   "coding_agent_evidence": "None agentic.",
+   "llamacpp_ollama": "Ollama deepseek-r1:7b",
+   "confidence": "high",
+   "notes": "Superseded by R1-0528-Qwen3-8B.",
+   "sources": [
+    "https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-7B",
+    "https://ollama.com/library/deepseek-r1/tags"
+   ]
+  },
+  {
+   "name": "DeepSeek-R1-Distill-Llama-8B",
+   "vendor": "DeepSeek",
+   "family": "DeepSeek-R1 distill",
+   "hf_repo": "deepseek-ai/DeepSeek-R1-Distill-Llama-8B",
+   "release_date": "2025-01-20 (older)",
+   "total_params_b": 8.03,
+   "active_params_b": 8.03,
+   "architecture": "Dense Llama-3.1-8B base",
+   "context_length": "128K",
+   "license": "MIT (base Llama 3.1 license terms also apply per DeepSeek card)",
+   "modalities": "text",
+   "thinking": "always",
+   "tool_calling": "no",
+   "official_quantized": [
+    "None; Ollama deepseek-r1:8b now points to R1-0528-Qwen3-8B, not this model"
+   ],
+   "vllm": "--reasoning-parser deepseek_r1",
+   "fit_16gb": "BF16 16 GB does not fit vLLM; GGUF Q4 fits.",
+   "coding_agent_evidence": "None agentic.",
+   "llamacpp_ollama": "No current Ollama tag (8b tag was repointed to R1-0528-Qwen3-8B)",
+   "confidence": "medium",
+   "notes": "Legacy; listed for completeness only.",
+   "sources": [
+    "https://huggingface.co/api/models/deepseek-ai/DeepSeek-R1-Distill-Llama-8B",
+    "https://ollama.com/library/deepseek-r1"
+   ]
+  },
+  {
+   "name": "DeepSeek-V4-Flash",
+   "vendor": "DeepSeek",
+   "family": "DeepSeek-V4",
+   "hf_repo": "deepseek-ai/DeepSeek-V4-Flash",
+   "release_date": "2026-04-22 (update DeepSeek-V4-Flash-0731 on 2026-07-31)",
+   "total_params_b": 284,
+   "active_params_b": 13,
+   "architecture": "MoE, hybrid CSA/HCA attention, FP4 experts + FP8 rest",
+   "context_length": "1M",
+   "license": "MIT",
+   "modalities": "text (Vision-Exp variant 2026-08-31)",
+   "thinking": "toggle",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "Native FP4+FP8 mixed: 159.62 GB safetensors"
+   ],
+   "vllm": "vLLM v0.32.0 has deepseek_v4 tool and reasoning parsers; not relevant on this machine.",
+   "fit_16gb": "Does not fit: 159.6 GB weights exceed 16 GiB VRAM + 61 GiB RAM. Ollama deepseek-v4-flash page says it was retired on 2026-08-27, no models pushed.",
+   "coding_agent_evidence": "Card (self-reported): SWE Verified 79.0 (Max), Terminal Bench 2.0 56.9, LiveCodeBench 91.6.",
+   "llamacpp_ollama": "None local",
+   "confidence": "high",
+   "notes": "Three modes: Non-think / Think High / Think Max.",
+   "sources": [
+    "https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash",
+    "https://huggingface.co/api/models/deepseek-ai/DeepSeek-V4-Flash?blobs=true",
+    "https://ollama.com/library/deepseek-v4-flash"
+   ]
+  }
+ ],
+ "facts": [
+  {
+   "topic": "DeepSeek releases in window",
+   "claim": "deepseek-ai HF org releases 2025-11-15..2026-11-15: DeepSeek-Math-V2 (2025-11-27), V3.2-Speciale (2025-11-28), V3.2 (2025-12-01), OCR-2 (2026-01-27), V4-Flash/-Base and V4-Pro/-Base (2026-04-22), V4-Flash-DSpark and V4-Pro-DSpark (2026-06-27), small draft heads for Qwen3 and Gemma4 (2026-06-28), V4-Flash-0731, V4-Pro-0813, V4-Flash-Vision-Exp (2026-08-31), V4.1-Flash (2026-09-10), V4.1-Flash-1017 (2026-10-17).",
+   "source_url": "https://huggingface.co/api/models?author=deepseek-ai&sort=createdAt&direction=-1&limit=40",
+   "source_date": "2026-11-15 query",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "DeepSeek sizes",
+   "claim": "Weight sizes: V3.2 689.5 GB (685B params), V4-Flash 159.6 GB (284B total/13B active, FP4+FP8), V4-Pro 1.6T/49B, V4.1-Flash-1017 510.3 GB (552B backbone, 8B active in prefill / 16B in decode), Math-V2 685B; all MIT except Math-V2 and OCR-2 (Apache-2.0).",
+   "source_url": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash",
+   "source_date": "2026-09-10 / lastModified 2026-11-10",
+   "support": "source-backed",
+   "notes": "Sizes summed from HF API ?blobs=true; parameter counts from the model cards."
+  },
+  {
+   "topic": "DeepSeek fit",
+   "claim": "No general DeepSeek model released in the window can run on this machine: the smallest, V4-Flash, needs 159.6 GB of weights against 16 GiB VRAM + 61 GiB RAM.",
+   "source_url": "https://huggingface.co/api/models/deepseek-ai/DeepSeek-V4-Flash?blobs=true",
+   "source_date": "2026-06-22",
+   "support": "source-backed"
+  },
+  {
+   "topic": "DeepSeek V4.1 template",
+   "claim": "DeepSeek-V4.1-Flash-1017 ships no Jinja chat template; prompt encoding is a Python reference (encoding.py) and the deepseek-recipe Rust library. It is multimodal (image-text-to-text) with 1M context.",
+   "source_url": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash-1017",
+   "source_date": "2026-11-10",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "DeepSeek API",
+   "claim": "The DeepSeek API model 'deepseek-flash' is now served by DeepSeek-V4.1-Flash-1017; the legacy names deepseek-v4-flash and deepseek-v4-flash-vision-exp are retired and mapped to it.",
+   "source_url": "https://api-docs.deepseek.com/",
+   "source_date": "2026-11-15 fetch",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "DeepSeek OCR-2",
+   "claim": "DeepSeek-OCR-2 is 3.39B BF16, Apache-2.0, created 2026-01-27: it fits the GPU but is OCR-only, so it does not matter for a coding agent.",
+   "source_url": "https://huggingface.co/api/models/deepseek-ai/DeepSeek-OCR-2",
+   "source_date": "2026-02-03",
+   "support": "source-backed"
+  },
+  {
+   "topic": "DeepSeek draft heads",
+   "claim": "On 2026-06-28 DeepSeek published speculative-decoding draft models (dspark_*, dflash_*, eagle3_*) for Qwen3-4B/8B/14B and Gemma4-12B, e.g. dspark_qwen3_8b_block7 (4.74 GB, arch Qwen3DSparkModel, 5 layers). The repos have no README or license, and nothing documents vLLM support.",
+   "source_url": "https://huggingface.co/deepseek-ai/dspark_qwen3_8b_block7",
+   "source_date": "2026-06-28",
+   "support": "direct-statement",
+   "notes": "Using them with vLLM is speculative."
+  },
+  {
+   "topic": "R1-0528-Qwen3-8B",
+   "claim": "DeepSeek-R1-0528-Qwen3-8B (MIT, 2025-05-29) is R1-0528 chain-of-thought distilled into the Qwen3-8B base; card: run it like Qwen3-8B but with DeepSeek's config files; system prompts are supported.",
+   "source_url": "https://huggingface.co/deepseek-ai/DeepSeek-R1-0528-Qwen3-8B",
+   "source_date": "2025-05-29",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "R1 distill tool calling",
+   "claim": "The official chat templates of R1-0528-Qwen3-8B and R1-Distill-Qwen-14B/32B never render a 'tools' list (only past tool_calls/outputs), and the Distill templates force '<think>\\n'.",
+   "source_url": "https://huggingface.co/deepseek-ai/DeepSeek-R1-0528-Qwen3-8B/raw/main/tokenizer_config.json",
+   "source_date": "2025-05-29",
+   "support": "source-backed"
+  },
+  {
+   "topic": "vLLM reasoning parsers",
+   "claim": "vLLM docs: DeepSeek R1 series uses reasoning parser deepseek_r1, with Tool Calling marked not supported; DeepSeek-V3.1 uses deepseek_v3 (tool calling only in non-thinking mode).",
+   "source_url": "https://github.com/vllm-project/vllm/blob/v0.32.0/docs/features/reasoning_outputs.md",
+   "source_date": "vLLM v0.32.0, 2026-10-18",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "vLLM parsers registry",
+   "claim": "vLLM v0.32.0 registers reasoning parsers deepseek_r1, deepseek_v3, deepseek_v4, deepseek_v41, openai_gptoss and tool parsers deepseek_v3, deepseek_v31, deepseek_v32, deepseek_v4, deepseek_v41, openai (GptOssToolParser).",
+   "source_url": "https://github.com/vllm-project/vllm/blob/v0.32.0/vllm/tool_parsers/__init__.py",
+   "source_date": "2026-10-18",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "Ollama DeepSeek",
+   "claim": "Ollama deepseek-r1 tags: 1.5b 1.1GB, 7b 4.7GB, 8b/latest 5.2GB (=R1-0528-Qwen3-8B), 14b 9.0GB, 32b 20GB, 70b 43GB, 671b 404GB; all 128K except 671b (160K). deepseek-v4-flash was 'retired on August 27, 2026' with no models pushed; deepseek-v3.2 has no local models.",
+   "source_url": "https://ollama.com/library/deepseek-r1/tags",
+   "source_date": "2026-11-15 fetch",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "gpt-oss releases",
+   "claim": "OpenAI HF org has had no new gpt-oss chat checkpoint since gpt-oss-20b/120b (2025-08-04). The only later gpt-oss derivatives are gpt-oss-safeguard-20b/120b (2025-09-18, safety classifiers); later org items are circuit-sparsity (2025-12) and privacy-filter (2026-04).",
+   "source_url": "https://huggingface.co/api/models?author=openai&sort=createdAt&direction=-1&limit=30",
+   "source_date": "2026-11-15 query",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "gpt-oss specs",
+   "claim": "gpt-oss-120b has 117B params / 5.1B active and fits one 80GB GPU; gpt-oss-20b has 21B / 3.6B active and runs within 16GB; MoE weights were post-trained in MXFP4; Apache-2.0; reasoning effort low/medium/high; harmony format required.",
+   "source_url": "https://huggingface.co/openai/gpt-oss-20b",
+   "source_date": "lastModified 2025-08-26",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "gpt-oss config",
+   "claim": "gpt-oss-20b config: 24 layers, 32 experts, 4 per token, sliding_window 128 alternating with full attention, 8 KV heads x head_dim 64, max_position_embeddings 131072 (YaRN factor 32), quant_method mxfp4; gpt-oss-120b has 36 layers and 128 experts.",
+   "source_url": "https://huggingface.co/openai/gpt-oss-20b/raw/main/config.json",
+   "source_date": "2025-08-26",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "gpt-oss sizes",
+   "claim": "Checkpoint sizes: gpt-oss-20b 13.76 GB, gpt-oss-120b 65.25 GB; ggml-org GGUF MXFP4 12.11 GB and 63.39 GB (repos updated 2026-11-12, now also contain eagle3 draft GGUFs).",
+   "source_url": "https://huggingface.co/api/models/ggml-org/gpt-oss-120b-GGUF?blobs=true",
+   "source_date": "2026-11-12",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "gpt-oss KV budget",
+   "claim": "gpt-oss-20b KV cache costs about 24 KiB/token in BF16 (12 full-attention layers x 2 x 8 heads x 64 x 2 B; sliding layers capped at 128 tokens). After ~12.8 GiB of weights on a 15.9 GiB GPU, vLLM leaves roughly 1-2 GiB, so about 32k-64k tokens (more with --kv-cache-dtype fp8); full 131k context is unlikely.",
+   "source_url": "https://huggingface.co/openai/gpt-oss-20b/raw/main/config.json",
+   "support": "inferred",
+   "notes": "Needs a local measurement; vLLM overheads (CUDA graphs, activations) vary by version."
+  },
+  {
+   "topic": "vLLM gpt-oss tool calling",
+   "claim": "vLLM recipe: run gpt-oss with '--tool-call-parser openai --enable-auto-tool-choice'; Chat Completions supports function calling (streaming too) but not built-in tools; only tool_choice='auto' is supported.",
+   "source_url": "https://github.com/vllm-project/recipes/blob/main/OpenAI/GPT-OSS.md",
+   "source_date": "last commit 2026-05-10",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "vLLM gpt-oss RTX 50",
+   "claim": "The vLLM gpt-oss recipe still says 'We are actively working on ensuring this model can work on Ampere, Ada Lovelace, and RTX 5090'; its Blackwell env var VLLM_USE_FLASHINFER_MOE_MXFP4_MXFP8=1 and GPT-OSS_Blackwell.yaml (kv-cache-dtype fp8) are selected only when compute_cap == 10.0.",
+   "source_url": "https://github.com/vllm-project/recipes/blob/main/OpenAI/GPT-OSS.md",
+   "source_date": "2026-05-10",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "MXFP4 on sm_120",
+   "claim": "In vLLM v0.32.0 the gpt-oss MXFP4 MoE backend list moves the OpenAI Triton kernel below Marlin on compute capability family 120 because 'the OAI Triton kernels run but their 99KB shared memory budget caps them at small tiles, so MARLIN prefills ~10% faster'. FlashInfer TRTLLM MXFP4 is SM100-only, and FlashInfer CUTLASS MXFP4xBF16 is SM90-only, so auto selection on the RTX 5080 lands on Marlin (weight-only MXFP4, BF16 activations).",
+   "source_url": "https://github.com/vllm-project/vllm/blob/v0.32.0/vllm/model_executor/layers/fused_moe/oracle/mxfp4.py",
+   "source_date": "2026-10-18",
+   "support": "source-backed",
+   "notes": "Final selection inferred from the priority list plus each backend's _supports_current_device/_supports_quant_scheme; confirm with the startup log."
+  },
+  {
+   "topic": "b12x backend",
+   "claim": "vLLM v0.32.0 has an SM12x-native FP4 MoE backend 'b12x' (B12X_MXFP4_MXFP8 / B12X_MXFP4_BF16), selectable with --moe-backend b12x; it is not in the automatic gpt-oss priority list.",
+   "source_url": "https://github.com/vllm-project/vllm/blob/v0.32.0/vllm/model_executor/layers/fused_moe/oracle/mxfp4.py",
+   "source_date": "2026-10-18",
+   "support": "source-backed",
+   "notes": "Whether b12x accepts gpt-oss shapes on the 5080 Laptop is untested."
+  },
+  {
+   "topic": "vLLM versions",
+   "claim": "Latest vLLM releases: v0.32.0 (2026-10-18), v0.33.0rc3 (2026-11-02); Docker Hub vllm/vllm-openai also has cu135-nightly tags dated 2026-11-15.",
+   "source_url": "https://github.com/vllm-project/vllm/releases",
+   "source_date": "2026-11-15 query",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "vLLM harmony issue",
+   "claim": "Known issue: openai_harmony 'error downloading or loading vocab file'; workaround is to pre-download o200k_base/cl100k_base tiktoken files and set TIKTOKEN_ENCODINGS_BASE (relevant in an offline Docker container).",
+   "source_url": "https://github.com/vllm-project/recipes/blob/main/OpenAI/GPT-OSS.md",
+   "source_date": "2026-05-10",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "llama.cpp gpt-oss 16GB",
+   "claim": "llama.cpp guide for 16GB VRAM: 'llama-server -hf ggml-org/gpt-oss-20b-GGUF --ctx-size 32768 --jinja -ub 4096 -b 4096' and for 120b 'llama-server -hf ggml-org/gpt-oss-120b-GGUF --ctx-size 32768 --jinja -ub 4096 -b 4096 --n-cpu-moe 32'.",
+   "source_url": "https://github.com/ggml-org/llama.cpp/discussions/15396",
+   "source_date": "updated 2026-09-29",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "llama.cpp RTX 5080 benchmark",
+   "claim": "Guide benchmark on 'NVIDIA GeForce RTX 5080, compute capability 12.0, CUDA 12.8' (desktop card): gpt-oss-20b MXFP4 (11.27 GiB) tg128 ~204.9 t/s, pp2048 ~7477 t/s, pp32768 ~5531 t/s (build 6210).",
+   "source_url": "https://github.com/ggml-org/llama.cpp/discussions/15396",
+   "source_date": "2025-08 benchmark in doc updated 2026-09-29",
+   "support": "direct-statement",
+   "notes": "The Laptop 5080 (140 W limit, 16 GB) will be slower than the desktop card; magnitude unknown."
+  },
+  {
+   "topic": "gpt-oss-120b RAM need",
+   "claim": "With --n-cpu-moe 32 of 36 layers, most of the 63.39 GB GGUF (roughly 50+ GB of expert weights) stays in system RAM; the machine has 61 GiB usable with ~40 GiB free while the desktop runs, so gpt-oss-120b would page from NVMe or need apps closed. Not recommended as a daily driver.",
+   "source_url": "https://github.com/ggml-org/llama.cpp/discussions/15396",
+   "support": "inferred"
+  },
+  {
+   "topic": "llama.cpp agent tips",
+   "claim": "The guide recommends --temp 1.0 --top-p 1.0 for gpt-oss and setting the default effort with --chat-template-kwargs '{\"reasoning_effort\": \"high\"}'; parallel slots (-np 4) for agents need extra memory.",
+   "source_url": "https://github.com/ggml-org/llama.cpp/discussions/15396",
+   "source_date": "2026-09-29",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "Ollama gpt-oss",
+   "claim": "Ollama gpt-oss tags: gpt-oss:20b (=latest) 14GB 128K, gpt-oss:120b 65GB 128K, plus cloud tags; capabilities tools + thinking; page updated about one month before 2026-11-15.",
+   "source_url": "https://ollama.com/library/gpt-oss/tags",
+   "source_date": "2026-11-15 fetch",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "gpt-oss benchmarks",
+   "claim": "OpenAI model card at high reasoning: SWE-bench Verified 62.4 (120b) / 60.7 (20b); Tau-Bench Retail 67.8 / 54.8; Aider Polyglot 44.4 / 34.2 (vendor self-reported).",
+   "source_url": "https://arxiv.org/html/2508.10925v1",
+   "source_date": "2025-08-08",
+   "support": "direct-statement",
+   "notes": "Older than window; I found no newer official agentic numbers."
+  },
+  {
+   "topic": "gpt-oss reasoning default",
+   "claim": "The gpt-oss chat template defaults reasoning_effort to 'medium' when not given; the card says it can be set in the system prompt, e.g. 'Reasoning: high'.",
+   "source_url": "https://huggingface.co/openai/gpt-oss-20b/raw/main/chat_template.jinja",
+   "source_date": "2025-08",
+   "support": "direct-statement"
+  }
+ ],
+ "gaps": [
+  "openai.com/index/introducing-gpt-oss returned a bot-protection page (9.7 KB, no content) to curl; benchmarks came from the arXiv model card instead. cookbook.openai.com was not opened.",
+  "I did not open the DeepSeek news index (https://api-docs.deepseek.com/news/ returned the quick-start page), so the per-release news posts are unchecked; releases were enumerated from the HF org listing.",
+  "I did not find official or vendor-published quantized checkpoints (FP8/AWQ/GGUF) for any DeepSeek R1 distill; only Ollama tags. Did not search unsloth/bartowski or other community quants.",
+  "DeepSeek draft-head repos (dspark_/dflash_/eagle3_ for Qwen3 and Gemma4) have no README or license, and I found no vLLM docs for the Qwen3DSparkModel architecture.",
+  "vLLM KV-cache headroom for gpt-oss-20b on a 16 GB card is computed, not measured; vLLM's own docs give no 16 GB guidance. The b12x backend's compatibility with gpt-oss shapes on the 5080 Laptop is unverified.",
+  "No official RTX 5080 Laptop (140 W) numbers exist; the llama.cpp benchmark is the desktop RTX 5080.",
+  "I did not check whether the default vllm/vllm-openai release image (CUDA 13.0) or the cu135 nightly is required for sm_120 with driver 595 / CUDA 13.2; another lane covers Docker images.",
+  "No official SWE-bench/BFCL/Terminal-Bench numbers exist for the DeepSeek R1 distills."
+ ]
+}

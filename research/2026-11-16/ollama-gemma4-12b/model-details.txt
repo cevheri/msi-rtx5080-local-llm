@@ -1,0 +1,1 @@
+details: {"parent_model": "imatrix-20260927-12b/model-q4_K_M.gguf", "format": "gguf", "family": "gemma4", "families": ["gemma4"], "parameter_size": "11.9B", "quantization_level": "Q4_K_M", "runner": "llamacpp"} | capabilities: ['completion', 'vision', 'audio', 'tools', 'thinking']

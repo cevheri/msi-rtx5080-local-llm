@@ -1,0 +1,117 @@
+{
+ "key": "k2-horizon-mova",
+ "repo": "bartowski/K2-Horizon-MoVA-36B-A4B-GGUF",
+ "file": "K2-Horizon-MoVA-36B-A4B-Q4_K_M.gguf",
+ "size_bytes": 22701885664,
+ "header_ok": true,
+ "header_facts": "GGUF v3, arch k2-horizon, 798 tensors, header 11.5 MB (fits the 32 MiB range). 48 blocks; blocks 0-2 dense (leading_dense_block_count 3, ffn 6144), blocks 3-47 MoE: 100 routed FFN experts, 8 used, 1 shared expert, expert ffn 768, sigmoid gating (func 2), weights scale 2.5. MoVA: every MoE block also has attn_v_exps [2560,1024,64] Q4_K = 90 MiB (64 value experts, 4 used), 3.955 GiB in total; dense blocks keep a plain attn_v. Attention: full attention on all 48 layers (build_attn_inp_kv, no SWA, no SSM, no MLA), 32 Q heads, 8 KV heads, head size 128/128, gated attention (attn_gate), rope NEOX base 1e7. Vocab 250,624 (gpt2 BPE, pre k2-horizon). Native context 524,288. Tensor total 21.132 GiB. Routed FFN experts (ffn_gate/up/down_exps, the only tensors --n-cpu-moe and the MoE cache touch): 14.943 GiB, 364.75 MiB per block when ffn_down_exps is Q6_K (22 blocks: 3-7, 10, 13, 16, 19, 22, 25, 28, 31, 34, 37, 40, 42-47) and 316.41 MiB when Q4_K (23 blocks), average 0.332 GiB. Note gguf_plan.py counts attn_v_exps as experts (its per-block 0.397/0.444 GiB and its n_cpu_moe table are 90 MiB per block too high on the RAM side and omit those 4,050 MiB from the always-on-GPU side). Non-expert GPU weights 1.898 GiB (1,944 MiB: block tensors 1.408 + output.weight Q6_K 0.490), plus attn_v_exps 4,050 MiB that always stay on the GPU (LLM_FFN_EXPS_REGEX is \\.ffn_(up|down|gate|gate_up)_(ch|)exps, common/common.h:1286). token_embd Q4_K 0.336 GiB (344 MiB) on the host. Embedded template: bartowski's, 51 kB, reasoning_effort default 'high' (high/medium/low only, anything else raises), tool_call_format default 'xml', no enable_thinking anywhere. Built with imatrix.",
+ "kv_math": "Full attention on all 48 layers, 8 KV heads x (128 K + 128 V). Per token: 48 x 8 x 256 = 98,304 elements; f16 196,608 B (192 KiB), q8_0 x 1.0625 = 104,448 B (102 KiB). At 65,536 tokens: q8_0 6,845,104,128 B = 6,528 MiB (6.375 GiB); f16 12,288 MiB (does not fit). No sliding-window cache, recurrent state or context checkpoints for this arch, so nothing else scales with context. Context ceiling with every routed expert in RAM and no MoE cache: (15,341 - 112 - 1,944 - 4,050 - 820) = 8,415 MiB for KV, / 102 KiB = about 84,000 tokens in q8_0, matching the KB's 85k. Prompt cache in host RAM at q8_0: 8k prompt about 0.8 GiB, 30k about 2.99 GiB, a full 64k prompt 6.375 GiB.",
+ "recommended": {
+  "context": 65536,
+  "kv_type": "q8_0",
+  "n_cpu_moe": 48,
+  "moe_cache_mib": 1792,
+  "load_mode": "none",
+  "threads": 8,
+  "vram_breakdown": "desktop 112 + non-expert weights 1,944 (block tensors 1,442 + output.weight 502; token_embd stays on host) + attn_v_exps value experts 4,050 (always on GPU, not matched by --n-cpu-moe, not covered by the MoE cache) + routed FFN experts 0 (all 45 MoE blocks in pinned RAM) + KV q8_0 at 65,536 6,528 + llama.cpp overhead 820 (CUDA context, compute buffers at -ub 512, pool growth; 0.8 GiB as measured on Qwen3.6/3.8 with the same-size 248k-250k vocab; MoVA adds only about 8 MiB of value-expert intermediates per ubatch) + --moe-cache-mib 1,792 = 15,246 MiB",
+  "predicted_peak_mib": 15246,
+  "predicted_free_mib": 595,
+  "memory_cap": "26g",
+  "predicted_container_ram_gib": 21,
+  "server_args": [
+   "-m",
+   "MODEL_PATH",
+   "--alias",
+   "local",
+   "-ngl",
+   "all",
+   "--n-cpu-moe",
+   "48",
+   "--moe-cache-mib",
+   "1792",
+   "-lm",
+   "none",
+   "-t",
+   "8",
+   "-fa",
+   "on",
+   "-c",
+   "65536",
+   "-ctk",
+   "q8_0",
+   "-ctv",
+   "q8_0",
+   "-np",
+   "1",
+   "--jinja",
+   "--reasoning-effort",
+   "high",
+   "--temp",
+   "1.0",
+   "--top-p",
+   "0.95"
+  ]
+ },
+ "alternative": "--n-cpu-moe 46 --moe-cache-mib 1024 (blocks 46-47 whole on the GPU, 729.5 MiB, plus a smaller cache): 112 + 1,944 + 4,050 + 729.5 + 6,528 + 820 + 1,024 = 15,208 MiB peak, 633 MiB free, pinned experts 14.23 GiB instead of 14.94. It tests whole blocks against cache at nearly equal VRAM on this model, where the cache can only cover 12% of the experts. The KB's own launch (46, no cache, mmap) predicts 14,183 MiB and is a useful no-cache baseline if time allows.",
+ "thinking": "always (high effort). No on/off switch: the bartowski template has no enable_thinking, and the k2-horizon parser only honours enable_thinking=false when the template mentions it (common/parsers/k2-horizon.cpp at b12407), so --reasoning off and per-request reasoning_effort \"none\" do not stop thinking. Server default: --reasoning-effort high (b12407 flag, equivalent to the KB's --chat-template-kwargs reasoning_effort; also the template default). Per request: top-level \"reasoning_effort\": \"high\"|\"medium\"|\"low\" (server-common.cpp copies it into chat_template_kwargs) or chat_template_kwargs.reasoning_effort; medium/low use <ifm|think_fast>/<ifm|think_faster> and the card says not to use them; any other value makes the template raise.",
+ "per_request_thinking_on": "",
+ "tool_calling": "Dedicated k2-horizon PEG parser, chosen in common/chat.cpp:1332-1337 when the template contains <|ifm|im_start|> and <ifm|tool_calls>, which the embedded template does; requires --jinja. Format COMMON_CHAT_FORMAT_PEG_NATIVE, <ifm|tool_calls><ifm|tool_call>name <ifm|arg_key>k</ifm|arg_key><ifm|arg_value>v</ifm|arg_value></ifm|tool_call></ifm|tool_calls>, xml by default (json and xml_typed via tool_call_format), lazy grammar triggered on <ifm|tool_calls>, parallel calls supported. Reasoning goes to reasoning_content; the parser injects an empty reasoning_content into earlier assistant turns because the strict template requires it, so OpenCode history works. Required args are a permutation, optional args follow as unbounded zero_or_more, so an optional arg emitted before a required one fails to parse and an optional arg can repeat (same pattern as open PR #31040 for the autoparser; not fixed for this parser).",
+ "sampling": "Model card: temperature 1.0, top_p 0.95, reasoning_effort high on every request, max_tokens 32768 in its example; no top_k, min_p or penalties. llama.cpp keeps its own defaults top_k 40 and min_p 0.05 unless overridden; add --top-k 0 --min-p 0 only to match the card exactly (the defaults are a mild safety net at temperature 1.0).",
+ "opencode_entry": "{\"k2-horizon-mova-36b\": {\"modelID\": \"local\", \"name\": \"K2 Horizon MoVA 36B A4B Q4_K_M (llama.cpp)\", \"capabilities\": {\"tools\": true, \"input\": [\"text\"], \"output\": [\"text\"], \"reasoning\": {\"supported\": true}}, \"limit\": {\"context\": 65536, \"output\": 16384}}}",
+ "probe_long_tokens": "8000,30000",
+ "expected_speed": "Decode about 35-55 tok/s near an 8k context, falling to roughly 30-45 at 30k (estimate). Reasoning: per token the 8 routed experts of 45 layers read about 1.2 GiB of host experts (8/100 x 14.94 GiB), about 3.8x the host bytes Qwen3.6 read with 21 blocks in RAM. On Qwen3.6 that host part cost about 9.7 ms on the CPU path (68 tok/s) and about 4 ms with a 15%-coverage cache (112 tok/s), about 35-45 GB/s effective. Here the 1,792 MiB cache covers 12% of the experts, so a 50-65% miss rate gives 0.6-0.8 GiB uploaded per token, 15-20 ms, plus about 4-5 ms of GPU work (1.9 GiB non-expert weights, 4 of 64 value experts, KV at 896 GB/s). Without the cache (KB launch) the CPU path predicts 20-30 tok/s. Prefill will be upload-bound: every 512-token ubatch uploads all 14.94 GiB of experts over PCIe 5.0, so expect roughly 1,000-1,600 tok/s with pinned memory and much less with mmap. Wall time per turn is long because high effort always thinks.",
+ "issues": [
+  {
+   "id": "ggml-org/llama.cpp#29535",
+   "state": "closed (merged 2026-10-06)",
+   "note": "Adds K2 Horizon dense and MoVA; k2-horizon arch, src/models/k2-horizon.cpp and common/parsers/k2-horizon.cpp are present at b12407."
+  },
+  {
+   "id": "ggml-org/llama.cpp#30246",
+   "state": "closed 2026-11-12",
+   "note": "Medium/low effort left text and tool calls in reasoning_content; fixed by PR #30335 (merged 2026-11-12), whose </ifm|think> fallback end tag is in the b12407 parser. Irrelevant at high effort."
+  },
+  {
+   "id": "ggml-org/llama.cpp#31040",
+   "state": "open",
+   "note": "Autoparser fix for mixed required/optional tagged args (order and unbounded repetition). The k2-horizon parser has the same required-then-zero_or_more(optional) structure and is not touched by it; watch OpenCode tool calls with optional args."
+  },
+  {
+   "id": "ggml-org/llama.cpp#31974",
+   "state": "open",
+   "note": "CUDA VMM-pool OOM during prompt processing aborts the server; with -ngl and --n-cpu-moe set --fit does not adjust, so a too-small margin shows up as an abort on a long prefill rather than a load error."
+  }
+ ],
+ "kb_discrepancies": [
+  "Overhead overestimated: the recipe budgets about 1.3 GiB compute plus 0.3-0.5 GiB CUDA context (1.6-1.8 GiB), but the measured overhead on the same-vocab Qwen models is 0.72-0.79 GiB. Its launch at --n-cpu-moe 46 therefore peaks near 14,183 MiB (1,658 MiB free), not 14.5-14.7 GiB, and wastes about 1.2 GiB of VRAM.",
+  "'At 44 the total is about 15.3-15.5 GiB, which is too tight' is wrong under the measured overhead: 44 gives 112 + 1,944 + 4,050 + 4 x 364.75 + 6,528 + 820 = 14,913 MiB, 928 MiB free.",
+  "The launch predates the 2026-11-16 Qwen3.6 findings now in llamacpp/README.md lines 48-50 and 190-192: it lacks -lm none, -t 8 and --moe-cache-mib, and gives spare VRAM to nothing instead of the cache.",
+  "RAM line is wrong for a pinned load: '24g leaves about 5 GiB for the process' assumes mmap. With -lm none the 14.2-14.9 GiB of experts are anonymous pinned memory counted in full, and --cache-ram 4096 cannot hold one near-full 64k prompt (6.375 GiB in q8_0; 4,096 MiB holds about 41k tokens). Recommend the default 8,192 MiB and a 26g cap (14.94 + 0.34 + 8 + 2 = 25.3 GiB).",
+  "The recipe uses -hf with -e HF_TOKEN and /root/.cache/huggingface; the measurement convention is -m with the cached file under /hf, --user and no token.",
+  "Speed line: '2.4 GB per token from the GPU' counts all 3.96 GiB of value experts; only 4 of 64 are read per token (about 0.25 GiB), so the GPU share is about 2.1-2.2 GiB plus KV. The 25-40 tok/s range fits a no-cache CPU path; with the cache the estimate is 35-55.",
+  "The At a glance table (models.md line 28) shows GPU 'about 14.5-14.7' and experts in RAM 'about 14.3' for 46; with -lm none and 48 + 1,792 MiB cache it becomes about 15.25 GiB GPU (estimate) and 14.94 GiB pinned.",
+  "Not wrong but redundant: --chat-template-kwargs '{\"reasoning_effort\":\"high\",\"tool_call_format\":\"xml\"}' sets the template's own defaults; b12407 also has --reasoning-effort high for the same effect.",
+  "Sources cite tag b12418 in llamacpp/README.md (e.g. lines 55, 108, 174, 372) while the image is b12407 (e574a17b vs b54752df); the flags used here (-lm, --moe-cache-mib, --reasoning-effort, -ngl all) all exist at b12407, but the citations should name the image tag.",
+  "The recipe does not mention that the MoE cache cannot hold attn_v_exps: llama-moe-cache.cpp only caches ffn_gate/up/down(_gate_up)_exps, so the 4,050 MiB of value experts are a fixed GPU cost that no flag moves."
+ ],
+ "risks": [
+  "The 595 MiB margin rests on the 0.8 GiB overhead measured on other architectures; if the first long prefill aborts (issue #31974) or free memory at the peak is under 500 MiB, drop the cache to 1,536 MiB before touching context.",
+  "Pinning 14.94 GiB of experts plus up to 8 GiB of prompt cache is the largest host footprint so far (about 25.3 GiB worst case); close heavy desktop apps and keep --memory equal to --memory-swap at 26g.",
+  "Prefill is upload-bound with every expert in RAM (all 14.94 GiB per ubatch), so the 30k probe may take 20-30 s and OpenCode's first turn with a big system prompt is slow; the 10-minute headerTimeout covers it.",
+  "Always-on high-effort thinking can consume most of the 16k output cap on hard tasks; the card's example uses max_tokens 32768, which would leave only 32k of prompt at 64k context.",
+  "Tool-call parsing of optional-before-required arguments can fail (k2-horizon parser structure, cf. open #31040).",
+  "The cache hit rate at 12% coverage is unknown for a 100-expert, 8-active router; if the comparison run shows whole blocks winning, the Qwen3.6 rule does not transfer here.",
+  "The planner script misclassifies attn_v_exps as experts; its n_cpu_moe table must not be used directly for this arch."
+ ],
+ "sources": [
+  "$HOME/projects/llm/llamacpp/models.md section 3 (lines 153-189) and At a glance line 28",
+  "$HOME/projects/llm/llamacpp/README.md lines 48-56, 102-108, 174-192, 241",
+  "$HOME/projects/llm/docs/opencode.md lines 20-44, 50-125, 165-171",
+  "GGUF header: https://huggingface.co/bartowski/K2-Horizon-MoVA-36B-A4B-GGUF/resolve/main/K2-Horizon-MoVA-36B-A4B-Q4_K_M.gguf bytes 0-33554431, saved at $SCRATCH/headers/k2-horizon-mova/head.gguf; embedded template extracted to $SCRATCH/k2tools/template.jinja",
+  "python3 -I gguf_plan.py head.gguf 65536 1.0625 plus per-tensor dump $SCRATCH/k2tools/dump.py",
+  "llama.cpp b12407 (e574a17b): common/common.h:1286 (LLM_FFN_EXPS_REGEX), common/arg.cpp:2662 (-lm), 2738 (--n-cpu-moe), 2748 (--moe-cache-mib), 2782 (-ngl all), 3741 (--reasoning), 3759 (--reasoning-effort), 3571 (--chat-template-kwargs)",
+  "llama.cpp b12407: common/chat.cpp:1332-1337, common/parsers/k2-horizon.cpp, tools/server/server-common.cpp:1549-1575, src/models/k2-horizon.cpp (build_attn_inp_kv, attn_v_exps), src/llama-moe-cache.cpp:293, docs/moe-cache.md",
+  "gh api repos/ggml-org/llama.cpp/issues/{29535,30246,30335,31040,31974}, queried 2026-11-16",
+  "Model card https://huggingface.co/IFM/K2-Horizon-MoVA-36B-A4B/raw/main/README.md lines 85-98 and 205-206"
+ ]
+}

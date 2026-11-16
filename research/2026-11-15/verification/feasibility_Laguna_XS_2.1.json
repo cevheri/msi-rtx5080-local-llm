@@ -1,0 +1,90 @@
+{
+ "verdicts": [
+  {
+   "claim": "Checkpoint weight sizes: BF16 66.89 GB (62.30 GiB), NVFP4 21.58 GB (20.09 GiB), INT4 22.26 GiB, FP8 32.89 GiB; GGUF Q4_K_M ggml-org 19,563,570,240 B (18.22 GiB), poolside 20,274,300,032 B (18.88 GiB); bartowski IQ4_XS 16.96 GiB, IQ3_XXS 13.30 GiB, Q4_K_M 19.14 GiB",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/poolside/Laguna-XS-2.1-NVFP4?blobs=true",
+   "correction": "All sizes match a re-read of the HF API safetensors and GGUF sizes (direct-statement). The Ollama latest model blob is 20,274,300,032 B, byte-identical in size to the poolside Q4_K_M GGUF (registry.ollama.ai/v2/library/laguna-xs-2.1/manifests/latest)."
+  },
+  {
+   "claim": "Architecture: 40 layers, 10 full_attention (every 4th from 0) + 30 sliding_attention window 512, num_key_value_heads 8, head_dim 128, 256 experts top-8, moe_intermediate 512, 1 shared expert, layer 0 dense, max_position_embeddings 262144",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/poolside/Laguna-XS-2.1/raw/main/config.json",
+   "correction": "Confirmed from the raw config.json. vLLM v0.33.0 laguna.py:502 passes config.num_key_value_heads (8) to every layer, so the SWA-layer KV-head gap is closed: 8 for both layer types. The GGUF metadata also has head_count_kv 8 and sliding_window 512."
+  },
+  {
+   "claim": "KV bytes per token: 2 x 10 x 8 x 128 x 2 = 40,960 B BF16 / 20,480 B FP8",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/poolside/Laguna-XS-2.1/raw/main/config.json",
+   "correction": "Source-backed arithmetic is correct. vLLM v0.33.0 keeps the hybrid KV cache manager on here (vllm/config/vllm.py:2228-2279 only disables it for chunked-local attention, non-GPU platforms or KV connectors), so SWA layers are not billed as full attention."
+  },
+  {
+   "claim": "vLLM NVFP4 + --cpu-offload-gb 9: GPU weights 11.06 GiB, KV pool 2.39 GiB (2447 MiB), max context about 123,700 tokens FP8 / 61,100 BF16; FP8 KV is the native path",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/layers/attention/attention.py",
+   "correction": "Minor correction: in vLLM a sliding-window request holds window-1 plus max_num_batched_tokens tokens per SWA layer, not 512. So the SWA cost is 30 x 2559 x 2048 B = 150 MiB FP8 (300 MiB BF16), giving about (2447-150) MiB / 20 KiB = 117,600 tokens FP8 (about 55,000 BF16). FP8 KV is applied automatically: attention.py:287-291 sets cache_dtype fp8 when a compressed-tensors kv_cache_scheme is present and kv_cache_dtype is auto. The non-expert BF16 share checks out: 1.909B params, 3.56 GiB. This holds only if the offload actually works (see the next claim)."
+  },
+  {
+   "claim": "vLLM v0.33.0 can serve the NVFP4 checkpoint on this 16 GB sm_120 GPU with UVA expert offload (--cpu-offload-gb 9 --cpu-offload-params experts), producing correct output",
+   "verdict": "uncertain",
+   "evidence_url": "https://github.com/vllm-project/vllm/issues/38718",
+   "correction": "Contested, with strong negative evidence. (1) vLLM #38718: on an RTX 5080 (sm_120, 16 GB), NVFP4 MoE with --cpu-offload-gb gave garbage or EOS on every MoE backend (FLASHINFER_CUTLASS crashed with an illegal instruction; VLLM_CUTLASS and MARLIN gave garbage). It was closed as stale/not_planned on 2026-07-31 without a fix, and a commenter reproduced the garbage with BF16 plus offload. That was vLLM 0.18, so it may or may not still apply. (2) vLLM #66264 (open, filed 2026-11-07 against v0.33.0 on sm_120 with an NVFP4 MoE): replace_parameter keeps the _vllm_is_uva_offloaded marker, so device_loading_context (model_loader/utils.py:252-261) skips re-offload. Expert tensors repacked to a new shape (Marlin) silently return to the GPU and OOM. The fix PR #66265 is unmerged. I confirmed the code at v0.33.0 (vllm/model_executor/utils.py replace_parameter rebinds .data when shape, stride or dtype differs). FLASHINFER_CUTLASS may keep the same shapes for Laguna's aligned dims, so it might avoid this, but that is not verified. (3) #51525: explicit VLLM_CUTLASS gives empty completions on sm_120. Treat the vLLM path as not recommended until someone tests it."
+  },
+  {
+   "claim": "vLLM v0.33.0 registers LagunaForCausalLM (registry.py:154) and DFlashLagunaForCausalLM (:696); poolside_v1 tool parser (tool_parsers/__init__.py:97) and reasoning parser (reasoning/__init__.py:39); supports_required_and_named = False",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/tool_parsers/poolside_v1_tool_parser.py",
+   "correction": "All line numbers confirmed at tag v0.33.0. Parser line 57: supports_required_and_named = False."
+  },
+  {
+   "claim": "PR #47311 is in v0.33.0; PR #64518 (raw text for union/enum/$ref string params) is not in v0.33.0 but is in v0.34.0rc4",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/vllm-project/vllm/pull/64518",
+   "correction": "gh compare: 47311 merge commit vs v0.33.0 behind_by 0; 1fc9d00 (#64518) vs v0.33.0 diverged (behind 652); vs v0.34.0rc4 ahead, behind 0. Issue #64517 is closed."
+  },
+  {
+   "claim": "NVFP4 MoE backend on sm_120 auto-selects from FLASHINFER_TRTLLM ... EMULATION; b12x needs explicit opt-in",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/layers/fused_moe/oracle/nvfp4.py",
+   "correction": "The list is confirmed. b12x is opt-in through --moe-backend b12x or flashinfer_b12x; the latter maps to a FlashInfer backend, so the 'vllm[b12x] extra required' claim applies only to the b12x name. Field reports for W4A4 compressed-tensors on RTX 5090 with v0.32 show auto picking FLASHINFER_CUTLASS (#51525, #66423 comment). #66423 (segfault with any --reasoning-parser on SM120 NVFP4) could not be reproduced by two maintainers, so it stays contested."
+  },
+  {
+   "claim": "vLLM applies generation_config.json default_chat_template_kwargs automatically (gap in record)",
+   "verdict": "uncertain",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/config/model.py",
+   "correction": "Inferred: vLLM v0.33.0 reads only sampling defaults from generation_config (get_diff_sampling_param, model.py:1860). Grep of model.py, arg_utils.py, vllm.py and transformers_utils/config.py found no use of default_chat_template_kwargs, tool_call_parser or speculative_config from generation_config. So --default-chat-template-kwargs is needed, and the DFlash speculative_config in generation_config.json is not auto-applied."
+  },
+  {
+   "claim": "llama.cpp: Laguna support merged in PR #25165 (2026-07-22, 1f66c3c), first release b10087; b12418 has LLM_ARCH_LAGUNA and the 'laguna_glm_thinking' auto-parser patch",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12418/common/chat-diff-analyzer.cpp",
+   "correction": "Confirmed (compare 1f66c3c...b10087 identical). Note: b12414-b12420 are flagged prerelease. GitHub 'latest' release is v1.0.0 (2026-11-13), which adds a host-memory MoE expert cache; b12420 is the newest build on 2026-11-15. Flags -ncmoe/--n-cpu-moe, --cpu-moe, --moe-cache-mib, -fa on|off|auto and -rea/--reasoning on|off|auto are confirmed in b12418 common/arg.cpp (--reasoning on sets enable_thinking=true)."
+  },
+  {
+   "claim": "The GGUFs embed the v8 template containing 'laguna_glm_thinking'",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/ggml-org/Laguna-XS-2.1-GGUF",
+   "correction": "I range-read the first 12 MB header of both Q4_K_M GGUFs (ggml-org and poolside) and parsed the metadata. tokenizer.chat_template is byte-identical to the HF chat_template.jinja (3874 B, starts with 'v8', contains laguna_glm_thinking). The poolside GGUF stores rope.scaling.yarn_attn_factor 1.0 and ggml-org stores 1.3466, but this is harmless: llama.cpp computes the YaRN mscale itself (llama-context.cpp:270-303), and only grok reads that key."
+  },
+  {
+   "claim": "llama.cpp plan: ggml-org Q4_K_M, --n-cpu-moe 18, -c 131072, q8_0 KV: about 10.8 GiB weights on GPU, 7.5 GiB in RAM, about 14.6 GiB VRAM total",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/ggml-org/Laguna-XS-2.1-GGUF?blobs=true",
+   "correction": "Small correction from the GGUF tensor table (source-backed): the expert tensors (Q4_K) total 16.45 GiB, 0.422 GiB per MoE layer, and non-expert tensors are 1.76 GiB (many Q8_0), not 1.1. With --n-cpu-moe 18 (17 MoE layers): RAM 7.17 GiB; GPU weights 1.76 + 22 x 0.422 = 11.04 GiB; KV 131072 x 10 x 2 x 1024 x 1.0625 B = 2.66 GiB; SWA about 0.06 GiB; compute about 1 GiB; total about 14.8 GiB plus about 0.3-0.5 GiB CUDA context, against about 15.8 GiB free. It fits but is tight. Use --n-cpu-moe 19-20 for margin. At 64K, --n-cpu-moe 15 gives about 14.7 GiB."
+  },
+  {
+   "claim": "Tool calling works through llama.cpp --jinja with the Laguna auto-parser patch",
+   "verdict": "uncertain",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/pull/26472",
+   "correction": "Inferred, not tested. Open PR #26472 says the generic tagged arg_key/arg_value parser requires required arguments in schema order before optional ones; it is unmerged. Expect that to constrain output order or reject reordered calls. Also open: #30996 (\\r\\n pre-tokenizer). The Metal-only overflow #30896 is mitigated by merged #31147 (amax rescaling, in b12418), and #30331 (YaRN beta metadata) is merged."
+  },
+  {
+   "claim": "Verdict 'good': serves OpenCode with working tool calls and at least 64k context on this machine",
+   "verdict": "uncertain",
+   "evidence_url": "https://github.com/vllm-project/vllm/issues/66264",
+   "correction": "For llama.cpp, the memory side holds: ggml-org Q4_K_M, --n-cpu-moe 18-20, -c 131072, q8_0 KV, -fa on, --reasoning on, about 15 GiB VRAM and 7-8 GiB RAM. Tool calls are plausible but untested end to end. For vLLM, the verdict should be downgraded to 'not recommended': UVA offload of NVFP4 MoE has an unfixed garbage-output report on an RTX 5080 (#38718) and an open v0.33.0 un-offload bug (#66264). Best realistic configuration: llama.cpp server-cuda13 (b12418 or v1.0.0) as above, or Ollama with num_ctx 65536 or more."
+  }
+ ],
+ "overall": "holds-with-corrections",
+ "summary": "The weights, config, KV math, parser names and llama.cpp support all re-verify against primary sources. All HF sizes match, and KV is 40,960 B per token BF16 (8 KV heads on every layer, confirmed in vLLM laguna.py:502). FP8 KV is applied automatically for the NVFP4 checkpoint (attention.py:287-291). The template embedded in both Q4_K_M GGUFs is byte-identical to the HF v8 template, read from a 12 MB header range-read. Corrections: (1) vLLM FP8 context with 9 GiB offload is about 117.6K, not 123.7K, because vLLM's SWA cost includes max_num_batched_tokens. (2) The ggml-org Q4_K_M splits into 16.45 GiB experts (0.422 GiB per layer) and 1.76 GiB non-expert, so --n-cpu-moe 18 at 128K q8_0 needs about 14.8 GiB plus CUDA context. That is tight, and --n-cpu-moe 19-20 is safer. (3) The vLLM UVA-offload path is contested. #38718 reports garbage output from NVFP4 MoE with CPU offload on an RTX 5080 across all backends (closed as stale, unfixed). Open #66264 shows that on v0.33.0 a repacked expert weight silently un-offloads (OOM with Marlin). Recommend against vLLM for this model on 16 GB. (4) vLLM does not auto-apply generation_config default_chat_template_kwargs or the DFlash speculative_config (inferred from source grep). (5) llama.cpp open PR #26472: the tagged tool-arg parser enforces schema order for required arguments, a tool-call risk that has not been tested. Also, GitHub's latest llama.cpp release is v1.0.0 (2026-11-13); the b124xx builds are marked prerelease. Best realistic configuration: llama.cpp server-cuda13 with ggml-org Laguna-XS-2.1-Q4_K_M.gguf, -c 131072 -ctk q8_0 -ctv q8_0 -fa on --n-cpu-moe 18-20 --reasoning on --jinja. Gaps: nothing was run on hardware; tool calls with OpenCode v2.3.0 and the round-tripping of 'reasoning' are not verified; whether FLASHINFER_CUTLASS keeps tensor shapes, and so avoids #66264, for Laguna is not verified."
+}

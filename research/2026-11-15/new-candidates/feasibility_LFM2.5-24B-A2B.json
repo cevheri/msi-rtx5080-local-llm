@@ -1,0 +1,78 @@
+{
+ "verdicts": [
+  {
+   "claim": "Identity, dates, license: LiquidAI/LFM2.5-24B-A2B, HF createdAt 2026-10-12T05:35:46Z, lastModified 2026-11-03; GGUF repo 2026-10-09; FP8 repo 2026-10-12; LFM Open License v1.0 with a USD 10M revenue threshold on commercial use (Section 5)",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/LiquidAI/LFM2.5-24B-A2B ; https://huggingface.co/LiquidAI/LFM2.5-24B-A2B/raw/main/LICENSE",
+   "correction": "Direct statement. LICENSE line 33 defines Threshold as annual revenue of USD 10,000,000 or more. Section 5(a)-(c) is as the record states."
+  },
+  {
+   "claim": "Architecture and KV arithmetic: Lfm2MoeForCausalLM, 40 layers (10 full_attention at indices 2,6,...,38; 30 conv with L_cache 3), 8 KV heads, head_dim 64, 64 experts top-4, 2 dense layers, vocab 128000, tied embeddings, max_position_embeddings 131072; KV = 20,480 B/token BF16, 10,240 B FP8",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/LiquidAI/LFM2.5-24B-A2B/raw/main/config.json ; https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/models/lfm2_moe.py",
+   "correction": "Raw config.json matches every field. lfm2_moe.py:205 sets head_dim = hidden_size / total_num_heads = 2048/32 = 64. Source-backed: 2 x 10 x 8 x 64 x 2 = 20,480 B. The QAD GGUF header agrees: lfm2moe.attention.head_count_kv = 8 only at layers 2,6,...,38 and context_length = 131072."
+  },
+  {
+   "claim": "Checkpoint sizes: BF16 safetensors 44.67 GiB, FP8 23.05, GGUF QAD-Q4_0 12.65, Q4_K_M 13.53, Q5_K_M 15.86, Q6_K 18.34, Q8_0 23.74; unsloth UD-Q4_K_XL 13.86 / UD-Q3_K_XL 10.20 / UD-Q5_K_XL 16.69; bartowski IQ4_XS 12.46 / Q4_K_M 14.30; sapidlabs NVFP4-W4A16 13.73; cyankiwi AWQ 14.12; Ollama blob 14,526,258,464 B",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/LiquidAI/LFM2.5-24B-A2B-GGUF?blobs=true ; https://huggingface.co/api/models/LiquidAI/LFM2.5-24B-A2B?blobs=true ; https://registry.ollama.ai/v2/library/lfm2.5/manifests/24b",
+   "correction": "Small corrections. (1) The BF16 safetensors total is 44.65 GiB; 44.67 GiB is the BF16 GGUF. (2) Q4_0.gguf (13,578,190,912 B) and QAD-Q4_0.gguf (13,578,190,880 B) differ by 32 bytes. The GGUF README says 'The Q4_0 build in this repository is the QAD checkpoint', so they are not separate quality options. (3) GGUF header tensor breakdown (source-backed): experts Q4_0 12.02 GiB, token_embd Q6_K 0.20 GiB, other Q4_0 0.39 GiB, F32 0.02 GiB, total 12.64 GiB. The GGUF carries general.sampling temp 0.1, top_k 50, penalty_repeat 1.05, and its embedded chat template is identical to the repo's chat_template.jinja."
+  },
+  {
+   "claim": "vLLM v0.33.0: Lfm2MoeForCausalLM registered (registry.py:153), IsHybrid; tool parser 'lfm2'; reasoning parser 'qwen3'; vendor minimum 0.23.0",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/models/registry.py ; https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/tool_parsers/__init__.py ; https://docs.liquid.ai/lfm/inference/vllm.md",
+   "correction": "registry.py:153 maps it to ('lfm2_moe','Lfm2MoeForCausalLM'). lfm2_moe.py:505-506 declares IsHybrid and SupportsQuant. tool_parsers/__init__.py:121 registers 'lfm2'. The 'qwen3' reasoning parser is registered at reasoning/__init__.py:168. Liquid docs say v0.23.0 or later. The vLLM recipe LFM2.5.md does not name the 24B explicitly; it names qwen3 and lfm2 for the family."
+  },
+  {
+   "claim": "vLLM: none fits 16 GB at >=64k; smallest 4-bit vLLM checkpoint is sapidlabs NVFP4-W4A16 at 13.73 GiB; est_max_context 0; fits 'no'",
+   "verdict": "refuted",
+   "evidence_url": "https://huggingface.co/api/models/myroslavtryhubets/LFM2.5-24B-A2B-NVFP4A16?blobs=true ; https://huggingface.co/myroslavtryhubets/LFM2.5-24B-A2B-NVFP4A16/raw/main/README.md",
+   "correction": "Smaller community checkpoints exist: myroslavtryhubets/LFM2.5-24B-A2B-NVFP4A16 12.92 GiB (compressed-tensors nvfp4-pack-quantized, weights only, so the Marlin path; embeddings, router and conv.conv kept BF16), cloudnathan5 NVFP4-W4A4 12.92 GiB, and FP8Enjoyer MXFP4 12.23 GiB (config.json has no quantization_config, so vLLM loading is unknown).\n\nArithmetic for 12.92 GiB:\n- util 0.92: 14.65 - 12.92 - 1.2 = 0.53 GiB, which is 27.8k tokens with BF16 KV or 55.6k with FP8 KV. Below 64k.\n- util 0.95: 15.13 - 12.92 - 1.2 = 1.01 GiB, which is 52.8k BF16 or 105k FP8.\n- util 0.96: 1.16 GiB, which is 60.9k BF16 or 122k FP8.\n\nSo 64k or more is source-backed only with FP8 KV at util 0.95 or higher.\n\nThe card is community and unvetted. It reports measurements on an RTX 5060 Ti 16 GB (also sm_120) with vLLM 0.30.0: --kv-cache-dtype fp8 --kv-cache-memory-bytes 1202590000 (117k tokens) --gpu-memory-utilization 0.96 --cudagraph-capture-sizes 1 2 4 8 --tool-call-parser lfm2 --reasoning-parser deepseek_r1. Its other figures: 15.4-15.6 GiB in use, about 160 tok/s decode at 1k context and 125 at 64k, and 120/120 tool calls parsed. It also reports fp8 KV + --enforce-eager at util 0.95 reaching 131072 at about 40 tok/s, and recommends keeping live context under about 70k.\n\nOn v0.33.0 here, FP8 KV should use --attention-backend TRITON_ATTN (baseline note on #61239) instead of the card's FlashInfer workspace tweak. Correct status: contested, a possible secondary route, not 'does not fit'."
+  },
+  {
+   "claim": "vLLM thinking: chat_template_kwargs enable_thinking has no effect",
+   "verdict": "refuted",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/parser/qwen3.py",
+   "correction": "It has no effect on the template, which always ends with '<|im_start|>assistant\\n<think>'. It does affect vLLM's qwen3 reasoning parser. In qwen3.py, __init__ reads chat_template_kwargs.enable_thinking (default True) and extract_reasoning returns (None, model_output) when it is false. The baseline's server-wide --default-chat-template-kwargs '{\"enable_thinking\":false}' would therefore dump LFM thinking into content. Do not set it for LFM. The community card uses --reasoning-parser deepseek_r1 instead."
+  },
+  {
+   "claim": "vLLM v0.33.0 conversion of JSON-string tool arguments in history to mappings not confirmed (known issue / gap)",
+   "verdict": "refuted",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/renderers/chat_utils/chat_message.py",
+   "correction": "Confirmed handled. In chat_message.py, _postprocess_messages (lines 699-771) json.loads string arguments of assistant tool_calls into a dict, and coerces invalid or non-object values to {} with a warning. The template's raise_exception on JSON-string arguments is not reached through vLLM's OpenAI endpoint. Close this gap."
+  },
+  {
+   "claim": "llama.cpp b12407: LLM_ARCH_LFM2MOE 'lfm2moe' at src/llama-arch.cpp:140; LFM2.5 template detection in chat.cpp (cited :1362); native PEG parser common/parsers/lfm2.cpp with allow_undeclared=true from PR #32164, included in b12407; func_args_not_string at chat.cpp:1211/1540; per-request thinking_budget_tokens / reasoning_budget_tokens at server-common.cpp:1588",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/common/chat.cpp ; https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/common/parsers/lfm2.cpp ; https://github.com/ggml-org/llama.cpp/pull/32164",
+   "correction": "- Line 140 is correct.\n- chat.cpp:1362 is the comment; the check ('List of tools: [' present, no '<|tool_list_start|>') and the return of common_chat_params_init_lfm2_5 are at 1363-1366.\n- lfm2.cpp:86-87 passes allow_undeclared = true and uses a lazy grammar triggered on <|tool_call_start|> (line 104).\n- PR #32164 was merged 2026-11-14T22:34:19Z as merge commit 0cc522e. GitHub compare of 0cc522e...b12407 reports b12407 ahead by 14, behind by 0, so the PR is included.\n- func_args_not_string runs only if the template caps probe sets supports_object_arguments (chat.cpp:1540; common/jinja/caps.cpp:326-329). Whether the probe passes for this template is inferred, not verified.\n- server-common.cpp:1588-1589 reads reasoning_budget_tokens, then thinking_budget_tokens, then falls back to --reasoning-budget. The claim that a budget of 0 forces an immediate </think> was not verified at that line."
+  },
+  {
+   "claim": "llama.cpp #30490: LFM2.5-24B-A2B emits Qwen3-Coder-style XML tool calls as content; closed 2026-10-26 as completed with no linked fix",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/issues/30490",
+   "correction": "Closed by its own reporter with state_reason 'completed', 0 comments and no linked commit or PR in the timeline. The reporter ran ROCm on an RX 7900 XTX with QAD-Q4_0 and f16 KV at -c 131072. The b12407 lfm2.cpp grammar accepts only <|tool_call_start|>[...]<|tool_call_end|>, so the risk is still open (unknown frequency)."
+  },
+  {
+   "claim": "llama.cpp recommended config fits: QAD-Q4_0 12.65 GiB + q8_0 KV at 131072 (1.33 GiB) + ~0.75 GiB compute = ~14.7 GiB, ~1.1 GiB margin; f16 KV at 128k too tight; --n-cpu-moe 4 frees ~0.6 GiB",
+   "verdict": "uncertain",
+   "evidence_url": "https://huggingface.co/api/models/LiquidAI/LFM2.5-24B-A2B-GGUF?blobs=true",
+   "correction": "Source-backed arithmetic:\n- GPU tensors about 12.64 GiB. The tied Q6_K embedding (0.20 GiB) is used for output on GPU; the input lookup is on CPU.\n- q8_0 KV at 131072: 131072 x 10 x 2 x 512 x 34/32 B = 1.33 GiB. f16: 2.50 GiB.\n- Compute buffers 0.5-1.0 GiB.\n- Total 14.5-15.0 GiB.\n- Usable VRAM is not 15.92 GiB: subtract about 0.1 GiB at idle and about 0.3-0.5 GiB of CUDA context, leaving about 15.3-15.5 GiB.\n- Realistic margin is 0.3-1.0 GiB, not 1.1. Likely fits but unmeasured.\n\n--n-cpu-moe check: each MoE block's experts are 64 x 3 x 2048 x 1536 x 0.5625 B = 0.316 GiB, so --n-cpu-moe 4 (blocks 2-3) frees 0.63 GiB. Confirmed.\n\nf16 KV at 128k (about 15.9 GiB) does not fit. Confirmed.\n\nFallbacks if the server fails to start out of memory: -c 98304, or keep -c 131072 and add --n-cpu-moe 4."
+  },
+  {
+   "claim": "Recommended configuration serves OpenCode with working tool calls and >=64k context on this machine (llama.cpp server-cuda-b12407, QAD-Q4_0, -c 131072, -ctk/-ctv q8_0, -fa on, -np 1, --jinja, GGML_CUDA_DISABLE_GRAPHS=1 before the image)",
+   "verdict": "uncertain",
+   "evidence_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/common/parsers/lfm2.cpp ; https://huggingface.co/LiquidAI/LFM2.5-24B-A2B-GGUF/raw/main/README.md",
+   "correction": "Inferred feasible, nothing measured.\n- Every component is present at b12407: the arch, LFM2.5 template detection, a native parser returning tool_calls and reasoning_content, and the GGUF's embedded template identical to the repo's.\n- The vendor post-trained with RL inside OpenCode (README line 140).\n- Main risks: the #30490 silent XML tool-call loss; always-on thinking spending tokens before every tool call; the community observation that long-context recall degraded beyond about 72k (fp8 KV, vLLM). So keep OpenCode's limit.context near 131072 but expect better quality under about 70k.\n- Secondary route: vLLM v0.33.0 with the community 12.92 GiB NVFP4A16 checkpoint, util 0.95-0.96, --kv-cache-dtype fp8, --attention-backend TRITON_ATTN, --max-model-len 65536-98304, --enable-auto-tool-choice --tool-call-parser lfm2, --reasoning-parser qwen3 (no enable_thinking=false), small --cudagraph-capture-sizes. Unvetted."
+  },
+  {
+   "claim": "Self-reported benchmarks: SWE-Bench Verified (OpenCode) 51.00 vs Qwen3.6-35B-A3B 66.20 / Gemma-4-26B-A4B 25.80 / Nemotron-3.5-Lightning 53.40; BFCLv4 65.01 vs 65.00; LiveClaw 48.09 vs 38.19; AutomationBench 27.69 vs 8.72; SciCode 32.71 vs 37.35; eval settings",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/LiquidAI/LFM2.5-24B-A2B/raw/main/README.md",
+   "correction": "Values match the README table and the settings at lines 404-412. The README states all models were evaluated with vLLM. The speed figures of 184 tok/s on M5 Max and 114 tok/s on Ryzen AI Max+ 395 (llama.cpp Q4_K_M, 4K context) are at lines 418-425."
+  }
+ ],
+ "overall": "holds-with-corrections",
+ "summary": "The core llama.cpp recommendation survives the attempt to refute it. QAD-Q4_0 (12.64 GiB of tensors) with q8_0 KV at 131072 tokens (1.33 GiB) and 0.5-1.0 GiB of compute buffers totals about 14.5-15.0 GiB. That is likely to fit, but the margin is about 0.3-1.0 GiB once CUDA context overhead is counted, not the 1.1 GiB the record claims. Fallbacks are -c 98304 or --n-cpu-moe 4, which frees 0.63 GiB. Every b12407 support claim is confirmed in source: arch, template detection, native parser, and PR #32164 (merged in 0cc522e, which b12407 contains).\n\nThree vLLM claims are refuted:\n- \"No vLLM fit\" is wrong. A community NVFP4A16 checkpoint at 12.92 GiB (myroslavtryhubets) reaches 105k tokens with FP8 KV at util 0.95 by our method. Its card reports 113k context measured on a 16 GB RTX 5060 Ti with vLLM 0.30.0. It is unvetted, so this is a contested secondary route, not a recommendation.\n- The tool-argument gap is closed: vLLM v0.33.0 converts JSON-string tool arguments to dicts in chat_message.py:699-771.\n- enable_thinking=false does matter in vLLM: the qwen3 reasoning parser then pushes the thinking text into content. The baseline's server-wide thinking-off default must not be applied to LFM.\n\nMinor corrections: BF16 safetensors are 44.65 GiB, not 44.67; Q4_0 and QAD-Q4_0 are the same build; the chat.cpp detection is at lines 1363-1366, not 1362. Risks that remain open are the #30490 XML tool-call leak and long-context recall degrading above about 70k.\n\nWorking files are in $SCRATCH/lfm."
+}

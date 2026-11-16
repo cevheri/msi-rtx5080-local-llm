@@ -1,0 +1,106 @@
+{
+ "verdicts": [
+  {
+   "claim": "Repo is the vendor's own (Kwaipilot org, not a re-upload); org isVerified=false, 14 models, 828 followers, also hosts KAT-V1-40B, KAT-Dev, KAT-Dev-72B-Exp",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/organizations/Kwaipilot/overview",
+   "correction": "Org API: isVerified false, numModels 14, numFollowers 828. The model list (api/models?author=Kwaipilot) shows continuous vendor history from 2024-10 (OASIS, KwaiCoder, SRPO, KAT-V1-40B 2025-07-20, KAT-Dev 2025-09-15, KAT-Dev-72B-Exp 2025-10-10). Authenticity is source-backed, not badge-proven."
+  },
+  {
+   "claim": "HF createdAt 2026-07-23T09:54:08Z, lastModified 2026-07-28; inside 2025-11-15..2026-11-15",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/Kwaipilot/KAT-Coder-V2.5-Dev?blobs=true",
+   "correction": "lastModified is 2026-07-28T04:35:27Z. Card line 35: 'Following the release of KAT-Coder-V2.5 in July'."
+  },
+  {
+   "claim": "Technical report arXiv 2607.05471 'KAT-Coder-V2.5 Technical Report', HF papers publishedAt 2026-07-06",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/papers/2607.05471"
+  },
+  {
+   "claim": "License Apache-2.0 via card YAML and API tag; no LICENSE file in repo",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Kwaipilot/KAT-Coder-V2.5-Dev/raw/main/README.md",
+   "correction": "README line 2 'license: apache-2.0'; tags include license:apache-2.0; sibling list has no LICENSE file. Base Qwen/Qwen3.6-35B-A3B is also tagged license:apache-2.0 (createdAt 2026-04-15), now re-verified."
+  },
+  {
+   "claim": "35B total / 3B active; 34,660,610,688 BF16 params; shards 69,325,581,696 bytes = 64.56 GiB",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/Kwaipilot/KAT-Coder-V2.5-Dev?blobs=true",
+   "correction": "Card line 35 states 35B total, 3B activated. API safetensors.total 34660610688 BF16; shard sum 69325581696 B."
+  },
+  {
+   "claim": "Architecture Qwen3_5MoeForConditionalGeneration/qwen3_5_moe, base Qwen3.6-35B-A3B; 40 layers (30 linear_attention + 10 full_attention, interval 4), hidden 2048, 16 q / 2 KV heads, head_dim 256, attn_output_gate, partial RoPE 0.25, mRoPE theta 1e7; GDN 16 key / 32 value heads x 128, conv 4, fp32 SSM; 256 experts top-8, moe_intermediate 512, shared 512; vocab 248320; untied; mtp_num_hidden_layers 0; vision_config present",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Kwaipilot/KAT-Coder-V2.5-Dev/raw/main/config.json",
+   "correction": "All values match config.json text_config; layer_types count {linear_attention: 30, full_attention: 10}; base_model in card YAML is Qwen3.6-35B-A3B (README lines 14-15, 170)."
+  },
+  {
+   "claim": "Native context 262,144; YaRN factor 4 to about 1,010,000 via --hf-overrides",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Kwaipilot/KAT-Coder-V2.5-Dev/raw/main/README.md",
+   "correction": "README line 388 states native 262,144; YaRN vLLM example uses factor 4.0 and --max-model-len 1010000. The on-GPU practical limits in the same field are the record's own arithmetic, not card statements."
+  },
+  {
+   "claim": "Text-only release; vision weights not included; vLLM requires --language-model-only",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Kwaipilot/KAT-Coder-V2.5-Dev/raw/main/README.md",
+   "correction": "README lines 216 and 250 (the latter says the flag is required)."
+  },
+  {
+   "claim": "Thinking on by default; enable_thinking=false emits empty think block; preserve_thinking kwarg; card sampling thinking temp 1.0/top_p 0.95/top_k 20/presence 1.5, non-thinking 0.7/0.8/20/1.5",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Kwaipilot/KAT-Coder-V2.5-Dev/raw/main/chat_template.jinja",
+   "correction": "Template lines 149-152 ('<think>\\n\\n</think>\\n\\n' when enable_thinking is false, else '<think>\\n'); line 100 preserve_thinking. Card lines 320-379 give the sampling values. llama.cpp/Ollama toggles remain inferred/community-page claims, not re-verified here."
+  },
+  {
+   "claim": "Tool calling: Qwen3-Coder XML format (<tool_call><function=><parameter=>), tools rendered as tojson in <tools>, tool results in <tool_response> inside a user turn; card uses --tool-call-parser qwen3_coder --reasoning-parser qwen3; abnormal tool labels 9.34% to 0.28%",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Kwaipilot/KAT-Coder-V2.5-Dev/raw/main/chat_template.jinja",
+   "correction": "Template lines 47-53, 105-127, 131-137 (role tool opens '<|im_start|>user'). Template is also embedded in tokenizer_config.json. Card lines 40, 237, 269. llama.cpp chat.cpp line numbers not re-checked by me."
+  },
+  {
+   "claim": "Benchmarks: SWE-bench Verified 69.40, Pro 45.96, Multilingual 63.00, Terminal-Bench 2.1 41.02 (32.60/49.44), PinchBench 93.43, SciCode 44.20, KAT-Code-Bench 46.21; comparison column values (Qwen3.6-35B-A3B 64.40/40.63, Qwen3.5-27B 68.60, Gemma4-31B 60.60, Qwen3.5-35B-A3B 58.60, Ornith 55.80, Gemma4-26B-A4B 35.80, Qwen3-Coder-30B 31.80); settings claude_code@2.1.195, temp 1.0, top_p 0.95, 256k; TB2.1 temp 0.7; PinchBench openclaw@2026.3.13; SciCode temp 0.6",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Kwaipilot/KAT-Coder-V2.5-Dev/raw/main/README.md",
+   "correction": "All values match the card table exactly. All are vendor in-house (card: 'All metrics ... reproduced in-house ... No officially reported results ... adopted'), single run each. TB2.1 and PinchBench top_p is 1.0 (not stated in record, not wrong)."
+  },
+  {
+   "claim": "Contested: Qwen official Qwen3.6-35B-A3B 73.4 Verified / 49.5 Pro; Ornith-1.0-35B 75.6 / 50.4; Kwaipilot declined to merge community eval PR (#11); cited to discussion #12",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Kwaipilot/KAT-Coder-V2.5-Dev/discussions/12",
+   "correction": "Qwen's own card confirms 73.4 and 49.5 (https://huggingface.co/Qwen/Qwen3.6-35B-A3B/raw/main/README.md; Qwen notes an internal scaffold and a corrected SWE-bench Pro set). Ornith 75.6/50.4 only seen as quoted in discussion #12, not checked at Ornith's own card. Discussion #11 (closed): Kwaipilot declined the automated eval-results PR and asked to be removed from the ranking. KAT's card itself admits about a 10 pp gap vs Qwen official numbers."
+  },
+  {
+   "claim": "Community discussions: #8 Q8_0 looping with repeat-penalty 1.1 and a fixed Qwen template suggested; #9 presence_penalty 1.5 'generates bad code' with others disagreeing; #12 user runs it on RTX 3060 with 260k context",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Kwaipilot/KAT-Coder-V2.5-Dev/discussions/9",
+   "correction": "#8 command also had presence-penalty 0 and top-p 0.95. #12 user (vlarmet) used Q5_K_M with --n-cpu-moe 35 and -c 260000."
+  },
+  {
+   "claim": "Checkpoint sizes (spot-checked): bartowski Q4_K_M 21.39 GB (arch qwen35moe); Ttimms REAP-50-NVFP4A16 13.37 GB / 12.45 GiB; sahilchachra W4A16 20.93 GB / 19.49 GiB; mudler APEX Compact 16.54 GB, most downloaded",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/Ttimms/KAT-Coder-V2.5-Dev-REAP-50-NVFP4A16?blobs=true",
+   "correction": "mudler APEX 290,950 downloads vs bartowski 210,589 (API downloads field, 30-day). Other checkpoint rows not re-checked."
+  },
+  {
+   "claim": "Ollama frob/kat-coder-v2.5-dev tags 35b / 35b-a3b-q4_K_M 21GB, q8_0 37GB, bf16 69GB, 256K context",
+   "verdict": "confirmed",
+   "evidence_url": "https://ollama.com/frob/kat-coder-v2.5-dev/tags"
+  },
+  {
+   "claim": "KV math: 20,480 B/token BF16 (2x10x2x256x2), GDN state about 60 MiB per sequence (30 x 2 MiB fp32)",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Kwaipilot/KAT-Coder-V2.5-Dev/raw/main/config.json",
+   "correction": "Arithmetic re-done from config values; consistent."
+  },
+  {
+   "claim": "speed_notes: 'HF discussion #51250-style ineffective prefix caching'",
+   "verdict": "refuted",
+   "evidence_url": "https://github.com/vllm-project/vllm/issues/51250",
+   "correction": "Mislabel: #51250 is cited elsewhere in the record as a vLLM GitHub issue, not an HF discussion. Wording fix only."
+  }
+ ],
+ "overall": "holds-with-corrections",
+ "summary": "Every identity and capability fact I checked holds against primary sources: vendor repo continuity (org isVerified=false), createdAt 2026-07-23, Apache-2.0 from metadata only with no LICENSE file, param and byte counts, all config values (10 full-attention + 30 GDN layers), context 262,144 with YaRN to 1,010,000, the text-only release requiring --language-model-only, the thinking and preserve_thinking template logic, the Qwen3-Coder XML tool format, and all seven benchmark values with their stated settings. The benchmarks are vendor in-house single runs. The contest is real: Qwen's own card reports 73.4 (SWE-bench Verified) and 49.5 (SWE-bench Pro) for Qwen3.6-35B-A3B, where KAT's table re-ran it at 64.40 and 40.63. Discussion #11 shows Kwaipilot declined the community eval PR and asked to be removed from the HF ranking. Only one wording correction: speed_notes calls vLLM issue #51250 an 'HF discussion'. Gaps: the Ornith 75.6/50.4 numbers were checked only as quoted in discussion #12, not at Ornith's own card. llama.cpp chat.cpp and vLLM registry line numbers, the per-request llama.cpp/Ollama thinking toggles, and the checkpoint rows beyond four spot checks were not re-verified. Raw files are in $SCRATCH/kat/."
+}

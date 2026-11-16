@@ -1,0 +1,55 @@
+{
+ "verdicts": [
+  {
+   "item": "Mac results quoted (pass counts, medians, slowest, per-surface) for all 8 tags",
+   "verdict": "confirmed",
+   "evidence": "ministral-3.md:15-16,29,33; magistral.md:15,25-30,40-42; granite4.1.md:14-15,21-25,30; granite4.2.md:14,18-19,25-26,34-37; cogito.md:16-17,21-26,32,36-38. measured-profiles.json: granite4.1:8b 24/30 at defaults (Inv 3/5, Opt 2/5, Op 4/5); granite4.2:8b profile medians 34/67/140/26/37/33s (page/profile discrepancy is real); cogito:32b planStatementRetries=1; magistral:24b reportReminderLimit=2 and retryUnreadStop=true.",
+   "correction": "Minor: magistral's profile prose says 'with one setting' and that investigate 'closed on a re-roll', so not every magistral cell passed first attempt; the record's 'two extra harness settings' counts retryUnreadStop from the settings block, which the profile prose itself does not count."
+  },
+  {
+   "item": "Ollama tag sizes, quants, contexts, badges, template layers",
+   "verdict": "confirmed",
+   "evidence": "registry.ollama.ai manifests (fetched 2026-11-16): model blobs 6,022,221,312 / 9,082,522,240 / 14,333,907,488 / 5,347,914,400 / 17,490,240,736 / 5,347,917,952 / 8,985,277,984 / 19,848,503,584 B, all match. granite4.2:8b layers = model, license, params only (no template). magistral has system layer 819 B. Library pages: granite4.2 shows no tools/thinking badge; magistral tools+thinking; ministral-3 tools+vision; cogito and granite4.1 tools. Tags contexts: ministral-3 256K, magistral 39K, granite4.1/4.2/cogito 128K. granite4.2 tag timestamp 'Aug 27, 2026 9:41 PM UTC' (https://ollama.com/library/granite4.2/tags)."
+  },
+  {
+   "item": "M5 Max bandwidth and 1.46x scaling",
+   "verdict": "confirmed",
+   "evidence": "https://www.apple.com/macbook-pro/specs/: 'M5 Max with 32-core GPU 36GB unified memory', 'M5 Max with 40-core GPU 48GB, 64GB,...', '614GB/s'. 896/614 = 1.46."
+  },
+  {
+   "item": "Fit arithmetic (KV per token, 64k totals vs 15.47 GiB)",
+   "verdict": "confirmed",
+   "evidence": "HF configs: Magistral 40 layers/8 KV/128 hd, max_pos 40960; granite-4.1-8b 40 layers, 30b 64 layers, 8 KV, 131072; cogito 14B 48 layers, 32B 64 layers, 8 KV, 131072, rope_scaling null. KV/token figures (139,264 / 163,840 / 196,608 / 262,144 B) follow.",
+   "correction": "q8_0 KV is 8.5 bits/element, not 8, so every q8_0 figure is about 6% low: 64k q8_0 is 4.5 GiB (ministral-3:8b), 5.3 GiB (ministral-3:14b, granite 8b), 6.4 GiB (cogito:14b), 8.5 GiB (32-64-layer models). cogito:14b at 64k q8_0 becomes about 15.4 GiB with buffers, so 'needs q4_0 KV or a spill' gets stronger; ministral-3:14b at about 14.5 GiB is still tight-but-inside. Verdicts unchanged."
+  },
+  {
+   "item": "KB status mapping",
+   "verdict": "confirmed",
+   "evidence": "docs/model-selection.md:305 lists 'IBM Granite 4.2 8B, Ministral 3 (8B and 14B)' under weak or missing agentic scores. No match for magistral, cogito or granite 4.1 anywhere in model-selection.md or README.md.",
+   "correction": "Devstral Small 2 exclusion is at model-selection.md:303, not 302. The '12-month release window' used to explain why Magistral and Cogito are absent could not be found in README.md or docs/; it is not a stated KB rule there, so cite its source or drop it."
+  },
+  {
+   "item": "Speed reasoning (all-in-VRAM faster, spill cases slower)",
+   "verdict": "confirmed",
+   "evidence": "Ceiling arithmetic checks out (896/6.0=149, 614/6.0=102; granite4.1:30b about 26 layers x 0.255 GiB = 6.6 GiB on CPU, which at about 70 GB/s gives about 9 tok/s). Record correctly says whole-run durations do not scale 1:1. All labelled (estimate)."
+  },
+  {
+   "item": "Mac context assumption ('probably 256k' via >=48 GiB rule)",
+   "verdict": "uncertain",
+   "evidence": "docs.ollama.com/context-length: '<24 GiB 4k, 24-48 GiB 32k, >=48 GiB 256k'. On a 64 GB Mac, Metal's GPU working-set limit is typically about 75% of RAM (about 48 GiB), so Ollama may have seen just under 48 GiB and defaulted to 32k instead.",
+   "correction": "State the Mac context as 32k or 256k, unknown, not 'probably 256k'."
+  },
+  {
+   "item": "Measurement-date inconsistency for granite4.2",
+   "verdict": "confirmed",
+   "evidence": "methodology.md:10 'Measured 22-23 August 2026'; KB verify record says card release date August 25, 2026; HF createdAt 2026-08-07 (private pre-launch); Ollama granite4.2 tag dated Aug 27, 2026. So the measured tag postdates the stated window."
+  },
+  {
+   "item": "granite4.2:8b native tools via Ollama unverified, possible prose fallback",
+   "verdict": "uncertain",
+   "evidence": "Manifest has no template layer and the page has no tools badge (confirmed), and setup.md:95-98 confirms a prose tool protocol exists, chosen per endpoint. Nothing in the docs says which path granite4.2 used."
+  }
+ ],
+ "overall": "holds-with-corrections",
+ "summary": "I could not refute anything substantive in the record. I re-checked against the libredb pages, measured-profiles.json, live Ollama manifests and library pages, HF configs, apple.com specs and docs.ollama.com. Confirmed: every Mac result, all eight blob sizes, the badges and template layers (granite4.2 has neither tools nor template), 614 GB/s for the 64 GB 40-core M5 Max, the KV-per-token math and the line-305 exclusions. The dating problem is real: the Ollama granite4.2 tag is dated Aug 27, 2026, after the stated 22-23 August measurement. Five corrections are needed. (1) q8_0 KV is 8.5 bits, so every q8_0 figure is about 6% low. That pushes cogito:14b at 64k q8_0 to about 15.4 GiB, at the limit. (2) The Devstral exclusion is at model-selection.md:303, not 302. (3) The '12-month window' does not appear in the KB docs. (4) The Mac context default could be 32k rather than 256k, because Metal's working set is about 48 GiB. (5) For magistral, the profile's own prose says 'one setting' and a re-roll on investigate. No recommendation changes."
+}

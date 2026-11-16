@@ -1,0 +1,2 @@
+NAME          ID              SIZE      PROCESSOR    CONTEXT    RUNNER      UNTIL               
+gemma4:12b    6114515d63c1    1.5 GB    100% GPU     65536      llamacpp    29 minutes from now    

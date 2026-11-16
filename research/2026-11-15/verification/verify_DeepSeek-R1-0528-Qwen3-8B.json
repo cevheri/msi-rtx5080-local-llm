@@ -1,0 +1,235 @@
+{
+ "name": "DeepSeek-R1-0528-Qwen3-8B",
+ "hf_repo": "deepseek-ai/DeepSeek-R1-0528-Qwen3-8B",
+ "within_last_12_months": false,
+ "official_org": {
+  "value": "DeepSeek (HF org deepseek-ai, isVerified: true, 154k followers, 106 models). The model card links chat.deepseek.com and calls this model DeepSeek's own distill of R1-0528 into Qwen3-8B Base.",
+  "source_url": "https://huggingface.co/api/organizations/deepseek-ai/overview",
+  "support": "direct-statement"
+ },
+ "release_date": {
+  "value": "2025-05-29 (HF createdAt 2025-05-29T11:07:47Z, lastModified 2025-05-29T13:13:34Z), released alongside DeepSeek-R1-0528 (createdAt 2025-05-28). This is outside the 2025-11-15..2026-11-15 window. In the window, deepseek-ai published no newer small chat or distilled checkpoint. Its sub-160 GB repos from 2026-06-28 (eagle3_qwen3_8b_ttt7, dflash_qwen3_8b_block7, dspark_qwen3_8b_block7 and similar) are speculative-decoding draft heads by name, not standalone chat models. All its other new LLMs are V3.2 / V4 / V4.1 at hundreds of billions of parameters.",
+  "source_url": "https://huggingface.co/api/models?author=deepseek-ai&sort=createdAt&direction=-1&limit=40",
+  "support": "direct-statement"
+ },
+ "license": {
+  "value": "MIT (card tag 'license: mit'). Card section 5: 'The use of DeepSeek-R1 models is also subject to MIT License. DeepSeek-R1 series (including Base and Chat) supports commercial use and distillation.' There are no use-based restrictions.",
+  "source_url": "https://huggingface.co/deepseek-ai/DeepSeek-R1-0528-Qwen3-8B/raw/main/README.md",
+  "support": "direct-statement"
+ },
+ "params": {
+  "value": "8.19B total = 8.19B active (dense). HF API safetensors total is 8,190,735,360 BF16 params. The 2 safetensors shards are 15.26 GiB (16.38 GB).",
+  "source_url": "https://huggingface.co/api/models/deepseek-ai/DeepSeek-R1-0528-Qwen3-8B?blobs=true",
+  "support": "direct-statement"
+ },
+ "architecture": {
+  "value": "Qwen3ForCausalLM (model_type qwen3), identical to Qwen3-8B. Dense, 36 layers, all full attention (sliding_window null, use_sliding_window false). GQA with 32 Q heads and 8 KV heads, head_dim 128, hidden 4096, intermediate 12288, vocab 151936, untied embeddings. Tokenizer is DeepSeek's: special tokens <｜User｜> / <｜Assistant｜> / <｜end▁of▁sentence｜> / <think> are single added tokens. The DeepSeek tool tokens <｜tool▁calls▁begin｜>, <｜tool▁call▁begin｜> and <｜tool▁sep｜> are NOT in the vocab (vocab.get returns None, checked in tokenizer.json).",
+  "source_url": "https://huggingface.co/deepseek-ai/DeepSeek-R1-0528-Qwen3-8B/raw/main/config.json",
+  "support": "direct-statement"
+ },
+ "context_length": {
+  "value": "131072 via YaRN factor 4.0 over a native 32768 (rope_scaling yarn, original_max_position_embeddings 32768, max_position_embeddings 131072; tokenizer model_max_length 131072). The vendor evaluated with a max generation length of 64K. Ollama lists 128K.",
+  "source_url": "https://huggingface.co/deepseek-ai/DeepSeek-R1-0528-Qwen3-8B/raw/main/config.json",
+  "support": "direct-statement"
+ },
+ "modalities": {
+  "value": "Text in, text out only (Ollama tag lists 'Text input'). The model is text-only, so no vision tower needs to be stripped.",
+  "source_url": "https://ollama.com/library/deepseek-r1/tags",
+  "support": "direct-statement"
+ },
+ "thinking": {
+  "mode": "always",
+  "how_to_toggle": "There is no official switch. The official chat_template has no enable_thinking variable; the generation prompt ends at <｜Assistant｜>, and the card says '<think>\\n' no longer needs to be forced. vLLM v0.33.0 docs: the auto-injected enable_thinking kwarg is 'harmlessly filtered out' for DeepSeek R1 templates, so --reasoning-parser deepseek_r1 only splits <think>...</think> into the 'reasoning' field. Thinking cannot be turned off per request except by prefilling an empty <think></think> through a custom template. Ollama: the deepseek-r1:8b template honours the API 'think' field. With think=false it injects an empty '<think>\\n\\n</think>' after <｜Assistant｜>; with think=true reasoning returns in message.thinking. llama.cpp: --reasoning-format deepseek extracts reasoning_content. A clean per-request off switch for this template was not established.",
+  "source_url": "https://huggingface.co/deepseek-ai/DeepSeek-R1-0528-Qwen3-8B/raw/main/tokenizer_config.json",
+  "support": "source-backed"
+ },
+ "tool_calling": {
+  "supported": "no",
+  "format": "DeepSeek R1 text format (<｜tool▁calls▁begin｜><｜tool▁call▁begin｜>function<｜tool▁sep｜>NAME\\n```json ...```<｜tool▁call▁end｜><｜tool▁calls▁end｜>), but those strings are multi-token plain text in this tokenizer",
+  "evidence": "1) The official chat_template (tokenizer_config.json) never references 'tools'. It only re-renders past assistant tool_calls and tool outputs, so tool definitions never reach the model (discovery claim confirmed). 2) vLLM v0.33.0 reasoning_outputs.md table marks 'DeepSeek R1 series | deepseek_r1 | ... | Tool Calling ❌'. 3) vLLM v0.33.0 tool_calling.md lists deepseek_v3 + examples/tool_chat_template_deepseekr1.jinja only for DeepSeek-R1-0528 (671B), not this distill. 4) Using deepseek_v3 here would fail at startup: DeepSeekV3ToolParser.__init__ raises RuntimeError('DeepSeek-V3 Tool parser could not locate tool call start/end tokens in the tokenizer!') when vocab.get('<｜tool▁calls▁begin｜>') is None, and it is None in this tokenizer.json (source-backed). 5) The card's 'enhanced support for function calling', BFCL_v3_MultiTurn 37.0 and Tau-Bench 53.5/63.9 belong to the 671B R1-0528 table, not the 8B. 6) The Ollama deepseek-r1:8b template has no .Tools block. 7) llama.cpp b12418 docs/function-calling.md: 'DeepSeek R1 (WIP / seems reluctant to call any tools?)'. 8) Artificial Analysis records tau2 = 0% for this model. Open vLLM issue #19001 (2025-06-01) 'How to use DeepSeek-R1-0528-Qwen3-8B with function call' is unresolved.",
+  "source_url": "https://github.com/vllm-project/vllm/blob/v0.33.0/docs/features/reasoning_outputs.md",
+  "support": "source-backed"
+ },
+ "checkpoints": [
+  {
+   "repo": "deepseek-ai/DeepSeek-R1-0528-Qwen3-8B",
+   "format": "safetensors BF16 (only official build; DeepSeek publishes no quantized variant)",
+   "size_gb": 16.38,
+   "official": true,
+   "publisher": "DeepSeek",
+   "source_url": "https://huggingface.co/api/models/deepseek-ai/DeepSeek-R1-0528-Qwen3-8B?blobs=true"
+  },
+  {
+   "repo": "unsloth/DeepSeek-R1-0528-Qwen3-8B-GGUF",
+   "format": "GGUF Q4_K_M 5.03 / UD-Q4_K_XL 5.12 / Q5_K_M 5.85 / Q6_K 6.73 / UD-Q6_K_XL 7.49 / Q8_0 8.71 / UD-Q8_K_XL 10.82 / BF16 16.39 GB. Its embedded template renders tools (adapted sglang tool_chat_template_deepseekr1).",
+   "size_gb": 8.71,
+   "official": false,
+   "publisher": "unsloth",
+   "source_url": "https://huggingface.co/api/models/unsloth/DeepSeek-R1-0528-Qwen3-8B-GGUF?blobs=true"
+  },
+  {
+   "repo": "bartowski/deepseek-ai_DeepSeek-R1-0528-Qwen3-8B-GGUF",
+   "format": "GGUF Q4_K_M 5.03 / Q5_K_M 5.85 / Q6_K 6.73 / Q6_K_L 7.03 / Q8_0 8.71 / bf16 16.39 GB. Embedded template is the official one (no tools).",
+   "size_gb": 8.71,
+   "official": false,
+   "publisher": "bartowski",
+   "source_url": "https://huggingface.co/api/models/bartowski/deepseek-ai_DeepSeek-R1-0528-Qwen3-8B-GGUF?blobs=true"
+  },
+  {
+   "repo": "lmstudio-community/DeepSeek-R1-0528-Qwen3-8B-GGUF",
+   "format": "GGUF Q3_K_L 4.43 / Q4_K_M 5.03 / Q6_K 6.73 / Q8_0 8.71 GB",
+   "size_gb": 8.71,
+   "official": false,
+   "publisher": "lmstudio-community",
+   "source_url": "https://huggingface.co/api/models/lmstudio-community/DeepSeek-R1-0528-Qwen3-8B-GGUF?blobs=true"
+  },
+  {
+   "repo": "Intel/DeepSeek-R1-0528-Qwen3-8B-int4-AutoRound",
+   "format": "safetensors INT4 AutoRound (bits 4, group 128, sym, packing auto_round:auto_gptq), chat template without tools",
+   "size_gb": 6.1,
+   "official": false,
+   "publisher": "Intel",
+   "source_url": "https://huggingface.co/Intel/DeepSeek-R1-0528-Qwen3-8B-int4-AutoRound/raw/main/config.json"
+  },
+  {
+   "repo": "JamAndTeaStudios/DeepSeek-R1-0528-Qwen3-8B-FP8-Dynamic",
+   "format": "safetensors compressed-tensors FP8 dynamic (lm_head kept BF16), small community publisher",
+   "size_gb": 9.43,
+   "official": false,
+   "publisher": "JamAndTeaStudios",
+   "source_url": "https://huggingface.co/api/models/JamAndTeaStudios/DeepSeek-R1-0528-Qwen3-8B-FP8-Dynamic?blobs=true"
+  },
+  {
+   "repo": "unsloth/DeepSeek-R1-0528-Qwen3-8B-unsloth-bnb-4bit",
+   "format": "safetensors bitsandbytes 4-bit (bnb is an out-of-tree plugin in vLLM v0.33.0 per discovery)",
+   "size_gb": 7.45,
+   "official": false,
+   "publisher": "unsloth",
+   "source_url": "https://huggingface.co/api/models/unsloth/DeepSeek-R1-0528-Qwen3-8B-unsloth-bnb-4bit?blobs=true"
+  },
+  {
+   "repo": "ollama library deepseek-r1:8b (= :latest = 8b-0528-qwen3-q4_K_M)",
+   "format": "GGUF Q4_K_M; also 8b-0528-qwen3-q8_0 8.9GB and 8b-0528-qwen3-fp16 16GB",
+   "size_gb": 5.2,
+   "official": false,
+   "publisher": "Ollama",
+   "source_url": "https://ollama.com/library/deepseek-r1/tags"
+  }
+ ],
+ "vllm": {
+  "arch_supported": "Yes. Registry at v0.33.0 line 202: \"Qwen3ForCausalLM\": (\"qwen3\", \"Qwen3ForCausalLM\").",
+  "min_version": "Any Qwen3-capable vLLM (Qwen3 support predates the model). v0.33.0 is the target. Closed issue #44841 reported garbled output on v0.22.1, so stay on v0.33.0.",
+  "best_checkpoint": "deepseek-ai/DeepSeek-R1-0528-Qwen3-8B with --quantization fp8 (online dynamic FP8), or Intel/DeepSeek-R1-0528-Qwen3-8B-int4-AutoRound for longer context",
+  "fits": "tight",
+  "weights_gib": 8.79,
+  "kv_bytes_per_token_bf16": 147456,
+  "kv_math": "Budget 16303 MiB x 0.92 = 14999 MiB = 14.65 GiB. BF16 checkpoint: 15.26 GiB, so it does NOT fit. Online FP8 (source-backed estimate): embed + lm_head untied = 2 x 151936 x 4096 = 1.245B params kept BF16 = 2.49 GB; remaining 6.95B linear params in FP8 = 6.95 GB; total 9.43 GB = 8.79 GiB. This matches the JamAndTea FP8-Dynamic checkpoint at 9.43 GB. KV pool = 14.65 - 8.79 - 1.2 = 4.66 GiB = 5.00e9 B. KV per token = 2 x 36 full-attention layers x 8 KV heads x 128 x 2 B = 147,456 B (144 KiB) BF16, or 73,728 B FP8. Max single-request context: BF16 KV 5.00e9 / 147456 = about 33.9k tokens; FP8 KV about 67.9k tokens. Intel INT4 AutoRound (6.10 GB = 5.68 GiB): pool = 14.65 - 5.68 - 1.2 = 7.77 GiB = 8.34e9 B, giving BF16 KV about 56.5k and FP8 KV about 113k tokens (cap 131072).",
+  "est_max_context_tokens": 67866,
+  "tool_call_parser": "None works. deepseek_v3 exists in v0.33.0 but raises RuntimeError at init for this tokenizer (tool tokens absent from vocab). hermes would need a custom template and a model that emits <tool_call> JSON; this distill was not shown to do that (speculative).",
+  "reasoning_parser": "deepseek_r1 (registered in vllm/reasoning/__init__.py at v0.33.0 as DeepSeekR1ReasoningParser, <think>/</think>)",
+  "quant_on_sm120": "FP8 W8A8: v0.33.0 ships csrc/quantization/w8a8/cutlass/c3x/scaled_mm_sm120_fp8.cu and scaled_mm_blockwise_sm120_fp8.cu, so a CUTLASS sm_120 FP8 path exists. INT4 AutoRound (auto_gptq packing) would go through the GPTQ/Marlin path (inferred, not checked on sm_120). Attention is FlashAttention 2 on sm_120 per discovery.",
+  "serve_command": "docker run --rm --gpus all --ipc=host -p 8000:8000 -v $HOME/.cache/huggingface:/root/.cache/huggingface vllm/vllm-openai:v0.33.0 --model deepseek-ai/DeepSeek-R1-0528-Qwen3-8B --served-model-name deepseek-r1-8b --quantization fp8 --kv-cache-dtype fp8 --max-model-len 65536 --gpu-memory-utilization 0.92 --reasoning-parser deepseek_r1 --generation-config vllm --override-generation-config '{\"temperature\":0.6,\"top_p\":0.95}'   (no --enable-auto-tool-choice: no working tool parser; needs the NVIDIA Container Toolkit, which is not installed yet; use --max-model-len 32768 with BF16 KV)",
+  "known_issues": "#19001 (open, 2025-06-01) 'How to use DeepSeek-R1-0528-Qwen3-8B with function call', unresolved. #59738 (open, 2026-10-02) deepseek_r1 streaming reasoning deltas not detokenized (byte-level BPE glyphs), which hits exactly this parser. #19729 (closed) 'tool_chat_template_deepseekr1 is no use'. #44841 (closed 2026-06) garbled output with this model on v0.22.1. No vLLM recipe exists for this distill (not checked exhaustively; GitHub search hit a rate limit).",
+  "sources": [
+   "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/model_executor/models/registry.py",
+   "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/reasoning/__init__.py",
+   "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/tool_parsers/__init__.py",
+   "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/tool_parsers/deepseekv3_tool_parser.py",
+   "https://github.com/vllm-project/vllm/blob/v0.33.0/docs/features/reasoning_outputs.md",
+   "https://github.com/vllm-project/vllm/blob/v0.33.0/docs/features/tool_calling.md",
+   "https://github.com/vllm-project/vllm/tree/v0.33.0/csrc/quantization/w8a8/cutlass/c3x",
+   "https://huggingface.co/deepseek-ai/DeepSeek-R1-0528-Qwen3-8B/resolve/main/tokenizer.json",
+   "https://github.com/vllm-project/vllm/issues/19001",
+   "https://github.com/vllm-project/vllm/issues/59738",
+   "https://github.com/vllm-project/vllm/issues/44841"
+  ]
+ },
+ "llamacpp": {
+  "arch_supported": "Yes, qwen3 architecture (the GGUF metadata in the HF API shows architecture qwen3, context_length 131072), long supported in released builds. Latest release is b12419 (2026-11-15).",
+  "gguf_repo": "unsloth/DeepSeek-R1-0528-Qwen3-8B-GGUF",
+  "quant": "Q8_0 (8.71 GB) at 64k with q8_0 KV; or Q6_K (6.73 GB) at about 96k; Q4_K_M (5.03 GB) reaches the full 128k with q8_0 KV",
+  "file_gib": 8.11,
+  "est_vram_gib": 13.7,
+  "est_ram_gib": 0,
+  "est_context_tokens": 65536,
+  "offload_plan": "Dense model, fully on GPU (-ngl 99); no --n-cpu-moe. KV per token is 144 KiB in f16, or about 76.5 KiB in q8_0 (8.5 bits). Q8_0 8.11 GiB + q8_0 KV at 65536 tokens (4.78 GiB) + about 0.8 GiB compute = 13.7 GiB, which fits 15.8 GiB free. Q8_0 + f16 KV at 65536 = 8.11 + 9.0 + 0.8 = 17.9 GiB: does NOT fit. Q4_K_M 4.68 GiB + q8_0 KV at 131072 (9.56 GiB) + 0.8 = 15.0 GiB, tight but fits. Q6_K 6.27 GiB + q8_0 KV at 98304 (7.17 GiB) + 0.8 = 14.2 GiB.",
+  "server_command": "docker run --rm --gpus all -p 8080:8080 -v $HOME/models:/root/.cache/llama.cpp ghcr.io/ggml-org/llama.cpp:server-cuda13 -hf unsloth/DeepSeek-R1-0528-Qwen3-8B-GGUF:Q8_0 --jinja -ngl 99 -c 65536 -ctk q8_0 -ctv q8_0 -fa on --reasoning-format deepseek --temp 0.6 --top-p 0.95 --host 0.0.0.0 --port 8080",
+  "tool_calling_note": "The official/bartowski template does not render tools. b12418 common/chat.cpp warns 'Template supports tool calls but does not natively describe tools. The fallback behaviour used may produce bad results'. The unsloth GGUF's embedded template does inject the tool list into the system prompt (sglang-derived R1 tool template), and llama.cpp also ships models/templates/llama-cpp-deepseek-r1.jinja for R1 distills (--chat-template-file; it must be mounted into the container). docs/function-calling.md still says 'DeepSeek R1 (WIP / seems reluctant to call any tools?)' and warns against extreme KV quantization. Tool calling is mechanically possible here, which makes llama.cpp the only runtime with a working path, but reliability is unproven (Artificial Analysis tau2 = 0%).",
+  "sources": [
+   "https://huggingface.co/api/models/unsloth/DeepSeek-R1-0528-Qwen3-8B-GGUF",
+   "https://github.com/ggml-org/llama.cpp/blob/b12418/docs/function-calling.md",
+   "https://github.com/ggml-org/llama.cpp/blob/b12418/common/chat.cpp",
+   "https://github.com/ggml-org/llama.cpp/tree/b12418/models/templates",
+   "https://api.github.com/repos/ggml-org/llama.cpp/releases?per_page=4"
+  ]
+ },
+ "ollama": {
+  "tag": "deepseek-r1:8b (= deepseek-r1:latest = deepseek-r1:8b-0528-qwen3-q4_K_M, digest 6995872bfe4c); also 8b-0528-qwen3-q8_0 (8.9GB) and 8b-0528-qwen3-fp16 (16GB)",
+  "size_gb": 5.2,
+  "context": "128K listed. Ollama defaults to 4k on GPUs under 24 GiB, so set num_ctx / OLLAMA_CONTEXT_LENGTH (e.g. 65536).",
+  "capabilities": "Library page badges are 'tools' and 'thinking', but they cover the whole deepseek-r1 family. The 8b manifest's template blob (sha256:c5ad996b...) has no .Tools block, only System/Messages/Thinking and IsThinkSet/Think handling. Thinking works, and the 'think' toggle is honoured. Tools are not rendered for 8b, so Ollama will probably refuse tool requests or ignore tools (inferred). Params: temperature 0.6, top_p 0.95, DeepSeek stop tokens. Input is text only.",
+  "source_url": "https://registry.ollama.ai/v2/library/deepseek-r1/manifests/8b"
+ },
+ "benchmarks": [
+  {
+   "name": "LiveCodeBench (2408-2505) pass@1",
+   "score": "60.5",
+   "self_reported": true,
+   "setting": "vendor, temp 0.6, top_p 0.95, max gen 64K, 16 samples",
+   "source_url": "https://huggingface.co/deepseek-ai/DeepSeek-R1-0528-Qwen3-8B/raw/main/README.md"
+  },
+  {
+   "name": "AIME 2024 / AIME 2025 / HMMT Feb 25 / GPQA Diamond",
+   "score": "86.0 / 76.3 / 61.5 / 61.1",
+   "self_reported": true,
+   "setting": "vendor, same sampling",
+   "source_url": "https://huggingface.co/deepseek-ai/DeepSeek-R1-0528-Qwen3-8B/raw/main/README.md"
+  },
+  {
+   "name": "SWE-bench Verified / BFCL_v3_MultiTurn / Tau-Bench",
+   "score": "No 8B numbers. The card's 57.6 / 37.0 / 53.5-63.9 belong to the 671B DeepSeek-R1-0528, not this distill.",
+   "self_reported": true,
+   "setting": "card table header is DeepSeek-R1 vs DeepSeek-R1-0528",
+   "source_url": "https://huggingface.co/deepseek-ai/DeepSeek-R1-0528-Qwen3-8B/raw/main/README.md"
+  },
+  {
+   "name": "Artificial Analysis tau2-bench (Telecom)",
+   "score": "0%",
+   "self_reported": false,
+   "setting": "AA independent eval; model page marked deprecated",
+   "source_url": "https://artificialanalysis.ai/models/deepseek-r1-qwen3-8b"
+  },
+  {
+   "name": "Artificial Analysis Terminal-Bench Hard",
+   "score": "1.5%",
+   "self_reported": false,
+   "setting": "AA independent eval",
+   "source_url": "https://artificialanalysis.ai/models/deepseek-r1-qwen3-8b"
+  },
+  {
+   "name": "Artificial Analysis LiveCodeBench / AIME25 / GPQA / IFBench / HLE / AA-LCR",
+   "score": "51.3% / 63.7% / 61.2% / 19.9% / 5.9% / 15%",
+   "self_reported": false,
+   "setting": "AA independent eval; Intelligence Index v5 shows N/A. AA LCB 51.3 vs vendor 60.5, a conflict likely due to different LCB windows and settings.",
+   "source_url": "https://artificialanalysis.ai/models/deepseek-r1-qwen3-8b"
+  }
+ ],
+ "speed_notes": "Inferred bandwidth ceilings at 896 GB/s for single-stream decode (weights read per token). vLLM online FP8 about 9.4 GB gives at most about 95 tok/s. llama.cpp Q8_0 8.71 GB gives about 100 tok/s, Q6_K 6.73 GB about 130 tok/s, Q4_K_M 5.03 GB about 175 tok/s. Real throughput is typically 60-75% of ceiling, and the laptop GPU runs at a 140 W power limit, so expect roughly 60-120 tok/s. No measured RTX 50-series report for this model was found. The practical cost is reasoning length, not speed: the R1-0528 family averages about 23K reasoning tokens per AIME question (card, 671B model), so each agent turn can take minutes and fill a 64k context fast.",
+ "opencode_fit": {
+  "verdict": "unsuitable",
+  "recommended_runtime": "llama.cpp (only runtime with a working tool-prompt path, via the unsloth GGUF's embedded template or llama-cpp-deepseek-r1.jinja); vLLM and Ollama have no tool path for this model",
+  "recommended_checkpoint": "unsloth/DeepSeek-R1-0528-Qwen3-8B-GGUF Q8_0 (or deepseek-r1:8b in Ollama for chat/reasoning only)",
+  "recommended_context": "65536 with q8_0 KV on llama.cpp; 65536 with FP8 KV on vLLM (online fp8); 32768 with BF16 KV",
+  "caveats": "Always-thinking model with no supported per-request off switch except in Ollama. Not trained or documented for tool calling at 8B: the official template drops tool definitions, vLLM marks R1 series tools unsupported, and deepseek_v3 parser crashes at init on this tokenizer. Artificial Analysis tau2 0% and Terminal-Bench Hard 1.5%. Released 2025-05-29, outside the 12-month window, and superseded by Qwen3.x small models. List it under 'thinking, no tool calling' as the only DeepSeek runnable on 16 GB, not as an OpenCode agent backend."
+ },
+ "gaps": [
+  "No end-to-end test of tool calls through llama.cpp with the unsloth template; llama.cpp format detection for the multi-token DeepSeek tool strings at b12418 was not traced.",
+  "Ollama's refusal of tools for deepseek-r1:8b is inferred from the template lacking .Tools; not run.",
+  "vLLM online FP8 weight size (8.79 GiB) is arithmetic, cross-checked against the FP8-Dynamic checkpoint; peak memory during online quantization was not checked.",
+  "INT4 AutoRound kernel path on sm_120 in v0.33.0 was not verified.",
+  "GitHub issue search hit the API rate limit; open llama.cpp issues for this model and further vLLM deepseek_r1 issues were not enumerated.",
+  "No vLLM recipe for this distill was found, but the recipes repo was not listed exhaustively.",
+  "No measured RTX 50-series tokens/s for this model.",
+  "The purpose of deepseek-ai's 2026-06-28 eagle3/dflash/dspark qwen3_8b repos was inferred from their names (speculative-decoding drafts); their cards were not read."
+ ]
+}

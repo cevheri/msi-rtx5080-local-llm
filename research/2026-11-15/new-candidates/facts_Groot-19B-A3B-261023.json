@@ -1,0 +1,109 @@
+{
+ "verdicts": [
+  {
+   "claim": "Publisher: GrootTeam is an HF user account (fullname 'Groot', created 2026-10-21T12:28:27Z, 12 models, 193 followers), member of unverified org Groot-R (Groot-AI, isVerified false, 1 user, 0 models); team question #2 unanswered",
+   "verdict": "confirmed",
+   "correction": "All fields match live API. Discussion #2 (rdsm, 2026-10-26) still has 1 comment and no reply. Card serve commands use 'Groot/Groot-19B-A3B-261023' (README lines 114, 165, 178, 191, 202, 215, 223); that repo returns 401. The namespace 'Groot' does exist, though: it is an unrelated user 'Iam Groot' with 0 models. Nothing is there now, but there is a typosquat risk if anyone copies the card commands. Not a re-upload: GrootTeam is the earliest uploader and every quant repo lists it as base_model.",
+   "evidence_url": "https://huggingface.co/api/users/GrootTeam/overview"
+  },
+  {
+   "claim": "Release: createdAt 2026-10-23T08:47:29Z, lastModified 2026-10-23T09:44:16Z; same-day siblings FP8, NVFP4, GGUF, 65B-A6B, 238B-A18B, 280B-A16B",
+   "verdict": "confirmed",
+   "correction": "The sibling licenses differ: 65B-A6B is 'other', 238B and 280B are 'mit', and 19B is apache-2.0. A single anonymous uploader releasing four model sizes under three licenses within about 70 minutes is a provenance flag.",
+   "evidence_url": "https://huggingface.co/api/models?author=GrootTeam&limit=50"
+  },
+  {
+   "claim": "License apache-2.0 in metadata, LICENSE file missing (404)",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/GrootTeam/Groot-19B-A3B-261023/raw/main/LICENSE"
+  },
+  {
+   "claim": "19,432,294,256 BF16 params includes the vision tower; repo 36.22 GiB incl. vision",
+   "verdict": "refuted",
+   "correction": "The count also includes the MTP head. In the safetensors index, shard 6 (883,453,000 B = 0.82 GiB) holds only the 19 mtp.* tensors, and the 333 visual tensors sit in shard 1. The six shards sum to 38,864,720,752 B = 36.20 GiB, which includes both vision and MTP. The text model without vision or MTP is about 18.5B (19.43 - 0.44 MTP - about 0.45 vision).",
+   "evidence_url": "https://huggingface.co/GrootTeam/Groot-19B-A3B-261023/raw/main/model.safetensors.index.json"
+  },
+  {
+   "claim": "config.json identical to Qwen3.6-35B-A3B except num_experts 128 vs 256, pad_token_id, router_aux_loss_coef 0.0, use_cache",
+   "verdict": "confirmed",
+   "correction": "A sorted diff also shows cosmetic differences: top-level dtype, eos and hidden_size keys, transformers_version 5.8.1 vs 4.57.1, and vision_config.model_type qwen3_5_moe_vision. None of them is architectural. The pruning claim is source-backed: GGUF discussion #2 has the GrootTeam reply of 2026-11-02, 'pruned ... not REAP'.",
+   "evidence_url": "https://huggingface.co/GrootTeam/Groot-19B-A3B-261023/raw/main/config.json"
+  },
+  {
+   "claim": "Architecture: qwen3_5_moe, 40 layers (10 full attention, 30 GDN), 16Q/2KV heads, head_dim 256, hidden 2048, 128 experts (inter 512) + 1 shared, top-8, vocab 248,320, 1 MTP layer, vision depth 27 hidden 1152, max_position_embeddings 262,144",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/GrootTeam/Groot-19B-A3B-261023/raw/main/config.json"
+  },
+  {
+   "claim": "Thinking toggle: on by default ('<think>\\n'), enable_thinking=false gives an empty think block, no /think or /nothink soft switches; chat_template.jinja always re-emits past <think> and ignores preserve_thinking, while the tokenizer_config template honours preserve_thinking",
+   "verdict": "confirmed",
+   "correction": "Template lines 143-149 and card line 355 confirm the toggle. A diff of chat_template.jinja against tokenizer_config.json's template differs only at line 100, in the preserve_thinking condition. Inferred: recent transformers and vLLM prefer the standalone chat_template.jinja, so vLLM probably also re-sends all past reasoning. That contradicts the card's 'interleaved by default' text (line 359). Separately, the card says the trace arrives in 'reasoning_content' (lines 76, 420-421), but vLLM v0.33.0 returns 'reasoning', so the card's snippet would print None on vLLM.",
+   "evidence_url": "https://huggingface.co/GrootTeam/Groot-19B-A3B-261023/raw/main/chat_template.jinja"
+  },
+  {
+   "claim": "Tool calling: Qwen3-Coder XML (<tool_call><function=..><parameter=..>), tools JSON in <tools> in the system turn, results as <tool_response> in a user turn; vLLM v0.33.0 qwen3_coder/qwen3_xml both map to Qwen3EngineToolParser (lines 206-219); qwen3 reasoning parser present; registry lines 205, 618-620, 740; llama.cpp b12407 llama-arch.cpp line 46 qwen35moe",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/tool_parsers/__init__.py"
+  },
+  {
+   "claim": "Checkpoint sizes: NVFP4 11.78 GiB + mtp 0.82; FP8 19.07 + 0.42; official Q4_K_M 11,657,618,560 B (10.86 GiB), mmproj 0.84; bartowski and mradermacher sizes as listed",
+   "verdict": "confirmed",
+   "correction": "All byte counts match. Two oddities: bartowski's Q4_K_M and IQ4_NL are byte-identical (12,484,339,584 B), and the official Q4_K_M is within 1,120 B of mradermacher's i1-Q4_K_M. Neither is a defect, but both are worth knowing when picking a file.",
+   "evidence_url": "https://huggingface.co/api/models/GrootTeam/Groot-19B-A3B-261023-GGUF?blobs=true"
+  },
+  {
+   "claim": "NVFP4 config: experts, shared expert and lm_head NVFP4 weight-only (input_activations null); attention and GDN projections FP8 W8A8 static per tensor; FP8 static kv_cache_scheme; vision ignored",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/GrootTeam/Groot-19B-A3B-261023-NVFP4/raw/main/config.json"
+  },
+  {
+   "claim": "Memory math: KV 20,480 B/token BF16; GDN state 0.06 GiB; vLLM LM-only about 128.5k BF16 / 257k FP8; llama.cpp Q4_K_M 131072 f16 about 14.4 GiB",
+   "verdict": "confirmed",
+   "correction": "Arithmetic re-checked and correct: 2x10x2x256x2 = 20,480; 30 x (32x128x128x4 + 8192x3x2) = 64.4 MB; (14.65-10.94-1.2-0.06) GiB / 20,480 = 128.4k. The 0.84 GiB vision-in-NVFP4 figure remains an estimate taken from the mmproj.",
+   "evidence_url": "https://huggingface.co/GrootTeam/Groot-19B-A3B-261023/raw/main/config.json"
+  },
+  {
+   "claim": "Blackwall: index 78.5 (CI 75.7-81.1), SuperGPQA 45.9, MATH 84.9, LCB 75.2, MRCR 76.9, GraphWalks 96.1, tools 100.0; RTX PRO 6000; 379 tok/s decode, 303 at 120k, prefill 27k at 32k; no Qwen3.6-35B-A3B on the board; above Nemotron 3.5 Lightning 30B Q8 (66.1)",
+   "verdict": "confirmed",
+   "correction": "The numbers match the page JSON (run 20261028-111213, harness 2.5.0, single run). Three corrections. (a) The 66.1 comparator is 'Nemotron 3.5 Lightning 30B Uncensored (darkstar) llama.cpp Q8 DFlash', a community fine-tune and not the official NVIDIA model. (b) The tools task is n=38, so 100% carries little resolution. (c) The benchmark operator guitaripod also published guitaripod/groot-19b-a3b-uncensored-nvfp4 (2026-10-30), so the 'independent' evaluator is also a Groot derivative publisher.",
+   "evidence_url": "https://guitaripod.github.io/blackwall/#groot-19b-a3b-nvfp4~medium"
+  },
+  {
+   "claim": "Vendor chart values: TB2.1 52.10/26.52/43.82, SWE-V 31.66/20.44/36.27, SWE Pro 49.79/21.34/48.02, NL2Repo 35.65/16.55/28.77, Toolathlon 42.90/21.91/35.80, BFCL v4 74.13/68.45/74.24, LCB v6 85.69/77.10/80.40, ALE 29.59, AutomationBench 10.94, JobBench 19.57, DeepSWE 4.43, HLE 21.21 (Qwen 21.94), HLE+tools 32.39, BCB Hard 25.68 (Gemma 27.70), GPQA 85.35, LongBench v2 62.03; avg 41.44; tokens 20,903 vs 27,199 (Gemma 60,841)",
+   "verdict": "confirmed",
+   "correction": "Every value was read from bars_19b.png. The Groot average recomputes to 41.444, and the card's '12 of 16' wins is consistent: losses on HLE, BCB Hard, SWE-V and BFCL. All of these are self-reported.",
+   "evidence_url": "https://huggingface.co/GrootTeam/Groot-19B-A3B-261023/resolve/main/assets/bars_19b.png"
+  },
+  {
+   "claim": "Vendor's Qwen3.6 baselines are credible comparators (SWE-V 36.27 'far below NVIDIA's 70.12')",
+   "verdict": "refuted",
+   "correction": "Qwen's own card (Qwen/Qwen3.6-35B-A3B README) reports SWE-bench Verified 73.4, SWE Pro 49.5, NL2Repo 29.4, GPQA 86.0, HLE 21.4 and LCB v6 80.4, and Gemma4-26B-A4B LCB 77.1. Groot's chart reuses LCB 80.40 and 77.10 exactly, so those two baselines were copied, not re-run. Its other Qwen3.6 baselines are lower than Qwen's own figures (SWE-V 36.27 vs 73.4, GPQA 83.33 vs 86.0). Groot's own SWE-V of 31.66 is less than half of the base model's official 73.4, which makes the vendor's SWE-bench harness, or the model itself, suspect. No Artificial Analysis entry was found (artificialanalysis.ai/models/groot-19b-a3b returns 404, and the models list has 0 'groot' hits).",
+   "evidence_url": "https://huggingface.co/Qwen/Qwen3.6-35B-A3B/raw/main/README.md"
+  },
+  {
+   "claim": "Sampling presets and generation_config (temp 1.0, top_p 0.95, top_k 20)",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/GrootTeam/Groot-19B-A3B-261023/raw/main/README.md"
+  },
+  {
+   "claim": "Community reports: tool use 'unflawed' (#1), Polish path alteration (#5), knowledge loss / alleged data shaping and half speed (GGUF #3), only English and Chinese output",
+   "verdict": "confirmed",
+   "correction": "All are anecdotal single-user reports. The 'only English and Chinese' claim comes from one commenter (scatiel, main discussion #4, 2026-11-03) after an Italian-output complaint; it was not measured. GGUF #3 was later softened by its author (2026-11-10: good for coding and office tasks, weak on general knowledge).",
+   "evidence_url": "https://huggingface.co/api/models/GrootTeam/Groot-19B-A3B-261023/discussions/4"
+  },
+  {
+   "claim": "Ollama: no library entry; community fauxpaslife/Groot-19B-A3B-261023 (Q4_0, 12GB, 256K, Text+Image, 129 downloads)",
+   "verdict": "uncertain",
+   "correction": "Confirmed: library/groot returns 404, and the tags page shows 12GB, 256K, Text and Image input, and 129 downloads. The quant type 'Q4_0' does not appear on the tags page and is unverified.",
+   "evidence_url": "https://ollama.com/fauxpaslife/Groot-19B-A3B-261023/tags"
+  },
+  {
+   "claim": "No Unsloth quant exists",
+   "verdict": "confirmed",
+   "correction": "An HF search for 'Groot-19B-A3B' returns 24 repos and none from unsloth.",
+   "evidence_url": "https://huggingface.co/api/models?search=Groot-19B-A3B&limit=50"
+  }
+ ],
+ "overall": "holds-with-corrections",
+ "summary": "The identity and capability facts mostly hold; I re-read every one from the HF API, raw files, the vLLM v0.33.0 and llama.cpp b12407 source, the Blackwall JSON and the vendor chart PNG. Confirmed: the publisher is anonymous (an HF user account plus an unverified one-member org, with the team question unanswered), the repo was created 2026-10-23, the metadata says Apache-2.0 but there is no LICENSE file, and the config is a pruned Qwen3.6-35B-A3B (128 vs 256 experts). The thinking toggle, the two-template discrepancy, the Qwen3-Coder XML tool format and the parser and registry line numbers all check out, as do all checkpoint byte sizes, the NVFP4 scheme, the KV and memory arithmetic, and every vendor chart number (average 41.444). Corrections: (1) the 19.43B param count and the 36.20 GiB BF16 total (not 36.22) include the MTP head, since shard 6 is MTP-only, as well as the vision tower. (2) Blackwall's 66.1 comparator is an uncensored community Nemotron fine-tune, the tools task is n=38, and the Blackwall operator also publishes a Groot derivative. (3) The vendor's Qwen3.6 baselines conflict with Qwen's own card (SWE-V 73.4 vs 36.27, GPQA 86.0 vs 83.33), while LCB 80.40/77.10 are copied from Qwen's card. Groot's SWE-V 31.66 is under half of the base model's official score, a red flag for agentic coding claims. (4) The card's reasoning_content field does not match vLLM's 'reasoning'. (5) The 'Groot' namespace used in the card commands exists as an unrelated user, so there is a typosquat risk. No Artificial Analysis entry was found. Raw reads are in $SCRATCH/v19/."
+}

@@ -1,0 +1,149 @@
+{
+  "name": "K2-Horizon-7B",
+  "hf_repo": "IFM/K2-Horizon-7B",
+  "exists_as_described": true,
+  "within_last_12_months": true,
+  "official_org": {
+    "value": "IFM = 'Institute of Foundation Models' (HF org fullname; isVerified false, enterprise plan, 118 members). Same org hosts the older K2, K2-Chat, K2-Think, K2-V2, Amber, Crystal repos (the former LLM360 lineage; W&B project is wandb.ai/llm360/K2-Horizon-7B). Code at github.com/ifm-ai/xllm.",
+    "source_url": "https://huggingface.co/api/organizations/IFM/overview",
+    "support": "source-backed"
+  },
+  "release_date": {
+    "value": "HF createdAt 2026-09-01T23:14:30Z; Artificial Analysis releaseDate 2026-09-03; main promoted to the anti-doom-loop (FTPO) checkpoint on 2026-10-01 (commit 85d46bbaf6 'Promote checkpoint anti_doom_loop_verified to main'); lastModified 2026-11-04. Blog https://ifm.ai/blog/k2/ returned HTTP 403, date not read.",
+    "source_url": "https://huggingface.co/api/models/IFM/K2-Horizon-7B/commits/main",
+    "support": "direct-statement"
+  },
+  "license": {
+    "value": "Apache-2.0 (card metadata and HF license tag; no separate LICENSE file in the repo). No use restrictions beyond Apache-2.0 found. Training data, code and eval code stated as fully open.",
+    "source_url": "https://huggingface.co/IFM/K2-Horizon-7B/raw/main/README.md",
+    "support": "direct-statement"
+  },
+  "params": {
+    "value": "Dense. 8,999,178,240 BF16 parameters (HF safetensors metadata); '7B-core' per card, i.e. about 6.95B body plus 2 x 1.03B untied embedding/lm_head (vocab 250,624 x 4096, tie_word_embeddings false). Active = total.",
+    "source_url": "https://huggingface.co/api/models/IFM/K2-Horizon-7B?blobs=true",
+    "support": "source-backed"
+  },
+  "architecture": {
+    "value": "K2HorizonForCausalLM (model_type k2_horizon, custom_code). config.json: 36 layers, all full attention (sliding_window null, use_sliding_window false, no linear/Mamba layers, no MoE: num_experts 0, mlp_only_layers 0..35), hidden 4096, 32 query heads, 8 KV heads (GQA), head_dim 128, intermediate 12288 SiLU, RoPE theta 1e7 default type, max_position_embeddings 524288, vocab 250624, BF16.",
+    "source_url": "https://huggingface.co/IFM/K2-Horizon-7B/raw/main/config.json",
+    "support": "direct-statement"
+  },
+  "context_length": {
+    "value": "524,288 tokens native (max_position_embeddings; card: 'Native 524,288-token context from the midtraining stages onward'; midtraining stages 3-4 at 512K). vLLM recipe default variant uses a 131K baseline; vendor SWE-bench/TB2.1 runs used 256k.",
+    "source_url": "https://huggingface.co/IFM/K2-Horizon-7B/raw/main/README.md",
+    "support": "direct-statement"
+  },
+  "modalities": {
+    "value": "Text in, text out only (card language en, pipeline text-generation; chat template raises on non-text content parts; Ollama tags list 'Text input'). No vision tower, so no --language-model-only needed.",
+    "source_url": "https://huggingface.co/IFM/K2-Horizon-7B/raw/main/chat_template.jinja",
+    "support": "direct-statement"
+  },
+  "thinking": {
+    "mode": "always",
+    "how_to_toggle": "Thinking cannot be switched off: the template has no enable_thinking and always opens the generation with <ifm|think> (high, default), <ifm|think_fast> (medium) or <ifm|think_faster> (low). Effort per request: vLLM extra_body chat_template_kwargs {\"reasoning_effort\":\"high|medium|low\"} or server-wide --default-chat-template-kwargs. llama.cpp b12407: per request chat_template_kwargs.reasoning_effort or the OpenAI reasoning_effort field (server-common.cpp ~L1566); reasoning_effort \"none\" or --reasoning off does NOT disable it because the parser only honours enable_thinking when the template mentions it (common/parsers/k2-horizon.cpp L28-29). Vendor: use high always, temperature 1.0, top_p 0.95, >=32,768 output tokens. vLLM v0.33.0 parser only accepts the effort-specific end tag, and the model often closes medium/low with </ifm|think> (open issue vllm#62743), so use only high on vLLM. llama.cpp b12407 accepts both end tags (fix for llama.cpp#30246, closed 2026-11-12). Ollama: ifm/k2-horizon is tagged 'thinking'; effort control via Ollama not verified.",
+    "source_url": "https://huggingface.co/IFM/K2-Horizon-7B/raw/main/chat_template.jinja",
+    "support": "direct-statement"
+  },
+  "tool_calling": {
+    "supported": "yes",
+    "format": "Template renders tools in a system '# Tools' block (presentation markdown default, or json/xml) and instructs calls as <ifm|tool_calls><ifm|tool_call>NAME\\n<ifm|arg_key>k</ifm|arg_key>\\n<ifm|arg_value>v</ifm|arg_value>...</ifm|tool_call></ifm|tool_calls> (tool_call_format xml default; json and xml_typed selectable via chat_template_kwargs). Tool results go in <|ifm|im_start|>tool turns.",
+    "evidence": "chat_template.jinja render_call_instructions and render_tool_calls_block; vLLM v0.33.0 vllm/tool_parsers/k2_horizon_tool_parser.py (json/xml/xml_typed, streaming) registered as 'k2_horizon'; llama.cpp b12407 common/parsers/k2-horizon.cpp PEG parser for xml and json. Template is strict: it raises if an assistant history message has no thinking field (think/reasoning/reasoning_content/...), if tool parameters are not a dict, or if a schema lists 'required' names missing from 'properties'. vLLM v0.33.0 passes only the 'reasoning' key (renderers/chat_utils/chat_message.py L619-659), so a client that omits it gets an error; OpenCode v2.3.0 sends reasoning \"\" on every assistant message when compatibility.reasoningField is set (packages/ai/src/protocols/openai-chat.ts L568-604, L659-665). llama.cpp injects reasoning_content \"\" itself (k2-horizon.cpp L12-18). Vendor BFCL v4 67.0, AA tau3-Banking 27.6.",
+    "source_url": "https://huggingface.co/IFM/K2-Horizon-7B/raw/main/chat_template.jinja",
+    "support": "direct-statement"
+  },
+  "vllm": {
+    "arch_supported": "Yes, native: registry.py L147 'K2HorizonForCausalLM': ('k2_horizon', ...) at tag v0.33.0, model file vllm/model_executor/models/k2_horizon.py, recipe recipes/models/IFM/K2-Horizon-7B.yaml. No vLLM config class, so --trust-remote-code is required (loads configuration_k2_horizon.py).",
+    "min_version": "Present in v0.31.0 per vllm#62743 environment; exact first version not checked. v0.33.0 confirmed.",
+    "tool_call_parser": "k2_horizon",
+    "reasoning_parser": "k2_horizon",
+    "best_checkpoint": "cyankiwi/K2-Horizon-7B-AWQ-INT4 (compressed-tensors W4A16 int4 group 32 asym, lm_head BF16, 7.56 GiB) is the only vLLM checkpoint that reaches 64k on 16 GB, and only with FP8 KV. IFM/K2-Horizon-7B-FP8 (10.29 GiB) is official but tops out near 46k (FP8 KV, util 0.92) or 53k (util 0.95). Both were uploaded before the 2026-10-01 anti-doom promotion (FP8 weights 2026-09-03, AWQ 2026-09-24), so they carry the pre-FTPO weights (inferred from commit dates; FP8 card shows the pre-FTPO-like numbers SWE-V 70.6 / TB2.1 39.1).",
+    "weights_gib": 7.56,
+    "kv_bytes_per_token_bf16": 147456,
+    "kv_math": "Budget 16303 MiB x 0.92 = 14999 MiB = 14.647 GiB. KV/token = 2 x 36 full-attn layers x 8 KV heads x 128 x 2 B = 147,456 B (144 KiB) BF16; 73,728 B FP8. BF16 IFM/K2-Horizon-7B 17,998,399,920 B = 16.76 GiB: does not fit (pool -3.32 GiB). FP8 IFM 11,053,505,536 B = 10.29 GiB: pool 14.647-10.294-1.2 = 3.153 GiB -> 22,958 tokens BF16 KV, 45,916 FP8 KV (util 0.95: 15.125-10.294-1.2 = 3.631 GiB -> 52,880 FP8 KV), below 64k. AWQ-INT4 8,122,473,440 B = 7.565 GiB: pool 5.883 GiB -> 42,835 BF16 KV, 85,671 FP8 KV. 64k needs 9.0 GiB BF16 KV or 4.5 GiB FP8 KV.",
+    "est_max_context_tokens": 85671,
+    "fits": "tight",
+    "quant_on_sm120": "FP8 block (128x128 weights, 1x128 dynamic activations): v0.33.0 ships csrc/quantization/w8a8/cutlass/c3x/scaled_mm_blockwise_sm120_fp8.cu, so a CUTLASS sm_120 blockwise path exists (kernel selection for this checkpoint inferred, not run). AWQ-INT4 compressed-tensors W4A16 group 32 asymmetric: Marlin path on sm_120 (inferred, not run). FP8 KV needs --attention-backend TRITON_ATTN on sm_120 per baseline (#61239).",
+    "serve_command": "docker run --rm --device nvidia.com/gpu=all --ipc=host --memory 24g -p 127.0.0.1:8000:8000 -v $HOME/.cache/huggingface:/root/.cache/huggingface vllm/vllm-openai:v0.33.0 cyankiwi/K2-Horizon-7B-AWQ-INT4 --trust-remote-code --chat-template-content-format string --max-model-len 65536 --max-num-seqs 1 --kv-cache-dtype fp8 --attention-backend TRITON_ATTN --reasoning-parser k2_horizon --enable-auto-tool-choice --tool-call-parser k2_horizon --default-chat-template-kwargs '{\"reasoning_effort\":\"high\",\"tool_call_format\":\"xml\"}'",
+    "known_issues": "vllm#62743 OPEN (2026-10-20): reasoning parser accepts only the requested effort's end tag; medium/low leak reasoning into content or the answer into reasoning, so stay on high. Template raises HTTP 400 on assistant messages without a 'reasoning' key (set OpenCode compatibility.reasoningField 'reasoning'). Template rejects tool schemas whose 'required' names a missing property. Untested: whether the parser sees reasoning_effort from --default-chat-template-kwargs (constructor reads kwargs['chat_template_kwargs']). BF16 needs about 22 GB per the vLLM recipe (vram_minimum_gb 22).",
+    "sources": [
+      "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/models/registry.py",
+      "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/recipes/models/IFM/K2-Horizon-7B.yaml",
+      "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/reasoning/k2_horizon_reasoning_parser.py",
+      "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/tool_parsers/k2_horizon_tool_parser.py",
+      "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/renderers/chat_utils/chat_message.py",
+      "https://github.com/vllm-project/vllm/issues/62743",
+      "https://huggingface.co/api/models/IFM/K2-Horizon-7B-FP8?blobs=true",
+      "https://huggingface.co/IFM/K2-Horizon-7B-FP8/raw/main/config.json",
+      "https://huggingface.co/api/models/cyankiwi/K2-Horizon-7B-AWQ-INT4?blobs=true",
+      "https://huggingface.co/cyankiwi/K2-Horizon-7B-AWQ-INT4/raw/main/config.json"
+    ]
+  },
+  "llamacpp": {
+    "arch_supported": "Yes: src/llama-arch.cpp L178 { LLM_ARCH_K2_HORIZON, \"k2-horizon\" } at tag b12407 (published 2026-11-15T10:04Z), src/models/k2-horizon.cpp, common/parsers/k2-horizon.cpp, models/templates/IFM-K2-Horizon.jinja; chat.cpp L1332-1337 selects the K2 Horizon handler. Mainline support since b11454 (official GGUF card).",
+    "gguf_repo": "bartowski/K2-Horizon-7B-GGUF (imatrix, llama.cpp b11462, created 2026-10-07, after the 2026-10-01 anti-doom promotion, so it most likely carries the released FTPO weights: inferred). Official IFM/K2-Horizon-7B-GGUF files were last uploaded 2026-09-22, before the promotion (pre-FTPO weights, inferred).",
+    "quant": "Q8_0",
+    "file_gib": 8.92,
+    "est_vram_gib": 14.5,
+    "est_ram_gib": 0,
+    "est_context_tokens": 65536,
+    "offload_plan": "Dense model, everything on GPU (-ngl 99); --n-cpu-moe does not apply. KV per token f16 144 KiB, q8_0 about 76.5 KiB. Q8_0 8.92 + 64k q8_0 KV 4.78 + about 0.8 compute = 14.5 GiB (fits); 64k f16 KV would be 18.7 GiB (no). Alternatives: Q5_K_M 6.39 + 96k q8_0 KV 7.17 + 0.8 = 14.4 GiB; Q4_K_M 5.38 + 128k q8_0 KV 9.56 + 0.8 = 15.7 GiB (very tight); Q4_K_M 5.38 + 64k f16 KV 9.0 + 0.8 = 15.2 GiB.",
+    "server_command": "docker run --rm --device nvidia.com/gpu=all --memory 16g -e GGML_CUDA_DISABLE_GRAPHS=1 -p 127.0.0.1:8080:8080 -v $HOME/.cache/huggingface:/root/.cache/huggingface ghcr.io/ggml-org/llama.cpp:server-cuda-b12407 -hf bartowski/K2-Horizon-7B-GGUF:Q8_0 -ngl 99 -c 65536 -np 1 -fa on -ctk q8_0 -ctv q8_0 --jinja --temp 1.0 --top-p 0.95 --chat-template-kwargs '{\"reasoning_effort\":\"high\",\"tool_call_format\":\"xml\"}' --host 0.0.0.0 --port 8080",
+    "tool_calling_note": "Dedicated PEG parser for xml and json call formats; assistant messages missing reasoning_content get an empty one injected, so OpenCode history works without extra config. Medium/low effort end-tag fallback present at b12407 (fix for #30246). Reasoning returned in reasoning_content (OpenCode reasoningField 'reasoning_content'). Thinking cannot be disabled. Not run on this machine.",
+    "sources": [
+      "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/src/llama-arch.cpp",
+      "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/common/parsers/k2-horizon.cpp",
+      "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/tools/server/server-common.cpp",
+      "https://github.com/ggml-org/llama.cpp/issues/30246",
+      "https://huggingface.co/api/models/bartowski/K2-Horizon-7B-GGUF?blobs=true",
+      "https://huggingface.co/api/models/IFM/K2-Horizon-7B-GGUF?blobs=true",
+      "https://huggingface.co/api/models/IFM/K2-Horizon-7B-GGUF/commits/main"
+    ]
+  },
+  "ollama": {
+    "tag": "ifm/k2-horizon:7b (= :latest = :7b-q4_K_M, digest 16de169bc273); also 7b-q5_0 6.3GB, 7b-q5_K_M 6.5GB, 7b-q6_K 7.4GB, 7b-q8_0 9.6GB, 7b-bf16 18GB. Namespace ifm, not the official library (ollama.com/library/k2-horizon is 404). Needs Ollama >= 0.40.4 (ollama#18698, closed 2026-10-14).",
+    "size_gb": 5.6,
+    "context": "512K advertised; set OLLAMA_CONTEXT_LENGTH=65536",
+    "capabilities": "tools, thinking",
+    "source_url": "https://ollama.com/ifm/k2-horizon/tags"
+  },
+  "checkpoints": [
+    {"repo": "IFM/K2-Horizon-7B", "format": "safetensors BF16 (36 shards, FTPO weights since 2026-10-01)", "size_gb": 16.76, "official": true, "publisher": "IFM", "source_url": "https://huggingface.co/api/models/IFM/K2-Horizon-7B?blobs=true"},
+    {"repo": "IFM/K2-Horizon-7B-FP8", "format": "compressed-tensors FP8 block 128x128, lm_head BF16 (weights 2026-09-03, pre-FTPO inferred)", "size_gb": 10.29, "official": true, "publisher": "IFM", "source_url": "https://huggingface.co/api/models/IFM/K2-Horizon-7B-FP8?blobs=true"},
+    {"repo": "IFM/K2-Horizon-7B-GGUF", "format": "GGUF Q4_K_M 5.21 / Q5_0 5.90 / Q5_K_M 6.02 / Q6_K 6.89 / Q8_0 8.92 / BF16 16.77 GiB (uploaded 2026-09-22, pre-FTPO inferred)", "size_gb": 5.21, "official": true, "publisher": "IFM", "source_url": "https://huggingface.co/api/models/IFM/K2-Horizon-7B-GGUF?blobs=true"},
+    {"repo": "bartowski/K2-Horizon-7B-GGUF", "format": "GGUF imatrix: Q8_0 8.92, Q6_K_L 7.57, Q6_K 7.27, Q5_K_M 6.39, Q4_K_M 5.38, IQ4_XS 4.88 GiB (2026-10-07)", "size_gb": 8.92, "official": false, "publisher": "bartowski", "source_url": "https://huggingface.co/api/models/bartowski/K2-Horizon-7B-GGUF?blobs=true"},
+    {"repo": "cyankiwi/K2-Horizon-7B-AWQ-INT4", "format": "compressed-tensors W4A16 int4 g32 asym (2026-09-24, pre-FTPO inferred)", "size_gb": 7.56, "official": false, "publisher": "cyankiwi", "source_url": "https://huggingface.co/api/models/cyankiwi/K2-Horizon-7B-AWQ-INT4?blobs=true"},
+    {"repo": "cyankiwi/K2-Horizon-7B-AWQ-FP8", "format": "compressed-tensors FP8", "size_gb": 10.3, "official": false, "publisher": "cyankiwi", "source_url": "https://huggingface.co/api/models/cyankiwi/K2-Horizon-7B-AWQ-FP8?blobs=true"}
+  ],
+  "benchmarks": [
+    {"name": "Terminal-Bench 2.1", "score": "44.2", "self_reported": false, "setting": "Artificial Analysis, reasoning, 'median' provider full precision (Qwen3.6-35B-A3B 44.9 on AA)", "source_url": "https://artificialanalysis.ai/models/k2-horizon-7b"},
+    {"name": "tau3-Banking", "score": "27.6", "self_reported": false, "setting": "Artificial Analysis (Qwen3.6-35B-A3B 9.3 on AA)", "source_url": "https://artificialanalysis.ai/models/k2-horizon-7b"},
+    {"name": "AA-LCR", "score": "69.7", "self_reported": false, "setting": "Artificial Analysis", "source_url": "https://artificialanalysis.ai/models/k2-horizon-7b"},
+    {"name": "SciCode", "score": "27.5", "self_reported": false, "setting": "Artificial Analysis", "source_url": "https://artificialanalysis.ai/models/k2-horizon-7b"},
+    {"name": "HLE", "score": "18.2", "self_reported": false, "setting": "Artificial Analysis", "source_url": "https://artificialanalysis.ai/models/k2-horizon-7b"},
+    {"name": "GDPval", "score": "1023.84 (Elo-style)", "self_reported": false, "setting": "Artificial Analysis; Intelligence Index null; Progress Index 263 per 2026-11-15 review", "source_url": "https://artificialanalysis.ai/models/k2-horizon-7b"},
+    {"name": "SWE-bench Verified", "score": "72.4 (pre-FTPO 69.2)", "self_reported": true, "setting": "mini-swe-agent, 256k context, reasoning high", "source_url": "https://huggingface.co/IFM/K2-Horizon-7B/raw/main/README.md"},
+    {"name": "Terminal-Bench 2.1", "score": "44.6 (pre-FTPO 39.7)", "self_reported": true, "setting": "terminus-2, 3 repeats, 256k context", "source_url": "https://huggingface.co/IFM/K2-Horizon-7B/raw/main/README.md"},
+    {"name": "BFCL v4", "score": "67.0", "self_reported": true, "setting": "temperature 0.01", "source_url": "https://huggingface.co/IFM/K2-Horizon-7B/raw/main/README.md"},
+    {"name": "LiveCodeBench v6", "score": "72.7", "self_reported": true, "setting": "500k output budget", "source_url": "https://huggingface.co/IFM/K2-Horizon-7B/raw/main/README.md"},
+    {"name": "tau3-Banking", "score": "25.8", "self_reported": true, "setting": "vendor card", "source_url": "https://huggingface.co/IFM/K2-Horizon-7B/raw/main/README.md"}
+  ],
+  "sampling": "Vendor: temperature 1.0, top_p 0.95, reasoning_effort high, max output at least 32,768 tokens (card Best Practices and recipe). generation_config.json sets no sampling, only eos [1, 250019]. No Unsloth repo or guide found in the HF search for K2-Horizon-7B.",
+  "speed_notes": "Inferred decode bound, bytes read per token excluding the input-embedding table: llama.cpp Q8_0 about 8.5 GB -> 896/8.5 = about 105 tok/s ceiling, realistic 65-80 tok/s; Q4_K_M about 5.2 GB -> about 170 ceiling, realistic 100-120. vLLM FP8 about 9.0 GB (lm_head BF16 2.05 GB included) -> about 100 ceiling; AWQ-INT4 about 6.1 GB -> about 145 ceiling. KV reads add up to 4.8 GB per token at 64k q8_0/FP8 KV, so decode roughly halves near a full context. Always-on high-effort thinking (vendor IFEval mean 3.2k tokens, LiveCodeBench mean 15.6k) makes each agent turn long. Nothing measured on this machine.",
+  "opencode_fit": {
+    "verdict": "good",
+    "recommended_runtime": "llama.cpp server-cuda-b12407",
+    "recommended_checkpoint": "bartowski/K2-Horizon-7B-GGUF Q8_0 (8.92 GiB), all on GPU",
+    "recommended_context": "65536 with q8_0 KV (Q5_K_M allows about 96k)",
+    "caveats": "Independent AA TB2.1 44.2 and tau3 27.6 put this 7B dense level with Qwen3.6-35B-A3B while fitting fully in VRAM, so it is a strong small/fast candidate to measure, but: (1) thinking is always on and the vendor wants high effort and 32k output tokens, which with a 64k window leaves about 32k for input unless OpenCode limit.output is lowered to about 16k; (2) vLLM path is weak on 16 GB: BF16 does not fit, official FP8 maxes at about 46-53k, only the community AWQ-INT4 plus FP8 KV reaches 64k, and both quants hold pre-FTPO weights; vllm#62743 breaks medium/low effort; (3) OpenCode against vLLM must set compatibility.reasoningField 'reasoning' or the template raises on history messages; (4) strict template rejects malformed tool schemas (required name not in properties), check MCP tools; (5) the self-reported SWE-bench Verified 72.4 is unconfirmed independently; (6) org 'IFM' is not HF-verified though its history ties it to the LLM360 K2 line."
+  },
+  "gaps": [
+    "IFM blog https://ifm.ai/blog/k2/ returned 403; announcement date and claims not read.",
+    "No independent SWE-bench Verified number; AA lists no SWE-bench for it.",
+    "Which weights the official FP8, official GGUF, cyankiwi AWQ, bartowski GGUF and Ollama ifm/k2-horizon tags carry (pre- or post-FTPO) is inferred from upload dates only.",
+    "vLLM kernel selection for the FP8 block and AWQ W4A16 g32 checkpoints on sm_120 not observed; nothing run on this machine.",
+    "Whether vLLM's k2_horizon reasoning parser receives reasoning_effort from --default-chat-template-kwargs is unverified.",
+    "Ollama effort control and tool-call reliability for ifm/k2-horizon not verified; the namespace owner 'ifm' on ollama.com not confirmed as IFM.",
+    "Exact first vLLM version with K2HorizonForCausalLM not pinned (present in 0.31.0 per vllm#62743).",
+    "No Unsloth sampling guidance found."
+  ]
+}

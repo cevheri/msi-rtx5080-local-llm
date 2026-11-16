@@ -1,0 +1,62 @@
+{
+ "verdicts": [
+  {
+   "claim": "Checkpoint sizes: BF16 single model.safetensors 7,947,142,640 B (7.40 GiB); FP8 5.27 GB (2 shards); official GGUF Q4_K_M 2.84 GB; ggml-org Q8_0 4.23 GB (3.94 GiB), BF16 GGUF 7.96 GB",
+   "verdict": "confirmed",
+   "correction": "Exact bytes: FP8 shards 3,982,036,144 + 1,285,019,664 = 5,267,055,808 B (4.91 GiB). Official GGUF filename is NVIDIA-Nemotron3-Nano-4B-Q4_K_M.gguf, 2,837,072,864 B. ggml-org files Nemotron-3-Nano-4B-Q8_0.gguf 4,233,681,088 B and Nemotron-3-Nano-4B-BF16.gguf 7,957,649,728 B. FP8 repo createdAt is 2026-03-12, not 2026-03-07.",
+   "evidence_url": "https://huggingface.co/api/models/nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16?blobs=true"
+  },
+  {
+   "claim": "Architecture: NemotronHForCausalLM, 42 layers, pattern gives 21 Mamba2 / 4 attention / 17 MLP, 8 KV heads, head_dim 128, no sliding window, max_position_embeddings 262144",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16/raw/main/config.json"
+  },
+  {
+   "claim": "KV bytes per token 16384 (BF16) / 8192 (FP8); vLLM pool 14.65 - 7.40 - 1.2 = 6.05 GiB gives about 396k tokens BF16 KV, capped at 262144 (4.0 GiB)",
+   "verdict": "confirmed",
+   "correction": "Recomputed: 2 x 4 x 8 x 128 x 2 = 16384 B. 262144 x 16384 = 4.00 GiB. Mamba state per sequence with fp32 SSM cache: 21 x (96x80x128x4 + (7680+2x8x128) x 3 x 2) = 83.8 MB (79.9 MiB), matches. vLLM's hybrid allocator inflates the attention block size to match the Mamba page size, and Mamba groups take blocks from the same pool, so the real token count is somewhat lower than 396k. With 6.05 GiB minus 4 sequences of Mamba state there is still about 1.7 GiB of headroom above 262144 (inferred from method, not a vLLM run)."
+  },
+  {
+   "claim": "vLLM v0.33.0: NemotronHForCausalLM registered; qwen3_coder tool parser registered; nemotron_v3 reasoning parser built in and handles enable_thinking=false; --default-chat-template-kwargs exists",
+   "verdict": "confirmed",
+   "correction": "registry.py line 186 confirmed. reasoning/__init__.py lines 143-145 map nemotron_v3 to nemotron_v3_engine_reasoning_parser.NemotronV3ParserReasoningAdapter. vllm/parser/nemotron_v3.py has class NemotronV3Parser(Qwen3Parser) and reads enable_thinking (lines 56, 87). tool_parsers/__init__.py line 206 maps qwen3_coder to Qwen3EngineToolParser. cli_args.py line 104 has default_chat_template_kwargs. The card command uses the nano_v3 plugin plus --mamba_ssm_cache_dtype float32 and --max-model-len 262144, and the FP8 card adds --kv-cache-dtype fp8, which matches the record.",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/reasoning/__init__.py"
+  },
+  {
+   "claim": "No open vLLM issue specific to this model or to sm_120",
+   "verdict": "uncertain",
+   "correction": "Nothing for Nemotron-3-Nano-4B or dense NemotronH on sm_120 turned up. Adjacent open issues: #52225 (Xid 13 warp errors on SM120 under multi-hour load with hybrid Mamba Nemotron-3.5-Lightning NVFP4 Marlin MoE, seen on RTX PRO 6000 Blackwell). It involves a different model and quant, but the hybrid Mamba path on SM120 is shared, so it is a stability risk to watch. Also #51250 (prefix caching ineffective on Mamba/GDN hybrids, a performance matter for agentic multi-turn use) and #55894 (Mamba+MTP corruption, does not apply without MTP).",
+   "evidence_url": "https://github.com/vllm-project/vllm/issues/52225"
+  },
+  {
+   "claim": "llama.cpp: nemotron-h supported at b12418; the model's chat template is byte-identical to models/templates/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16.jinja; b12418 is a prerelease",
+   "verdict": "confirmed",
+   "correction": "src/models/nemotron-h.cpp returns HTTP 200 at b12418. Both templates have md5 7ab9e1a131eca34b1fe027680129af08. The b12418 release is prerelease=true, published 2026-11-15T15:53:48Z.",
+   "evidence_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12418/models/templates/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16.jinja"
+  },
+  {
+   "claim": "llama.cpp --jinja tool calling should work for this model",
+   "verdict": "uncertain",
+   "correction": "Open llama.cpp PR #30193 (2026-10-08, still open) says tool-call argument grammars enforce declared JSON key order, and that this breaks tool calls for Nemotron and Qwen models. Its author's replay measured 0 to 3 valid tool calls out of 32 on master and 25 to 29 with the patch. So llama.cpp tool calling for this model family is contested on master. Prefer vLLM, or test with OpenCode's real tool schemas before relying on it.",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/pull/30193"
+  },
+  {
+   "claim": "llama.cpp VRAM about 8.6 to 9.2 GiB at 262144 context with Q8_0 and f16 KV",
+   "verdict": "confirmed",
+   "correction": "Q8_0 is 3.94 GiB, f16 KV at 262144 is 4.00 GiB, recurrent state is about 0.08 GiB, plus compute buffers: about 8.5 to 9.0 GiB. This fits the 16 GiB card easily (source-backed arithmetic)."
+  },
+  {
+   "claim": "Ollama tags nemotron-3-nano:4b, 4b-q8_0, 4b-bf16 exist",
+   "verdict": "confirmed",
+   "correction": "The tags page also lists 4b-mxfp8 and 4b-nvfp4. Sizes and the 256K context per tag were not re-read.",
+   "evidence_url": "https://ollama.com/library/nemotron-3-nano/tags"
+  },
+  {
+   "claim": "Verdict: mechanically fits with tool calls and at least 64k context (full 262144) on this machine; agentic coding quality weak",
+   "verdict": "confirmed",
+   "correction": "Best realistic configuration: vLLM v0.33.0 with the BF16 checkpoint, --max-model-len 262144 (or 131072), qwen3_coder plus nemotron_v3, and capabilities.tools enabled manually in OpenCode. FP8 is a speed option only. llama.cpp is the fallback, but tool calling there is caveated by PR #30193."
+  }
+ ],
+ "overall": "holds-with-corrections",
+ "summary": "I could not refute any runtime claim. Every load-bearing value matched on a raw re-read: the config (21 Mamba, 4 attention and 17 MLP layers; 8 KV heads; head_dim 128; 262144 max positions), the HF file sizes, KV at 16384 B/token, Mamba state at about 80 MiB per sequence, and a vLLM KV pool of 6.05 GiB that holds the full 262144 context (4.0 GiB of BF16 KV). In vLLM v0.33.0 the registry, qwen3_coder, nemotron_v3 and --default-chat-template-kwargs are all present at the cited lines. In llama.cpp b12418, nemotron-h.cpp is present and the chat template is byte-identical (md5 match).\n\nCorrections and caveats:\n(1) Open llama.cpp PR #30193 reports that tool-call grammars enforce JSON key order, and that this breaks Nemotron and Qwen tool calls on master (0 to 3 of 32 valid in the author's replay). llama.cpp tool calling is therefore contested, not merely untested.\n(2) Open vLLM issue #52225 reports Xid warp errors on SM120 with a hybrid Mamba Nemotron 3.5 NVFP4 model under long load. It is a different model, but the Mamba path on SM120 is shared, so treat it as a stability risk. Open issue #51250 reports that prefix caching is ineffective on Mamba hybrids.\n(3) The FP8 repo createdAt is 2026-03-12, and the exact FP8 total is 5,267,055,808 B.\n(4) vLLM's hybrid page-size unification reduces the theoretical 396k token figure, but there is still ample headroom at 262144.\n\nVerdict stands: it serves OpenCode with tool calls and at least 64k context on vLLM, and agentic quality is weak.\n\nGaps: I made no live run. sm_120 Mamba stability is unverified, and so is the exact vLLM block allocation. I did not check whether PR #30193 affects flat-argument tools of the kind OpenCode mostly uses."
+}

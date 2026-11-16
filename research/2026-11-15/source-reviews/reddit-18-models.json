@@ -1,0 +1,430 @@
+{
+ "review": {
+  "key": "reddit-18-models",
+  "url": "https://www.reddit.com/r/LocalLLaMA/comments/1s9mkm1/benchmarked_18_models_that_i_can_run_on_my_rtx/",
+  "title": "Benchmarked 18 models that I can run on my RTX 5080 16GB using Nick Lothian's SQL benchmark",
+  "publisher": "Reddit r/LocalLLaMA, user u/grumd (flair: Discussion; score 59, 62 comments, upvote ratio 0.93)",
+  "as_of": "Post created 2026-04-01 14:44 UTC (edited same day); comments run to 2026-09-19. Archived copy retrieved via Arctic Shift.",
+  "source_type": "community-measurement",
+  "accessible": true,
+  "access_notes": "reddit.com and old.reddit.com JSON returned HTTP 403 (curl, generic UA); WebFetch refused reddit.com; Wayback had no snapshot. Full post and all 97 archived comments were read raw from the Arctic Shift API (https://arctic-shift.photon-reddit.com/api/posts/ids?ids=1s9mkm1 and /api/comments/search?link_id=1s9mkm1), cross-checked identical with PullPush (api.pullpush.io). The author's hardware was confirmed from his other archived comments (Arctic Shift author=grumd search). Raw files: $SCRATCH/src/reddit-18-models/. Images in comments (preview.redd.it, imgur) were not read.",
+  "credibility": "medium",
+  "credibility_reason": "One hobbyist, who is transparent and engaged: he posts exact llama-server commands and llama-benchy tables in follow-ups. The quality scores come from single-pass runs of a small 25-task SQL tool-calling benchmark at temperature 0.1, and the author himself says scores vary by 1 to 3 errors between runs. The post has no tok/s numbers. The speed figures in comments are mostly recalled ranges (\"like 1500/15-19\"). The only rigorous speed data is one llama-benchy table for Gemma 4 26B-A4B in a different thread. Hardware is a desktop RTX 5080 (overclocked, 9800X3D, DDR5-6000, PCIe 5.0 x16), not the laptop GPU. All models tested are older generations (Qwen3.5 era, April 2026).",
+  "summary": "The post is a quality-only leaderboard of 18 GGUF models (plus later additions in comments), run on a desktop RTX 5080 16 GB with 96 GB DDR5 using self-compiled llama.cpp and Nick Lothian's 25-task SQL tool-calling benchmark. MoE models with experts offloaded to RAM score highest: Qwen3.5-122B-A10B UD-Q4_K_XL 24/25, UD-IQ3_XXS 23/25. Qwen3.5-27B IQ4_XS scores 23/25, Qwen3.5-35B-A3B UD-Q6_K_XL 22/25 and Qwen3-Coder-Next UD-Q5_K_XL 20/25. Vanilla Qwen3.5-9B scores 5/25 because of tool-call formatting errors. In comments the author gives approximate pp/tg ranges and his daily llama-server command. His practical advice: -ub 2048 or larger for prefill (pp is under 300 tok/s at -ub 512 and about 1500 at 2048-4096), --no-mmap, no q4 KV cache, q8_0 KV only on builds after b8626 (KV rotation). He needs 80k-150k context for real coding in OpenCode. Later comments add Qwen3.8-27B UD-Q6_K_XL q8_0 KV at 23/25 (2026-08-24, probably on his newer 2x RTX 3080 20GB rig) and Ornith-1.0-35B Q8_0 with 5 errors. For this laptop, the source is useful as evidence for the MoE expert-offload approach and the llama.cpp tuning tips. Its speeds are upper bounds from a faster desktop card and cannot be transferred directly.",
+  "findings": [
+   {
+    "topic": "Hardware of the measurements",
+    "claim": "The author's rig is a desktop RTX 5080 16 GB (overclocked, 3-fan card), AMD Ryzen 7 9800X3D (8C/16T), DDR5-6000 with tuned timings (64 GB in March, 96 GB at post time), PCIe 5.0 x16, Linux, self-compiled llama.cpp. The monitor runs on the iGPU, so the full 16 GB VRAM is free. By 2026-08-20 he no longer had the 5080 and ran 2x RTX 3080 20GB.",
+    "evidence": "documented",
+    "location": "post body; author comments 2026-03-30 oda3d9s, 2026-03-18, 2026-08-20, odrs815",
+    "target": "hardware",
+    "relevance": "high"
+   },
+   {
+    "topic": "Benchmark method",
+    "claim": "Nick Lothian's SQL benchmark has 25 tool-using SQL tasks at temperature 0.1. Each model ran once (single pass). The author raised the 120 s per-test timeout because of slow models. Green means pass, red fail, yellow error/timeout. The author notes that run-to-run variance of 1-3 errors is normal and that a better quant can sometimes score worse.",
+    "evidence": "documented",
+    "location": "comments odtbkr5, oduszw2, ogpthm0",
+    "target": "benchmarking",
+    "relevance": "high"
+   },
+   {
+    "topic": "Full score table (passes out of 25)",
+    "claim": "Qwen3.5-122B-A10B unsloth UD-Q4_K_XL 24; Qwen3.5-27B bartowski IQ4_XS 23; Qwen3.5-122B-A10B UD-IQ3_XXS 23; Qwen3.5-35B-A3B UD-Q6_K_XL 22; Qwen3.5-27B Claude-4.6-Opus-Reasoning-Distilled i1 Q3_K_M 22; Nemotron-3-Super-120B-A12B UD-Q4_K_S 21; Qwen3-Coder-Next UD-Q5_K_XL 20; Qwen3.5-35B-A3B Opus distill Q6_K 20; GLM-4.7-Flash UD-Q6_K_XL 19; GLM-4.5-Air Q5_K_M 18; Nemotron-Cascade-2-30B-A3B Q6_K_L 18; Qwen3-Coder-Next UD-Q4_K_XL 16; Devstral-Small-2-24B byteshape IQ3_S 16; Qwen3.5-9B HighIQ-THINKING Q6_K 16; Qwen3.5-9B HighIQ-INSTRUCT Q6_K 14; GLM-4.6V Q3_K_S 14; OmniCoder-9B Q6_K_L 5; Qwen3.5-9B UD-Q6_K_XL 5. Added in comments: Qwopus3.5-9B-v3 17.",
+    "evidence": "measured",
+    "location": "post body; comment odrhyii",
+    "target": "models",
+    "relevance": "medium"
+   },
+   {
+    "topic": "Later additions relevant to baseline picks",
+    "claim": "Qwen3.8-27B UD-Q6_K_XL with q8_0 KV: '23 passed, 2 failed, 0 errored out of 25' (2026-08-24; hardware not stated, the author had moved to 2x RTX 3080 20GB by then). Ornith-1.0-35B Q8_0: 5 errors, 'way more than original Qwen' (2026-06-26). Qwen3.6-27B is 'VERY inconsistent on this benchmark depending on the quant'.",
+    "evidence": "measured",
+    "location": "comments p5lrlqg, ou02lku, otyrq5e",
+    "target": "models",
+    "relevance": "medium"
+   },
+   {
+    "topic": "Qwen3.8-27B agentic quality (opinion)",
+    "claim": "The author says Qwen3.8-27B is 'much better than 3.6 in everyday agentic coding tasks, it follows instructions better, doesn't let go, verifies everything'. He did not measure its token usage. Another user reports that 3.8 uses about 1.5x-3x more tokens than 3.6.",
+    "evidence": "opinion",
+    "location": "comments p5lxb5l, p5lvb76",
+    "target": "models",
+    "relevance": "medium"
+   },
+   {
+    "topic": "Dense 27B at low quant vs 35B-A3B MoE at high quant on 16 GB",
+    "claim": "The author found Qwen3.5-27B Q3 worse than Qwen3.5-35B-A3B Q6 on a full Aider benchmark suite. He later called 27B at Q3/IQ4_XS with quantized KV 'lobotomized' compared with 35B-A3B Q8_K_XL with experts offloaded. On 16 GB he preferred 35B-A3B at Q6/Q8 with RAM offload.",
+    "evidence": "opinion",
+    "location": "comment odqiimt; author comments 2026-05-02 ojkluhi, 2026-05-14 olu7xx9, 2026-05-22",
+    "target": "models",
+    "relevance": "high"
+   },
+   {
+    "topic": "Context needs for coding agents",
+    "claim": "The author needs at least 80k-120k context for real tasks, preferably 150k, and runs 131k daily. The SQL tests need under about 15k, which let him offload fewer layers for the test runs. The test-time speed therefore overstates daily-use speed.",
+    "evidence": "opinion",
+    "location": "comments odqiimt, odrs815",
+    "target": "opencode",
+    "relevance": "high"
+   },
+   {
+    "topic": "Daily llama-server command (Qwen3.5-122B IQ3_XXS)",
+    "claim": "llama-server -hf unsloth/Qwen3.5-122B-A10B-GGUF:UD-IQ3_XXS --no-mmap --no-mmproj --jinja -b 2048 -ub 2048 --temp 0.6 --top-k 20 --top-p 0.95 --min-p 0.01 -fitc 131072 --fit on -fitt 256 --cache-ram 0 --parallel 1 --reasoning-budget 1024 --reasoning-budget-message \"... thinking budget exceeded, let's answer now.\" (llama.cpp build of about April 2026).",
+    "evidence": "documented",
+    "location": "comment odrs815",
+    "target": "llamacpp",
+    "relevance": "medium"
+   },
+   {
+    "topic": "Prefill tuning: ubatch size",
+    "claim": "With the default -ub 512, pp on the 122B with expert offload was under 300 tok/s. With -ub 2048-4096 it rose to about 1500 tok/s. --no-mmap also gave 'a solid improvement for pp'. With mmap on, experts stayed on disk and inference was 'terrible'.",
+    "evidence": "measured",
+    "location": "comments oe1j3hk, oduut6m",
+    "target": "llamacpp",
+    "relevance": "high"
+   },
+   {
+    "topic": "KV cache quantization",
+    "claim": "'do not use q4 for kv cache, the quality of responses will be VERY low'. q8_0 KV is 'almost lossless to f16' only on llama.cpp newer than b8626, which added KV-cache vector rotation (TurboQuant-like). Qwen3.5 is 'quite sensitive to kv cache quantization'. A commenter (Big_Mix_4044) reproduced the same 2 fails on Qwen3.5-27B Q4_K_M with q8 KV and the rotation build.",
+    "evidence": "opinion",
+    "location": "comments oduut6m, oe1isnv, odrrd4j",
+    "target": "llamacpp",
+    "relevance": "high"
+   },
+   {
+    "topic": "Expert offload alternatives",
+    "claim": "Besides --fit, experts can be placed with --n-cpu-moe N or -ot \".*_exps\\.weight=CPU\" (all experts to CPU). LM Studio has a 'Force Model Expert Weights onto CPU' option. Thread count: leaving llama.cpp's default (8 on a 9800X3D) was best; -t 16 cut speed by 20%+.",
+    "evidence": "opinion",
+    "location": "comments oduut6m, odtj38k; author comment 2026-03-30",
+    "target": "llamacpp",
+    "relevance": "medium"
+   },
+   {
+    "topic": "Tool-calling failures of small models",
+    "claim": "Most of vanilla Qwen3.5-9B's errors were malformed tool calls (5/25). Fine-tunes HighIQ-THINKING (16/25) and Qwopus3.5-9B-v3 (17/25) fixed this, while the '9B Claude-4.6-Opus-Reasoning-Distilled' did not. Another user saw the same tool-call errors with Qwen3.5-9B Q8.",
+    "evidence": "measured",
+    "location": "post body; comments ods1ekb, odrelyv",
+    "target": "models",
+    "relevance": "low"
+   },
+   {
+    "topic": "Memory bandwidth claim",
+    "claim": "The author says 'My 5080 has around 1000gb/s' (an overclocked desktop card; stock desktop is 960 GB/s) and estimates dense decode as bandwidth divided by GGUF size: 1000/9.5 GB is about 105 tok/s for Qwen3.5-9B Q8_0.",
+    "evidence": "computed",
+    "location": "author comment 2026-05-31 oowtxyp",
+    "target": "hardware",
+    "relevance": "medium"
+   },
+   {
+    "topic": "NVFP4 on consumer Blackwell",
+    "claim": "The author says NVFP4 is 'mostly for SM100 arch' and only accelerated when the full model stays on the GPU, so he ignores it on a 5080. This is opinion and partly conflicts with the baseline, which lists sm_120 NVFP4 paths in vLLM.",
+    "evidence": "opinion",
+    "location": "author comment 2026-05-12",
+    "target": "vllm",
+    "relevance": "low"
+   },
+   {
+    "topic": "Distillation heuristic",
+    "claim": "Community observation: 'Claude Opus reasoning distills' of 27B/35B did not beat vanilla; only some 9B fine-tunes improved, mainly in tool-call formatting. Fine-tunes should be verified rather than assumed better.",
+    "evidence": "opinion",
+    "location": "comments odpuzhc, ods1ekb, odrm0po",
+    "target": "models",
+    "relevance": "low"
+   }
+  ],
+  "measurements": [
+   {
+    "model": "Qwen3.5-122B-A10B",
+    "quant": "unsloth UD-Q4_K_XL (about 68 GB RAM used)",
+    "gpu": "RTX 5080 desktop (OC) + 96 GB DDR5-6000, 9800X3D",
+    "runtime": "llama.cpp self-built (about April 2026)",
+    "settings": "experts offloaded to RAM, -ub 2048, --no-mmap, 'real usage' context",
+    "prompt_tok_s": "about 1500",
+    "gen_tok_s": "15-19",
+    "measured_or_estimated": "measured",
+    "context": "real usage, about 131k allocated; recalled figure, not a benchmark table"
+   },
+   {
+    "model": "Qwen3.5-122B-A10B",
+    "quant": "unsloth UD-IQ3_XXS (about 33 GB RAM)",
+    "gpu": "RTX 5080 desktop (OC) + DDR5-6000",
+    "runtime": "llama.cpp self-built",
+    "settings": "--fit on -fitc 131072 -fitt 256 -b/-ub 2048 --no-mmap --no-mmproj --cache-ram 0 -np 1",
+    "prompt_tok_s": "1500-2000",
+    "gen_tok_s": "25-30",
+    "measured_or_estimated": "measured",
+    "context": "131k; recalled range"
+   },
+   {
+    "model": "Qwen3.5-122B-A10B",
+    "quant": "IQ3 class",
+    "gpu": "RTX 5080 desktop",
+    "runtime": "llama.cpp",
+    "settings": "-ub 512 (default) vs -ub 2048-4096",
+    "prompt_tok_s": "under 300 (ub 512) vs about 1500 (ub 2048-4096)",
+    "measured_or_estimated": "measured",
+    "context": "recalled, comment oe1j3hk"
+   },
+   {
+    "model": "Qwen3.5-27B",
+    "quant": "Q4 (IQ4_XS)",
+    "gpu": "RTX 5080 desktop",
+    "runtime": "llama.cpp",
+    "settings": "partially offloaded layers",
+    "prompt_tok_s": "about 1000",
+    "gen_tok_s": "about 15",
+    "measured_or_estimated": "measured",
+    "context": "approximate, depends on layers offloaded"
+   },
+   {
+    "model": "Qwen3.5-27B",
+    "quant": "Q3",
+    "gpu": "RTX 5080 desktop",
+    "runtime": "llama.cpp",
+    "settings": "fully on GPU",
+    "gen_tok_s": "30-40 empty context (author unsure); about 6 with filled context (pp about 500)",
+    "prompt_tok_s": "about 500 at filled context",
+    "measured_or_estimated": "measured",
+    "context": "author: 'I don't remember' - low confidence"
+   },
+   {
+    "model": "Qwen3.5-35B-A3B",
+    "quant": "UD-Q6_K_XL",
+    "gpu": "RTX 5080 desktop",
+    "runtime": "llama.cpp",
+    "settings": "some experts offloaded",
+    "prompt_tok_s": "2000+",
+    "gen_tok_s": "about 70 (60-70 elsewhere)",
+    "measured_or_estimated": "measured",
+    "context": "not stated; likely small test context"
+   },
+   {
+    "model": "Qwen3.5-9B",
+    "quant": "Q6/Q8",
+    "gpu": "RTX 5080 desktop",
+    "runtime": "llama.cpp",
+    "settings": "fully on GPU",
+    "gen_tok_s": "about 100",
+    "measured_or_estimated": "measured",
+    "context": "recalled"
+   },
+   {
+    "model": "Qwen3.5-9B",
+    "quant": "Q8_0 (9.5 GB)",
+    "gpu": "RTX 5080 desktop, assumed 1000 GB/s",
+    "runtime": "n/a",
+    "settings": "bandwidth / file size arithmetic",
+    "gen_tok_s": "105 (theoretical ceiling)",
+    "measured_or_estimated": "estimated",
+    "context": "author arithmetic 1000/9.5"
+   },
+   {
+    "model": "Qwen3.6-35B-A3B",
+    "quant": "unsloth UD-Q6_K_XL",
+    "gpu": "RTX 5080 desktop + DDR5-6000",
+    "runtime": "llama.cpp (2026-04-17 build)",
+    "settings": "--fit on -fitt 512 -fitc 0 --no-mmap --kv-unified -b 4096 -ub 2048, f16 KV",
+    "gen_tok_s": "35",
+    "vram": "15 GB VRAM + 29 GB RAM (llama-server process)",
+    "measured_or_estimated": "measured",
+    "context": "262k full (f16 KV); other thread ogrgfvj"
+   },
+   {
+    "model": "Qwen3.6-35B-A3B (or 3.5) ",
+    "quant": "unsloth Q8_K_XL",
+    "gpu": "RTX 5080 desktop + DDR5-6000",
+    "runtime": "llama.cpp",
+    "settings": "RAM offloading, full context",
+    "prompt_tok_s": "about 2000 (1500+ with -ub 2048)",
+    "gen_tok_s": "35-40",
+    "measured_or_estimated": "measured",
+    "context": "full context; author comments 2026-05-14 olu7xx9, 2026-05-19"
+   },
+   {
+    "model": "Gemma 4 26B-A4B-it",
+    "quant": "unsloth UD-Q6_K_XL",
+    "gpu": "RTX 5080 desktop + DDR5-6000",
+    "runtime": "llama.cpp (2026-04-06 build), measured with llama-benchy",
+    "settings": "-ngl 99 --ctx-size 0 --n-cpu-moe 23 --no-mmap --cache-ram 0 -b 4096 -ub 1024 -np 1 -ctk/-ctv q8_0",
+    "prompt_tok_s": "2590.02 (pp4096)",
+    "gen_tok_s": "40.92 (tg128)",
+    "measured_or_estimated": "measured",
+    "context": "depth 0, 262k allocated; other thread oem5j5k"
+   },
+   {
+    "model": "Gemma 4 26B-A4B-it",
+    "quant": "unsloth UD-Q6_K_XL",
+    "gpu": "RTX 5080 desktop + DDR5-6000",
+    "runtime": "llama.cpp, llama-benchy",
+    "settings": "same as above",
+    "prompt_tok_s": "2104.35 (pp4096 @ d100000; TTFT 49.5 s)",
+    "gen_tok_s": "30.89 (tg128 @ d100000)",
+    "measured_or_estimated": "measured",
+    "context": "depth 100000"
+   },
+   {
+    "model": "Qwen3.5-122B-A10B",
+    "quant": "low quant",
+    "gpu": "commenter's DDR4 system (unspecified GPU)",
+    "runtime": "llama.cpp",
+    "settings": "default -ub likely",
+    "prompt_tok_s": "30-35",
+    "measured_or_estimated": "measured",
+    "context": "commenter Blaze6181; shows DDR4 / small ubatch penalty"
+   }
+  ],
+  "conflicts": [
+   {
+    "baseline_claim": "Model pick #2: Qwen3.8-27B at unsloth UD-Q3_K_XL, all on GPU, 64k q8_0 KV.",
+    "source_claim": "The author found the dense 27B at Q3/IQ4_XS on 16 GB clearly weaker than 35B-A3B at Q6/Q8 with expert offload (Aider suite, Qwen3.5 generation), and found Qwen3.6-27B very quant-sensitive on the SQL test. He scored Qwen3.8-27B only at UD-Q6_K_XL (23/25), probably not on the 5080.",
+    "assessment": "This is about older generations and is partly opinion, but it is a real risk for the Q3 pick. The KB should treat Qwen3.8-27B UD-Q3_K_XL as needing local quality verification against Qwen3.6-35B-A3B Q4_K_M/Q6 before ranking it second. It should not be read as evidence that Q3 dense is fine."
+   },
+   {
+    "baseline_claim": "llama.cpp b12418: --no-mmap and --mlock removed (use -lm/--load-mode).",
+    "source_claim": "All the author's commands (April 2026 builds) use --no-mmap and call it essential for keeping experts in RAM and for pp speed.",
+    "assessment": "Not a factual conflict: the flag was current then and removed later. KB commands copied from this thread must translate --no-mmap to the -lm/--load-mode equivalent. The underlying lesson (do not leave offloaded experts mmapped from disk) still holds. Whether -fitc/-fitt are still present at b12418 was not verified here."
+   },
+   {
+    "baseline_claim": "vLLM NVFP4 paths on sm_120 are documented (W4A16 Marlin, W4A4 FlashInfer CUTLASS), with an Ornith-1.5-9B NVFP4 pick.",
+    "source_claim": "The author: 'NVFP4 is mostly for SM100 arch ... not something I'm looking at for a 5080'.",
+    "assessment": "Opinion without measurement; the baseline is verified from vLLM sources. Keep the baseline and do not cite this."
+   }
+  ],
+  "agreements": [
+   "MoE plus expert offload to RAM is the practical way to run large models on 16 GB (baseline Qwen3.6-35B-A3B with --n-cpu-moe 21, Qwen3-Coder-Next --n-cpu-moe 37). The author ran Qwen3.6-35B-A3B Q6 with full 262k context at 35 tok/s on desktop hardware.",
+   "q8_0 KV is the recommended KV quant in recent llama.cpp; q4 KV is harmful (baseline uses q8_0 KV for 64k fits).",
+   "Coding agents need large context: the author needs 80k-150k, consistent with the baseline 64k minimum and 128k targets.",
+   "-np 1 / --parallel 1 for a single user (baseline: -np auto gives 4 slots, use -np 1).",
+   "Default llama.cpp thread count is best; oversubscribing threads hurt speed.",
+   "Qwen3-Coder-Next and GLM-4.7-Flash are viable 16 GB + RAM coding models (20/25 at UD-Q5_K_XL, 19/25 at UD-Q6_K_XL), consistent with baseline picks #5 and #9.",
+   "Gemma 4 26B-A4B runs well on a 16 GB 5080: 2590 pp / 40.9 tg at depth 0 even with experts partly offloaded at Q6, supporting baseline pick #3 (Q4_0 all on GPU should be faster)."
+  ],
+  "kb_notes": [
+   {
+    "target_doc": "docs/community-benchmarks.md",
+    "note": "u/grumd (r/LocalLLaMA, 2026-04-01) ran Nick Lothian's 25-task SQL tool-calling benchmark (single pass, temperature 0.1) on a desktop RTX 5080 16 GB (overclocked, ~1000 GB/s claimed), Ryzen 7 9800X3D, 96 GB DDR5-6000 and self-built llama.cpp. Top scores: Qwen3.5-122B-A10B UD-Q4_K_XL 24/25, Qwen3.5-27B IQ4_XS 23/25, Qwen3.5-122B UD-IQ3_XXS 23/25, Qwen3.5-35B-A3B UD-Q6_K_XL 22/25, Qwen3-Coder-Next UD-Q5_K_XL 20/25, GLM-4.7-Flash UD-Q6_K_XL 19/25, vanilla Qwen3.5-9B 5/25 (tool-call format errors). The author says run-to-run noise is 1-3 tasks, so differences of one or two points are not meaningful. Source: https://www.reddit.com/r/LocalLLaMA/comments/1s9mkm1/benchmarked_18_models_that_i_can_run_on_my_rtx/"
+   },
+   {
+    "target_doc": "docs/community-benchmarks.md",
+    "note": "Speed numbers from the same author are desktop RTX 5080 figures and are mostly recalled ranges, not benchmark tables: Qwen3.5-122B-A10B IQ3_XXS with expert offload about 1500-2000 pp / 25-30 tg at 131k context; Q4_K_XL about 1500 / 15-19; Qwen3.6-35B-A3B UD-Q6_K_XL at 262k f16 KV 35 tg using 15 GB VRAM + 29 GB RAM. The one llama-benchy table: Gemma 4 26B-A4B UD-Q6_K_XL with --n-cpu-moe 23 and q8_0 KV gave pp4096 2590.02 / tg128 40.92 tok/s at depth 0 and 2104.35 / 30.89 at depth 100000. Expect lower numbers on the laptop GPU (896 GB/s, 140 W) and on its RAM. Sources: https://www.reddit.com/r/LocalLLaMA/comments/1s9mkm1/ and https://www.reddit.com/r/LocalLLaMA/comments/1sdu8oz/bartowski_vs_unsloth_for_gemma_4/oem5j5k/"
+   },
+   {
+    "target_doc": "llamacpp/README.md",
+    "note": "For MoE models with experts in system RAM, raise the micro-batch: one desktop RTX 5080 user measured prefill under 300 tok/s at the default -ub 512 and about 1500 tok/s at -ub 2048-4096 on Qwen3.5-122B-A10B. Keep offloaded experts resident in RAM rather than memory-mapped from disk; that user's --no-mmap advice predates its removal, so use the current -lm/--load-mode equivalent. Source: https://www.reddit.com/r/LocalLLaMA/comments/1s9mkm1/benchmarked_18_models_that_i_can_run_on_my_rtx/"
+   },
+   {
+    "target_doc": "llamacpp/README.md",
+    "note": "Do not use q4_0 KV cache for coding agents. Community testing reports very low response quality, and Qwen3.5/3.6 models are sensitive to KV quantization. q8_0 KV is near-lossless only on builds newer than b8626, which added KV-cache vector rotation. Leave --threads at its default; one user lost 20%+ speed with threads set to all logical cores. Source: https://www.reddit.com/r/LocalLLaMA/comments/1s9mkm1/benchmarked_18_models_that_i_can_run_on_my_rtx/"
+   },
+   {
+    "target_doc": "llamacpp/models.md",
+    "note": "Community evidence (desktop RTX 5080, Qwen3.5 generation): a dense 27B squeezed to Q3/IQ4_XS on 16 GB lost to the 35B-A3B MoE at Q6/Q8 with experts in RAM on an Aider suite. Verify the Qwen3.8-27B UD-Q3_K_XL pick against Qwen3.6-35B-A3B locally before trusting the ranking. The same author later scored Qwen3.8-27B UD-Q6_K_XL with q8_0 KV at 23/25 on the SQL benchmark, likely on a 2x RTX 3080 20GB rig, and called it much more thorough than Qwen3.6 in agentic coding. Source: https://www.reddit.com/r/LocalLLaMA/comments/1s9mkm1/benchmarked_18_models_that_i_can_run_on_my_rtx/"
+   },
+   {
+    "target_doc": "llamacpp/benchmarking.md",
+    "note": "Quality checks on small task suites are noisy: the author of the 18-model RTX 5080 SQL benchmark saw 1-3 task swings between identical runs at temperature 0.1, and also had to raise the per-test 120 s timeout for slow offloaded models, which would otherwise count as failures. Run quality suites at least three times and report the timeout used. Source: https://www.reddit.com/r/LocalLLaMA/comments/1s9mkm1/benchmarked_18_models_that_i_can_run_on_my_rtx/"
+   },
+   {
+    "target_doc": "docs/opencode.md",
+    "note": "A 16 GB RTX 5080 user running OpenCode daily reports needing 80k-120k context minimum (150k preferred) and runs 131k with -np 1 and a --reasoning-budget of 1024 tokens to stop runaway thinking. Source: https://www.reddit.com/r/LocalLLaMA/comments/1s9mkm1/benchmarked_18_models_that_i_can_run_on_my_rtx/"
+   },
+   {
+    "target_doc": "docs/sources.md",
+    "note": "reddit-18-models: community measurement by u/grumd, 2026-04-01, desktop RTX 5080 16 GB + 9800X3D + 96 GB DDR5-6000, llama.cpp. Quality-only SQL tool-calling scores (single pass); speeds only as recalled ranges in comments. Credibility medium. Reddit blocks bots; the archive was read through the Arctic Shift API. URL: https://www.reddit.com/r/LocalLLaMA/comments/1s9mkm1/benchmarked_18_models_that_i_can_run_on_my_rtx/"
+   }
+  ],
+  "gaps": [
+   "No tok/s for the 18 test runs themselves; the author did not record them.",
+   "Images in comments (Qwopus 9B result, Qwen3.6 runs, MoQ comparison on imgur) were not read.",
+   "The hardware behind the Qwen3.8-27B 23/25 result (2026-08-24) is not stated; the author had sold or RMA'd the 5080 by 2026-08-20.",
+   "No laptop RTX 5080 data; RAM bandwidth and PCIe effects for expert offload on the Core Ultra 9 290HX Plus are unknown.",
+   "Whether -fitc/-fitt/--kv-unified/--cache-ram still exist unchanged at llama.cpp b12418 was not checked.",
+   "None of the baseline's newest picks (Qwen3.6-35B-A3B Q4_K_M, Nemotron 3.5 Lightning, Ornith-1.5-9B, Gemma 4 12B, gpt-oss-20b) were scored in the post."
+  ],
+  "methodology": "Reddit JSON endpoints (old/www/api) returned 403 and WebFetch refused reddit.com; the Wayback Machine had no snapshot. Post and comments were downloaded raw from the Arctic Shift and PullPush archive APIs into the scratchpad src/reddit-18-models directory and parsed with python3 -I. The author's hardware was cross-checked through Arctic Shift searches of his comment history (keywords 5080, 9800X3D). Numbers are quoted verbatim from comment bodies.",
+  "new_candidates": [
+   {
+    "name": "Qwen3.5-122B-A10B (UD-IQ3_XXS / Q3_K_S)",
+    "hf_repo": "unsloth/Qwen3.5-122B-A10B-GGUF",
+    "why": "Top scorer on 16 GB with experts in RAM. IQ3_XXS needs about 33 GB RAM, which fits the laptop's roughly 40 GiB free; about 25-30 tg on desktop. Superseded generation, so check whether a Qwen3.6/3.8 122B-class MoE exists."
+   },
+   {
+    "name": "Qwopus3.5-9B-v3",
+    "hf_repo": "Jackrong/Qwopus3.5-9B-v3-GGUF",
+    "why": "Qwen3.5-9B fine-tune that fixed tool-call formatting (17/25 vs 5/25 for vanilla). Low priority: older generation and an unverified community fine-tune."
+   }
+  ]
+ },
+ "check": {
+  "verdicts": [
+   {
+    "item": "Publisher, type, as-of date",
+    "verdict": "confirmed",
+    "evidence": "Arctic Shift /api/posts/ids?ids=1s9mkm1 re-fetched raw: author grumd, created_utc 1775054668 = 2026-04-01 14:44:28 UTC, score 59, num_comments 62, flair 'Discussion', title matches. Comment search returned 97 comments, latest in the batch 2026-08-24 (review's 2026-09-19 tail not re-checked). Community-measurement classification fits."
+   },
+   {
+    "item": "Author hardware: desktop RTX 5080 OC, 9800X3D, DDR5-6000, 64 then 96 GB, PCIe 5.0 x16; 5080 gone by 2026-08-20",
+    "verdict": "confirmed",
+    "evidence": "ob4neff 2026-03-18 'rtx 5080 overclocked + 9800x3d + tuned 64gb ddr5 at 6000'; p4siebi 2026-08-20 'DDR5 96gb at 6000mhz, 9800x3d ... pcie 5.0 x16 ... I don't have the 5080 anymore and I'm using 2x 3080 20gb'. Post body: 'I have 96GB'.",
+    "correction": "Add one step: from 2026-06-13 (orfpvck) to at least 2026-07-03 (ovdhzar 'It's a 5080 16gb + 3080 20gb') the author ran a 5080 + 3080 20GB dual-GPU rig (36 GB VRAM). Results posted in that window, Ornith-1.0-35B Q8_0 '5 errors' and the Qwen3.6-27B quant variation (2026-06-26), probably came from that rig, not a single 16 GB card. The review flags this only for the Qwen3.8 result."
+   },
+   {
+    "item": "Score table (18 models, passes /25)",
+    "verdict": "confirmed",
+    "evidence": "Post selftext verbatim: '24: unsloth/Qwen3.5-122B-A10B-GGUF:UD-Q4_K_XL', '23: bartowski/Qwen_Qwen3.5-27B-GGUF:IQ4_XS', '23: ...UD-IQ3_XXS', '22: ...Qwen3.5-35B-A3B-GGUF:UD-Q6_K_XL', '20: unsloth/Qwen3-Coder-Next-GGUF:UD-Q5_K_XL', '19: unsloth/GLM-4.7-Flash-GGUF:UD-Q6_K_XL', '5: unsloth/Qwen3.5-9B-GGUF:UD-Q6_K_XL'. All 18 entries match the review. 'Q4_K_XL uses around 68GB RAM, IQ3_XXS around 33GB RAM'."
+   },
+   {
+    "item": "Method: single pass, temp 0.1, raised 120 s timeout, 1-3 error run-to-run noise",
+    "verdict": "confirmed",
+    "evidence": "odtbkr5 'Single pass for all of them'; oduszw2 'are any of the tests timing out at 120s? ... I increased the timeout'; ogpthm0 'Even though this test uses temperature 0.1 there's still randomness ... small changes to my setup will break it and get 2-3 errors. Using a BETTER quant can also give me more errors.'"
+   },
+   {
+    "item": "Recalled pp/tg ranges (122B Q4 1500/15-19, Q3 1500-2000/25-30, 27B Q4 ~1000/15, 27B Q3 30-40 tg falling to 500/6, 35B 2000+/70, 9B ~100 tg)",
+    "verdict": "confirmed",
+    "evidence": "odqiimt verbatim: '122B Q4 in real usage is like 1500/15-19. 122B Q3 can do 1500-2000/25-30. 27B Q4 ... around 1000/15 ... 27B Q3 ... around 30-40 tg maybe (I don't usually use it so I don't remember) ... down to 500/6. 35B is very fast at 2000+/70. 9B is around 100 tg.' Also 'These tests don't need more than like 15k of context'. Correctly labelled as recalled, not tables.",
+    "correction": "The author later gives the 122B Q4 prefill as a range: odz9xp5 '1000-1500t/s for prefill, 15-20t/s for generation' and p4siebi '~15 tps generation with ~1000-1500 tps prefill'. Record 1000-1500 pp rather than 'about 1500'."
+   },
+   {
+    "item": "Prefill vs ubatch and --no-mmap",
+    "verdict": "confirmed",
+    "evidence": "oe1j3hk 'When I use default -ub 512, my pp speed is under 300, but with -ub 2048-4096 it goes up to 1500 t/s. Also --no-mmap gives a solid improvement for pp'; oduut6m 'mmap enabled keeps experts on the disk ... terrible inference speed'."
+   },
+   {
+    "item": "KV quant advice (no q4 KV, q8_0 near-lossless after b8626 rotation)",
+    "verdict": "confirmed",
+    "evidence": "oduut6m 'do not use q4 for kv cache, the quality of responses will be VERY low ... make sure llama.cpp is newer than 0.9.11 or b8626 ... q8_0 is almost lossless to f16 now. qwen 3.5 is quite sensitive to kv cache quantization'; odrrd4j (Big_Mix_4044) 'same two fails for the qwen3.5-27b q4_k_m by bart. BUT, with q8 kv and new quant rotation'. Opinion classification is right."
+   },
+   {
+    "item": "Daily llama-server command (122B UD-IQ3_XXS) and context needs 80k-150k",
+    "verdict": "confirmed",
+    "evidence": "odrs815 command matches the review verbatim, including -fitc 131072 --fit on -fitt 256 --cache-ram 0 --parallel 1 --reasoning-budget 1024. odqiimt 'I need 80k-120k minimum for real tasks, preferably 150k'."
+   },
+   {
+    "item": "Gemma 4 26B-A4B llama-benchy table",
+    "verdict": "confirmed",
+    "evidence": "oem5j5k: 'pp4096 | 2590.02', 'pp4096 @ d100000 | 2104.35' (e2e_ttft 49605.99 ms), 'tg128 | 40.92', 'tg128 @ d100000 | 30.89'; command -ngl 99 --ctx-size 0 --n-cpu-moe 23 --no-mmap --cache-ram 0 -b 4096 -ub 1024 --parallel 1 -ctv q8_0 -ctk q8_0, UD-Q6_K_XL, 'on my 16GB 5080'."
+   },
+   {
+    "item": "Later additions: Qwen3.8-27B UD-Q6_K_XL 23/25, Ornith-1.0-35B Q8_0 5 errors, Qwen3.6-27B inconsistent; Qwen3.6-35B-A3B 262k 35 tg 15 GB VRAM + 29 GB RAM",
+    "verdict": "confirmed",
+    "evidence": "p5lrlqg 'Results: 23 passed, 2 failed, 0 errored out of 25 / Qwen 3.8 27B UD-Q6_K_XL with q8_0 context'; ou02lku 'Q8_0 ... Ornith ... 5 errors, way more than original Qwen'; otyrq5e 'qwen 3.6 27b is VERY inconsistent on this benchmark depending on the quant'; p5lxb5l opinion quoted correctly; ogrgfvj '15GB VRAM used + 29GB RAM ... 35 t/s', 2026-04-17, single 5080.",
+    "correction": "Same hardware caveat as above for the 2026-06-26 items."
+   },
+   {
+    "item": "Threads and bandwidth/NVFP4 claims",
+    "verdict": "confirmed",
+    "evidence": "odbkdoe 'when I tried 16, the speed actually dropped like 20+%'; oowtxyp 'My 5080 has around 1000gb/s ... 1000 / 9.5 = 105 tokens per second' (correctly marked computed); ole10iy 'NVFP4 is mostly for SM100 arch ... not something I'm looking at for a 5080'."
+   },
+   {
+    "item": "Conflicts with baseline",
+    "verdict": "confirmed",
+    "evidence": "Baseline current-knowledge.md line 68 has pick #2 Qwen3.8-27B unsloth UD-Q3_K_XL all on GPU, and line 40 says '--no-mmap and --mlock removed (use -lm/--load-mode)'. Line 29 documents sm_120 NVFP4 paths. The review's assessments hold. The Q3 risk is indirect evidence from the Qwen3.5 generation (odqiimt 'quality-wise it's worse than 35B Q6 ... full suite of Aider benchmarks'), so it calls for verification, not demotion, which is what the review says. The no-mmap point is a translation issue, not a conflict. The NVFP4 point is unmeasured opinion and does not touch an all-on-GPU 9B pick."
+   }
+  ],
+  "credibility_fair": true,
+  "credibility_note": "Medium is fair. The author is one transparent hobbyist who posts exact commands. Quality runs are single-pass on a 25-task suite with 1-3 tasks of admitted noise. Speeds are recalled ranges, apart from one llama-benchy table posted in another thread. The hardware is a desktop OC RTX 5080 with DDR5-6000 and PCIe 5.0, not the laptop. Some later results (June to August 2026) came from multi-GPU rigs.",
+  "overall": "holds-with-corrections",
+  "summary": "I re-read the post raw from the Arctic Shift API and confirmed it (grumd, 2026-04-01 14:44 UTC, score 59, 62 comments). I also re-fetched 97 comments and checked them against the reviewer's saved author-history files in scratchpad/src/reddit-18-models. All checked numbers match verbatim: the score table, method caveats, recalled pp/tg ranges, ubatch/no-mmap and KV advice, the daily command, the Gemma 4 llama-benchy table (2590.02/40.92 at depth 0, 2104.35/30.89 at 100k) and the later Qwen3.8/Ornith results. The conflict assessments against the baseline are sound. Two small corrections. First, from mid-June to at least early July 2026 the author ran a 5080 + 3080 20GB dual-GPU rig, so the 2026-06-26 Ornith-1.0-35B Q8_0 and Qwen3.6-27B quant results are probably not single 16 GB card results. Second, the 122B Q4 prefill should be recorded as 1000-1500 tok/s, as the author restated it twice, not 'about 1500'. My raw fetch is at $SCRATCH/src/reddit-18-models-check/."
+ }
+}

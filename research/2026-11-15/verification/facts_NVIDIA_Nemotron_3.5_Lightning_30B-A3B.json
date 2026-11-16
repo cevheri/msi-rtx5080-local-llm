@@ -1,0 +1,128 @@
+{
+ "overall": "holds-with-corrections",
+ "summary": "I could not refute any identity, capability or benchmark fact in this record. Every check against primary sources held, read raw on 2026-11-15: the HF API, raw config.json, README, chat_template.jinja and LICENSE, the NVFP4 card, vLLM source at tag v0.33.0, llama.cpp chat.cpp at b12418, the Ollama registry manifests and config blob, the NVIDIA blog, and the Artificial Analysis article.\n\nWhat holds:\n- **Ownership:** author is nvidia. The NVIDIA blog post is dated Aug 11, 2026.\n- **Dates:** createdAt is 2026-08-01, inside the 2025-11-15..2026-11-15 window.\n- **License:** OpenMDW-1.1, and the LICENSE text matches the record.\n- **Size:** 30B total, 3B active. The layer layout is 23 mamba, 23 moe and 6 attention, with attention at blocks 5, 12, 19, 26, 33 and 42.\n- **Context:** max_position_embeddings is 262144; the card claims up to 1M.\n- **Modality:** text only.\n- **Thinking:** the template defaults enable_thinking to True, opens with '<think>\\n', and renders '<think></think>' when thinking is off.\n- **Tool calling:** the template uses the Qwen3-Coder XML format.\n- **Benchmarks:** every number matches the card's NVIDIA-measured table.\n- **Artificial Analysis:** the AA figures (index 24, TB2.1 24%, GDPval 824, about 670 tok/s) match its 2026-08-11 article.\n- **Files and issues:** checkpoint sizes, Ollama blobs, the recipe values and the issue titles all match.\n\nCorrections:\n1. **force_nonempty_content does nothing in llama.cpp.** Only vLLM's nemotron_v3 parser reads it. Neither the chat template nor llama.cpp's common/chat.cpp references it, so the llama.cpp --chat-template-kwargs '{\"force_nonempty_content\": true}' flag in the record has no effect.\n2. **The max_tokens note has no source.** The record says the card warns that reasoning tokens count toward max_tokens. Neither the BF16 card nor the NVFP4 card contains that note.\n3. **Two attribution slips.** The GDPval-AA v2 figure is 832 in NVIDIA's card and 824 in the AA article; the record has the AA value right but never shows the difference. Also, the AA index score of 24 was measured on the NVFP4 weights, while the DeepInfra endpoint is the source of the speed figure.\n4. **Minor:** Ollama digest 5c19f6282f4f is the model-layer blob, not the manifest digest. The tags page shows 14b60fc91804 for :latest and e7a64ff15fb1 for :q4_K_M. The registry manifests for both tags point to that same 25.43 GB blob.\n\nStill open: the 12.9 aggregator value for the AA index was not checked.",
+ "verdicts": [
+  {
+   "claim": "Official NVIDIA repo (HF author nvidia), NVIDIA blog dated 2026-08-11, card 'Model Developer: NVIDIA Corporation', vLLM recipe provider NVIDIA",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16"
+  },
+  {
+   "claim": "HF createdAt 2026-08-01T06:55:21Z, lastModified 2026-08-24; card Release Date August 11, 2026; inside 2025-11-15..2026-11-15 window",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16"
+  },
+  {
+   "claim": "License OpenMDW-1.1 (license:other, license_name openmdw-1.1), permissive grant, notice retention, patent/copyright litigation termination, no output restrictions; card 'ready for commercial use'",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/raw/main/LICENSE"
+  },
+  {
+   "claim": "30B total / 3B active; safetensors total 31,577,937,344 (API also reports BF16 32,913,263,168, F32 3072); 61.31 GiB; routed experts 23x128x2x2688x1856 = 29.37B, MTP MoE 1.28B",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/raw/main/config.json",
+   "correction": "Note the HF API's own BF16 count (32.91B) exceeds its 'total' (31.58B); this is an internal inconsistency in the HF API metadata, not in the record."
+  },
+  {
+   "claim": "Architecture NemotronHForCausalLM, 52 layers: 23 mamba, 23 moe, 6 attention at blocks 5,12,19,26,33,42; 32 Q heads, 2 KV heads, head_dim 128; 128 experts top-6, 1 shared (3712), moe_intermediate 1856, hidden 2688, vocab 131072; MTP layer [attention, moe]; card 'Nemotron-3-Lightning + MTP'",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/raw/main/config.json"
+  },
+  {
+   "claim": "Context: config max_position_embeddings 262144; card claims up to 1M, validated 1M on GB200, B200 (SGLang) and 8xH100; single H100 uses 256K",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/raw/main/README.md"
+  },
+  {
+   "claim": "Text-in/text-out only, no vision tower",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/raw/main/README.md"
+  },
+  {
+   "claim": "Thinking on by default via enable_thinking (default True, '<think>\\n'), off renders '<think></think>'; truncate_history_thinking default True",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/raw/main/chat_template.jinja"
+  },
+  {
+   "claim": "vLLM v0.33.0 nemotron_v3 parser reads enable_thinking and force_nonempty_content and swaps reasoning into empty content; registered as NemotronV3ParserReasoningAdapter; NemotronHForCausalLM at registry.py line 186, NemotronHMTPModel registered",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/parser/nemotron_v3.py"
+  },
+  {
+   "claim": "Tool calling in Qwen3-Coder XML (<tool_call><function=..><parameter=..>), tool results as <tool_response> inside a user turn; card uses --tool-call-parser qwen3_coder --reasoning-parser nemotron_v3; card advises force_nonempty_content for coding agents",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/raw/main/chat_template.jinja"
+  },
+  {
+   "claim": "llama.cpp b12418 common/chat.cpp line 1420 routes this template to common_chat_params_init_qwen3_coder ('also used by Nemotron Nano 3')",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/blob/b12418/common/chat.cpp"
+  },
+  {
+   "claim": "Setting force_nonempty_content server-wide via llama.cpp --chat-template-kwargs has the NVIDIA-advised effect (server_command and caveat 3)",
+   "verdict": "refuted",
+   "evidence_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/raw/main/chat_template.jinja",
+   "correction": "force_nonempty_content does not appear anywhere in chat_template.jinja or in llama.cpp b12418 common/chat.cpp (grep finds nothing). Only vLLM's nemotron_v3 parser acts on it, so in llama.cpp the kwarg is a no-op. The advice holds for vLLM only."
+  },
+  {
+   "claim": "Post-training data includes 614,773 'Synthetic OpenCode Agentic Tasks' (from gpt-oss-120b); NVIDIA blog lists OpenCode among harnesses",
+   "verdict": "confirmed",
+   "evidence_url": "https://developer.nvidia.com/blog/Nvidia-nemotron-3-5-lightning-delivers-fast-accurate-specialized-task-execution-for-long-running-agents/"
+  },
+  {
+   "claim": "Card notes that reasoning tokens count toward max_tokens, so content comes back empty when the budget runs out",
+   "verdict": "uncertain",
+   "evidence_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/raw/main/README.md",
+   "correction": "I could not find this note in either the BF16 card or the NVFP4 card. The behaviour is plausible, but the attribution to the card has no source."
+  },
+  {
+   "claim": "SWE-bench Verified 51.56 (BF16), 52.80 (NVFP4); same-table Qwen3.6-35B-A3B 70.12, Gemma 4 26B-A4B 57.40, gpt-oss-20b 52.44, Nemotron 3 Nano 34.08, Super 63.08; NeMo Evaluator, NVIDIA-measured",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/raw/main/README.md"
+  },
+  {
+   "claim": "SWE-bench Multilingual 39.33; Terminal-Bench 2.1 24.58 (BF16) / 23.46 (NVFP4) with Qwen3.6 44.38, Gemma 4 37.22, gpt-oss-20b 15.17; tau3-bench Banking 9.28; PinchBench 85.37; IFBench loose 71.88; AA-LCR 52.00",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4/raw/main/README.md",
+   "correction": "All values are NVIDIA self-reported under NeMo Gym or NeMo Evaluator. The card's same table also gives GDPval-AA-V2 832, which differs from AA's 824."
+  },
+  {
+   "claim": "Artificial Analysis launch article 2026-08-11: Intelligence Index 24 (Nano 15), TB v2.1 24%, GDPval-AA v2 Elo 824, ~670 tok/s on pre-release DeepInfra NVFP4 endpoint",
+   "verdict": "confirmed",
+   "evidence_url": "https://artificialanalysis.ai/articles/nemotron-3-5-lightning-launch",
+   "correction": "The article says AA 'measured the NVFP4 variant at 24' and measured the 670 tok/s speed on the DeepInfra endpoint, so the 24 is not tied to DeepInfra. The aggregator value of 12.9 was not verified."
+  },
+  {
+   "claim": "Checkpoint sizes: BF16 65.83 GB/61.31 GiB; NVFP4 21.56 GB/20.08 GiB; DSpark 1.35 GB; DFlash 1.18 GB; ggml-org Q4_0 18.9 GB + mtp 1.16 GB, Q8_0 33.59, BF16 63.18, no Q4_K_M; RedHatAI FP8 32.29 GB; useful-quants W4A16 17.83 GB/16.60 GiB; NVFP4 card calls ggml-org 'Official GGUF weights' and uses :Q4_K_M at -c 40960",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/ggml-org/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-GGUF?blobs=true"
+  },
+  {
+   "claim": "NVFP4 card hardware row: GeForce RTX 5090 'Hardware: yes', '_confirm_', '_no recipe published_'",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4/raw/main/README.md"
+  },
+  {
+   "claim": "vLLM recipe at v0.33.0: provider NVIDIA, min_vllm_version 0.27.1, image v0.28.0, context 262144, NVFP4 vram_minimum_gb 18 with --moe-backend marlin, 93.3 decode tok/s on DGX Spark, fastokens not bundled (#47859)",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/vllm-project/vllm/blob/v0.33.0/recipes/models/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16.yaml",
+   "correction": "#47859 is a PR, closed without merging. fastokens does not appear in v0.33.0 requirements/common.txt, requirements/cuda.txt or docker/Dockerfile."
+  },
+  {
+   "claim": "Cited vLLM issues #62078, #49412, #43728, #39103, #52225, #55406, #60008, #59770, #55894 are open and match described topics; OpenCode #60202 open (tool_choice omitted); llama.cpp #20650 open",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/vllm-project/vllm/issues/52225"
+  },
+  {
+   "claim": "Ollama: :latest = :30b = :30b-a3b = :30b-a3b-q4_K_M, digest 5c19f6282f4f, 25.43 GB; config renderer/parser nemotron-3.5-nano, requires 0.32.9, file_type Q4_K_M, model_type 32.9B; params temperature 1, top_p 0.95, draft_num_predict 2; ~898K downloads; tools+thinking badges; 1M context",
+   "verdict": "confirmed",
+   "evidence_url": "https://registry.ollama.ai/v2/library/nemotron-3.5-lightning/manifests/latest",
+   "correction": "5c19f6282f4f is the model-layer blob digest. The tags page shows manifest/index IDs 14b60fc91804 (:latest) and e7a64ff15fb1 (:q4_K_M). The registry manifests for both tags reference the same 5c19f blob."
+  },
+  {
+   "claim": "llama.cpp latest stable v1.0.0 (2026-11-13), b12418 prerelease (2026-11-15)",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/releases/tag/v1.0.0"
+  }
+ ]
+}

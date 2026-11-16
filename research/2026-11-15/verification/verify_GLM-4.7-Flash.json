@@ -1,0 +1,311 @@
+{
+ "name": "GLM-4.7-Flash",
+ "hf_repo": "zai-org/GLM-4.7-Flash",
+ "within_last_12_months": true,
+ "official_org": {
+  "value": "Z.ai (HF org zai-org, fullname 'Z.ai', team plan, 154 models, 23.5k followers; isVerified=false in the org API, so there is no verified badge). The repo is authentic: the card links to z.ai/blog/glm-4.7 and docs.z.ai/guides/llm/glm-4.7, and that Z.ai docs page describes GLM-4.7-Flash ('Small but Powerful', 200K context, 128K max output, 'Lightweight, Completely Free'). Artificial Analysis lists modelWeightsSourceUrl as https://huggingface.co/zai-org/GLM-4.7-Flash.",
+  "source_url": "https://huggingface.co/api/organizations/zai-org/overview ; https://docs.z.ai/guides/llm/glm-4.7 ; https://huggingface.co/zai-org/GLM-4.7-Flash/raw/main/README.md",
+  "support": "direct-statement"
+ },
+ "release_date": {
+  "value": "2026-01-19 (HF API createdAt 2026-01-19T06:28:10Z, lastModified 2026-01-29). Artificial Analysis also gives releaseDate 2026-01-19. This is inside the 2025-11-15..2026-11-15 window. No dated Z.ai release-note entry was found, and the Z.ai docs page carries no visible date.",
+  "source_url": "https://huggingface.co/api/models/zai-org/GLM-4.7-Flash",
+  "support": "direct-statement"
+ },
+ "license": {
+  "value": "MIT. The HF tag is 'license:mit' and the card frontmatter says 'license: mit'. The repo is not gated. MIT has no use restrictions; only the notice must be kept.",
+  "source_url": "https://huggingface.co/zai-org/GLM-4.7-Flash/raw/main/README.md",
+  "support": "direct-statement"
+ },
+ "params": {
+  "value": "31.22B total in the HF safetensors metadata (BF16 31,221,485,568 + F32 3,008). That includes the 1 MTP (nextn) layer. The main model alone is about 29.9B (Ollama model_type '29.9B', llama.cpp PR table 29.9B). The card calls it '30B-A3B', so about 3B active. From config, active per token is about 3.6B: about 1.8B non-expert excluding the input embedding, plus 4 of 64 routed experts x 46 MoE layers = 1.74B. Of the 29.9B in the main model, 27.8B are routed-expert parameters.",
+  "source_url": "https://huggingface.co/api/models/zai-org/GLM-4.7-Flash?blobs=true",
+  "support": "source-backed"
+ },
+ "architecture": {
+  "value": "Glm4MoeLiteForCausalLM (model_type glm4_moe_lite), a DeepSeek-V2-style MoE with MLA attention. Config: 47 layers, all full attention (no sliding-window or linear layers); first_k_dense_replace=1, so layer 0 is dense FFN (intermediate 10240) and 46 layers are MoE. Each MoE layer has 64 routed experts with top-4 routing (sigmoid/noaux_tc, routed_scaling 1.8) plus 1 shared expert, moe_intermediate 1536, hidden 2048. Attention: 20 heads, q_lora_rank 768, kv_lora_rank 512, qk_nope 192, qk_rope 64, v_head 256. num_nextn_predict_layers=1 (MTP), vocab 154880, rope_theta 1e6, no rope_scaling. KV cache (MLA latent) = (512+64) x 47 layers = 27,072 elements per token: 54,144 B/token at BF16, 27,072 B at FP8. llama.cpp converts it as arch DEEPSEEK2.",
+  "source_url": "https://huggingface.co/zai-org/GLM-4.7-Flash/raw/main/config.json",
+  "support": "direct-statement"
+ },
+ "context_length": {
+  "value": "max_position_embeddings 202,752 (native, no rope_scaling, so there is no separate extended mode). The Z.ai docs say 200K context and 128K max output. Ollama lists 198K, Artificial Analysis 200,000.",
+  "source_url": "https://huggingface.co/zai-org/GLM-4.7-Flash/raw/main/config.json ; https://docs.z.ai/guides/llm/glm-4.7",
+  "support": "direct-statement"
+ },
+ "modalities": {
+  "value": "Text in, text out only (pipeline_tag text-generation; Z.ai docs: input and output modalities Text; Ollama: 'Text input'). There is no vision tower, so all weights are language-model weights.",
+  "source_url": "https://huggingface.co/api/models/zai-org/GLM-4.7-Flash ; https://ollama.com/library/glm-4.7-flash/tags",
+  "support": "direct-statement"
+ },
+ "thinking": {
+  "mode": "toggle",
+  "how_to_toggle": "Thinking is on by default: the template's generation prompt ends '<|assistant|><think>' unless enable_thinking is defined and false, in which case it emits '</think>'. The template also has clear_thinking. By default it keeps reasoning only for assistant turns after the last user message (interleaved thinking within the current agent turn). clear_thinking=false keeps it for all turns, which is Z.ai 'Preserved Thinking'; the card asks for it on multi-turn agentic tasks. vLLM v0.33.0: per request, extra_body {\"chat_template_kwargs\": {\"enable_thinking\": false}}. The glm47 parser engine (vllm/parser/glm47_moe.py lines 245-264) reads enable_thinking/thinking from chat kwargs and starts in CONTENT state. vLLM maps an incoming 'reasoning' or 'reasoning_content' history field back to reasoning_content for the template (vllm/renderers/chat_utils/chat_message.py:361,619-658). llama.cpp b12418: per request \"chat_template_kwargs\": {\"enable_thinking\": false}; server-wide --reasoning off or --reasoning-budget 0; --reasoning-preserve is on by default and its doc cites Z.ai preserved thinking. Ollama v0.40.16: native API \"think\": false; OpenAI endpoint \"reasoning_effort\": \"none\" maps to think=false for boolean models.",
+  "source_url": "https://huggingface.co/zai-org/GLM-4.7-Flash/raw/main/chat_template.jinja",
+  "support": "direct-statement"
+ },
+ "tool_calling": {
+  "supported": "yes",
+  "format": "GLM XML: <tool_call>{name}<arg_key>k</arg_key><arg_value>v</arg_value>...</tool_call>. Tool results go back as <|observation|><tool_response>...</tool_response>.",
+  "evidence": "The chat template renders the tools list: under 'if tools' it writes a '# Tools' system block that loops over tools with tojson inside <tools></tools>, and it renders assistant tool_calls and tool-role responses. The card serves with --tool-call-parser glm47 --enable-auto-tool-choice and reports tau2-Bench 79.5. llama.cpp ships models/templates/GLM-4.7-Flash.jinja, byte-identical to the HF template (diff empty at b12418). Ollama shows the 'tools' badge with renderer/parser 'glm-4.7'. Ollama's own page offers 'ollama launch opencode --model glm-4.7-flash'.",
+  "source_url": "https://huggingface.co/zai-org/GLM-4.7-Flash/raw/main/chat_template.jinja",
+  "support": "direct-statement"
+ },
+ "checkpoints": [
+  {
+   "repo": "zai-org/GLM-4.7-Flash",
+   "format": "safetensors BF16 (48 shards)",
+   "size_gb": 62.44,
+   "official": true,
+   "publisher": "Z.ai",
+   "source_url": "https://huggingface.co/api/models/zai-org/GLM-4.7-Flash?blobs=true"
+  },
+  {
+   "repo": "ggml-org/GLM-4.7-Flash-GGUF",
+   "format": "GGUF Q4_K 18.24 GB (16.99 GiB), Q8_0 31.84 GB",
+   "size_gb": 18.24,
+   "official": false,
+   "publisher": "ggml-org",
+   "source_url": "https://huggingface.co/api/models/ggml-org/GLM-4.7-Flash-GGUF?blobs=true"
+  },
+  {
+   "repo": "unsloth/GLM-4.7-Flash-GGUF",
+   "format": "GGUF: Q4_K_M 18.31 GB (17.05 GiB), UD-Q4_K_XL 17.52 GB (16.32 GiB), IQ4_XS 16.27 GB (15.15 GiB), MXFP4_MOE 16.97 GB, UD-Q3_K_XL 13.78 GB (12.84 GiB), UD-IQ3_XXS 12.91 GB, Q5_K_M 21.41 GB, Q6_K 24.69 GB, Q8_0 31.84 GB. Re-uploaded after the 2026-01-21 llama.cpp gating fix; lastModified 2026-02-12.",
+   "size_gb": 18.31,
+   "official": false,
+   "publisher": "unsloth",
+   "source_url": "https://huggingface.co/api/models/unsloth/GLM-4.7-Flash-GGUF?blobs=true"
+  },
+  {
+   "repo": "bartowski/zai-org_GLM-4.7-Flash-GGUF",
+   "format": "GGUF imatrix: Q4_K_M 18.47 GB (17.21 GiB), Q4_K_S 17.78 GB, IQ4_XS 16.25 GB, Q3_K_XL 14.78 GB, IQ3_M 13.98 GB (13.02 GiB), Q8_0 31.84 GB",
+   "size_gb": 18.47,
+   "official": false,
+   "publisher": "bartowski",
+   "source_url": "https://huggingface.co/api/models/bartowski/zai-org_GLM-4.7-Flash-GGUF?blobs=true"
+  },
+  {
+   "repo": "lmstudio-community/GLM-4.7-Flash-GGUF",
+   "format": "GGUF Q4_K_M 18.13 GB, Q6_K 24.61 GB, Q8_0 31.84 GB (uploaded 2026-01-20, before the gating fix; works because the loader fallback sets sigmoid)",
+   "size_gb": 18.13,
+   "official": false,
+   "publisher": "lmstudio-community",
+   "source_url": "https://huggingface.co/api/models/lmstudio-community/GLM-4.7-Flash-GGUF?blobs=true"
+  },
+  {
+   "repo": "Intel/GLM-4.7-Flash-int4-AutoRound",
+   "format": "safetensors int4 AutoRound (auto_round:auto_gptq packing, sym, group 128; layer 0 MLP and shared experts kept at 16-bit). Smallest vLLM-loadable full-model build.",
+   "size_gb": 17.24,
+   "official": false,
+   "publisher": "Intel",
+   "source_url": "https://huggingface.co/api/models/Intel/GLM-4.7-Flash-int4-AutoRound?blobs=true"
+  },
+  {
+   "repo": "QuantTrio/GLM-4.7-Flash-AWQ",
+   "format": "safetensors AWQ 4-bit g128 (attention, gate and layer 0 unquantized); most downloaded vLLM quant",
+   "size_gb": 19.76,
+   "official": false,
+   "publisher": "QuantTrio",
+   "source_url": "https://huggingface.co/api/models/QuantTrio/GLM-4.7-Flash-AWQ?blobs=true"
+  },
+  {
+   "repo": "cyankiwi/GLM-4.7-Flash-AWQ-4bit",
+   "format": "safetensors AWQ 4-bit (compressed-tensors)",
+   "size_gb": 20.17,
+   "official": false,
+   "publisher": "cyankiwi",
+   "source_url": "https://huggingface.co/api/models/cyankiwi/GLM-4.7-Flash-AWQ-4bit?blobs=true"
+  },
+  {
+   "repo": "unsloth/GLM-4.7-Flash-NVFP4",
+   "format": "safetensors NVFP4",
+   "size_gb": 21.26,
+   "official": false,
+   "publisher": "unsloth",
+   "source_url": "https://huggingface.co/api/models/unsloth/GLM-4.7-Flash-NVFP4?blobs=true"
+  },
+  {
+   "repo": "axteam/GLM-4.7-Flash-NVFP4A16",
+   "format": "safetensors NVFP4 weight-only (W4A16)",
+   "size_gb": 18.94,
+   "official": false,
+   "publisher": "axteam",
+   "source_url": "https://huggingface.co/api/models/axteam/GLM-4.7-Flash-NVFP4A16?blobs=true"
+  },
+  {
+   "repo": "unsloth/GLM-4.7-Flash-FP8-Dynamic",
+   "format": "safetensors FP8 dynamic",
+   "size_gb": 32.52,
+   "official": false,
+   "publisher": "unsloth",
+   "source_url": "https://huggingface.co/api/models/unsloth/GLM-4.7-Flash-FP8-Dynamic?blobs=true"
+  },
+  {
+   "repo": "pirola/GLM-4.7-Flash-REAP-23B-A3B-NVFP4",
+   "format": "safetensors NVFP4 of the Cerebras REAP expert-pruned 23B variant (a different, pruned model; only build that fits vLLM on 16 GB, with about 10k BF16 / 21k FP8 KV tokens)",
+   "size_gb": 13.86,
+   "official": false,
+   "publisher": "pirola (community)",
+   "source_url": "https://huggingface.co/api/models/pirola/GLM-4.7-Flash-REAP-23B-A3B-NVFP4?blobs=true"
+  },
+  {
+   "repo": "unsloth/GLM-4.7-Flash-REAP-23B-A3B-GGUF",
+   "format": "GGUF of the cerebras/GLM-4.7-Flash-REAP-23B-A3B pruned variant: Q4_K_M 14.11 GB (13.14 GiB), UD-Q4_K_XL 14.24 GB, IQ4_XS 12.58 GB",
+   "size_gb": 14.11,
+   "official": false,
+   "publisher": "unsloth",
+   "source_url": "https://huggingface.co/api/models/unsloth/GLM-4.7-Flash-REAP-23B-A3B-GGUF?blobs=true"
+  },
+  {
+   "repo": "ollama library glm-4.7-flash:q4_K_M (= :latest)",
+   "format": "GGUF Q4_K_M, model blob 19,019,269,280 bytes; renderer/parser glm-4.7; requires Ollama 0.15.0",
+   "size_gb": 19.02,
+   "official": false,
+   "publisher": "Ollama",
+   "source_url": "https://registry.ollama.ai/v2/library/glm-4.7-flash/manifests/latest"
+  }
+ ],
+ "vllm": {
+  "arch_supported": "Yes. registry.py at v0.33.0 line 125 has \"Glm4MoeLiteForCausalLM\": (\"glm4_moe_lite\", ...) and line 730 has Glm4MoeLiteMTPModel for MTP. Added in commit 71832ba (PR #31386, 2026-01-19).",
+  "min_version": "v0.15.0 (2026-01-29) is the first release tag that contains vllm/model_executor/models/glm4_moe_lite.py; v0.14.0 and v0.14.1 return 404. At launch the card said 'main branch only'.",
+  "tool_call_parser": "glm47 (the card). In v0.33.0 vllm/tool_parsers/__init__.py maps both glm45 and glm47 to Glm47MoeModelToolParser.",
+  "reasoning_parser": "glm45 (the card) or glm47 (in-tree GLM-4.7 recipe). In v0.33.0 vllm/reasoning/__init__.py maps both to Glm47MoeParserReasoningAdapter, so the two names are equivalent.",
+  "best_checkpoint": "Intel/GLM-4.7-Flash-int4-AutoRound (16.06 GiB), the smallest full-model vLLM checkpoint, used with expert CPU offload. Without offload nothing fits except the pruned REAP-23B NVFP4.",
+  "weights_gib": 16.06,
+  "kv_bytes_per_token_bf16": 54144,
+  "kv_math": "Budget 16303 MiB x 0.92 = 14999 MiB = 14.65 GiB. MLA KV = (kv_lora_rank 512 + qk_rope 64) x 47 layers x 2 B = 54,144 B/token BF16, 27,072 B/token FP8. No checkpoint fits on the GPU alone. Intel int4 AutoRound: 14.65 - 16.06 - 1.2 = -2.61 GiB. QuantTrio AWQ 18.41 GiB: -4.96. axteam NVFP4A16 17.64 GiB: -4.19. Pruned REAP-23B NVFP4 (12.91 GiB): pool 0.54 GiB, which is 10,653 tokens BF16 or 21,307 FP8, too small for OpenCode. With UVA offload of experts (--cpu-offload-gb N --cpu-offload-params experts) on Intel int4: N=4 gives pool 1.39 GiB (27.5k BF16 / 55.0k FP8); N=6 gives pool 3.39 GiB (67.2k BF16 / 134.3k FP8); N=8 gives pool 5.39 GiB (106.8k BF16 / 202,752 FP8, capped by max_position_embeddings). An MTP spec layer, if enabled, adds 1 layer of KV plus its weights (about 1.3B params). Offloaded experts are read over PCIe 5.0 x16 (about 64 GB/s theoretical) through zero-copy UVA, so decode speed is speculative.",
+  "est_max_context_tokens": 134345,
+  "fits": "no",
+  "quant_on_sm120": "Attention: on device_capability.major == 12, vLLM v0.33.0 cuda.py lines 134-137 selects TRITON_MLA (then FLASHINFER_MLA_SPARSE_SM120) for MLA, not FlashAttention 2. triton_mla.py accepts kv_cache_dtype fp8/fp8_e4m3 on SM89+ and dequantizes to BF16 on load. MoE weights: int4 AutoRound (GPTQ packing) and AWQ are expected to run through the Marlin W4A16 MoE kernels, which work on sm_120 (inferred, not traced in source). NVFP4 W4A4 builds would use the sm_120 FP4 paths with the FlashInfer JIT host-RAM caveat; NVFP4A16 uses Marlin FP4 (see open issue #34694 on NVFP4 Marlin garbled output on GPUs without native FP4, which does not apply to sm_120's native FP4).",
+  "serve_command": "docker run --rm --gpus all --ipc=host -p 8000:8000 -v $HOME/.cache/huggingface:/root/.cache/huggingface vllm/vllm-openai:v0.33.0 Intel/GLM-4.7-Flash-int4-AutoRound --served-model-name glm-4.7-flash --max-model-len 65536 --kv-cache-dtype fp8 --cpu-offload-gb 6 --cpu-offload-params experts --enable-auto-tool-choice --tool-call-parser glm47 --reasoning-parser glm45   (offload flags and KV numbers are from the arithmetic and have not been tested; the card's reference command is: vllm serve zai-org/GLM-4.7-Flash --tensor-parallel-size 4 --speculative-config.method mtp --speculative-config.num_speculative_tokens 1 --tool-call-parser glm47 --reasoning-parser glm45 --enable-auto-tool-choice --served-model-name glm-4.7-flash)",
+  "known_issues": "Open vLLM issues on the glm47 parser family: #67684 (2026-11-14) drops tool calls with unknown function names and returns empty responses, trapping clients in retry loops; #67471 (2026-11-13) turns a quoted tag in prose into a real tool call with empty arguments; #60703 streaming parser swallows the rest of the stream after a stray <tool_call> token in prose; #49248 returns empty arguments when <arg_value> is omitted; #57826/#57827 drop the last parameter when the closing tag is missing; #63581 streamed tool_call index skips rejected calls (OpenAI SDK IndexError); #58315 required tool_choice grammar accepts split marker tokens; #65944 ModelOpt FP8 KV scales not loaded into MLA attention for GLM-4.7-Flash since v0.25.0. Not found: any open sm_120 issue specific to dense MLA with GLM-4.7-Flash; the sm_120 MLA issues concern sparse MLA in GLM-5.3-Flash and DeepSeek-V4.1.",
+  "sources": [
+   "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/model_executor/models/registry.py",
+   "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/tool_parsers/__init__.py",
+   "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/reasoning/__init__.py",
+   "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/platforms/cuda.py",
+   "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/v1/attention/backends/mla/triton_mla.py",
+   "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/config/offload.py",
+   "https://github.com/vllm-project/vllm/blob/v0.33.0/recipes/models/zai-org/GLM-4.7.yaml",
+   "https://github.com/vllm-project/vllm/commit/71832ba71e",
+   "https://huggingface.co/zai-org/GLM-4.7-Flash/raw/main/README.md",
+   "https://huggingface.co/Intel/GLM-4.7-Flash-int4-AutoRound/raw/main/config.json",
+   "https://github.com/vllm-project/vllm/issues/67684",
+   "https://github.com/vllm-project/vllm/issues/60703",
+   "https://github.com/vllm-project/vllm/issues/65944"
+  ]
+ },
+ "llamacpp": {
+  "arch_supported": "Yes. Glm4MoeLiteForCausalLM is converted as MODEL_ARCH.DEEPSEEK2 (conversion/glm.py line 248 at b12418, including MTP export). Support merged in PR #18936 (2026-01-19). Sigmoid gating fix #18980 (2026-01-21) is a loader fallback, so older GGUFs also load correctly. V-less MLA cache landed in #19067 (2026-01-25): llama-kv-cache.cpp has has_v = !is_mla, so only the 576-wide K latent is cached. CUDA FA for GLM 4.7 landed in #18953. Latest builds b12418/b12419 (2026-11-15) are marked prerelease on GitHub.",
+  "gguf_repo": "unsloth/GLM-4.7-Flash-GGUF (Q4_K_M, 17.05 GiB), or UD-Q4_K_XL 16.32 GiB from the same repo",
+  "quant": "Q4_K_M with --n-cpu-moe 17-18 at 64k context. Alternative fully on the GPU: UD-Q3_K_XL (12.84 GiB), which leaves about 1.97 GiB for KV, about 39k tokens at f16, too short for comfortable OpenCode use.",
+  "file_gib": 17.05,
+  "est_vram_gib": 15.6,
+  "est_ram_gib": 6.2,
+  "est_context_tokens": 65536,
+  "offload_plan": "GPU available about 15.81 GiB (16303 - 112 MiB idle). Q4_K_M expert share: 17.05 x 27.78/29.92 / 46 = about 0.344 GiB per MoE layer. KV per token is 54,144 B at f16; q8_0 is about 28.8 KB. For 64k context with f16 KV (3.30 GiB) and a 1.0 GiB compute buffer, 5.54 GiB must move to RAM, so --n-cpu-moe 17 (5.85 GiB RAM). With q8_0 KV (1.76 GiB): --n-cpu-moe 12. For 128k: f16 KV 6.61 GiB needs --n-cpu-moe 26 (8.95 GiB RAM); q8_0 KV needs 17. For the full 202,752: f16 KV 10.22 GiB needs --n-cpu-moe 37 (12.7 GiB RAM); q8_0 needs 23. Everything stays well under the 40 GiB RAM budget. Using 18 instead of 17 adds headroom.",
+  "server_command": "docker run --rm --gpus all -p 8080:8080 -v $HOME/models:/models ghcr.io/ggml-org/llama.cpp:server-cuda13 -m /models/GLM-4.7-Flash-Q4_K_M.gguf --alias glm-4.7-flash --host 0.0.0.0 --port 8080 -ngl 99 --n-cpu-moe 18 -c 65536 -fa on --jinja --temp 0.7 --top-p 1.0 --min-p 0.01   (unsloth's tool-calling sampling is temp 0.7 / top-p 1.0; the card uses the same for SWE-bench and Terminal-Bench; add -ctk q8_0 to halve KV and drop --n-cpu-moe to about 12, after testing that quantized K works with MLA)",
+  "tool_calling_note": "Works through --jinja (on by default) with the embedded template. llama.cpp ships models/templates/GLM-4.7-Flash.jinja, byte-identical to the HF template, and its test-chat suite covers it (open issue #30313 is a test-harness skip, not a runtime bug). Open #20650 reports '500 - Failed to parse input' on some tool calls; the GLM-4.7-Flash link there is not confirmed. Reasoning is returned in reasoning_content; --reasoning-preserve (default on) supports Z.ai preserved thinking.",
+  "sources": [
+   "https://github.com/ggml-org/llama.cpp/blob/b12418/conversion/glm.py",
+   "https://github.com/ggml-org/llama.cpp/blob/b12418/src/llama-kv-cache.cpp",
+   "https://github.com/ggml-org/llama.cpp/blob/b12418/models/templates/GLM-4.7-Flash.jinja",
+   "https://github.com/ggml-org/llama.cpp/blob/b12418/tools/server/README.md",
+   "https://github.com/ggml-org/llama.cpp/pull/18936",
+   "https://github.com/ggml-org/llama.cpp/pull/18980",
+   "https://github.com/ggml-org/llama.cpp/pull/19067",
+   "https://huggingface.co/api/models/unsloth/GLM-4.7-Flash-GGUF?blobs=true",
+   "https://huggingface.co/unsloth/GLM-4.7-Flash-GGUF/raw/main/README.md"
+  ]
+ },
+ "ollama": {
+  "tag": "glm-4.7-flash (latest = q4_K_M, digest 4475827791a2); also q8_0 (32 GB) and bf16 (60 GB)",
+  "size_gb": 19.02,
+  "context": "198K listed. Ollama's default on GPUs under 24 GiB is 4k, so set OLLAMA_CONTEXT_LENGTH=65536 or num_ctx for OpenCode.",
+  "capabilities": "tools, thinking (badges); text input only; renderer and parser 'glm-4.7'; requires Ollama 0.15.0; default params temperature 1, top_p 0.95, min_p 0.01; page offers 'ollama launch opencode --model glm-4.7-flash'; 2.2M downloads, updated about 5 months ago",
+  "source_url": "https://ollama.com/library/glm-4.7-flash/tags"
+ },
+ "benchmarks": [
+  {
+   "name": "SWE-bench Verified",
+   "score": "59.2 (vs Qwen3-30B-A3B-Thinking-2507 22.0, gpt-oss-20b 34.0 in the same vendor table)",
+   "setting": "vendor harness, temperature 0.7, top-p 1.0, max new tokens 16384",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/zai-org/GLM-4.7-Flash/raw/main/README.md"
+  },
+  {
+   "name": "tau2-Bench",
+   "score": "79.5",
+   "setting": "vendor; temperature 0, 16384 tokens; extra prompt added for Retail/Telecom, Airline domain fixes from the Claude Opus 4.5 report; Preserved Thinking on",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/zai-org/GLM-4.7-Flash/raw/main/README.md"
+  },
+  {
+   "name": "LiveCodeBench v6",
+   "score": "64.0",
+   "setting": "vendor; temperature 1.0, top-p 0.95, 131072 max tokens",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/zai-org/GLM-4.7-Flash/raw/main/README.md"
+  },
+  {
+   "name": "BrowseComp",
+   "score": "42.8",
+   "setting": "vendor",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/zai-org/GLM-4.7-Flash/raw/main/README.md"
+  },
+  {
+   "name": "GPQA",
+   "score": "75.2",
+   "setting": "vendor",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/zai-org/GLM-4.7-Flash/raw/main/README.md"
+  },
+  {
+   "name": "Terminal-Bench Hard (Artificial Analysis)",
+   "score": "22.0% reasoning; 3.8% non-reasoning",
+   "setting": "independent, Artificial Analysis harness",
+   "self_reported": false,
+   "source_url": "https://artificialanalysis.ai/models/glm-4-7-flash"
+  },
+  {
+   "name": "tau2-Bench Telecom (Artificial Analysis)",
+   "score": "98.8% reasoning; 91.8% non-reasoning",
+   "setting": "independent, AA harness (Telecom domain only, not comparable to the vendor's 3-domain 79.5)",
+   "self_reported": false,
+   "source_url": "https://artificialanalysis.ai/models/glm-4-7-flash"
+  },
+  {
+   "name": "GPQA Diamond (Artificial Analysis)",
+   "score": "58.1% reasoning; 45.2% non-reasoning (vendor reports 75.2; conflict)",
+   "setting": "independent",
+   "self_reported": false,
+   "source_url": "https://artificialanalysis.ai/models/glm-4-7-flash"
+  },
+  {
+   "name": "IFBench / AA-LCR / HLE (Artificial Analysis)",
+   "score": "IFBench 60.8%, AA-LCR 41.7%, HLE 7.6% (reasoning); vendor HLE 14.4 (conflict)",
+   "setting": "independent",
+   "self_reported": false,
+   "source_url": "https://artificialanalysis.ai/models/glm-4-7-flash"
+  }
+ ],
+ "speed_notes": "Measured, RTX 4090 (not 50-series), llama.cpp PR #30489: GLM-4.7-Flash Q4_K prefill pp2048 about 8,440-8,590 t/s fully on the GPU (https://github.com/ggml-org/llama.cpp/pull/30489). Measured, RTX PRO 6000 Blackwell (sm_120, 96 GB), PR #30196: unsloth GLM-4.7-Flash Q8_0 with MTP speculative decoding gave about 128-130 t/s mean decode on SPEED-Bench coding turns (https://github.com/ggml-org/llama.cpp/pull/30196). PR #31968's 43 t/s figures are from SYCL (Intel GPU) and do not apply. Bandwidth arithmetic (inferred): active about 3.56B params per token; at Q4_K_M (~4.9 bpw) that is about 2.18 GB read per token. Fully on the GPU: 896 GB/s / 2.18 GB = about 410 t/s ceiling. With --n-cpu-moe 18: about 0.42 GB per token comes from DDR5 (18 layers x 4 experts x 5.78 MB). At 80 GB/s that is 5.2 ms, plus about 2.0 ms of GPU time, so the ceiling is about 140 t/s and realistic decode is perhaps 40-80 t/s. With --n-cpu-moe 28 the ceiling is about 100 t/s. MLA decode slows with depth (the SYCL table shows 43 to 25-32 t/s from 0 to 16k depth), so expect lower rates at OpenCode-scale contexts. vLLM with UVA expert offload reads experts over PCIe 5.0 and is unmeasured.",
+ "opencode_fit": {
+  "verdict": "good",
+  "recommended_runtime": "llama.cpp server (ghcr.io/ggml-org/llama.cpp:server-cuda13) with --jinja and --n-cpu-moe; Ollama glm-4.7-flash as the simple alternative. vLLM v0.33.0 only with UVA expert offload (untested).",
+  "recommended_checkpoint": "unsloth/GLM-4.7-Flash-GGUF Q4_K_M (18.31 GB / 17.05 GiB) or UD-Q4_K_XL (17.52 GB / 16.32 GiB)",
+  "recommended_context": "65536 with f16 KV and --n-cpu-moe 17-18. 128k is reachable with q8_0 KV (--n-cpu-moe 17) or f16 KV (--n-cpu-moe 26).",
+  "caveats": "1) Q4 weights (16-17 GiB) exceed 16 GB VRAM, so experts must be partly in system RAM: no all-GPU build at Q4. In vLLM nothing full-size fits without offload. 2) Thinking is on by default. OpenCode must send the reasoning back for interleaved thinking within a turn. vLLM maps 'reasoning' to reasoning_content and llama.cpp preserves it by default; whether OpenCode v2.3.0 sends it is unverified. 3) The vLLM glm47 tool parser has several open bugs (#67684 empty response on unknown tool names, #60703 stream swallowed after a stray <tool_call>, #67471 prose tag becomes a call); prefer llama.cpp or Ollama. 4) Vendor numbers (SWE-bench Verified 59.2, tau2 79.5) are self-reported. Independent AA results are modest (Terminal-Bench Hard 22%; GPQA 58 vs vendor 75), and AA marks the model deprecated in favour of GLM-5. 5) Released 2026-01-19, about 10 months old; newer 30B-A3B class models may beat it. 6) Use temp 0.7 / top-p 1.0 for agentic coding (the card's SWE-bench setting)."
+ },
+ "gaps": [
+  "No dated Z.ai blog or release note specific to GLM-4.7-Flash was found; the release date rests on the HF createdAt and the AA releaseDate (both 2026-01-19).",
+  "zai-org has no 'verified' flag in the HF org API (isVerified=false); authenticity rests on cross-links from z.ai docs.",
+  "No vendor-official quantized checkpoint (no zai-org FP8/INT4); no RedHatAI or nvidia quant was found. Intel/GLM-4.7-Flash-int4-AutoRound exists.",
+  "vLLM UVA expert offload (--cpu-offload-params experts) with Marlin int4 MoE on sm_120 is not tested; its speed and compatibility with CUDA graphs are unknown. The Marlin kernel path for auto-round on sm_120 was inferred, not traced in source.",
+  "Whether llama.cpp accepts -ctk q8_0 for the V-less MLA cache on CUDA, and its quality impact, was not verified.",
+  "No measured decode speed on an RTX 5080 Laptop GPU or with --n-cpu-moe offload; the speeds are bandwidth estimates.",
+  "No independent SWE-bench Verified, SWE-bench Pro, Terminal-Bench 2.x, BFCL or Aider results were found for GLM-4.7-Flash; the AA Intelligence Index is null (model marked deprecated).",
+  "Whether Ollama v0.40.16 offloads only expert tensors (rather than whole layers) for this model on a 16 GB GPU was not checked.",
+  "OpenCode v2.3.0 behavior with the GLM reasoning round-trip and tool_choice (issue #60202) was not tested for this model."
+ ]
+}

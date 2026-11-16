@@ -1,0 +1,18 @@
+import ctypes
+c = ctypes.CDLL("libcuda.so.1")
+def chk(name, rc):
+    print(f"{name}: {'OK' if rc == 0 else 'ERROR ' + str(rc)}")
+chk("cuInit", c.cuInit(0))
+ver = ctypes.c_int(); c.cuDriverGetVersion(ctypes.byref(ver)); print("driver CUDA version:", ver.value)
+n = ctypes.c_int(); c.cuDeviceGetCount(ctypes.byref(n)); print("device count:", n.value)
+dev = ctypes.c_int(); c.cuDeviceGet(ctypes.byref(dev), 0)
+name = ctypes.create_string_buffer(128); c.cuDeviceGetName(name, 128, dev); print("device:", name.value.decode())
+ma, mi = ctypes.c_int(), ctypes.c_int()
+c.cuDeviceGetAttribute(ctypes.byref(ma), 75, dev); c.cuDeviceGetAttribute(ctypes.byref(mi), 76, dev); print("compute capability:", f"{ma.value}.{mi.value}")
+tot = ctypes.c_size_t(); c.cuDeviceTotalMem_v2(ctypes.byref(tot), dev); print("total memory MiB:", tot.value // 2**20)
+ctx = ctypes.c_void_p()
+chk("cuDevicePrimaryCtxRetain", c.cuDevicePrimaryCtxRetain(ctypes.byref(ctx), dev))
+chk("cuCtxSetCurrent", c.cuCtxSetCurrent(ctx))
+ptr = ctypes.c_uint64()
+chk("cuMemAlloc 1 GiB", c.cuMemAlloc_v2(ctypes.byref(ptr), 1 << 30))
+chk("cuMemFree", c.cuMemFree_v2(ptr))

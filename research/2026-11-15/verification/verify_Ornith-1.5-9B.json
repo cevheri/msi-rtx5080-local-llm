@@ -1,0 +1,273 @@
+{
+ "name": "Ornith-1.5-9B",
+ "hf_repo": "ornith-ai/Ornith-1.5-9B",
+ "official_org": {
+  "value": "Ornith AI (HF org ornith-ai, formerly deepreinforce-ai: https://huggingface.co/deepreinforce-ai/Ornith-1.0-9B returns 307 to ornith-ai/Ornith-1.0-9B, and deep-reinforce.com now serves the 'Ornith AI' site). The vendor blog https://ornith.ai/ornith_1_5.html (Aug. 2026) links to the HF collection ornith-ai/ornith-15. The HF org is NOT verified: isVerified=false, team plan, 10 members, 36 models, 4172 followers (https://huggingface.co/api/organizations/ornith-ai/overview). The vendor site and the HF org are consistent with each other, but the lab's people and its affiliation are not disclosed anywhere I could find.",
+  "source_url": "https://ornith.ai/ornith_1_5.html",
+  "support": "source-backed"
+ },
+ "release_date": {
+  "value": "HF createdAt 2026-08-18T06:20:12Z (main repo); the NVFP4 repo was created 2026-08-26 and the GGUF repo 2026-08-19. The Ollama changelog says 'Release Ornith-1.5-397B, Ornith-1.5-35B-A3B, Ornith-1.5-9B (Aug 19, 2026)', and the vendor blog is dated Aug. 2026. This is inside the 2025-11-15..2026-11-15 window.",
+  "source_url": "https://huggingface.co/api/models/ornith-ai/Ornith-1.5-9B",
+  "support": "direct-statement"
+ },
+ "within_last_12_months": true,
+ "license": {
+  "value": "The card front matter and the API tag both say 'license: mit' (license:mit), with license_link https://huggingface.co/ornith-ai/Ornith-1.5-9B/blob/main/LICENSE. That LICENSE file does not exist: it returns HTTP 404 'Entry not found', and the repo has no LICENSE file in its siblings. The card names no restrictions. The base is Qwen3.5-9B (qwen3_5 architecture). The card also mentions Gemma 4 lineage for the family, which could carry Gemma terms, but this was not verified for the 9B.",
+  "source_url": "https://huggingface.co/ornith-ai/Ornith-1.5-9B/raw/main/README.md",
+  "support": "contested"
+ },
+ "params": {
+  "value": "Dense model, about 9B. The API safetensors total is 9,653,104,368 BF16 params, and every parameter is active on every token. That total includes a vision tower of about 0.456B (0.849 GiB BF16) and one MTP layer of about 0.243B (0.453 GiB). Both figures come from the NVFP4 safetensors header, which leaves about 8.95B for the language model. The card says 'a 9B dense model'.",
+  "source_url": "https://huggingface.co/api/models/ornith-ai/Ornith-1.5-9B?blobs=true",
+  "support": "source-backed"
+ },
+ "architecture": {
+  "value": "Qwen3_5ForConditionalGeneration (model_type qwen3_5). It is a hybrid of Gated DeltaNet linear attention and full attention: 32 layers with full_attention_interval 4, so 24 linear_attention layers and 8 full_attention layers. Full attention uses 16 query heads, 4 KV heads, head_dim 256, an output gate and partial rotary 0.25 (mrope), with rope_theta 1e7. The GDN layers have 16 key heads and 32 value heads, head dims of 128, conv kernel 4 and an fp32 SSM state. Other values: hidden 4096, intermediate 12288, vocab 248320, untied embeddings, 1 MTP layer, and a 27-layer ViT vision tower.",
+  "source_url": "https://huggingface.co/ornith-ai/Ornith-1.5-9B/raw/main/config.json",
+  "support": "direct-statement"
+ },
+ "context_length": {
+  "value": "Native 262,144 (max_position_embeddings; the GGUF metadata has context_length 262144). The card says YaRN factor 4.0 extends it to about 1M, through --hf-overrides plus VLLM_ALLOW_LONG_MAX_MODEL_LEN=1. It warns that static YaRN hurts quality on short inputs.",
+  "source_url": "https://huggingface.co/ornith-ai/Ornith-1.5-9B/raw/main/config.json",
+  "support": "direct-statement"
+ },
+ "modalities": {
+  "value": "Input is text, image and video: config.json has vision_config, and the repo includes video_preprocessor_config.json. Output is text. Ollama lists the input as 'Text, Image'. A text-only path exists: vLLM v0.33.0 has --language-model-only (arg_utils.py line 1497), and llama.cpp and Ollama simply leave out the mmproj (0.92 GB). No separate text-only checkpoint is published.",
+  "source_url": "https://huggingface.co/ornith-ai/Ornith-1.5-9B/raw/main/config.json",
+  "support": "direct-statement"
+ },
+ "thinking": {
+  "mode": "toggle",
+  "how_to_toggle": "Thinking is on by default: the chat_template generation prompt opens '<think>\\n'. With enable_thinking=false the template emits an empty '<think>\\n\\n</think>\\n\\n' (chat_template.jinja lines 145-148). vLLM: send \"chat_template_kwargs\": {\"enable_thinking\": false} per request, and serve with --reasoning-parser qwen3 (registered in v0.33.0 vllm/reasoning/__init__.py as Qwen3ParserReasoningAdapter). llama.cpp: send \"chat_template_kwargs\": {\"enable_thinking\": false} or \"reasoning_effort\": \"none\" per request, or use --reasoning off server-wide (tools/server/README.md at b12418). Ollama: send \"think\": false on /api/chat, or \"reasoning_effort\": \"none\" on /v1 (docs/api/openai-compatibility.mdx at v0.40.16). The template also renders reasoning_content for every assistant turn in the history.",
+  "source_url": "https://huggingface.co/ornith-ai/Ornith-1.5-9B/raw/main/chat_template.jinja",
+  "support": "direct-statement"
+ },
+ "tool_calling": {
+  "supported": "yes",
+  "format": "Qwen3-Coder XML: <tool_call>\\n<function=NAME>\\n<parameter=ARG>\\nvalue\\n</parameter>\\n</function>\\n</tool_call>. Tools are rendered as JSON lines inside <tools></tools> in the system turn.",
+  "evidence": "The chat_template.jinja (lines 45-53) renders the tools list and the XML call format, and renders history tool_calls and tool responses (<tool_response>). The card's vLLM command uses --enable-auto-tool-choice --tool-call-parser qwen3_xml --reasoning-parser qwen3, and its SGLang command uses --tool-call-parser qwen3_coder. In vLLM v0.33.0 (vllm/tool_parsers/__init__.py), 'qwen3_xml' and 'qwen3_coder' both map to the same qwen3_engine_tool_parser.Qwen3EngineToolParser, so the choice makes no difference in v0.33.0. llama.cpp b12418 common/chat.cpp:1420-1427 selects its Qwen3-Coder handler for templates that contain <tool_call>, <function= and <parameter=, which this template does. The card has an OpenCode provider example, and Ollama shows a 'tools' badge.",
+  "source_url": "https://huggingface.co/ornith-ai/Ornith-1.5-9B/raw/main/README.md",
+  "support": "source-backed"
+ },
+ "checkpoints": [
+  {
+   "repo": "ornith-ai/Ornith-1.5-9B",
+   "format": "safetensors BF16 (4 shards)",
+   "size_gb": 19.31,
+   "official": true,
+   "publisher": "ornith-ai",
+   "source_url": "https://huggingface.co/api/models/ornith-ai/Ornith-1.5-9B?blobs=true"
+  },
+  {
+   "repo": "ornith-ai/Ornith-1.5-9B-NVFP4",
+   "format": "ModelOpt 0.45.0 MIXED_PRECISION: MLP and lm_head W4A16_NVFP4 (group 16); all attention/GDN projections FP8 per-tensor W8A8; embeddings, vision and MTP BF16; kv_cache_quant_algo FP8. One model.safetensors file",
+   "size_gb": 8.82,
+   "official": true,
+   "publisher": "ornith-ai",
+   "source_url": "https://huggingface.co/api/models/ornith-ai/Ornith-1.5-9B-NVFP4?blobs=true"
+  },
+  {
+   "repo": "ornith-ai/Ornith-1.5-9B-GGUF",
+   "format": "GGUF arch qwen35: Q4_K_M 5.78 / Q5_K_M 6.64 / Q6_K 7.56 / Q8_0 9.79 / BF16 18.41 GB, plus mmproj BF16 0.92 GB",
+   "size_gb": 9.79,
+   "official": true,
+   "publisher": "ornith-ai",
+   "source_url": "https://huggingface.co/api/models/ornith-ai/Ornith-1.5-9B-GGUF?blobs=true"
+  },
+  {
+   "repo": "ornith-ai/Ornith-1.5-9B-DFlash",
+   "format": "DFlash speculative draft model (not verified for vLLM v0.33.0)",
+   "official": true,
+   "publisher": "ornith-ai",
+   "source_url": "https://huggingface.co/api/models?author=ornith-ai&limit=100"
+  },
+  {
+   "repo": "ornith-ai/Ornith-1.5-9B-MLX / -MLX-4bit / -MLX-6bit / -MLX-8bit",
+   "format": "MLX (Apple only, not relevant here)",
+   "official": true,
+   "publisher": "ornith-ai",
+   "source_url": "https://huggingface.co/api/models?author=ornith-ai&limit=100"
+  },
+  {
+   "repo": "bartowski/Ornith-1.5-9B-GGUF",
+   "format": "GGUF imatrix IQ2_M 3.77 to Q8_0 9.55 GB (Q4_K_M 5.91, Q5_K_M 6.85, Q6_K 7.70, Q6_K_L 8.19), bf16 17.92, mmproj 0.92",
+   "size_gb": 9.55,
+   "official": false,
+   "publisher": "bartowski",
+   "source_url": "https://huggingface.co/api/models/bartowski/Ornith-1.5-9B-GGUF?blobs=true"
+  },
+  {
+   "repo": "protoLabsAI/Ornith-1.5-9B-NVFP4",
+   "format": "Community NVFP4 W4A4 for sm120 with a distilled MTP head; vision BF16",
+   "size_gb": 11.69,
+   "official": false,
+   "publisher": "protoLabsAI",
+   "source_url": "https://huggingface.co/protoLabsAI/Ornith-1.5-9B-NVFP4"
+  },
+  {
+   "repo": "cyankiwi/Ornith-1.5-9B-AWQ-INT4",
+   "format": "AWQ INT4 (compressed-tensors)",
+   "size_gb": 8.99,
+   "official": false,
+   "publisher": "cyankiwi",
+   "source_url": "https://huggingface.co/api/models/cyankiwi/Ornith-1.5-9B-AWQ-INT4?blobs=true"
+  },
+  {
+   "repo": "cyankiwi/Ornith-1.5-9B-AWQ-FP8",
+   "format": "FP8",
+   "size_gb": 11.91,
+   "official": false,
+   "publisher": "cyankiwi",
+   "source_url": "https://huggingface.co/api/models/cyankiwi/Ornith-1.5-9B-AWQ-FP8?blobs=true"
+  }
+ ],
+ "vllm": {
+  "arch_supported": "Yes. Qwen3_5ForConditionalGeneration (line 617), Qwen3_5ForCausalLM and Qwen3_5MTP are all in vllm/model_executor/models/registry.py at tag v0.33.0. ModelOpt MIXED_PRECISION with W4A16_NVFP4 and FP8 layers is handled by ModelOptMixedPrecisionConfig (modelopt.py:1574, min capability 75). The same modelopt_mixed format loads for the sister model Ornith-1.5-35B-A3B-NVFP4 on sm_120 according to vLLM issue #54331.",
+  "min_version": "The card says vLLM >= 0.19.1. The study target, v0.33.0, contains the architecture and both parsers.",
+  "best_checkpoint": "ornith-ai/Ornith-1.5-9B-NVFP4 with --language-model-only",
+  "weights_gib": 6.91,
+  "kv_bytes_per_token_bf16": 32768,
+  "kv_math": "Budget: 16303 MiB x 0.92 = 14999 MiB = 14.647 GiB, minus the 1.2 GiB reserve = 13.447 GiB. NVFP4 checkpoint per the safetensors header: 8.212 GiB total = MLP 2.531 + embed 1.895 + GDN projections 1.513 + vision 0.849 + lm_head 0.533 + MTP 0.453 + self_attn 0.438. MTP loads only with speculative decoding, so the weights are 7.759 GiB with vision and 6.910 GiB with --language-model-only. KV per token: 2 x 8 full-attention layers x 4 KV heads x 256 x 2 bytes = 32,768 B (32 KiB) in BF16, 16 KiB in FP8. GDN state per sequence: 24 layers x (SSM 32 x 128 x 128 x 4 B fp32 = 2 MiB + conv 8192 x 3 x 2 B = 48 KiB) = about 49 MiB, a fixed cost. With --language-model-only the pool is 13.447 - 6.910 = 6.537 GiB, minus about 0.05 GiB GDN state = about 6.49 GiB. That gives about 212,600 tokens with BF16 KV, and about 425,000 tokens with FP8 KV, capped at 262,144. With vision loaded the pool is 5.688 GiB, about 184,700 tokens with BF16 KV and 262,144 (capped) with FP8. The checkpoint declares FP8 KV in config.json, so 'auto' probably selects FP8 already (inferred); pass --kv-cache-dtype fp8 explicitly. At 262,144 tokens with FP8 KV, one sequence uses 4.0 GiB of the 6.5 GiB pool, which leaves room for OpenCode's small parallel requests.",
+  "est_max_context_tokens": 262144,
+  "fits": "yes",
+  "quant_on_sm120": "Not the FlashInfer NVFP4 path. The MLP and lm_head layers are W4A16_NVFP4 (weight-only), and on cc 120 init_nvfp4_linear_kernel (vllm/model_executor/kernels/linear/__init__.py:1191-1250, v0.33.0) forces MarlinNvFp4LinearKernel: FlashInfer CuTe-DSL is used only on SM100/103, and Humming is preferred only on SM90. The FP8 per-tensor attention/GDN layers go to FlashInferFP8ScaledMMLinearKernel, whose is_supported only requires cc>=100, then fall back to Cutlass FP8. The reported first-start JIT that used about 52 GiB host RAM (PR #66864, open) is FlashInferCutlassNvFp4LinearKernel's fp4_gemm_cutlass_sm120 build for W4A4 checkpoints, so this W4A16 checkpoint should not trigger it (inferred from source, not measured). b12x kernels are not on the default path for this checkpoint. Attention runs on FlashAttention 2 and the GDN layers on the FLA Triton kernels.",
+  "tool_call_parser": "qwen3_coder (the card says qwen3_xml; in v0.33.0 both names map to Qwen3EngineToolParser)",
+  "reasoning_parser": "qwen3",
+  "serve_command": "docker run --rm --gpus all --ipc=host -p 8000:8000 -v $HOME/.cache/huggingface:/root/.cache/huggingface vllm/vllm-openai:v0.33.0 ornith-ai/Ornith-1.5-9B-NVFP4 --served-model-name ornith-1.5-9b --language-model-only --max-model-len 262144 --kv-cache-dtype fp8 --gpu-memory-utilization 0.92 --max-num-seqs 4 --enable-prefix-caching --enable-auto-tool-choice --tool-call-parser qwen3_coder --reasoning-parser qwen3 --override-generation-config '{\"temperature\":0.6,\"top_p\":0.95,\"top_k\":20,\"min_p\":0.0}'  (The card adds --trust-remote-code, but the repo has no custom code. The NVIDIA Container Toolkit must be installed first.)",
+  "known_issues": "vLLM #54331 (open, updated 2026-10-19): on sm_120 the sister model Ornith-1.5-35B-A3B-NVFP4 (modelopt_mixed, hybrid GDN) dies after 7-8 minutes of sustained high-concurrency load with CUDA graphs on, in 0.26.0-0.28.0, and is clean on 0.24.0. A maintainer could not reproduce it with BF16 KV. Status in v0.33.0 is unknown, and it may matter with FP8 KV. #34948 (open): Qwen3.5 GDN kernel illegal memory access. #61003 (open): DFlash draft fp8 ignored_layers bug, which matters only if the DFlash draft is used. #65139 (open): b12x attention plus MTP crash on v0.33.0 sm_120, which matters only if b12x attention or MTP is enabled. The card's benchmark notes say Harbor had to be modified to 'align with vLLM's reasoning_content key'. v0.33.0 returns 'reasoning', and the template reads message.reasoning_content, so prior-turn reasoning may be dropped unless the client sends it back (inferred). No vLLM recipe exists for Ornith (searched vllm-project/recipes). No Ornith-specific tool-calling issue was found.",
+  "sources": [
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/models/registry.py",
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/tool_parsers/__init__.py",
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/reasoning/__init__.py",
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/layers/quantization/modelopt.py",
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/kernels/linear/__init__.py",
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/layers/quantization/utils/humming/priority.py",
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/kernels/linear/scaled_mm/flashinfer.py",
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/engine/arg_utils.py",
+   "https://huggingface.co/ornith-ai/Ornith-1.5-9B-NVFP4/raw/main/hf_quant_config.json",
+   "https://huggingface.co/ornith-ai/Ornith-1.5-9B-NVFP4/resolve/main/model.safetensors (header bytes 8-144303)",
+   "https://github.com/vllm-project/vllm/pull/66864",
+   "https://github.com/vllm-project/vllm/issues/54331",
+   "https://github.com/vllm-project/vllm/issues/34948",
+   "https://github.com/vllm-project/vllm/issues/65139"
+  ]
+ },
+ "llamacpp": {
+  "arch_supported": "Yes. The arch is qwen35: LLM_ARCH_QWEN35 is in src/llama-arch.cpp and src/models/qwen35.cpp at b12418, and also at the v1.0.0 release (2026-11-13). The b* builds are marked prerelease on GitHub.",
+  "gguf_repo": "ornith-ai/Ornith-1.5-9B-GGUF",
+  "quant": "Q8_0 (Q6_K if more headroom is needed)",
+  "file_gib": 9.114,
+  "est_vram_gib": 14.1,
+  "est_ram_gib": 1,
+  "est_context_tokens": 262144,
+  "offload_plan": "Everything stays on the GPU (-ngl 99); there are no MoE experts. KV per token = 2 x 8 attention layers x 4 x 256 x 2 B = 32 KiB in f16, about 17 KiB in q8_0 (counted as half, 16 KiB, below). Q8_0 with q8_0 KV at 262,144: 9.11 + 4.0 + about 0.05 recurrent state + about 1.0 compute buffers (vocab 248k logits) = about 14.2 GiB of the roughly 16.1 GiB free, so it fits but is tight. Q6_K (7.04 GiB) with q8_0 KV at 262,144 needs about 12.1 GiB; Q6_K with f16 KV at 131,072 needs about 12.1 GiB. Leave out the mmproj (0.86 GiB) for coding.",
+  "server_command": "docker run --rm --gpus all -p 8080:8080 -v $HOME/.cache/llama.cpp:/root/.cache/llama.cpp ghcr.io/ggml-org/llama.cpp:server-cuda13 -hf ornith-ai/Ornith-1.5-9B-GGUF:Q8_0 --host 0.0.0.0 --port 8080 -ngl 99 -c 262144 -np 1 -fa on -ctk q8_0 -ctv q8_0 --jinja --temp 0.6 --top-p 0.95 --top-k 20 --min-p 0",
+  "tool_calling_note": "With --jinja (on by default), the embedded GGUF template contains '<tool_call>\\n<function=' and '<parameter=', which matches the Qwen3-Coder XML handler in common/chat.cpp:1420-1427 (b12418). The embedded template differs slightly from the repo's chat_template.jinja: it carries a '{#- Unsloth fixes #}' comment and uses 'arguments is mapping'. Not tested end to end with OpenCode.",
+  "sources": [
+   "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12418/src/llama-arch.cpp",
+   "https://raw.githubusercontent.com/ggml-org/llama.cpp/v1.0.0/src/llama-arch.cpp",
+   "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12418/common/chat.cpp",
+   "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12418/tools/server/README.md",
+   "https://huggingface.co/api/models/ornith-ai/Ornith-1.5-9B-GGUF?blobs=true"
+  ]
+ },
+ "ollama": {
+  "tag": "ornith-1.5:9b",
+  "size_gb": 6.6,
+  "context": "256K window. Ollama defaults to 4k on GPUs under 24 GiB, so set OLLAMA_CONTEXT_LENGTH (for example 131072) together with OLLAMA_FLASH_ATTENTION=1 and OLLAMA_KV_CACHE_TYPE=q8_0.",
+  "capabilities": "vision, tools, thinking. The registry manifest shows Q4_K_M (file_type Q4_K_M, model_family qwen35): a model layer of 5.63 GB plus a projector of 0.92 GB. Other tags are 35b (23 GB), 122b, 122b-nvfp4, 122b-q4_K_M and 397b. The page shows 478.2K downloads.",
+  "source_url": "https://ollama.com/library/ornith-1.5/tags"
+ },
+ "benchmarks": [
+  {
+   "name": "SWE-bench Verified",
+   "score": "70.6 (Ornith-1.0-9B 69.4, Qwen3.5-9B 53.2, Qwen3.6-35B-A3B 73.4, Gemma-4-31B 52)",
+   "setting": "OpenHands harness, temp 1.0, top_p 0.95, 256k context, git history removed, no network; mean of 5 runs",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/ornith-ai/Ornith-1.5-9B/raw/main/README.md"
+  },
+  {
+   "name": "SWE-bench Pro",
+   "score": "47.5",
+   "setting": "OpenHands, same settings",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/ornith-ai/Ornith-1.5-9B/raw/main/README.md"
+  },
+  {
+   "name": "SWE-bench Multilingual",
+   "score": "54.4",
+   "setting": "OpenHands",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/ornith-ai/Ornith-1.5-9B/raw/main/README.md"
+  },
+  {
+   "name": "Terminal-Bench 2.1 (Terminus-2)",
+   "score": "46.2 (Qwen3.5-9B 21.3)",
+   "setting": "Harbor/Terminus-2, parser=json, temp 1.0, 128K context, 5 runs, modified Qwen chat template",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/ornith-ai/Ornith-1.5-9B/raw/main/README.md"
+  },
+  {
+   "name": "Terminal-Bench 2.1 (Claude Code harness)",
+   "score": "47.0",
+   "setting": "Claude Code 2.1.126, temp 1.0, max_new_tokens 131072, 5 runs",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/ornith-ai/Ornith-1.5-9B/raw/main/README.md"
+  },
+  {
+   "name": "MCP-Atlas",
+   "score": "54.2",
+   "setting": "thinking mode, 500-task public subset, judge model Claude 4.8 Opus",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/ornith-ai/Ornith-1.5-9B/raw/main/README.md"
+  },
+  {
+   "name": "Toolathlon-Verified",
+   "score": "41.2",
+   "setting": "official eval service, 128K max tokens",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/ornith-ai/Ornith-1.5-9B/raw/main/README.md"
+  },
+  {
+   "name": "NL2Repo",
+   "score": "32.4",
+   "setting": "temp 1.0, 400K context, 48K output",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/ornith-ai/Ornith-1.5-9B/raw/main/README.md"
+  },
+  {
+   "name": "ClawEval",
+   "score": "66.5",
+   "setting": "temp 0.6, 256K context",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/ornith-ai/Ornith-1.5-9B/raw/main/README.md"
+  },
+  {
+   "name": "Independent results",
+   "score": "None found. A web search found no Artificial Analysis entry and no independent SWE-bench or Terminal-Bench run; the BenchLM aggregator only repeats the vendor's 70.6.",
+   "setting": "search on 2026-11-15",
+   "self_reported": false,
+   "source_url": "https://www.benchlm.ai/models/ornith-1-5-9b"
+  }
+ ],
+ "speed_notes": "Inferred bandwidth bound for vLLM NVFP4 decode: the bytes read per token are the GEMM weights only, excluding the embedding lookup. That is MLP 2.531 + GDN 1.513 + attention 0.438 + lm_head 0.533 = 5.02 GiB, or 5.39 GB. At 896 GB/s the ceiling is about 166 tok/s at short context. At 100k context the FP8 KV adds about 1.6 GB per token, for a ceiling of about 128 tok/s (with BF16 KV, about 3.3 GB and about 103 tok/s). The GDN state of about 49 MiB per token step is negligible. A realistic expectation is about 80-120 tok/s single stream (inferred). llama.cpp Q8_0 reads about 9 GB per token, a ceiling of about 100 tok/s; Q6_K's ceiling is about 125 tok/s. Measured reference, not this GPU: protoLabsAI's community W4A4 NVFP4 build on an RTX PRO 6000 Blackwell (1792 GB/s, shared box) reports 151 t/s decode with MTP off and 192.5 t/s with MTP K=1 at acceptance 0.80 (https://huggingface.co/protoLabsAI/Ornith-1.5-9B-NVFP4). A community GGUF page reports 94.3 t/s generation in BF16 on an RTX 5090 with llama.cpp (https://huggingface.co/kizzlah/Ornith-1.5-9B-GGUF, lead only, not verified). The laptop's 140 W power limit may lower prefill throughput.",
+ "opencode_fit": {
+  "verdict": "good",
+  "recommended_runtime": "vLLM v0.33.0 (vllm/vllm-openai:v0.33.0); llama.cpp server-cuda13 as the alternative",
+  "recommended_checkpoint": "ornith-ai/Ornith-1.5-9B-NVFP4 with --language-model-only (llama.cpp: ornith-ai/Ornith-1.5-9B-GGUF Q8_0, or Q6_K for headroom)",
+  "recommended_context": "262144 with FP8 KV in vLLM (about 4.0 GiB of a 6.5 GiB pool); 131072 if BF16 KV is preferred",
+  "caveats": "(1) Every benchmark is self-reported by an unverified HF org (Ornith AI, formerly deepreinforce-ai) that names no team members. SWE-bench Verified 70.6 for a 9B model is extraordinary, and no independent result exists. (2) The LICENSE file linked from the card returns 404; only the 'mit' tag exists. (3) The model thinks by default, which uses tokens; for quick edits disable it per request with chat_template_kwargs enable_thinking=false. (4) The template reads reasoning_content from history, while vLLM v0.33.0 emits 'reasoning', so interleaved reasoning may be dropped across OpenCode turns. (5) OpenCode v2.3.0 auto-discovers vLLM models with tools disabled, so declare tool capability explicitly in the provider config (see also OpenCode issue #60202). (6) Open vLLM issue #54331: the sister 35B modelopt_mixed NVFP4 crashes on sm_120 under sustained concurrent load with CUDA graphs. If that shows up, try --enforce-eager or the GGUF route. (7) The NVIDIA Container Toolkit must be installed before any GPU container runs."
+ },
+ "gaps": [
+  "No independent benchmark (Artificial Analysis, official SWE-bench or Terminal-Bench leaderboards) exists for Ornith-1.5-9B; the vendor's 70.6 SWE-bench Verified is unverified.",
+  "The license text is missing (the license_link returns 404), and I did not establish whether Gemma 4 terms apply to any Ornith-1.5 component.",
+  "I did not establish the people behind Ornith AI / DeepReinforce or their corporate affiliation; the HF org is unverified.",
+  "I did not run the NVFP4 checkpoint on sm_120 in v0.33.0. The Marlin W4A16 path and the absence of the FlashInfer NVFP4 JIT are inferred from source. Whether FlashInferFP8ScaledMMLinearKernel triggers any JIT compile on first start is unknown.",
+  "I did not establish whether issue #54331 (sm_120 modelopt_mixed crash under load) is fixed in v0.33.0 or affects the 9B model.",
+  "vLLM's real GDN state allocation and hybrid page-size inflation may shift the KV token estimates by a few percent; I did not measure them.",
+  "I did not verify whether vLLM v0.33.0's kv_cache_dtype=auto picks FP8 from this checkpoint's config.json.",
+  "The official Ornith-1.5-9B-DFlash draft has not been verified with vLLM v0.33.0 speculative decoding.",
+  "OpenCode end-to-end tool calling with this model has not been tested; no measured tok/s exists on an RTX 5080 Laptop."
+ ]
+}

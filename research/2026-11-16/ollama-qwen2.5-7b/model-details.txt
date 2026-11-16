@@ -1,0 +1,1 @@
+details: {"parent_model": "", "format": "gguf", "family": "qwen2", "families": ["qwen2"], "parameter_size": "7.6B", "quantization_level": "Q4_K_M"} | capabilities: ['completion', 'tools']

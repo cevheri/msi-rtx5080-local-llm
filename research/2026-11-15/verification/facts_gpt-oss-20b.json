@@ -1,0 +1,161 @@
+{
+ "verdicts": [
+  {
+   "claim": "Repo openai/gpt-oss-20b is OpenAI's own official upload, not a re-upload; HF org 'openai' isVerified=true",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/organizations/openai/overview"
+  },
+  {
+   "claim": "HF createdAt 2025-08-04T22:33:29Z, lastModified 2025-08-26; arXiv card dated August 5, 2025; outside the 2025-11-15..2026-11-15 window",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/openai/gpt-oss-20b"
+  },
+  {
+   "claim": "No newer gpt-oss chat checkpoint in the openai org; only gpt-oss-safeguard-20b/120b (2025-09-18) are later gpt-oss repos",
+   "verdict": "confirmed",
+   "correction": "Later non-gpt-oss OpenAI repos exist (circuit-sparsity 2025-12-11, privacy-filter 2026-04-17), but neither is a general chat model, so the conclusion holds.",
+   "evidence_url": "https://huggingface.co/api/models?author=openai&sort=createdAt&direction=-1"
+  },
+  {
+   "claim": "License apache-2.0 plus a 200-byte USAGE_POLICY; no field-of-use restriction in the license",
+   "verdict": "confirmed",
+   "correction": "USAGE_POLICY text only asks users to comply with applicable law.",
+   "evidence_url": "https://huggingface.co/openai/gpt-oss-20b/raw/main/README.md"
+  },
+  {
+   "claim": "21B total / 3.6B active; HF safetensors total 20,914,757,184 (BF16 1,804,459,584 + U8 19,110,297,600)",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/openai/gpt-oss-20b?blobs=true"
+  },
+  {
+   "claim": "Architecture: GptOssForCausalLM, 24 layers, hidden 2880, 32 experts top-4, intermediate 2880, swiglu_limit 7.0, 64 Q heads, 8 KV heads, head_dim 64, alternating sliding(128)/full, rope_theta 150000, YaRN factor 32 over 4096, mxfp4 with attn/router/embed/lm_head unquantized, vocab 201088",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/openai/gpt-oss-20b/raw/main/config.json"
+  },
+  {
+   "claim": "Context 131072 (max_position_embeddings, YaRN); arXiv card says 131,072",
+   "verdict": "confirmed",
+   "evidence_url": "https://arxiv.org/html/2508.10925v1"
+  },
+  {
+   "claim": "Text-only modality ('text-only models' in arXiv card)",
+   "verdict": "confirmed",
+   "evidence_url": "https://arxiv.org/html/2508.10925v1"
+  },
+  {
+   "claim": "Checkpoint: 3 shards totalling 13,761,316,904 B (12.82 GiB); plus original/model.safetensors and metal/model.bin",
+   "verdict": "confirmed",
+   "correction": "Shard files are named model-0000{0,1,2}-of-00002.safetensors (3 files despite the 'of-00002' name): 4,792,272,488 + 4,798,702,184 + 4,170,342,232 B.",
+   "evidence_url": "https://huggingface.co/api/models/openai/gpt-oss-20b?blobs=true"
+  },
+  {
+   "claim": "Thinking always on; template renders 'Reasoning: ' + reasoning_effort defaulting to medium (chat_template.jinja lines 203-206); card says set 'Reasoning: high' in system prompt",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/openai/gpt-oss-20b/raw/main/chat_template.jinja"
+  },
+  {
+   "claim": "vLLM v0.33.0 Harmony path accepts only low/medium/high (REASONING_EFFORT dict) and raises VLLMValidationError otherwise",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/entrypoints/openai/parser/harmony_utils.py"
+  },
+  {
+   "claim": "--reasoning-effort-map exists in v0.33.0 and the example map {none,minimal,xhigh,max -> low/high} is valid and applies on the gpt-oss path",
+   "verdict": "confirmed",
+   "correction": "Keys are validated against ReasoningEffort Literal['none','minimal','low','medium','high','xhigh','max'] (vllm/renderers/params.py:27), so all four keys are accepted; online_renderer._make_request_with_harmony calls map_reasoning_effort(request.reasoning_effort, self.reasoning_effort_map) before the Harmony check.",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/renderers/online_renderer.py"
+  },
+  {
+   "claim": "Harmony routing via 'use_harmony = model_type == gpt_oss' in chat_completion/serving.py",
+   "verdict": "confirmed",
+   "correction": "Minor: in chat_completion/serving.py:172 it is is_harmony=... == 'gpt_oss'; the variable self.use_harmony lives in vllm/renderers/online_renderer.py:186.",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/entrypoints/openai/chat_completion/serving.py"
+  },
+  {
+   "claim": "Tool calling supported; template renders '# Tools' + render_tool_namespace('functions', tools) (lines 251-252) and 'Calls to these tools must go to the commentary channel' (line 221); card lists native function calling",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/openai/gpt-oss-20b/raw/main/chat_template.jinja"
+  },
+  {
+   "claim": "vLLM v0.33.0: registry line 128 GptOssForCausalLM; tool parser 'openai' -> GptOssToolParser; reasoning parser 'openai_gptoss' -> GptOssReasoningParser",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/models/registry.py"
+  },
+  {
+   "claim": "MXFP4 oracle on capability family 120 moves TRITON after BATCHED_MARLIN with the quoted 'Consumer Blackwell ... 99KB shared memory' comment",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/layers/fused_moe/oracle/mxfp4.py"
+  },
+  {
+   "claim": "vLLM issues #65770 (open, 2026-11-05, labels tool-calling+gpt-oss), #44216, #58825, #46464 exist and are open with the described titles",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/vllm-project/vllm/issues/65770"
+  },
+  {
+   "claim": "SWE-bench Verified 60.7 high / 53.2 medium / 37.4 low (OpenAI self-reported)",
+   "verdict": "confirmed",
+   "evidence_url": "https://arxiv.org/html/2508.10925v1"
+  },
+  {
+   "claim": "SWE-bench setting: OpenAI internal harness, fixed n=477 subset, pass@1 averaged over 4 tries, Codex-CLI-like exec tool",
+   "verdict": "uncertain",
+   "correction": "The Codex-CLI-like exec tool text is in section 2.6 (main evals). The 'n=477' and '4 tries per instance' text is in the Preparedness section 5.2.3.1 and is stated for the o3/o4-mini internal scaffold. The card does not explicitly tie these settings to the Table 3 numbers, so presenting them as the setting for 60.7 is a conflation.",
+   "evidence_url": "https://arxiv.org/html/2508.10925v1"
+  },
+  {
+   "claim": "NVIDIA Nemotron 3.5 Lightning card: gpt-oss-20b SWE-bench Verified 52.44, SWE-bench Multilingual 41.93, Terminal-Bench 2.1 15.17, PinchBench 57.20; Qwen3.6-35B-A3B TB2.1 44.38, Gemma 4 26B-A4B 37.22",
+   "verdict": "confirmed",
+   "correction": "Card says SWE-Bench and Terminal-Bench ran on NeMo Evaluator and most others on NeMo Gym; PinchBench harness is not named per row, so 'NeMo Gym' for PinchBench is inferred.",
+   "evidence_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/raw/main/README.md"
+  },
+  {
+   "claim": "Z.ai GLM-4.7-Flash card: gpt-oss-20b SWE-bench Verified 34.0, tau2-Bench 47.7, LiveCodeBench v6 61.0 (marked not self-reported)",
+   "verdict": "confirmed",
+   "correction": "Values match the table. However, the same GPT-OSS-20B column lists AIME25 91.7, GPQA 71.5, HLE 10.9, which are exactly OpenAI's self-reported high-effort numbers, so Z.ai at least partly copied vendor figures; provenance of 61.0 and 47.7 is unstated, so 'self_reported: false' is not established for those rows (treat as unknown provenance).",
+   "evidence_url": "https://huggingface.co/zai-org/GLM-4.7-Flash/raw/main/README.md"
+  },
+  {
+   "claim": "Tau-Bench Retail/Airline 54.8/38.0 high, 47.3/42.6 medium, 35.0/32.0 low; tools given in developer message",
+   "verdict": "confirmed",
+   "evidence_url": "https://arxiv.org/html/2508.10925v1"
+  },
+  {
+   "claim": "Aider Polyglot 34.2 high / 26.6 medium / 16.6 low (Table 3)",
+   "verdict": "confirmed",
+   "evidence_url": "https://arxiv.org/html/2508.10925v1"
+  },
+  {
+   "claim": "Codeforces Elo 2516 with tools / 2230 no tools (high), held-out split",
+   "verdict": "confirmed",
+   "evidence_url": "https://arxiv.org/html/2508.10925v1"
+  },
+  {
+   "claim": "llama.cpp guide RTX 5080 bench: tg128 204.85, pp2048 7477, pp32768 5531 at -ub 2048, build a094f381 (6210), 11.27 GiB, 20.91 B; RTX 5090 282 t/s; guide discussion created 2025-08-18; 'Always use the original MXFP4 model'",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/discussions/15396"
+  },
+  {
+   "claim": "llama.cpp latest build b12418 (2026-11-15)",
+   "verdict": "confirmed",
+   "correction": "b12418 exists (published 2026-11-15T15:53:48Z) but is flagged prerelease; newer builds b12419/b12420 appeared the same day, and the GitHub 'latest' (non-prerelease) release is llama.cpp v1.0.0 (2026-11-13). Pin by tag rather than calling b12418 'latest'.",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/releases/tag/v1.0.0"
+  },
+  {
+   "claim": "ggml-org/gpt-oss-20b-GGUF: gpt-oss-20b-MXFP4.gguf 12,109,566,624 B, eagle3 Q8_0 0.92 GB and BF16 1.72 GB drafts, updated 2026-11-12",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/ggml-org/gpt-oss-20b-GGUF?blobs=true"
+  },
+  {
+   "claim": "Ollama gpt-oss:20b digest f38aa0c53da5, 14GB, 128K context",
+   "verdict": "confirmed",
+   "evidence_url": "https://ollama.com/library/gpt-oss/tags"
+  },
+  {
+   "claim": "vLLM KV math: 0.631 GiB pool -> about 27.4k tokens BF16 at 0.92; 1.109 GiB -> 48.3k BF16 / 96.7k FP8 at 0.95",
+   "verdict": "confirmed",
+   "correction": "Arithmetic is slightly low: 0.631 GiB / 24,576 B = about 27.6k (BF16) and 55.1k (FP8); 1.109 GiB gives about 48.5k / 96.9k. Differences are rounding only.",
+   "evidence_url": "https://huggingface.co/openai/gpt-oss-20b/raw/main/config.json"
+  }
+ ],
+ "overall": "holds-with-corrections",
+ "summary": "I could not refute any identity or capability fact in the gpt-oss-20b record. I re-read the HF API, config.json, chat_template.jinja, README, the arXiv card 2508.10925v1, the Nemotron 3.5 Lightning and GLM-4.7-Flash cards, vLLM v0.33.0 source and the llama.cpp guide. All the following match their sources exactly: ownership (verified openai org), dates (createdAt 2025-08-04, outside the window), license, parameter counts, architecture, context, modalities, always-on reasoning with low/medium/high levels, the Harmony tool-call template, the vLLM parsers and validation, the MXFP4 Marlin ordering on sm_120, the cited issues, and every benchmark value (OpenAI 60.7/53.2/37.4, Tau, Aider, Codeforces; NVIDIA 52.44/41.93/15.17/57.20; Z.ai 34.0/47.7/61.0). I also confirmed that the --reasoning-effort-map keys are valid and that the map is applied on the Harmony path. Corrections: (1) The SWE-bench setting 'n=477, 4 tries' comes from the card's Preparedness section about the o3/o4-mini scaffold, not from the Table 3 eval description, so the setting is conflated. (2) The GLM-4.7-Flash column for gpt-oss-20b reuses OpenAI's self-reported AIME/GPQA/HLE values, so its 61.0 and 47.7 have unknown provenance rather than being independent. (3) llama.cpp b12418 is a prerelease build. Newer builds came out the same day, and the latest stable release is v1.0.0 (2026-11-13). (4) Minor: is_harmony vs use_harmony naming, and KV token counts rounded slightly low. Evidence files are in $SCRATCH/fc20/."
+}

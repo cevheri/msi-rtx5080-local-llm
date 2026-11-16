@@ -1,0 +1,55 @@
+{
+ "file": "$HOME/projects/llm/docs/opencode.md",
+ "checked_claims": 31,
+ "fixes": [
+  {
+   "what": "Moved the citation for the llama-server HTTP 400 `exceed_context_size_error` from the Unsloth OpenCode guide to the Unsloth Qwen3-Coder-Next page, and added that page to Sources.",
+   "why": "The OpenCode guide does not contain that error (checked with grep on the raw .md). The Qwen3-Coder-Next page quotes it word for word.",
+   "source": "https://unsloth.ai/docs/models/qwen3-coder-next"
+  },
+  {
+   "what": "Changed the Qwen3.8-27B row in the OpenRouter table from '19 of 23 endpoints serve 262144' to '18 of 23 endpoints serve 262144, one serves 65536'.",
+   "why": "The live endpoints API on 2026-11-15 returned 23 endpoints: 18 at 262144, 4 at 1M or more, and Cerebras at 65536. The openrouter review agrees.",
+   "source": "https://openrouter.ai/api/v1/models/qwen/qwen3.8-27b/endpoints"
+  },
+  {
+   "what": "Changed the date of the DGX Spark thinking measurement from 2026-09-07 to 2026-09-05.",
+   "why": "The runbook says 'Measured on 2026-09-05' for that table (runbook line 216). 2026-09-07 is the date for the other figures.",
+   "source": "user's DGX Spark runbook (read-only), lines 216-222"
+  },
+  {
+   "what": "Rewrote the Ollama row of the thinking table. Ollama /v1 maps `none` to `think: false` (openai.go). Under that mapping, a model that cannot turn thinking off, such as gpt-oss, falls back to its lowest level. The Ollama thinking docs are now cited for that behaviour and added to Sources.",
+   "why": "The old text said openai.go maps `none` to `low` for gpt-oss. openai.go v0.40.16 only maps `none` to false. The fallback to the lowest level is written in the Ollama thinking docs, not in openai.go.",
+   "source": "https://github.com/ollama/ollama/blob/v0.40.16/openai/openai.go ; https://docs.ollama.com/capabilities/thinking"
+  },
+  {
+   "what": "Added evidence labels to the Artificial Analysis Qwen3.8 TB2.1 numbers (49.1 and 67.4): full precision through cloud APIs, Terminus 2 harness, not a local quant and not OpenCode.",
+   "why": "Rule 7 requires a hardware, runtime and measurement label on third-party numbers.",
+   "source": "kb/reviews/artificialanalysis.json"
+  },
+  {
+   "what": "Gave the 'Qwen3.8 defaults to xhigh' claim a primary source: the chat template, which defaults to xhigh and raises an error on anything other than xhigh, medium or low. Also explained that llama.cpp handles `none` itself before the template runs, which is why the `none` effort variant works.",
+   "why": "The claim had no source. Because the template raises on any other value, a reader would otherwise expect `none` to break.",
+   "source": "https://huggingface.co/Qwen/Qwen3.8-27B/raw/main/chat_template.jinja ; llama.cpp b12418 server README line 1457"
+  },
+  {
+   "what": "The vLLM sentence now says tool calling needs `--enable-auto-tool-choice` plus the right `--tool-call-parser`, and that thinking models also need `--reasoning-parser`.",
+   "why": "The reasoning parser is not a requirement for tool calling. The old wording said it was.",
+   "source": "vllm/README.md parser table"
+  },
+  {
+   "what": "Added a label to the r/LocalLLaMA small-model claim: one author's 25-task text-to-SQL agent benchmark, single runs, mostly through OpenRouter.",
+   "why": "Rule 7 requires a label on third-party evidence. The details come from the reddit-small-local review.",
+   "source": "kb/reviews/reddit-small-local.json"
+  }
+ ],
+ "remaining_concerns": [
+  "Not verified: that the Ollama example config (gemma4:26b-a4b-it-qat at 65536 context, effort ['none','high']) fits in 16 GB once the 1.11 GiB projector is loaded. The tag sizes are confirmed, but KV headroom with the projector was not recalculated.",
+  "These conclusions come from reading the source and have not been run: the discovery override in providers.vllm, `tools: []` hitting vLLM, and the OpenRouter `provider` object reaching the request body. The document already labels each of them as untested.",
+  "These relative links point to documents that do not exist yet: docs/model-selection.md, vllm/models.md and llamacpp/models.md. All three are planned knowledge base documents.",
+  "Sentences that contain 'I re-validated' are written in the first person. That is acceptable under the rules, but the lead may want a neutral voice.",
+  "What I re-checked live on 2026-11-15:\n- All three JSON blocks validate with 0 errors against the schema copy, which is byte-identical to the live https://opencode.ai/config.json. A config with a V1 `npm` key is rejected.\n- The four issues and the two fix PRs are open. llama.cpp PR #26939 was merged on 2026-08-20 and is included in b12407.\n- The v2.3.0 release was published on 2026-11-13.\n- vLLM v0.33.0 protocol.py lines 980-991 match the document.\n- llama.cpp b12418 README lines 191, 221, 240, 242, 1384, 1457 and 1575 match.\n- The OpenCode docs match: the 200k/32k defaults, the 5-minute header timeout, the root model not keeping a variant, the plugin removal syntax, the compaction defaults and its warning, and the agents.title.model migration.\n- The OpenRouter contexts, the endpoints that lack tools, and the privacy, ZDR and provider-selection docs match.\n- `opencode --help` lists the `reload` command and `debug config`."
+ ],
+ "verdict": "ready",
+ "used_playwright": false
+}

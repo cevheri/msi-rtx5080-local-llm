@@ -1,0 +1,114 @@
+{
+ "verdicts": [
+  {
+   "claim": "Real vendor ownership: HF org 'Nanbeige' (fullname 'Nanbeige LLM Lab', team plan, isVerified false, 19 members). The default system prompt names BOSS Zhipin (Kanzhun) and the contact is nanbeige@kanzhun.com. It is not a re-upload.",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/organizations/Nanbeige/overview ; https://huggingface.co/Nanbeige/Nanbeige4.3-33B/raw/main/README.md ; https://huggingface.co/Nanbeige/Nanbeige4.3-33B/raw/main/tokenizer_config.json",
+   "correction": "Direct-statement. The org API returned fullname 'Nanbeige LLM Lab', plan team, isVerified false, numUsers 19, numModels 16. The org's line runs back to Nanbeige4-3B-Thinking-2510 (created 2025-10-22), so this is the vendor's own repo and not a re-upload. The BOSS Zhipin line (你是南北阁，一款由BOSS直聘自主研发并训练的专业大语言模型) appears only in the no-tools branch of the template. When tools are passed, the template injects a different Chinese tool-expert prompt instead."
+  },
+  {
+   "claim": "Dates: HF createdAt 2026-10-24T02:49:18Z, lastModified 2026-10-28T01:59:01Z, eval yaml dated 2026-10-25, AA releaseDate 2026-10-25, official FP8/INT8/INT4 created 2026-10-31.",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/Nanbeige/Nanbeige4.3-33B ; https://huggingface.co/Nanbeige/Nanbeige4.3-33B/raw/main/.eval_results/Nanbeige4.3-33B.yaml ; https://artificialanalysis.ai/models/nanbeige4-3-33b",
+   "correction": "Every value matches. Exact creation times: FP8 00:45:10Z, INT8 00:45:34Z and INT4 00:48:44Z, all on 2026-10-31. The Base repo was created 2026-10-24T02:46:52Z."
+  },
+  {
+   "claim": "License Apache-2.0 from card metadata, HF tag, GGUF general.license and AA; there is no LICENSE file.",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Nanbeige/Nanbeige4.3-33B/raw/main/README.md",
+   "correction": "Confirmed: card 'license: apache-2.0', tag license:apache-2.0, and raw/main/LICENSE returns HTTP 404. I parsed the GGUF headers myself: bartowski IQ2_M and mradermacher i1-IQ2_M both carry general.license=apache-2.0. AA lists 'Apache 2.0', openSourceCategorization 'permissive'."
+  },
+  {
+   "claim": "Dense, 33,118,977,024 BF16 parameters, all active (590.9M per block x 52 + 2.39B for the untied embedding and lm_head).",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/Nanbeige/Nanbeige4.3-33B?blobs=true",
+   "correction": "The HF safetensors total is exactly 33,118,977,024. My own sum from config.json gives the same count: 52 x (2x7168^2 + 2x7168x1024 + 3x7168x22016 + 2x7168) + 2x166912x7168 + 7168. Small fix to the checkpoint size: the 14 shards total 66,238,009,168 B, which is 61.69 GiB (record says 61.67). AA lists 33B parameters."
+  },
+  {
+   "claim": "Architecture: LlamaForCausalLM, 52 layers all full attention, hidden 7168, intermediate 22016, 56 Q heads, 8 KV heads, head_dim 128, rope_theta 1.2e8, rope_scaling null, vocab 166912, untied, BF16. Not the looped 4.2-3B arch. Base model Nanbeige4.3-33B-Base.",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Nanbeige/Nanbeige4.3-33B/raw/main/config.json",
+   "correction": "Raw config.json matches every value. Nanbeige4.2-3B's config shows NanbeigeForCausalLM, model_type nanbeige, num_loops 2, so the contrast holds. The GGUF headers agree: general.architecture=llama, block_count 52, head_count_kv 8, freq_base 1.2e8."
+  },
+  {
+   "claim": "Context 524,288 tokens (max_position_embeddings, card 512K, GGUF context_length). 64k KV costs 13.0 GiB f16, 6.91 GiB q8_0, 3.66 GiB q4_0.",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Nanbeige/Nanbeige4.3-33B/raw/main/config.json",
+   "correction": "Source-backed arithmetic: 2 x 52 x 8 x 128 x 2 B = 212,992 B/token, and x 65,536 = 13.0 GiB. q8_0 (8.5 bits) gives 6.91 GiB and q4_0 (4.5 bits) gives 3.66 GiB. The 512K is a vendor claim. The config has rope_scaling null with no YaRN, and no independent long-context test at 512K exists (AA lcr is null)."
+  },
+  {
+   "claim": "Modalities: text only. The template replaces image/video/audio parts with a reminder. Nanbeige4.3-33B-VLM is referenced by llama.cpp PR #31794 but is not on HF.",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Nanbeige/Nanbeige4.3-33B/raw/main/tokenizer_config.json ; https://github.com/ggml-org/llama.cpp/pull/31794",
+   "correction": "The template's visible_text macro does this. PR #31794 'mtmd: add qwen3vl_mlp projector for Nanbeige4.3-33B-VLM' is open (created 2026-11-06). The API for Nanbeige/Nanbeige4.3-33B-VLM returns an auth error, meaning the repo is private or absent, and the org listing has no VLM."
+  },
+  {
+   "claim": "Thinking toggle: enable_thinking defaults on (prompt ends '<think>\\n'), false emits an empty think block; preserve_thinking is on unless explicitly false and recommended for code-agent work; vLLM qwen3 reasoning parser reads prompt tokens (qwen3.rs tests at v0.33.0).",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Nanbeige/Nanbeige4.3-33B/raw/main/tokenizer_config.json ; https://github.com/vllm-project/vllm/blob/v0.33.0/rust/src/parser/src/reasoning/qwen3.rs",
+   "correction": "Confirmed from the template text. preserve_thinking strips earlier reasoning only when 'preserve_thinking is defined and preserve_thinking is false'. The card recommends False for general chat and True for multi-turn tool use and code agents. qwen3.rs at v0.33.0 has tests qwen3_prompt_end_marker_starts_in_content and qwen3_tolerates_old_and_new_formats, which initialize from THINK_START_ID or THINK_END_ID. Caveat: the card says all models were evaluated at 'highest thinking effort', but the template has no effort control, only enable_thinking."
+  },
+  {
+   "claim": "Tool calling: Qwen3-Coder XML by default, tool_call_format='json' for Hermes-style, results as <tool_response> in a user turn, <think>/</think>/<tool_call>/</tool_call> are added special tokens 166103-166106.",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Nanbeige/Nanbeige4.3-33B/resolve/main/tokenizer.json ; https://huggingface.co/Nanbeige/Nanbeige4.3-33B/raw/main/added_tokens.json",
+   "correction": "Format, default 'xml', the json switch and the <tool_response> wrapping all match the template. Correction: ids 166103-166106 are added tokens, but tokenizer.json marks them special=false. Only <|im_start|>, <|im_end|> and <|endoftext|> (166100-166102) are special. In the XML branch the template iterates tool_call.arguments|items, so arguments must reach it as a dict, not a JSON string (inferred risk; vLLM and llama.cpp normally convert)."
+  },
+  {
+   "claim": "The card serves vLLM/SGLang with --tool-call-parser qwen3_coder --reasoning-parser qwen3. vLLM v0.33.0 registers qwen3_coder and qwen3_xml (same class), and LlamaForCausalLM is at registry.py line 155. NanbeigeForCausalLM at line 760 uses the Transformers backend.",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/tool_parsers/__init__.py ; https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/model_executor/models/registry.py",
+   "correction": "Raw files at tag v0.33.0: line 155 is 'LlamaForCausalLM': ('llama','LlamaForCausalLM') and line 760 is 'NanbeigeForCausalLM': ('transformers','TransformersForCausalLM'). qwen3_coder and qwen3_xml both map to qwen3_engine_tool_parser.Qwen3EngineToolParser, and qwen3_json is aliased to Hermes2ProToolParser. The card's own vLLM command also uses --tensor-parallel-size 4 and --gpu-memory-utilization 0.8."
+  },
+  {
+   "claim": "llama.cpp: tool calls for the same-shaped Nanbeige4.2-3B template were fixed by #26252 (b10227), and the #26324 thread reports them 100% working at b10335. #31986 fixes 4.3 prompts and is approved 2026-11-10 but unmerged. It needs tokenizer.ggml.metaspace.prepend_scheme, which bartowski has and mradermacher lacks.",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/pull/26324 ; https://github.com/ggml-org/llama.cpp/pull/31986",
+   "correction": "#26252 was merged 2026-08-02. The #26324 comment of 2026-08-10 reads: 'Tried b10335 (#26252 was merged in b10227) and nanbeige tool calls work 100% of the times'. Note that #26324 itself was closed unmerged. #31986 'llama : honor metaspace_prepend_scheme for SPM' is open, with an APPROVED review on 2026-11-10T08:08:26Z. Its body shows wrong role ids and extra 152343 space tokens after <|im_end|> and <think>. At b12407, llama-vocab.cpp still carries the TODO at line 3836 and defaults the scheme to NEVER when the key is absent. My header parse: bartowski IQ2_M has prepend_scheme=first and mradermacher i1-IQ2_M has no such key. The HF tokenizer.json pre_tokenizer is Metaspace with prepend_scheme 'first'."
+  },
+  {
+   "claim": "Ollama: no official tag (library/nanbeige4.3 404). The community tag home-rag/nanbeige4.3:33b-512k-bf16 (66GB, 512K) lists thinking but not tools.",
+   "verdict": "refuted",
+   "evidence_url": "https://ollama.com/home-rag/nanbeige4.3/tags",
+   "correction": "library/nanbeige4.3 does return 404, and the tag is 66GB with a 512K context. But the community tag page shows both capability badges, 'tools' and 'thinking' (an indigo badge span with text 'tools'). The tools badge only means Ollama detected a tool template. It is still untested."
+  },
+  {
+   "claim": "Speed note: 'AA measured 42.8 tok/s on a cloud provider.'",
+   "verdict": "refuted",
+   "evidence_url": "https://artificialanalysis.ai/models/nanbeige4-3-33b",
+   "correction": "AA has no speed measurement for Nanbeige4.3-33B. Its model record has \"headline\":null, \"workloads\":{} and \"hosts\":[]. The 42.76 tok/s value on that page belongs to the Qwen3.8 27B (Xhigh) comparison entry. Remove the claim, and drop the derived 'one hard task takes about an hour at 45 tok/s' framing or relabel it as a pure assumption."
+  },
+  {
+   "claim": "AA Intelligence Index v5.0.1 20.41 (Qwen3.8 27B xhigh 20.1); TB 4.0 29.8%; FrontierCode-AA 2.0 10.7%; AutomationBench partial 53.1; output tokens per task 158.5k (Qwen3.8 27B xhigh 109.8k).",
+   "verdict": "confirmed",
+   "evidence_url": "https://artificialanalysis.ai/models/nanbeige4-3-33b",
+   "correction": "AA page data: intelligenceIndex 20.4071, terminalBench40 0.29798, frontierCode20 0.10718, automationBenchPartialScore 0.53115, output tokens per task 158,457.7 (102.0k reasoning + 56.4k answer). Qwen3.8 27B (Xhigh): II 20.1069, output tokens 109,802. These are independent but single-run figures. AA also has hleDiamond 0.069 and critptAgenticHard 0.155. Its tau2, tauBanking, terminalBench21, gpqa, lcr and aime25 are all null."
+  },
+  {
+   "claim": "AA Progress Index 306 (Qwen3.8 27B xhigh 303) on the small open-weight view.",
+   "verdict": "confirmed",
+   "evidence_url": "https://artificialanalysis.ai/models/open-source/small",
+   "correction": "Chart values are 305.985 (Nanbeige4.3-33B) and 303.092 (Qwen3.8 27B xhigh). The page text says both 'score highest on the Artificial Analysis Progress Index v1 among Small open source models', so treat them as roughly tied."
+  },
+  {
+   "claim": "Vendor table: TB2.1 80.9 (Qwen3.8-27B 73.0), TB4.0 23.8, SWE-Bench Pro 60.3 (61.7), DeepSWE 65.5 (42.5), Toolathlon-Verified 70.4, Tau3 48.8, GPQA Diamond 89.5, AIME 2026 95.2.",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Nanbeige/Nanbeige4.3-33B/raw/main/README.md",
+   "correction": "All numbers match the card table and the .eval_results yaml (dated 2026-10-25). They are vendor self-reports. Conflicts with AA to flag: (1) the vendor's Qwen3.8-27B TB2.1 of 73.0 is 6.8 points below AA's independent 79.8 for Qwen3.8 27B xhigh, so the vendor's 80.9 vs 73.0 margin is not supported by AA (AA has no TB2.1 for Nanbeige). (2) TB4.0: vendor 23.8 vs AA 29.8 for Nanbeige, and vendor 6.3 vs AA 5.6 for Qwen3.8. (3) The vendor's Automation Bench 54.2 (not in the record) vs AA's AutomationBench partial 53.1 use different harnesses. GPQA, AIME 2026, AA-LCR 84.0, Toolathlon and Tau3 have no independent AA value. Footnote 4 uses 'GPT-6 Sol' as judge for SWE-Atlas-QnA."
+  },
+  {
+   "claim": "Checkpoints: official INT4 (compressed-tensors W4A16 int4 g32 asym, lm_head and embed unquantized) 21.00 GiB, FP8 33.08 GiB, INT8 33.52 GiB; Tech2wild W4A16 AutoRound 19.34 GiB; primitive-ai NVFP4 20.55 GiB; listed GGUF sizes.",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Nanbeige/Nanbeige4.3-33B-INT4/raw/main/config.json",
+   "correction": "The INT4 config matches: group_size 32, symmetric false, ignore [lm_head, model.embed_tokens]. Sizes from HF blobs match: 21.00, 33.08, 33.52, 19.34 and 20.55 GiB. The bartowski, mradermacher and AtomicChat GGUF sizes I spot-checked all match. Missing from the record: bartowski also has IQ2_XS 9.90 GiB and IQ2_XXS 9.38 GiB. About 30 other community W4/NVFP4 builds exist (for example cyankiwi AWQ-INT4 and axteam NVFP4A16), but no 4-bit build can fit the 14.65 GiB vLLM budget, so the 'no vLLM fit' conclusion stands. The only 3-bit vLLM build found is of the Base model (stuchapin W3A16)."
+  },
+  {
+   "claim": "llama.cpp arch: GGUFs use general.architecture 'llama' (LLM_ARCH_LLAMA, src/llama-arch.cpp line 11 at b12407).",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/blob/b12407/src/llama-arch.cpp",
+   "correction": "Line 11 at b12407 is { LLM_ARCH_LLAMA, \"llama\" }. The GGUF headers say general.architecture=llama. conversion/nanbeige.py exists at b12407 (HTTP 200)."
+  }
+ ],
+ "overall": "holds-with-corrections",
+ "summary": "The identity and capability facts hold: vendor ownership (Nanbeige LLM Lab, BOSS Zhipin/Kanzhun), dates, the exact parameter count, Llama architecture, 512K context, Apache-2.0 from card metadata only, the thinking and preserve_thinking toggles, the XML/JSON tool format and the vLLM/llama.cpp source references. I checked them against raw config.json, README.md, tokenizer_config.json, tokenizer.json, the HF API, my own GGUF header parses, vLLM v0.33.0 and llama.cpp b12407 source, and the GitHub PR API.\n\nTwo claims are refuted:\n(1) Artificial Analysis has no speed data for this model (headline null, hosts empty). The 42.8 tok/s is the Qwen3.8 27B xhigh entry.\n(2) The Ollama community tag lists both tools and thinking, not thinking only.\n\nSmaller corrections:\n- <think> and <tool_call> (ids 166103-166106) are added tokens but not special (special=false).\n- The BF16 checkpoint is 61.69 GiB, not 61.67.\n- llama.cpp PR #26324 was closed unmerged. The fix came in #26252.\n\nBenchmark caveats to carry: all card numbers are vendor self-reports. The card's Qwen3.8-27B TB2.1 of 73.0 conflicts with AA's independent 79.8 (xhigh), which weakens the claimed 80.9 lead, and AA has no TB2.1, tau, GPQA, AIME or LCR for Nanbeige. TB4.0 is 23.8 (vendor) vs 29.8 (AA). The AA Intelligence Index (20.41 vs 20.11) and Progress Index (306 vs 303) are effectively tied with Qwen3.8 27B, and AA's page text names both as top."
+}

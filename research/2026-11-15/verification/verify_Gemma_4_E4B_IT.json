@@ -1,0 +1,291 @@
+{
+ "name": "Gemma 4 E4B IT",
+ "hf_repo": "google/gemma-4-E4B-it",
+ "within_last_12_months": true,
+ "official_org": {
+  "value": "Google DeepMind. HF org 'google' has isVerified=true (https://huggingface.co/api/organizations/google/overview). The card links the Google launch blog, ai.google.dev docs and the tech report arXiv 2607.02770. The launch blog (Apr 02, 2026) links the HF collection huggingface.co/collections/google/gemma-4; its per-model links point to the gg-hf-gg namespace.",
+  "source_url": "https://huggingface.co/google/gemma-4-E4B-it",
+  "support": "direct-statement"
+ },
+ "release_date": {
+  "value": "HF createdAt is 2026-03-02T19:57:40Z (private pre-creation, from the HF API). Vendor release date is March 31, 2026 (ai.google.dev/gemma/docs/releases: 'Release of Gemma 4 in E2B, E4B, 31B and 26B A4B sizes'), and the launch blog is dated Apr 02, 2026. Both dates fall inside 2025-11-15..2026-11-15. The repo was last modified 2026-11-03.",
+  "source_url": "https://ai.google.dev/gemma/docs/releases",
+  "support": "direct-statement"
+ },
+ "license": {
+  "value": "apache-2.0 (card YAML 'license: apache-2.0', license_link https://ai.google.dev/gemma/docs/gemma_4_license). The launch blog calls it a 'commercially permissive Apache 2.0 license'. There is no Gemma Terms of Use restriction, unlike Gemma 3/3n; ai.google.dev still lists a 'Prohibited use' page, which I did not re-read.",
+  "source_url": "https://huggingface.co/google/gemma-4-E4B-it/raw/main/README.md",
+  "support": "direct-statement"
+ },
+ "params": {
+  "value": "The card says '4.5B effective (8B with embeddings)', with a ~150M vision encoder and a ~300M audio encoder. The HF API safetensors total is 7,996,156,490 BF16 params, in a single 15.99 GB model.safetensors file (14.894 GiB). From my read of the safetensors header: per-layer embeddings (PLE) 5.25 GiB, embed_tokens 1.25 GiB, decoder linears/norms 7.50 GiB, audio 0.575 GiB, vision 0.315 GiB. It is dense, not MoE.",
+  "source_url": "https://huggingface.co/api/models/google/gemma-4-E4B-it?blobs=true",
+  "support": "source-backed"
+ },
+ "architecture": {
+  "value": "Gemma4ForConditionalGeneration (model_type gemma4) is a dense decoder with PLE (hidden_size_per_layer_input 256). It has 42 layers in a 5:1 sliding:full pattern: 35 sliding_attention layers (window 512, head_dim 256) and 7 full_attention layers (global_head_dim 512, partial_rotary 0.25, p-RoPE theta 1e6). It uses num_key_value_heads 2 with 8 query heads, hidden 2560, intermediate 10240 and vocab 262144, with tied embeddings and final_logit_softcapping 30. num_kv_shared_layers=18: the last 18 layers reuse KV from earlier layers, so only layers 0-23 own KV, and of those only 4 are full attention (5, 11, 17, 23). vLLM v0.33.0 gemma4.py implements this through kv_sharing_target_layer_name, and llama.cpp gemma4.cpp through n_layer_kv_from_start/kv_source.",
+  "source_url": "https://huggingface.co/google/gemma-4-E4B-it/raw/main/config.json",
+  "support": "source-backed"
+ },
+ "context_length": {
+  "value": "128K native (max_position_embeddings 131072; card: 'small models feature a 128K context window'). No extended or YaRN mode is documented.",
+  "source_url": "https://huggingface.co/google/gemma-4-E4B-it/raw/main/config.json",
+  "support": "direct-statement"
+ },
+ "modalities": {
+  "value": "Input is text, image, audio (up to 30 s) and video (as frames, up to 60 s); output is text. There is no text-only checkpoint, but text-only serving is possible: vLLM --language-model-only (MultiModalConfig.language_model_only in v0.33.0, and the recipe's text_only feature) skips loading the 0.89 GiB of vision+audio towers. In llama.cpp, leaving out the mmproj gives text-only.",
+  "source_url": "https://huggingface.co/google/gemma-4-E4B-it",
+  "support": "direct-statement"
+ },
+ "thinking": {
+  "mode": "toggle",
+  "how_to_toggle": "Template: enable_thinking defaults to false. When true, it injects '<|think|>' at the top of the system turn, and output is '<|channel>thought\\n...<channel|>answer'. Per the card, E4B with thinking off emits no empty thought block. vLLM: start with --reasoning-parser gemma4 and send extra_body={\"chat_template_kwargs\":{\"enable_thinking\":true}} per request (recipe); the reasoning text is returned in 'reasoning'. llama.cpp llama-server: send chat_template_kwargs {\"enable_thinking\": true|false} per request (server-common.cpp:1626-1637 at b12418), or set the server default with --reasoning on|off / --chat-template-kwargs. Ollama: tag carries the 'thinking' badge; toggle with the native API 'think': true/false or '/set think' (Ollama mechanism inferred, not re-read in docs). Card: drop prior-turn thoughts from history except on tool-call turns (the template's preserve_thinking variable handles this).",
+  "source_url": "https://huggingface.co/google/gemma-4-E4B-it/raw/main/chat_template.jinja",
+  "support": "direct-statement"
+ },
+ "tool_calling": {
+  "supported": "yes",
+  "format": "Native special tokens. Tools are rendered in the system turn as '<|tool>{declaration}<tool|>'. Calls are '<|tool_call>call:NAME{args}<tool_call|>', with string values wrapped as <|\"|>...<|\"|>, and results come back as '<|tool_response>...<tool_response|>'. OpenAI tool_calls and tool messages are mapped by tool_call_id.",
+  "evidence": "The card says 'Function Calling - Native support for structured tool use, enabling agentic workflows'. In chat_template.jinja (header 'Published: 2026-07-09 ... Fixed tool-calling loops'), lines 207-213 loop over 'tools' and emit <|tool>...<tool|>, and lines 244-263 render assistant tool_calls. In vLLM v0.33.0 the tool parser registry has 'gemma4' -> gemma4_engine_tool_parser.Gemma4EngineToolParser, and examples/tool_chat_template_gemma4.jinja exists. llama.cpp common/chat.cpp:1399-1402 at b12418 detects the Gemma4 template by the string '<|tool_call>call:' and uses a dedicated PEG parser. The Ollama gemma4 page shows a 'tools' badge.",
+  "source_url": "https://huggingface.co/google/gemma-4-E4B-it/raw/main/chat_template.jinja",
+  "support": "direct-statement"
+ },
+ "checkpoints": [
+  {
+   "repo": "google/gemma-4-E4B-it",
+   "format": "safetensors BF16 (with vision+audio towers)",
+   "size_gb": 15.99,
+   "official": true,
+   "publisher": "google",
+   "source_url": "https://huggingface.co/api/models/google/gemma-4-E4B-it?blobs=true"
+  },
+  {
+   "repo": "google/gemma-4-E4B-it-qat-w4a16-ct",
+   "format": "compressed-tensors W4A16 QAT (int4, group 32, symmetric; vision ignored; PLE+embeddings stay BF16), 10.723 GiB",
+   "size_gb": 11.51,
+   "official": true,
+   "publisher": "google",
+   "source_url": "https://huggingface.co/api/models/google/gemma-4-E4B-it-qat-w4a16-ct?blobs=true"
+  },
+  {
+   "repo": "google/gemma-4-E4B-it-qat-q4_0-gguf",
+   "format": "GGUF Q4_0 QAT (gemma-4-E4B_q4_0-it.gguf 5.15 GB + mmproj 0.99 GB)",
+   "size_gb": 5.15,
+   "official": true,
+   "publisher": "google",
+   "source_url": "https://huggingface.co/api/models/google/gemma-4-E4B-it-qat-q4_0-gguf?blobs=true"
+  },
+  {
+   "repo": "google/gemma-4-E4B-it-qat-mobile-ct",
+   "format": "compressed-tensors mixed int2/4/8 mobile QAT (int2 embeddings + lm_head)",
+   "size_gb": 3.73,
+   "official": true,
+   "publisher": "google",
+   "source_url": "https://huggingface.co/api/models/google/gemma-4-E4B-it-qat-mobile-ct?blobs=true"
+  },
+  {
+   "repo": "google/gemma-4-E4B-it-assistant",
+   "format": "safetensors BF16 MTP draft model (for --speculative-config)",
+   "size_gb": 0.16,
+   "official": true,
+   "publisher": "google",
+   "source_url": "https://huggingface.co/api/models/google/gemma-4-E4B-it-assistant?blobs=true"
+  },
+  {
+   "repo": "ggml-org/gemma-4-E4B-it-GGUF",
+   "format": "GGUF Q4_0 4.59 / Q8_0 8.03 / BF16 15.05 GB; mmproj BF16 0.99 / Q8_0 0.56; mtp drafter GGUFs (updated 2026-11-12)",
+   "size_gb": 8.03,
+   "official": false,
+   "publisher": "ggml-org",
+   "source_url": "https://huggingface.co/api/models/ggml-org/gemma-4-E4B-it-GGUF?blobs=true"
+  },
+  {
+   "repo": "unsloth/gemma-4-E4B-it-GGUF",
+   "format": "GGUF UD-Q4_K_XL 5.13, Q4_K_M 4.98, Q5_K_M 5.48, Q6_K 7.07, Q8_0 8.19, UD-Q8_K_XL 8.71, BF16 15.05 GB, plus mmproj and MTP",
+   "size_gb": 5.13,
+   "official": false,
+   "publisher": "unsloth",
+   "source_url": "https://huggingface.co/api/models/unsloth/gemma-4-E4B-it-GGUF?blobs=true"
+  },
+  {
+   "repo": "unsloth/gemma-4-E4B-it-qat-GGUF",
+   "format": "GGUF from QAT weights: UD-Q4_K_XL 4.22, UD-Q2_K_XL 3.22 GB",
+   "size_gb": 4.22,
+   "official": false,
+   "publisher": "unsloth",
+   "source_url": "https://huggingface.co/api/models/unsloth/gemma-4-E4B-it-qat-GGUF?blobs=true"
+  },
+  {
+   "repo": "unsloth/gemma-4-E4B-it-NVFP4",
+   "format": "safetensors NVFP4 (PLE in FP8), 7.551 GiB",
+   "size_gb": 8.11,
+   "official": false,
+   "publisher": "unsloth",
+   "source_url": "https://huggingface.co/api/models/unsloth/gemma-4-E4B-it-NVFP4?blobs=true"
+  },
+  {
+   "repo": "bartowski/google_gemma-4-E4B-it-GGUF",
+   "format": "GGUF imatrix Q4_K_M 5.41, Q6_K 6.33, Q8_0 8.03, bf16 15.05 GB (+ many more)",
+   "size_gb": 5.41,
+   "official": false,
+   "publisher": "bartowski",
+   "source_url": "https://huggingface.co/api/models/bartowski/google_gemma-4-E4B-it-GGUF?blobs=true"
+  },
+  {
+   "repo": "lmstudio-community/gemma-4-E4B-it-GGUF",
+   "format": "GGUF Q4_K_M 5.34, Q6_K 6.22, Q8_0 8.03 GB",
+   "size_gb": 5.34,
+   "official": false,
+   "publisher": "lmstudio-community",
+   "source_url": "https://huggingface.co/api/models/lmstudio-community/gemma-4-E4B-it-GGUF?blobs=true"
+  },
+  {
+   "repo": "lmstudio-community/gemma-4-E4B-it-QAT-GGUF",
+   "format": "GGUF QAT Q4_0 5.15 GB",
+   "size_gb": 5.15,
+   "official": false,
+   "publisher": "lmstudio-community",
+   "source_url": "https://huggingface.co/api/models/lmstudio-community/gemma-4-E4B-it-QAT-GGUF?blobs=true"
+  },
+  {
+   "repo": "RedHatAI/gemma-4-E4B-it",
+   "format": "BF16 mirror only (15.99 GB). The FP8-dynamic repo cited by the vLLM recipe returned an HF API error (not public)",
+   "size_gb": 15.99,
+   "official": false,
+   "publisher": "RedHatAI",
+   "source_url": "https://huggingface.co/api/models/RedHatAI/gemma-4-E4B-it?blobs=true"
+  }
+ ],
+ "vllm": {
+  "arch_supported": "Yes. In registry.py at tag v0.33.0, line 427 maps 'Gemma4ForConditionalGeneration' to ('gemma4_mm', ...) and line 117 maps Gemma4ForCausalLM; Gemma4MTPModel is also registered (line 723).",
+  "min_version": "0.19.1 per the vLLM recipe (min_vllm_version) for E4B. The minimum version for the QAT W4A16 checkpoint was not established; use v0.33.0.",
+  "best_checkpoint": "google/gemma-4-E4B-it-qat-w4a16-ct with --language-model-only. BF16 does not fit.",
+  "tool_call_parser": "gemma4 (vllm/tool_parsers/__init__.py at v0.33.0: 'gemma4' -> Gemma4EngineToolParser), with --enable-auto-tool-choice",
+  "reasoning_parser": "gemma4 (vllm/reasoning/__init__.py at v0.33.0: 'gemma4' -> Gemma4ParserReasoningAdapter)",
+  "quant_on_sm120": "W4A16 compressed-tensors goes through the MPLinear kernel list (CUDA order: CutlassW4A8, Machete, Marlin, ...). Machete requires capability 90 ('requires compute capability of 90 (Hopper)'), so on sm_120 the Marlin W4A16 kernel is selected (inferred from v0.33.0 kernels/linear/__init__.py:539-547 and machete.py:33). Attention: Gemma4Config (models/config.py:301-367 at v0.33.0) forces TRITON_ATTN when FA4 is unavailable. The pinned vllm flash-attention (b273a026) has _is_fa4_supported return False unless capability major == 10, so sm_120 runs every attention layer on the Triton backend, not FA2.",
+  "weights_gib": 9.833,
+  "kv_bytes_per_token_bf16": 16384,
+  "kv_math": "Budget 16303 MiB x 0.92 = 14999 MiB = 14.65 GiB. The W4A16 checkpoint is 10.723 GiB; with --language-model-only, minus vision 0.315 and audio 0.575 GiB (from the safetensors header), it is 9.833 GiB. KV pool = 14.65 - 9.833 - 1.2 = 3.617 GiB (3.884e9 B). Full-attention layers that own KV: 4 (the 7 full layers minus 3 that are KV-shared). KV per token = 2 x 4 x 2 kv_heads x 512 global_head_dim x 2 B = 16,384 B (BF16), or 8,192 B with FP8 KV. Sliding layers that own KV: 20 x 2 x 2 x 256 x 2 B = 40,960 B/token, capped at about 512+block tokens, so about 21-26 MiB per sequence (negligible). Max context: BF16 3.884e9/16384 = 237k tokens and FP8 474k, both capped at 131,072. One 128K sequence uses 2.0 GiB in BF16, leaving room for about 1.8 concurrent 128K sequences (about 3.6 with FP8 KV). With towers loaded: pool 2.727 GiB, giving 178.7k (BF16), still capped at 131,072. BF16 checkpoint: 14.894 GiB, or 14.004 GiB text-only; 14.004 + 1.2 = 15.2 GiB > 14.65, so it does NOT fit, and still does not at 0.95 (15.13 GiB). unsloth NVFP4 text-only: 6.661 GiB, pool 6.79 GiB (fits, but not official, and NVFP4 on sm_120 carries JIT/kernel risk). Caveat: open issue #49878 reports Gemma4 KV usage about 40% higher since v0.26, so real capacity may be below this arithmetic. It still fits 128K.",
+  "est_max_context_tokens": 131072,
+  "fits": "yes",
+  "serve_command": "docker run --rm --gpus all --ipc=host -p 8000:8000 -v ~/.cache/huggingface:/root/.cache/huggingface vllm/vllm-openai:v0.33.0 --model google/gemma-4-E4B-it-qat-w4a16-ct --served-model-name gemma-4-e4b --language-model-only --max-model-len 131072 --gpu-memory-utilization 0.92 --enable-auto-tool-choice --tool-call-parser gemma4 --reasoning-parser gemma4 --async-scheduling --host 0.0.0.0 --port 8000   (The recipe also passes --chat-template examples/tool_chat_template_gemma4.jinja; the model repo's own chat_template.jinja is Google's newer canonical template, published 2026-07-09. Use sampling temperature=1.0, top_p=0.95, top_k=64 per the card. Optional: --kv-cache-dtype fp8; MTP via --speculative-config '{\"model\":\"google/gemma-4-E4B-it-assistant\",\"num_speculative_tokens\":4}', where the QAT card says a QAT target needs the matching QAT assistant.)",
+  "known_issues": "Open vLLM issues: #38887 (2026-04-03, open/stale): heterogeneous head dims force TRITON_ATTN; E4B was slow at ~9 tok/s on an RTX 4090 with v0.19, and a later comment reports ~130 tok/s on an RTX 5090. #40677: FlashInfer rejects Gemma 4 head_size on Blackwell SM120. #49878: about 40% KV-cache size increase for Gemma4 since v0.26. Tool-calling and reasoning parser bugs: #54256 (parser drops tool calls when the model goes straight from <channel|> to call: without <|tool_call>), #53363 (tool_choice='required' not enforced), #50889 (non-streaming finish_reason=tool_calls with empty tool_calls under load), #51284 (literal quotes kept in array/object string values), #56263, #57231/#57232 (channel tokens leak when the tool parser is used without the reasoning parser), #66430 (2026-11-08: template with enable_thinking=false gives no empty thought channel after a tool response, so a stray 'thought' leaks into content; affects HF and vLLM templates), #49717 (streaming content empty when the reasoning channel is left open), #67454. MTP: #48848. The recipe says MTP needs nightly, but Gemma4MTPModel is registered in v0.33.0.",
+  "sources": [
+   "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/model_executor/models/registry.py",
+   "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/tool_parsers/__init__.py",
+   "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/reasoning/__init__.py",
+   "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/model_executor/models/config.py",
+   "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/v1/attention/backends/fa_utils.py",
+   "https://github.com/vllm-project/flash-attention/blob/b273a02621d3c94bc747df67204f591b67f38fae/vllm_flash_attn/flash_attn_interface.py",
+   "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/model_executor/models/gemma4.py",
+   "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/config/multimodal.py",
+   "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/model_executor/kernels/linear/__init__.py",
+   "https://raw.githubusercontent.com/vllm-project/recipes/main/models/Google/gemma-4-E4B-it.yaml",
+   "https://github.com/vllm-project/vllm/issues/38887",
+   "https://github.com/vllm-project/vllm/issues/49878",
+   "https://github.com/vllm-project/vllm/issues/54256",
+   "https://github.com/vllm-project/vllm/issues/66430",
+   "https://github.com/vllm-project/vllm/issues/53363",
+   "https://github.com/vllm-project/vllm/issues/40677"
+  ]
+ },
+ "llamacpp": {
+  "gguf_repo": "ggml-org/gemma-4-E4B-it-GGUF (Q8_0); alternative google/gemma-4-E4B-it-qat-q4_0-gguf (QAT Q4_0, 5.15 GB) for maximum speed",
+  "quant": "Q8_0",
+  "file_gib": 7.48,
+  "arch_supported": "Yes. src/llama-arch.cpp at b12418 has LLM_ARCH_GEMMA4 'gemma4' and 'gemma4-assistant' (MTP), and src/models/gemma4.cpp implements KV sharing (n_layer_kv_from_start = n_layer - shared_kv_layers). Note: GitHub 'latest' is now v1.0.0 (2026-11-13; adds external PLE shard loading --ple and FP8 KV -ctk f8_e4m3, and refactors the gemma4 chat parser, #31915); b-builds b12413-b12419 (2026-11-15) are marked prerelease.",
+  "tool_calling_note": "Works via --jinja (default on). common/chat.cpp detects the Gemma4 template by '<|tool_call>call:' and uses COMMON_CHAT_FORMAT_PEG_GEMMA4. v1.0.0 adds response_format support in the gemma4 parser. Thinking is toggled per request with chat_template_kwargs.enable_thinking, or server-wide with --reasoning on|off.",
+  "est_vram_gib": 10.5,
+  "est_ram_gib": 3,
+  "est_context_tokens": 131072,
+  "offload_plan": "Not MoE, so no --n-cpu-moe; everything on GPU with -ngl 999. Math: Q8_0 7.48 GiB + full-attention KV F16 4 layers x 2 x 2 x 512 x 2 B = 16 KiB/token x 131072 = 2.0 GiB (q8_0 KV about 1.06 GiB) + SWA KV 20 layers x 40 KiB/token x about 1024 tokens = about 40 MiB + compute about 1 GiB = about 10.5 GiB (about 9.6 GiB with q8_0 KV). That fits in 16 GB with about 5 GiB spare. Inferred: llama.cpp keeps input embedding tensors (token_embd and the PLE table, about 2.8B params) in host RAM, so actual VRAM is likely a few GiB lower and host RAM use is about 3 GiB. BF16 (15.05 GB = 14.0 GiB) + KV would not fit fully.",
+  "server_command": "docker run --rm --gpus all -p 8080:8080 -v ~/.cache/llama.cpp:/root/.cache/llama.cpp ghcr.io/ggml-org/llama.cpp:server-cuda13 -hf ggml-org/gemma-4-E4B-it-GGUF:Q8_0 --no-mmproj --alias gemma-4-e4b --host 0.0.0.0 --port 8080 -ngl 999 -c 131072 -fa on -ctk q8_0 -ctv q8_0 --jinja --temp 1.0 --top-p 0.95 --top-k 64",
+  "sources": [
+   "https://github.com/ggml-org/llama.cpp/blob/b12418/src/llama-arch.cpp",
+   "https://github.com/ggml-org/llama.cpp/blob/b12418/src/models/gemma4.cpp",
+   "https://github.com/ggml-org/llama.cpp/blob/b12418/common/chat.cpp",
+   "https://github.com/ggml-org/llama.cpp/blob/b12418/tools/server/server-common.cpp",
+   "https://github.com/ggml-org/llama.cpp/blob/b12418/tools/server/README.md",
+   "https://github.com/ggml-org/llama.cpp/releases/tag/v1.0.0",
+   "https://huggingface.co/api/models/ggml-org/gemma-4-E4B-it-GGUF?blobs=true"
+  ]
+ },
+ "ollama": {
+  "tag": "gemma4:e4b (= gemma4:latest, digest 009acb0d7fe1). Others: gemma4:e4b-it-qat 6.1GB, e4b-it-q4_K_M 6.6GB, e4b-it-q8_0 9.0GB, e4b-it-bf16 16GB; MLX-only tags e4b-mlx/e4b-nvfp4 9.5GB, e4b-mxfp8 12GB",
+  "size_gb": 6.6,
+  "context": "128K context window shown on every e4b tag. Ollama defaults to 4k on GPUs under 24 GiB, so set num_ctx / OLLAMA_CONTEXT_LENGTH (at least 64k for OpenCode).",
+  "capabilities": "Family page badges: vision, tools, thinking, audio, cloud. Tags list 'Text, Image' input. 29.2M downloads; page lists 'ollama launch opencode --model gemma4'.",
+  "source_url": "https://ollama.com/library/gemma4/tags"
+ },
+ "benchmarks": [
+  {
+   "name": "Tau2 (average over 3)",
+   "score": "42.2%",
+   "setting": "instruction-tuned, Google eval (thinking setting not stated)",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/google/gemma-4-E4B-it/raw/main/README.md"
+  },
+  {
+   "name": "LiveCodeBench v6",
+   "score": "52.0%",
+   "setting": "instruction-tuned, Google eval",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/google/gemma-4-E4B-it/raw/main/README.md"
+  },
+  {
+   "name": "Codeforces ELO",
+   "score": "940",
+   "setting": "instruction-tuned, Google eval",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/google/gemma-4-E4B-it/raw/main/README.md"
+  },
+  {
+   "name": "MMLU Pro / GPQA Diamond / BigBench Extra Hard",
+   "score": "69.4% / 58.6% / 33.1%",
+   "setting": "instruction-tuned, Google eval",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/google/gemma-4-E4B-it/raw/main/README.md"
+  },
+  {
+   "name": "MRCR v2 8-needle 128k",
+   "score": "25.4%",
+   "setting": "long-context retrieval, Google eval",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/google/gemma-4-E4B-it/raw/main/README.md"
+  },
+  {
+   "name": "Artificial Analysis Intelligence Index v5.0.1",
+   "score": "N/A (not scored on the current index); a search snippet claimed 12 on the older v4.1 index (unverified)",
+   "setting": "Gemma 4 E4B (Reasoning) page; measured API output speed 66 tok/s reasoning / 58 tok/s non-reasoning (DeepInfra)",
+   "self_reported": false,
+   "source_url": "https://artificialanalysis.ai/models/gemma-4-e4b"
+  },
+  {
+   "name": "Terminal-Bench Hard / tau2-Bench (AA via aggregator)",
+   "score": "8.3% / 20.8% (contested: tau2 20.8 vs Google's self-reported 42.2)",
+   "setting": "Third-party aggregator designforonline.com attributing to Artificial Analysis; not confirmed on AA itself",
+   "self_reported": false,
+   "source_url": "https://designforonline.com/ai-models/google-gemma-4-e4b-reasoning/"
+  }
+ ],
+ "speed_notes": "Bandwidth ceilings (inferred), GPU 896 GB/s. vLLM W4A16 decode reads about 3.33 GiB of int4 decoder weights plus the 1.25 GiB BF16 tied lm_head = 4.58 GiB (4.92 GB) per token, so at most about 180 tok/s single-stream. BF16 would read about 8.75 GiB, at most about 95 tok/s, and does not fit anyway. PLE lookups are row gathers, not full reads. llama.cpp Q8_0 reads roughly 4-5 GB per token (excluding the PLE table), at most about 180-220 tok/s; QAT Q4_0 is higher. Measured reports (user comments, not vendor): vLLM issue #38887 has ~130 tok/s single-stream for E4B BF16 on an RTX 5090 with the gemma4-cu130 image (2026-04-11), ~35 tok/s on a desktop RTX 5080 via Docker/WSL2 with an early gemma4 image (2026-04-05), ~9 tok/s on an RTX 4090 with v0.19.0, and ~3.5-4 tok/s on a 4070 Ti Super with v0.22 FP8. All of these ran on the forced TRITON_ATTN backend, which v0.33.0 still forces on sm_120 because FA4 is gated to capability 10. Artificial Analysis measures 58-66 tok/s on a hosted API. Expect llama.cpp to be faster than vLLM for single-user use on this laptop. Prefill on long OpenCode prompts (more than 10k tokens of system and tool schema) matters more than decode; no sm_120 prefill numbers were found. The laptop GPU at 80-140 W will be slower than the desktop numbers.",
+ "opencode_fit": {
+  "verdict": "weak",
+  "recommended_runtime": "vLLM v0.33.0 (vllm/vllm-openai:v0.33.0) as the Docker/vLLM/OpenCode pipeline smoke test; llama.cpp server-cuda13 for faster single-user use",
+  "recommended_checkpoint": "google/gemma-4-E4B-it-qat-w4a16-ct (vLLM, --language-model-only); ggml-org/gemma-4-E4B-it-GGUF Q8_0 or google/gemma-4-E4B-it-qat-q4_0-gguf (llama.cpp)",
+  "recommended_context": "131072 (fits with BF16 KV in vLLM: about 2.0 GiB of a 3.6 GiB pool); 65536 is enough for OpenCode and leaves concurrency headroom",
+  "caveats": "This is a small model: Tau2 42.2% and LCB v6 52% (self-reported), with no SWE-bench, Terminal-Bench, BFCL or Aider numbers from Google. Use it to validate the stack (tool-call parsing, reasoning field, OpenCode v2.3.0 capabilities.tools=true, since the built-in vLLM discovery starts with tools disabled), not as the daily coding agent; Gemma 4 12B W4A16 or larger models fit better. In vLLM on sm_120, attention is forced to Triton (FA4 is gated to sm_100), so it is slower than its size suggests. Many open gemma4 tool and reasoning parser bugs exist (#54256 dropped tool calls after the thought channel, #53363 tool_choice=required, #66430 stray 'thought' after a tool response with thinking off), so always pair --tool-call-parser gemma4 with --reasoning-parser gemma4. The BF16 checkpoint does not fit vLLM's 14.65 GiB budget. Card sampling is temperature 1.0, top_p 0.95, top_k 64. The thinking default is off; enable it per request with chat_template_kwargs."
+ },
+ "gaps": [
+  "RedHatAI/gemma-4-E4B-it-FP8-dynamic (cited by the vLLM recipe) returned an HF API error, so it may be private or not exist; FP8 size and availability are unverified.",
+  "The minimum vLLM version for the QAT W4A16 checkpoint specifically is not stated anywhere I found; only 0.19.1 for the base model.",
+  "The Marlin selection on sm_120 is inferred from the kernel order and Machete's gate. I did not read Marlin's min capability or confirm it with a run.",
+  "No measured RTX 5080 Laptop numbers; the ~35 tok/s RTX 5080 report was a desktop card with an early image in April 2026. Prefill speed on sm_120 is unknown.",
+  "Artificial Analysis currently shows no Intelligence Index score for E4B (v5.0.1). The 12 (v4.1) and the aggregator's tau2 20.8% / TerminalBench Hard 8.3% are unverified and conflict with Google's Tau2 42.2.",
+  "No SWE-bench Verified/Pro, Terminal-Bench, BFCL or Aider results from Google or official leaderboards were found for E4B.",
+  "Whether vLLM's hybrid KV allocator pads sliding/full page sizes so that real KV capacity falls below the arithmetic (see #49878) was not quantified.",
+  "llama.cpp host-side placement of the PLE table (and the effect of v1.0.0's --ple shard option) is inferred, not measured.",
+  "Ollama's per-request thinking toggle mechanism ('think' field) was not re-read in Ollama docs for v0.40.16.",
+  "The QAT card's statement that the MTP assistant must match QAT precision comes from discovery notes; I did not re-read the QAT card."
+ ]
+}

@@ -1,0 +1,110 @@
+{
+ "overall": "holds-with-corrections",
+ "summary": "I found nothing in the gpt-oss-120b record that I could refute. I checked the identity, date, license, architecture, context, template and every cited benchmark against raw primary sources on 2026-11-15, and all of them match. The cited vLLM v0.33.0 source lines and every issue number also match, and all those issues are open.\n\nFour small corrections:\n1. The main checkpoint has 15 shard files (model-00000 to model-00014-of-00014), not 14. The byte total of 65,248,893,184 (60.77 GiB) is still correct.\n2. The chat template writes a tool call as `<|start|>assistant to=functions.NAME<|channel|>commentary json<|message|>`. The record gives `<|channel|>commentary to=functions.NAME` instead.\n3. Calling the Qwen3.5-27B card a \"same-harness table\" is not supported. The card has no footnote on the harness, and its GPT-OSS-120B value of 62.0 is close to OpenAI's own 62.4. It should be cited as a Qwen comparison column that is effectively self-reported.\n4. vLLM's `reasoning_effort` field accepts more values than low, medium and high (none, minimal, low, medium, high, xhigh, max). Only low, medium and high are documented for gpt-oss, so the \"reasoning cannot be disabled\" conclusion stands.\n\nThe memory figures recompute correctly from the config: 36,864 B/token BF16 KV, 4.5 GiB of KV for a full 131072-token sequence, and 3.185e9 expert parameters per layer. The model's release date is outside the 12-month window.\n\nGaps: I did not re-check Artificial Analysis tau2, the llama.cpp guide's 5090 speed remark, the vLLM recipe text on tool_choice=auto, or the MXFP4 oracle lines.",
+ "verdicts": [
+  {
+   "claim": "Official OpenAI repo: HF author 'openai', and the org has isVerified=true",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/organizations/openai/overview"
+  },
+  {
+   "claim": "HF createdAt 2025-08-04T22:33:06Z, lastModified 2025-08-26; arXiv card dated 'OpenAI August 5, 2025'; outside 2025-11-15..2026-11-15",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/openai/gpt-oss-120b"
+  },
+  {
+   "claim": "License apache-2.0 (card YAML and tag), plus a USAGE_POLICY file; arXiv says 'under the Apache 2.0 license and our gpt-oss usage policy'",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/openai/gpt-oss-120b/raw/main/README.md"
+  },
+  {
+   "claim": "117B total and 5.1B active; HF safetensors total 116,829,156,672 (BF16 2,167,371,072 + U8 114,661,785,600)",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/openai/gpt-oss-120b?blobs=true"
+  },
+  {
+   "claim": "Main checkpoint is 14 shards, 65,248,893,184 B = 60.77 GiB",
+   "verdict": "refuted",
+   "correction": "There are 15 shard files, model-00000-of-00014 through model-00014-of-00014. The total of 65,248,893,184 B (60.77 GiB) is correct. metal/model.bin is 65,238,253,568 B.",
+   "evidence_url": "https://huggingface.co/api/models/openai/gpt-oss-120b?blobs=true"
+  },
+  {
+   "claim": "Architecture: GptOssForCausalLM, 36 layers alternating sliding (window 128) and full attention (18 + 18), 128 experts with 4 active, hidden 2880, intermediate 2880, 64 query heads, 8 KV heads, head_dim 64, vocab 201088, MXFP4 MoE with attention, router, embeddings and lm_head unquantized, swiglu_limit 7.0",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/openai/gpt-oss-120b/raw/main/config.json"
+  },
+  {
+   "claim": "Context 131072 via YaRN factor 32 from original 4096",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/openai/gpt-oss-120b/raw/main/config.json"
+  },
+  {
+   "claim": "Modalities are text only",
+   "verdict": "confirmed",
+   "correction": "Also stated directly in arXiv 2508.10925: 'these text-only models'.",
+   "evidence_url": "https://arxiv.org/html/2508.10925v1"
+  },
+  {
+   "claim": "Thinking is always on, with effort low/medium/high; the template defaults to medium and renders 'Reasoning: <effort>'",
+   "verdict": "confirmed",
+   "correction": "vLLM v0.33.0's reasoning_effort field (protocol.py line 267) accepts none, minimal, low, medium, high, xhigh and max, not only low/medium/high. Only low/medium/high are documented for gpt-oss. include_reasoning is at line 279 as stated.",
+   "evidence_url": "https://huggingface.co/openai/gpt-oss-120b/raw/main/chat_template.jinja"
+  },
+  {
+   "claim": "Tool calling: functions namespace in the developer message (template lines 243-252), calls on the commentary channel as '<|channel|>commentary to=functions.NAME'",
+   "verdict": "confirmed",
+   "correction": "The template (lines 296-299) renders a call as '<|start|>assistant to=functions.NAME<|channel|>commentary json<|message|>{args}<|call|>', with the recipient before the channel. The system line reads \"Calls to these tools must go to the commentary channel: 'functions'.\"",
+   "evidence_url": "https://huggingface.co/openai/gpt-oss-120b/raw/main/chat_template.jinja"
+  },
+  {
+   "claim": "vLLM v0.33.0: registry line 128, tool parser 'openai' at line 194 (GptOssToolParser), reasoning parser 'openai_gptoss' at line 71",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/tool_parsers/__init__.py"
+  },
+  {
+   "claim": "Vendor benchmarks: SWE-bench Verified 47.9/52.6/62.4; Tau-Bench Retail 62.0/67.8 (medium/high); Airline 49.2 (high); Aider Polyglot 34.2/44.4",
+   "verdict": "confirmed",
+   "correction": "Values match the arXiv table exactly. They are self-reported, and SWE-bench was run with a Codex-CLI-like terminal tool.",
+   "evidence_url": "https://arxiv.org/html/2508.10925v1"
+  },
+  {
+   "claim": "Aider official leaderboard: 41.8 pass_rate_2, high effort via openrouter, 2025-08-06",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/Aider-AI/aider/main/aider/website/_data/polyglot_leaderboard.yml"
+  },
+  {
+   "claim": "SWE-bench official leaderboard: 26.0 with mini-SWE-agent, 2025-08-07",
+   "verdict": "confirmed",
+   "correction": "Tags: 'Mini: 1.7.0', 'Attempts - 1'.",
+   "evidence_url": "https://raw.githubusercontent.com/SWE-bench/swe-bench.github.io/master/data/leaderboards.json"
+  },
+  {
+   "claim": "Qwen3.5-27B card 'same-harness table': GPT-OSS-120B scores SWE-bench Verified 62.0 and Terminal Bench 2 18.7",
+   "verdict": "uncertain",
+   "correction": "The values 62.0 and 18.7 (and Qwen 72.4/69.2 and 41.6/40.5) are confirmed. The card gives no footnote saying gpt-oss was rerun on the same harness, and 62.0 sits close to OpenAI's 62.4. Treat it as Qwen's comparison column, not independent same-harness evidence.",
+   "evidence_url": "https://huggingface.co/Qwen/Qwen3.5-27B/raw/main/README.md"
+  },
+  {
+   "claim": "ggml-org GGUF: gpt-oss-120b-MXFP4.gguf 59.03 GiB, eagle3 draft GGUFs, last modified 2026-11-12",
+   "verdict": "confirmed",
+   "correction": "Exact size is 63,387,346,208 B. The eagle3 drafts are 1.59 GB (BF16) and 0.85 GB (Q8_0).",
+   "evidence_url": "https://huggingface.co/api/models/ggml-org/gpt-oss-120b-GGUF?blobs=true"
+  },
+  {
+   "claim": "Ollama gpt-oss:120b digest 714d86958b6e, 65GB, 128K context, text input",
+   "verdict": "confirmed",
+   "evidence_url": "https://ollama.com/library/gpt-oss/tags"
+  },
+  {
+   "claim": "Cited issues: vLLM #58825, #65770, #66989, #67603, #55754; llama.cpp #30377, #27783; OpenCode #58019",
+   "verdict": "confirmed",
+   "correction": "All are open and their titles match the record's descriptions (checked via gh api).",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/issues/30377"
+  },
+  {
+   "claim": "KV arithmetic: 18 full layers x 2 x 8 x 64 x 2 B = 36,864 B/token; 131072 tokens = 4.5 GiB; experts 128 x 3 x 2880^2 = 3.185e9 per layer",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/openai/gpt-oss-120b/raw/main/config.json"
+  }
+ ]
+}

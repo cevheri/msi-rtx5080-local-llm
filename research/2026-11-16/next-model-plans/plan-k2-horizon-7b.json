@@ -1,0 +1,101 @@
+{
+ "key": "k2-horizon-7b",
+ "repo": "bartowski/K2-Horizon-7B-GGUF",
+ "file": "K2-Horizon-7B-Q8_0.gguf",
+ "size_bytes": 9573973280,
+ "header_ok": true,
+ "header_facts": "GGUF v3, arch k2-horizon, 327 tensors, 48 keys, header 11.5 MB (fits in the 32 MiB range fetch). 36 blocks, all dense (expert_count 0, expert_used_count 0, no ffn_*_exps or attn_v_exps tensors, so --n-cpu-moe and --moe-cache-mib do nothing). Attention: full attention in every layer, no sliding_window key, no SSM or MLA; head_count 32, head_count_kv 8 (GQA 4:1), key_length 128, value_length 128, rope dim 128, rope freq_base 1e7, embedding 4096, feed_forward 12288. Vocab 250,624 (gpt2 BPE, pre k2-horizon), untied output.weight and token_embd.weight, each [4096, 250624] Q8_0 = 1.016 GiB. Native context 524,288 (card: 512K, Stage 3/4 midtraining at 512K). All weights Q8_0 (file_type 7), 8.906 GiB in tensors, imatrix used. Per-block expert GiB: 0 for all 36 blocks. Non-expert GPU weights: 7.890 GiB (6.874 GiB block tensors + 1.016 GiB output.weight; norms negligible). token_embd 1.016 GiB stays in host memory. Embedded chat template: 51,034 chars, contains <|ifm|im_start|> and <ifm|tool_calls> (so chat.cpp picks the K2 Horizon handler), reasoning_effort default('high') with high/medium/low only (other values raise), tool_call_format default('xml') with json/xml/xml_typed, no enable_thinking anywhere, and it raises on an assistant turn without a thinking field.",
+ "kv_math": "Full attention in all 36 layers, so the gguf_plan.py KV line is correct. Per token: 36 layers x 8 KV heads x (128 K + 128 V) = 73,728 elements. f16: x 2 B = 147,456 B = 144 KiB/token. q8_0: x 1.0625 B = 78,336 B = 76.5 KiB/token. At 65,536: f16 9.000 GiB (script output), q8_0 4.781 GiB = 4,896 MiB. At recommended 81,920 q8_0: 81,920 x 78,336 = 6,417,285,120 B = 6,120 MiB (5.977 GiB). At 73,728 q8_0: 5,508 MiB. Maximum q8_0 context inside the 15,341 MiB peak limit: (15,341 - 112 desktop - 8,079 weights - 819 overhead) = 6,331 MiB / 76.5 KiB = about 84.7k tokens, so 81,920 is the largest round value. No recurrent state, no SWA cache.",
+ "recommended": {
+  "context": 81920,
+  "kv_type": "q8_0",
+  "n_cpu_moe": null,
+  "moe_cache_mib": null,
+  "load_mode": "mmap",
+  "threads": null,
+  "vram_breakdown": "Weights on GPU 7.890 GiB = 8,079 MiB (36 blocks 6.874 GiB + output.weight 1.016 GiB; token_embd 1.016 GiB stays on the host). KV q8_0 at 81,920 = 6,120 MiB. Overhead (CUDA context, compute buffers at -ub 512 incl. a 512 x 250,624 x 4 B = 490 MiB logits buffer) about 0.8 GiB = 819 MiB, taken from the Qwen3.8-27B measurement (0.79 GiB, 248k vocab, larger 5120 hidden), so it should be conservative for a 4096-hidden dense model. CUDA total 15,018 MiB, plus desktop 112 MiB = 15,130 MiB nvidia-smi peak, 711 MiB free of 15,841, 211 MiB under the 15,341 MiB limit. For comparison the KB's 65,536 would peak at 13,906 MiB (1,935 MiB free).",
+  "predicted_peak_mib": 15130,
+  "predicted_free_mib": 711,
+  "memory_cap": "16g",
+  "predicted_container_ram_gib": 11.5,
+  "server_args": [
+   "-m",
+   "MODEL_PATH",
+   "--alias",
+   "local",
+   "-ngl",
+   "all",
+   "-fa",
+   "on",
+   "-c",
+   "81920",
+   "-ctk",
+   "q8_0",
+   "-ctv",
+   "q8_0",
+   "-np",
+   "1",
+   "--jinja",
+   "--chat-template-kwargs",
+   "{\"reasoning_effort\":\"high\",\"tool_call_format\":\"xml\"}",
+   "--temp",
+   "1.0",
+   "--top-p",
+   "0.95",
+   "--top-k",
+   "0",
+   "--min-p",
+   "0"
+  ]
+ },
+ "alternative": "The KB context with a larger micro-batch for prefill: same args but -c 65536 -b 2048 -ub 1024. KV 4,896 MiB, overhead about 0.8 GiB plus about 490 MiB for the doubled logits and compute buffers (estimate), predicted nvidia-smi peak about 14,400 MiB (about 1,440 MiB free). Compare prefill at 8k and 30k against the main run; if the main run's measured peak goes above 15,341 MiB, this (or plain -c 73728, peak about 14,518 MiB) is also the fallback.",
+ "thinking": "Always on. Server default: --chat-template-kwargs '{\"reasoning_effort\":\"high\",\"tool_call_format\":\"xml\"}' (both are also the template and parser defaults, so this is explicit rather than required). There is no off switch: the bartowski template has no enable_thinking, so --reasoning off, chat_template_kwargs.enable_thinking=false and the OpenAI field reasoning_effort \"none\" (server-common.cpp sets enable_thinking false and erases the kwarg) all still produce high-effort thinking, because k2-horizon.cpp only honours thinking_off when the template source mentions enable_thinking. Per request, effort can be lowered with chat_template_kwargs.reasoning_effort \"medium\" or \"low\" (tags <ifm|think_fast>/<ifm|think_faster>), or the top-level OpenAI reasoning_effort field, which server-common.cpp copies into the kwargs; any value other than high, medium, low (for example \"minimal\" or \"xhigh\") makes the template raise an error. The card says to always use high.",
+ "per_request_thinking_on": "{\"chat_template_kwargs\":{\"reasoning_effort\":\"high\"}}",
+ "tool_calling": "--jinja with the embedded template; common/chat.cpp at b12407 (line ~1334) selects common_chat_params_init_k2_horizon when the template contains both <|ifm|im_start|> and <ifm|tool_calls>, which the bartowski template does (10 and 7 occurrences). The parser (common/parsers/k2-horizon.cpp) is a PEG_NATIVE parser: reasoning in <ifm|think>...</ifm|think>, tool calls in <ifm|tool_calls><ifm|tool_call>name <ifm|arg_key>k</ifm|arg_key><ifm|arg_value>v</ifm|arg_value></ifm|tool_call></ifm|tool_calls>, xml by default, json and xml_typed by tool_call_format; lazy grammar triggered on <ifm|tool_calls>, parallel calls when requested; it injects an empty reasoning_content on assistant history turns so the strict template does not raise on OpenCode history. Issue #30246 (medium/low leaving answers in reasoning_content) is closed, fixed by PR #30335; the b12407 parser already accepts </ifm|think> as a closer at medium/low.",
+ "sampling": "Model card (IFM/K2-Horizon-7B README, lines 109 and 243-245): temperature 1.0, top_p 0.95, reasoning_effort high on every request, at least 32,768 output tokens (\"Truncated reasoning is a failed response\"). The card gives no top_k, min_p or penalties; its example uses an OpenAI-compatible client, so --top-k 0 --min-p 0 turns off llama.cpp's own defaults (top_k 40, min_p 0.05) to match pure top_p sampling (inferred; drop them to keep the KB recipe unchanged).",
+ "opencode_entry": "{\"k2-horizon-7b\": {\"modelID\": \"local\", \"name\": \"K2 Horizon 7B Q8_0 (llama.cpp)\", \"capabilities\": {\"tools\": true, \"input\": [\"text\"], \"output\": [\"text\"], \"reasoning\": {\"supported\": true}}, \"limit\": {\"context\": 81920, \"output\": 32768}}}",
+ "probe_long_tokens": "8000,30000,60000",
+ "expected_speed": "Decode reads about 7.89 GiB (8.47 GB) of Q8_0 weights per token plus the KV in use. At the RTX 5080 Laptop's about 896 GB/s the ceiling is about 106 tok/s at empty context; at 75-85% effective bandwidth expect about 75-90 tok/s near 8k (estimate). At 60k context the q8_0 KV adds about 4.5 GiB per token read, total about 13.3 GB, so expect about 50-60 tok/s; near 80k about 45-55 tok/s (estimate). Prefill should be several thousand tok/s at 8k on a dense 9B Q8_0 with flash attention (estimate). Effective agent latency will be dominated by long high-effort reasoning, not decode rate.",
+ "issues": [
+  {
+   "id": "ggml-org/llama.cpp#29535",
+   "state": "closed (merged 2026-10-06T16:42:25Z)",
+   "note": "model : add K2 Horizon dense and MoVA support. LLM_ARCH_K2_HORIZON is in src/llama-arch.cpp:178 and src/llama-model.cpp at b12407; src/models/k2-horizon.cpp handles the dense case (n_expert 0)."
+  },
+  {
+   "id": "ggml-org/llama.cpp#30246",
+   "state": "closed 2026-11-12T23:12:00Z",
+   "note": "K2 Horizon low/medium effort leaves final text and tool calls in reasoning_content. Fixed by PR #30335 (accept </ifm|think> as closer at medium/low); the code is present in common/parsers/k2-horizon.cpp at b12407."
+  }
+ ],
+ "kb_discrepancies": [
+  "Memory line counts token_embd on the GPU: it says 8.92 + 4.78 + 0.8 = 14.5 GiB, but token_embd (1.016 GiB) stays in host memory, so GPU use at 64k q8_0 is 7.89 + 4.78 + 0.8 = 13.47 GiB (13,906 MiB nvidia-smi peak with the desktop). The same error inflates the f16 figure: 7.89 + 9.00 + 0.8 = 17.7 GiB, not 18.7 (still does not fit).",
+  "64k is not the best context: q8_0 KV fits up to about 84.7k inside the 500 MiB margin, and 81,920 peaks at about 15,130 MiB. The extra room matters because the card demands at least 32,768 output tokens.",
+  "OpenCode limit.output 16384 (llamacpp/models.md and docs/opencode.md) contradicts the card's 'at least 32,768 output tokens ... Truncated reasoning is a failed response'. At 81,920 context, output 32,768 still leaves about 49k for input.",
+  "The 'Longer context' Q5_K_M at about 96k line uses the same token_embd-on-GPU arithmetic (6.39 + 7.17 + 0.8); with token_embd on the host the Q5_K_M peak would be lower, and Q8_0 itself already reaches about 80k, so the trade-off statement is stale.",
+  "The docker recipe uses -hf and -e HF_TOKEN; the workflow passes the cached file with -m and must not need a token (the repo is public). Also -v .../root/.cache rather than /hf with --user.",
+  "Speed line says 'a ceiling of about 105 tok/s for Q8_0' with 65-80 tok/s near empty context; arithmetic from the header (8.47 GB per token at about 896 GB/s) gives the same ceiling, but 75-90 tok/s is the more likely band for a dense model with no host traffic (estimate; measure).",
+  "The KB evidence line cites only Artificial Analysis (TB2.1 44.2, tau3-Banking 27.6); the current card reports vendor TB2.1 44.6 and tau3-Banking 25.8 and SWE-bench Verified 72.4 (vendor-reported), so the vendor and AA numbers differ, as noted for MoVA.",
+  "The recipe does not mention that the template raises on reasoning_effort values other than high, medium, low, so an OpenCode effort variant such as 'minimal' or 'xhigh' would fail the request; it also omits the native 524,288 context from the header."
+ ],
+ "risks": [
+  "The 0.8 GiB overhead is borrowed from Qwen; this model's 250,624 vocab gives a 490 MiB logits buffer at -ub 512 alone. If the measured peak exceeds 15,341 MiB, drop to -c 73728 (about 14,518 MiB) or 65536 (13,906 MiB).",
+  "Thinking cannot be turned off; 'reasoning_effort: none' silently runs at high effort, and invalid effort strings return a template error.",
+  "High effort plus a 32k output budget means long turns; OpenCode headerTimeout and the 32,768 output limit should be checked in the smoke test for truncation.",
+  "The org IFM is unverified on HF and the GGUF is a third-party quant; that it carries the post-FTPO weights is inferred from dates only.",
+  "--top-k 0 --min-p 0 is an inference from the card's OpenAI-client example, not a stated recommendation.",
+  "Container RAM: token_embd 1.02 GiB + prompt cache up to 8 GiB (--cache-ram default 8192, about 109k tokens of q8_0 KV state) + about 2 GiB process = about 11.5 GiB; the mmapped 8.9 GiB file also passes through page cache during load, which is reclaimable but counts toward the cgroup, so keep the cap at 16g rather than tighter."
+ ],
+ "sources": [
+  "https://huggingface.co/bartowski/K2-Horizon-7B-GGUF/resolve/main/K2-Horizon-7B-Q8_0.gguf (first 32 MiB, saved at $SCRATCH/headers/k2-horizon-7b/head.gguf; template at $SCRATCH/headers/k2-horizon-7b/template.jinja)",
+  "https://huggingface.co/IFM/K2-Horizon-7B/raw/main/README.md (lines 24, 33, 109-122, 163-166, 243-245)",
+  "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/common/chat.cpp (K2 Horizon detection ~line 1332)",
+  "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/common/parsers/k2-horizon.cpp",
+  "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/tools/server/server-common.cpp (lines 1550-1575)",
+  "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/common/arg.cpp (-ngl all, --cache-ram, --reasoning)",
+  "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/src/llama-arch.cpp and src/models/k2-horizon.cpp",
+  "gh api repos/ggml-org/llama.cpp/issues/29535 and /issues/30246 (plus timeline: PR #30335)",
+  "$HOME/projects/llm/llamacpp/models.md sections 3 and 4",
+  "$HOME/projects/llm/docs/opencode.md (lines 40-43, 60-86, 142-143, 170)"
+ ]
+}

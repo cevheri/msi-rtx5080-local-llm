@@ -1,0 +1,583 @@
+{
+ "review": {
+  "key": "hf-rtx5080-throughput",
+  "url": "https://huggingface.co/datasets/iBlessi/rtx-5080-llm-throughput",
+  "title": "RTX 5080 Local LLM Throughput (Measured, Ollama) - TechFuelHQ dataset v1.1.0",
+  "publisher": "iBlessi on Hugging Face, mirroring TechFuelHQ (author LK Wood IV), canonical page https://techfuelhq.com/data/rtx-5080-llm-throughput/",
+  "as_of": "Captures 2026-08-12 and 2026-08-26; HF repo lastModified 2026-10-01; canonical page updated 2026-11-04 (version 1.1.0)",
+  "source_type": "community-measurement",
+  "accessible": true,
+  "access_notes": "Raw reads only, no summarizer. datasets-server /splits returned config \"default\", split \"train\". Downloaded README.md (3735 bytes) and rtx-5080-llm-throughput.csv (34 data rows) via curl -A \"Mozilla/5.0\" into $SCRATCH/src/hf-rtx5080-throughput/. Also read the canonical TechFuelHQ page (HTTP 200) for method, coding-eval grid and change log; it mentions a longer 80-row CSV that was not fetched.",
+  "credibility": "medium",
+  "credibility_reason": "The method is clear and sound: the median of 3 runs, Ollama's native eval counters, a fresh prefill each run (a nonce defeats the prompt cache), temp 0 and seed 42, a 256-token output, models pinned by digest, a dated change log and a correction note. Every number is a real measurement. It is still a single retail card on a single runtime (Ollama 0.32.1 on Windows 11), the power limit and clocks are not recorded, and the VRAM column is a whole-GPU reading that can include a model left over from an earlier run. The hardware is a DESKTOP RTX 5080 (host Ryzen 7 7800X3D, retail card), not our laptop GPU. One cell looks odd: devstral 24B prefill of 9377 tok/s is above the dense 14B (about 5200) while its decode is only 36 tok/s.",
+  "summary": "This is a small, careful community dataset of 34 measured Ollama 0.32.1 rows on a desktop retail RTX 5080 16 GB (Windows 11, driver 610.88, Ryzen 7 7800X3D), at 4k and 16k context with prompts of about 470 to 2600 tokens. Headline numbers: gpt-oss:20b MXFP4 decodes at 178-190 tok/s with prefill of 9-11k tok/s and about 13.4-14.4 GiB whole-GPU VRAM. Qwen2.5 14B Q4_K_M decodes at about 94-97 tok/s, 7B Q4_K_M at about 171-180, and Llama 3.2 3B at about 298-313. qwen3-coder:30b Q4_K_M, partly offloaded (74% on GPU), decodes at 52-62 tok/s with prefill of only 1.5-2.4k tok/s, and that speed depends on free system RAM (83 tok/s with about 20 GB free, under 1 tok/s while paging). devstral 24B fits only at 4k context (36 tok/s) and collapses below 1 tok/s at 8k. A companion coding eval (8 tasks, 2 reps, executed checkers) scores gpt-oss:20b 8/8 stable, qwen3-coder:30b and devstral 6/8, and qwen2.5-coder 14B and 7B 5/8 and 4/8. For this laptop, the dataset is an upper-bound reference for Ollama only: none of the current picks except gpt-oss-20b appear, and there are no vLLM or llama.cpp rows.",
+  "methodology": "Script llm-throughput-ollama-v1 drives Ollama /api/generate and records eval_count/eval_duration and prompt_eval_count/prompt_eval_duration. Each cell is the median of 3 reps, with a unique nonce prefix per rep so every run pays a full prefill. Settings: temperature 0, seed 42, a 256-token target output, num_ctx 4096 and 16384, prompt tokens about 467-2597. Model digest is pinned per row. Environment per row: NVIDIA GeForce RTX 5080 (desktop retail), driver 610.88, Ollama 0.32.1, Windows 11, Ryzen 7 7800X3D. Not recorded: power limit, clocks, KV cache type, flash attention setting. vram_resident_mib is a whole-GPU nvidia-smi reading. Coding eval techfuelhq-coding-eval-v1: 8 tasks, 2 reps each, scored by executed checkers with no LLM judge.",
+  "findings": [
+   {
+    "topic": "hardware identity",
+    "claim": "All rows are a desktop retail GeForce RTX 5080 16 GB on a Ryzen 7 7800X3D Windows 11 host, driver 610.88. These are not laptop numbers, and the power limit is not recorded.",
+    "evidence": "documented",
+    "location": "README.md Method section; CSV gpu/driver columns",
+    "target": "hardware",
+    "relevance": "high"
+   },
+   {
+    "topic": "runtime",
+    "claim": "Every row is Ollama 0.32.1 (baseline current Ollama is v0.40.16). There are no vLLM or llama.cpp rows.",
+    "evidence": "measured",
+    "location": "CSV ollama_version column",
+    "target": "ollama",
+    "relevance": "high"
+   },
+   {
+    "topic": "gpt-oss-20b decode",
+    "claim": "gpt-oss:20b MXFP4 (digest 17052f91a42e) decodes at 187.27-190.14 tok/s (2026-08-12) and 178.34-183.0 tok/s (2026-08-26 re-capture, 3-5% lower on a card six hours into bench work), flat from 4k to 16k context.",
+    "evidence": "measured",
+    "location": "CSV rows 1-4, 17-20",
+    "target": "models",
+    "relevance": "high"
+   },
+   {
+    "topic": "gpt-oss-20b prefill",
+    "claim": "gpt-oss:20b prefill is 9078-11001 tok/s for prompts of 503-1658 tokens on Ollama.",
+    "evidence": "measured",
+    "location": "CSV median_prefill_tok_s",
+    "target": "models",
+    "relevance": "medium"
+   },
+   {
+    "topic": "gpt-oss-20b VRAM",
+    "claim": "gpt-oss:20b whole-GPU VRAM is 13381-14067 MiB at 4k and 13683-14355 MiB at 16k context (Ollama default KV, Windows desktop compositor possibly included).",
+    "evidence": "measured",
+    "location": "CSV vram_resident_mib",
+    "target": "models",
+    "relevance": "medium"
+   },
+   {
+    "topic": "runtime comparison",
+    "claim": "Ollama gpt-oss-20b decode of 178-190 tok/s is about 7-13% below the baseline's desktop llama.cpp figure of about 205 tok/s tg128 (ggml-org guide), which fits Ollama overhead. The methods differ (256-token gen with real prompts vs tg128).",
+    "evidence": "computed",
+    "target": "benchmarking",
+    "relevance": "medium"
+   },
+   {
+    "topic": "MoE partial offload",
+    "claim": "qwen3-coder:30b Q4_K_M (19 GB file, 74% GPU-resident under Ollama whole-layer offload) decodes at 61.55-61.89 tok/s at 4k and 51.62-51.65 at 16k. Prefill is only 1525-2369 tok/s, 4-6x below the fully resident models.",
+    "evidence": "measured",
+    "location": "CSV qwen3-coder:30b rows; README notes",
+    "target": "models",
+    "relevance": "high"
+   },
+   {
+    "topic": "RAM headroom",
+    "claim": "Offloaded-model decode depends on free system RAM: the same qwen3-coder:30b decoded at 83 tok/s with about 20 GB free and under 1 tok/s while paging at 1.2 GB free (anecdote from the eval runs, not a CSV row).",
+    "evidence": "measured",
+    "location": "README notes; canonical page",
+    "target": "host",
+    "relevance": "high"
+   },
+   {
+    "topic": "dense 24B spill",
+    "claim": "devstral:24b Q4_K_M (14 GB file) fits only at 4k context on 16 GB (36.32 / 34.9 tok/s). At 8k the KV cache spilled and decode collapsed below 1 tok/s.",
+    "evidence": "measured",
+    "location": "CSV devstral rows; README notes",
+    "target": "models",
+    "relevance": "medium"
+   },
+   {
+    "topic": "dense scaling",
+    "claim": "Dense Q4_K_M decode: 3B 298-313, 7B 171-180, 14B 93-97 tok/s. These are bandwidth-bound reference points for the desktop card.",
+    "evidence": "measured",
+    "location": "CSV",
+    "target": "hardware",
+    "relevance": "medium"
+   },
+   {
+    "topic": "context effect",
+    "claim": "For fully resident models, decode is flat from 4k to 16k num_ctx at these short prompts (under 2.6k tokens). The data says nothing about 64k-128k agent contexts.",
+    "evidence": "measured",
+    "location": "README Headline results",
+    "target": "benchmarking",
+    "relevance": "high"
+   },
+   {
+    "topic": "method",
+    "claim": "Without a per-rep nonce, warm Ollama runs hit the prompt cache and report about 60,000 tok/s 'prefill' that measures nothing. Benchmarks must force a fresh prefill or report cache hits separately.",
+    "evidence": "documented",
+    "location": "README Method",
+    "target": "benchmarking",
+    "relevance": "high"
+   },
+   {
+    "topic": "method",
+    "claim": "Use runtime-native counters (eval_count/eval_duration), never wall-clock division. Pin the model by digest because tags move upstream.",
+    "evidence": "documented",
+    "location": "README Method",
+    "target": "benchmarking",
+    "relevance": "medium"
+   },
+   {
+    "topic": "coding eval",
+    "claim": "techfuelhq-coding-eval-v1 (8 tasks incl. two-turn tool calling, 2 reps, executed checkers): gpt-oss:20b 8/8 stable, qwen3-coder:30b 6/8, devstral:24b (4k) 6/8, qwen2.5-coder:14b 5/8, qwen2.5-coder:7b 4/8. Both qwen2.5-coder models failed the Tools task.",
+    "evidence": "measured",
+    "location": "canonical page, coding eval section",
+    "target": "models",
+    "relevance": "medium"
+   },
+   {
+    "topic": "VRAM column caveat",
+    "claim": "vram_resident_mib can include a previously benched model still resident: llama3.2:3b shows 15682 MiB at 4k but 5495 MiB at 16k.",
+    "evidence": "measured",
+    "location": "CSV llama3.2 rows; README Caveats",
+    "target": "benchmarking",
+    "relevance": "low"
+   },
+   {
+    "topic": "data anomaly",
+    "claim": "The devstral:24b prefill of 9377 tok/s (1694-token prompt) is higher than the dense 14B (about 4900-5200) and drops to 5335 at 2597 tokens. Treat it as suspect.",
+    "evidence": "computed",
+    "location": "CSV devstral rows",
+    "target": "models",
+    "relevance": "low"
+   }
+  ],
+  "measurements": [
+   {
+    "model": "gpt-oss:20b",
+    "quant": "MXFP4",
+    "gpu": "RTX 5080 desktop (retail, power limit not recorded)",
+    "runtime": "Ollama 0.32.1, Windows 11, driver 610.88",
+    "context": "4096 ctx, 503 prompt tok",
+    "prompt_tok_s": "9078.28",
+    "gen_tok_s": "190.14",
+    "vram": "14067 MiB whole-GPU",
+    "settings": "median of 3, temp 0, seed 42, 256 out, 2026-08-12",
+    "measured_or_estimated": "measured"
+   },
+   {
+    "model": "gpt-oss:20b",
+    "quant": "MXFP4",
+    "gpu": "RTX 5080 desktop",
+    "runtime": "Ollama 0.32.1",
+    "context": "4096 ctx, 1658 prompt tok",
+    "prompt_tok_s": "10464.66",
+    "gen_tok_s": "187.27",
+    "vram": "14060 MiB",
+    "settings": "2026-08-12",
+    "measured_or_estimated": "measured"
+   },
+   {
+    "model": "gpt-oss:20b",
+    "quant": "MXFP4",
+    "gpu": "RTX 5080 desktop",
+    "runtime": "Ollama 0.32.1",
+    "context": "16384 ctx, 503 prompt tok",
+    "prompt_tok_s": "9286.61",
+    "gen_tok_s": "188.63",
+    "vram": "14355 MiB",
+    "settings": "2026-08-12",
+    "measured_or_estimated": "measured"
+   },
+   {
+    "model": "gpt-oss:20b",
+    "quant": "MXFP4",
+    "gpu": "RTX 5080 desktop",
+    "runtime": "Ollama 0.32.1",
+    "context": "16384 ctx, 1658 prompt tok",
+    "prompt_tok_s": "10554.32",
+    "gen_tok_s": "187.73",
+    "vram": "14355 MiB",
+    "settings": "2026-08-12",
+    "measured_or_estimated": "measured"
+   },
+   {
+    "model": "gpt-oss:20b",
+    "quant": "MXFP4",
+    "gpu": "RTX 5080 desktop",
+    "runtime": "Ollama 0.32.1",
+    "context": "4096 ctx, 503 prompt tok",
+    "prompt_tok_s": "9607.49",
+    "gen_tok_s": "181.5",
+    "vram": "13381 MiB",
+    "settings": "2026-08-26 re-capture, card warm after 6 h",
+    "measured_or_estimated": "measured"
+   },
+   {
+    "model": "gpt-oss:20b",
+    "quant": "MXFP4",
+    "gpu": "RTX 5080 desktop",
+    "runtime": "Ollama 0.32.1",
+    "context": "4096 ctx, 1360 prompt tok",
+    "prompt_tok_s": "11001.37",
+    "gen_tok_s": "178.37",
+    "vram": "13385 MiB",
+    "settings": "2026-08-26",
+    "measured_or_estimated": "measured"
+   },
+   {
+    "model": "gpt-oss:20b",
+    "quant": "MXFP4",
+    "gpu": "RTX 5080 desktop",
+    "runtime": "Ollama 0.32.1",
+    "context": "16384 ctx, 503 prompt tok",
+    "prompt_tok_s": "9092.22",
+    "gen_tok_s": "183.0",
+    "vram": "13683 MiB",
+    "settings": "2026-08-26",
+    "measured_or_estimated": "measured"
+   },
+   {
+    "model": "gpt-oss:20b",
+    "quant": "MXFP4",
+    "gpu": "RTX 5080 desktop",
+    "runtime": "Ollama 0.32.1",
+    "context": "16384 ctx, 1360 prompt tok",
+    "prompt_tok_s": "10328.62",
+    "gen_tok_s": "178.34",
+    "vram": "13683 MiB",
+    "settings": "2026-08-26",
+    "measured_or_estimated": "measured"
+   },
+   {
+    "model": "qwen3-coder:30b (Qwen3-Coder-30B-A3B)",
+    "quant": "Q4_K_M (19 GB file, 74% GPU-resident)",
+    "gpu": "RTX 5080 desktop",
+    "runtime": "Ollama 0.32.1 partial offload",
+    "context": "4096 ctx, 467 prompt tok",
+    "prompt_tok_s": "1744.18",
+    "gen_tok_s": "61.89",
+    "vram": "15101 MiB",
+    "settings": "2026-08-26, Ryzen 7 7800X3D host RAM",
+    "measured_or_estimated": "measured"
+   },
+   {
+    "model": "qwen3-coder:30b",
+    "quant": "Q4_K_M",
+    "gpu": "RTX 5080 desktop",
+    "runtime": "Ollama 0.32.1 partial offload",
+    "context": "4096 ctx, 1347 prompt tok",
+    "prompt_tok_s": "2368.71",
+    "gen_tok_s": "61.55",
+    "vram": "15101 MiB",
+    "settings": "2026-08-26",
+    "measured_or_estimated": "measured"
+   },
+   {
+    "model": "qwen3-coder:30b",
+    "quant": "Q4_K_M",
+    "gpu": "RTX 5080 desktop",
+    "runtime": "Ollama 0.32.1 partial offload",
+    "context": "16384 ctx, 467 prompt tok",
+    "prompt_tok_s": "1524.77",
+    "gen_tok_s": "51.62",
+    "vram": "15003 MiB",
+    "settings": "2026-08-26",
+    "measured_or_estimated": "measured"
+   },
+   {
+    "model": "qwen3-coder:30b",
+    "quant": "Q4_K_M",
+    "gpu": "RTX 5080 desktop",
+    "runtime": "Ollama 0.32.1 partial offload",
+    "context": "16384 ctx, 1347 prompt tok",
+    "prompt_tok_s": "1928.14",
+    "gen_tok_s": "51.65",
+    "vram": "15003 MiB",
+    "settings": "2026-08-26",
+    "measured_or_estimated": "measured"
+   },
+   {
+    "model": "devstral:24b",
+    "quant": "Q4_K_M (14 GB file)",
+    "gpu": "RTX 5080 desktop",
+    "runtime": "Ollama 0.32.1",
+    "context": "4096 ctx, 1694 prompt tok",
+    "prompt_tok_s": "9377.3 (suspect)",
+    "gen_tok_s": "36.32",
+    "vram": "14997 MiB",
+    "settings": "2026-08-26; 8k ctx spilled, under 1 tok/s",
+    "measured_or_estimated": "measured"
+   },
+   {
+    "model": "devstral:24b",
+    "quant": "Q4_K_M",
+    "gpu": "RTX 5080 desktop",
+    "runtime": "Ollama 0.32.1",
+    "context": "4096 ctx, 2597 prompt tok",
+    "prompt_tok_s": "5334.83",
+    "gen_tok_s": "34.9",
+    "vram": "14997 MiB",
+    "settings": "2026-08-26",
+    "measured_or_estimated": "measured"
+   },
+   {
+    "model": "qwen2.5:14b",
+    "quant": "Q4_K_M",
+    "gpu": "RTX 5080 desktop",
+    "runtime": "Ollama 0.32.1",
+    "context": "4096 ctx, 488 prompt tok",
+    "prompt_tok_s": "5202.23",
+    "gen_tok_s": "96.65",
+    "vram": "10841 MiB",
+    "settings": "2026-08-12",
+    "measured_or_estimated": "measured"
+   },
+   {
+    "model": "qwen2.5:14b",
+    "quant": "Q4_K_M",
+    "gpu": "RTX 5080 desktop",
+    "runtime": "Ollama 0.32.1",
+    "context": "16384 ctx, 1674 prompt tok",
+    "prompt_tok_s": "4864.67",
+    "gen_tok_s": "94.58",
+    "vram": "13159 MiB",
+    "settings": "2026-08-12",
+    "measured_or_estimated": "measured"
+   },
+   {
+    "model": "qwen2.5-coder:14b",
+    "quant": "Q4_K_M",
+    "gpu": "RTX 5080 desktop",
+    "runtime": "Ollama 0.32.1",
+    "context": "4096 ctx, 488 prompt tok",
+    "prompt_tok_s": "5271.63",
+    "gen_tok_s": "94.89",
+    "vram": "10169 MiB",
+    "settings": "2026-08-26",
+    "measured_or_estimated": "measured"
+   },
+   {
+    "model": "qwen2.5-coder:14b",
+    "quant": "Q4_K_M",
+    "gpu": "RTX 5080 desktop",
+    "runtime": "Ollama 0.32.1",
+    "context": "16384 ctx, 1368 prompt tok",
+    "prompt_tok_s": "4842.15",
+    "gen_tok_s": "93.41",
+    "vram": "12487 MiB",
+    "settings": "2026-08-26",
+    "measured_or_estimated": "measured"
+   },
+   {
+    "model": "qwen2.5:7b",
+    "quant": "Q4_K_M",
+    "gpu": "RTX 5080 desktop",
+    "runtime": "Ollama 0.32.1",
+    "context": "4096 ctx, 488 prompt tok",
+    "prompt_tok_s": "10152.28",
+    "gen_tok_s": "180.02",
+    "vram": "6190 MiB",
+    "settings": "2026-08-12",
+    "measured_or_estimated": "measured"
+   },
+   {
+    "model": "qwen2.5:7b",
+    "quant": "Q4_K_M",
+    "gpu": "RTX 5080 desktop",
+    "runtime": "Ollama 0.32.1",
+    "context": "16384 ctx, 1674 prompt tok",
+    "prompt_tok_s": "9984.37",
+    "gen_tok_s": "176.61",
+    "vram": "7034 MiB",
+    "settings": "2026-08-12",
+    "measured_or_estimated": "measured"
+   },
+   {
+    "model": "qwen2.5-coder:7b",
+    "quant": "Q4_K_M",
+    "gpu": "RTX 5080 desktop",
+    "runtime": "Ollama 0.32.1",
+    "context": "4096 ctx, 488 prompt tok",
+    "prompt_tok_s": "9651.9",
+    "gen_tok_s": "173.73",
+    "vram": "5671 MiB",
+    "settings": "2026-08-26",
+    "measured_or_estimated": "measured"
+   },
+   {
+    "model": "qwen2.5-coder:7b",
+    "quant": "Q4_K_M",
+    "gpu": "RTX 5080 desktop",
+    "runtime": "Ollama 0.32.1",
+    "context": "16384 ctx, 1368 prompt tok",
+    "prompt_tok_s": "9825.47",
+    "gen_tok_s": "171.41",
+    "vram": "6515 MiB",
+    "settings": "2026-08-26",
+    "measured_or_estimated": "measured"
+   },
+   {
+    "model": "llama3.2:3b",
+    "quant": "Q4_K_M",
+    "gpu": "RTX 5080 desktop",
+    "runtime": "Ollama 0.32.1",
+    "context": "16384 ctx, 471 prompt tok",
+    "prompt_tok_s": "17885.62",
+    "gen_tok_s": "312.89",
+    "vram": "5495 MiB (4k rows read 15682 MiB, leftover model)",
+    "settings": "2026-08-12",
+    "measured_or_estimated": "measured"
+   },
+   {
+    "model": "llama3.2:3b",
+    "quant": "Q4_K_M",
+    "gpu": "RTX 5080 desktop",
+    "runtime": "Ollama 0.32.1",
+    "context": "16384 ctx, 1657 prompt tok",
+    "prompt_tok_s": "19397.36",
+    "gen_tok_s": "298.59",
+    "vram": "5501 MiB",
+    "settings": "2026-08-12",
+    "measured_or_estimated": "measured"
+   },
+   {
+    "model": "gpt-oss:20b",
+    "quant": "MXFP4",
+    "gpu": "RTX 5080 Laptop 140 W (this machine)",
+    "runtime": "Ollama",
+    "context": "4k-16k",
+    "gen_tok_s": "about 165-177 (desktop 178-190 x 896/960 bandwidth ratio; power-limit effect not included)",
+    "settings": "scaling estimate by reviewer, not measured",
+    "measured_or_estimated": "estimated"
+   }
+  ],
+  "conflicts": [
+   {
+    "baseline_claim": "Desktop RTX 5080 llama.cpp gpt-oss-20b about 205 tok/s tg128 (ggml-org guide).",
+    "source_claim": "Desktop RTX 5080 Ollama 0.32.1 gpt-oss:20b 178-190 tok/s decode (256-token gen after a 503-1658 token prompt).",
+    "assessment": "Not a real conflict. The runtime and method differ (Ollama vs llama-bench tg128 on an empty context). The roughly 10% gap fits Ollama overhead plus the filled context. Both are desktop numbers, so the laptop will be lower."
+   },
+   {
+    "baseline_claim": "Baseline excludes Qwen3-Coder-30B-A3B as older and weaker.",
+    "source_claim": "qwen3-coder:30b scores 6/8 on the TechFuelHQ coding eval and runs at 52-62 tok/s partly offloaded on 16 GB.",
+    "assessment": "Consistent. The source does not test any current pick other than gpt-oss-20b, which scored 8/8 and was the best in its set, so the exclusion stands. The row remains useful as a proxy for 3B-active MoE partial-offload behaviour."
+   }
+  ],
+  "agreements": [
+   "Baseline: Ollama whole-layer offload is slower than llama.cpp --n-cpu-moe for MoE models that spill. The source shows Ollama partial offload of a 30B-A3B MoE cuts prefill to 1.5-2.4k tok/s (4-6x below resident models), which supports using llama.cpp --n-cpu-moe for picks 1, 5, 6 and 9.",
+   "Baseline: the desktop RTX 5080 is not the laptop. The source's hardware is explicitly a desktop retail card with a 7800X3D host.",
+   "Baseline: OpenCode needs a 64k or larger context. The source shows a 14 GB dense model (devstral 24B) already spilling at 8k on 16 GB, which supports keeping dense picks at about 12-13.5 GiB weights with q8_0 KV.",
+   "Baseline: about 40 GiB of free RAM for models. The source's RAM-headroom finding (83 tok/s with about 20 GB free vs under 1 tok/s when paging) shows the RAM budget for offloaded experts is load-bearing, especially for Qwen3-Coder-Next with about 26 GiB in RAM."
+  ],
+  "kb_notes": [
+   {
+    "target_doc": "docs/community-benchmarks.md",
+    "note": "TechFuelHQ RTX 5080 LLM Throughput dataset v1.1.0 (https://huggingface.co/datasets/iBlessi/rtx-5080-llm-throughput, CC BY 4.0): 34 measured rows on a DESKTOP retail RTX 5080 16 GB, Ollama 0.32.1, Windows 11, driver 610.88, Ryzen 7 7800X3D, median of 3 fresh-prefill runs, temp 0, 256-token output, 4k and 16k num_ctx, prompts of 467-2597 tokens. Power limit not recorded. Treat as a desktop upper bound, not a laptop number."
+   },
+   {
+    "target_doc": "docs/community-benchmarks.md",
+    "note": "gpt-oss:20b MXFP4 on desktop RTX 5080 under Ollama 0.32.1: 178.34-190.14 tok/s decode, 9078-11001 tok/s prefill, 13381-14355 MiB whole-GPU VRAM, flat from 4k to 16k context (https://huggingface.co/datasets/iBlessi/rtx-5080-llm-throughput). Scaling by bandwidth alone (896/960) gives an estimate of about 165-177 tok/s on our 140 W laptop GPU under Ollama, with llama.cpp expected somewhat higher. Measure before relying on it."
+   },
+   {
+    "target_doc": "docs/community-benchmarks.md",
+    "note": "qwen3-coder:30b Q4_K_M (19 GB, 74% GPU-resident under Ollama) on desktop RTX 5080: 61.6-61.9 tok/s decode at 4k, 51.6 at 16k, prefill only 1525-2369 tok/s. The author saw 83 tok/s with about 20 GB of RAM free and under 1 tok/s while paging (https://huggingface.co/datasets/iBlessi/rtx-5080-llm-throughput)."
+   },
+   {
+    "target_doc": "llamacpp/benchmarking.md",
+    "note": "Force a fresh prefill on every repetition, for example with a unique nonce at the start of the prompt. TechFuelHQ found that warm repeats hit the prompt cache and report about 60,000 tok/s 'prefill' that measures nothing. Our llama-server has --cache-prompt on by default, so the same trap applies (https://huggingface.co/datasets/iBlessi/rtx-5080-llm-throughput)."
+   },
+   {
+    "target_doc": "llamacpp/benchmarking.md",
+    "note": "Read the runtime's own timing counters (llama-server 'timings' prompt_per_second / predicted_per_second) rather than dividing by wall-clock time. Record the model file hash, driver, runtime build and capture date per row, following the TechFuelHQ dataset schema (capture_date_utc, method_version, gpu, driver, runtime_version, model, digest, quant, num_ctx, prompt_tokens, reps, median decode/prefill, load_ms, vram_mib)."
+   },
+   {
+    "target_doc": "vllm/benchmarking.md",
+    "note": "Prefix caching is on by default in vLLM v0.33.0. As the TechFuelHQ RTX 5080 dataset shows for Ollama, repeated identical prompts measure cache hits, not prefill. Use unique prompts per rep, or turn off prefix caching for prefill measurements (https://huggingface.co/datasets/iBlessi/rtx-5080-llm-throughput)."
+   },
+   {
+    "target_doc": "docs/host-setup.md",
+    "note": "When MoE experts sit in system RAM (--n-cpu-moe), decode speed depends on free host RAM. One RTX 5080 user measured 83 tok/s with about 20 GB free and under 1 tok/s while the box was paging at 1.2 GB free (https://huggingface.co/datasets/iBlessi/rtx-5080-llm-throughput). Give the container a --memory limit and keep enough RAM free for the desktop, about 20 GiB."
+   },
+   {
+    "target_doc": "docs/model-selection.md",
+    "note": "On 16 GB a dense model with a 14 GB Q4_K_M file (devstral 24B) fits only at 4k context: at 8k the KV cache spilled and decode fell below 1 tok/s (TechFuelHQ, desktop RTX 5080, Ollama). For a 64k OpenCode context, keep dense weights at about 12-13.5 GiB with q8_0 KV, as the baseline picks do (https://huggingface.co/datasets/iBlessi/rtx-5080-llm-throughput)."
+   },
+   {
+    "target_doc": "docs/model-selection.md",
+    "note": "TechFuelHQ coding eval v1 (8 tasks including two-turn tool calling, 2 reps, executed checkers, Ollama on RTX 5080): gpt-oss:20b 8/8 stable, qwen3-coder:30b 6/8, devstral:24b 6/8, qwen2.5-coder:14b 5/8, qwen2.5-coder:7b 4/8. Both qwen2.5-coder models failed tool calling. This is a small community eval, but it supports keeping gpt-oss-20b as a pick (https://techfuelhq.com/data/rtx-5080-llm-throughput/)."
+   },
+   {
+    "target_doc": "docs/sources.md",
+    "note": "hf-rtx5080-throughput: https://huggingface.co/datasets/iBlessi/rtx-5080-llm-throughput (mirror of https://techfuelhq.com/data/rtx-5080-llm-throughput/), community measurement, desktop RTX 5080, Ollama 0.32.1, captures 2026-08-12 and 2026-08-26, read 2026-11-15. Credibility medium: rigorous method, but single unit, single runtime and the wrong GPU variant for us."
+   }
+  ],
+  "gaps": [
+   "No laptop RTX 5080 rows and no power-limit or clock data, so the desktop-to-laptop scaling remains an estimate.",
+   "No vLLM or llama.cpp rows. Ollama 0.32.1 is about 8 minor versions older than the current v0.40.16.",
+   "None of the current picks appear except gpt-oss-20b: no Qwen3.6-35B-A3B, Qwen3.8-27B, Gemma 4, Nemotron 3.5, GLM-4.7-Flash or Qwen3-Coder-Next.",
+   "Prompts are at most about 2.6k tokens and num_ctx at most 16k. Nothing covers the 64k-128k agent contexts OpenCode uses, or long-context prefill.",
+   "The KV cache type and flash attention settings are not recorded, and the VRAM column is a whole-GPU reading that sometimes includes leftover models.",
+   "The canonical page mentions a longer 80-row CSV and a coding-eval per-rep CSV that were not fetched.",
+   "devstral 4k prefill of 9377 tok/s looks anomalous and is not explained."
+  ],
+  "new_candidates": []
+ },
+ "check": {
+  "verdicts": [
+   {
+    "item": "Publisher, type and as-of date",
+    "verdict": "confirmed",
+    "evidence": "HF API: author iBlessi, createdAt 2026-08-13T07:12:07Z, lastModified 2026-10-01T01:09:34Z, license cc-by-4.0, files README.md, rtx-5080-llm-throughput.csv. Canonical page (HTTP 200) https://techfuelhq.com/data/rtx-5080-llm-throughput/: 'By LK Wood IV', 'Version 1.1.0', 'Page updated Nov 4, 2026', 'Download CSV (34 rows)' and 'Download CSV (80 rows)'. Captures 2026-08-12 and 2026-08-26. community-measurement is the right type.",
+    "correction": "The 2026-11-04 update log entry reads 'Paired the two context settings only within matching model digest... No new GPU run.' It is a presentation change, and the latest measurement is still 2026-08-26."
+   },
+   {
+    "item": "Hardware is a desktop retail RTX 5080, driver 610.88, Windows 11, Ryzen 7 7800X3D",
+    "verdict": "confirmed",
+    "evidence": "README: 'single retail NVIDIA GeForce RTX 5080 (16 GB)', 'RTX 5080, driver 610.88, ollama 0.32.1, Windows 11, Ryzen 7 7800X3D'. CSV gpu column reads 'NVIDIA GeForce RTX 5080', with no 'Laptop GPU' suffix.",
+    "correction": "The word 'desktop' is an inference from the retail card, the device name and the 7800X3D desktop CPU. It is a sound inference, but the source never states it. Windows 11 and the CPU are in the README and the page, not in CSV columns."
+   },
+   {
+    "item": "All 34 CSV rows quoted in the review (gpt-oss, qwen2.5, qwen2.5-coder, llama3.2, qwen3-coder, devstral)",
+    "verdict": "confirmed",
+    "evidence": "The raw CSV (5358 bytes, 35 lines including the header) matches the review verbatim, for example 'gpt-oss:20b,17052f91a42e,20.9B,MXFP4,4096,503,3,190.14,9078.28,297.7,14067', 'qwen3-coder:30b,...,16384,467,3,51.62,1524.77,219.9,15003' and 'devstral:24b,...,4096,1694,3,36.32,9377.3,238.2,14997'. Ranges 178.34-190.14 and 13381-14355 MiB check out."
+   },
+   {
+    "item": "Method: median of 3, nonce fresh prefill, temp 0, seed 42, 256-token output, native counters, digest pinning, ~60,000 tok/s cache trap",
+    "verdict": "confirmed",
+    "evidence": "The README Method section and the page's 'Method, exactly' section contain all of these. The page adds that 'a cell enters the CSV only when all 3 repetitions pass mechanical checks'."
+   },
+   {
+    "item": "qwen3-coder:30b 74% GPU-resident; 83 tok/s with ~20 GB free vs under 1 tok/s while paging",
+    "verdict": "confirmed",
+    "evidence": "The page says '74% GPU-resident (measured via /api/ps at 8k context; the split itself moves with load-time state)' and '83 tok/s with ~20GB free and under 1 tok/s while the box was paging at 1.2GB free'.",
+    "correction": "The change log and FAQ give 0.7, 62 and 83 tok/s 'under three host states', and the FAQ puts the 83 tok/s down to 'a different resident split'. The variation therefore depends on load-time memory state, meaning the GPU/CPU split, and not only on free RAM. The host-setup note should say 'load-time memory state and free RAM'. The 74% figure was measured at 8k, not at the 4k or 16k rows."
+   },
+   {
+    "item": "devstral:24b fits only at 4k; at 8k decode fell below 1 tok/s",
+    "verdict": "confirmed",
+    "evidence": "README: 'At 8k context its 14GB file plus KV cache spilled and decode collapsed below 1 tok/s on this box.'"
+   },
+   {
+    "item": "Coding eval grid: gpt-oss 8/8, qwen3-coder 6/8, devstral 6/8, qwen2.5-coder 14B 5/8, 7B 4/8; both qwen2.5-coder failed Tools",
+    "verdict": "confirmed",
+    "evidence": "The canonical page grid matches. The Tools column fails for qwen2.5-coder:14b and :7b. qwen3-coder has '1 of 2' on Tests (flaky), and devstral fails Spec and Regex."
+   },
+   {
+    "item": "Conflict 1: Ollama 178-190 vs baseline llama.cpp ~205 tg128 is not a real conflict, gap due to Ollama overhead plus filled context",
+    "verdict": "uncertain",
+    "evidence": "The same author's companion page (https://techfuelhq.com/self-hosted/ollama-vs-llamacpp-rtx-5080-2026/, HTTP 200), on the same card: 'gpt-oss 20B Ollama 195.8 t/s' vs 'llama.cpp b10507 222-238 t/s' on the upstream GGUF. It says llama.cpp is '13-22% faster on the gpt-oss MoE (different conversions there)' and that 'Ollama's gpt-oss blob is architecture-tagged gptoss and upstream llama.cpp refuses it'. On dense models the gap is only 2-6%.",
+    "correction": "The conclusion (no real conflict) holds, but the explanation is incomplete. The gpt-oss gap comes mostly from the different model conversion (Ollama's own blob vs the upstream ggml-org GGUF), not from wrapper overhead. The same desktop card measured 222-238 t/s on llama-server, above the baseline's 205 tg128. The review missed this companion llama.cpp measurement, and its gap 'No vLLM or llama.cpp rows' should name it."
+   },
+   {
+    "item": "Conflict 2 / agreement: Qwen3-Coder-30B-A3B exclusion stands; gpt-oss-20b remains a pick",
+    "verdict": "confirmed",
+    "evidence": "The baseline excludes 'Qwen3-Coder-30B-A3B (older, weaker)', and pick 4 is gpt-oss-20b via llama.cpp ggml-org MXFP4. The source tests no other current pick."
+   },
+   {
+    "item": "Reviewer's laptop estimate 165-177 tok/s (bandwidth ratio 896/960)",
+    "verdict": "confirmed",
+    "evidence": "It is correctly labelled 'estimated', not measured. The arithmetic is 178.34*0.933=166.4 and 190.14*0.933=177.5.",
+    "correction": "The note should say this estimate applies to Ollama's own gpt-oss blob only. For the baseline's llama.cpp upstream GGUF, the desktop anchor should be the companion page's 222-238 t/s, not the Ollama dataset."
+   },
+   {
+    "item": "Credibility rating medium",
+    "verdict": "confirmed",
+    "evidence": "Every figure is a real measurement with a disclosed method, a change log and a correction record (the 1.0.2 VRAM unit fix from /1000 to /1024). Limits: a single desktop unit, a single runtime, power limit and clocks not recorded, and VRAM read whole-GPU. The companion page states a desktop baseline of 1,642 MiB, which supports the review's compositor caveat."
+   }
+  ],
+  "credibility_fair": true,
+  "credibility_note": "Medium is fair. The method is rigorous and transparent, with nonce prefill, native counters, digest pins, a published change log and corrections. The review's caveats are all accurate: a single desktop card, Ollama 0.32.1 only, no power or clock data, and whole-GPU VRAM readings. The one thing missing from the credibility note is that the same author also published a llama.cpp b10507 head-to-head on the same card, which partly fills the 'no llama.cpp' gap.",
+  "overall": "holds-with-corrections",
+  "summary": "I re-fetched the HF API metadata, README.md, the 34-row CSV and the canonical TechFuelHQ page raw, into $SCRATCH/src/hf-rtx5080-throughput-verify/. All quoted numbers match verbatim, and so do the publisher (iBlessi mirroring TechFuelHQ, author LK Wood IV), version 1.1.0, the dates, the method, the coding-eval grid and the hardware (a retail RTX 5080, which is desktop by inference). Three corrections are needed. (1) The gpt-oss gap against the baseline's 205 tg128 is explained mainly by model conversion, not Ollama overhead. The same author's companion page measured llama.cpp b10507 at 222-238 t/s and Ollama at 195.8 t/s for gpt-oss-20b on the same desktop card. It also notes that Ollama's 'gptoss' blob will not load in upstream llama.cpp. Add this page (https://techfuelhq.com/self-hosted/ollama-vs-llamacpp-rtx-5080-2026/) to sources and community-benchmarks. (2) The offloaded qwen3-coder 0.7 / 62 / 83 tok/s spread is attributed to load-time memory state and resident split, not only to free RAM, and the 74% residency was measured at 8k context. (3) The 2026-11-04 page update added no new measurements. The credibility rating of medium is fair."
+ }
+}

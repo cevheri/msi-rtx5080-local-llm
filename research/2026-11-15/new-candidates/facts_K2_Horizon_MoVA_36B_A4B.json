@@ -1,0 +1,114 @@
+{
+ "overall": "holds-with-corrections",
+ "summary": "I could not refute any identity or capability fact in the record. Everything load-bearing checks out against raw primary sources read on 2026-11-15: the HF API, config.json, README.md, chat_template.jinja, the GGUF metadata through the HF API (expand gguf), vLLM v0.33.0 source and recipe, llama.cpp b12407 source with tag ancestry, GitHub PR and issue state, the Ollama pages, and the AA page RSC JSON.\n\nOwnership is genuine. The HF org IFM is 'Institute of Foundation Models' (enterprise plan, 118 members, though it has no verified badge). The card links github.com/ifm-ai/xllm (Apache-2.0, created 2026-09-02) and wandb.ai/llm360. AA attributes the model to IFM.\n\nConfig values all match exactly. Arithmetic on config.json gives about 37.4B total and 4.64B active without embeddings. Adding embeddings and lm_head gives 5.93B, against 5.95B in the recipe, so the record's arithmetic holds.\n\nThinking is always on with the main HF template: the generation prompt always opens an <ifm|think*> tag, and the template has no enable_thinking. The official IFM GGUF template does have enable_thinking (it pre-fills an empty think block), and the bartowski template does not. The tool-call formats and line numbers in the record are correct. All AA numbers match the raw JSON (TB2.1 0.5655, tau-Banking 0.3196, Progress score 280.70). The vendor-card numbers are self-reported, and the card itself says its baselines come from AA.\n\nMinor corrections:\n(1) AutomationBench 26.1 is AA's 'automationBenchPartialScore' field. Label it as a partial score.\n(2) The Ollama tag list leaves out 36b-q5_0 (26GB) and 36b-bf16 (75GB).\n(3) The IFM GGUF repo was created on 2026-09-03 with an earlier upload. The current quant files were re-uploaded on 2026-09-22.\n(4) The GPTQ repo totals 20.27 GiB, not 20.25. vLLM still does not fit.\n(5) enable_thinking=false is a template pre-fill of an empty think block, not a separately trained mode. Its quality is unknown, and the vendor reports results only at high effort.\n\nThe IFM blog still returns 403. Scratch files are in $SCRATCH/k2v/",
+ "verdicts": [
+  {
+   "claim": "Official vendor is IFM (Institute of Foundation Models), not a re-upload; code at github.com/ifm-ai/xllm, logs at wandb.ai/llm360; MoVA = Mixture-of-Values attention (card line 25)",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/organizations/IFM/overview",
+   "correction": "HF org fullname 'Institute of Foundation Models', enterprise, 118 users, isVerified false. README line 22 links ifm-ai/xllm (gh api: created 2026-09-02, Apache-2.0); release table links wandb.ai/llm360/K2-Horizon-36B; line 25 defines MoVA. AA lists creator 'Institute of Foundation Models'. Support: direct-statement."
+  },
+  {
+   "claim": "Release dates: HF createdAt 2026-09-01T23:01:25Z; recipe date_added 2026-08-31 / updated 2026-09-03; vLLM PR #55063 merged 2026-09-03; AA release 2026-09-03; main = sft_2_2500 promoted 2026-10-01",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/IFM/K2-Horizon-MoVA-36B-A4B/commits/main",
+   "correction": "All match: commit 'Promote checkpoint sft_2_2500 to main' 2026-10-01T16:41:58Z; latest commit 2026-11-04 (README); PR #55063 merged_at 2026-09-03T08:17:09Z; AA releaseDate 2026-09-03."
+  },
+  {
+   "claim": "License Apache-2.0, not gated",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/IFM/K2-Horizon-MoVA-36B-A4B/raw/main/README.md",
+   "correction": "README front matter license: apache-2.0; API gated:false. Ollama page also says Apache 2.0."
+  },
+  {
+   "claim": "Total 37,444,792,020 params BF16; vendor 4B active; recipe 5.95B active; arithmetic 4.65B without embeddings, 5.93B with",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/recipes/models/IFM/K2-Horizon-MoVA-36B-A4B.yaml",
+   "correction": "HF safetensors total 37444792020 BF16. Recheck from config: routed 45x8x3x2560x768=2.12B, value experts 45x4x2560x1024=0.47B, shared 0.27B, dense 3x3x2560x6144=0.14B, attention q/k/o/v plus output gate about 1.64B, giving 4.64B; embeddings plus lm_head 2x250624x2560=1.28B, giving 5.93B. The total rebuilds to about 37.4B. AA lists 36 params / 4 active. Support: source-backed."
+  },
+  {
+   "claim": "Architecture: K2HorizonForCausalLM custom_code, 48 layers, hidden 2560, 32 Q / 8 KV heads, head_dim 128, all full attention, softplus gate, rope_theta 1e7, layers 3-47 MoE 100 experts top-8 (768) + 1 shared, MoVA 64 value experts top-4, vocab 250624, untied",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/IFM/K2-Horizon-MoVA-36B-A4B/raw/main/config.json",
+   "correction": "Every value matches the raw config.json (mlp_only_layers [0,1,2], sliding_window null, use_sliding_window false, tie_word_embeddings false, mova_num_experts 64, mova_num_experts_per_tok 4). I did not re-parse the GGUF tensor split (14.9 / 3.96 / 2 GiB)."
+  },
+  {
+   "claim": "Context 524,288 native",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/IFM/K2-Horizon-MoVA-36B-A4B/raw/main/config.json",
+   "correction": "max_position_embeddings 524288; card line 34; recipe context_length 524288; AA contextWindowTokens 524288; GGUF metadata context_length 524288. KV math checks out: 2x48x8x128x2 = 196,608 B in BF16, and 104,448 B in q8_0 (34/32 B per element), so 64k is 6.375 GiB."
+  },
+  {
+   "claim": "Text only; template raises on non-text content parts",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/IFM/K2-Horizon-MoVA-36B-A4B/raw/main/chat_template.jinja",
+   "correction": "chat_template.jinja line 903 raises 'Unsupported <role> content part ... Expected type=text'. Text content lists are accepted since commit #11 (2026-10-14). Ollama tags say 'Text input'."
+  },
+  {
+   "claim": "Thinking always on with HF main template; reasoning_effort high|medium|low default high; card says always high; real off switch only in official IFM GGUF template (enable_thinking); llama.cpp honours --reasoning off only if template has enable_thinking (parser line 29); bartowski template lacks it; Ollama: reasoning can't be turned off",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/common/parsers/k2-horizon.cpp",
+   "correction": "Main template lines 1003-1013 always emit <ifm|think> / <ifm|think_fast> / <ifm|think_faster> and contain no enable_thinking. Card Best Practices item 1 says always high. HF API gguf.chat_template: the IFM GGUF has enable_thinking (it emits an empty <ifm|think></ifm|think>), bartowski's does not. Parser line 29 is the thinking_off condition. Ollama readme: 'Reasoning can't be turned off.' Caveat: the off switch is only an empty-think pre-fill, not a trained non-reasoning mode, so output quality with it is untested."
+  },
+  {
+   "claim": "Tool calling: <ifm|tool_calls><ifm|tool_call>NAME <ifm|arg_key>/<ifm|arg_value>, xml default, json and xml_typed via tool_call_format; template lines 786-792 and 865-888; vLLM k2_horizon tool parser; llama.cpp dedicated parser at chat.cpp ~1334; HF template rejects assistant history without reasoning field; llama.cpp injects empty reasoning_content",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/IFM/K2-Horizon-MoVA-36B-A4B/raw/main/chat_template.jinja",
+   "correction": "Template lines 784-794 (call instructions) and 865-888 (render_tool_calls_block) match. Line 979 raises 'Assistant message is missing a thinking field'. Default tool_call_format is 'xml' (line 12). llama.cpp b12407 chat.cpp lines 1332-1337 select common_chat_params_init_k2_horizon, and parser lines 15-16 inject reasoning_content=''. Parser line 115 notes that models leave out <ifm|arg_type> even when xml_typed is requested."
+  },
+  {
+   "claim": "Checkpoint sizes: BF16 69.78, FP8 45.07, IFM GGUF Q4_K_M 20.83 (Q5_0 24.10, Q5_K_M 24.62, Q6_K 28.65, Q8_0 37.10) uploaded 2026-09-22; bartowski b11462 Q4_K_M 21.14 etc.; GPTQ 20.25; AWQ 22.58; NVFP4 34.22",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/IFM/K2-Horizon-MoVA-36B-A4B-GGUF?blobs=true",
+   "correction": "All match within rounding (GiB). Small corrections: the IFM GGUF repo was created on 2026-09-03 with a first upload. The current quants were re-uploaded on 2026-09-22, when a stray K2-Horizon-32B-Q4_K_M.gguf was deleted. Siladrim GPTQ repo totals 20.27 GiB, AWQ 22.61, NVFP4 34.24 (whole repo, so the small differences are probably non-weight files). bartowski README line 24 confirms b11462."
+  },
+  {
+   "claim": "vLLM: K2HorizonForCausalLM at registry.py line 147 in v0.33.0; recipe H200 TP2 vram_minimum_gb 90; min version v0.30.0 via PR #55063; compute_mova_v_sparse stacks expert.weight without quant flags; nothing fits 16 GB",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/models/registry.py",
+   "correction": "registry.py line 147 confirmed. The recipe gives h200 verified, tp 2, vram_minimum_gb 90. GitHub compare shows the #55063 merge commit 'diverged' from v0.29.0 and is an ancestor of v0.30.0 (published 2026-09-22), so the minimum of v0.30.0 is right. k2_horizon.py lines 912-935 match the record. The fit verdict holds: even the 20.27 GiB GPTQ exceeds the 14.65 GiB budget."
+  },
+  {
+   "claim": "Issues: vLLM #62743 open (medium/low reasoning leak), #66264 open (CPU offload), #55512; llama.cpp PR #29535 merged 2026-10-06 (b11454), #30335 and #31683 included in b12407; #25859 open; Ollama PR #18281 open",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/vllm-project/vllm/issues/62743",
+   "correction": "All states match. The #29535 merge commit is identical to the b11454 tag. #30335 (merged 2026-11-12) and #31683 (merged 2026-11-05) are both ancestors of b12407 (tag date 2026-11-15). #31683 is a general KV-shift fix and is not specific to K2. #55512 is closed (2026-09-06)."
+  },
+  {
+   "claim": "Ollama ifm/k2-horizon:36b = 36b-q4_K_M digest 2a1342732f8d 22GB; q5_K_M 26GB, q6_K 31GB, q8_0 40GB; 512K; default 4k under 24 GB; requires 0.40.4; tools+thinking",
+   "verdict": "confirmed",
+   "evidence_url": "https://ollama.com/ifm/k2-horizon/tags",
+   "correction": "Confirmed, but the record leaves out 36b-q5_0 (890a6c855f00, 26GB) and 36b-bf16 (75GB). The readme asks for at least 32,768 context; 65,536 is the study's own requirement."
+  },
+  {
+   "claim": "AA independent: Terminal-Bench 2.1 56.6 (Qwen3.6-35B-A3B 44.9), tau3-Banking 32.0 (Qwen3.6 9.3), Progress Index 281 (Qwen3.6 261, Qwen3.8-27B xhigh 303)",
+   "verdict": "confirmed",
+   "evidence_url": "https://artificialanalysis.ai/models/k2-horizon-mova-36b-a4b",
+   "correction": "AA RSC JSON: terminalBench21 0.565543, tauBanking 0.319588, isReasoning true. Qwen3.6-35B-A3B: 0.449438 and 0.092784. The small-models page scores are 280.70 for K2 MoVA, 261.45 for Qwen3.6-35B-A3B and 303.09 for qwen3-8-27b."
+  },
+  {
+   "claim": "AA AutomationBench-AA 26.1",
+   "verdict": "confirmed",
+   "evidence_url": "https://artificialanalysis.ai/models/k2-horizon-mova-36b-a4b",
+   "correction": "The value is 0.26102 in AA's field 'automationBenchPartialScore', so label it as the AutomationBench-AA partial score."
+  },
+  {
+   "claim": "Vendor card self-reports: TB2.1 58.6, tau3-Banking 26.8, GPQA Diamond 80.8, SciCode 38.9 (high effort)",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/IFM/K2-Horizon-MoVA-36B-A4B/raw/main/README.md",
+   "correction": "Parsed from the card's HTML table, all self-reported. The card says baselines are 'from Artificial Analysis' and its Qwen3.6 figures (44.9 / 9.3) match AA. Its own K2 figures differ from AA's live values (TB2.1 58.6 vs 56.6, tau3 26.8 vs 32.0), so they come from a vendor run, and the conflict should stay flagged. Best Practices item 1 says all reported results use high effort."
+  },
+  {
+   "claim": "Sampling temperature 1.0, top_p 0.95, reasoning_effort high",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/IFM/K2-Horizon-MoVA-36B-A4B/raw/main/README.md",
+   "correction": "Card Best Practices items 1 and 2, IFM GGUF README line 243 and the Ollama readme all say the same."
+  },
+  {
+   "claim": "IFM blog https://ifm.ai/blog/k2/ unreadable",
+   "verdict": "confirmed",
+   "evidence_url": "https://ifm.ai/blog/k2/",
+   "correction": "It still returned HTTP 403 on 2026-11-15. The card lists it as 'Available'."
+  }
+ ]
+}

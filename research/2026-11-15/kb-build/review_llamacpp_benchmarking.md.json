@@ -1,0 +1,76 @@
+{
+ "file": "$HOME/projects/llm/llamacpp/benchmarking.md",
+ "checked_claims": 27,
+ "fixes": [
+  {
+   "what": "Image contents line: server-cuda also ships the `llama` binary, and light-cuda ships `llama`, `llama-cli` and `llama-completion`. Added that neither image has llama-bench.",
+   "why": "The b12418 cuda.Dockerfile has COPY lines for /app/full/llama plus llama-server (server target) and llama, llama-cli and llama-completion (light target). The old text said 'only llama-server'.",
+   "source": "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12418/.devops/cuda.Dockerfile"
+  },
+  {
+   "what": "Qwen3.6-35B-A3B experts per layer changed from 0.44 to 0.42 GiB (16.875 GiB over 40 layers), with a config link. The sweep cap note now says about 11 GiB at -ncmoe 26, not 11.5.",
+   "why": "The feasibility record's source-backed arithmetic gives 0.422 GiB per layer (8.44 GiB for 20 layers).",
+   "source": "ver/feasibility_Qwen3.6-35B-A3B.json, ver/verify_Qwen3.6-35B-A3B.json"
+  },
+  {
+   "what": "102.4 GB/s RAM bandwidth is now labelled as an estimate (6400 MT/s x 8 bytes x 2 channels) instead of being attributed to Intel's spec.",
+   "why": "The Intel ark page for SKU 245960 lists DDR5-6400 and 2 channels but gives no bandwidth figure.",
+   "source": "ver/platform_host-docker-gpu.json"
+  },
+  {
+   "what": "clocks_event_reasons.active guidance: bit 0x1 only means the GPU is idle, so only the other bits mark a throttled row. The old rule was 'any non-zero value'.",
+   "why": "nvidia-smi --help-query-gpu on this machine lists gpu_idle as one of the event reasons, so a non-zero value does not by itself mean the GPU was held back. Running the query once also confirmed that all 9 fields are valid on driver 595.99.02.",
+   "source": "nvidia-smi --help-query-gpu (local, read-only)"
+  },
+  {
+   "what": "Thread-count advice now links its real source, comment odbkdoe in thread 1s7lo0a (2026-03-30), not 'same thread'. The text now says 'speed' (not 'decode speed') dropped by more than 20% at 16 threads on an 8C/16T 9800X3D, where the default of 8 was best.",
+   "why": "The archived comment is in a different thread from the post it was attributed to, and it does not single out decode speed.",
+   "source": "scratchpad/src/reddit-18-models archive (Arctic Shift), reddit-18-models check"
+  },
+  {
+   "what": "The Qwen3.6-35B-A3B 35 tok/s row now links comment ogrgfvj in thread 1so3rsx, not the 18-models thread. The build cell now reads 'self-built llama.cpp (comment dated ...)' for this row and the Gemma row.",
+   "why": "The archive puts ogrgfvj in link_id t3_1so3rsx. The dates are comment dates, not stated build dates.",
+   "source": "reddit-18-models review and check, Arctic Shift archive"
+  },
+  {
+   "what": "TechFuelHQ llama.cpp vs Ollama row: runtime cell now reads llama-server b10507 vs Ollama 0.32.1, 4k context, 256-token generations.",
+   "why": "Rule 7 asks for runtime labels, and the companion page states this setup.",
+   "source": "https://techfuelhq.com/self-hosted/ollama-vs-llamacpp-rtx-5080-2026/ (saved copy vs.html)"
+  },
+  {
+   "what": "The community table intro now says every row is a third-party measurement on desktop hardware, and that the Qwen3.6 row is a recalled figure.",
+   "why": "Rule 7 asks for measured or estimated labels on third-party numbers.",
+   "source": "reviews hf-rtx5080-throughput, reddit-18-models"
+  },
+  {
+   "what": "Added inline links to the TechFuelHQ companion page and the canonical dataset page in the notes under the table, and added both pages plus the two new Reddit comment links to Sources.",
+   "why": "These factual notes had no source next to them.",
+   "source": "hf-rtx5080-throughput check"
+  },
+  {
+   "what": "The -ub note for the gpt-oss guide now says the RTX 5080 run measured -ub 2048 and 4096, and 2048 was as fast or faster at every prefill size.",
+   "why": "The guide's run used -ub 2048,4096: pp2048 7476.55 vs 7469.28, pp32768 5531.03 vs 5376.58.",
+   "source": "https://github.com/ggml-org/llama.cpp/discussions/15396 (saved gd/body.md)"
+  },
+  {
+   "what": "return_progress is now described as stream mode only. The -fitt/-fitc table row now gives both defaults (off / 0).",
+   "why": "The b12418 server README and llama-bench README say so.",
+   "source": "bench-src/tools_server_README.md, tools_llama-bench_README.md"
+  },
+  {
+   "what": "Maintenance: the community measurement dates now read 2025-08 to 2026-08, not 2025-08 to 2026-11.",
+   "why": "The latest measurement is the TechFuelHQ capture of 2026-08-26. The 2026-11-04 page update was a presentation-only change.",
+   "source": "hf-rtx5080-throughput check"
+  }
+ ],
+ "remaining_concerns": [
+  "The Reddit comment permalinks (/r/LocalLLaMA/comments/<post>/comment/<id>/) were built from the archive's post and comment ids. They could not be opened live because reddit.com returns 403 to non-browser clients.",
+  "The thinking-on vs thinking-off example (all 1024 tokens used vs answered in 1.5 s) comes from the user's private DGX Spark runbook, so it cannot carry a public link. It is attributed to that runbook in the text.",
+  "The probe sends model 'bench' while the server runs with --alias gpt-oss-20b. This relies on single-model llama-server ignoring the model field, which was not re-verified at b12418.",
+  "The '-ub 512 under 300 tok/s vs about 1500 tok/s' comment (oe1j3hk) does not name the model itself. The Qwen3.5-122B-A10B attribution comes from the review's reading of the surrounding thread context.",
+  "Verified live and correct: full-cuda-b12407 exists (CUDA 12.8.1, entrypoint /app/tools.sh, about 3.62 GB compressed, built 2026-11-15); full-cuda13-b12407 exists with CUDA 13.5.0 and cuda>=13.5; full-cuda-b12418 returns 404. Also checked against source copies: the llama-bench options, defaults and JSONL fields, n_ctx = p + n + d, server timings and metrics names, --cache-ram 8192, the scoreboard (with FA) and gpt-oss guide numbers, the issue states (#27330, #30357, #25859, #27623 and PR #31802 all open), and the 191 and 68 tok/s estimates.",
+  "Writing-rule scan: no em or en dashes, no emoji, one sentence per prose line, ports only on 127.0.0.1, no restart policies, and --memory with an equal --memory-swap in every docker run. All relative links point to planned KB documents."
+ ],
+ "verdict": "ready-with-concerns",
+ "used_playwright": false
+}

@@ -1,0 +1,146 @@
+{
+  "name": "NVIDIA Nemotron 3.5 Bolt 74B-A9B 24GB (IQ2_XXS QAT GGUF)",
+  "hf_repo": "nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB-GGUF",
+  "exists_as_described": true,
+  "official_org": {
+    "value": "NVIDIA (HF author 'nvidia'; card: 'Model Developer: NVIDIA Corporation'). Family repos: -24GB-GGUF, -24GB (ModelOpt safetensors), -BF16, -24GB-LiLiCorr and -24GB-LiLiCorr-GGUF (speculative drafter).",
+    "source_url": "https://huggingface.co/api/models/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB-GGUF?blobs=true",
+    "support": "direct-statement"
+  },
+  "release_date": {
+    "value": "Public release 2026-10-15 (card 'Release Date: Hugging Face 10/15/2026'; NVIDIA blog 'Published: October 15, 2026'). HF createdAt 2026-10-07T19:15:58Z (GGUF), lastModified 2026-10-15T18:10:28Z; BF16 repo createdAt 2026-10-09.",
+    "source_url": "https://research.nvidia.com/labs/nemotron/Nemotron-3.5-Bolt-24GB/",
+    "support": "direct-statement"
+  },
+  "within_last_12_months": true,
+  "license": {
+    "value": "OpenMDW-1.1 (card 'Governing Terms'). Permissive: free to use, modify and distribute including commercially ('This model is ready for commercial or non-commercial use'); must keep the license and origin notices when redistributing; rights terminate if you sue claiming the model infringes patents or copyright; no restrictions on outputs; user is responsible for clearing third-party rights. No acceptable-use policy and no gating (HF gated=false).",
+    "source_url": "https://raw.githubusercontent.com/OpenMDW/OpenMDW/main/1.1/LICENSE.OpenMDW-1.1",
+    "support": "direct-statement"
+  },
+  "params": {
+    "value": "74B total / 9B active (card). HF GGUF metadata total 74,042,720,848. Compressed from Nemotron 3.5 Super VL 120B-A12B with Star Elastic; top-k 9 experts per token (parent 22). Arithmetic from the GGUF header: routed experts 15.88 GiB of the 20.50 GiB tensors; only 0.407 GiB of routed expert bytes are read per token, while the dense part (Mamba NVFP4, Q8_0 attention, latent projections, output head, shared experts) is 4.09 GiB per token.",
+    "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB-GGUF/raw/main/README.md",
+    "support": "direct-statement"
+  },
+  "architecture": {
+    "value": "Nemotron-H hybrid Mamba-2 + Transformer LatentMoE plus C-RADIO v4-H vision encoder. config.json (BF16 repo): architectures NemotronH_Omni_Reasoning_V3, llm_config NemotronHPuzzleForCausalLM (model_type nemotron_h_puzzle), 88 blocks = 40 Mamba-2 + 40 MoE + 8 full-attention (block indices 7,16,25,36,47,58,69,78), hidden 4096, 32 query heads, num_key_value_heads 2, head_dim 128, no sliding window, Mamba 128 heads x 64 dim, state 128, 8 groups, conv 4; MoE: per-layer heterogeneous routed experts (240 to 496) with widths 1536-2560, 9 active, 1 shared expert (5376), moe_latent_size 1024, relu2, sigmoid routing, routed_scaling 5.0; vocab 131072. Quantization (GGUF and ModelOpt hf_quant_config): routed and shared experts IQ2_XXS (2.0625 bpw, QAT/QAD), Mamba in/out projections NVFP4 (W4A16), embeddings/output/attention/latent Q8_0. GGUF general.architecture = nemotron_h_moe.",
+    "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-BF16/raw/main/config.json",
+    "support": "direct-statement"
+  },
+  "context_length": {
+    "value": "262144 (max_position_embeddings 262144; GGUF nemotron_h_moe.context_length 262144; card 'Up to 256K'). Long-context recovery trained at 128K. NVIDIA's 28GB recipe uses 65,536 with q8_0 KV; Unsloth's guide says 'Up to 128K for 74B-A9B'.",
+    "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-BF16/raw/main/config.json",
+    "support": "direct-statement"
+  },
+  "modalities": {
+    "value": "Input text, image, video; output text. Vision lives in a separate mmproj GGUF (1,733,692,736 B = 1.61 GiB) for llama.cpp, so omitting --mmproj (or passing --no-mmproj with -hf) gives a text-only path. In the safetensors repo the vision_model and mlp1 weights are inside the shards (no --language-model-only savings measured).",
+    "source_url": "https://huggingface.co/api/models/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB-GGUF?blobs=true",
+    "support": "direct-statement"
+  },
+  "thinking": {
+    "mode": "toggle",
+    "how_to_toggle": "Chat template default enable_thinking=True (chat_template.jinja: 'set enable_thinking = enable_thinking if enable_thinking is defined else True'). Off: chat_template_kwargs {\"enable_thinking\": false} (template emits '<think></think>'). Medium effort: {\"enable_thinking\": true, \"medium_effort\": true} appends '{reasoning effort: efficient}' to the last user turn. llama.cpp b12407: per request body chat_template_kwargs (card's own llama.cpp client example), server default via --chat-template-kwargs '{\"enable_thinking\":false}' or --reasoning off; reasoning returned in reasoning_content. vLLM: same chat_template_kwargs per request, --default-chat-template-kwargs for a server default; card uses reasoning parser plugin ultra_v3 (ultra_v3_reasoning_parser.py in the repo, not in-tree; in-tree v0.33.0 has nemotron_v3). Ollama: tag lists thinking capability and parser nemotron-3-nano; native API 'think': true/false (per-request /v1 toggle not verified). History reasoning is re-inserted only from message.reasoning_content and is truncated for turns before the last user message (truncate_history_thinking default True).",
+    "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-BF16/raw/main/chat_template.jinja",
+    "support": "direct-statement"
+  },
+  "tool_calling": {
+    "supported": "yes",
+    "format": "Qwen3-Coder XML: <tool_call>\\n<function=NAME>\\n<parameter=ARG>\\nVALUE\\n</parameter>\\n</function>\\n</tool_call>; tools rendered as <tools><function><name>..</name><parameters>..; tool results wrapped in <tool_response> inside a user turn.",
+    "evidence": "chat_template.jinja (identical bytes in the GGUF tokenizer.chat_template, 12514 chars) contains the tool block and format instructions; card has a full llama.cpp tool-calling example with tool_choice auto/none; vLLM recipe uses --enable-auto-tool-choice --tool-call-parser qwen3_coder; llama.cpp b12407 common/chat.cpp lines 1420-1427 route templates containing '<tool_call>', '<function=', '<parameter=' to the Qwen3-Coder handler ('also used by Nemotron Nano 3, Qwen3.5'). Training card lists 26.2B tokens of tool-calling data and MCP E2E RL. Community 24GB-file run (anik-jha card, self-reported): BFCL simple valid/correct 100% / 94.3%, multiple 99.0% / 92.0%.",
+    "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB-GGUF/raw/main/README.md",
+    "support": "direct-statement"
+  },
+  "checkpoints": [
+    {"repo": "nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB-GGUF", "format": "GGUF IQ2_XXS QAT (NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB.gguf 22,018,326,528 B = 20.51 GiB) + mmproj 1,733,692,736 B = 1.61 GiB", "official": true, "publisher": "NVIDIA", "size_gb": 22.02, "source_url": "https://huggingface.co/api/models/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB-GGUF?blobs=true"},
+    {"repo": "nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB-LiLiCorr-GGUF", "format": "GGUF speculative drafter (998,242,560 B = 0.93 GiB), needs the target model", "official": true, "publisher": "NVIDIA", "size_gb": 1.0, "source_url": "https://huggingface.co/api/models/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB-LiLiCorr-GGUF?blobs=true"},
+    {"repo": "nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB", "format": "safetensors ModelOpt MIXED_PRECISION (IQ2_XXS ggml-packed experts, W4A16_NVFP4 Mamba, Q8_0), 90 shards, 24,083,745,496 B = 22.43 GiB incl. vision", "official": true, "publisher": "NVIDIA", "size_gb": 24.08, "source_url": "https://huggingface.co/api/models/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB?blobs=true"},
+    {"repo": "nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-BF16", "format": "safetensors BF16, 63 shards, 139.5 GiB", "official": true, "publisher": "NVIDIA", "size_gb": 149.8, "source_url": "https://huggingface.co/api/models/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-BF16?blobs=true"},
+    {"repo": "unsloth/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-GGUF", "format": "GGUF: IQ2_XXS 22,018,326,464 B (20.51 GiB, same as NVIDIA), UD-IQ2_XXS 20.51 GiB, UD-IQ1_M 18.91 GiB, UD-IQ1_S 17.24 GiB, UD-IQ2_M 22.92 GiB, UD-Q2_K_XL 26.78 GiB and larger; dflash drafter 0.93 GiB; mmproj-BF16 1.61 GiB", "official": false, "publisher": "Unsloth", "size_gb": 22.02, "source_url": "https://huggingface.co/api/models/unsloth/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-GGUF/tree/main?recursive=true"},
+    {"repo": "anik-jha/Nemotron-3.5-Bolt-74B-A9B-16GB-GGUF", "format": "GGUF REAP expert-pruned IQ2_XXS (NVIDIA bytes, 50% experts kept): 16GB-REAP50 13,378,655,232 B = 12.46 GiB; 12GB-REAP25 8.44 GiB. Self-reported: keeps 93-94% of HumanEval+/MBPP+ and BFCL; long context not benchmarked", "official": false, "publisher": "anik-jha (community)", "size_gb": 13.38, "source_url": "https://huggingface.co/api/models/anik-jha/Nemotron-3.5-Bolt-74B-A9B-16GB-GGUF/tree/main?recursive=true"}
+  ],
+  "vllm": {
+    "fits": "no",
+    "arch_supported": "Yes at tag v0.33.0: registry.py line 553 'NemotronH_Omni_Reasoning_V3' -> nano_nemotron_vl; line 187 'NemotronHPuzzleForCausalLM' -> nemotron_h. The card's minimum is nightly 77154ca (2026-10-14), which v0.33.0 contains (GitHub compare: v0.33.0 is 843 commits ahead).",
+    "best_checkpoint": "nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB (only vLLM-loadable quantized checkpoint)",
+    "weights_gib": 22.43,
+    "kv_bytes_per_token_bf16": 8192,
+    "kv_math": "Budget 16303 MiB x 0.92 = 14999 MiB = 14.65 GiB. Weights 22.43 GiB (HF API shard sum, includes vision; minus the ~1.61 GiB vision part it is still about 20.8 GiB). KV pool = 14.65 - 22.43 - 1.2 = -8.98 GiB, negative, so no context at all (also negative with --language-model-only). KV per token: 2 x 8 attention layers x 2 KV heads x 128 x 2 B = 8192 B BF16, 4096 B FP8; Mamba state per sequence about 40 x 128 x 64 x 128 x 2 B = 84 MB (bf16 ssm cache per card) plus conv state. If it fitted, 128k would cost 1.0 GiB BF16 KV. Expert CPU offload is not a usable plan (baseline: #66264).",
+    "est_max_context_tokens": 0,
+    "quant_on_sm120": "ModelOpt MIXED_PRECISION with ggml-packed IQ2_XXS/Q8_0 blocks runs only through b12x kernels (docs/features/quantization/b12x.md at v0.33.0: 'uv pip install vllm[b12x]', --linear-backend b12x --moe-backend b12x; IQ2_XXS MoE with BF16 activations on SM120/SM121). Baseline: b12x is not installed in vllm/vllm-openai:v0.33.0. NVFP4 W4A16 Mamba layers would use Marlin.",
+    "tool_call_parser": "qwen3_coder",
+    "reasoning_parser": "ultra_v3 via --reasoning-parser-plugin ultra_v3_reasoning_parser.py (repo file); in-tree nemotron_v3 is the likely fallback (not verified for this model)",
+    "min_version": "nightly-77154ca6116ae34cbfe314beef1016bde9b63989 per card (v0.33.0 is newer) plus pip b12x and 'vllm download-kernels'",
+    "serve_command": "Not runnable on 16 GB. Card recipe for reference: VLLM_USE_V2_MODEL_RUNNER=1 vllm serve nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB --trust-remote-code --max-model-len 262144 --max-num-seqs 1 --kv-cache-dtype fp8 --linear-backend b12x --moe-backend b12x --attention-backend FLASHINFER --mamba-backend flashinfer --mamba-ssm-cache-dtype bfloat16 --mamba-cache-dtype bfloat16 --mamba-cache-mode align --enable-auto-tool-choice --tool-call-parser qwen3_coder --reasoning-parser-plugin ultra_v3_reasoning_parser.py --reasoning-parser ultra_v3 --speculative-config '{\"method\":\"dflash\",\"model\":\"nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB-LiLiCorr\",\"num_speculative_tokens\":7}'",
+    "known_issues": "Needs b12x (absent from the image) and a 24 GB+ GPU; card lists A100/H100-80GB/Blackwell. FP8 KV on sm_120 goes through FlashInfer (baseline race #61239).",
+    "sources": [
+      "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/models/registry.py",
+      "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/docs/features/quantization/b12x.md",
+      "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/layers/quantization/modelopt.py",
+      "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB/raw/main/README.md",
+      "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB/resolve/main/hf_quant_config.json",
+      "https://api.github.com/repos/vllm-project/vllm/compare/77154ca6116ae34cbfe314beef1016bde9b63989...v0.33.0"
+    ]
+  },
+  "llamacpp": {
+    "arch_supported": "Yes. src/llama-arch.cpp at b12407 maps LLM_ARCH_NEMOTRON_H_MOE 'nemotron_h_moe' (line 105) and the latent tensors ffn_latent_down/ffn_latent_up (lines 584-585); src/models/nemotron-h.cpp loads per-layer expert counts and widths (lines 111-131). Support landed in PR #30520 'add Nemotron Super 3.5 VL and Nemotron Bolt 74B A9B support', merged 2026-10-15 (cd0a5b6a1); first build containing it is b11669. CUDA NVFP4 kernels present (ggml-cuda mmvq/mmq). The 'pixtral' pre-tokenizer bug in NVIDIA's GGUF (#30894) is fixed by PR #30960 (merged 2026-10-22), included in b12407. Spec types draft-dflash and draft-lilicorr exist at b12407 (common/speculative.cpp lines 77, 80).",
+    "gguf_repo": "nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB-GGUF",
+    "quant": "IQ2_XXS QAT (experts), NVFP4 Mamba, Q8_0 rest; no higher-quality smaller option exists because the QAT 2-bit file is the vendor's target",
+    "file_gib": 20.51,
+    "est_vram_gib": 14.4,
+    "est_ram_gib": 9.5,
+    "est_context_tokens": 131072,
+    "offload_plan": "GGUF header arithmetic (range-read of the file header): non-routed tensors 4.617 GiB (incl. 0.531 GiB token_embd) stay on GPU; routed experts 15.882 GiB. VRAM budget about 15.3 GiB usable (16303 MiB minus ~0.11 GiB idle minus ~0.5 GiB CUDA context), target <= 14.8 GiB. KV f16 = 8192 B/token: 64k 0.50 GiB, 128k 1.00 GiB, 256k 2.00 GiB; q8_0 about 0.53x (256k q8_0 = 1.06 GiB). Mamba state ~0.16 GiB (-np 1). Compute buffers ~1.0 GiB. Fixed GPU at 128k f16 = 4.62 + 1.00 + 0.16 + 1.0 = 6.78 GiB, leaving ~8.0 GiB for experts. --n-cpu-moe 50 (blocks 0-49) puts 8.23 GiB of experts in RAM and 7.65 GiB on GPU: GPU total ~14.4 GiB. The same N gives 256k with -ctk/-ctv q8_0 (~14.5 GiB). For 64k f16, --n-cpu-moe 46 (7.61 GiB RAM, 8.27 GiB GPU, ~14.55 GiB). RAM use ~8.2 GiB experts plus ~1 GiB host buffers, far below the ~40 GiB free. Without --mmproj (text only). The LiLiCorr drafter would add 0.93 GiB on GPU and push ~2 more blocks to RAM; its benefit with CPU experts is unmeasured. Alternatively let --fit (default on) place experts by leaving -ncmoe unset.",
+    "server_command": "docker run --rm --name bolt --device nvidia.com/gpu=all -e GGML_CUDA_DISABLE_GRAPHS=1 --memory 24g -p 127.0.0.1:8080:8080 -v $HOME/.cache/huggingface:/root/.cache/huggingface ghcr.io/ggml-org/llama.cpp:server-cuda-b12407 --hf-repo nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB-GGUF --hf-file NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB.gguf --no-mmproj --alias nemotron-bolt -c 131072 -np 1 -ngl 999 --n-cpu-moe 50 -fa on -b 2048 -ub 512 --jinja --temp 1.0 --top-p 0.95 --chat-template-kwargs '{\"enable_thinking\":false}' --host 0.0.0.0 --port 8080",
+    "tool_calling_note": "Template is routed to llama.cpp's Qwen3-Coder XML handler (common/chat.cpp:1420-1427 at b12407); reasoning arrives in reasoning_content (OpenCode compatibility.reasoningField 'reasoning_content'). Same handler family as baseline issue #30118 (Qwen3.6 tool call leaking into content), so run a tool-call smoke test. Thinking is ON by default in the template, so set the server default off and enable per request via chat_template_kwargs.",
+    "sources": [
+      "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/src/llama-arch.cpp",
+      "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/src/models/nemotron-h.cpp",
+      "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/common/chat.cpp",
+      "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/common/arg.cpp",
+      "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/common/speculative.cpp",
+      "https://github.com/ggml-org/llama.cpp/pull/30520",
+      "https://github.com/ggml-org/llama.cpp/issues/30894",
+      "https://github.com/ggml-org/llama.cpp/pull/30960",
+      "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB-GGUF/resolve/main/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB.gguf (header range-read, bytes 0-24 MiB)"
+    ]
+  },
+  "ollama": {
+    "tag": "nemotron-3.5-bolt:74b-a9b (= :latest = :74b-a9b-iq2, digest d6d3deeca271)",
+    "size_gb": 24.75,
+    "context": "256K listed; Ollama default on <24 GiB GPUs is 4k, so OLLAMA_CONTEXT_LENGTH=65536 or more is required",
+    "capabilities": "Manifest: model blob sha256:91d63363e782 = NVIDIA's GGUF byte-for-byte (22,018,326,528 B), projector 1,733,692,736 B, draft (architecture dflash) 998,242,560 B, so ~23.05 GiB total. Config: nemotron_h_moe, IQ2_XXS, 74.0B, renderer nemotron-3.5-super, parser nemotron-3-nano, requires 0.40.5 (baseline v0.40.16 is enough). Params: temperature 1, top_p 0.95, draft_num_predict 7. Search page shows vision, tools, thinking. On 16 GB Ollama falls back to whole-layer offload and also loads the projector and the draft, so expect it slower than llama.cpp --n-cpu-moe.",
+    "source_url": "https://registry.ollama.ai/v2/library/nemotron-3.5-bolt/manifests/74b-a9b"
+  },
+  "benchmarks": [
+    {"name": "Terminal-Bench 2.1", "score": "50.98 (Qwen3.6-35B-A3B BF16 44.38, Gemma 4 26B-A4B 37.22, Nemotron 3.5 Lightning 23.46, same NVIDIA table)", "self_reported": true, "setting": "IQ2 24GB model, NVIDIA harness", "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB-GGUF/raw/main/README.md"},
+    {"name": "MCP-Atlas (500 public tasks)", "score": "52.20 (Qwen3.6-35B-A3B 51.20 measured by NVIDIA; Qwen-reported 62.8)", "self_reported": true, "setting": "NVIDIA harness", "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB-GGUF/raw/main/README.md"},
+    {"name": "PinchBench", "score": "87.82 (Qwen3.6-35B-A3B 88.07)", "self_reported": true, "setting": "NVIDIA harness", "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB-GGUF/raw/main/README.md"},
+    {"name": "Tau3 Banking", "score": "17.01 (Qwen3.6-35B-A3B 10.52)", "self_reported": true, "setting": "NVIDIA harness", "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB-GGUF/raw/main/README.md"},
+    {"name": "SciCode / GPQA Diamond / HLE no tools / AA-LCR / GDPVal-AA-V2", "score": "41.02 / 86.43 / 25.30 / 64.06 / 28.47", "self_reported": true, "setting": "NVIDIA harness", "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB-GGUF/raw/main/README.md"},
+    {"name": "BrowseComp / WebArena (vision)", "score": "66.75 / 50.86", "self_reported": true, "setting": "NVIDIA harness", "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB-GGUF/raw/main/README.md"},
+    {"name": "AA-AgentPerf Local replay duration", "score": "600.80 s (Qwen3.6-35B-A3B UD-Q4_K_M+MTP 453.97 s, Gemma 4 26B-A4B 480.68 s, Qwen3.8-27B 1043.28 s; lower is better)", "self_reported": true, "setting": "llama.cpp, RTX Spark 128GB, Windows 11 ARM, Bolt with LiLiCorr", "source_url": "https://research.nvidia.com/labs/nemotron/Nemotron-3.5-Bolt-24GB/"},
+    {"name": "AIPerf SPEED-Bench-Coding TPS", "score": "83.99 (Qwen3.6-35B-A3B 96.63, Gemma 4 26B-A4B 100.56, Qwen3.8-27B 28.26)", "self_reported": true, "setting": "llama.cpp, RTX Spark, Bolt with LiLiCorr drafter", "source_url": "https://research.nvidia.com/labs/nemotron/Nemotron-3.5-Bolt-24GB/"},
+    {"name": "BenchLM BenchAlign v5.8 overall (aggregate)", "score": "41.6 Estimated, open #46, range 27.25-55.95; all 8 underlying results NVIDIA-reported, 0 independent runs", "self_reported": true, "setting": "aggregator over vendor numbers (2026-11-13), per reviews/benchlm.json check", "source_url": "https://benchlm.ai/models/nemotron-3-5-bolt-74b-a9b"},
+    {"name": "Artificial Analysis Intelligence Index", "score": "N/A (page lists the model, 'No publicly available API', not evaluated)", "self_reported": false, "setting": "independent, read 2026-11-15", "source_url": "https://artificialanalysis.ai/models/nemotron-3-5-bolt-74b-a9b"},
+    {"name": "HumanEval+ / MBPP+ / BFCL simple / BFCL multiple (24GB NVIDIA file)", "score": "0.890 / 0.743 / 94.3% correct / 92.0% correct; DGX Spark decode 40.1 tok/s, prefill 1145 tok/s; GPU memory 21.6 GB at 128K", "self_reported": false, "setting": "community third-party run on a REAP-pruning card, unverified, llama.cpp", "source_url": "https://huggingface.co/anik-jha/Nemotron-3.5-Bolt-74B-A9B-16GB-GGUF/raw/main/README.md"}
+  ],
+  "sampling": "temperature 1.0, top_p 0.95 (card 'Recommended Sampling', generation_config.json, GGUF general.sampling.temp/top_p, Ollama params). No min_p/top_k given. Unsloth guide uses defaults and gives no separate values for 74B-A9B. Thinking/no-thinking use the same values per the card.",
+  "speed_notes": "Inferred decode bound at --n-cpu-moe 50: GPU reads 4.09 GiB dense + 0.19 GiB active experts = 4.27 GiB (4.59 GB) per token -> 5.1 ms at 896 GB/s; RAM reads 0.22 GiB (0.235 GB) of active experts -> 2.9 ms at 80 GB/s. Ceiling ~125 tok/s; at the ~69% efficiency implied by the community DGX Spark figure (40.1 tok/s vs 273/4.73 GB = 58 ceiling) expect roughly 55-80 tok/s single stream without speculation. Unlike most MoE models, the dense part (Mamba NVFP4 2.30 GiB, Q8_0 heads) dominates, so expert offload costs little; Qwen3.6-35B-A3B reads far fewer bytes per token and NVIDIA's own RTX Spark numbers show Bolt slower (84 vs 97 TPS, 601 s vs 454 s agent replay). Prefill with CPU experts is the open risk (baseline #25859).",
+  "opencode_fit": {
+    "verdict": "good",
+    "recommended_runtime": "llama.cpp ghcr.io/ggml-org/llama.cpp:server-cuda-b12407 (Ollama fallback slower; vLLM does not fit)",
+    "recommended_checkpoint": "nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB-GGUF NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB.gguf (20.51 GiB), no mmproj",
+    "recommended_context": "131072 with f16 KV and --n-cpu-moe 50 (256k with q8_0 KV at the same N; 64k needs only N=46)",
+    "caveats": "Fits this laptop despite NVIDIA's 32 GB+ guidance because only ~8 GiB of experts need to live in RAM; the 32 GB figure assumes all-GPU plus drafter and mmproj. Everything is an estimate: nothing measured on sm_120 laptop. All quality numbers are NVIDIA-reported (TB2.1 50.98 vs Qwen3.6 44.38 in the same NVIDIA harness) with no independent AA/SWE-bench result; no SWE-bench Verified number is published. 2-bit QAT quality on long agentic sessions unknown. Thinking defaults ON and NVIDIA's agent replay is 32% slower than Qwen3.6-35B-A3B. Tool calls go through llama.cpp's Qwen3-Coder XML handler (watch #30118-style leaks). Use OpenCode reasoningField 'reasoning_content'. Worth a measured head-to-head against pick #1."
+  },
+  "gaps": [
+    "Nothing run on this machine: VRAM, compute buffer size, tok/s and prefill at --n-cpu-moe 50 are estimates.",
+    "No independent quality benchmark: Artificial Analysis has no score; BenchLM is all NVIDIA-reported; only a community REAP card self-reports HumanEval+/BFCL for the 24GB file.",
+    "No SWE-bench Verified or Terminal-Bench 4.0 figure for Bolt; NVIDIA technical report PDF not read.",
+    "LiLiCorr drafter: card uses --spec-type draft-dflash with the LiLiCorr GGUF while b12407 also has draft-lilicorr; which is correct and whether it helps with CPU-resident experts is unverified.",
+    "Ollama per-request thinking toggle via /v1 not verified; Ollama layer-offload speed for this model not measured.",
+    "vLLM: whether b12x supports expert CPU offload was not checked (irrelevant while weights exceed the 14.65 GiB budget).",
+    "Exact llama.cpp CUDA context and compute buffer sizes for this hybrid graph are assumptions (0.5 and 1.0 GiB)."
+  ]
+}

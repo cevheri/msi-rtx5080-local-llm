@@ -1,0 +1,326 @@
+{
+ "summary": "Host prerequisites are all officially covered for this laptop, and none block the plan. Ubuntu 26.04 is in the NVIDIA Container Toolkit tested-platform table for amd64 (https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/supported-platforms.html). Docker Engine officially supports 'Ubuntu Resolute 26.04 (LTS)' (https://docs.docker.com/engine/install/ubuntu/). The toolkit install guide pins NVIDIA_CONTAINER_TOOLKIT_VERSION=1.20.1-1, released 2026-09-19 (https://github.com/NVIDIA/nvidia-container-toolkit/releases). NVIDIA's apt repo already serves 1.20.2-1, tagged around 2026-11-05 but with no GitHub release page or docs update yet. The setup is one generic deb repo, apt install, 'sudo nvidia-ctk runtime configure --runtime=docker', 'sudo systemctl restart docker', then verify with 'sudo docker run --rm --runtime=nvidia --gpus all ubuntu nvidia-smi' (https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html, .../sample-workload.html). CDI is a fully supported alternative: since toolkit 1.18 the nvidia-cdi-refresh service writes /var/run/cdi/nvidia.yaml automatically (https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/cdi-support.html), and Docker has CDI on by default since Engine 28.3.0 (https://docs.docker.com/reference/cli/dockerd/). In Compose you can use deploy.resources.reservations.devices (driver nvidia, count, capabilities [gpu] is mandatory) or the newer 'gpus: all' shorthand, which needs Compose 2.30.0+ (https://docs.docker.com/compose/how-tos/gpu-support/, https://docs.docker.com/reference/compose-file/services/). Driver 595 is the CUDA 13.2 branch (R595). CUDA 12.x and 13.0-13.2 containers run on it through backward compatibility. CUDA 13.3-13.5 containers rely on minor-version compatibility (13.x needs driver >= 580), which has PTX/feature caveats, and forward-compat packages are not available for GeForce (https://docs.nvidia.com/cuda/cuda-toolkit-release-notes/index.html, https://docs.nvidia.com/deploy/cuda-compatibility/minor-version-compatibility.html). vLLM v0.33.0's Dockerfile defaults to CUDA 13.0.3, which is fine on 595, while the vllm/vllm-openai 'cu135-nightly' tags would be in minor-compat territory. NVIDIA's official laptop spec pages list the RTX 5080 Laptop GPU at 1334 AI TOPS, 7680 CUDA cores, 16 GB GDDR7, 256-bit, 896 GB/s and 80-150 W GPU subsystem power (https://www.nvidia.com/en-us/geforce/laptops/compare/). Blackwell is supported only by the open kernel modules, which matches the installed nvidia-driver-595-open. The 595.99.02 README lists the RTX 5080 Laptop GPU, and Ubuntu has shipped 595.99.02 in resolute-updates/security since 2026-10-07. On laptops, RTD3 is on by default and the GPU stays active while a CUDA app runs. PRIME render offload only covers GLX/OpenGL/Vulkan, so CUDA compute does not depend on which GPU drives the display (that last point is inferred). Running nvidia-persistenced in UVM persistence mode disables RTD3.",
+ "facts": [
+  {
+   "topic": "toolkit-platform",
+   "claim": "NVIDIA Container Toolkit platform support table lists Ubuntu 26.04 (amd64 and arm64), alongside Ubuntu 22.04 and 24.04.",
+   "source_url": "https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/supported-platforms.html",
+   "source_date": "docs for toolkit 1.20.1 (copyright 2020-2026), fetched 2026-11-15",
+   "support": "direct-statement",
+   "notes": "Raw HTML read via curl, not summarizer."
+  },
+  {
+   "topic": "toolkit-version",
+   "claim": "Install guide pins NVIDIA_CONTAINER_TOOLKIT_VERSION=1.20.1-1 and installs nvidia-container-toolkit, nvidia-container-toolkit-base, libnvidia-container-tools, libnvidia-container1 at that version.",
+   "source_url": "https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html",
+   "source_date": "fetched 2026-11-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "toolkit-version",
+   "claim": "Latest GitHub release is v1.20.1 published 2026-09-19 (v1.20.0 on 2026-08-13, v1.19.1 on 2026-05-21).",
+   "source_url": "https://api.github.com/repos/NVIDIA/nvidia-container-toolkit/releases?per_page=8",
+   "source_date": "2026-09-19",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "toolkit-version",
+   "claim": "A newer v1.20.2 tag exists (tagged commit dated 2026-11-05, a grpc bump merge) and nvidia-container-toolkit 1.20.2-1 is already in NVIDIA's stable apt repo, but there is no GitHub release entry and the docs still pin 1.20.1-1.",
+   "source_url": "https://nvidia.github.io/libnvidia-container/stable/deb/amd64/Packages",
+   "source_date": "2026-11-05",
+   "support": "source-backed",
+   "notes": "Tag confirmed via https://api.github.com/repos/NVIDIA/nvidia-container-toolkit/tags. Release notes for 1.20.2 not found."
+  },
+  {
+   "topic": "toolkit-repo",
+   "claim": "The apt source list is distro-agnostic: 'deb https://nvidia.github.io/libnvidia-container/stable/deb/$(ARCH) /', so no per-release (resolute) repo is needed.",
+   "source_url": "https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list",
+   "source_date": "fetched 2026-11-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "toolkit-docker-config",
+   "claim": "'sudo nvidia-ctk runtime configure --runtime=docker' modifies /etc/docker/daemon.json so Docker can use the NVIDIA Container Runtime; then 'sudo systemctl restart docker'.",
+   "source_url": "https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html",
+   "source_date": "fetched 2026-11-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "toolkit-verify",
+   "claim": "Official verification command: 'sudo docker run --rm --runtime=nvidia --gpus all ubuntu nvidia-smi'.",
+   "source_url": "https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/sample-workload.html",
+   "source_date": "fetched 2026-11-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "toolkit-cdi",
+   "claim": "Since toolkit v1.18.0 the nvidia-cdi-refresh systemd service auto-generates /var/run/cdi/nvidia.yaml on toolkit install/upgrade, driver install/upgrade and reboot; list devices with 'nvidia-ctk cdi list'; manual fallback 'sudo nvidia-ctk cdi generate --output=/var/run/cdi/nvidia.yaml'. It does not handle driver removal.",
+   "source_url": "https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/cdi-support.html",
+   "source_date": "fetched 2026-11-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "toolkit-cdi",
+   "claim": "Toolkit 1.20.1 fixes: nvidia-cdi-refresh now ordered before Docker so GPU containers starting at boot no longer fail; 'nvidia-ctk runtime configure' preserves existing Docker feature flags when enabling CDI.",
+   "source_url": "https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/release-notes.html",
+   "source_date": "1.20.1, 2026-09-19",
+   "support": "direct-statement",
+   "notes": "Argues for >= 1.20.1 on a laptop with restart: unless-stopped containers."
+  },
+  {
+   "topic": "toolkit-cdi",
+   "claim": "Generated CDI specs use schema v0.7.0, which requires docker >= 26.1.0; Docker 29.9.3 on this host satisfies it.",
+   "source_url": "https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/release-notes.html",
+   "source_date": "1.19.1 known issues",
+   "support": "source-backed"
+  },
+  {
+   "topic": "toolkit-release-notes",
+   "claim": "No toolkit release note mentions driver 595, Docker 29 or Ubuntu 26.04 specifically. 1.20.1 features like per-GPU memory limits (NVIDIA_GPU_MEMORY_LIMIT) and firmware injection require an R615+ driver, so they are not available on 595.",
+   "source_url": "https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/release-notes.html",
+   "source_date": "fetched 2026-11-15",
+   "support": "source-backed"
+  },
+  {
+   "topic": "toolkit-known-issue",
+   "claim": "With the --gpus hook path and systemd cgroup management, 'systemctl daemon-reload' can make running containers lose the GPU ('Failed to initialize NVML: Unknown Error'). Documented Docker workaround: daemon.json exec-opts native.cgroupdriver=cgroupfs, or use CDI.",
+   "source_url": "https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/troubleshooting.html",
+   "source_date": "fetched 2026-11-15",
+   "support": "direct-statement",
+   "notes": "Relevant: cgroup v2 + systemd on this host; recreate the container if it happens."
+  },
+  {
+   "topic": "docker-ubuntu",
+   "claim": "Docker Engine OS requirements list Ubuntu Stonking 26.10, Ubuntu Resolute 26.04 (LTS), Noble 24.04 and Jammy 22.04 (64-bit).",
+   "source_url": "https://docs.docker.com/engine/install/ubuntu/",
+   "source_date": "fetched 2026-11-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "docker-gpu",
+   "claim": "docker run exposes GPUs with --gpus all, --gpus device=0, --gpus device=<UUID>; capabilities via --gpus 'all,capabilities=utility'. Prerequisite is the NVIDIA Container Toolkit.",
+   "source_url": "https://docs.docker.com/engine/containers/gpu/",
+   "source_date": "fetched 2026-11-15",
+   "support": "direct-statement",
+   "notes": "The resource_constraints page now just links to this GPU access page."
+  },
+  {
+   "topic": "docker-cdi",
+   "claim": "Docker Engine has CDI enabled by default since 28.3.0, reading specs from /etc/cdi and /var/run/cdi; disable with daemon.json features.cdi=false; check with docker info.",
+   "source_url": "https://docs.docker.com/reference/cli/dockerd/",
+   "source_date": "fetched 2026-11-15",
+   "support": "direct-statement",
+   "notes": "Some docs PRs say 28.2.0; the live dockerd reference says 28.3.0. Either way Docker 29.9.3 qualifies."
+  },
+  {
+   "topic": "compose-gpu",
+   "claim": "Compose GPU reservation uses deploy.resources.reservations.devices with driver, count (int or all), device_ids, options and capabilities; capabilities is mandatory; count and device_ids are mutually exclusive.",
+   "source_url": "https://docs.docker.com/compose/how-tos/gpu-support/",
+   "source_date": "fetched 2026-11-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "compose-gpu",
+   "claim": "Service-level 'gpus' shorthand (gpus: all, or a list of driver/count) is equivalent to a device request with an implicit gpu capability and requires Docker Compose 2.30.0 or later; Compose v5.7.1 here qualifies.",
+   "source_url": "https://docs.docker.com/reference/compose-file/services/",
+   "source_date": "fetched 2026-11-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "compose-cdi",
+   "claim": "Compose 'devices' accepts CDI names (for example nvidia.com/gpu=all).",
+   "source_url": "https://docs.docker.com/reference/compose-file/services/",
+   "source_date": "fetched 2026-11-15",
+   "support": "source-backed",
+   "notes": "Doc example uses vendor1.com/device=gpu; nvidia.com/gpu=all is the NVIDIA CDI kind from the toolkit CDI page."
+  },
+  {
+   "topic": "cuda-compat",
+   "claim": "CUDA toolkit to driver branch: 13.0=R580, 13.1=R590, 13.2=R595, 13.3=R610, 13.4=R615, 13.5=R620. Existing CUDA 13.x applications run on drivers >= 580 via minor version compatibility.",
+   "source_url": "https://docs.nvidia.com/cuda/cuda-toolkit-release-notes/index.html",
+   "source_date": "CUDA 13.5 release notes, fetched 2026-11-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "cuda-compat",
+   "claim": "Minimum Linux drivers: CUDA 12.8 GA >= 570.26 (12.8 U1 >= 570.124.06), 12.9 GA >= 575.51.03 (12.9 U1 >= 575.57.08), 13.0/13.1/13.2 >= 580 (13.x minor compat).",
+   "source_url": "https://docs.nvidia.com/cuda/cuda-toolkit-release-notes/index.html",
+   "source_date": "fetched 2026-11-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "cuda-compat",
+   "claim": "Driver 595.99.02 runs CUDA 12.8, 12.9, 13.0, 13.1 and 13.2 containers natively (595 is the 13.2 branch and newer drivers are backward compatible). CUDA 13.3-13.5 containers run only under minor-version compatibility.",
+   "source_url": "https://docs.nvidia.com/deploy/cuda-compatibility/minor-version-compatibility.html",
+   "source_date": "last updated Nov 11, 2026",
+   "support": "source-backed"
+  },
+  {
+   "topic": "cuda-compat",
+   "claim": "Minor-version compatibility caveats: features spanning toolkit and driver may fail with cudaErrorCallRequiresNewerDriver, and applications that JIT-compile PTX do not work on older drivers.",
+   "source_url": "https://docs.nvidia.com/deploy/cuda-compatibility/minor-version-compatibility.html",
+   "source_date": "last updated Nov 11, 2026",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "cuda-compat",
+   "claim": "Forward Compatibility (cuda-compat package) applies only to NVIDIA Data Center GPUs and select NGC Server Ready RTX SKUs, not GeForce laptop GPUs.",
+   "source_url": "https://docs.nvidia.com/deploy/cuda-compatibility/forward-compatibility.html",
+   "source_date": "last updated Nov 11, 2026",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "vllm-image-cuda",
+   "claim": "vLLM v0.33.0 Dockerfile sets ARG CUDA_VERSION=13.0.3 (final base nvidia/cuda:13.0.3-base), which is fine on driver 595. Docker Hub also has cu135-nightly tags (CUDA 13.5, R620 branch) and v0.32.0-cu129 variants.",
+   "source_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/docker/Dockerfile",
+   "source_date": "v0.33.0 tag pushed 2026-11-02",
+   "support": "source-backed",
+   "notes": "Tags from https://hub.docker.com/v2/repositories/vllm/vllm-openai/tags. Pick v0.33.0 or a cu130/cu129 tag over cu135-nightly on driver 595."
+  },
+  {
+   "topic": "gpu-spec",
+   "claim": "RTX 5080 Laptop GPU: 1334 AI TOPS, 7680 CUDA cores, boost 1500-2287 MHz, 16 GB GDDR7, 256-bit memory interface, 896 GB/s memory bandwidth, GPU subsystem power 80-150 W, Blackwell.",
+   "source_url": "https://www.nvidia.com/en-us/geforce/laptops/compare/",
+   "source_date": "fetched 2026-11-15",
+   "support": "direct-statement",
+   "notes": "896 GB/s also stated on https://www.nvidia.com/en-us/geforce/laptops/50-series/. Cross-check: 256 bit / 8 x 28 Gbps (14001 MHz memory clock x2) = 896 GB/s."
+  },
+  {
+   "topic": "gpu-spec",
+   "claim": "The host's observed 140 W power limit (175 W max) is above NVIDIA's 80-150 W subsystem power range. The extra headroom is consistent with OEM/Dynamic Boost configuration.",
+   "source_url": "https://download.nvidia.com/XFree86/Linux-x86_64/595.99.02/README/dynamicboost.html",
+   "source_date": "README 595.99.02",
+   "support": "inferred"
+  },
+  {
+   "topic": "gpu-cc",
+   "claim": "NVIDIA's compute capability table lists GeForce RTX 5080 (and the whole RTX 50 consumer line) at compute capability 12.0. Laptop SKUs are not listed separately; the host nvidia-smi reports 12.0 for the 5080 Laptop GPU.",
+   "source_url": "https://developer.nvidia.com/cuda-gpus",
+   "source_date": "fetched 2026-11-15",
+   "support": "source-backed"
+  },
+  {
+   "topic": "driver-open",
+   "claim": "Blackwell and later GPUs are supported only by the open kernel modules; NVIDIA recommends open modules on all supported GPUs. Known open-module costs: slower GPU init (mitigate with nvidia-persistenced) and longer RTD3 entry/exit latency.",
+   "source_url": "https://download.nvidia.com/XFree86/Linux-x86_64/595.99.02/README/kernel_open.html",
+   "source_date": "README 595.99.02",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "driver-support",
+   "claim": "Driver 595.99.02 README supported-chips appendix lists 'NVIDIA GeForce RTX 5080 Laptop GPU' (device IDs 2C19 and 2C59 among others).",
+   "source_url": "https://download.nvidia.com/XFree86/Linux-x86_64/595.99.02/README/supportedchips.html",
+   "source_date": "README 595.99.02",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "ubuntu-driver",
+   "claim": "Ubuntu 26.04 (resolute) ships nvidia-graphics-drivers-595 595.99.02-0ubuntu0.26.04.1 in updates (2026-10-07) and security (2026-10-08). NVIDIA upstream already has 595.104.02 and 595.112.07.",
+   "source_url": "https://api.launchpad.net/1.0/ubuntu/+archive/primary?ws.op=getPublishedSources&source_name=nvidia-graphics-drivers-595&exact_match=true&distro_series=https://api.launchpad.net/1.0/ubuntu/resolute",
+   "source_date": "2026-10-07",
+   "support": "direct-statement",
+   "notes": "Upstream versions from https://download.nvidia.com/XFree86/Linux-x86_64/"
+  },
+  {
+   "topic": "ubuntu-toolkit",
+   "claim": "Ubuntu's own archive has nvidia-container-toolkit 1.19.0+dfsg1-0ubuntu1~26.04.1 only in resolute-proposed (universe), published 2026-11-13. NVIDIA's repo (1.20.1/1.20.2) is newer, and NVIDIA's guide uses its own repo.",
+   "source_url": "https://api.launchpad.net/1.0/ubuntu/+archive/primary?ws.op=getPublishedSources&source_name=nvidia-container-toolkit&exact_match=true&distro_series=https://api.launchpad.net/1.0/ubuntu/resolute",
+   "source_date": "2026-11-13",
+   "support": "direct-statement",
+   "notes": "Mixing both sources can cause version conflicts. Pin to the NVIDIA repo."
+  },
+  {
+   "topic": "laptop-rtd3",
+   "claim": "On Ampere-or-newer notebooks, Runtime D3 (RTD3) power management is enabled by default (NVreg_DynamicPowerManagement=0x03 = fine-grained). The GPU stays active while a CUDA application is running and drops to its lowest power state when idle.",
+   "source_url": "https://download.nvidia.com/XFree86/Linux-x86_64/595.99.02/README/dynamicpowermanagement.html",
+   "source_date": "README 595.99.02",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "laptop-persistence",
+   "claim": "When nvidia-persistenced runs with UVM persistence mode, RTD3 is disabled, so the dGPU never powers down. On a laptop, leave persistence off unless startup latency matters; a loaded vLLM container keeps the GPU active anyway.",
+   "source_url": "https://download.nvidia.com/XFree86/Linux-x86_64/595.99.02/README/dynamicpowermanagement.html",
+   "source_date": "README 595.99.02",
+   "support": "source-backed",
+   "notes": "The recommendation part is inferred."
+  },
+  {
+   "topic": "laptop-prime",
+   "claim": "PRIME render offload (__NV_PRIME_RENDER_OFFLOAD) concerns GLX/OpenGL and Vulkan presentation to an X screen. CUDA is not part of it, so CUDA containers access the dGPU directly while the iGPU drives the display.",
+   "source_url": "https://download.nvidia.com/XFree86/Linux-x86_64/595.99.02/README/primerenderoffload.html",
+   "source_date": "README 595.99.02",
+   "support": "inferred",
+   "notes": "No official sentence says 'CUDA works in on-demand mode'; inferred from scope of the chapter plus RTD3 chapter saying GPU stays active for CUDA apps."
+  },
+  {
+   "topic": "laptop-dynamic-boost",
+   "claim": "Dynamic Boost (nvidia-powerd service) shifts power between CPU and GPU on Ampere+ notebooks with Intel CometLake+ chipsets and SBIOS support. It is enabled with 'systemctl enable --now nvidia-powerd.service' after copying nvidia-dbus.conf to /etc/dbus-1/system.d.",
+   "source_url": "https://download.nvidia.com/XFree86/Linux-x86_64/595.99.02/README/dynamicboost.html",
+   "source_date": "README 595.99.02",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "toolkit-capabilities",
+   "claim": "NVIDIA_DRIVER_CAPABILITIES replaces the defaults, so compute,utility is the right set for CUDA + nvidia-smi; CUDA images set it already.",
+   "source_url": "https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/docker-specialized.html",
+   "source_date": "fetched 2026-11-15",
+   "support": "direct-statement"
+  }
+ ],
+ "snippets": [
+  {
+   "purpose": "NVIDIA Container Toolkit apt install on Ubuntu 26.04 (official guide, version pinned)",
+   "content": "sudo apt-get update && sudo apt-get install -y --no-install-recommends ca-certificates curl gnupg2\ncurl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg \\\n  && curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | \\\n    sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \\\n    sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list\nsudo apt-get update\nexport NVIDIA_CONTAINER_TOOLKIT_VERSION=1.20.1-1\nsudo apt-get install -y \\\n  nvidia-container-toolkit=${NVIDIA_CONTAINER_TOOLKIT_VERSION} \\\n  nvidia-container-toolkit-base=${NVIDIA_CONTAINER_TOOLKIT_VERSION} \\\n  libnvidia-container-tools=${NVIDIA_CONTAINER_TOOLKIT_VERSION} \\\n  libnvidia-container1=${NVIDIA_CONTAINER_TOOLKIT_VERSION}",
+   "source_url": "https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html"
+  },
+  {
+   "purpose": "Configure Docker runtime, restart, verify",
+   "content": "sudo nvidia-ctk runtime configure --runtime=docker\nsudo systemctl restart docker\nsudo docker run --rm --runtime=nvidia --gpus all ubuntu nvidia-smi",
+   "source_url": "https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/sample-workload.html"
+  },
+  {
+   "purpose": "CDI alternative: check auto-generated spec and use it from Docker (native CDI on Docker >= 28.3) or via nvidia runtime",
+   "content": "sudo systemctl status nvidia-cdi-refresh.path nvidia-cdi-refresh.service\nnvidia-ctk cdi list            # expect nvidia.com/gpu=0, nvidia.com/gpu=all, ...\n# regenerate if needed\nsudo systemctl restart nvidia-cdi-refresh.service\n# native Docker CDI\ndocker run --rm --device nvidia.com/gpu=all ubuntu nvidia-smi -L\n# via NVIDIA runtime in cdi mode (official example)\ndocker run --rm -ti --runtime=nvidia -e NVIDIA_VISIBLE_DEVICES=nvidia.com/gpu=all ubuntu nvidia-smi -L",
+   "source_url": "https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/cdi-support.html"
+  },
+  {
+   "purpose": "Compose GPU reservation (official long form; capabilities is mandatory)",
+   "content": "services:\n  test:\n    image: nvidia/cuda:12.9.0-base-ubuntu22.04\n    command: nvidia-smi\n    deploy:\n      resources:\n        reservations:\n          devices:\n            - driver: nvidia\n              count: 1\n              capabilities: [gpu]",
+   "source_url": "https://docs.docker.com/compose/how-tos/gpu-support/"
+  },
+  {
+   "purpose": "Compose gpus shorthand (requires Docker Compose 2.30.0+)",
+   "content": "services:\n  model:\n    gpus: all",
+   "source_url": "https://docs.docker.com/reference/compose-file/services/"
+  },
+  {
+   "purpose": "Compose CDI device form (syntax from Compose spec; nvidia.com/gpu kind from NVIDIA CDI docs)",
+   "content": "services:\n  model:\n    devices:\n      - \"nvidia.com/gpu=all\"",
+   "source_url": "https://docs.docker.com/reference/compose-file/services/"
+  },
+  {
+   "purpose": "Workaround if containers lose GPU after 'systemctl daemon-reload' (hook/--gpus path with systemd cgroups)",
+   "content": "/etc/docker/daemon.json:\n{\n  \"exec-opts\": [\"native.cgroupdriver=cgroupfs\"]\n}",
+   "source_url": "https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/troubleshooting.html"
+  },
+  {
+   "purpose": "CUDA toolkit to driver branch table relevant to container choice",
+   "content": "CUDA 13.5 R620 | 13.4 R615 | 13.3 R610 | 13.2 R595 | 13.1 R590 | 13.0 R580. 13.x minor compat: driver >= 580. 12.x: >= 525 (12.8 GA >= 570.26, 12.9 GA >= 575.51.03).",
+   "source_url": "https://docs.nvidia.com/cuda/cuda-toolkit-release-notes/index.html"
+  },
+  {
+   "purpose": "Optional laptop power tooling (Dynamic Boost daemon)",
+   "content": "sudo cp /usr/share/doc/NVIDIA_GLX-1.0/nvidia-dbus.conf /etc/dbus-1/system.d/\nsudo systemctl enable --now nvidia-powerd.service\nnvidia-settings -q DynamicBoostSupport",
+   "source_url": "https://download.nvidia.com/XFree86/Linux-x86_64/595.99.02/README/dynamicboost.html"
+  }
+ ],
+ "gaps": [
+  "No release notes or GitHub release page found for toolkit v1.20.2, even though it is tagged (commit 2026-11-05) and served by the NVIDIA apt repo. Its changes are unverified, so the docs-pinned 1.20.1-1 is the documented choice.",
+  "No toolkit release note mentions driver 595 or Docker 29 specifically (searched the full release-notes page for '595', 'Docker 29', '26.04').",
+  "No official NVIDIA or Ubuntu page states outright that CUDA containers work while PRIME is in on-demand mode. That conclusion is inferred from the PRIME render offload chapter (OpenGL/Vulkan only) and the RTD3 chapter (GPU stays active while a CUDA app runs).",
+  "developer.nvidia.com/cuda-gpus lists the desktop GeForce RTX 5080 at CC 12.0 but no laptop SKUs. The laptop's 12.0 comes from the lead's nvidia-smi observation.",
+  "NVIDIA's laptop spec pages give 80-150 W GPU subsystem power but do not explain the host's 175 W max limit (likely OEM plus Dynamic Boost; not verified).",
+  "No Ubuntu documentation page (documentation.ubuntu.com) on CUDA containers for 26.04 was found. Launchpad shows an Ubuntu-packaged nvidia-container-toolkit 1.19.0 only in resolute-proposed.",
+  "Could not read vLLM GitHub release notes for v0.33.0 (GitHub API returned no tag_name, probably rate-limited). Image CUDA version was taken from the v0.33.0 Dockerfile instead."
+ ]
+}

@@ -1,0 +1,112 @@
+{
+ "overall": "holds-with-corrections",
+ "summary": "I found no runtime claim I could refute. The recommended setup holds on paper: llama.cpp b12407 with bartowski/K2-Horizon-7B-GGUF Q8_0, all on GPU, 65536 context with q8_0 KV, xml tool calls at high effort. It is still unmeasured on this machine. Corrections: (1) Pre-FTPO status of the IFM FP8, IFM GGUF and cyankiwi AWQ uploads is now source-backed, not just inferred from dates. The FTPO promotion replaced the main weight files: pytorch_model-*-of-00036 with one set of hashes at commit f846b1e640, model-*-of-00036 with different hashes now. Those three uploads are older (2026-09-03, 2026-09-22 and 2026-09-24). IFM GGUF lastModified 2026-10-15 is README edits only, and its GGUF header says general.name 'Checkpoint_0002500'. (2) The Ollama ifm/k2-horizon 7b tags are almost certainly repackaged IFM GGUFs, so pre-FTPO (inferred). The q4_K_M 5.6GB and q5_K_M 6.5GB sizes match the IFM files, and a 7b-q5_0 tag exists, which only the IFM set has. (3) The llama.cpp VRAM total uses the wrong parts but lands in the right place. token_embd (250624x4096 Q8_0, about 1.02 GiB) stays on CPU in llama.cpp, so the GPU holds about 7.9 GiB of weights, not 8.92. The CUDA context (about 0.3-0.5 GiB) is not counted. Net: 7.9 + 4.78 KV + about 1.0 compute + 0.4 is about 14.1 GiB of 15.92 GiB. 96k does not fit at Q8_0 (about 16.5 GiB); 96k fits with Q6_K or Q5_K_M. (4) Two open gaps closed. vLLM v0.33.0 merges --default-chat-template-kwargs into the kwargs it passes to the reasoning parser (chat_completion/serving.py L197-207, L310-313). llama.cpp's capability probe retries with an empty reasoning_content (common/jinja/caps.cpp L74+), so supports_object_arguments is detected and tool-call arguments in the history are parsed to dicts before the strict template sees them (chat.cpp L1540). (5) The cyankiwi AWQ-INT4 chat_template predates the 2026-10-14 content-list fix (34 lines differ from main), so its serve command needs --chat-template-content-format string (already in the record) or --chat-template with main's template. It is asymmetric int4 g32 with zero points and lm_head in BF16. The Marlin path is inferred. I re-derived all KV and memory numbers from config.json and the HF API sizes and they match the record. Everything was read-only; nothing was run on the GPU.",
+ "verdicts": [
+  {
+   "claim": "Architecture: K2HorizonForCausalLM, 36 layers all full attention, 8 KV heads, head_dim 128, vocab 250624, max_position_embeddings 524288, untied embeddings, dense (num_experts 0)",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/IFM/K2-Horizon-7B/raw/main/config.json"
+  },
+  {
+   "claim": "Weight sizes: BF16 17,998,399,920 B (16.76 GiB); IFM FP8 11,053,505,536 B (10.29 GiB); cyankiwi AWQ-INT4 8,122,473,440 B (7.565 GiB); safetensors params 8,999,178,240",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/cyankiwi/K2-Horizon-7B-AWQ-INT4?blobs=true"
+  },
+  {
+   "claim": "GGUF sizes: bartowski Q8_0 9,573,973,280 B (8.916 GiB), Q6_K 7.273, Q6_K_L 7.568, Q5_K_M 6.387, Q4_K_M 5.379 GiB; IFM Q4_K_M 5.208, Q5_K_M 6.022, Q6_K 6.887, Q8_0 8.916, BF16 16.774 GiB",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/bartowski/K2-Horizon-7B-GGUF?blobs=true"
+  },
+  {
+   "claim": "KV arithmetic: 147,456 B/token BF16, 73,728 FP8. vLLM budget 14.647 GiB. AWQ pool 5.883 GiB gives 42,835 BF16 / 85,671 FP8 tokens. IFM FP8 gives 45,916 FP8 tokens (52,880 at util 0.95). BF16 does not fit.",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/IFM/K2-Horizon-7B/raw/main/config.json"
+  },
+  {
+   "claim": "vLLM v0.33.0 registers K2HorizonForCausalLM -> k2_horizon (registry.py L147); k2_horizon reasoning and tool parsers exist; recipe says BF16 needs 22 GB; --trust-remote-code and --chat-template-content-format string are base args",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/recipes/models/IFM/K2-Horizon-7B.yaml"
+  },
+  {
+   "claim": "vllm#62743 OPEN; v0.33.0 reasoning parser accepts only the effort-specific end tag, so use high effort only",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/vllm-project/vllm/issues/62743"
+  },
+  {
+   "claim": "Unverified whether the vLLM reasoning parser sees reasoning_effort from --default-chat-template-kwargs",
+   "verdict": "confirmed",
+   "correction": "The gap is resolved: it does. serving.py _effective_chat_template_kwargs merges the server defaults (L197-207), and the merged kwargs go to _make_parser (L310-313). The parser reads chat_template_kwargs['reasoning_effort'] in __init__ (k2_horizon_reasoning_parser.py L24-34). Support: source-backed.",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/entrypoints/openai/chat_completion/serving.py"
+  },
+  {
+   "claim": "vLLM forwards only the 'reasoning' key into the template (chat_message.py L619-659)",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/renderers/chat_utils/chat_message.py"
+  },
+  {
+   "claim": "sm_120 FP8 blockwise CUTLASS kernel ships in v0.33.0; FP8 KV needs TRITON_ATTN because #61239 is open",
+   "verdict": "confirmed",
+   "correction": "scaled_mm_blockwise_sm120_fp8.cu and its dispatch header are present at v0.33.0, and #61239 is still OPEN. Which kernel actually gets selected at runtime, and Marlin for asymmetric int4 g32 with zero points, remain inferred.",
+   "evidence_url": "https://github.com/vllm-project/vllm/issues/61239"
+  },
+  {
+   "claim": "vLLM serve command with cyankiwi AWQ-INT4, FP8 KV, max-model-len 65536 would reach 64k",
+   "verdict": "uncertain",
+   "correction": "The arithmetic holds (FP8 pool about 85.7k tokens). The AWQ repo's chat_template.jinja predates the 2026-10-14 content-list fix (34 lines differ from IFM main), so --chat-template-content-format string must stay, or pass --chat-template with main's template. The weights are pre-FTPO: uploaded 2026-09-24, and the FTPO promotion on 2026-10-01 replaced the main weight files (pytorch_model-* to model-*, different LFS hashes). Not run.",
+   "evidence_url": "https://huggingface.co/api/models/cyankiwi/K2-Horizon-7B-AWQ-INT4/commits/main"
+  },
+  {
+   "claim": "llama.cpp b12407: arch k2-horizon at llama-arch.cpp L178, src/models/k2-horizon.cpp, common/parsers/k2-horizon.cpp, chat.cpp L1332-1337 handler, server-common.cpp ~L1566 reasoning_effort, b12407 published 2026-11-15",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/common/parsers/k2-horizon.cpp"
+  },
+  {
+   "claim": "llama.cpp: 'none' / --reasoning off does not disable thinking; medium/low end-tag fallback present (#30246 fixed)",
+   "verdict": "confirmed",
+   "correction": "thinking_off needs the template to contain 'enable_thinking' (k2-horizon.cpp L28-29), and none of the IFM, FP8 or AWQ templates do. #30246 was closed 2026-11-12, and the fallback </ifm|think> end tag is in the parser.",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/issues/30246"
+  },
+  {
+   "claim": "llama.cpp injects empty reasoning_content so OpenCode works without extra config, and multi-turn tool history renders",
+   "verdict": "confirmed",
+   "correction": "Also source-backed: the caps probe retries with empty reasoning_content on the thinking-field exception (common/jinja/caps.cpp caps_try_execute), so supports_object_arguments is detected and func_args_not_string parses OpenAI string arguments into dicts (chat.cpp L1540). Without that, the template would raise 'tool_call.arguments must be a dict'. Not run end to end.",
+   "evidence_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/common/jinja/caps.cpp"
+  },
+  {
+   "claim": "llama.cpp Q8_0 + 64k q8_0 KV + 0.8 GiB = 14.5 GiB VRAM, fits on 16 GB",
+   "verdict": "confirmed",
+   "correction": "The total is about right but the parts are not. KV q8_0 = 73,728 elements x 1.0625 B = 78,336 B/token, x 65536 = 4.78 GiB (confirmed). llama.cpp keeps token_embd on CPU (about 1.02 GiB at Q8_0), so the GPU holds about 7.9 GiB of weights. Add the CUDA context, about 0.3-0.5 GiB, and the larger compute buffer that a 250k vocab needs (logits for a 512-token ubatch alone are about 0.5 GB). Estimate about 14.1-14.5 GiB of 15.92 GiB. Inferred and not measured. Q8_0 at 96k (about 16.5 GiB) does not fit.",
+   "evidence_url": "https://huggingface.co/api/models/bartowski/K2-Horizon-7B-GGUF?blobs=true"
+  },
+  {
+   "claim": "bartowski GGUF (b11462, 2026-10-07) likely has the released FTPO weights; official IFM GGUF last uploaded 2026-09-22, pre-FTPO",
+   "verdict": "confirmed",
+   "correction": "IFM GGUF lastModified is 2026-10-15, but those are README edits only; the weights were uploaded 2026-09-22, before the 2026-10-01 weight change. Its GGUF header has general.name 'Checkpoint_0002500', which points to an earlier training checkpoint. bartowski's header has general.name 'K2-Horizon-7B' and was made after the promotion. FTPO status for bartowski is still inferred because the card names no source revision.",
+   "evidence_url": "https://huggingface.co/api/models/IFM/K2-Horizon-7B-GGUF/commits/main"
+  },
+  {
+   "claim": "Ollama ifm/k2-horizon:7b = latest = 7b-q4_K_M (16de169bc273, 5.6GB); also q5_K_M 6.5GB, q6_K 7.4GB, q8_0 9.6GB, bf16 18GB; library/k2-horizon 404",
+   "verdict": "confirmed",
+   "correction": "The record leaves out a 7b-q5_0 tag (6.3GB). The tag sizes match the IFM GGUF byte sizes, and q5_0 exists only in the IFM set, so the Ollama tags are most likely the pre-FTPO IFM GGUFs (inferred). Who owns the 'ifm' namespace is still unconfirmed.",
+   "evidence_url": "https://ollama.com/ifm/k2-horizon/tags"
+  },
+  {
+   "claim": "Decode ceilings: Q8_0 about 8.5 GB read per token gives about 105 tok/s; KV reads at 64k add about 4.8-5.1 GB per token",
+   "verdict": "confirmed",
+   "correction": "9.574e9 B minus a token_embd of about 1.09e9 B is 8.48 GB, and 896/8.48 = 106 tok/s (inferred ceiling). The 64k q8_0 KV is 5.13e9 B per token read.",
+   "evidence_url": "https://huggingface.co/api/models/bartowski/K2-Horizon-7B-GGUF?blobs=true"
+  },
+  {
+   "claim": "OpenCode v2.3.0 sends reasoning \"\" on assistant messages when compatibility.reasoningField is set (openai-chat.ts L568-604, L659-665)",
+   "verdict": "uncertain",
+   "correction": "I did not re-read this in this check. It matters only for the vLLM path.",
+   "evidence_url": ""
+  },
+  {
+   "claim": "Recommended: llama.cpp server-cuda-b12407 with bartowski Q8_0, -ngl 99, -c 65536, -np 1, q8_0 KV, xml tool calls, high effort serves OpenCode with working tool calls at 64k",
+   "verdict": "uncertain",
+   "correction": "Nothing in the sources refutes it: the dedicated PEG parser with a lazy grammar, the history fixups and the memory all check out. It is not measured. Watch three things: always-on high-effort thinking (keep OpenCode limit.output at about 16k at 64k context), the first-start VRAM peak, and GGML_CUDA_DISABLE_GRAPHS=1 placed before the image name. If you want more than 64k, the best alternative is Q6_K (7.27 GiB) at 96k with q8_0 KV, about 14.9 GiB estimated.",
+   "evidence_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/src/models/k2-horizon.cpp"
+  }
+ ]
+}

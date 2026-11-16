@@ -1,0 +1,114 @@
+{
+ "overall": "holds-with-corrections",
+ "summary": "The identity and capability facts hold up against raw reads of the HF API, config.json, chat_template.jinja, LICENSE.md, generation_config.json, the README and the vendor blog, plus vLLM v0.33.0 source, the llama.cpp b12418 source and the Ollama registry manifest. Three corrections. (1) The Friendli 'third-party' Terminal-Bench 40.22% is not independent: it is copied from Poolside's own Laguna-XS-2.1-FP8 card, so it is a vendor self-reported FP8 score and self_reported should be true. (2) vLLM PR #41129 is titled '[New Model] Laguna XS.2 implementation'. It added the shared LagunaForCausalLM architecture before XS 2.1 existed, so it is not XS 2.1-specific. (3) The BF16 checkpoint row lists 66.93 GB, which is the BF16 GGUF size. The safetensors total 66.889 GB (62.30 GiB). Nothing in the record looks invented. Remaining caveats. All benchmarks are vendor self-reported on patched task images with Poolside's own harness, and no independent result was found. The card contradicts itself on the default: the template defaults enable_thinking to false, while generation_config.json sets default_chat_template_kwargs enable_thinking true and the card's Transformers example comment says 'Reasoning is on by default'. Not checked: the Ollama digest 0175be1e57f4, the 0.22.0 minimum for quantized variants, and willitrunai speed figures.",
+ "verdicts": [
+  {
+   "claim": "Official vendor repo: HF org 'poolside' is verified; the card links the vendor blog",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/organizations/poolside/overview",
+   "correction": "org.json: fullname 'Poolside', isVerified true, numModels 33. api author=poolside. README line 20 links https://poolside.ai/blog/introducing-laguna-xs-2-1."
+  },
+  {
+   "claim": "HF createdAt 2026-06-20T14:14:26Z, lastModified 2026-08-19; blog dated 2026-07-02; benchmarks 'as of 2 July 2026'; inside the 12-month window",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/poolside/Laguna-XS-2.1",
+   "correction": "createdAt 2026-06-20T14:14:26.000Z, lastModified 2026-08-19T15:41:00.000Z. Blog HTML has a <time> element with 2026-07-02 and the text 'Benchmarks as of 2 July 2026.' That phrase is in the blog, not the HF card."
+  },
+  {
+   "claim": "License OpenMDW-1.1, permissive, with retain-notices and patent/copyright-suit termination conditions; outputs unrestricted",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/poolside/Laguna-XS-2.1/raw/main/LICENSE.md",
+   "correction": "Tag license:openmdw-1.1. LICENSE.md text matches the record. The card (line 32) says 'fully permissive license' and line 439 points to the Acceptable Use Policy."
+  },
+  {
+   "claim": "33B total / 3B active; HF API 33,442,617,088 BF16 params; BF16 safetensors 66.9 GB (62.3 GiB)",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/poolside/Laguna-XS-2.1?blobs=true",
+   "correction": "Safetensors sum is 66,889,022,016 B (62.30 GiB). The checkpoints row for this repo says 66.93, which is the BF16 GGUF size (66,930,226,304 B), not the safetensors size."
+  },
+  {
+   "claim": "Architecture: LagunaForCausalLM, 40 layers, hidden 2048, 10 full + 30 SWA (window 512), heads 48/64, kv 8, head_dim 128, YaRN x32 orig 8192 theta 5e5 partial 0.5, 256 experts top-8, moe_int 512, shared 512, layer 0 dense 8192, vocab 100352",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/poolside/Laguna-XS-2.1/raw/main/config.json",
+   "correction": "Every value matches config.json, including num_attention_heads_per_layer [48,64,64,64,...] and gating per_head. Only a single num_key_value_heads=8 is given, so the record's KV-head assumption for SWA layers is reasonable."
+  },
+  {
+   "claim": "Context 262,144 tokens; vendor evals at 256K",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/poolside/Laguna-XS-2.1/raw/main/README.md",
+   "correction": "max_position_embeddings 262144. README line 54 says 'Context window: 262,144 tokens' and line 79 says 'context length of 256K tokens'."
+  },
+  {
+   "claim": "Text-to-text only, no vision tower",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/poolside/Laguna-XS-2.1",
+   "correction": "README line 53: 'Modality: text-to-text'. config has no vision keys."
+  },
+  {
+   "claim": "Thinking toggle: template defaults enable_thinking false; <think> or </think> after <assistant>; re-renders message.reasoning / reasoning_content; vendor recommends preserved thinking",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/poolside/Laguna-XS-2.1/raw/main/chat_template.jinja",
+   "correction": "Confirmed in the template. Also, generation_config.json sets default_chat_template_kwargs {enable_thinking: true}, reasoning_parser poolside_v1 and tool_call_parser poolside_v1, and the card's Transformers example comment says 'Reasoning is on by default'. The effective default therefore depends on the runtime. Note too that the template renders prior reasoning for all assistant turns only when enable_thinking is true."
+  },
+  {
+   "claim": "Tool calling supported: tools as JSON lines in <available_tools> inside <system>; assistant calls as <tool_call>NAME<arg_key>..</arg_key><arg_value>..</arg_value></tool_call>; results as <tool_response>; later system messages rendered as <system> blocks",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/poolside/Laguna-XS-2.1/raw/main/chat_template.jinja",
+   "correction": "Confirmed verbatim. The template calls arguments.items(), so tool_call arguments must be a dict (not a JSON string) when history is re-sent. That is a possible client-side pitfall."
+  },
+  {
+   "claim": "vLLM v0.33.0: registry.py:154 LagunaForCausalLM, :696 DFlashLagunaForCausalLM; tool_parsers/__init__.py:97 and reasoning/__init__.py:39 poolside_v1; supports_required_and_named = False",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/tool_parsers/poolside_v1_tool_parser.py",
+   "correction": "All line numbers match. supports_required_and_named = False is at poolside_v1_tool_parser.py:57."
+  },
+  {
+   "claim": "Support arrived in PR #41129 (merged 2026-04-28)",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/vllm-project/vllm/pull/41129",
+   "correction": "Merged 2026-04-28T18:23:00Z, but the title is '[New Model] Laguna XS.2 implementation'. It added the shared architecture for the predecessor XS.2, not for XS 2.1 specifically."
+  },
+  {
+   "claim": "PR #47311 merged 2026-07-02 (258f8de) is in v0.33.0; PR #64518 merged 2026-11-03 is not in v0.33.0 (diverged, 652 behind) but is in v0.34.0rc4; DFlash PR #46853 merged 2026-07-03",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/vllm-project/vllm/pull/64518",
+   "correction": "compare 258f8de...v0.33.0: ahead, behind_by 0. #64518 merge...v0.33.0: diverged, behind_by 652. #64518 merge...v0.34.0rc4: ahead, behind_by 0. #46853 merged 2026-07-03T01:09:28Z."
+  },
+  {
+   "claim": "llama.cpp PR #25165 merged 2026-07-22 (1f66c3c), first in b10087; b12418 has LLM_ARCH_LAGUNA at llama-arch.cpp:129 and a Laguna patch at chat-diff-analyzer.cpp:176-195 keyed on 'laguna_glm_thinking'",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12418/common/chat-diff-analyzer.cpp",
+   "correction": "PR title 'Add support for Laguna XS.2 & M.1', merged 2026-07-22T01:54:09Z. compare 1f66c3c...b10087 is identical, and b10087 was published 2026-07-22. The patch is at lines 176-193. The HF template first line contains 'laguna_glm_thinking_v8'."
+  },
+  {
+   "claim": "Ollama latest = q4_K_M, renderer/parser poolside-v1, requires 0.32.3, model_type 33.4B, about 20 GB",
+   "verdict": "confirmed",
+   "evidence_url": "https://registry.ollama.ai/v2/library/laguna-xs-2.1/manifests/latest",
+   "correction": "Config blob: file_type Q4_K_M, renderer/parser poolside-v1, requires 0.32.3, model_type 33.4B. Layers total 20,274,302,663 B. The digest 0175be1e57f4 was not checked."
+  },
+  {
+   "claim": "Official checkpoint sizes: NVFP4 21.58 GB, INT4 23.9 GB, FP8 35.32 GB, GGUF Q4_K_M 20.27 GB / BF16 66.93 GB, DFlash 0.92 GB, all published by poolside",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/poolside/Laguna-XS-2.1-NVFP4?blobs=true",
+   "correction": "NVFP4 21.577 GB (20.09 GiB), INT4 23.897 GB (22.26 GiB), FP8 35.317 GB (32.89 GiB), GGUF Q4_K_M 20,274,300,032 B, BF16 GGUF 66,930,226,304 B, DFlash 0.924 GB. All authored by poolside, created 2026-06-20 to 2026-06-29. Community repos were not re-checked."
+  },
+  {
+   "claim": "SWE-bench Verified 70.9%, Multilingual 63.1%, SWE-Bench Pro 47.6%, Terminal-Bench 2.0 37.5%, with the stated attempts, harness, sampling, 256K ctx, patched images",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/poolside/Laguna-XS-2.1/raw/main/README.md",
+   "correction": "README lines 65 and 79-86 match exactly. All are vendor self-reported with the vendor's own 'pool' harness on patched task images. No independent leaderboard entry was found."
+  },
+  {
+   "claim": "Vendor table: Qwen3.6-35B-A3B 73.4 / 67.2 / 49.5 / 51.5, higher on all four",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/poolside/Laguna-XS-2.1/raw/main/README.md",
+   "correction": "README line 67 matches. These are vendor-quoted scores for the other model, which the vendor says came from official release posts. They were not re-verified against Qwen's own sources."
+  },
+  {
+   "claim": "Terminal-Bench 2.0 40.22% (FP8) is a third-party quantization check (self_reported false)",
+   "verdict": "refuted",
+   "evidence_url": "https://huggingface.co/poolside/Laguna-XS-2.1-FP8/raw/main/README.md",
+   "correction": "40.22% ± 2.70% (3.02% RH) is from Poolside's own FP8 card ('Quantization quality', line 95), against BF16 37.53% ± 2.81%. Friendli only mirrors the card. It is vendor self-reported, so self_reported should be true. The same table also shows FP8 SWE-V 70.75, Multilingual 64.92, Pro 48.02."
+  }
+ ]
+}

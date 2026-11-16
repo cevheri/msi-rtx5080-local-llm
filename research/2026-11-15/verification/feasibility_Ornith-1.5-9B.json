@@ -1,0 +1,107 @@
+{
+ "verdicts": [
+  {
+   "claim": "Weight sizes: BF16 4 shards total 19.31 GB; NVFP4 single model.safetensors 8.82 GB (8.212 GiB); GGUF Q4_K_M 5.78 / Q5_K_M 6.64 / Q6_K 7.56 / Q8_0 9.79 / BF16 18.41 GB, mmproj 0.92 GB",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/ornith-ai/Ornith-1.5-9B-NVFP4?blobs=true",
+   "correction": "Re-read 2026-11-15: BF16 shards 4911674496+4954211152+4988356912+4452061304 = 19,306,303,864 B (17.98 GiB); NVFP4 model.safetensors 8,818,103,892 B; Ornith-1.5-9B-Q8_0.gguf 9,786,060,384 B (9.114 GiB), Q6_K 7,558,901,696 B, mmproj 921,704,672 B. All match."
+  },
+  {
+   "claim": "NVFP4 per-component breakdown: MLP 2.531, embed 1.895, GDN 1.513, vision 0.849, lm_head 0.533, MTP 0.453, self_attn 0.438 GiB; 6.910 GiB with --language-model-only and no MTP",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/ornith-ai/Ornith-1.5-9B-NVFP4/resolve/main/model.safetensors",
+   "correction": "Header length read from bytes 0-7 is 144,296 (so bytes 8-144303 is correct). My own grouping of data_offsets reproduced every figure exactly; total 8.212 GiB. Source-backed."
+  },
+  {
+   "claim": "hf_quant_config: ModelOpt 0.45.0 MIXED_PRECISION, MLP+lm_head W4A16_NVFP4 group 16, attention/GDN projections FP8, MTP excluded, kv_cache_quant_algo FP8",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/ornith-ai/Ornith-1.5-9B-NVFP4/raw/main/hf_quant_config.json",
+   "correction": "201 quantized layers: 104 FP8, 97 W4A16_NVFP4; exclude_modules mtp*. config.json quantization_config also carries kv_cache_scheme fp8 (num_bits 8, float), so --kv-cache-dtype auto should pick FP8 (per the #54331 thread, auto reads only config.json quantization_config, which this repo has). Passing fp8 explicitly is still right."
+  },
+  {
+   "claim": "Architecture: 32 layers, full_attention_interval 4 (8 full / 24 linear), 16 Q heads, 4 KV heads, head_dim 256, GDN 16 key / 32 value heads x 128, conv 4, fp32 SSM, max_position_embeddings 262144",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/ornith-ai/Ornith-1.5-9B/raw/main/config.json"
+  },
+  {
+   "claim": "vLLM KV math: BF16 32,768 B/token, FP8 16,384 B/token; pool 13.447 - 6.910 = 6.537 GiB minus about 49 MiB GDN state; about 212.6k tokens BF16, 262,144 (capped) with FP8; FP8 at 262,144 uses 4.0 GiB",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/ornith-ai/Ornith-1.5-9B/raw/main/config.json",
+   "correction": "Recomputed: 2x8x4x256x2 = 32,768 B. GDN conv dim 2x16x128 + 32x128 = 8192, state 24 x (2 MiB + 48 KiB) = 49.1 MiB. 6.49 GiB / 32 KiB = 212.7k tokens. Unmeasured caveat: hybrid page alignment inflates the attention block size (for example #62320 shows 2176, #54331 logs show 2096) and prefix caching on hybrid models may hold extra GDN states, so the real pool can be a few percent lower. 262,144 with FP8 still leaves about 2.4 GiB slack."
+  },
+  {
+   "claim": "vLLM v0.33.0 registers Qwen3_5ForConditionalGeneration (line 617), Qwen3_5ForCausalLM, Qwen3_5MTP; --language-model-only exists (arg_utils.py 1497)",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/models/registry.py",
+   "correction": "registry.py lines 204, 617, 739; arg_utils.py lines 651 and 1497."
+  },
+  {
+   "claim": "Parsers: qwen3_xml and qwen3_coder both map to Qwen3EngineToolParser in v0.33.0; reasoning parser qwen3 maps to Qwen3ParserReasoningAdapter",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/tool_parsers/__init__.py",
+   "correction": "tool_parsers/__init__.py lines 206-220; reasoning/__init__.py line 168. The card's vLLM command (README line 206) uses qwen3_xml + qwen3 + --trust-remote-code; SGLang (line 213) uses qwen3_coder."
+  },
+  {
+   "claim": "NVFP4 W4A16 layers on sm_120 go to MarlinNvFp4LinearKernel (FlashInfer CuTe-DSL only on SM100/103), so the FlashInfer NVFP4 Cutlass JIT (52 GiB host RAM, PR #66864) should not trigger",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/kernels/linear/__init__.py",
+   "correction": "init_nvfp4_linear_kernel: for use_a16 with linear_backend auto, CuTe-DSL only if cc in (100,103), else Marlin unless prefers_humming. Not-triggering the JIT remains inferred from source, not measured."
+  },
+  {
+   "claim": "On sm_120 attention runs on FlashAttention 2",
+   "verdict": "refuted",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/v1/attention/backends/flash_attn.py",
+   "correction": "Not with the recommended --kv-cache-dtype fp8. FlashAttentionBackend.supports_combination rejects quantized KV unless FA3 on SM90 or FA4 ('FP8 KV cache requires FA3 on SM90, FA4 with head_size=512 on SM90, or FA4 on SM100'), and the non-SM100 priority list in platforms/cuda.py is FLASH_ATTN, FLASHINFER, TRITON_ATTN, so vLLM falls to FlashInfer (supports cc 8.0-12.1 and fp8 KV). The #54331 logs for the sister Ornith-35B NVFP4 on sm_120 show 'decode_backend=xqa, kv_cache_dtype=torch.float8_e4m3fn'. FA2 applies only with BF16 KV. The v0.33.0 Dockerfile installs FlashInfer precompiled kernels for all architectures (line 948-952), so a large attention JIT is unlikely but unmeasured."
+  },
+  {
+   "claim": "Issue #54331: maintainer could not reproduce with BF16 KV; status in v0.33.0 unknown",
+   "verdict": "refuted",
+   "evidence_url": "https://github.com/vllm-project/vllm/issues/54331",
+   "correction": "Partly wrong. The responder (adi-suresh01, role not stated) first reproduced with BF16 KV, then posted a correction (2026-10-19T23:23Z) re-running ornith-ai/Ornith-1.5-35B-A3B-NVFP4 on vllm/vllm-openai:v0.28.0 with FP8 KV, xqa decode, prefix caching, CUDA graphs on an RTX PRO 6000 (sm_120), 25 min and 15 min soaks at 70 concurrency, 0 failures. So the crash is unreproduced even with FP8 KV. Issue still open, last updated 2026-10-19; no v0.33.0 data. At OpenCode's low concurrency the risk is low; --enforce-eager is the documented fallback."
+  },
+  {
+   "claim": "Other open issues cited: #34948, #61003, #65139 open; PR #66864 open",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/vllm-project/vllm/issues/65139",
+   "correction": "States as of 2026-11-15: #34948 open (updated 2026-08-17), #65139 open (2026-11-08, b12x+MTP only), #61003 open (DFlash only), #66864 open. No Ornith-specific tool-calling issue found in a repo search for 'Ornith'."
+  },
+  {
+   "claim": "llama.cpp: arch qwen35 in b12418 and v1.0.0; common/chat.cpp:1420-1427 selects the Qwen3-Coder handler for this template",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12418/common/chat.cpp",
+   "correction": "llama-arch.cpp line 45 at b12418; src/models/qwen35.cpp returns 200. v1.0.0 (2026-11-13) is the latest non-prerelease; b12418 and b12419 are prereleases. The repo template emits '<tool_call>\\n<function=' with newlines, so the exclusion clause does not apply. Embedded GGUF template not re-read by me."
+  },
+  {
+   "claim": "llama.cpp Q8_0 + q8_0 KV at 262,144 = 9.11 + 4.0 + 0.05 + 1.0 = about 14.2 GiB of about 16.1 GiB free",
+   "verdict": "refuted",
+   "evidence_url": "https://huggingface.co/api/models/ornith-ai/Ornith-1.5-9B-GGUF?blobs=true",
+   "correction": "Minor arithmetic: q8_0 stores 8.5 bits per value, so KV is 32,768 x 8.5/16 = 17,408 B/token = 4.25 GiB at 262,144, total about 14.4 GiB. Free VRAM is 16303 - 112 MiB = 16,191 MiB = 15.81 GiB, not 16.1 GiB. Still fits with about 1.4 GiB margin, but the compute buffer with a 248k vocab is unmeasured; Q6_K (7.04 GiB) at about 12.3 GiB is the safer default, or Q8_0 at -c 131072."
+  },
+  {
+   "claim": "Ollama ornith-1.5:9b is Q4_K_M, model layer 5.63 GB + projector 0.92 GB",
+   "verdict": "confirmed",
+   "evidence_url": "https://registry.ollama.ai/v2/library/ornith-1.5/manifests/9b",
+   "correction": "Manifest layers: model 5,629,109,056 B, projector 921,704,448 B."
+  },
+  {
+   "claim": "License: card says mit but linked LICENSE returns 404",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/ornith-ai/Ornith-1.5-9B/resolve/main/LICENSE",
+   "correction": "HTTP 404 on 2026-11-15; README front matter lines 3-4 say license: mit with that link."
+  },
+  {
+   "claim": "Chat template renders reasoning_content for every assistant turn; thinking on by default, enable_thinking=false gives empty think block",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/ornith-ai/Ornith-1.5-9B/raw/main/chat_template.jinja",
+   "correction": "Lines 89-100 render <think>reasoning_content</think> for every assistant message (no last-query gating); lines 145-148 handle enable_thinking. Whether vLLM v0.33.0 maps an incoming 'reasoning' field back to reasoning_content was not checked."
+  },
+  {
+   "claim": "Verdict: serves OpenCode with working tool calls and at least 64k context on this machine (vLLM NVFP4 --language-model-only, 262,144 FP8 KV)",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/ornith-ai/Ornith-1.5-9B-NVFP4/raw/main/hf_quant_config.json",
+   "correction": "Feasible by source and arithmetic (inferred, not run). Fixes for the record: the attention backend with FP8 KV is FlashInfer, not FA2; the #54331 summary should say it was not reproduced even with FP8 KV. Tool calling end to end with OpenCode v2.3.0 is untested, and tools must be declared explicitly in the provider config."
+  }
+ ],
+ "overall": "holds-with-corrections",
+ "summary": "The record's runtime claims mostly hold on this machine. I re-read every load-bearing value live on 2026-11-15 and got the same results: the HF API file sizes, the NVFP4 safetensors header breakdown (8.212 GiB total, 6.910 GiB for the language model only without MTP), config.json (8 full-attention layers, 4 KV heads, head_dim 256, 24 GDN layers), hf_quant_config, and the v0.33.0 sources (registry, parser aliases, the Marlin W4A16 path on sm_120). vLLM KV math: 32 KiB per token in BF16, a pool of about 6.49 GiB, about 212k tokens with BF16 KV, and 262,144 (capped) with FP8 KV. Corrections: (1) With the recommended --kv-cache-dtype fp8, attention on sm_120 does not run on FlashAttention 2. FA2 rejects quantized KV outside FA3/FA4, so vLLM falls back to FlashInfer; the sister model's logs show xqa decode. (2) Issue #54331 was not reproduced even with FP8 KV and the Ornith-35B NVFP4 checkpoint on sm_120 (v0.28.0), so the record's 'BF16-only' framing is out of date. (3) In llama.cpp, q8_0 KV costs 8.5 bits per value, which gives 4.25 GiB at 262k and about 14.4 GiB in total. Free VRAM is 15.81 GiB, not 16.1, so Q8_0 at 262k fits but is tight; Q6_K or a 131k context is safer. Gaps: no run of any kind, the real hybrid block or page overhead with prefix caching is unmeasured, the GGUF-embedded template was not re-read, it was not checked whether vLLM accepts 'reasoning' back as reasoning_content in history, and no #54331 data exists for v0.33.0. The best realistic config is the record's own vLLM command (NVFP4, --language-model-only, FP8 KV, 262144 or 131072), with --enforce-eager as the fallback; on llama.cpp, Q6_K with q8_0 KV at 262144."
+}

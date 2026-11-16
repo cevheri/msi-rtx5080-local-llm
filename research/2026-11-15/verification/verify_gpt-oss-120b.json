@@ -1,0 +1,242 @@
+{
+ "name": "gpt-oss-120b",
+ "hf_repo": "openai/gpt-oss-120b",
+ "within_last_12_months": false,
+ "official_org": {
+  "value": "OpenAI. HF org 'openai' has isVerified=true (HF API /api/organizations/openai/overview). The model card links to openai.com/index/introducing-gpt-oss and openai.com/open-models, and the arXiv model card 2508.10925 is authored by OpenAI.",
+  "source_url": "https://huggingface.co/api/organizations/openai/overview",
+  "support": "direct-statement"
+ },
+ "release_date": {
+  "value": "HF createdAt 2025-08-04T22:33:06Z, lastModified 2025-08-26. The vendor announcement and model card are dated 2025-08-05 (arXiv 2508.10925, 'OpenAI August 5, 2025'). That is outside the 2025-11-15..2026-11-15 window. No newer general-purpose gpt-oss checkpoint was found (lead from discovery).",
+  "source_url": "https://huggingface.co/api/models/openai/gpt-oss-120b",
+  "support": "direct-statement"
+ },
+ "license": {
+  "value": "apache-2.0 (card YAML 'license: apache-2.0', HF tag license:apache-2.0). The repo also ships a USAGE_POLICY file, and the arXiv card says the models are released 'under the Apache 2.0 license and our gpt-oss usage policy'. Apache-2.0 has no field-of-use or user-count restrictions; the usage policy adds acceptable-use terms.",
+  "source_url": "https://huggingface.co/openai/gpt-oss-120b/raw/main/README.md",
+  "support": "direct-statement"
+ },
+ "params": {
+  "value": "117B total and 5.1B active per the card. HF API safetensors total is 116,829,156,672 (BF16 2,167,371,072 + U8 114,661,785,600). The main checkpoint (14 shards, excluding original/) is 65,248,893,184 bytes = 65.25 GB = 60.77 GiB.",
+  "source_url": "https://huggingface.co/api/models/openai/gpt-oss-120b?blobs=true",
+  "support": "direct-statement"
+ },
+ "architecture": {
+  "value": "GptOssForCausalLM (model_type gpt_oss). MoE with 36 layers, 128 local experts, 4 per token, hidden 2880, expert intermediate 2880, SwiGLU (limit 7.0). layer_types alternates sliding_attention (window 128) and full_attention, so 18 full and 18 SWA layers. GQA with 64 query heads, 8 KV heads and head_dim 64, attention bias, and learned attention sinks. Vocab 201088 (o200k_harmony). The MoE weights are MXFP4 (quant_method mxfp4); attention, router, embeddings and lm_head are BF16.",
+  "source_url": "https://huggingface.co/openai/gpt-oss-120b/raw/main/config.json",
+  "support": "direct-statement"
+ },
+ "context_length": {
+  "value": "131072 (max_position_embeddings). It is native 4096 extended with YaRN factor 32, original_max_position_embeddings 4096. The arXiv card says dense layers are extended to 131,072 with YaRN. Ollama lists 128K.",
+  "source_url": "https://huggingface.co/openai/gpt-oss-120b/raw/main/config.json",
+  "support": "direct-statement"
+ },
+ "modalities": {
+  "value": "Text in, text out only (pipeline_tag text-generation; Ollama shows 'Text input'). No vision tower, so the checkpoint is already text-only.",
+  "source_url": "https://huggingface.co/api/models/openai/gpt-oss-120b",
+  "support": "direct-statement"
+ },
+ "thinking": {
+  "mode": "always",
+  "how_to_toggle": "Reasoning cannot be switched off. It always runs in the harmony 'analysis' channel; only the effort changes (low, medium, high; template default 'medium', rendered as 'Reasoning: <effort>' in the system message). vLLM v0.33.0: per-request 'reasoning_effort': 'low'|'medium'|'high' (chat_completion/protocol.py line 267); 'include_reasoning': false hides the chain of thought (protocol.py line 279; recipe); reasoning parser openai_gptoss. llama.cpp b12418: per-request 'reasoning_effort' or 'chat_template_kwargs': {\"reasoning_effort\":\"high\"}; server defaults via --reasoning-effort LEVEL or --chat-template-kwargs (server README lines 221, 241, 1455-1457). Ollama: 'think': 'low'|'medium'|'high' natively, or reasoning_effort on /v1. /api/show for gpt-oss returns values [low, medium, high] with default medium and no boolean off.",
+  "source_url": "https://huggingface.co/openai/gpt-oss-120b/raw/main/chat_template.jinja",
+  "support": "direct-statement"
+ },
+ "tool_calling": {
+  "supported": "yes",
+  "format": "Harmony format. Function tools are rendered in the developer message as a 'functions' namespace, and calls are emitted on the commentary channel ('<|channel|>commentary to=functions.NAME'). Built-in browser and python tools are also available.",
+  "evidence": "chat_template.jinja renders tools: '{%- if tools -%} # Tools ... render_tool_namespace(\"functions\", tools)' inside the developer message (lines 243-252), plus the system line 'Calls to these tools must go to the commentary channel: functions.' The card lists 'Function calling with defined schemas'. The vLLM recipe says to use --tool-call-parser openai --enable-auto-tool-choice and notes that only tool_choice=\"auto\" is supported. llama.cpp ships models/templates/openai-gpt-oss-120b for its auto-parser.",
+  "source_url": "https://huggingface.co/openai/gpt-oss-120b/raw/main/chat_template.jinja",
+  "support": "direct-statement"
+ },
+ "checkpoints": [
+  {
+   "repo": "openai/gpt-oss-120b",
+   "format": "safetensors MXFP4 MoE + BF16 (HF layout); original/ holds a second copy for the reference implementation; metal/model.bin 65.24 GB",
+   "size_gb": 65.25,
+   "official": true,
+   "publisher": "OpenAI",
+   "source_url": "https://huggingface.co/api/models/openai/gpt-oss-120b?blobs=true"
+  },
+  {
+   "repo": "ggml-org/gpt-oss-120b-GGUF",
+   "format": "GGUF MXFP4 (gpt-oss-120b-MXFP4.gguf, 59.03 GiB); also eagle3 draft GGUFs (BF16 1.59 GB, Q8_0 0.85 GB), last modified 2026-11-12",
+   "size_gb": 63.39,
+   "official": false,
+   "publisher": "ggml-org (llama.cpp maintainers; linked by the official llama.cpp guide)",
+   "source_url": "https://huggingface.co/api/models/ggml-org/gpt-oss-120b-GGUF?blobs=true"
+  },
+  {
+   "repo": "unsloth/gpt-oss-120b-GGUF",
+   "format": "GGUF Q2_K..Q8_0, UD-Q4_K_XL (63.02 GB), F16 65.37 GB; every quant is 62.6-64.5 GB because the experts stay MXFP4-sized",
+   "size_gb": 62.77,
+   "official": false,
+   "publisher": "unsloth",
+   "source_url": "https://huggingface.co/api/models/unsloth/gpt-oss-120b-GGUF?blobs=true"
+  },
+  {
+   "repo": "bartowski/openai_gpt-oss-120b-GGUF",
+   "format": "GGUF MXFP4_MOE 63.39 GB; IQ2_M..Q8_0 all 62.6-63.4 GB; bf16 65.37 GB",
+   "size_gb": 63.39,
+   "official": false,
+   "publisher": "bartowski",
+   "source_url": "https://huggingface.co/api/models/bartowski/openai_gpt-oss-120b-GGUF?blobs=true"
+  },
+  {
+   "repo": "lmstudio-community/gpt-oss-120b-GGUF",
+   "format": "GGUF MXFP4, 2 shards (39.82 + 23.57 GB)",
+   "size_gb": 63.39,
+   "official": false,
+   "publisher": "lmstudio-community",
+   "source_url": "https://huggingface.co/api/models/lmstudio-community/gpt-oss-120b-GGUF?blobs=true"
+  },
+  {
+   "repo": "RedHatAI/gpt-oss-120b",
+   "format": "safetensors MXFP4 mirror of the original (same shard sizes)",
+   "size_gb": 65.25,
+   "official": false,
+   "publisher": "RedHatAI",
+   "source_url": "https://huggingface.co/api/models/RedHatAI/gpt-oss-120b?blobs=true"
+  },
+  {
+   "repo": "gpt-oss:120b (Ollama library)",
+   "format": "Ollama MXFP4, digest 714d86958b6e",
+   "size_gb": 65,
+   "official": false,
+   "publisher": "Ollama",
+   "source_url": "https://ollama.com/library/gpt-oss/tags"
+  }
+ ],
+ "vllm": {
+  "fits": "no",
+  "arch_supported": "Yes. GptOssForCausalLM -> ('gpt_oss', 'GptOssForCausalLM') at registry.py line 128 at tag v0.33.0.",
+  "min_version": "0.10.1 (the card installs vllm==0.10.1+gptoss). v0.33.0 supports it natively.",
+  "best_checkpoint": "openai/gpt-oss-120b (MXFP4 native). No smaller official vLLM checkpoint exists; amd/gpt-oss-120b-w-mxfp4-a-fp8 is a ROCm variant.",
+  "weights_gib": 60.77,
+  "kv_bytes_per_token_bf16": 36864,
+  "kv_math": "Budget 16303 MiB x 0.92 = 14999 MiB = 14.65 GiB. Weights 65,248,893,184 B = 60.77 GiB, and 14.65 - 60.77 - 1.2 reserve = -47.3 GiB, so there is no KV pool and the model does not load. Hypothetical KV per token: 18 full-attention layers x 2 x 8 KV heads x 64 x 2 B = 36,864 B/token BF16 (18,432 B FP8). The 18 sliding layers cap at 128 x 2,048 B x 18 = 4.7 MB per sequence. A full 131072-token sequence would need only 4.5 GiB BF16 / 2.25 GiB FP8. The weights are the blocker. Offloading about 47 GiB of experts to host RAM with --cpu-offload-gb / --cpu-offload-params (both present in arg_utils.py at v0.33.0) needs pinned memory beyond the ~40 GiB free and streams the weights over PCIe every step, so it is not viable.",
+  "est_max_context_tokens": 0,
+  "quant_on_sm120": "The v0.33.0 MXFP4 MoE oracle (fused_moe/oracle/mxfp4.py, _get_priority_backends_for_gpt_oss) explicitly handles device capability family 120. It demotes the OAI Triton kernels below MARLIN/BATCHED_MARLIN ('Consumer Blackwell: the OAI Triton kernels run but their 99KB shared memory budget caps them at small tiles, so MARLIN prefills ~10% faster'). In practice the path is Marlin W4A16 MXFP4, unless a FlashInfer CUTLASS backend listed earlier passes its capability check (not verified). The recipe's VLLM_USE_FLASHINFER_MOE_MXFP4_MXFP8 Blackwell setting applies to SM100. Attention on sm_120 is FA2 or Triton, with sinks supported.",
+  "tool_call_parser": "openai (vllm/tool_parsers/__init__.py line 194 -> gptoss_tool_parser.GptOssToolParser, v0.33.0)",
+  "reasoning_parser": "openai_gptoss (vllm/reasoning/__init__.py line 71 -> GptOssReasoningParser, v0.33.0)",
+  "serve_command": "Not runnable on this machine. The reference is the recipe/card command: vllm serve openai/gpt-oss-120b --tool-call-parser openai --reasoning-parser openai_gptoss --enable-auto-tool-choice (needs at least about 70 GB of VRAM, e.g. one 80 GB GPU).",
+  "known_issues": "Open in vLLM: #58825 (HarmonyParser returns a stray 'commentary to=assistant' header as a tool call named 'assistant<|channel|>analysis', updated 2026-09-29); #65770 (gpt-oss chat completions return 500 when a prior tool call name contains special-token text, 2026-11-11); #66989 (Rust frontend: gpt-oss can't be served with tool/reasoning-parser flags, 2026-11-13); #67603 (Quark W4A4 gpt-oss MoE fails to load on Blackwell, CUTLASS W4A4 drops expert biases); #55754 (configured tool parser ignored for forced calls unless auto tool choice is on). The recipe says Chat Completions supports only tool_choice=auto. OpenCode issue #60202 (tool_choice omitted) is listed in the lead brief.",
+  "sources": [
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/models/registry.py",
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/tool_parsers/__init__.py",
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/reasoning/__init__.py",
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/layers/fused_moe/oracle/mxfp4.py",
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/engine/arg_utils.py",
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/entrypoints/openai/chat_completion/protocol.py",
+   "https://github.com/vllm-project/recipes/blob/main/OpenAI/GPT-OSS.md",
+   "https://github.com/vllm-project/vllm/issues/58825",
+   "https://github.com/vllm-project/vllm/issues/65770",
+   "https://github.com/vllm-project/vllm/issues/66989"
+  ]
+ },
+ "llamacpp": {
+  "gguf_repo": "ggml-org/gpt-oss-120b-GGUF",
+  "quant": "MXFP4 (native; the official guide says 'Always use the original MXFP4 model files', and the K-quants are no smaller)",
+  "file_gib": 59.03,
+  "arch_supported": "Yes, since August 2025 (official guide discussion #15396, benchmarks on build 6129/6210). Current b12418 ships models/templates/openai-gpt-oss-120b for the auto-parser.",
+  "est_vram_gib": 13.4,
+  "est_ram_gib": 52,
+  "est_context_tokens": 65536,
+  "offload_plan": "Expert size per MoE layer: 128 experts x 3 x 2880 x 2880 = 3.185e9 params at MXFP4 4.25 bits = 1.692 GB = 1.576 GiB. Times 36 that is 56.7 GiB of experts; the other 2.3 GiB of the 59.03 GiB GGUF is attention, router and embeddings (source-backed). GPU budget is about 15.8 GiB free minus the 1 GiB fit margin, so about 14.8 GiB. Option A, matching the guide's 16 GB recipe: --n-cpu-moe 32 keeps experts of 4 layers on GPU (6.30 GiB) + 2.30 GiB non-expert + KV F16 at 64k (65536 x 36,864 B = 2.25 GiB) + SWA cache ~0.08 GiB + compute ~2.5 GiB (guide table: 2.7 GB) = ~13.4 GiB VRAM. 32 x 1.576 = 50.4 GiB of experts are mmapped in host RAM, plus about 1.5 GiB process overhead, so ~52 GiB RAM. Option B: -ctk q8_0 -ctv q8_0 (KV 1.2 GiB) and --n-cpu-moe 31 puts ~14.5 GiB in VRAM and ~49 GiB in RAM. At 128k with F16 KV (4.5 GiB), --n-cpu-moe 33 means ~52 GiB of experts in RAM. Feasibility: MARGINAL. ~49-52 GiB of experts is about 10 GiB more than the ~40 GiB free while the desktop runs. With mmap (the default --load-mode auto) the kernel would keep evicting expert pages and re-reading them from NVMe (or swapping/zram if --load-mode mlock or no mmap), with large stalls. It only runs cleanly if apps are closed so about 52+ GiB is free (61 GiB usable leaves ~9 GiB for OS, desktop and Docker). Do not use mlock, and do not set a Docker memory limit below ~56 GiB, because mmapped page cache counts against the container cgroup. The user's `heavy` slice (32 GB) would kill it if it were launched through heavy.",
+  "server_command": "docker run --rm --gpus all -p 8080:8080 -v $HOME/models:/models ghcr.io/ggml-org/llama.cpp:server-cuda13 -m /models/gpt-oss-120b-MXFP4.gguf --host 0.0.0.0 --port 8080 -c 65536 -np 1 -ngl 999 --n-cpu-moe 32 -ub 2048 -b 2048 --jinja --reasoning-effort medium --temp 1.0 --top-p 1.0 --load-mode mmap (needs the NVIDIA Container Toolkit, which is not installed yet; add -ctk q8_0 -ctv q8_0 and --n-cpu-moe 31 for slightly more speed; official guide form: llama-server -hf ggml-org/gpt-oss-120b-GGUF --ctx-size 32768 --jinja -ub 4096 -b 4096 --n-cpu-moe 32)",
+  "tool_calling_note": "Works via --jinja (on by default) with the template-driven auto-parser; the guide documents coding-agent use with tool calls. Open llama.cpp issue #30377 (updated 2026-11-14): gpt-oss-120b with tools plus response_format json_schema loops in the reasoning channel and never emits a tool call. Also open: #27783, where the o200k pre-tokenizer regex crashes llama-server on a ~26,000-character unbroken run (possible with minified files in an agent context). OpenCode issue #58019: an unanchored subagent.sessionID schema pattern triggers llama.cpp HTTP 400.",
+  "sources": [
+   "https://github.com/ggml-org/llama.cpp/discussions/15396",
+   "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12418/tools/server/README.md",
+   "https://huggingface.co/api/models/ggml-org/gpt-oss-120b-GGUF?blobs=true",
+   "https://github.com/ggml-org/llama.cpp/issues/30377",
+   "https://github.com/ggml-org/llama.cpp/issues/27783",
+   "https://github.com/anomalyco/opencode/issues/58019"
+  ]
+ },
+ "ollama": {
+  "tag": "gpt-oss:120b (digest 714d86958b6e); also gpt-oss:120b-cloud (remote, not local)",
+  "size_gb": 65,
+  "context": "128K window (library). Ollama's default on GPUs under 24 GiB is 4k, so OpenCode needs OLLAMA_CONTEXT_LENGTH=65536 or more.",
+  "capabilities": "tools, thinking (library badges); Text input only, no vision. Thinking levels low/medium/high via 'think' or reasoning_effort, no off switch. Updated '1 month ago'; 15.5M downloads for the gpt-oss family. 65 GB is more than the ~40 GiB RAM + ~15 GiB VRAM available while the desktop runs, so it has the same RAM problem as llama.cpp.",
+  "source_url": "https://ollama.com/library/gpt-oss/tags"
+ },
+ "benchmarks": [
+  {
+   "name": "SWE-bench Verified",
+   "score": "62.4 (high) / 52.6 (medium) / 47.9 (low)",
+   "setting": "OpenAI internal harness, terminal tool similar to Codex CLI",
+   "self_reported": true,
+   "source_url": "https://arxiv.org/html/2508.10925v1"
+  },
+  {
+   "name": "Tau-Bench Retail",
+   "score": "67.8 (high) / 62.0 (medium)",
+   "setting": "functions in developer message",
+   "self_reported": true,
+   "source_url": "https://arxiv.org/html/2508.10925v1"
+  },
+  {
+   "name": "Tau-Bench Airline",
+   "score": "49.2 (high)",
+   "setting": "functions in developer message",
+   "self_reported": true,
+   "source_url": "https://arxiv.org/html/2508.10925v1"
+  },
+  {
+   "name": "Aider Polyglot",
+   "score": "44.4 (high) / 34.2 (medium)",
+   "setting": "OpenAI model card",
+   "self_reported": true,
+   "source_url": "https://arxiv.org/html/2508.10925v1"
+  },
+  {
+   "name": "Aider Polyglot (official leaderboard)",
+   "score": "41.8 pass_rate_2",
+   "setting": "aider --model openrouter/openai/gpt-oss-120b --reasoning-effort high, 2025-08-06",
+   "self_reported": false,
+   "source_url": "https://raw.githubusercontent.com/Aider-AI/aider/main/aider/website/_data/polyglot_leaderboard.yml"
+  },
+  {
+   "name": "SWE-bench Verified (official leaderboard)",
+   "score": "26.0",
+   "setting": "mini-SWE-agent bash-only harness, 2025-08-07 (conflicts with vendor 62.4 because the harness differs)",
+   "self_reported": false,
+   "source_url": "https://raw.githubusercontent.com/SWE-bench/swe-bench.github.io/master/data/leaderboards.json"
+  },
+  {
+   "name": "SWE-bench Verified (Qwen same-harness table)",
+   "score": "62.0",
+   "setting": "Qwen3.5-27B model card comparison column GPT-OSS-120B (Qwen3.5-27B 72.4, 35B-A3B 69.2)",
+   "self_reported": false,
+   "source_url": "https://huggingface.co/Qwen/Qwen3.5-27B/raw/main/README.md"
+  },
+  {
+   "name": "Terminal-Bench 2",
+   "score": "18.7",
+   "setting": "Qwen3.5-27B model card comparison (Qwen3.5-27B 41.6, 35B-A3B 40.5)",
+   "self_reported": false,
+   "source_url": "https://huggingface.co/Qwen/Qwen3.5-27B/raw/main/README.md"
+  }
+ ],
+ "speed_notes": "There are no measured RTX 5080 Laptop numbers for 120b. Measured references: the official guide reports 'about 30 t/s at zero context on a 5090 with --n-cpu-moe 21' (desktop, 21 layers on CPU) and 170-196 t/s tg128 fully on GPU for RTX Pro 6000. For comparison, an RTX 5080 desktop runs gpt-oss-20b at 204.9 t/s tg128 and 7476 t/s pp2048 (https://github.com/ggml-org/llama.cpp/discussions/15396). Bandwidth arithmetic (inferred): active expert bytes are 4 x 13.2 MB = 52.9 MB per layer per token. With 32 CPU layers that is 1.69 GB per token from DDR5; at 80-100 GB/s the ceiling is about 47-59 t/s, and the realistic figure is roughly half. Scaling the 5090 report (30 t/s at 21 CPU layers) to 32 layers gives an estimate of about 15-20 t/s decode at short context on this laptop, falling with long context. If RAM is short and mmap pages fault from NVMe, expect far lower and erratic speed. Prefill of large OpenCode prompts (10-20k tokens) is slowed by the CPU-resident experts; not measured.",
+ "opencode_fit": {
+  "verdict": "weak",
+  "recommended_runtime": "llama.cpp server (ghcr.io/ggml-org/llama.cpp:server-cuda13) with --n-cpu-moe 32 (64k, F16 KV) or 31 (64k, q8_0 KV); vLLM cannot load it; Ollama gpt-oss:120b has the same RAM shortfall with less control",
+  "recommended_checkpoint": "ggml-org/gpt-oss-120b-GGUF (gpt-oss-120b-MXFP4.gguf, 63.39 GB)",
+  "recommended_context": "65536 (OpenCode minimum); 131072 is possible in VRAM terms with --n-cpu-moe 33 but needs about 52 GiB of free host RAM",
+  "caveats": "Marginal feasibility: ~49-52 GiB of expert weights must sit in RAM against ~40 GiB free with the desktop running, so it is only usable after closing most apps; otherwise mmap thrashes NVMe. Estimated ~15-20 t/s decode. Reasoning cannot be disabled (effort low/medium/high only). Harmony-format tool-call bugs remain open (vLLM #58825, #65770; llama.cpp #30377), and only tool_choice=auto is supported. The model dates from August 2025 (outside the 12-month window), and Qwen's same-harness table shows newer smaller models well ahead (Terminal-Bench 2 18.7 vs 40+). gpt-oss-20b (fully on GPU) or newer MoE models are better daily drivers on this machine."
+ },
+ "gaps": [
+  "Artificial Analysis tau2 65.8% for gpt-oss-120b (High) comes from a discovery lead and was not re-verified (JS-rendered page).",
+  "No measured decode or prefill numbers on an RTX 5080 Laptop or 290HX DDR5 with --n-cpu-moe; the speed figures are inferred from bandwidth and from the guide's 5090 remark.",
+  "Actual DDR5 bandwidth of this laptop was not measured.",
+  "Which MXFP4 backend vLLM v0.33.0 actually picks on sm_120 (FlashInfer CUTLASS vs Marlin) was not confirmed against is_supported_config; this is moot because the model does not fit.",
+  "The exact GGUF per-tensor split (expert vs non-expert bytes) was derived from config arithmetic, not from parsing the GGUF header.",
+  "Compute buffer size at -ub 2048 on this GPU was estimated from the guide's 2.7 GB table value, not measured.",
+  "Effect of llama.cpp's --moe-cache-mib and of the eagle3 draft GGUF on CPU-offloaded gpt-oss-120b speed was not evaluated.",
+  "BFCL and LiveCodeBench scores for gpt-oss-120b from a primary source were not found in this pass.",
+  "No llama.cpp open issue specific to gpt-oss on sm_120 was found; the search may be incomplete."
+ ]
+}

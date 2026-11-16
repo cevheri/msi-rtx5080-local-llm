@@ -1,0 +1,119 @@
+{
+ "verdicts": [
+  {
+   "claim": "Repo Qwen/Qwen3.8-27B is the official Qwen upload, not a re-upload; HF org isVerified=false",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/Qwen/Qwen3.8-27B ; https://huggingface.co/api/organizations/Qwen/overview ; https://github.com/QwenLM/Qwen3.8",
+   "correction": "Supported by: author=Qwen. The org has 469 models, 116,473 followers and isVerified=false. The QwenLM/Qwen3.8 README line 60 names Qwen/Qwen3.8-27B and line 72 links its model card."
+  },
+  {
+   "claim": "HF createdAt 2026-08-05T08:22:59Z, vendor announcement 2026-08-14, lastModified 2026-11-07, inside the 12-month window",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/Qwen/Qwen3.8-27B ; https://github.com/QwenLM/Qwen3.8",
+   "correction": "Supported by: README News line 48 says '2026-08-14: Qwen3.8-27B is now available on Hugging Face Hub'. The Artificial Analysis embedded JSON has releaseDate 2026-08-14. lastModified is 2026-11-07T04:42:17Z."
+  },
+  {
+   "claim": "License Apache-2.0, not gated",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Qwen/Qwen3.8-27B/raw/main/README.md",
+   "correction": "Supported by: the front matter says 'license: apache-2.0', the API has the tag license:apache-2.0 and gated=false."
+  },
+  {
+   "claim": "Dense 27B; safetensors total 27,781,427,952 BF16 params; BF16 weights 55.56 GB (51.75 GiB)",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/Qwen/Qwen3.8-27B?blobs=true",
+   "correction": "Supported by: the safetensors blobs sum to 55,563,006,776 bytes. The record says this total includes the vision tower and the MTP head. That is inferred: the vision_config and mtp_num_hidden_layers=1 are present, but the API gives no breakdown."
+  },
+  {
+   "claim": "Architecture: Qwen3_5ForConditionalGeneration, 64 layers with full_attention_interval 4 (16 full-attention layers), 24 Q / 4 KV heads, head_dim 256, partial rotary 0.25, rope_theta 1e7, GDN 16 QK / 48 V heads at dim 128, conv 4, fp32 SSM state, hidden 5120, FFN 17408, vocab 248320 untied, 1 MTP layer, 27-layer ViT at hidden 1152, max_position_embeddings 262144",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Qwen/Qwen3.8-27B/raw/main/config.json",
+   "correction": "Every value matches config.json exactly. The KV figure of 2x16x4x256x2 = 65,536 B/token is correct arithmetic."
+  },
+  {
+   "claim": "Context 262,144 native, extensible to 1,000,000 with static YaRN factor 4.0 via --hf-overrides, with a warning about short-text quality",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Qwen/Qwen3.8-27B/raw/main/README.md",
+   "correction": "Supported by README lines 53, 514-558."
+  },
+  {
+   "claim": "Modalities: text, image and video in, text out; pipeline image-text-to-text; no text-only Qwen checkpoint; mmproj about 0.93 GB",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Qwen/Qwen3.8-27B/raw/main/README.md ; https://huggingface.co/api/models?author=Qwen&search=Qwen3.8-27B",
+   "correction": "Supported by: a search of the Qwen org returns only Qwen3.8-27B and Qwen3.8-27B-FP8. The unsloth and ggml-org mmproj-BF16 files are 0.93 GB each."
+  },
+  {
+   "claim": "Thinking on by default; reasoning_effort xhigh (default)/medium/low; preserve_thinking default true; enable_thinking=false emits an empty <think></think>",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Qwen/Qwen3.8-27B/raw/main/chat_template.jinja",
+   "correction": "Supported by chat_template.jinja. Lines 46-49 default reasoning_effort to 'xhigh' and raise an exception on any other value. Line 118 gates on preserve_thinking. The generation prompt ends with '<think>\\n\\n</think>\\n\\n' when enable_thinking is false. README lines 258-264 say the same."
+  },
+  {
+   "claim": "Tool calling: Qwen3-Coder XML format, tools rendered as a <tools> list; template line 57 'if tools and tools is iterable'; lines 123-145 render tool_calls; vendor commands use --tool-call-parser qwen3_coder",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Qwen/Qwen3.8-27B/raw/main/chat_template.jinja ; https://github.com/QwenLM/Qwen3.8",
+   "correction": "I read the template myself. Line 57 is the tools check, line 68 gives the <tool_call><function=...><parameter=...> instructions, and lines 123-145 render the calls back. The QwenLM README lines 158, 171 and 184 use qwen3_coder and qwen3."
+  },
+  {
+   "claim": "vLLM v0.33.0 registers Qwen3_5ForConditionalGeneration (line 617) and Qwen3_5MTP (line 739); qwen3_coder and qwen3_xml map to Qwen3EngineToolParser; the qwen3 reasoning parser exists",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/model_executor/models/registry.py",
+   "correction": "Supported by: the line numbers match exactly, tool_parsers/__init__.py lines 206 and 217 hold the mappings, and reasoning/__init__.py line 168 registers qwen3."
+  },
+  {
+   "claim": "Recipe: min_vllm_version 0.17.0, image vllm/vllm-openai:qwen38, RTX 5090 needs --enforce-eager and a 32K context for Inferact NVFP4",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/recipes/main/models/Qwen/Qwen3.8-27B.yaml",
+   "correction": "Supported by recipe lines 53, 59 and 211-220. I did not check the claim that the image is a 'fork build in the 0.27 range'."
+  },
+  {
+   "claim": "Checkpoint sizes: FP8 30.87 GB, nvidia NVFP4 21.92, Inferact NVFP4 26.38, unsloth NVFP4 23.42, RedHatAI INT4 19.45 (18.12 GiB), RedHatAI MXFP4 19.83, AMD MXFP4 19.8, cyankiwi AWQ 21.02",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/RedHatAI/Qwen3.8-27B-INT4?blobs=true",
+   "correction": "Every value matches the safetensors blob sums. Wording fix: the kv_math line 'Smaller vLLM builds are all larger' should read 'the other vLLM builds are all larger'."
+  },
+  {
+   "claim": "GGUF sizes: unsloth UD-Q3_K_XL 13.15, UD-IQ4_XS 14.35, UD-IQ3_S 12.04, UD-Q4_K_M 16.56; ggml-org Q4_K_M 19.4 / Q8_0 28.6 / BF16 53.8; bartowski IQ4_XS 15.48, Q3_K_M 13.4; lmstudio Q4_K_M 16.81",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/unsloth/Qwen3.8-27B-GGUF/tree/main",
+   "correction": "Every value matches the tree listings. The unsloth MTP Q4_0 file is 1.28 GiB and the ggml-org mtp Q4_0 file is 1.56 GiB, which matches the record's '1.28-1.56 GiB'."
+  },
+  {
+   "claim": "Ollama tag qwen3.8:27b = latest = 27b-q4_K_M",
+   "verdict": "refuted",
+   "evidence_url": "https://ollama.com/library/qwen3.8/tags",
+   "correction": "qwen3.8:27b and latest share digest e118e4d12a70. 27b-q4_K_M has a different digest, 25b843619e94, and so does 27b-mtp-q4_K_M at 22130167c4c2. All three are 18GB, but the default tag is not byte-identical to 27b-q4_K_M. The record's tag list also leaves out 27b-mtp-q8_0 (30GB), 27b-mtp-bf16 (56GB) and 27b-mlx-bf16 (MLX, 56GB). 27b-nvfp4 and 27b-mlx share digest 5642e97495e1."
+  },
+  {
+   "claim": "Ollama issues #18632 (think high/max fall back to medium) and #18840 (HTTP 500 on qwen3.8:27b) are open",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/ollama/ollama/issues/18632",
+   "correction": "Both issues are open and their titles match. I did not check the claim that /api/show reports [false,low,medium,xhigh]."
+  },
+  {
+   "claim": "Vendor card: TB2.1 (Terminus) 73.0, SWE-bench Pro 61.7, NL2Repo 42.3, DeepSWE 1.1 42.2, QwenSWEBench 79.0, IFBench 79.5, LiveCodeBench v6 90.3, with the stated settings",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Qwen/Qwen3.8-27B/raw/main/README.md",
+   "correction": "Every value matches the Qwen3.8-27B column of the card's text table, and all are vendor self-reported. The SWE-bench Pro setting (Claude Code harness, temp 1.0, top_p 0.95, 256K, corrected task set) and the QwenSWEBench avg@3 setting match the footnotes. QwenSWEBench also used an 8-hour timeout and max_tokens 32,768. The card gives no explicit thinking setting for the table."
+  },
+  {
+   "claim": "Artificial Analysis: TB2.1 79.8/65.2/67.4/49.1; TB4.0 5.6/5.1/2.5/0; tau3-Banking 48.0/47.4/32.2/20.0 (xhigh/medium/low/non-reasoning)",
+   "verdict": "confirmed",
+   "evidence_url": "https://artificialanalysis.ai/models/qwen3-8-27b",
+   "correction": "Supported by the embedded JSON per shortName. terminalBench21 is 0.7978/0.6517/0.6742/0.4906, terminalBench40 is 0.0556/0.0505/0.0253/0, and tauBanking is 0.4804/0.4742/0.3216/0.2."
+  },
+  {
+   "claim": "AA Intelligence Index v5.0.1: 20.1/17.5/15.7/10; xhigh used 128M output tokens and 42.8 min per task",
+   "verdict": "confirmed",
+   "evidence_url": "https://artificialanalysis.ai/models/qwen3-8-27b",
+   "correction": "Supported by: intelligenceIndex is 20.11/17.48/15.69/10.03. The xhigh record has 127,697,260 output tokens and intelligenceIndexTimePerTask 2567.6 s (42.8 min). The page shows 'v5.0.1'. I did not check the 'small open-weight median 8' or the 'median 77.7M tokens' comparison figures."
+  },
+  {
+   "claim": "arena.ai Elo 1434, the 'via Alibaba API, BF16' setting for AA, and llama.cpp issue details (#29947, #30357, #27623 speed reports, #32316)",
+   "verdict": "uncertain",
+   "correction": "I did not check these. The record itself lists the arena Elo as unverified."
+  }
+ ],
+ "overall": "holds-with-corrections",
+ "summary": "Only one claim is wrong, and it is the Ollama one. The record's identity, capability and benchmark claims survive the adversarial check.\n\n**Identity and capabilities.** The repo is official: author is Qwen, the QwenLM/Qwen3.8 README links to it, and the HF org reports isVerified=false. It was created on HF on 2026-08-05 and announced on 2026-08-14, inside the window. The license is Apache-2.0 and the repo is not gated. These all match the raw config.json, README and chat_template.jinja:\n- the parameter count of 27,781,427,952 and the 55.56 GB of BF16 weights;\n- every architecture value;\n- the 262,144 native context and the YaRN path to 1M;\n- vision input, with no text-only checkpoint;\n- thinking on by default, reasoning_effort xhigh/medium/low, preserve_thinking, and enable_thinking=false emitting an empty think block;\n- Qwen3-Coder XML tool calling.\n\n**Runtime support.** vLLM v0.33.0 registers the architecture at registry.py lines 617 and 739, and the qwen3_coder and qwen3 parsers exist. The recipe values match.\n\n**Sizes and benchmarks.** All checkpoint and GGUF sizes match the HF API. All seven vendor-card benchmark numbers match the card exactly, and all are self-reported. The Artificial Analysis TB2.1, TB4.0 and tau3-Banking values, the Intelligence Index (20.1/17.5/15.7/10.0), the 128M xhigh output tokens and the 42.8 min per task all match the page's embedded JSON.\n\n**Refuted.** The record says qwen3.8:27b = latest = 27b-q4_K_M. On ollama.com, 27b and latest share digest e118e4d12a70, but 27b-q4_K_M has digest 25b843619e94 and 27b-mtp-q4_K_M has 22130167c4c2. All three are 18GB, so the default tag is a distinct build. The tag list also leaves out 27b-mtp-q8_0, 27b-mtp-bf16 and 27b-mlx-bf16.\n\n**Minor.** The kv_math line 'Smaller vLLM builds are all larger' should read 'the other vLLM builds are all larger'.\n\n**Not checked.** The arena Elo, the AA median comparison figures and the llama.cpp issue details.\n\nWorking files are in $SCRATCH/fc38/"
+}

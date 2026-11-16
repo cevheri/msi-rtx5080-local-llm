@@ -1,0 +1,289 @@
+{
+ "name": "KAT-Coder-V2.5-Dev (Kwaipilot)",
+ "hf_repo": "Kwaipilot/KAT-Coder-V2.5-Dev",
+ "within_last_12_months": true,
+ "official_org": {
+  "value": "Kwaipilot (the KwaiKAT team at Kuaishou). The HF org 'Kwaipilot' is NOT verified (API isVerified=false). It has 14 models and 828 followers and also hosts the earlier KAT-V1-40B, KAT-Dev and KAT-Dev-72B-Exp (2025). The card links to the technical report arXiv 2607.05471 ('KAT-Coder-V2.5 Technical Report', KwaiKAT Team, HF papers publishedAt 2026-07-06). I found no vendor blog post that links to the HF repo. The org-repo continuity and the paper make the repo authentic, but that is source-backed, not proven by a badge.",
+  "source_url": "https://huggingface.co/api/organizations/Kwaipilot/overview",
+  "support": "source-backed"
+ },
+ "release_date": {
+  "value": "HF createdAt 2026-07-23T09:54:08Z, lastModified 2026-07-28. No dated vendor announcement found; the card says it follows 'the release of KAT-Coder-V2.5 in July'. Inside the 2025-11-15..2026-11-15 window.",
+  "source_url": "https://huggingface.co/api/models/Kwaipilot/KAT-Coder-V2.5-Dev",
+  "support": "direct-statement"
+ },
+ "license": {
+  "value": "Apache-2.0 per the card YAML ('license: apache-2.0') and the API tag license:apache-2.0. No extra use restrictions are stated. Caveat: the repo has no LICENSE file (the file listing has none), so the license comes from metadata only. The base, Qwen3.6-35B-A3B, is also Apache-2.0 (per discovery, not re-verified here).",
+  "source_url": "https://huggingface.co/Kwaipilot/KAT-Coder-V2.5-Dev/raw/main/README.md",
+  "support": "direct-statement"
+ },
+ "params": {
+  "value": "35B total, 3B active per the card. HF API safetensors total is 34,660,610,688 params (all BF16). Shard sum is 69,325,581,696 bytes = 64.56 GiB. Arithmetic from config: routed experts are 256 x 3 x 2048 x 512 x 40 layers = 32.21B (92.9%). Active per token: 8 routed experts = 1.007B, plus about 1.94B non-expert (lm_head 0.51B, shared experts 0.126B, attention/GDN), about 2.95B in total.",
+  "source_url": "https://huggingface.co/api/models/Kwaipilot/KAT-Coder-V2.5-Dev?blobs=true",
+  "support": "source-backed"
+ },
+ "architecture": {
+  "value": "Qwen3_5MoeForConditionalGeneration (model_type qwen3_5_moe), a fine-tune of Qwen3.6-35B-A3B. The card's base_model is Qwen3.6-35B-A3B, NOT Qwen3.5 as the discovery lead said. 40 layers, hidden 2048, with full_attention_interval 4 laid out as 3 Gated DeltaNet (linear_attention) layers + 1 full-attention layer. That gives 10 full-attention layers (16 q heads, 2 KV heads, head_dim 256, output gate, partial RoPE 0.25, mRoPE theta 1e7) and 30 GDN layers (16 key heads / 32 value heads x 128, conv kernel 4, fp32 SSM state). MoE: 256 experts, top-8, moe_intermediate 512, plus a shared expert of 512. Vocab 248,320, untied embeddings. mtp_num_hidden_layers=0, so no MTP head ships; community '-MTP' GGUFs transplant one. config.json still carries a vision_config, but the card says the vision weights are not included.",
+  "source_url": "https://huggingface.co/Kwaipilot/KAT-Coder-V2.5-Dev/raw/main/config.json",
+  "support": "direct-statement"
+ },
+ "context_length": {
+  "value": "Native 262,144 (max_position_embeddings; the card says it 'natively supports context lengths of up to 262,144 tokens'). It extends to about 1,010,000 with YaRN factor 4 through a --hf-overrides rope_parameters override (card command). On this GPU the practical limits are about 48k (BF16 KV) or 96k (FP8 KV) with vLLM on the pruned REAP-50 checkpoint, and 128k with llama.cpp using expert offload.",
+  "source_url": "https://huggingface.co/Kwaipilot/KAT-Coder-V2.5-Dev/raw/main/README.md",
+  "support": "direct-statement"
+ },
+ "modalities": {
+  "value": "Text in, text out. The card: 'this open-weight release ships only the language-model weights and operates as a text-only model; the vision/multimodal components are not included'. vLLM requires --language-model-only, otherwise startup fails on the missing vision-tower weights (card). The Ollama community page lists 'Text' input.",
+  "source_url": "https://huggingface.co/Kwaipilot/KAT-Coder-V2.5-Dev/raw/main/README.md",
+  "support": "direct-statement"
+ },
+ "thinking": {
+  "mode": "toggle",
+  "how_to_toggle": "Thinking is on by default: the chat template ends the generation prompt with '<think>\\n'. To turn it off, enable_thinking=false makes the template emit an empty '<think>\\n\\n</think>\\n\\n'. vLLM: per request, extra_body={'chat_template_kwargs': {'enable_thinking': False}} (card example), with --reasoning-parser qwen3; reasoning comes back in the 'reasoning' field. The card also documents chat_template_kwargs {'preserve_thinking': True}, which keeps historical thinking and is recommended for agents. llama.cpp: per request, pass the same 'chat_template_kwargs' in the /v1/chat/completions body, or set it server-wide with --chat-template-kwargs '{\"enable_thinking\":false}' (inferred from standard llama-server behaviour, not tested). Ollama: API 'think': false, or '/set nothink' in the CLI (shown on the frob/kat-coder-v2.5-dev page). Card sampling: thinking mode temp 1.0, top_p 0.95, top_k 20, presence_penalty 1.5; non-thinking temp 0.7, top_p 0.8, top_k 20, presence_penalty 1.5. Users in HF discussion #9 report that presence_penalty 1.5 hurts code.",
+  "source_url": "https://huggingface.co/Kwaipilot/KAT-Coder-V2.5-Dev/raw/main/README.md",
+  "support": "direct-statement"
+ },
+ "tool_calling": {
+  "supported": "yes",
+  "format": "Qwen3-Coder XML: <tool_call>\\n<function=NAME>\\n<parameter=ARG>\\nvalue\\n</parameter>\\n</function>\\n</tool_call>. Tool results are wrapped in <tool_response> inside a user turn.",
+  "evidence": "chat_template.jinja (embedded in tokenizer_config) renders the tools list into the system turn as '# Tools ... <tools>' + tool|tojson for each tool, followed by the XML call-format instructions. The card's 'Tool Call' vLLM command uses --enable-auto-tool-choice --tool-call-parser qwen3_coder --reasoning-parser qwen3, and the SGLang tool-use command is the same. The card says RL cut 'abnormal tool labels' from 9.34% to 0.28%. llama.cpp b12418 common/chat.cpp lines 1420-1427 detect templates containing <tool_call>, <function= and <parameter= and route them to common_chat_params_init_qwen3_coder. The Ollama community page shows 'ollama launch opencode --model frob/kat-coder-v2.5-dev' writing a file through a tool.",
+  "source_url": "https://huggingface.co/Kwaipilot/KAT-Coder-V2.5-Dev/raw/main/chat_template.jinja",
+  "support": "direct-statement"
+ },
+ "checkpoints": [
+  {
+   "repo": "Kwaipilot/KAT-Coder-V2.5-Dev",
+   "format": "safetensors BF16 (text-only)",
+   "size_gb": 69.33,
+   "official": true,
+   "publisher": "Kwaipilot",
+   "source_url": "https://huggingface.co/api/models/Kwaipilot/KAT-Coder-V2.5-Dev?blobs=true"
+  },
+  {
+   "repo": "bartowski/Kwaipilot_KAT-Coder-V2.5-Dev-GGUF",
+   "format": "GGUF imatrix (arch qwen35moe, made with b10087): IQ2_XXS 9.78, Q2_K_L 13.11, IQ3_XXS 14.87, Q3_K_S 15.51, Q3_K_M 16.23, IQ4_XS 18.81, Q4_K_M 21.39, Q5_K_M 25.02, Q6_K 30.05, Q8_0 36.91, bf16 69.38 GB",
+   "size_gb": 21.39,
+   "official": false,
+   "publisher": "bartowski",
+   "source_url": "https://huggingface.co/api/models/bartowski/Kwaipilot_KAT-Coder-V2.5-Dev-GGUF?blobs=true"
+  },
+  {
+   "repo": "mradermacher/KAT-Coder-V2.5-Dev-i1-GGUF",
+   "format": "GGUF imatrix: i1-IQ3_M 15.44, i1-IQ4_XS 18.73, i1-Q4_K_M 21.17, i1-Q5_K_M 24.73, i1-Q6_K 28.51 GB",
+   "size_gb": 21.17,
+   "official": false,
+   "publisher": "mradermacher",
+   "source_url": "https://huggingface.co/api/models/mradermacher/KAT-Coder-V2.5-Dev-i1-GGUF?blobs=true"
+  },
+  {
+   "repo": "mudler/KAT-Coder-V2.5-Dev-APEX-GGUF",
+   "format": "GGUF APEX mixed MoE quants: I-Mini 13.47, Compact 16.54, Quality 22.82, Balanced 25.27 GB (most downloaded quant)",
+   "size_gb": 16.54,
+   "official": false,
+   "publisher": "mudler",
+   "source_url": "https://huggingface.co/api/models/mudler/KAT-Coder-V2.5-Dev-APEX-GGUF?blobs=true"
+  },
+  {
+   "repo": "noctrex/KAT-Coder-V2.5-Dev-MXFP4_MOE-GGUF",
+   "format": "GGUF MXFP4_MOE (with a transplanted MTP layer)",
+   "size_gb": 20.42,
+   "official": false,
+   "publisher": "noctrex",
+   "source_url": "https://huggingface.co/api/models/noctrex/KAT-Coder-V2.5-Dev-MXFP4_MOE-GGUF?blobs=true"
+  },
+  {
+   "repo": "sahilchachra/KAT-Coder-V2.5-Dev-W4A16",
+   "format": "compressed-tensors W4A16 INT4",
+   "size_gb": 20.93,
+   "official": false,
+   "publisher": "sahilchachra",
+   "source_url": "https://huggingface.co/api/models/sahilchachra/KAT-Coder-V2.5-Dev-W4A16?blobs=true"
+  },
+  {
+   "repo": "sahilchachra/KAT-Coder-V2.5-Dev-NVFP4A16",
+   "format": "compressed-tensors NVFP4A16",
+   "size_gb": 22.46,
+   "official": false,
+   "publisher": "sahilchachra",
+   "source_url": "https://huggingface.co/api/models/sahilchachra/KAT-Coder-V2.5-Dev-NVFP4A16?blobs=true"
+  },
+  {
+   "repo": "sakamakismile/KAT-Coder-V2.5-Dev-NVFP4",
+   "format": "compressed-tensors NVFP4 (W4A4)",
+   "size_gb": 21.9,
+   "official": false,
+   "publisher": "sakamakismile",
+   "source_url": "https://huggingface.co/api/models/sakamakismile/KAT-Coder-V2.5-Dev-NVFP4?blobs=true"
+  },
+  {
+   "repo": "cyankiwi/KAT-Coder-V2.5-Dev-AWQ-INT4",
+   "format": "compressed-tensors AWQ INT4",
+   "size_gb": 24.43,
+   "official": false,
+   "publisher": "cyankiwi",
+   "source_url": "https://huggingface.co/api/models/cyankiwi/KAT-Coder-V2.5-Dev-AWQ-INT4?blobs=true"
+  },
+  {
+   "repo": "debackerl/KAT-Coder-V2.5-Dev-FP8",
+   "format": "compressed-tensors FP8 (Qwen3_5MoeForCausalLM, text-only)",
+   "size_gb": 35.77,
+   "official": false,
+   "publisher": "debackerl",
+   "source_url": "https://huggingface.co/api/models/debackerl/KAT-Coder-V2.5-Dev-FP8?blobs=true"
+  },
+  {
+   "repo": "Ttimms/KAT-Coder-V2.5-Dev-REAP-50-NVFP4A16",
+   "format": "compressed-tensors nvfp4-pack-quantized, REAP-pruned to 128 of 256 experts (the only vLLM build that fits 16 GB fully on GPU)",
+   "size_gb": 13.37,
+   "official": false,
+   "publisher": "Ttimms",
+   "source_url": "https://huggingface.co/api/models/Ttimms/KAT-Coder-V2.5-Dev-REAP-50-NVFP4A16?blobs=true"
+  },
+  {
+   "repo": "Ttimms/KAT-Coder-V2.5-Dev-REAP-50-GGUF",
+   "format": "GGUF of the 50%-pruned model: Q4_K_M 11.37, Q5_K_M 13.26, Q6_K 15.26, Q8_0 19.75 GB",
+   "size_gb": 13.26,
+   "official": false,
+   "publisher": "Ttimms",
+   "source_url": "https://huggingface.co/api/models/Ttimms/KAT-Coder-V2.5-Dev-REAP-50-GGUF?blobs=true"
+  }
+ ],
+ "vllm": {
+  "arch_supported": "Yes. The v0.33.0 registry.py lists Qwen3_5MoeForConditionalGeneration (line 618) and Qwen3_5MoeForCausalLM (line 205), and the --language-model-only flag exists (arg_utils.py line 1497).",
+  "min_version": "The card recommends vllm>=0.19.0; v0.33.0 is fine.",
+  "best_checkpoint": "Fully on GPU: Ttimms/KAT-Coder-V2.5-Dev-REAP-50-NVFP4A16 (12.45 GiB, 50% experts pruned, community, quality unverified). Unpruned alternative: sahilchachra/KAT-Coder-V2.5-Dev-W4A16 (19.49 GiB) with UVA expert offload (--cpu-offload-gb about 8 --cpu-offload-params experts). That offload path is untested and will be PCIe-bound.",
+  "fits": "tight",
+  "weights_gib": 12.45,
+  "kv_bytes_per_token_bf16": 20480,
+  "kv_math": "Budget 16303 MiB x 0.92 = 14999 MiB = 14.65 GiB. KV per token = 2 x 10 full-attention layers x 2 KV heads x 256 x 2 B = 20,480 B (BF16), or 10,240 B (FP8). GDN fixed state per sequence = 30 layers x (32 x 128 x 128 x 4 B fp32 = 2 MiB, plus conv about 48 KiB) = about 61 MiB. (a) REAP-50 NVFP4A16: 14.65 - 12.45 - 1.2 = 1.00 GiB pool, minus 0.06 GiB GDN state = 0.94 GiB = 1,009,000,000 B. BF16 KV: 1.009e9 / 20480 = about 49k tokens. FP8 KV: about 98k tokens. Both are under the 262,144 cap. (b) Unpruned W4A16 19.49 GiB: it does not fit (19.49 > 14.65). With a 2.0 GiB KV target (about 104k tokens BF16 or 209k FP8), the GPU can hold 14.65 - 1.2 - 2.0 = 11.45 GiB of weights, so about 8.0 GiB must go through --cpu-offload-gb. (c) Original BF16 (64.56 GiB), FP8 (33.32 GiB), AWQ-INT4 (22.75 GiB) and NVFP4 (20.40 GiB) do not fit without offload.",
+  "est_max_context_tokens": 98000,
+  "tool_call_parser": "qwen3_coder (registered in v0.33.0 vllm/tool_parsers/__init__.py line 206)",
+  "reasoning_parser": "qwen3 (registered in v0.33.0 vllm/reasoning/__init__.py line 168)",
+  "quant_on_sm120": "NVFP4A16 is a weight-only FP4 checkpoint. On sm_120 it should run on the Marlin FP4 weight-only path, or on FlashInfer/b12x kernels for NVFP4 MoE (inferred; I did not trace the kernel selection in the v0.33.0 source). INT4 W4A16/AWQ uses Marlin MoE (inferred). Known sm_120 issues on the same architecture: #49476, where the FlashInfer b12x SM120 MoE workspace is allocated in profile_run and OOMs on 16 GB Blackwell with NVFP4 Qwen3.6-35B-A3B (open), and #54331, where hybrid-GDN NVFP4 dies under sustained load with CUDA graphs on (open).",
+  "serve_command": "docker run --rm --gpus all --ipc=host -p 8000:8000 -v ~/.cache/huggingface:/root/.cache/huggingface vllm/vllm-openai:v0.33.0 --model Ttimms/KAT-Coder-V2.5-Dev-REAP-50-NVFP4A16 --served-model-name kat-coder --language-model-only --max-model-len 65536 --kv-cache-dtype fp8 --max-num-seqs 2 --gpu-memory-utilization 0.92 --enable-auto-tool-choice --tool-call-parser qwen3_coder --reasoning-parser qwen3   (Card base command: vllm serve Kwaipilot/KAT-Coder-V2.5-Dev --max-model-len 262144 --reasoning-parser qwen3 --enable-auto-tool-choice --tool-call-parser qwen3_coder --language-model-only --tensor-parallel-size 8)",
+  "known_issues": "Open vLLM issues, from a GitHub search on 2026-11-15. Tool parser: #65774 (qwen3_coder: a repeated parameter breaks streamed tool-call arguments, 2026-11-05), #57699 (qwen3_coder drops the last parameter when </parameter> is missing), #42021 (Qwen3.5 with reasoning parser returns non-standard tool calls when enable_thinking=true), #39056 (tool calls lost when the XML tool_call is emitted inside <think>), #47194 (Qwen3.6 hybrid with prefix caching + MTP leaks tool calls; not relevant here because there is no MTP). Hybrid: #51250 (prefix caching ineffective on GDN hybrid Qwen3_5MoeForConditionalGeneration, which hurts agent re-prefill). sm_120: #49476 and #54331 (see above). No KAT-specific issue found. The --language-model-only flag is mandatory.",
+  "sources": [
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/models/registry.py",
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/tool_parsers/__init__.py",
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/reasoning/__init__.py",
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/engine/arg_utils.py",
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/config/offload.py",
+   "https://huggingface.co/Kwaipilot/KAT-Coder-V2.5-Dev/raw/main/README.md",
+   "https://huggingface.co/Kwaipilot/KAT-Coder-V2.5-Dev/raw/main/config.json",
+   "https://huggingface.co/Ttimms/KAT-Coder-V2.5-Dev-REAP-50-NVFP4A16/raw/main/config.json",
+   "https://github.com/vllm-project/vllm/issues/65774",
+   "https://github.com/vllm-project/vllm/issues/57699",
+   "https://github.com/vllm-project/vllm/issues/42021",
+   "https://github.com/vllm-project/vllm/issues/49476",
+   "https://github.com/vllm-project/vllm/issues/54331",
+   "https://github.com/vllm-project/vllm/issues/51250"
+  ]
+ },
+ "llamacpp": {
+  "arch_supported": "Yes. GGUF general.architecture is qwen35moe (HF API gguf metadata, context_length 262144). LLM_ARCH_QWEN35MOE 'qwen35moe' is in src/llama-arch.cpp at b12418 (line 46). bartowski quantized with b10087 (released 2026-07-22).",
+  "gguf_repo": "bartowski/Kwaipilot_KAT-Coder-V2.5-Dev-GGUF",
+  "quant": "Q4_K_M (Q5_K_M 23.30 GiB also works with more offload; the fully-on-GPU options are IQ3_XXS 13.85 GiB with q8_0 KV at 64k, or REAP-50 Q5_K_M 12.35 GiB)",
+  "file_gib": 19.92,
+  "offload_plan": "--n-cpu-moe 18 with q8_0 KV at 128k. Experts are 92.9% of params, so about 18.5 GiB of the 19.92 GiB file, or 0.463 GiB per layer; non-expert tensors about 1.41 GiB. GPU: 22 x 0.463 = 10.19 + 1.41 + KV q8_0 131072 x 10240 B = 1.25 + GDN state 0.06 + compute about 0.8 = about 13.7 GiB VRAM. CPU RAM: 18 x 0.463 = about 8.3 GiB. With f16 KV (2.5 GiB) use --n-cpu-moe 20 (about 14.0 GiB VRAM, 9.3 GiB RAM). Full GPU alternative: IQ3_XXS 13.85 + KV q8_0 64k 0.63 + 0.06 + 0.8 = about 15.3 GiB, too tight on a 15.9 GiB card with 112 MiB idle use.",
+  "est_vram_gib": 13.7,
+  "est_ram_gib": 8.3,
+  "est_context_tokens": 131072,
+  "server_command": "docker run --rm --gpus all -p 8080:8080 -v ~/models:/models ghcr.io/ggml-org/llama.cpp:server-cuda13 -m /models/Kwaipilot_KAT-Coder-V2.5-Dev-Q4_K_M.gguf --alias kat-coder -ngl 99 --n-cpu-moe 18 -c 131072 -np 1 -fa on -ctk q8_0 -ctv q8_0 --jinja --temp 0.7 --top-p 0.8 --top-k 20 --host 0.0.0.0 --port 8080",
+  "tool_calling_note": "The template contains <tool_call>, <function= and <parameter=, so llama.cpp b12418 common/chat.cpp (lines 1420-1427) picks the specialized Qwen3-Coder parser under --jinja (on by default). The <think> block is split into reasoning_content. Community reports: HF discussion #8 shows Q8_0 looping with llama.cpp at repeat-penalty 1.1, and a reply suggests a fixed Qwen chat template. Discussion #9 says the card's presence_penalty 1.5 'generates bad code', though others report it works well. An end-to-end OpenCode tool call through llama-server has not been verified.",
+  "sources": [
+   "https://huggingface.co/api/models/bartowski/Kwaipilot_KAT-Coder-V2.5-Dev-GGUF?blobs=true",
+   "https://huggingface.co/bartowski/Kwaipilot_KAT-Coder-V2.5-Dev-GGUF/raw/main/README.md",
+   "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12418/src/llama-arch.cpp",
+   "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12418/common/chat.cpp",
+   "https://huggingface.co/Kwaipilot/KAT-Coder-V2.5-Dev/discussions/8",
+   "https://huggingface.co/Kwaipilot/KAT-Coder-V2.5-Dev/discussions/9"
+  ]
+ },
+ "ollama": {
+  "tag": "frob/kat-coder-v2.5-dev:35b-a3b-q4_K_M (community namespace; not in the official library, ollama.com/library/kat-coder returns 404)",
+  "size_gb": 21,
+  "context": "256K listed; Ollama's default is 4k on GPUs under 24 GiB, so set num_ctx to 65536 or more",
+  "capabilities": "The page lists Text input. No tools/thinking/vision badge markup was found, but the readme shows thinking with /set nothink and a working 'ollama launch opencode' tool call. Tags: latest and 35b (21GB), 35b-a3b-q4_K_M (21GB), 35b-a3b-q8_0 (37GB), 35b-a3b-bf16 (69GB). 1,472 downloads. At 21 GB it will not fit in 16 GB VRAM, so Ollama will split layers to the CPU.",
+  "source_url": "https://ollama.com/frob/kat-coder-v2.5-dev/tags"
+ },
+ "benchmarks": [
+  {
+   "name": "SWE-bench Verified",
+   "score": "69.40",
+   "setting": "In-house: claude_code@2.1.195 harness, pass@1, temp 1.0, top_p 0.95, 256k ctx, served by vLLM/SGLang. The same table re-runs Qwen3.6-35B-A3B at 64.40, Qwen3.5-27B 68.60, Gemma4-31B 60.60, Qwen3.5-35B-A3B 58.60, Ornith-1.0-35B 55.80, Gemma4-26B-A4B 35.80, Qwen3-Coder-30B 31.80. This is the vendor's own same-harness table, not an independent third party.",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/Kwaipilot/KAT-Coder-V2.5-Dev/raw/main/README.md"
+  },
+  {
+   "name": "SWE-bench Pro",
+   "score": "45.96",
+   "setting": "Same in-house harness (Qwen3.6-35B-A3B re-run at 40.63)",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/Kwaipilot/KAT-Coder-V2.5-Dev/raw/main/README.md"
+  },
+  {
+   "name": "SWE-bench Multilingual",
+   "score": "63.00",
+   "setting": "Same in-house harness",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/Kwaipilot/KAT-Coder-V2.5-Dev/raw/main/README.md"
+  },
+  {
+   "name": "Terminal-Bench 2.1",
+   "score": "41.02 (average of Terminus-2 32.60 and Claude Code 49.44)",
+   "setting": "pass@1, temp 0.7, 256k ctx",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/Kwaipilot/KAT-Coder-V2.5-Dev/raw/main/README.md"
+  },
+  {
+   "name": "PinchBench",
+   "score": "93.43",
+   "setting": "openclaw@2026.3.13 agent, pass@1",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/Kwaipilot/KAT-Coder-V2.5-Dev/raw/main/README.md"
+  },
+  {
+   "name": "SciCode",
+   "score": "44.20",
+   "setting": "pass@1, temp 0.6",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/Kwaipilot/KAT-Coder-V2.5-Dev/raw/main/README.md"
+  },
+  {
+   "name": "KAT-Code-Bench",
+   "score": "46.21",
+   "setting": "Vendor's own benchmark",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/Kwaipilot/KAT-Coder-V2.5-Dev/raw/main/README.md"
+  },
+  {
+   "name": "SWE-bench Verified, conflict with provider-reported numbers",
+   "score": "Contested. Qwen's official Qwen3.6-35B-A3B score is 73.4 (Verified) and 49.5 (Pro), and Ornith-1.0-35B is 75.6 / 50.4, both above KAT's 69.4 / 45.96. KAT re-ran them at 64.40 and 55.80. Kwaipilot attributes the gap to harness version and Qwen's benchmark-specific optimizations, and declined to merge the HF community eval results (discussion #11).",
+   "setting": "Mixed harnesses; numbers quoted in a community discussion, not independently re-measured",
+   "self_reported": false,
+   "source_url": "https://huggingface.co/Kwaipilot/KAT-Coder-V2.5-Dev/discussions/12"
+  }
+ ],
+ "speed_notes": "Inferred, no measured RTX 50-series numbers found. About 2.95B params are read per token; at Q4_K_M (about 4.85 bpw, about 0.6 B/param) that is about 1.8 GB per token. Fully on GPU at 896 GB/s the ceiling is about 500 tok/s. With --n-cpu-moe 18 (about 45% of routed experts in DDR5, about 0.27 GB per token at about 80 GB/s = 3.4 ms, plus about 1.5 GB per token on the GPU = 1.7 ms) the ceiling is about 190 tok/s, so expect perhaps 40-90 tok/s decode in practice. Prefill of long agent contexts with CPU experts will be the main cost. HF discussion #51250-style ineffective prefix caching on GDN hybrids in vLLM and llama.cpp recurrent-state handling may force re-prefill between agent turns. The vLLM REAP-50 NVFP4A16 build has about 1.5 GB read per token, entirely on the GPU. Users report running the model on an RTX 3060 with a 260k context (discussion #12), which suggests offload is workable.",
+ "opencode_fit": {
+  "verdict": "good",
+  "recommended_runtime": "llama.cpp server (ghcr.io/ggml-org/llama.cpp:server-cuda13) with expert offload. vLLM only with the pruned REAP-50 NVFP4A16 build, or with UVA expert offload.",
+  "recommended_checkpoint": "bartowski/Kwaipilot_KAT-Coder-V2.5-Dev-GGUF Q4_K_M (19.92 GiB) with --n-cpu-moe 18. For a full-GPU vLLM path, Ttimms/KAT-Coder-V2.5-Dev-REAP-50-NVFP4A16 (pruned, quality unverified).",
+  "recommended_context": "131072 on llama.cpp with q8_0 KV (the model is native 262k; 64k is the minimum for OpenCode). About 64k with FP8 KV on vLLM REAP-50.",
+  "caveats": "1. No unpruned vLLM quant fits in the 14.65 GiB budget: the smallest full-expert 4-bit build is 18.60 GiB. 2. No official quants, and nothing from unsloth, ggml-org, lmstudio-community, RedHatAI, nvidia or Intel; bartowski and mradermacher are the best GGUF sources. 3. Benchmarks are vendor in-house and contested against Qwen's own Qwen3.6-35B-A3B numbers, so it may not beat its base on official harnesses. Community anecdotes are largely positive for agentic use, including OpenCode and Claude Code. 4. Thinking is on by default. For OpenCode, keep thinking on and consider preserve_thinking=true. Some users report loops (Q8, repeat-penalty) and bad code with presence_penalty 1.5. 5. Open qwen3_coder streaming tool-argument bugs in vLLM (#65774, #57699). 6. vLLM must use --language-model-only. 7. HF org is not verified, and there is no LICENSE file (Apache-2.0 per metadata only). 8. OpenCode v2.3.0 starts vLLM-discovered models with tools disabled, so enable capabilities.tools explicitly."
+ },
+ "gaps": [
+  "The HF org is unverified and I found no dated vendor announcement or blog linking the repo; the release date comes only from HF createdAt 2026-07-23.",
+  "The repo has no LICENSE file; Apache-2.0 comes from card metadata only.",
+  "The discovery lead 'Qwen3.5-35B-A3B fine-tune' is wrong: the card says base Qwen3.6-35B-A3B (same qwen3_5_moe architecture).",
+  "The 'third-party same-harness table (SWE-bench Verified 69.40)' lead is the vendor's own in-house table, not a third party.",
+  "No independent results from Artificial Analysis, the official SWE-bench leaderboard, BFCL, tau2, LiveCodeBench or Aider were found.",
+  "No measured tok/s on RTX 50-series; the speed figures are bandwidth arithmetic only.",
+  "The NVFP4A16 / W4A16 MoE kernel selection on sm_120 in vLLM v0.33.0 was not traced in source.",
+  "The quality of the REAP-50 pruned checkpoint is unknown, and its vLLM startup on 16 GB is untested (see #49476).",
+  "The vLLM --cpu-offload-gb / --cpu-offload-params experts path for the unpruned W4A16 build is untested and may be very slow over PCIe.",
+  "Ollama capability badges could not be read from the page markup, and only a community namespace (frob) exists.",
+  "llama-server per-request chat_template_kwargs for enable_thinking was not verified in the b12418 source.",
+  "The exact Q4_K_M per-layer expert size is estimated from the param share (92.9%), not read from GGUF tensor metadata."
+ ]
+}

@@ -1,0 +1,275 @@
+{
+ "name": "Devstral Small 2 24B Instruct 2512",
+ "hf_repo": "mistralai/Devstral-Small-2-24B-Instruct-2512",
+ "within_last_12_months": true,
+ "official_org": {
+  "value": "Mistral AI. The HF org 'mistralai' has isVerified=true (API /api/organizations/mistralai/overview). The Mistral blog 'Introducing: Devstral 2 and Mistral Vibe CLI' (2025-12-09) announces Devstral Small 2 (24B, Apache 2.0), and the card links to Mistral's own docs and Vibe CLI.",
+  "source_url": "https://huggingface.co/api/organizations/mistralai/overview ; https://mistral.ai/news/devstral-2-vibe-cli/",
+  "support": "direct-statement"
+ },
+ "release_date": {
+  "value": "HF createdAt is 2025-11-28T11:27:11Z, probably while the repo was still private. The public announcement is 2025-12-09 (blog datePublished 2025-12-09T12:00Z). The SWE-bench leaderboard row gives model_release_date 20251209. Both dates fall inside the 2025-11-15..2026-11-15 window. Repo updates after release: the generation_config default was changed to temp 0.15 (2025-12-22); stray [THINK]/[/THINK] special tokens were replaced (2026-06-30); the chat template was last updated on 2026-07-15 'to match mistral-common'.",
+  "source_url": "https://huggingface.co/api/models/mistralai/Devstral-Small-2-24B-Instruct-2512 ; https://mistral.ai/news/devstral-2-vibe-cli/ ; https://huggingface.co/api/models/mistralai/Devstral-Small-2-24B-Instruct-2512/commits/main",
+  "support": "direct-statement"
+ },
+ "license": {
+  "value": "Apache 2.0. The card front matter says 'license: apache-2.0' and the API tag is 'license:apache-2.0'. The card's wording is 'Open-source license allowing usage and modification for both commercial and non-commercial purposes.' The only extra condition is a gating note pointing to Mistral's privacy policy. Note: the larger Devstral 2 123B uses a modified MIT license, and the blog says so.",
+  "source_url": "https://huggingface.co/mistralai/Devstral-Small-2-24B-Instruct-2512/raw/main/README.md",
+  "support": "direct-statement"
+ },
+ "params": {
+  "value": "Dense model, total equals active. The HF API safetensors total is 24,011,361,280 parameters (BF16 1,781,550,080 + F8_E4M3 22,229,811,200), which includes the Pixtral vision tower. The GGUF text-only total is 23,572,403,200 (HF gguf metadata). That puts the vision tower plus projector at about 0.44B (inferred from the difference, and it matches the 0.88 GB mmproj F16). The card says '24 billion parameters'.",
+  "source_url": "https://huggingface.co/api/models/mistralai/Devstral-Small-2-24B-Instruct-2512?blobs=true ; https://huggingface.co/api/models/unsloth/Devstral-Small-2-24B-Instruct-2512-GGUF?expand[]=gguf",
+  "support": "source-backed"
+ },
+ "architecture": {
+  "value": "Mistral3ForConditionalGeneration (model_type mistral3, text_config ministral3), with a Pixtral vision encoder (24 layers, hidden 1024). Text model: 40 layers, hidden 5120, intermediate 32768, 32 query heads, 8 KV heads (GQA), head_dim 128, vocab 131072, untied embeddings. sliding_window is null, so all 40 layers use full attention. RoPE is YaRN (factor 48, original 8192, theta 1e8) with Llama-4 style attention scaling (llama_4_scaling_beta 0.1), and the card cites Scalable-Softmax. The official weights are FP8 E4M3 (static activation scheme), with the vision tower, projector and lm_head kept in BF16. The repo ships both an HF layout (model-0000x-of-00006) and a Mistral 'consolidated' layout.",
+  "source_url": "https://huggingface.co/mistralai/Devstral-Small-2-24B-Instruct-2512/raw/main/config.json ; https://huggingface.co/mistralai/Devstral-Small-2-24B-Instruct-2512/raw/main/params.json",
+  "support": "direct-statement"
+ },
+ "context_length": {
+  "value": "The card and blog say 256k (262,144), and the card's vLLM command uses --max-model-len 262144. config max_position_embeddings is 393,216, and Ollama and the GGUF metadata both show 384K. Treat 256K as the supported figure. On this GPU the practical context is far smaller (see llamacpp).",
+  "source_url": "https://huggingface.co/mistralai/Devstral-Small-2-24B-Instruct-2512/raw/main/README.md ; https://huggingface.co/mistralai/Devstral-Small-2-24B-Instruct-2512/raw/main/config.json",
+  "support": "direct-statement"
+ },
+ "modalities": {
+  "value": "Text and image in, text out (card: 'Vision Capabilities'; Ollama: 'Text, Image input'). Text-only paths: in vLLM, --language-model-only skips the vision encoder (it is a documented opt-in feature in the v0.33.0 Ministral-3 recipe, which uses the same architecture). In llama.cpp, leave out --mmproj. The Ollama blob bundles the projector (14.14 GiB is about Q4_K_M 13.34 + mmproj 0.82, inferred).",
+  "source_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/recipes/models/mistralai/Ministral-3-14B-Instruct-2512.yaml ; https://ollama.com/library/devstral-small-2/tags",
+  "support": "source-backed"
+ },
+ "thinking": {
+  "mode": "no",
+  "how_to_toggle": "There is nothing to toggle. It is an instruct model with no reasoning mode. The chat template has no THINK handling, and on 2026-06-30 Mistral replaced the stray [THINK]/[/THINK] special tokens with reserved slots. vLLM: do not pass --reasoning-parser. llama.cpp: no reasoning extraction is needed. Ollama: the library page shows only the 'vision' and 'tools' badges, with no 'thinking' badge.",
+  "source_url": "https://huggingface.co/mistralai/Devstral-Small-2-24B-Instruct-2512/raw/main/chat_template.jinja ; https://huggingface.co/api/models/mistralai/Devstral-Small-2-24B-Instruct-2512/commits/main ; https://ollama.com/library/devstral-small-2/tags",
+  "support": "direct-statement"
+ },
+ "tool_calling": {
+  "supported": "yes",
+  "format": "Mistral v11+ format: the tools list is rendered as [AVAILABLE_TOOLS]<json>[/AVAILABLE_TOOLS] before the first user turn, calls are emitted as [TOOL_CALLS]name[ARGS]{json}, and results go back in tool messages.",
+  "evidence": "Template lines 36-41 build '[AVAILABLE_TOOLS]' + (tools|tojson) + '[/AVAILABLE_TOOLS]'. Line 182 emits '[TOOL_CALLS]'. The card shows multi-step tool-call transcripts and says 'Devstral Small 2 supports tool calling'. The current template (2026-07-15) merges consecutive same-role messages and allows system or user after any role. The older template embedded in the Dec-2025 GGUFs raised 'roles must alternate', which broke OpenCode and mini-swe-agent (llama.cpp issues #19647 and #19851). For llama.cpp, pass the current template with --chat-template-file. The Ollama template is Ollama's own Go template.",
+  "source_url": "https://huggingface.co/mistralai/Devstral-Small-2-24B-Instruct-2512/raw/main/chat_template.jinja ; https://github.com/ggml-org/llama.cpp/issues/19647 ; https://github.com/ggml-org/llama.cpp/issues/19851",
+  "support": "direct-statement"
+ },
+ "checkpoints": [
+  {
+   "repo": "mistralai/Devstral-Small-2-24B-Instruct-2512",
+   "format": "FP8 E4M3 safetensors (HF layout 6 shards; a duplicate consolidated layout of 25.79 GB also ships)",
+   "size_gb": 25.79,
+   "official": true,
+   "publisher": "Mistral AI",
+   "source_url": "https://huggingface.co/api/models/mistralai/Devstral-Small-2-24B-Instruct-2512?blobs=true"
+  },
+  {
+   "repo": "ggml-org/Devstral-Small-2-24B-Instruct-2512-GGUF",
+   "format": "GGUF Q8_0 + mmproj F16 (0.88 GB); no 4-bit file",
+   "size_gb": 25.06,
+   "official": false,
+   "publisher": "ggml-org",
+   "source_url": "https://huggingface.co/api/models/ggml-org/Devstral-Small-2-24B-Instruct-2512-GGUF?blobs=true"
+  },
+  {
+   "repo": "unsloth/Devstral-Small-2-24B-Instruct-2512-GGUF",
+   "format": "GGUF IQ4_XS 12.78 GB / Q4_K_M 14.33 GB / UD-Q4_K_XL 14.51 / UD-Q3_K_XL 11.85 / UD-IQ3_XXS 9.41 / Q5_K_M 16.76 / Q8_0 25.06 / BF16 47.15; mmproj 0.88",
+   "size_gb": 12.78,
+   "official": false,
+   "publisher": "unsloth",
+   "source_url": "https://huggingface.co/api/models/unsloth/Devstral-Small-2-24B-Instruct-2512-GGUF?blobs=true"
+  },
+  {
+   "repo": "bartowski/mistralai_Devstral-Small-2-24B-Instruct-2512-GGUF",
+   "format": "GGUF imatrix IQ4_XS 12.76 GB / Q4_K_M 14.33 / Q4_K_S 13.55 / IQ3_M 10.65 / Q3_K_XL 12.99 / Q5_K_M 16.76 / Q8_0 25.06 (no mmproj listed)",
+   "size_gb": 12.76,
+   "official": false,
+   "publisher": "bartowski",
+   "source_url": "https://huggingface.co/api/models/bartowski/mistralai_Devstral-Small-2-24B-Instruct-2512-GGUF?blobs=true"
+  },
+  {
+   "repo": "lmstudio-community/Devstral-Small-2-24B-Instruct-2512-GGUF",
+   "format": "GGUF Q3_K_L 12.4 / Q4_K_M 14.33 / Q6_K 19.35 / Q8_0 25.06 / F16; mmproj 0.88",
+   "size_gb": 14.33,
+   "official": false,
+   "publisher": "lmstudio-community",
+   "source_url": "https://huggingface.co/api/models/lmstudio-community/Devstral-Small-2-24B-Instruct-2512-GGUF?blobs=true"
+  },
+  {
+   "repo": "RedHatAI/Devstral-Small-2-24B-Instruct-2512",
+   "format": "FP8 safetensors (byte-identical shard sizes to the official repo; no 4-bit RedHatAI build found)",
+   "size_gb": 25.79,
+   "official": false,
+   "publisher": "RedHatAI",
+   "source_url": "https://huggingface.co/api/models/RedHatAI/Devstral-Small-2-24B-Instruct-2512?blobs=true"
+  },
+  {
+   "repo": "androiddrew/Devstral-Small-2-24B-Instruct-2512-AWQ-4bit",
+   "format": "compressed-tensors pack-quantized W4A16 (vision tower ignored, embed/lm_head BF16); HF shards 15.03 GB (plus a duplicate consolidated file)",
+   "size_gb": 15.03,
+   "official": false,
+   "publisher": "androiddrew (community)",
+   "source_url": "https://huggingface.co/api/models/androiddrew/Devstral-Small-2-24B-Instruct-2512-AWQ-4bit?blobs=true"
+  },
+  {
+   "repo": "cyankiwi/Devstral-Small-2-24B-Instruct-2512-AWQ-4bit",
+   "format": "AWQ 4-bit (compressed-tensors) HF shards 16.07 GB",
+   "size_gb": 16.07,
+   "official": false,
+   "publisher": "cyankiwi (community)",
+   "source_url": "https://huggingface.co/api/models/cyankiwi/Devstral-Small-2-24B-Instruct-2512-AWQ-4bit?blobs=true"
+  },
+  {
+   "repo": "Firworks/Devstral-Small-2-24B-Instruct-2512-nvfp4",
+   "format": "NVFP4 safetensors, single file",
+   "size_gb": 16.07,
+   "official": false,
+   "publisher": "Firworks (community)",
+   "source_url": "https://huggingface.co/api/models/Firworks/Devstral-Small-2-24B-Instruct-2512-nvfp4?blobs=true"
+  },
+  {
+   "repo": "ollama library devstral-small-2:24b (= :latest, :24b-instruct-2512-q4_K_M)",
+   "format": "Ollama GGUF q4_K_M, model blob 15,177,370,240 B incl. vision projector; q8_0 26 GB, fp16 48 GB tags",
+   "size_gb": 15.18,
+   "official": false,
+   "publisher": "Ollama",
+   "source_url": "https://registry.ollama.ai/v2/library/devstral-small-2/manifests/24b"
+  }
+ ],
+ "vllm": {
+  "fits": "no",
+  "arch_supported": "Yes. Mistral3ForConditionalGeneration -> mistral3.Mistral3ForConditionalGeneration at registry.py line 541 on tag v0.33.0. The tool parser 'mistral' (MistralToolParser) is registered in vllm/tool_parsers/__init__.py at v0.33.0. No reasoning parser applies.",
+  "min_version": "No Devstral recipe exists in v0.33.0 or in vllm-project/recipes. The Ministral-3 recipe (same arch) gives min_vllm_version 0.11.0. The card asks for vllm latest plus mistral_common >= 1.8.6. Issue #44911 ('Devstral-Small-2 no longer working in 0.22.1') is closed. Use v0.33.0.",
+  "best_checkpoint": "androiddrew/Devstral-Small-2-24B-Instruct-2512-AWQ-4bit (W4A16 compressed-tensors, 15.03 GB = 13.99 GiB, the smallest vLLM-loadable 4-bit build found). Even this does not leave a useful KV pool.",
+  "weights_gib": 13.99,
+  "kv_bytes_per_token_bf16": 163840,
+  "kv_math": "Budget is 16303 MiB x 0.92 = 14.65 GiB. KV per token: 2 x 40 full-attention layers x 8 KV heads x 128 x 2 B = 163,840 B BF16 (81,920 B FP8). (1) Official FP8, 24.04 GiB: does not fit. (2) androiddrew AWQ with vision, 13.99 GiB: 14.65 - 13.99 - 1.2 = -0.55 GiB, does not fit. (3) The same with --language-model-only (minus the 0.82 GiB vision tower, giving 13.17 GiB): pool 0.27 GiB, about 1.8k tokens BF16 or 3.6k FP8. (4) The same at --gpu-memory-utilization 0.97 (15.44 GiB): pool 1.07 GiB, about 7.0k BF16 or 14.0k FP8. The cyankiwi AWQ and Firworks NVFP4 builds (16.07 GB) are worse. The cause is that the 4-bit builds keep embed_tokens and lm_head in BF16 (2 x 671M params = 2.5 GiB). Nothing reaches OpenCode's 64k.",
+  "est_max_context_tokens": 14000,
+  "serve_command": "Not recommended. Best effort only: docker run --gpus all --ipc=host -p 8000:8000 -v ~/.cache/huggingface:/root/.cache/huggingface vllm/vllm-openai:v0.33.0 --model androiddrew/Devstral-Small-2-24B-Instruct-2512-AWQ-4bit --language-model-only --gpu-memory-utilization 0.97 --kv-cache-dtype fp8 --max-model-len 12288 --tool-call-parser mistral --enable-auto-tool-choice. The vendor card command is 'vllm serve mistralai/Devstral-Small-2-24B-Instruct-2512 --max-model-len 262144 --tensor-parallel-size 2 --tool-call-parser mistral --enable-auto-tool-choice', which needs two GPUs.",
+  "tool_call_parser": "mistral",
+  "reasoning_parser": "none (non-thinking model)",
+  "quant_on_sm120": "W4A16 compressed-tensors should take vLLM's Marlin/machete-class mixed-precision path, and Marlin supports SM 8.0+ (inferred, not read at the tag). FP8 on SM120 has open issue #55571 (Xid 13 under sustained load with FlashInferFP8ScaledMMLinearKernel; workaround VLLM_DISABLED_KERNELS or --enforce-eager). NVFP4 would use the SM120 b12x/FlashInfer path with the first-start JIT RAM spike (from the lead, not re-verified).",
+  "known_issues": "Open: #66113 (Devstral-Small-2 FP8 with --config-format hf builds the vision tower as FP8, so image embeddings are zeros), #59212 (Mistral tokenizer truncates OpenAI tool_call ids to their last 9 chars), #48318 (v11 streaming parser merges parallel tool calls when content precedes [TOOL_CALLS]), #48975 (v11 parser includes trailing text in arguments), #58145 (Mistral grammar path rebuilds the parser every request), #55754 (forced tool calls need --enable-auto-tool-choice), #67520 (mistral parser tests broken on main after tool_choice normalization). The card notes that Mistral-format tool_choice 'required' or named is not guaranteed.",
+  "sources": [
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/models/registry.py",
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/tool_parsers/__init__.py",
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/recipes/models/mistralai/Ministral-3-14B-Instruct-2512.yaml",
+   "https://huggingface.co/mistralai/Devstral-Small-2-24B-Instruct-2512/raw/main/README.md",
+   "https://huggingface.co/api/models/androiddrew/Devstral-Small-2-24B-Instruct-2512-AWQ-4bit?blobs=true",
+   "https://github.com/vllm-project/vllm/issues/66113",
+   "https://github.com/vllm-project/vllm/issues/59212",
+   "https://github.com/vllm-project/vllm/issues/48318",
+   "https://github.com/vllm-project/vllm/issues/55571",
+   "https://github.com/vllm-project/vllm/issues/44911"
+  ]
+ },
+ "llamacpp": {
+  "arch_supported": "Yes. LLM_ARCH_MISTRAL3 'mistral3' (llama-arch.cpp). The attn_factor fix for mistral3 (PR #17945, which the card says is required) was merged 2025-12-12, so it is in every release since, including stable v1.0.0 (2026-11-13) and b12418/b12419 (2026-11-15). The GGUF metadata shows architecture mistral3, context_length 393216.",
+  "gguf_repo": "unsloth/Devstral-Small-2-24B-Instruct-2512-GGUF (or bartowski equivalent)",
+  "quant": "IQ4_XS (12.78 GB). Q4_K_M (14.33 GB) only reaches about 17k context even with q8_0 KV.",
+  "file_gib": 11.9,
+  "est_vram_gib": 15.4,
+  "est_ram_gib": 1,
+  "est_context_tokens": 32768,
+  "offload_plan": "Dense model: everything on GPU (-ngl 99). No --n-cpu-moe applies. llama.cpp always keeps token_embd (0.352 GiB in these quants) on the CPU (llama-model.cpp line 1793 at v1.0.0). Usable VRAM is 16303 - 112 idle = 15.81 GiB. Reserve 1.0 GiB for compute buffers and 0.4 GiB for CUDA context. KV per token: f16 163,840 B, q8_0 87,040 B, q4_0 46,080 B. GPU tensors were measured by parsing the GGUF headers with range reads. IQ4_XS: 11.54 GiB on GPU, KV room 2.87 GiB, giving about 18.8k f16, 35.4k q8_0 or 66.8k q4_0. Q4_K_M: 12.99 GiB on GPU, KV room 1.42 GiB, giving 9.3k f16, 17.5k q8_0 or 33k q4_0. UD-Q3_K_XL: 10.68 GiB, giving 24k f16, 46k q8_0 or 87k q4_0. UD-IQ3_XXS: 8.41 GiB, giving 39k f16 or 74k q8_0. Recommended: IQ4_XS with q8_0 KV at 32768. For 64k use IQ4_XS with q4_0 KV (fits about 66.8k, tight) or UD-IQ3_XXS with q8_0 KV (3-bit quality cost). Leave out --mmproj for text-only use.",
+  "server_command": "Needs the NVIDIA Container Toolkit installed first: docker run --gpus all -p 8080:8080 -v ~/models:/models ghcr.io/ggml-org/llama.cpp:server-cuda13 -m /models/Devstral-Small-2-24B-Instruct-2512-IQ4_XS.gguf --chat-template-file /models/devstral-small-2-2512-chat_template.jinja --jinja -ngl 99 -fa on -c 32768 -ctk q8_0 -ctv q8_0 --temp 0.15 --alias devstral-small-2 --host 0.0.0.0 --port 8080. The template file is the current https://huggingface.co/mistralai/Devstral-Small-2-24B-Instruct-2512/raw/main/chat_template.jinja (2026-07-15), which replaces the stricter template embedded in the Dec-2025 GGUFs.",
+  "tool_calling_note": "Likely to work, inferred. llama.cpp's template-driven auto-parser has a passing test for the same [TOOL_CALLS]name[ARGS]{...} format on models/templates/unsloth-mistral-Devstral-Small-2507.jinja and on Ministral-3-14B-Reasoning-2512 (tests/test-chat.cpp lines 2703 and 6910 at v1.0.0). There is no test for the exact 2512 template. Known pitfall: the older embedded template throws 'conversation roles must alternate' with agent clients. OpenCode users hit this (#19647) and so did mini-swe-agent (#19851). Override the template as shown in the command.",
+  "sources": [
+   "https://raw.githubusercontent.com/ggml-org/llama.cpp/master/src/llama-arch.cpp",
+   "https://github.com/ggml-org/llama.cpp/pull/17945",
+   "https://github.com/ggml-org/llama.cpp/releases/tag/v1.0.0",
+   "https://raw.githubusercontent.com/ggml-org/llama.cpp/v1.0.0/tests/test-chat.cpp",
+   "https://raw.githubusercontent.com/ggml-org/llama.cpp/v1.0.0/src/llama-model.cpp",
+   "https://huggingface.co/api/models/unsloth/Devstral-Small-2-24B-Instruct-2512-GGUF?blobs=true",
+   "https://huggingface.co/unsloth/Devstral-Small-2-24B-Instruct-2512-GGUF/resolve/main/Devstral-Small-2-24B-Instruct-2512-IQ4_XS.gguf (header range read)",
+   "https://github.com/ggml-org/llama.cpp/issues/19647",
+   "https://github.com/ggml-org/llama.cpp/issues/19851"
+  ]
+ },
+ "ollama": {
+  "tag": "devstral-small-2:24b (= :latest = :24b-instruct-2512-q4_K_M, digest 24277f07f62d); also :24b-instruct-2512-q8_0 (26 GB), :24b-instruct-2512-fp16 (48 GB), :24b-cloud",
+  "size_gb": 15.18,
+  "context": "384K listed. Ollama defaults to 4k on GPUs under 24 GiB. On 16 GB the q4_K_M blob (14.14 GiB including the vision projector) leaves about 0.6 GiB of KV room: roughly 4k f16 or 7.7k q8_0 fully on GPU (source-backed arithmetic). Larger contexts spill layers to the CPU.",
+  "capabilities": "Badges: vision, tools. No thinking badge. Input: Text, Image. Params blob {\"temperature\":0.15}. The template is Ollama's own Go template with a Mistral-style system prompt. 2.8M downloads, updated 11 months ago.",
+  "source_url": "https://ollama.com/library/devstral-small-2/tags ; https://registry.ollama.ai/v2/library/devstral-small-2/manifests/24b"
+ },
+ "benchmarks": [
+  {
+   "name": "SWE-bench Verified",
+   "score": "68.0%",
+   "setting": "Mistral's own scaffold, not specified",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/mistralai/Devstral-Small-2-24B-Instruct-2512/raw/main/README.md ; https://mistral.ai/news/devstral-2-vibe-cli/"
+  },
+  {
+   "name": "SWE-bench Multilingual",
+   "score": "55.7%",
+   "setting": "vendor",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/mistralai/Devstral-Small-2-24B-Instruct-2512/raw/main/README.md"
+  },
+  {
+   "name": "Terminal-Bench 2",
+   "score": "22.5%",
+   "setting": "vendor",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/mistralai/Devstral-Small-2-24B-Instruct-2512/raw/main/README.md"
+  },
+  {
+   "name": "SWE-bench Verified (official leaderboard)",
+   "score": "56.4%",
+   "setting": "mini-SWE-agent 1.17.2 bash-only, checked=true, 2025-12-09, avg 86.9 calls/instance (Devstral 2 123B scored 53.8 in the same harness)",
+   "self_reported": false,
+   "source_url": "https://raw.githubusercontent.com/SWE-bench/swe-bench.github.io/master/data/leaderboards.json"
+  },
+  {
+   "name": "Terminal-Bench 2.1 (Artificial Analysis)",
+   "score": "29.6%",
+   "setting": "AA independent; values parsed from the page's embedded JSON for slug devstral-small-2",
+   "self_reported": false,
+   "source_url": "https://artificialanalysis.ai/models/devstral-small-2"
+  },
+  {
+   "name": "Terminal-Bench Hard (Artificial Analysis)",
+   "score": "16.7%",
+   "setting": "AA independent",
+   "self_reported": false,
+   "source_url": "https://artificialanalysis.ai/models/devstral-small-2"
+  },
+  {
+   "name": "tau2-bench (Artificial Analysis)",
+   "score": "23.4%",
+   "setting": "AA independent",
+   "self_reported": false,
+   "source_url": "https://artificialanalysis.ai/models/devstral-small-2"
+  },
+  {
+   "name": "LiveCodeBench (Artificial Analysis)",
+   "score": "34.8%",
+   "setting": "AA independent",
+   "self_reported": false,
+   "source_url": "https://artificialanalysis.ai/models/devstral-small-2"
+  },
+  {
+   "name": "Terminal-Bench 4.0 (Artificial Analysis)",
+   "score": "0%",
+   "setting": "AA independent; AA Intelligence Index v5.0.1 shows N/A for this model",
+   "self_reported": false,
+   "source_url": "https://artificialanalysis.ai/models/devstral-small-2"
+  }
+ ],
+ "speed_notes": "This is a dense 24B model, so every token reads all GPU weights (inferred bandwidth bound at 896 GB/s). IQ4_XS has 11.54 GiB (12.39 GB) on the GPU, giving a ceiling of about 72 tok/s. Q4_K_M has 12.99 GiB (13.95 GB), giving about 64 tok/s. At a realistic 60-75% of peak, expect about 40-55 tok/s decode on a single stream, lower at the 140 W laptop power limit and as the KV cache grows. Prefill is compute-bound and should be fast on GB203. Any layer spilled to system RAM (Ollama defaults at long context, or Q5+ quants) drops decode sharply, because DDR5 at about 80-100 GB/s caps a dense model at a few tok/s per offloaded share. No measured RTX 50-series laptop report was verified.",
+ "opencode_fit": {
+  "verdict": "usable",
+  "recommended_runtime": "llama.cpp server (ghcr.io/ggml-org/llama.cpp:server-cuda13, stable v1.0.0 or later) with the current HF chat_template.jinja passed via --chat-template-file",
+  "recommended_checkpoint": "unsloth/Devstral-Small-2-24B-Instruct-2512-GGUF IQ4_XS (12.78 GB), or bartowski IQ4_XS",
+  "recommended_context": "32768 with q8_0 KV (fits about 35k). 64k is only possible with q4_0 KV (fits about 66.8k, tight) or with 3-bit weights (UD-IQ3_XXS + q8_0 KV, about 74k).",
+  "caveats": "This is a non-thinking, tool-calling coder from Dec 2025: the vendor reports SWE-bench Verified 68.0, but the independent mini-SWE-agent score is 56.4 and AA puts tau2 at 23% and Terminal-Bench Hard at 17%, so it is weaker than newer 2026 small models. Because it is dense, the 16 GB card cannot hold 4-bit weights plus the 64k context OpenCode wants without KV or weight compromises. vLLM effectively does not fit: the 4-bit builds are 15-16 GB because embed and lm_head stay in BF16. Ollama's q4_K_M with the bundled vision projector leaves under 8k fully on GPU. Agent clients break on the old embedded template ('roles must alternate'). Open vLLM Mistral tool-parser bugs affect streaming parallel calls and tool-call IDs. Use temperature 0.15."
+ },
+ "gaps": [
+  "No measured tokens/s for this model on an RTX 50-series (laptop or desktop) was found or verified; speed is bandwidth arithmetic only.",
+  "llama.cpp tool calling with the exact 2512 template is not covered by an upstream test (only Devstral-2507 and Ministral-3 templates); end-to-end OpenCode behaviour through llama-server was not tested.",
+  "The vLLM kernel path for compressed-tensors W4A16 on sm_120 at v0.33.0 was not read at the tag (Marlin assumed). The --language-model-only saving (0.82 GiB) is estimated from the vision param count.",
+  "The Artificial Analysis numbers were parsed from the page's embedded JSON. Attributing them to Devstral Small 2 relies on block proximity, and AA's Intelligence Index for it is N/A.",
+  "The Ollama blob's split between text weights and vision projector is inferred from sizes. Ollama tool-call reliability with OpenCode was not verified.",
+  "No official Mistral GGUF exists for Devstral Small 2 (only for 2505/2507), and ggml-org ships Q8_0 only.",
+  "No BFCL, Aider or SWE-bench Pro results were found for this model.",
+  "The vLLM tokenizer_mode auto-selection (mistral vs hf) for this repo was not checked at v0.33.0. Issue #66113 shows --config-format hf breaks vision for the FP8 build."
+ ]
+}

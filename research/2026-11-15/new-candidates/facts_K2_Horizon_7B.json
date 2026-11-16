@@ -1,0 +1,126 @@
+{
+ "overall": "holds-with-corrections",
+ "summary": "I could not refute any identity or capability fact. IFM/K2-Horizon-7B is IFM's own original upload: it has no base_model tag, and the commit authors include MBZUAI and LLM360 people (hunterhector, desaifan-mbzuai). The HF org is not verified. Created 2026-09-01, FTPO checkpoint promoted to main 2026-10-01 (85d46bbaf6). Apache-2.0. 8,999,178,240 BF16 parameters. Dense, 36 full-attention layers, 8 KV heads x 128 head_dim, 524,288 max_position_embeddings. Text only.\n\nThinking is always on. I read the template myself: it has no enable_thinking, it always opens <ifm|think*>, and it raises on effort 'none'. Tool calling is native, using <ifm|tool_calls> in xml/json/xml_typed formats. Both runtimes ship dedicated parsers, which I confirmed in vLLM v0.33.0 and llama.cpp b12407 source. vllm#62743 is open; llama.cpp #30246 was closed 2026-11-12 and the fallback end tag is in b12407. All VRAM and context arithmetic re-computes.\n\nAll six Artificial Analysis numbers match AA's raw page JSON. All four vendor benchmark numbers match the README.\n\nCorrections:\n(1) The opencode_fit claim that K2's AA tau3 score 'matches' Qwen3.6-35B-A3B is wrong. AA has Qwen3.6-35B-A3B at 9.3 on tau-Banking against K2's 27.6. Only TB2.1 is close (44.9 vs 44.2).\n(2) vLLM support first appears in v0.30.0 (2026-09-22). v0.29.0 does not have it.\n(3) The vLLM recipe does not back the 32,768-output-token advice: its example uses max_tokens 2048. Only the card says 32,768.\n(4) generation_config also sets bos_token_id 0 and pad_token_id 1. It still has no sampling defaults.\n\nFlags:\n- Vendor numbers differ from AA on SciCode (33.6 vs 27.5), HLE (19.5 vs 18.2), LCR (68.0 vs 69.7) and tau3-Banking (25.8 vs 27.6).\n- The vendor's own pre-FTPO numbers disagree with each other: the FP8 and GGUF cards give SWE-V 70.6 / TB2.1 39.1, while the main card's 'before' column gives 69.2 / 39.7.\n- The Ollama readme says Ollama does not pass earlier-turn reasoning back to the model (ollama#18281). This affects OpenCode tool loops on the fallback runtime.\n- IFM also publishes Jais-3 repos on the same K2HorizonForCausalLM architecture, with base_model inception42/Jais-3-7B. This is a related family, not a re-upload of K2 Horizon.\n\nScratch evidence is in $SCRATCH/k2h/.",
+ "verdicts": [
+  {
+   "claim": "Official org: IFM = Institute of Foundation Models, the original publisher (not a re-upload), with the former LLM360 lineage; isVerified false, enterprise plan, 118 members; code at github.com/ifm-ai/xllm",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/organizations/IFM/overview",
+   "correction": "source-backed. Org API: fullname 'Institute of Foundation Models', isVerified false, plan enterprise, numUsers 118. The model has no base_model tag. Commit authors include hunterhector and desaifan-mbzuai. The same org hosts IFM/K2, K2-Chat, K2-Think, K2-V2, Amber and Crystal. The card links W&B wandb.ai/llm360/K2-Horizon-7B. GitHub ifm-ai/xllm exists (Apache-2.0, created 2026-09-02); the ifm-ai GitHub org is not verified, and its blog field is https://ifm.ai/. Note that IFM also publishes Jais-3-* repos on the same K2HorizonForCausalLM architecture, with base_model inception42/Jais-3-7B. That is a sibling family, not evidence that K2 Horizon is a re-upload."
+  },
+  {
+   "claim": "Dates: HF createdAt 2026-09-01T23:14:30Z; AA releaseDate 2026-09-03; main promoted to the FTPO checkpoint 2026-10-01 (85d46bbaf6); lastModified 2026-11-04; blog returns 403",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/IFM/K2-Horizon-7B/commits/main",
+   "correction": "direct-statement. Commit 85d46bbaf6 'Promote checkpoint anti_doom_loop_verified to main' 2026-10-01T16:45:06Z. The latest commit, 1ad5223c80 on 2026-11-04, changes the README only. Since 2026-10-01 the only non-README change is to modeling code (92f61d9123, 2026-11-02); the 2026-10-14 commit 4622f94a66 is a template change (text content lists). AA's raw JSON has releaseDate 2026-09-03. https://ifm.ai/blog/k2/ returned HTTP 403 again."
+  },
+  {
+   "claim": "License Apache-2.0, fully open data/code/eval",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/IFM/K2-Horizon-7B/raw/main/README.md",
+   "correction": "direct-statement: card metadata says license apache-2.0, and the HF tag is license:apache-2.0. There is no LICENSE file among the siblings. The card links the xllm, Eval360 and DATA_NAVIGATOR repos. The technical report is still 'In Progress' (it was due at the end of September 2026)."
+  },
+  {
+   "claim": "Params 8,999,178,240 BF16, dense, about 6.95B body plus 2 x 1.03B untied embedding/lm_head",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/IFM/K2-Horizon-7B?blobs=true",
+   "correction": "source-backed. safetensors.total = 8,999,178,240. Embedding = 250,624 x 4,096 = 1,026,555,904. Per layer: attention 41.9M plus MLP 151.0M, so 36 layers come to about 6.946B. tie_word_embeddings is false. validation.json logical_bytes = 17,998,356,480. AA lists 'parameters': 7 and the vLLM recipe says '9B stored'."
+  },
+  {
+   "claim": "Architecture: K2HorizonForCausalLM, 36 layers, all full attention, hidden 4096, 32 Q / 8 KV heads, head_dim 128, intermediate 12288, RoPE theta 1e7, max_position_embeddings 524288, vocab 250624, no MoE",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/IFM/K2-Horizon-7B/raw/main/config.json",
+   "correction": "direct-statement from the raw config.json: sliding_window null, use_sliding_window false, num_experts 0, mlp_only_layers lists all 36 layers. Also present: layernorm_num_groups 4 and query_key_norm false."
+  },
+  {
+   "claim": "Context 524,288 native; midtraining stages 3-4 at 512K; vLLM recipe 131K baseline; vendor SWE-V and TB2.1 runs at 256k",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/recipes/models/IFM/K2-Horizon-7B.yaml",
+   "correction": "The card's training table has Stage 3 and Stage 4 at a 512K sequence length. The recipe says 'BF16 serving runtime with a 131K context baseline' and vram_minimum_gb 22. The card says SWE-bench Verified and Terminal-Bench 2.1 'run at 256k context'."
+  },
+  {
+   "claim": "Modalities: text only; template raises on non-text parts",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/IFM/K2-Horizon-7B/raw/main/chat_template.jinja",
+   "correction": "render_text_content raises 'Unsupported <role> content part ... Expected type=text'. The config has no vision keys."
+  },
+  {
+   "claim": "Thinking always on, cannot be disabled; efforts high/medium/low via <ifm|think>, <ifm|think_fast>, <ifm|think_faster>; llama.cpp 'none' does not disable it",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/IFM/K2-Horizon-7B/raw/main/chat_template.jinja",
+   "correction": "direct-statement. The template contains no 'enable_thinking' (grep count 0). The generation prompt always opens a think tag, and any other effort value, including 'none', raises an exception. In llama.cpp b12407, common/parsers/k2-horizon.cpp L28-29 sets thinking_off only when the template source contains enable_thinking. server-common.cpp L1566-1574 erases reasoning_effort on 'none', so the template default 'high' applies. The vendor's Ollama readme also says 'Reasoning can't be turned off.'"
+  },
+  {
+   "claim": "Tool calling: native <ifm|tool_calls><ifm|tool_call>NAME <ifm|arg_key>..</ifm|arg_key><ifm|arg_value>..</ifm|arg_value> (xml default, json, xml_typed); tool results in <|ifm|im_start|>tool turns; template raises on a missing thinking field, string parameters, or required names missing from properties",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/IFM/K2-Horizon-7B/raw/main/chat_template.jinja",
+   "correction": "Read directly from the template. render_call_instructions is at L784-792 and render_tool_calls_block at L865-888. The raises are at L183 (required name not in properties), L251 (parameters given as a string), L870 (arguments given as a string) and L978-979 (missing thinking field). The template accepts any of think, think_fast, think_faster, reasoning_content or reasoning. vLLM v0.33.0 chat_message.py reads only the 'reasoning' key from the request and then sets both reasoning and reasoning_content. OpenCode v2.3.0 openai-chat.ts sets requireReasoning when reasoningField is configured and then sends an empty string, as stated. All special tokens exist in tokenizer_config: 250029/250030 think, 250050-250053 fast/faster, 250054/250055 tool_calls."
+  },
+  {
+   "claim": "vLLM v0.33.0 native support (registry L147), k2_horizon tool and reasoning parsers, recipe present; vllm#62743 open",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/models/registry.py",
+   "correction": "Confirmed: registry L147, the recipe, the reasoning parser (effort-specific end tag only, read from chat_template_kwargs at construction) and the tool parser (json, xml and xml_typed, with streaming). No k2 config class exists in transformers_utils/configs, so --trust-remote-code is needed. Issue #62743 is open, created 2026-10-20, and reproduced on 0.31.0."
+  },
+  {
+   "claim": "vLLM min_version: present in v0.31.0",
+   "verdict": "refuted",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.30.0/vllm/model_executor/models/registry.py",
+   "correction": "The first release with K2HorizonForCausalLM is v0.30.0, published 2026-09-22. It is absent at v0.29.0 (2026-09-09). The model is also present at v0.31.0 (registry L144)."
+  },
+  {
+   "claim": "llama.cpp b12407 support: llama-arch.cpp L178, src/models/k2-horizon.cpp, common/parsers/k2-horizon.cpp, chat.cpp L1332-1337; mainline since b11454; medium/low end-tag fallback; injects empty reasoning_content",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/common/parsers/k2-horizon.cpp",
+   "correction": "All line references match. The parser injects reasoning_content '' at L13-18 and adds the generic </ifm|think> fallback for medium/low at L51-54. #30246 was closed 2026-11-12. b12407 was published 2026-11-15T10:04Z and b11454 on 2026-10-06. The official GGUF card states 'Mainline support merged in release b11454'."
+  },
+  {
+   "claim": "Checkpoint sizes and dates: FP8 10.29 GiB, AWQ-INT4 7.565 GiB, GGUF sizes as listed, all pre-FTPO except bartowski (2026-10-07)",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/IFM/K2-Horizon-7B-GGUF/commits/main",
+   "correction": "source-backed. FP8 is 11,053,505,536 B and AWQ-INT4 is 8,122,473,440 B. The official GGUF weights were uploaded 2026-09-03 and again 2026-09-22; commits after that change only the README (lastModified 2026-10-15 is a README change). The official GGUF card's SGLang command pins a different revision (69ada542) from the main card (85d46bbaf6), which weakly supports the pre-FTPO reading. The cyankiwi weights were uploaded only on 2026-09-24. The pre-FTPO status of all these repos is still inferred."
+  },
+  {
+   "claim": "FP8 card shows SWE-V 70.6 / TB2.1 39.1 (pre-FTPO); main card pre-FTPO SWE-V 69.2 / TB2.1 39.7",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/IFM/K2-Horizon-7B-FP8/raw/main/README.md",
+   "correction": "Both are quoted correctly, but they contradict each other. The FP8 and GGUF cards' benchmark tables show 70.6 / 39.1, while the main card's FTPO 'before' column shows 69.2 / 39.7. HLE 18.6 agrees across both. The record should flag this as a vendor-internal inconsistency in the pre-FTPO baselines."
+  },
+  {
+   "claim": "AA: TB2.1 44.2, tau3-Banking 27.6, AA-LCR 69.7, SciCode 27.5, HLE 18.2, GDPval 1023.84, Intelligence Index null",
+   "verdict": "confirmed",
+   "evidence_url": "https://artificialanalysis.ai/models/k2-horizon-7b",
+   "correction": "Values from the raw page JSON: terminalBench21 0.44195, tauBanking 0.27629, lcr 0.69667, scicode 0.27546, hle 0.18211, gdpval 1023.84, intelligenceIndex null, isReasoning true, performanceDataSource median. Further AA values not in the record: GPQA 75.3, Terminal-Bench 4.0 1.0, FrontierCode 2.0 1.2."
+  },
+  {
+   "claim": "Vendor self-reports: SWE-bench Verified 72.4 (pre 69.2), TB2.1 44.6 (pre 39.7), BFCL v4 67.0, LiveCodeBench v6 72.7",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/IFM/K2-Horizon-7B/raw/main/README.md",
+   "correction": "All four match the card's FTPO table and stated settings: mini-swe-agent and terminus-2 at 256k, BFCL at temperature 0.01, LCB with a 500k output budget. They are self-reported. Conflicts with AA on overlapping benchmarks: SciCode 33.6 vendor vs 27.5 AA, HLE 19.5 vs 18.2, LCR 68.0 vs 69.7, tau3-Banking 25.8 vs 27.6, TB2.1 44.6 vs 44.2. The large SciCode gap points to differing harnesses, so only the AA numbers should be used for cross-model comparison. There is no independent SWE-V number."
+  },
+  {
+   "claim": "opencode_fit caveat: independent AA TB2.1 44.2 and tau3 27.6 match Qwen3.6-35B-A3B",
+   "verdict": "refuted",
+   "evidence_url": "https://artificialanalysis.ai/models/qwen3-6-35b-a3b",
+   "correction": "Only TB2.1 is close: Qwen3.6-35B-A3B scores 44.9 on AA and K2 scores 44.2. On AA tau-Banking Qwen3.6-35B-A3B scores 9.3, far below K2's 27.6. AA also has Qwen3.6 ahead on SciCode (36.6 vs 27.5), LCR (71.7 vs 69.7) and HLE (22.2 vs 18.2)."
+  },
+  {
+   "claim": "Sampling: temp 1.0, top_p 0.95, high effort, at least 32,768 output tokens (card Best Practices and vLLM recipe); generation_config sets only eos [1, 250019]",
+   "verdict": "uncertain",
+   "evidence_url": "https://huggingface.co/IFM/K2-Horizon-7B/raw/main/generation_config.json",
+   "correction": "The card states all of these. The vLLM recipe's client example uses temperature 1.0 and top_p 0.95 but max_tokens 2048, so the 32,768 figure is card-only. generation_config also sets bos_token_id 0 and pad_token_id 1; it has no sampling defaults."
+  },
+  {
+   "claim": "Ollama ifm/k2-horizon:7b = latest = 7b-q4_K_M (16de169bc273, 5.6GB), q8_0 9.6GB, bf16 18GB; not in library; needs Ollama >= 0.40.4; tools and thinking",
+   "verdict": "confirmed",
+   "evidence_url": "https://ollama.com/ifm/k2-horizon/tags",
+   "correction": "The tags page confirms the digests and sizes, and library/k2-horizon returns 404. The readme says 'Requires Ollama 0.40.4 or later'. The readme names IFM as developer, links ifm.ai, and says reasoning cannot be turned off. Missing caveat: the readme says Ollama does not yet pass earlier-turn reasoning back to the model in multi-turn chats and tool loops (ollama/ollama#18281). Who owns the namespace is still not formally confirmed."
+  },
+  {
+   "claim": "VRAM and context arithmetic (vLLM AWQ-INT4 85,671 FP8-KV tokens; FP8 45,916 / 52,880; llama.cpp Q8_0 + 64k q8_0 KV = 14.5 GiB)",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/cyankiwi/K2-Horizon-7B-AWQ-INT4?blobs=true",
+   "correction": "Re-computed. Budget 14.647 GiB. AWQ pool 14.647 - 7.565 - 1.2 = 5.882 GiB, giving about 42.8k BF16 or 85.7k FP8 tokens. FP8 pool 3.153 GiB, giving about 45.9k FP8 tokens. At util 0.95: 15.125 - 10.294 - 1.2 = 3.631 GiB, giving about 52.9k. KV at 64k: 9.0 GiB f16, 4.78 GiB q8_0. Q4_K_M with 128k comes to 15.74 GiB against 15.92 GiB total, which is very tight. All figures are estimates; nothing has been run."
+  }
+ ]
+}

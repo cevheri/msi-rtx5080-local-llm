@@ -1,0 +1,317 @@
+{
+ "review": {
+  "key": "openrouter",
+  "url": "https://openrouter.ai/models",
+  "title": "OpenRouter model catalog, rankings and privacy docs",
+  "publisher": "OpenRouter, Inc.",
+  "as_of": "2026-11-15 (API pulled 2026-11-15; rankings say \"Usage data through Nov 14, 2026\")",
+  "source_type": "registry",
+  "accessible": true,
+  "access_notes": "Raw reads only. curl -s -A \"Mozilla/5.0\" https://openrouter.ai/api/v1/models (467 models, saved to $SCRATCH/src/openrouter/models.json), per-model /api/v1/models/<id>/endpoints for 7 picks (ep_*.json in the same dir), docs as .md (data-collection.md, provider-logging.md, ps.md = provider-selection, zdr2.md). Rankings (/rankings) and coding-agent app ranking (/apps/category/coding) read with Playwright innerText. https://openrouter.ai/apps?url=https://opencode.ai/ returns \"Not Found\". Prices in the API are USD per token; converted to USD per 1M tokens below.",
+  "credibility": "high",
+  "credibility_reason": "First-party live API and docs from the router itself: authoritative for which hosted endpoints exist, their context, price, quantization and data policy. Rankings are OpenRouter's own traffic only (and app rankings only include apps that opt into attribution), so they are not representative of local-model or OpenCode usage. Throughput figures are hosted datacenter hardware, irrelevant to the laptop.",
+  "summary": "OpenRouter hosts 7 of the 10 picks (Qwen3.6-35B-A3B, Qwen3.8-27B, Gemma 4 26B-A4B, gpt-oss-20b, Qwen3-Coder-Next, Nemotron 3.5 Lightning, GLM-4.7-Flash) plus honorable Qwen3.5-9B, so the user can test agent behaviour in OpenCode for cents before downloading. Not hosted: Ornith-1.5-9B, Gemma 4 12B, DeepSeek-R1-0528-Qwen3-8B, KAT-Coder-V2.5-Dev, Laguna XS 2.1 (only full DeepSeek-R1-0528 671B is listed, a different model). Hosted endpoints run FP8/BF16/FP4 on datacenter GPUs, so quality is an upper bound for our Q3/Q4 GGUFs and speed says nothing about the laptop. OpenRouter publishes model and app rankings; OpenCode does not appear in the top 50 coding agents (only a third-party \"OpenCode\" gateway at rank ~200-230 overall), so OpenRouter gives no usable signal about which models OpenCode users pick. Privacy: code is sent to OpenRouter and a third-party provider; OpenRouter does not store prompts by default, but providers have their own retention/training policies, so use provider data_collection \"deny\" or zdr true, avoid :free variants, and keep confidential repos local.",
+  "findings": [
+   {
+    "topic": "availability",
+    "claim": "qwen/qwen3.6-35b-a3b hosted: context 262144, model price $0.10 in / $0.90 out per 1M; 12 provider endpoints, all fp8/fp4/unknown quant; cheapest PrimeIntellect fp8 $0.013/$0.121 per 1M.",
+    "evidence": "documented",
+    "location": "/api/v1/models and /api/v1/models/qwen/qwen3.6-35b-a3b/endpoints",
+    "target": "models",
+    "relevance": "high"
+   },
+   {
+    "topic": "availability",
+    "claim": "qwen/qwen3.8-27b hosted: 23 endpoints, most 262144 context (StreamLake, Novita, Alibaba, Nebius list 1,000,000-1,024,000); model price $0.15/$1.875 per 1M; Cerebras fp16 endpoint 65536 context $0.99/$1.49.",
+    "evidence": "documented",
+    "location": "/api/v1/models/qwen/qwen3.8-27b/endpoints",
+    "target": "models",
+    "relevance": "high"
+   },
+   {
+    "topic": "availability",
+    "claim": "google/gemma-4-26b-a4b-it hosted: 262144 context, $0.0675/$0.225 per 1M, 15 endpoints mostly bf16; a :free variant exists (max completion 32768 tokens).",
+    "evidence": "documented",
+    "location": "/api/v1/models, endpoints",
+    "target": "models",
+    "relevance": "high"
+   },
+   {
+    "topic": "availability",
+    "claim": "openai/gpt-oss-20b hosted: 131072 context, $0.03/$0.13 per 1M, 12 endpoints (fp4, fp8, bf16, Groq, Bedrock).",
+    "evidence": "documented",
+    "location": "/api/v1/models/openai/gpt-oss-20b/endpoints",
+    "target": "models",
+    "relevance": "high"
+   },
+   {
+    "topic": "availability",
+    "claim": "qwen/qwen3-coder-next hosted by a single provider (Parasail bf16), 262144 context, $0.12/$0.80 per 1M.",
+    "evidence": "documented",
+    "location": "/api/v1/models/qwen/qwen3-coder-next/endpoints",
+    "target": "models",
+    "relevance": "high"
+   },
+   {
+    "topic": "availability",
+    "claim": "nvidia/nemotron-3.5-lightning hosted: 262144 context, $0.07/$0.20 per 1M, 4 endpoints (Darkbloom int4, Fireworks, DeepInfra bf16, CoreWeave bf16); :free variant lists 1,000,000 context, 65536 max completion.",
+    "evidence": "documented",
+    "location": "/api/v1/models, endpoints",
+    "target": "models",
+    "relevance": "medium"
+   },
+   {
+    "topic": "availability",
+    "claim": "z-ai/glm-4.7-flash hosted: 200000 context, $0.0605/$0.40 per 1M; only 2 endpoints (Cloudflare 131072 ctx; Novita bf16 200000 ctx with uptime_last_30m 0 at fetch time).",
+    "evidence": "documented",
+    "location": "/api/v1/models/z-ai/glm-4.7-flash/endpoints",
+    "target": "models",
+    "relevance": "medium"
+   },
+   {
+    "topic": "availability",
+    "claim": "qwen/qwen3.5-9b hosted: 262144 context, $0.037/$0.054 per 1M.",
+    "evidence": "documented",
+    "location": "/api/v1/models",
+    "target": "models",
+    "relevance": "low"
+   },
+   {
+    "topic": "not hosted",
+    "claim": "No OpenRouter listing for Ornith-1.5-9B, Gemma 4 12B, DeepSeek-R1-0528-Qwen3-8B, KAT-Coder-V2.5-Dev or Laguna XS 2.1 (searched 467 ids for ornith, gemma, deepseek, kat, kwaipilot, laguna, poolside). deepseek/deepseek-r1-0528 is the full model, not the 8B distill.",
+    "evidence": "documented",
+    "location": "/api/v1/models",
+    "target": "models",
+    "relevance": "high"
+   },
+   {
+    "topic": "excluded models also hosted",
+    "claim": "Excluded or older candidates are hosted too: google/gemma-4-31b-it, qwen/qwen3-coder-30b-a3b-instruct, mistralai/devstral-2512, qwen/qwen3.6-27b, qwen/qwen3.5-27b, ibm-granite/granite-4.2-8b, mistralai/ministral-8b/14b-2512, mistralai/mistral-small-2603, nvidia/nemotron-3-super-120b-a12b, openai/gpt-oss-120b.",
+    "evidence": "documented",
+    "location": "/api/v1/models",
+    "target": "models",
+    "relevance": "low"
+   },
+   {
+    "topic": "quantization caveat",
+    "claim": "Endpoints report quantization per provider (bf16, fp8, fp4, int4, unknown) and requests can filter with provider.quantizations; hosted quality is therefore at FP8/BF16 and is an upper bound for local Q3/Q4 GGUF results.",
+    "evidence": "documented",
+    "location": "endpoints JSON quantization field; docs/guides/routing/provider-selection.md line 25 and 1598",
+    "target": "benchmarking",
+    "relevance": "high"
+   },
+   {
+    "topic": "tool support",
+    "claim": "Every pick's model entry lists 'tools' in supported_parameters, but some endpoints do not (e.g. CoreWeave and SiliconFlow for qwen3.6-35b-a3b, Parasail/CoreWeave/SiliconFlow for gemma-4-26b-a4b-it).",
+    "evidence": "documented",
+    "location": "endpoints JSON supported_parameters",
+    "target": "opencode",
+    "relevance": "medium"
+   },
+   {
+    "topic": "try-before-download",
+    "claim": "OpenRouter is an OpenAI-compatible endpoint, so the same OpenCode agent flow can be smoke-tested remotely on a pick before a multi-GB download; behaviour differences (chat template, parser, quant) mean it does not validate the local vLLM/llama.cpp config.",
+    "evidence": "opinion",
+    "target": "opencode",
+    "relevance": "high"
+   },
+   {
+    "topic": "usage rankings",
+    "claim": "OpenRouter publishes model rankings (tokens processed, usage through Nov 14, 2026) and an Apps & Agents ranking with a Coding Agents category. Top coding agents today: Hermes Agent 2.06T tokens, Claude Code 1.39T, Kilo Code 1.16T, pi 514B, Codex 272B, Cline 60B, Roo Code 7.9B.",
+    "evidence": "measured",
+    "location": "https://openrouter.ai/apps/category/coding (Playwright innerText)",
+    "target": "opencode",
+    "relevance": "medium"
+   },
+   {
+    "topic": "OpenCode not ranked",
+    "claim": "OpenCode (opencode.ai) is absent from the top 50 coding agents and the /apps?url=https://opencode.ai/ page is Not Found; the only 'OpenCode' entries are a third-party gateway (origin opencode.aihub-gateway.fbrai.dev) at ranks 200 and 230 of the overall app lists. Apps appear only when they opt into usage tracking via attribution, so OpenRouter offers no reliable view of which models OpenCode users choose.",
+    "evidence": "documented",
+    "location": "/apps HTML (app_id 4483145), /apps/category/coding",
+    "target": "opencode",
+    "relevance": "medium"
+   },
+   {
+    "topic": "model rankings",
+    "claim": "Top models by weekly tokens are all hosted frontier/large models (DeepSeek V4.1 Flash 1017 58T, Hy4 18.9T, GLM 5.3 Flash 11.9T, GPT-6 Luna 7.68T, Claude Opus 5.5 6.98T); none of our 3B-35B picks are in the top 10, so rankings are not a guide for local model selection.",
+    "evidence": "measured",
+    "location": "https://openrouter.ai/rankings",
+    "target": "models",
+    "relevance": "low"
+   },
+   {
+    "topic": "privacy: OpenRouter",
+    "claim": "OpenRouter does not store prompts or responses unless the user opts into logging or 'OpenRouter use of inputs/outputs' (1% discount), or content is flagged by CSAM screening; it stores request metadata (token counts, latency) and samples a small number of prompts for anonymous categorization.",
+    "evidence": "documented",
+    "location": "https://openrouter.ai/docs/guides/privacy/data-collection.md",
+    "target": "opencode",
+    "relevance": "high"
+   },
+   {
+    "topic": "privacy: providers",
+    "claim": "Each downstream provider has its own retention/training policy; the account setting can block providers that train (separate settings for paid and free models); per request use provider.data_collection 'deny' or provider.zdr true. Endpoints with unclear policy are assumed to retain and train. Google Vertex endpoints use Safety Retention (up to 90 days for flagged prompts) since 2026-10-18.",
+    "evidence": "documented",
+    "location": "docs/guides/privacy/provider-logging.md; docs/guides/features/zdr.md lines 19-58, 106; provider-selection.md lines 20-21",
+    "target": "opencode",
+    "relevance": "high"
+   },
+   {
+    "topic": "hosted speed",
+    "claim": "OpenRouter 'fastest models' list: Qwen3.8 27B 901 tok/s on Cerebras, gpt-oss-20b 429 tok/s on Groq, Nemotron 3.5 Lightning 256 tok/s on Fireworks. Datacenter hardware: not comparable with the laptop.",
+    "evidence": "measured",
+    "location": "https://openrouter.ai/rankings fastest-models section",
+    "target": "benchmarking",
+    "relevance": "low"
+   }
+  ],
+  "measurements": [
+   {
+    "model": "Qwen3.8-27B",
+    "gpu": "hosted, Cerebras (unknown hardware, not RTX 5080)",
+    "runtime": "Cerebras API",
+    "quant": "fp16",
+    "gen_tok_s": "901",
+    "measured_or_estimated": "measured",
+    "settings": "OpenRouter 'fastest on' figure, 2026-11 rankings page; $0.99/M"
+   },
+   {
+    "model": "gpt-oss-20b",
+    "gpu": "hosted, Groq (unknown hardware, not RTX 5080)",
+    "runtime": "Groq API",
+    "gen_tok_s": "429",
+    "measured_or_estimated": "measured",
+    "settings": "OpenRouter 'fastest on' figure; $0.07/M"
+   },
+   {
+    "model": "Nemotron 3.5 Lightning",
+    "gpu": "hosted, Fireworks (unknown hardware, not RTX 5080)",
+    "runtime": "Fireworks API",
+    "gen_tok_s": "256",
+    "measured_or_estimated": "measured",
+    "settings": "OpenRouter 'fastest on' figure; $0.05/M"
+   }
+  ],
+  "conflicts": [
+   {
+    "baseline_claim": "Nemotron 3.5 Lightning context 128k-256k",
+    "source_claim": "OpenRouter lists 262144 for paid endpoints and 1,000,000 for the :free variant",
+    "assessment": "Not a real conflict: provider-side max context; local limit is VRAM/RAM-bound. Treat the 1M figure as a provider claim only."
+   },
+   {
+    "baseline_claim": "Qwen3.8-27B (implicitly 262k native context)",
+    "source_claim": "Some providers (StreamLake, Novita, Alibaba, Nebius) advertise 1,000,000-1,024,000 context",
+    "assessment": "Likely provider-extended (YaRN or similar); irrelevant at our 64k local budget."
+   }
+  ],
+  "agreements": [
+   "All seven hosted picks list tool support at model level, consistent with baseline 'Tools: Yes'.",
+   "gpt-oss-20b native context 131072 matches baseline 128k llama.cpp figure.",
+   "DeepSeek-R1-0528-Qwen3-8B has no hosted endpoint; only the full R1-0528 is listed, consistent with it being a chat-only local pick."
+  ],
+  "kb_notes": [
+   {
+    "target_doc": "docs/model-selection.md",
+    "note": "Before downloading a pick, you can smoke-test it in OpenCode through OpenRouter (https://openrouter.ai/api/v1/models, checked 2026-11-15): hosted are qwen/qwen3.6-35b-a3b (262k, $0.10/$0.90 per 1M), qwen/qwen3.8-27b (262k, $0.15/$1.875), google/gemma-4-26b-a4b-it (262k, $0.0675/$0.225), openai/gpt-oss-20b (131k, $0.03/$0.13), qwen/qwen3-coder-next (262k, $0.12/$0.80, one provider), nvidia/nemotron-3.5-lightning (262k, $0.07/$0.20), z-ai/glm-4.7-flash (200k, $0.0605/$0.40) and qwen/qwen3.5-9b."
+   },
+   {
+    "target_doc": "docs/model-selection.md",
+    "note": "Ornith-1.5-9B, Gemma 4 12B, DeepSeek-R1-0528-Qwen3-8B, KAT-Coder-V2.5-Dev and Laguna XS 2.1 have no OpenRouter endpoint (2026-11-15), so they can only be evaluated locally."
+   },
+   {
+    "target_doc": "docs/model-selection.md",
+    "note": "OpenRouter endpoints serve BF16/FP8/FP4 weights on datacenter GPUs, so a hosted trial shows the best case for a model; a local Q3/Q4 GGUF may be weaker, and hosted tokens/s (e.g. Qwen3.8 27B 901 tok/s on Cerebras) says nothing about the RTX 5080 Laptop."
+   },
+   {
+    "target_doc": "docs/opencode.md",
+    "note": "Privacy: sending code to OpenRouter passes it to OpenRouter and a third-party inference provider. OpenRouter does not store prompts by default (https://openrouter.ai/docs/guides/privacy/data-collection), but providers have their own retention and training terms; disable training providers in privacy settings, set provider.data_collection to \"deny\" or provider.zdr to true per request, avoid :free variants, and do not send proprietary repositories; keep those on the local vLLM/llama.cpp endpoints."
+   },
+   {
+    "target_doc": "docs/opencode.md",
+    "note": "Not every OpenRouter provider endpoint supports tools even when the model does (for example CoreWeave and SiliconFlow for qwen3.6-35b-a3b at 2026-11-15); pin a provider with tools support, or tool calls in OpenCode may fail."
+   },
+   {
+    "target_doc": "docs/community-benchmarks.md",
+    "note": "OpenRouter rankings (https://openrouter.ai/rankings, https://openrouter.ai/apps/category/coding) measure tokens routed through OpenRouter only, and app rankings only include apps that opt into attribution; OpenCode itself is not in the top 50 coding agents, so these rankings cannot tell which models OpenCode users prefer."
+   },
+   {
+    "target_doc": "docs/sources.md",
+    "note": "OpenRouter model catalog (https://openrouter.ai/models, API https://openrouter.ai/api/v1/models and /api/v1/models/<id>/endpoints): registry, high credibility for hosted availability, context, price, quantization and data policy; not a source for local performance or quality. Checked 2026-11-15."
+   }
+  ],
+  "gaps": [
+   "Did not verify how OpenCode v2.3.0 configures OpenRouter (built-in provider vs openai-compatible) or which attribution headers it sends; that would explain its absence from app rankings.",
+   "Per-endpoint data policy (training/retention) is not in the endpoints JSON fields seen; it is on provider pages, not checked per pick.",
+   "latency_last_30m and throughput_last_30m were null in the unauthenticated endpoints responses, so no per-provider speed or latency for most picks.",
+   "Did not run any request against OpenRouter (would require an API key and sends data off-machine)."
+  ],
+  "new_candidates": [],
+  "methodology": "Pulled the full model list and per-model endpoint JSON with curl, filtered with python3 -I against baseline picks and honorable/excluded names; read rankings and coding-agent app pages via Playwright innerText; read privacy and provider-selection docs as raw .md. All numbers are quoted from the API or page text; prices converted from USD/token to USD per 1M tokens."
+ },
+ "check": {
+  "verdicts": [
+   {
+    "item": "Publisher OpenRouter, Inc.; type registry; as-of 2026-11-15, rankings 'Usage data through Nov 14, 2026'",
+    "verdict": "confirmed",
+    "evidence": "curl /api/v1/models returns 467 models (same count). rankings.html contains <time dateTime=\"2026-11-14T00:00:00.000Z\">Nov 14, 2026</time> after 'Usage data through'."
+   },
+   {
+    "item": "Picks hosted with context and model price: qwen3.6-35b-a3b 262144 $0.10/$0.90; gemma-4-26b-a4b-it 262144 $0.0675/$0.225 (:free max completion 32768); gpt-oss-20b 131072 $0.03/$0.13; qwen3-coder-next 262144 $0.12/$0.80 single Parasail bf16; nemotron-3.5-lightning 262144 $0.07/$0.20 (:free 1000000 ctx, 65536 max completion); glm-4.7-flash 200000 $0.0605/$0.40; qwen3.5-9b 262144 $0.037/$0.054",
+    "verdict": "confirmed",
+    "evidence": "Raw /api/v1/models parsed with python3 -I: all values match exactly. All list 'tools' in supported_parameters. Endpoint counts match: 12, 15, 12, 1, 4, 2."
+   },
+   {
+    "item": "qwen/qwen3.8-27b: 23 endpoints, most 262144, StreamLake/Novita/Alibaba/Nebius 1,000,000-1,024,000; model price $0.15/$1.875; Cerebras fp16 65536 ctx $0.99/$1.49",
+    "verdict": "confirmed",
+    "evidence": "Endpoints JSON: 23 rows; StreamLake 1024000, Novita/Alibaba/Nebius 1000000; Cerebras fp16 65536 0.99/1.49. But the model-level context_length in /api/v1/models is 1024000, not 262144.",
+    "correction": "The kb_note '(262k, $0.15/$1.875)' for qwen/qwen3.8-27b should say: model listing context_length 1,024,000; 19 of 23 provider endpoints serve 262144."
+   },
+   {
+    "item": "Cheapest qwen3.6-35b-a3b endpoint PrimeIntellect fp8 $0.013/$0.121 per 1M",
+    "verdict": "uncertain",
+    "evidence": "Now PrimeIntellect fp8 $0.014 / $0.13 per 1M. Endpoint prices change over time, so this may only be drift. Do not quote it as a fixed value."
+   },
+   {
+    "item": "Tools missing on some endpoints: CoreWeave and SiliconFlow for qwen3.6-35b-a3b; Parasail/CoreWeave/SiliconFlow for gemma-4-26b-a4b-it",
+    "verdict": "confirmed",
+    "evidence": "supported_parameters has no 'tools' on exactly those endpoints. The same is true for SiliconFlow fp8 on gpt-oss-20b."
+   },
+   {
+    "item": "Not hosted: Ornith-1.5-9B, Gemma 4 12B, DeepSeek-R1-0528-Qwen3-8B, KAT-Coder-V2.5-Dev, Laguna XS 2.1; only full deepseek/deepseek-r1-0528",
+    "verdict": "confirmed",
+    "evidence": "Substring search of 467 ids: ornith/kat/kwaipilot/laguna/poolside return none. The gemma ids are only 4-26b-a4b, 4-31b, 3-4b/12b/27b and 2-27b. The deepseek R1 id is only deepseek/deepseek-r1-0528."
+   },
+   {
+    "item": "Fastest-models: Qwen3.8 27B 901 tok/s Cerebras, gpt-oss-20b 429 tok/s Groq, Nemotron 3.5 Lightning 256 tok/s Fireworks",
+    "verdict": "uncertain",
+    "evidence": "Raw rankings page now reads 'Qwen3.8 27B fastest on Cerebras 888 tok/s $0.99/M', 'gpt-oss-20b fastest on Groq 434 tok/s $0.07/M'. Embedded JSON gives Nemotron Lightning p50_throughput 254, best_throughput_provider Fireworks. These are rolling p50 values over OpenRouter traffic, so the exact numbers drift. Providers are confirmed; the numbers are not.",
+    "correction": "Quote these as rolling p50 throughput measured by OpenRouter on hosted datacenter hardware, approximate and dated (for example about 890 tok/s), not as fixed measurements."
+   },
+   {
+    "item": "Top coding agents: Hermes Agent 2.06T, Claude Code 1.39T, Kilo Code 1.16T; OpenCode not in top 50; third-party 'OpenCode' gateway app_id 4483145 at ranks 200 and 230",
+    "verdict": "confirmed",
+    "evidence": "coding.html meta: 'Hermes Agent, Claude Code, Kilo Code, and 47 more'. The token figures 2.06T/1.39T/1.16T appear. coding.html has no 'opencode'. apps.html has app_id 4483145, title OpenCode, origin_url https://opencode.aihub-gateway.fbrai.dev/, at rank 200 and rank 230. A raw curl of /apps?url=https://opencode.ai/ returns HTTP 200, so 'Not Found' is presumably client-rendered; this was not re-checked in a browser."
+   },
+   {
+    "item": "Top models weekly: DeepSeek V4.1 Flash 1017 58T, Hy4 18.9T, GLM 5.3 Flash 11.9T, GPT-6 Luna 7.68T, Claude Opus 5.5 6.98T; no 3B-35B picks in top 10",
+    "verdict": "confirmed",
+    "evidence": "Raw text: 1 DeepSeek V4.1 Flash 1017 58T, 2 Hy4 18.9T, 3 DeepSeek V4.1 Flash 15.7T, 4 GLM 5.3 Flash 11.9T, 5 GPT-6 Luna 7.68T, 6 Claude Opus 5.5 6.98T. The review left out rank 3; the values it quotes are correct.",
+    "correction": "The list skips rank 3, DeepSeek V4.1 Flash at 15.7T. Harmless for the conclusion."
+   },
+   {
+    "item": "Privacy: OpenRouter does not store prompts unless the user opts into logging or into input/output use (1% discount), or CSAM flagging; it stores metadata and samples prompts for anonymous categorization",
+    "verdict": "confirmed",
+    "evidence": "data-collection.md lines 19-32 say this verbatim. Line 11 adds that Safety Retention endpoints may retain prompts from any request for abuse prevention, and that these can be excluded with 'ZDR only'. This supports the review's Vertex Safety Retention point.",
+    "correction": "For docs/opencode.md, add that Safety Retention endpoints can retain prompts even without opt-in, and that the 'ZDR only' privacy setting excludes them."
+   },
+   {
+    "item": "Conflicts with baseline (Nemotron context, Qwen3.8 1M context)",
+    "verdict": "confirmed",
+    "evidence": "The baseline gives Nemotron '128k-256k' and Qwen3.8 '64k q8_0 KV' as the local budget. The provider-side 262144 and 1M figures do not contradict local VRAM-bound limits, so the review is right that these are not real conflicts. gpt-oss-20b 131072 agrees with the baseline's 128k."
+   }
+  ],
+  "credibility_fair": true,
+  "credibility_note": "'High' is fair for hosted availability, context, price, per-endpoint quantization and tool support (first-party live API), and for OpenRouter's own privacy policy. The review already limits rankings and throughput correctly: they cover OpenRouter traffic only and run on hosted hardware. It should also say that throughput figures are rolling p50 values that drift day to day, and that prices are live and change.",
+  "overall": "holds-with-corrections",
+  "summary": "I re-checked the review against raw curl data saved in $SCRATCH/src/openrouter-check/: models.json (467 models), ep_*.json for the 7 picks, rankings.html, coding.html, apps.html and dc.md. The review is accurate: context lengths, model prices, endpoint counts, quantization, tool gaps, the not-hosted list, coding-agent rankings, the OpenCode gateway entry and the privacy statements all match. Four corrections: (1) qwen/qwen3.8-27b has model-level context_length 1,024,000, so the kb_note's '262k' should say that most endpoints serve 262144; (2) fastest-model throughput is a rolling p50 that has already moved (888 / 434 / 254 tok/s now, against 901 / 429 / 256), so quote it as approximate and dated; (3) the cheapest PrimeIntellect price for qwen3.6 has moved to $0.014/$0.13; (4) the top-models list skips rank 3, DeepSeek V4.1 Flash at 15.7T. The opencode.md privacy note should also mention Safety Retention endpoints and the 'ZDR only' setting. Unverified: the claim that /apps?url=https://opencode.ai/ is 'Not Found'. A raw curl returns HTTP 200, so the message is presumably rendered in the browser. None of the source's numbers apply to RTX 5080 Laptop performance, and the review says so correctly."
+ }
+}

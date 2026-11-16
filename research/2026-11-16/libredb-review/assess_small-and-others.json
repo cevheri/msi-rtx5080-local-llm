@@ -1,0 +1,184 @@
+{
+ "lane": "small-and-others",
+ "mac_setup_notes": "Source pages: $HOME/projects/libredb/libredb-studio/docs/llms/README.md, methodology.md, setup.md, model-tuning.md, bonsai/bonsai-2.md, liquid/lfm3.md, ornith/ornith.md, muse/muse-glimmer.md. Facts that matter for transfer (all measured on the M5 Max, libredb-studio):\n- Hardware: Apple M5 Max, 64 GB unified memory, macOS high-power mode on AC (methodology.md \"The machine\"). Apple's spec page lists 64 GB only for the M5 Max with the 40-core GPU, at 614 GB/s (https://www.apple.com/macbook-pro/specs/). This laptop's GPU has 896 GB/s, 1.46x that, but only 15.47 GiB of CUDA memory. Methodology says high-power mode alone was worth 2.8x throughput, and a long sweep lost cells to thermals, so lost cells were re-measured on a rested machine. The timings are best-case runs on a rested machine.\n- Engine versions are not uniform across this lane. The general method was Ollama 0.32.13 and 0.33.0 (22-23 Aug 2026), and gemma4:12b went from 5/5 to 1/5 between those two engine versions. bonsai-2 was measured 17-22 Oct 2026 on Ollama 0.40.6 across four app builds, and its 2b row depends on a server-side blank-locator fix (bonsai-2.md \"Where these figures are softest\"). lfm3 was measured on Ollama 0.40.13 because it refuses older versions (lfm3.md). The ornith and muse pages name no engine, so they presumably used 0.32.13/0.33.0.\n- Transport: Ollama's OpenAI-compatible /v1 endpoint, with temperature 0 and topP 1 by default (model-tuning.md). That overrides the Ollama Modelfile sampling (bonsai temp 1 + presence_penalty 1, ornith temp 0.6, muse temp 1). OpenCode will not send temperature 0 unless configured to.\n- Context: the lane pages set no context bound. Six other models needed OLLAMA_CONTEXT_LENGTH=32768 (qwen3.6.md:68-69), so these ran at whatever Ollama defaults to on a 64 GB Mac. That is not stated, and it is not the 4k default this <24 GiB GPU gets.\n- Thinking: libredb can suppress reasoning per model through suppressPlanReasoning and suppressAgentReasoning. ornith:35b passed only with both on. muse-glimmer passed only with plan reasoning off. bonsai-2:9b passed only with agent reasoning off. bonsai-2:2b and 4b needed temperature 0.3 and verdict/compare hold limits of 5. ornith:9b needed one extra plan turn. lfm3 needed no settings. muse-glimmer also needed a 150 s turn limit and reportReminderLimit 2.\n- Per-turn limit: 90 s shipped. Of this lane, only muse-glimmer carries 150 s.\n- Pass bar: six surfaces x five consecutive passes against an SQLite sample. Answer correctness is \"largely unchecked\" (methodology.md \"What is not covered\").\n- Durations are whole agent runs (prefill + decode + tool turns), not tok/s. The methodology itself says to treat pass/fail as the transferable part and the seconds as a lower bound on smaller machines.\n- Disk sizes on the Mac match the Linux GGUF tags for bonsai, ornith and muse. They do not match for lfm3:1.7b: the Mac shows 1.7 GB, while the Linux GGUF Q4_K_M is 1.1 GB and the tag page shows \"1.1GB - 1.7GB\". So the Mac very likely ran a different (MLX) artifact (inference).",
+ "models": [
+  {
+   "tag": "bonsai-2:2b",
+   "underlying_model": "Prism ML Ternary Bonsai 2 2B (ternary Q2_0 build of Qwen/Qwen3.5-2B), HF prism-ml/Ternary-Bonsai-2-2B-gguf, Apache-2.0",
+   "mac_result": "(measured on the M5 Max, libredb-studio) 30/30 runs, median 52 s, slowest 5:24. Per surface: Investigate 3:00, Optimize 43 s, Assess 1:13, Operate 37 s, Analyze 53 s, Plan 14 s. This is the widest spread of any listed model. 90 s turn limit. Needed temperature 0.3 plus both hold limits at 5, and its operate cell relied on a server-side blank-locator fix. Ollama 0.40.6, 17-22 Oct 2026. Source: $HOME/projects/libredb/libredb-studio/docs/llms/bonsai/bonsai-2.md",
+   "kb_status": "not evaluated. Only Ternary Bonsai 2 27B is in the KB, excluded because its only independent test regresses against Qwen3.8-27B (docs/model-selection.md:299).",
+   "ollama_tag_facts": "Q2_0 (ternary), qwen35 family 1.9B. Model blob 546,689,504 B (0.51 GiB) plus vision projector 364,664,352 B (0.34 GiB), 911 MB listed. 256K context. Badges: vision, tools, thinking. Requires Ollama 0.40.6, renderer/parser qwen3.5, runner llamacpp. Params: temperature 1, top_k 20, top_p 0.95, presence_penalty 1. https://ollama.com/library/bonsai-2/tags and https://registry.ollama.ai/v2/library/bonsai-2/manifests/2b",
+   "opencode_suitability": "Tools and thinking yes, 256K context. The libredb evidence shows reliable tool calls only after tuning (temperature 0.3, extra holds) and a server fix. At the default temperature 0 it looped restating one answer. It is far too small for coding-agent work in OpenCode.",
+   "fit_here": "all-in-vram",
+   "fit_detail": "(estimate) Weights 0.51 GiB, projector 0.34 GiB. KV is 12 KiB/token in f16 (6 full-attention layers x 2 KV heads x 256, per Qwen3.5-2B config.json): 0.75 GiB at 64k, 3 GiB at 256K. GDN state and compute buffers add about 0.5-1 GiB. The total is about 2-3 GiB at 64k, far under 15.47 GiB. No system RAM needed beyond the process.",
+   "best_runtime_here": "Ollama (bonsai-2:2b, same file and parser that were tested), with OLLAMA_CONTEXT_LENGTH=65536 and a pinned version of at least 0.40.6. llama.cpp b12407 also runs Q2_0 per the KB, but the tool parser path differs from the one tested.",
+   "speed_here_vs_mac": "(estimate) Similar or faster. The model fits fully, so decode is bandwidth-bound or overhead-bound and this GPU has 1.46x the Mac's 614 GB/s. Run time is dominated by the model's re-reading behaviour, though, not by tok/s. Q2_0 CUDA kernel speed under Ollama is unmeasured.",
+   "recommendation": "skip-here",
+   "reason": "It fits trivially, but it is the least stable passer on the roster (14 s to 5:24) and needed tuning plus a server fix. As a 2B ternary model it brings nothing to an OpenCode coding workflow. At most it is a stack smoke test.",
+   "sources": [
+    "$HOME/projects/libredb/libredb-studio/docs/llms/bonsai/bonsai-2.md",
+    "https://ollama.com/library/bonsai-2/tags",
+    "https://registry.ollama.ai/v2/library/bonsai-2/manifests/2b",
+    "https://huggingface.co/api/models/prism-ml/Ternary-Bonsai-2-2B-gguf",
+    "https://huggingface.co/Qwen/Qwen3.5-2B/raw/main/config.json",
+    "$HOME/projects/llm/docs/model-selection.md"
+   ]
+  },
+  {
+   "tag": "bonsai-2:4b",
+   "underlying_model": "Prism ML Ternary Bonsai 2 4B (ternary Q2_0 of Qwen/Qwen3.5-4B), HF prism-ml/Ternary-Bonsai-2-4B-gguf, Apache-2.0",
+   "mac_result": "(measured on the M5 Max, libredb-studio) 30/30 runs, median 46 s, slowest 3:18. Per surface: Investigate 25 s, Optimize 1:11, Assess 37 s, Operate 29 s, Analyze 58 s, Plan 59 s. 90 s turn limit. Needed temperature 0.3 and both hold limits at 5. Ollama 0.40.6. Source: $HOME/projects/libredb/libredb-studio/docs/llms/bonsai/bonsai-2.md",
+   "kb_status": "not evaluated (only the 27B sibling is excluded, docs/model-selection.md:299)",
+   "ollama_tag_facts": "Q2_0, qwen35 4.2B. Model 1,212,103,520 B (1.13 GiB) plus projector 366,894,624 B (0.34 GiB), 1.6 GB listed. 256K context. Badges: vision, tools, thinking. Requires 0.40.6. Same params as the 2b. https://ollama.com/library/bonsai-2/tags and https://registry.ollama.ai/v2/library/bonsai-2/manifests/4b",
+   "opencode_suitability": "Tools and thinking yes, 256K. The libredb evidence shows reliable tool calls only with tuned sampling (temperature 0.3) and extra holds. A 4B ternary model has no coding evidence; the KB's only independent Bonsai test is of the 27B and regresses.",
+   "fit_here": "all-in-vram",
+   "fit_detail": "(estimate) Weights 1.13 GiB, projector 0.34 GiB. KV is 32 KiB/token f16 (8 full-attention layers x 4 KV heads x 256, per Qwen3.5-4B config.json): 2 GiB at 64k, 8 GiB at 256K. Total about 4 GiB at 64k and about 10.5 GiB at 256K.",
+   "best_runtime_here": "Ollama bonsai-2:4b with OLLAMA_CONTEXT_LENGTH=65536, version 0.40.6 or later. It is the tested artifact and parser.",
+   "speed_here_vs_mac": "(estimate) Similar or faster: fully in VRAM, with 1.46x the bandwidth. Agent run time depends on turn behaviour more than on decode speed.",
+   "recommendation": "skip-here",
+   "reason": "It fits easily but is a tuned-only passer with a 3:18 tail, and it is dominated by bonsai-2:9b (steadier) and by ornith:9b (faster median, no sampling tuning). It has no coding value for OpenCode.",
+   "sources": [
+    "$HOME/projects/libredb/libredb-studio/docs/llms/bonsai/bonsai-2.md",
+    "https://ollama.com/library/bonsai-2/tags",
+    "https://registry.ollama.ai/v2/library/bonsai-2/manifests/4b",
+    "https://huggingface.co/api/models/prism-ml/Ternary-Bonsai-2-4B-gguf",
+    "https://huggingface.co/Qwen/Qwen3.5-4B/raw/main/config.json"
+   ]
+  },
+  {
+   "tag": "bonsai-2:9b",
+   "underlying_model": "Prism ML Ternary Bonsai 2 9B (ternary Q2_0 of Qwen/Qwen3.5-9B), HF prism-ml/Ternary-Bonsai-2-9B-gguf, Apache-2.0",
+   "mac_result": "(measured on the M5 Max, libredb-studio) 30/30 runs, median 55 s, slowest 1:53. Per surface: Investigate 19 s, Optimize 1:10, Assess 1:20, Operate 28 s, Analyze 55 s, Plan 56 s. 90 s turn limit. Needed refusalExamples and suppressAgentReasoning: assess and operate spent their turns thinking. Temperature stayed at the default 0. Ollama 0.40.6. The 27b sibling read 25/30 (plan 0/5) and is NOT supported. Source: $HOME/projects/libredb/libredb-studio/docs/llms/bonsai/bonsai-2.md",
+   "kb_status": "not evaluated. The 27B is excluded (docs/model-selection.md:267,299), and the vLLM table also excludes the 27B for lacking a loadable checkpoint (vllm/models.md:716).",
+   "ollama_tag_facts": "Q2_0, qwen35 9.0B. Model 2,556,640,128 B (2.38 GiB) plus projector 624,229,664 B (0.58 GiB), 3.2 GB listed; this is also bonsai-2:latest. 256K context. Badges: vision, tools, thinking. Requires 0.40.6. Params temperature 1, top_k 20, top_p 0.95, presence_penalty 1. https://ollama.com/library/bonsai-2/tags and https://registry.ollama.ai/v2/library/bonsai-2/manifests/9b",
+   "opencode_suitability": "Tools and thinking yes, 256K. The libredb evidence shows reliable tool calls with thinking off on agent turns. With thinking on it stalled. Use it in OpenCode only with thinking off. There is no coding benchmark for the 9B, and the vendor lists looping and malformed tool calls for the family (per the KB's 27B notes).",
+   "fit_here": "all-in-vram",
+   "fit_detail": "(estimate) Weights 2.38 GiB, projector 0.58 GiB. KV is 32 KiB/token f16 (Qwen3.5-9B: 8 full-attention layers x 4 KV x 256, vllm/models.md:511): 2 GiB at 64k, 4 GiB at 128k, 8 GiB at 256K. Plus about 1 GiB of compute and state. Totals: about 6 GiB at 64k, about 12 GiB at 256K.",
+   "best_runtime_here": "Ollama bonsai-2:9b (0.40.6 or later), OLLAMA_CONTEXT_LENGTH=65536, thinking off per request. It is the tested file and parser. llama.cpp b12407 runs Q2_0 too, but its tool parsing for this template has not been tested.",
+   "speed_here_vs_mac": "(estimate) Faster or similar. It is fully in VRAM, and the decode ceiling scales by about 1.46x (896 vs 614 GB/s), but ternary Q2_0 CUDA kernel efficiency is unmeasured. Run time also depends on thinking being off.",
+   "recommendation": "worth-trying",
+   "reason": "It is the steadiest Bonsai size (1:53 tail), needs no sampling hack, and takes about 6 GiB at 64k, which leaves room for a second model. It is useful as a cheap tool-calling sub-agent test. It is not a coding pick, because quality evidence beyond this DB harness is missing.",
+   "sources": [
+    "$HOME/projects/libredb/libredb-studio/docs/llms/bonsai/bonsai-2.md",
+    "https://ollama.com/library/bonsai-2/tags",
+    "https://registry.ollama.ai/v2/library/bonsai-2/manifests/9b",
+    "https://huggingface.co/api/models/prism-ml/Ternary-Bonsai-2-9B-gguf",
+    "$HOME/projects/llm/vllm/models.md",
+    "$HOME/projects/llm/docs/model-selection.md"
+   ]
+  },
+  {
+   "tag": "lfm3:1.7b",
+   "underlying_model": "Liquid AI LFM3-1.7B (tri-hybrid: 24 layers, 13 conv, 5 sliding-window, 6 global attention), HF LiquidAI/LFM3-1.7B, LFM Open License v1.0",
+   "mac_result": "(measured on the M5 Max, libredb-studio) 30/30 runs at compiled defaults with no profile, median 84 s, slowest 5:33. Per surface: Investigate 43 s, Optimize 4:13, Assess 1:58, Operate 1:23, Analyze 1:09, Plan 36 s. Assess and Optimize first read 4/5 and locked on a re-roll. In 4 of 5 investigate runs it called no tool and answered from the snapshot. 90 s turn limit. Ollama 0.40.13. Disk 1.7 GB on the Mac. Source: $HOME/projects/libredb/libredb-studio/docs/llms/liquid/lfm3.md",
+   "kb_status": "not evaluated. The KB only covers LFM2.5-24B-A2B, excluded for vendor-only quality, silent tool-call loss (llama.cpp #30490) and the licence revenue cap (docs/model-selection.md:266,298).",
+   "ollama_tag_facts": "The Linux/registry manifest is GGUF Q4_K_M: model 1,099,627,808 B (1.02 GiB) from LFM3-1.7B-Q4_K_M.gguf, runner llamacpp. Requires 0.40.13. Capabilities: completion, tools, thinking. Params: temperature 0.1, top_k 50, repeat_penalty 1.1. 256K context. The tag page lists lfm3:1.7b as '1.1GB - 1.7GB', so it resolves per platform; the 1.7 GB the Mac reports matches the lfm3:1.7b-nvfp4 MLX tag (inference). https://ollama.com/library/lfm3/tags and https://registry.ollama.ai/v2/library/lfm3/manifests/1.7b",
+   "opencode_suitability": "Tools and thinking badges, 256K. The Ollama card itself says it is 'not recommended for agentic coding or complex multi-step reasoning due to its small size'. The libredb evidence proves tool reliability in a DB loop, but likely on a different artifact (MLX on the Mac, GGUF here). Its tool-skipping behaviour in Investigate is a warning for OpenCode.",
+   "fit_here": "all-in-vram",
+   "fit_detail": "(estimate) Weights 1.02 GiB. KV is about 12 KiB/token f16 for the 6 global-attention layers (4 KV heads x 128, config.json), plus 5 SWA layers with a 256-token window (negligible) and the conv state: about 0.75 GiB at 64k, about 3 GiB at 256K. Total about 2-4.5 GiB.",
+   "best_runtime_here": "Ollama lfm3:1.7b (0.40.13 or later) with OLLAMA_CONTEXT_LENGTH=65536. llama.cpp b12407 also has LLM_ARCH_LFM3 (src/llama-arch.cpp:141) with LiquidAI/LFM3-1.7B-GGUF. Either way it is a GGUF build, not the one the Mac most likely ran.",
+   "speed_here_vs_mac": "(estimate) Decode is likely faster (fully in VRAM, tiny model, 1.46x bandwidth), but the Mac run times come from the model's long tool loops (4:13 optimize), not from tok/s. The artifact likely differs (GGUF Q4_K_M vs MLX), so even the pass/fail does not transfer cleanly.",
+   "recommendation": "skip-here",
+   "reason": "It has the slowest median of the small models, a 5:33 tail, and its own card advises against agentic coding. The tested artifact is probably not the one Linux pulls. The libredb pass is a memory-constrained curiosity, not an OpenCode candidate.",
+   "sources": [
+    "$HOME/projects/libredb/libredb-studio/docs/llms/liquid/lfm3.md",
+    "https://ollama.com/library/lfm3",
+    "https://ollama.com/library/lfm3/tags",
+    "https://registry.ollama.ai/v2/library/lfm3/manifests/1.7b",
+    "https://huggingface.co/LiquidAI/LFM3-1.7B/raw/main/config.json",
+    "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/src/llama-arch.cpp"
+   ]
+  },
+  {
+   "tag": "ornith:9b",
+   "underlying_model": "Ornith-1.0-9B (Qwen3.5-9B architecture, qwen35, text-only), HF ornith-ai/Ornith-1.0-9B, MIT, created 2026-06-21. This is NOT Ornith-1.5-9B, which is the separate Ollama repo ornith-1.5.",
+   "mac_result": "(measured on the M5 Max, libredb-studio) 30/30 runs, median 31 s, slowest 1:58. Per surface: Investigate 20 s, Optimize 36 s, Assess 51 s, Operate 21 s, Analyze 16 s, Plan 31 s. 90 s turn limit. The only setting is one extra plan turn (planStatementRetries), and no thinking suppression was needed. The engine version is not stated on the page (presumably Ollama 0.32.13/0.33.0). Source: $HOME/projects/libredb/libredb-studio/docs/llms/ornith/ornith.md",
+   "kb_status": "not evaluated as Ornith 1.0. The KB excluded the newer sibling Ornith-1.5-9B (previous rank 7) for scores from an anonymous, unverified org and vLLM NVFP4 hybrid-GDN crash #54331 (docs/model-selection.md:300, vllm/models.md:690-695).",
+   "ollama_tag_facts": "Q4_K_M, qwen35 9.0B. Model 5,629,108,640 B (5.24 GiB), 5.6 GB listed; this is also ornith:latest and ornith:9b-q4_K_M. 256K context. Badges: tools, thinking (no vision). Requires Ollama 0.30.11. Renderer and parser 'ornith'. Ships a SYSTEM layer ('You are Ornith, an open-source agentic coding assistant. Think step by step...') and params temperature 0.6, top_k 20, top_p 0.95. https://ollama.com/library/ornith/tags and https://registry.ollama.ai/v2/library/ornith/manifests/9b",
+   "opencode_suitability": "Tools and thinking yes, 256K. It is an agentic-coding fine-tune (the Ollama page lists 'ollama launch opencode --model ornith'). The libredb evidence is the cleanest in this lane: all six surfaces 5/5 at the default temperature 0 with thinking left on, with only one extra plan turn. It stops one sentence short of a runnable statement, which hints that it may need a nudge to emit the final action.",
+   "fit_here": "all-in-vram",
+   "fit_detail": "(estimate) Weights 5.24 GiB. KV is 32 KiB/token f16 (8 full-attention layers x 4 KV x 256, Ornith-1.0-9B config.json): 2 GiB at 64k, 4 GiB at 128k, 8 GiB at 256K. Plus GDN state and about 1-1.5 GiB of compute. Totals: about 8.5 GiB at 64k, about 10.5 GiB at 128k, about 14.5 GiB at 256K (tight; q8_0 KV would halve the KV). No CPU spill.",
+   "best_runtime_here": "Ollama ornith:9b with OLLAMA_CONTEXT_LENGTH=65536 (or 131072), OLLAMA_FLASH_ATTENTION=1, one parallel slot. This is the exact GGUF and the 'ornith' tool parser that passed the harness, which matters more than raw speed. llama.cpp b12407 (qwen35 arch) with ornith-ai/Ornith-1.0-9B-GGUF would also fit, but whether its chat parser handles Ornith 1.0's tool format is untested.",
+   "speed_here_vs_mac": "(estimate) Faster. It sits fully in VRAM, and the decode ceiling is about 159 vs 109 tok/s (5.63 GB read per token at 896 vs 614 GB/s), about 1.46x. Prefill on the RTX 5080 is likely no slower. The Mac's 31 s median is whole-run time, so expect the same order or a little less, not a straight 1.46x.",
+   "recommendation": "try-here-first",
+   "reason": "It is the only model in this lane that combines a full fit with headroom for 128k, a clean first-hand 30/30 tool-loop record with almost no tuning, a 31 s median, and a coding-agent post-training target. The KB's exclusion was aimed at Ornith-1.5 and its vLLM NVFP4 path, not at this Ollama GGUF. The provenance concern (unverified org) remains and should be stated.",
+   "sources": [
+    "$HOME/projects/libredb/libredb-studio/docs/llms/ornith/ornith.md",
+    "https://ollama.com/library/ornith",
+    "https://ollama.com/library/ornith/tags",
+    "https://registry.ollama.ai/v2/library/ornith/manifests/9b",
+    "https://huggingface.co/api/models/ornith-ai/Ornith-1.0-9B",
+    "https://huggingface.co/ornith-ai/Ornith-1.0-9B/raw/main/config.json",
+    "https://ollama.com/library/ornith-1.5/tags",
+    "$HOME/projects/llm/docs/model-selection.md",
+    "$HOME/projects/llm/vllm/models.md"
+   ]
+  },
+  {
+   "tag": "ornith:35b",
+   "underlying_model": "Ornith-1.0-35B (Qwen3.5-35B-A3B MoE architecture, qwen35moe: 256 experts, top-8, 40 layers, 10 full-attention), HF ornith-ai/Ornith-1.0-35B, MIT",
+   "mac_result": "(measured on the M5 Max, libredb-studio) 30/30 runs, median 36 s, slowest 2:30. Per surface: Investigate 1:37, Optimize 55 s, Assess 50 s, Operate 16 s, Analyze 28 s, Plan 37 s. 90 s turn limit. Needed suppressPlanReasoning plus suppressAgentReasoning plus one extra plan turn. At defaults its plan cell read 0/5 twice, because thinking ate the turn. All six surfaces were re-read under the shipped pair. Disk 21 GB. The engine is not stated. The page says the 9b is the size to reach for. Source: $HOME/projects/libredb/libredb-studio/docs/llms/ornith/ornith.md",
+   "kb_status": "not evaluated as Ornith 1.0. 'Ornith-1.5-35B' sits in the KB's carried-over exclusion group as an unverified discovery lead (docs/model-selection.md:307; research/2026-11-15/baseline.md:79).",
+   "ollama_tag_facts": "Q4_K_M, qwen35moe 34.7B. Model 21,166,757,664 B (19.71 GiB), 21 GB listed. 256K context. Badges: tools, thinking. Requires 0.30.11, parser 'ornith', same SYSTEM layer and params as the 9b (temp 0.6). The size equals ornith-1.0-35b-Q4_K_M.gguf in ornith-ai/Ornith-1.0-35B-GGUF (19.71 GiB). https://ollama.com/library/ornith/tags and https://registry.ollama.ai/v2/library/ornith/manifests/35b",
+   "opencode_suitability": "Tools and thinking yes, 256K. The libredb evidence shows tool reliability ONLY with thinking suppressed on every turn. With thinking on it timed out. In OpenCode it would have to run with thinking off.",
+   "fit_here": "partial-offload",
+   "fit_detail": "(estimate) Weights 19.71 GiB exceed 15.47 GiB. KV is 20 KiB/token f16 (10 full-attention layers x 2 KV x 256): 1.25 GiB at 64k, 2.5 GiB at 128k. With Ollama's whole-layer split (about 0.49 GiB per layer) roughly 24-26 of 40 layers fit on the GPU and about 7-8 GiB go to RAM. With llama.cpp the same architecture as the KB's Qwen3.6-35B-A3B recipe applies: --n-cpu-moe about 21 at 128k (about 8.9 GiB of experts in RAM) or about 18-19 at 64k. RAM need is about 8-9 GiB plus the process, well inside the 40 GiB free.",
+   "best_runtime_here": "llama.cpp b12407 with ornith-ai/Ornith-1.0-35B-GGUF Q4_K_M, -ngl all --n-cpu-moe ~21 -c 65536 or 131072 -fa on --jinja, thinking off, following the Qwen3.6-35B-A3B recipe in llamacpp/models.md. That beats Ollama's layer split for a MoE. Caveat: llama.cpp's handling of Ornith's tool format is untested, while Ollama's 'ornith' parser is what passed the harness.",
+   "speed_here_vs_mac": "(estimate) Slower. The Mac holds all 19.7 GiB in 614 GB/s memory. Here the routed experts of about half the layers are read from DDR5 (about 102 GB/s peak) on every token, so decode drops to roughly the KB's Qwen3.6-35B-A3B offload range rather than scaling up. Mac run times (median 36 s, investigate 1:37) should be read as a lower bound here.",
+   "recommendation": "skip-here",
+   "reason": "The harness itself shows it is slower than ornith:9b and passes only with thinking fully suppressed. On this laptop it spills to RAM. The same MoE slot is already covered by KB rank 2, Qwen3.6-35B-A3B, which has the same architecture, the same recipe and stronger independent evidence.",
+   "sources": [
+    "$HOME/projects/libredb/libredb-studio/docs/llms/ornith/ornith.md",
+    "https://ollama.com/library/ornith/tags",
+    "https://registry.ollama.ai/v2/library/ornith/manifests/35b",
+    "https://huggingface.co/ornith-ai/Ornith-1.0-35B/raw/main/config.json",
+    "https://huggingface.co/api/models/ornith-ai/Ornith-1.0-35B-GGUF?blobs=true",
+    "$HOME/projects/llm/llamacpp/models.md",
+    "$HOME/projects/llm/docs/model-selection.md"
+   ]
+  },
+  {
+   "tag": "muse-glimmer:latest",
+   "underlying_model": "Meta Muse Glimmer 30B (dense 27.9B, 52 layers: 39 sliding-window with a 2048 window plus 13 full-attention, 2 KV heads x 128, vision encoder), HF meta-models/Muse-Glimmer-30B, Apache-2.0, created 2026-08-09",
+   "mac_result": "(measured on the M5 Max, libredb-studio) 30/30 runs, median 115 s, slowest 4:45. It is the slowest model on the roster. Per surface: Investigate 103 s, Optimize 191 s, Assess 167 s, Operate 80 s, Analyze 115 s, Plan 17 s. It needed three settings: suppressPlanReasoning (plan went from 0/5 at 90 s timeouts to 16-21 s), turnTimeoutMs 150 s, and reportReminderLimit 2. One run hit model-unavailable and was re-read. Disk 18 GB. The engine is not stated. Source: $HOME/projects/libredb/libredb-studio/docs/llms/muse/muse-glimmer.md",
+   "kb_status": "excluded. It is in the 'Superseded by Qwen3.8-27B, do not fit, or remain unverified' group (docs/model-selection.md:307; research/2026-11-15/baseline.md:79). AA lists TB2.1 51.7 (research/2026-11-15/source-reviews/artificialanalysis.json:105).",
+   "ollama_tag_facts": "Q4_K_M (from muse-glimmer:30b-q4_K_M), muse-glimmer family 27.9B. Model 16,756,681,056 B (15.61 GiB) plus projector 1,400,328,928 B (1.30 GiB), 18 GB listed. 128K context. Badges: vision, tools, thinking. Requires 0.32.8, renderer/parser 'glimmer'. Params: temperature 1, top_k 64, top_p 0.95. https://ollama.com/library/muse-glimmer/tags and https://registry.ollama.ai/v2/library/muse-glimmer/manifests/latest",
+   "opencode_suitability": "Tools, thinking and vision, 128K context (enough for 64k). The libredb evidence shows reliable tool use (a passing assess calls 11 tools), but only with plan thinking off, a 150 s turn limit and an extra report reminder. In other words it works, but slowly, and sometimes stops without filing.",
+   "fit_here": "partial-offload",
+   "fit_detail": "(estimate) Ollama Q4_K_M weights are 15.61 GiB plus a 1.30 GiB projector, already over 15.47 GiB. KV is small: 13 KiB/token f16 for the 13 global layers, about 0.8 GiB at 64k, plus about 80 MiB of SWA. Ollama would place roughly 38-42 of 52 dense layers on the GPU and about 3.5-4.5 GiB in RAM. All-in-VRAM is possible only with a smaller llama.cpp quant, for example unsloth UD-Q3_K_XL at 12.44 GiB or UD-IQ3_XXS at 12.23 GiB, text-only, about 14.5-15 GiB at 64k. That is tight, and it is a different quant from the one that passed.",
+   "best_runtime_here": "If tried at all: llama.cpp b12407 (it has LLM_ARCH_MUSE_GLIMMER) with unsloth/Muse-Glimmer-30B-GGUF UD-Q3_K_XL, -ngl all, -c 65536, no mmproj, thinking off. That fits fully, which Ollama's Q4_K_M cannot. Ollama with the tested Q4_K_M would spill dense layers to DDR5.",
+   "speed_here_vs_mac": "(estimate) Slower with the tested Q4_K_M on Ollama. A dense model reads every weight per token, and about 25% of them would come from DDR5 at about 102 GB/s peak against the Mac's 614 GB/s for all of them. That is roughly half the Mac's decode rate, so the 115 s median and 150 s per-turn limit would likely be exceeded. With UD-Q3_K_XL fully in VRAM, decode could be similar to or faster than the Mac, but at a lower quant whose agent reliability is unmeasured.",
+   "recommendation": "skip-here",
+   "reason": "It is the slowest passer even on the Mac, needs three harness-specific crutches, and either spills (tested quant) or runs at an untested Q3 quant here. The KB's exclusion holds. This evidence adds a confirmed tool-reliability note but no reason to rank it.",
+   "sources": [
+    "$HOME/projects/libredb/libredb-studio/docs/llms/muse/muse-glimmer.md",
+    "https://ollama.com/library/muse-glimmer",
+    "https://ollama.com/library/muse-glimmer/tags",
+    "https://registry.ollama.ai/v2/library/muse-glimmer/manifests/latest",
+    "https://huggingface.co/meta-models/Muse-Glimmer-30B/raw/main/config.json",
+    "https://huggingface.co/api/models/unsloth/Muse-Glimmer-30B-GGUF?blobs=true",
+    "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/src/llama-arch.cpp",
+    "$HOME/projects/llm/docs/model-selection.md"
+   ]
+  }
+ ],
+ "kb_implications": [
+  "Disambiguate Ornith in docs/model-selection.md:300 and vllm/models.md:690. The KB's exclusion is about Ornith-1.5-9B (Ollama repo ornith-1.5, vision, 6.6 GB). The user's harness passed Ornith-1.0-9B (Ollama repo ornith, tag ornith:9b, text-only, Q4_K_M 5.24 GiB, parser 'ornith') 30/30 with only one extra plan turn, a 31 s median and a 1:58 slowest run (measured on the M5 Max, libredb-studio). Add Ornith-1.0-9B as an honorable mention or trial for an Ollama all-in-VRAM agent at 64k-128k (about 8.5-10.5 GiB, estimate). Keep the unverified-org caveat, but note that first-hand tool-loop reliability now exists for the 1.0 GGUF on Ollama, and that the vLLM NVFP4 crash reason does not apply to this path.",
+  "Strengthen the Ternary Bonsai 2 27B exclusion (docs/model-selection.md:267,299): the user's harness independently records bonsai-2:27b at 25/30, with plan 0/5 across five configurations ('no-plan-evidence'), and it is NOT supported (bonsai/bonsai-2.md). Add that as a second, first-hand piece of evidence. Optionally list bonsai-2:9b (2.38 GiB Q2_0, passes 30/30 with agent thinking off) as a tiny sub-agent curiosity, not a pick.",
+  "Muse Glimmer 30B stays excluded, but the reason line in docs/model-selection.md:307 should say why concretely for this machine. Dense 27.9B Q4_K_M (15.61 GiB plus a 1.30 GiB projector) does not fit in 15.47 GiB, it spills dense layers on Ollama, and even on the Mac it is the slowest harness passer (median 115 s, 150 s turn limit, three settings). Also record that llama.cpp b12407 supports the arch and that unsloth UD-Q3_K_XL (12.44 GiB) is the only all-in-VRAM route (estimate, untested quant).",
+  "LFM: the KB covers only LFM2.5-24B-A2B. LFM3-1.7B passes the harness (median 84 s, slowest 5:33) but its own Ollama card says it is not recommended for agentic coding, and the Linux tag (GGUF Q4_K_M 1.1 GB) is likely not the artifact the Mac ran (1.7 GB, matching the MLX nvfp4 tag). Do not add it as a pick. At most, add one line under exclusions so it is not rediscovered.",
+  "Ornith-1.0-35B (ornith:35b) passes 30/30 only with both reasoning suppressions. It is the qwen35moe architecture identical to Qwen3.6-35B-A3B (rank 2), so it would reuse the --n-cpu-moe ~21 recipe. No KB change is needed beyond noting it as a covered-by-rank-2 alternative. The harness itself prefers the 9b.",
+  "A pick the harness does not cover: none of the KB's top 10 except gpt-oss-20b is in this lane, and the harness has no Qwen3.8-27B-on-Ollama result at a quant that fits 16 GB (that belongs to another lane). For this lane, the libredb runs give tool-reliability evidence only for Ornith-1.0-9B as a potential addition.",
+  "Add an Ollama runtime note to the KB, which currently has none installed (README 'Not installed'). Ollama's tag-to-artifact mapping is per platform (lfm3:1.7b shows '1.1GB - 1.7GB'). The harness ran temperature 0 over /v1, while the Modelfile defaults are higher (bonsai temp 1 plus presence_penalty 1, ornith 0.6, muse 1). The minimum Ollama versions are bonsai-2 0.40.6, lfm3 0.40.13, muse-glimmer 0.32.8 and ornith 0.30.11, so pin an ollama/ollama image of at least 0.40.13 and set OLLAMA_CONTEXT_LENGTH=65536."
+ ],
+ "gaps": [
+  "The Ollama engine version is not stated on the ornith and muse-glimmer pages. I assumed 0.32.13/0.33.0 from methodology.md, and the gemma4:12b case shows the engine version can flip pass to fail.",
+  "The context length the Mac harness ran at is not recorded for these models (no OLLAMA_CONTEXT_LENGTH noted). Neither is how many tokens a libredb run actually uses, so it is unknown whether 64k matches the tested condition.",
+  "I could not confirm which artifact the Mac pulled for lfm3:1.7b. The registry returned only the GGUF manifest to an anonymous client, and darwin user-agent requests were refused (UNAUTHORIZED). The MLX inference rests on the 1.7 GB size alone.",
+  "The ornith:9b/35b and muse-glimmer digests on the Mac are not recorded in the libredb pages, so identity with today's registry tags is assumed. The tags were last updated 4 and 2-3 months ago, which is before the August and October measurements, so they are likely identical.",
+  "No measurement on this laptop exists for any lane model. All fit and speed figures are estimates, and Ollama has not been pulled yet. Q2_0 ternary CUDA kernel speed under Ollama is unknown.",
+  "Untested: whether llama.cpp b12407's chat parsing handles the Ornith 1.0 tool-call format, which would decide llama.cpp vs Ollama for ornith:35b with --n-cpu-moe.",
+  "The libredb harness checks tool use and citations against SQLite, not coding quality. Answer correctness is 'largely unchecked' per methodology.md, so none of this ranks models for OpenCode coding tasks.",
+  "Ornith provenance (ornith-ai, an unverified org per the KB) is not addressed by the harness evidence."
+ ]
+}

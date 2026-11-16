@@ -1,0 +1,21 @@
+server healthy after 8 s
+opencode exit=0 after 9 s
+     1	def add(a, b):
+     2	    return a + b
+     3	
+     4	
+     5	if __name__ == "__main__":
+     6	    print(add(2, 3))
+answer: I'll create the file and then read it back.
+tool_use: write completed
+step tokens: {"input": 6588, "output": 141, "reasoning": 0, "cache": {"read": 0, "write": 0}}
+tool_use: read completed
+step tokens: {"input": 24, "output": 85, "reasoning": 0, "cache": {"read": 6728, "write": 0}}
+answer: The file `hello.py` has **6 lines**:  1. `def add(a, b):` 2. `    return a + b` 3. *(blank)* 4. *(blank)* 5. `if __name__ == "__main__":` 6. `    print(add(2, 3))`
+step tokens: {"input": 136, "output": 73, "reasoning": 0, "cache": {"read": 6836, "write": 0}}
+models seen in events: none
+stderr lines: 0
+GPU peak 15190 MiB
+0.15.411.055 I slot print_timing: id  0 | task 0 | prompt eval time =    4050.64 ms /  6588 tokens (    0.61 ms per token,  1626.41 tokens per second)
+0.16.273.106 I slot print_timing: id  0 | task 147 | prompt eval time =     103.52 ms /    24 tokens (    4.31 ms per token,   231.85 tokens per second)
+0.17.187.196 I slot print_timing: id  0 | task 234 | prompt eval time =     227.11 ms /   136 tokens (    1.67 ms per token,   598.82 tokens per second)

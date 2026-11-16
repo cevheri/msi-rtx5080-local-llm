@@ -1,0 +1,364 @@
+{
+ "review": {
+  "key": "periscale-laptop",
+  "url": "https://periscale.ai/gpus/rtx-5080-laptop",
+  "title": "What AI models can the RTX 5080 Laptop run? | Periscale",
+  "publisher": "Periscale (periscale.ai), a small-business AI directory site with a \"Can I run this AI model?\" calculator",
+  "as_of": "Data last updated 2026-10-30 (stated on https://periscale.ai/can-i-run); page fetched 2026-11-15",
+  "source_type": "calculator-estimate",
+  "accessible": true,
+  "access_notes": "Raw curl with UA \"Mozilla/5.0\" returned HTTP 200 (45390 bytes, server-rendered HTML, no scripts). Also fetched /can-i-run (methodology), three per-model detail pages (qwen3-6-35b-a3b, gpt-oss-20b, gemma-4-26b-a4b on rtx-5080-laptop) and /gpus/rtx-5080 for comparison. NVIDIA spec checked against https://www.nvidia.com/en-us/geforce/laptops/50-series/ (raw HTML). Files in $SCRATCH/src/periscale-laptop/.",
+  "credibility": "low",
+  "credibility_reason": "Pure VRAM-fit calculator with no measurements, no throughput, no bandwidth, no laptop-specific modelling (laptop and desktop RTX 5080 pages give byte-identical verdicts). Uses a generic bits-per-weight per quant name, FP16 KV, apparently full attention on every layer, no CPU/MoE offload modelling, and has internal inconsistencies (Gemma 4 26B Q4_K_M: \"8K tokens of context does not\" fit yet \"Largest context that still loads at Q4_K_M: 128K tokens\"). Its verdicts contradict configurations the baseline verified by file size.",
+  "summary": "Periscale's GPU page lists the RTX 5080 Laptop as \"16 GB\", \"Bandwidth —\", \"Typical price —\", \"Released 2025\" and says \"51 of 75 popular models load, each at its best-fitting quantization\", with a fit verdict per model (Runs with headroom / close to the limit / trade-offs / will not run). The method (/can-i-run): \"Each verdict adds three things: the quantized model weights, the KV cache for your context size, and runtime overhead. It assumes one chat session at a time. These are estimates\", default 8K context, FP16 KV, \"headroom\" means total within 85% of VRAM. Nothing is measured. The /gpus/rtx-5080 desktop page shows the identical list, so the site does not tell the laptop and desktop cards apart, beyond VRAM size. Its GPU-only, generic-quant arithmetic marks baseline picks as Q2_K-only or \"Will not run\" (Qwen3.6-35B-A3B, Qwen3.8-27B, GLM-4.7-Flash, Qwen3-Coder-Next), which is wrong for llama.cpp with --n-cpu-moe and with model-specific quants (Google QAT Q4_0, MXFP4, UD quants). Use it only as an example of why generic calculators mislead. Do not use it as a model-selection input.",
+  "methodology": "Stated: weights + KV cache at chosen context + runtime overhead; batch 1, single session; \"KV cache computed at FP16 (2 bytes per element)\"; \"Mixture-of-experts model: all N parameters must reside in memory\"; verdict thresholds: headroom if within 85% of VRAM. Inferred by this reviewer (computed): weights = params x fixed bpw per quant name (gpt-oss 20.9B x ~4.33 bpw / 8 = 11.32 GB; Qwen3.6 36.0B -> 19.46 GB; Gemma 4 25.8B -> 13.97 GB), ignoring each model's native format (MXFP4, QAT Q4_0). Qwen3.6 KV 0.63 GB at 8K matches all 40 layers with full attention (40 x 2 x 2 heads x 256 dim x 2 B x 8192 = 0.67 GB), ignoring that only 10 layers are full attention in that hybrid model, so KV is overestimated about 4x. Overhead 1.56-1.96 GB, formula not published. No runtime, driver, or throughput modelling; GPU bandwidth field is empty.",
+  "findings": [
+   {
+    "topic": "GPU specs on the page",
+    "claim": "Page lists RTX 5080 Laptop as 16 GB VRAM, released 2025, Bandwidth '—', Typical price '—'. No TGP, no CUDA core count, no bandwidth.",
+    "evidence": "documented",
+    "location": "https://periscale.ai/gpus/rtx-5080-laptop header block",
+    "target": "hardware",
+    "relevance": "low"
+   },
+   {
+    "topic": "NVIDIA official spec cross-check",
+    "claim": "NVIDIA's 50-series laptop page lists GeForce RTX 5080 Laptop GPU: 1334 AI TOPS, 7680 CUDA cores, boost clock 1500 - 2287 MHz, 16 GB GDDR7, 896 GB/s. Periscale's only spec (16 GB) agrees; it omits bandwidth, which is what sets decode speed.",
+    "evidence": "documented",
+    "location": "https://www.nvidia.com/en-us/geforce/laptops/50-series/ spec table",
+    "target": "hardware",
+    "relevance": "medium"
+   },
+   {
+    "topic": "Laptop vs desktop",
+    "claim": "/gpus/rtx-5080 (desktop) and /gpus/rtx-5080-laptop give identical model lists and percentages, because the calculator uses only VRAM size. No laptop power or bandwidth difference is modelled.",
+    "evidence": "documented",
+    "location": "https://periscale.ai/gpus/rtx-5080 vs /gpus/rtx-5080-laptop",
+    "target": "hardware",
+    "relevance": "medium"
+   },
+   {
+    "topic": "Method",
+    "claim": "Verdict = quantized weights + KV cache at chosen context (default 8K) + runtime overhead; batch 1; FP16 KV; 'Runs with headroom' if within 85% of VRAM. 'These are estimates, so real use varies with your runtime and drivers. Data last updated 2026-10-30.'",
+    "evidence": "documented",
+    "location": "https://periscale.ai/can-i-run 'How the estimate works'; per-model pages",
+    "target": "general",
+    "relevance": "medium"
+   },
+   {
+    "topic": "No CPU/MoE offload modelling",
+    "claim": "MoE models are treated as needing all parameters in VRAM ('all 36.0B parameters must reside in memory'), so Qwen3-Coder-Next shows 'Will not run' and Qwen3.6-35B-A3B Q4_K_M shows 'Will not run' (22.05 GB, 138%). With llama.cpp --n-cpu-moe the baseline places experts in system RAM, so both run on this laptop.",
+    "evidence": "documented",
+    "location": "/can-i-run/qwen3-6-35b-a3b/on/rtx-5080-laptop",
+    "target": "llamacpp",
+    "relevance": "high"
+   },
+   {
+    "topic": "Generic quant sizes",
+    "claim": "Weights come from a fixed bits-per-weight per quant name: gpt-oss 20B Q4_K_M 11.32 GB, Qwen3.6 35B A3B Q4_K_M 19.46 GB, Gemma 4 26B A4B Q4_K_M 13.97 GB. Real files in the baseline: ggml-org gpt-oss-20b MXFP4 11.28 GiB (12.11 GB), Qwen3.6 Q4_K_M 19.13 GiB (20.54 GB), Gemma 4 QAT Q4_0 13.45 GiB. Periscale's Qwen3.6 weights are about 5% below the real file, and the native MXFP4 and QAT formats are not offered.",
+    "evidence": "computed",
+    "location": "per-model detail pages; baseline model table",
+    "target": "models",
+    "relevance": "medium"
+   },
+   {
+    "topic": "KV cache overestimate on hybrid/SWA models",
+    "claim": "Qwen3.6 35B A3B KV at 8K = 0.63 GB, matching full attention on all 40 layers; the model has only 10 full-attention layers (Gated DeltaNet hybrid), so KV is overestimated about 4x. Gemma 4 26B A4B KV at 8K = 1.88 GB, apparently ignoring sliding-window layers.",
+    "evidence": "computed",
+    "location": "/can-i-run/qwen3-6-35b-a3b and gemma-4-26b-a4b on rtx-5080-laptop",
+    "target": "models",
+    "relevance": "medium"
+   },
+   {
+    "topic": "Internal inconsistency",
+    "claim": "Gemma 4 26B A4B page says 'The Q4_K_M weights ... fit ... but 8K tokens of context does not' (17.80 GB, 111%) yet also 'Largest context that still loads at Q4_K_M: 128K tokens'. gpt-oss 20B also claims 128K fits at Q4_K_M, which linear FP16 KV scaling from its own 0.38 GB at 8K would not allow (about 6 GB of KV at 128K plus 12.9 GB of weights and overhead > 16 GB), unless SWA is modelled for that model only.",
+    "evidence": "documented",
+    "location": "/can-i-run/gemma-4-26b-a4b/on/rtx-5080-laptop; /can-i-run/gpt-oss-20b/on/rtx-5080-laptop",
+    "target": "general",
+    "relevance": "low"
+   },
+   {
+    "topic": "Fit verdicts for baseline picks",
+    "claim": "Best-fitting quant per the page: gpt-oss 20B Q4_K_M 83% headroom; Gemma 4 26B A4B Q2_K 81% headroom; Nemotron 3.5 Lightning 30B Q2_K 83%; Qwen3.8 27B Q2_K 87% close to limit; Qwen3.6 35B A3B Q2_K 96% close to limit; GLM-4.7 Flash Q2_K 98% close to limit; Laguna XS.2 Q2_K 92%; Qwen3.5 9B Q8_0 78%; Gemma 4 31B Q2_K 129% trade-offs; Qwen3 Coder Next, gpt-oss 120B, Nemotron 3 Super 120B, DeepSeek V4 Flash: will not run.",
+    "evidence": "computed",
+    "location": "https://periscale.ai/gpus/rtx-5080-laptop model list",
+    "target": "models",
+    "relevance": "medium"
+   },
+   {
+    "topic": "Contradiction with baseline Qwen3.8-27B",
+    "claim": "Periscale implies Qwen3.8 27B needs Q2_K (87%) at 8K context; the baseline uses unsloth UD-Q3_K_XL (12.24 GiB) all on GPU with 64k q8_0 KV. Periscale offers no UD/IQ quants and no q8_0 KV.",
+    "evidence": "computed",
+    "location": "/gpus/rtx-5080-laptop; baseline model table #2",
+    "target": "models",
+    "relevance": "medium"
+   },
+   {
+    "topic": "Runtime quickstart on /can-i-run",
+    "claim": "Suggests 'llama-server -m model-Q4_K_M.gguf -c 8192 --host 127.0.0.1 --port 8080' and 'ollama pull llama3.1:8b-instruct-q4_K_M'. 8K context is far below the 64k OpenCode needs in practice; not useful for this project.",
+    "evidence": "documented",
+    "location": "https://periscale.ai/can-i-run 'Get a model running'",
+    "target": "opencode",
+    "relevance": "low"
+   },
+   {
+    "topic": "No performance data",
+    "claim": "No tok/s, prompt-processing, or measured VRAM numbers anywhere on the GPU page or the model pages reviewed.",
+    "evidence": "documented",
+    "location": "all fetched pages",
+    "target": "benchmarking",
+    "relevance": "medium"
+   }
+  ],
+  "measurements": [
+   {
+    "model": "gpt-oss 20B",
+    "gpu": "RTX 5080 Laptop (VRAM size only; identical to desktop page)",
+    "measured_or_estimated": "estimated",
+    "quant": "Q4_K_M (generic bpw, not native MXFP4)",
+    "context": "8K",
+    "vram": "13.26 GB total = 11.32 weights + 0.38 KV FP16 + 1.56 overhead (83%)",
+    "runtime": "none specified",
+    "settings": "batch 1, FP16 KV"
+   },
+   {
+    "model": "Qwen3.6 35B A3B",
+    "gpu": "RTX 5080 Laptop (VRAM size only)",
+    "measured_or_estimated": "estimated",
+    "quant": "Q4_K_M",
+    "context": "8K",
+    "vram": "22.05 GB = 19.46 weights + 0.63 KV + 1.96 overhead (138%, Will not run)",
+    "runtime": "none; no CPU offload modelled",
+    "settings": "batch 1, FP16 KV"
+   },
+   {
+    "model": "Qwen3.6 35B A3B",
+    "gpu": "RTX 5080 Laptop",
+    "measured_or_estimated": "estimated",
+    "quant": "Q2_K",
+    "context": "8K",
+    "vram": "15.39 GB (96%, close to limit); Q3_K_M 18.95 GB, Q5_K_M 26.57, Q6_K 30.04, Q8_0 38.16, FP16 69.55",
+    "runtime": "none",
+    "settings": "batch 1, FP16 KV"
+   },
+   {
+    "model": "Gemma 4 26B A4B",
+    "gpu": "RTX 5080 Laptop",
+    "measured_or_estimated": "estimated",
+    "quant": "Q4_K_M",
+    "context": "8K",
+    "vram": "17.80 GB = 13.97 weights + 1.88 KV + 1.96 overhead (111%, trade-offs)",
+    "runtime": "none",
+    "settings": "batch 1, FP16 KV"
+   },
+   {
+    "model": "Gemma 4 26B A4B",
+    "gpu": "RTX 5080 Laptop",
+    "measured_or_estimated": "estimated",
+    "quant": "Q3_K_M / Q2_K",
+    "context": "8K",
+    "vram": "15.58 GB (close to limit) / 13.03 GB (headroom)",
+    "runtime": "none",
+    "settings": "batch 1, FP16 KV"
+   },
+   {
+    "model": "gpt-oss 20B",
+    "gpu": "RTX 5080 Laptop",
+    "measured_or_estimated": "estimated",
+    "quant": "Q5_K_M / Q3_K_M / Q2_K",
+    "context": "8K",
+    "vram": "15.89 GB (close) / 11.46 GB / 9.39 GB",
+    "runtime": "none",
+    "settings": "batch 1, FP16 KV"
+   },
+   {
+    "model": "Qwen3.8 27B",
+    "gpu": "RTX 5080 Laptop",
+    "measured_or_estimated": "estimated",
+    "quant": "Q2_K",
+    "context": "8K",
+    "vram": "87% of 16 GB (close to limit)",
+    "runtime": "none",
+    "settings": "batch 1, FP16 KV"
+   },
+   {
+    "model": "Nemotron 3.5 Lightning 30B",
+    "gpu": "RTX 5080 Laptop",
+    "measured_or_estimated": "estimated",
+    "quant": "Q2_K",
+    "context": "8K",
+    "vram": "83% of 16 GB",
+    "runtime": "none",
+    "settings": "batch 1, FP16 KV"
+   },
+   {
+    "model": "GLM-4.7 Flash",
+    "gpu": "RTX 5080 Laptop",
+    "measured_or_estimated": "estimated",
+    "quant": "Q2_K",
+    "context": "8K",
+    "vram": "98% of 16 GB",
+    "runtime": "none",
+    "settings": "batch 1, FP16 KV"
+   },
+   {
+    "model": "Qwen3.5 9B",
+    "gpu": "RTX 5080 Laptop",
+    "measured_or_estimated": "estimated",
+    "quant": "Q8_0",
+    "context": "8K",
+    "vram": "78% of 16 GB",
+    "runtime": "none",
+    "settings": "batch 1, FP16 KV"
+   },
+   {
+    "model": "Laguna XS.2",
+    "gpu": "RTX 5080 Laptop",
+    "measured_or_estimated": "estimated",
+    "quant": "Q2_K",
+    "context": "8K",
+    "vram": "92% of 16 GB",
+    "runtime": "none",
+    "settings": "batch 1, FP16 KV"
+   },
+   {
+    "model": "Gemma 4 31B",
+    "gpu": "RTX 5080 Laptop",
+    "measured_or_estimated": "estimated",
+    "quant": "Q2_K",
+    "context": "8K",
+    "vram": "129% of 16 GB (trade-offs)",
+    "runtime": "none",
+    "settings": "batch 1, FP16 KV"
+   }
+  ],
+  "conflicts": [
+   {
+    "baseline_claim": "Qwen3.6-35B-A3B runs at Q4_K_M (19.13 GiB) via llama.cpp --n-cpu-moe 21 with about 9 GiB of experts in RAM, 128k context.",
+    "source_claim": "Qwen3.6 35B A3B 'Will not run' at Q4_K_M (22.05 GB, 138%); only Q2_K loads (96%).",
+    "assessment": "Baseline wins. Periscale models only GPU-resident weights and states all MoE parameters must be in VRAM; it does not model llama.cpp expert offload to system RAM. Its KV is also overestimated about 4x for this hybrid model."
+   },
+   {
+    "baseline_claim": "Qwen3-Coder-Next runs via llama.cpp UD-IQ4_XS with --n-cpu-moe 37 (about 26 GiB in RAM).",
+    "source_claim": "Qwen3 Coder Next: 'Will not run'.",
+    "assessment": "Baseline wins for the same reason (no CPU offload modelling). Speed is a separate question that Periscale does not address."
+   },
+   {
+    "baseline_claim": "Gemma 4 26B-A4B Google QAT Q4_0 (13.45 GiB) fits all on GPU with 64k q8_0 KV.",
+    "source_claim": "Gemma 4 26B A4B Q4_K_M with 8K context does not fit (17.80 GB, 111%); best fit Q2_K.",
+    "assessment": "Baseline file size is authoritative. Periscale adds a generic 1.96 GB overhead, FP16 KV that appears to ignore sliding-window layers, and does not offer the QAT Q4_0 file. Needs on-device confirmation of the 64k claim, but Periscale is not evidence against it."
+   },
+   {
+    "baseline_claim": "Qwen3.8-27B UD-Q3_K_XL 12.24 GiB, all on GPU, 64k q8_0 KV.",
+    "source_claim": "Qwen3.8 27B best fit is Q2_K at 87% (close to limit) at 8K.",
+    "assessment": "Periscale has no UD/IQ quants and assumes FP16 KV; baseline uses the real file size. Baseline stands; measure on device."
+   },
+   {
+    "baseline_claim": "gpt-oss-20b MXFP4 GGUF 11.28 GiB, 128k context on llama.cpp.",
+    "source_claim": "gpt-oss 20B Q4_K_M 11.32 GB weights, 13.26 GB at 8K, 'largest context that still loads: 128K'.",
+    "assessment": "Broad agreement that it fits with long context, but Periscale's weight figure is in decimal GB and comes from a generic Q4_K_M, not the native MXFP4 (real file 12.11 GB decimal). Agreement is coincidental, not corroboration."
+   }
+  ],
+  "agreements": [
+   "16 GB VRAM for the RTX 5080 Laptop matches NVIDIA's spec table (16 GB GDDR7) and nvidia-smi (16303 MiB).",
+   "gpt-oss 20B fits fully on the GPU with long context (128K claimed), consistent with baseline pick #4.",
+   "gpt-oss 120B, Nemotron 3 Super 120B, DeepSeek V4 Flash and other 100B+ models 'Will not run', consistent with the baseline exclusions (the baseline excludes gpt-oss-120b over RAM, not only VRAM).",
+   "Gemma 4 31B does not fit comfortably (129% even at Q2_K), consistent with its exclusion in the baseline.",
+   "NVIDIA official laptop spec read live: RTX 5080 Laptop 896 GB/s, 1334 AI TOPS, 7680 CUDA cores, 1500 - 2287 MHz boost, matching the baseline machine profile."
+  ],
+  "kb_notes": [
+   {
+    "target_doc": "docs/community-benchmarks.md",
+    "note": "Periscale (https://periscale.ai/gpus/rtx-5080-laptop, data as of 2026-10-30) is a VRAM-fit calculator, not a benchmark: verdicts are weights + FP16 KV at 8K + a fixed overhead, with no throughput, no bandwidth, and identical results for the laptop and desktop RTX 5080. Do not cite it for performance."
+   },
+   {
+    "target_doc": "docs/model-selection.md",
+    "note": "Generic 'can I run it' calculators such as Periscale (https://periscale.ai/gpus/rtx-5080-laptop) mark Qwen3.6-35B-A3B and Qwen3-Coder-Next as 'Will not run' on 16 GB because they assume every MoE parameter must sit in VRAM. llama.cpp --n-cpu-moe moves experts to system RAM, so size MoE models by the real GGUF file size against VRAM + free RAM, not by these verdicts."
+   },
+   {
+    "target_doc": "docs/model-selection.md",
+    "note": "Calculators that price a quant by a fixed bits-per-weight (Periscale: gpt-oss 20B Q4_K_M = 11.32 GB, Gemma 4 26B A4B Q4_K_M = 13.97 GB) miss native formats (MXFP4, Google QAT Q4_0, unsloth UD quants) and hybrid or sliding-window KV layouts. Use the actual file size from the Hugging Face API and the model's config.json for KV."
+   },
+   {
+    "target_doc": "docs/sources.md",
+    "note": "periscale.ai/gpus/rtx-5080-laptop: calculator-estimate, low credibility for this project. It has no measurements, its bandwidth field is empty, and it is internally inconsistent (Gemma 4 26B A4B: 8K context 'does not' fit at Q4_K_M, yet 'largest context that still loads at Q4_K_M: 128K tokens'). Reviewed 2026-11-15."
+   },
+   {
+    "target_doc": "docs/host-setup.md",
+    "note": "NVIDIA's official spec table (https://www.nvidia.com/en-us/geforce/laptops/50-series/, read 2026-11-15) lists the GeForce RTX 5080 Laptop GPU at 1334 AI TOPS, 7680 CUDA cores, 1500 - 2287 MHz boost, 16 GB GDDR7 and 896 GB/s. Third-party GPU pages such as Periscale omit the bandwidth figure, which sets decode speed."
+   }
+  ],
+  "gaps": [
+   "Periscale does not publish its runtime-overhead formula or bits-per-weight table; the bpw and KV-layer inferences in this review are reverse-engineered from three pages.",
+   "Only three per-model detail pages were read; the other verdicts come from the GPU list percentages only.",
+   "NVIDIA's spec table row for memory bandwidth has 6 values for 7 memory-configuration columns (layout quirk); the 896 GB/s mapping for the 5080 Laptop agrees with the baseline but comes from column order.",
+   "The page gives no TGP; NVIDIA's laptop table on the fetched page did not show a per-SKU TGP range in the parsed text."
+  ],
+  "new_candidates": []
+ },
+ "check": {
+  "verdicts": [
+   {
+    "item": "Publisher, type, as-of: Periscale small-business AI directory, calculator-estimate, 'Data last updated 2026-10-30'",
+    "verdict": "confirmed",
+    "evidence": "Raw curl -A Mozilla/5.0 of /gpus/rtx-5080-laptop returned HTTP 200, 45390 bytes. Footer: 'AI agents, MCP servers and automations that help small businesses do more with the same team.' /can-i-run: 'How the estimate works ... These are estimates, so real use varies with your runtime and drivers. Data last updated 2026-10-30.'"
+   },
+   {
+    "item": "GPU header: 16 GB, Bandwidth '—', Typical price '—', Released 2025; '51 of 75 popular models load, each at its best-fitting quantization'",
+    "verdict": "confirmed",
+    "evidence": "Verbatim in extracted page text: 'VRAM 16 GB | Bandwidth — | Typical price — | Released 2025' and '51 of 75 popular models load, each at its best-fitting quantization.'"
+   },
+   {
+    "item": "Laptop and desktop pages give identical verdicts",
+    "verdict": "confirmed",
+    "evidence": "diff of extracted text of /gpus/rtx-5080-laptop (with 'Laptop' removed) vs /gpus/rtx-5080 differs only in the title/name lines; the desktop page also shows Bandwidth '—'. Every model, quant and percentage is identical."
+   },
+   {
+    "item": "Method: weights + KV at 8K + overhead, batch 1, FP16 KV, headroom = within 85% of VRAM, MoE 'all N parameters must reside in memory'",
+    "verdict": "confirmed",
+    "evidence": "Detail pages: 'Batch size 1 with a single chat session', 'KV cache computed at FP16 (2 bytes per element).', 'Mixture-of-experts model: all 36.0B parameters must reside in memory even though only 3.0B are active per token.', gpt-oss page: 'The model, KV cache, and runtime overhead fit within 85% of your VRAM at these settings.'",
+    "correction": "Small nuance: the Gemma 4 26B A4B page text says 'Reduce the context length, pick a smaller quantization, or accept CPU offloading', so CPU offload is mentioned as an option, but it is never modelled in any number."
+   },
+   {
+    "item": "Qwen3.6 35B A3B Q4_K_M: 19.46 weights + 0.63 KV + 1.96 overhead = 22.05 GB, 138%, Will not run; Q2_K 15.39 GB close to limit; Q3_K_M 18.95, Q5_K_M 26.57, Q6_K 30.04, Q8_0 38.16, FP16 69.55",
+    "verdict": "confirmed",
+    "evidence": "Verbatim on /can-i-run/qwen3-6-35b-a3b/on/rtx-5080-laptop: 'Weights (36.0B parameters) 19.46 GB | KV cache at 8K tokens 0.63 GB | Runtime overhead 1.96 GB | Total vs 16 GB 22.05 GB', '138% of VRAM', all listed per-quant totals match."
+   },
+   {
+    "item": "Gemma 4 26B A4B Q4_K_M 13.97 + 1.88 + 1.96 = 17.80 GB, 111%, trade-offs, yet 'Largest context that still loads at Q4_K_M: 128K tokens'; Q3_K_M 15.58, Q2_K 13.03",
+    "verdict": "confirmed",
+    "evidence": "Verbatim: 'The Q4_K_M weights of Gemma 4 26B A4B fit on the RTX 5080 Laptop, but 8K tokens of context does not.' and 'Largest context that still loads at Q4_K_M: | 128K tokens'. 128K is also the context slider maximum, so the field looks like a bug that echoes the slider cap."
+   },
+   {
+    "item": "gpt-oss 20B Q4_K_M 11.32 + 0.38 + 1.56 = 13.26 GB, 83% headroom; Q5_K_M 15.89, Q3_K_M 11.46, Q2_K 9.39; 'largest context 128K' inconsistent",
+    "verdict": "confirmed",
+    "evidence": "Verbatim on /can-i-run/gpt-oss-20b/on/rtx-5080-laptop. Computed by this checker: 0.38 equals 24 layers x 2 x 8 KV heads x 64 x 2 B x 8192 = 0.375 GiB, i.e. full attention on every layer with no SWA, so the reviewer's hedge 'unless SWA is modelled for that model only' does not apply: the 128K claim is simply inconsistent (about 6 GiB KV + 12.9 GB > 16 GB)."
+   },
+   {
+    "item": "KV overestimate for Qwen3.6 hybrid (all 40 layers counted as full attention, about 4x)",
+    "verdict": "confirmed",
+    "evidence": "40 x 2 x 2 heads x 256 x 2 B x 8192 = 671,088,640 B = 0.625 GiB, which matches the page's 0.63 exactly in GiB (the reviewer's 0.67 GB decimal is close but the exact match is binary).",
+    "correction": "The exact match in GiB suggests Periscale labels GiB as 'GB'. If its weight figures are also GiB, the reviewer's statement that Periscale's Qwen3.6 Q4_K_M weights are 'about 5% below the real file' (19.46 vs 20.54 GB decimal) is wrong: compared GiB to GiB, 19.46 vs 19.13 GiB is about 1.7% above. Treat the size gap as small and the unit as uncertain; the main point (generic bpw, no native MXFP4/QAT/UD quants) stands."
+   },
+   {
+    "item": "GPU-list verdicts for baseline picks (Qwen3.8 27B Q2_K 87%, Qwen3.6 35B A3B Q2_K 96%, GLM-4.7 Flash Q2_K 98%, Laguna XS.2 Q2_K 92%, Nemotron 3.5 Lightning Q2_K 83%, Qwen3.5 9B Q8_0 78%, Gemma 4 31B Q2_K 129%, Qwen3 Coder Next / gpt-oss 120B / Nemotron 3 Super 120B / DeepSeek V4 Flash Will not run)",
+    "verdict": "confirmed",
+    "evidence": "All entries present verbatim in the /gpus/rtx-5080-laptop model list."
+   },
+   {
+    "item": "Conflicts with baseline (Qwen3.6 35B A3B, Qwen3-Coder-Next, Gemma 4 26B QAT, Qwen3.8 27B UD-Q3_K_XL) are real disagreements in which the baseline wins",
+    "verdict": "confirmed",
+    "evidence": "Baseline current-knowledge.md lines 67-75: Qwen3.6 Q4_K_M --n-cpu-moe 21 19.13 GiB; Qwen3.8-27B UD-Q3_K_XL 12.24 GiB all on GPU 64k q8_0; Gemma 4 26B QAT Q4_0 13.45 GiB; Qwen3-Coder-Next UD-IQ4_XS --n-cpu-moe 37; gpt-oss-20b MXFP4 11.28 GiB. Periscale's verdicts rest on GPU-only placement, FP16 KV and generic quants, which the page states explicitly. The disagreements are real but stem from modelling scope, not contrary evidence; the baseline's 64k-on-GPU claims still need on-device measurement."
+   },
+   {
+    "item": "Credibility 'low' for this project",
+    "verdict": "confirmed",
+    "evidence": "No measurements, no throughput, empty bandwidth field, identical laptop/desktop output, generic quants, FP16 full-attention KV, and an internal inconsistency on two of three detail pages. 'Low' is fair."
+   }
+  ],
+  "credibility_fair": true,
+  "credibility_note": "Fair. Periscale is a pure VRAM-fit calculator. It calls itself an estimate ('These are estimates'), it has no throughput or bandwidth data, it gives byte-identical verdicts for the laptop and desktop RTX 5080, it counts every layer as full-attention FP16 KV (checked for Qwen3.6 and gpt-oss), and it puts all MoE parameters in VRAM. Its 'largest context' field contradicts its own totals.",
+  "overall": "holds-with-corrections",
+  "summary": "I re-fetched 6 pages raw with curl -A Mozilla/5.0, all HTTP 200, into $SCRATCH/src/periscale-check/. Every load-bearing number in the review matches the pages verbatim: the GPU header, the 51-of-75 count, the per-model percentages, the Qwen3.6, Gemma 4 26B and gpt-oss 20B VRAM breakdowns and per-quant totals, the method statements and the 2026-10-30 data date. The laptop and desktop pages differ only in the name. The baseline conflicts are real and come from modelling scope, so the baseline stands, and the low credibility rating is fair.\n\nCorrections:\n(1) Periscale's KV figures match full-attention arithmetic exactly in GiB: 0.625 for Qwen3.6, 0.375 for gpt-oss. That suggests the site labels GiB as 'GB'. If its weight figures are GiB too, the claim that its Qwen3.6 weights are 'about 5% below the real file' is wrong: compared GiB to GiB, 19.46 vs 19.13 GiB is about 2% above.\n(2) The gpt-oss KV also ignores sliding-window attention. The reviewer's hedge that SWA might be modelled for that model only should go: the '128K largest context' value is plainly inconsistent and probably echoes the slider maximum.\n(3) The Gemma page does mention 'accept CPU offloading' as an option, but no number models it."
+ }
+}

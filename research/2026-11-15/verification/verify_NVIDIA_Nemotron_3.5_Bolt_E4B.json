@@ -1,0 +1,275 @@
+{
+ "name": "NVIDIA Nemotron 3.5 Bolt E4B (repos: nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-BF16 and nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-4GB)",
+ "hf_repo": "nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-BF16",
+ "official_org": {
+  "value": "NVIDIA. Owned by the HF org 'nvidia' (API: isVerified true, 1044 models). The vendor blog at research.nvidia.com links to all four repos. The bare id nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B does not exist (the HF API returns 401). The real repo ids are -BF16 (safetensors), -4GB (official Q4_K_M GGUF), -BF16-DFlash-NVFP4 and -4GB-DFlash (speculative drafters). Also listed on build.nvidia.com/nvidia/nemotron-3.5-bolt-e4b (HTTP 200).",
+  "source_url": "https://huggingface.co/api/organizations/nvidia/overview ; https://research.nvidia.com/labs/nemotron/NVIDIA-Nemotron-3.5-Bolt-E4B-4GB/",
+  "support": "direct-statement"
+ },
+ "release_date": {
+  "value": "Public release 2026-10-23: the card says 'Hugging Face 10/23/2026', 'GA (10/23/2026)', and the blog is dated October 23, 2026. The HF API createdAt is 2026-10-05T04:25:48Z for -BF16 and 2026-10-05T04:26:43Z for -4GB, which is the date the repos were created privately. Artificial Analysis lists 2026-10-23. Both dates fall inside 2025-11-15..2026-11-15.",
+  "source_url": "https://huggingface.co/api/models/nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-BF16",
+  "support": "direct-statement"
+ },
+ "license": {
+  "value": "Card metadata: license: other, license_name: openmdw-1.1. OpenMDW-1.1 is permissive: 'permission is hereby granted, free of charge, to deal in the Model Materials without restriction'. Its conditions are: keep the agreement and notices when you redistribute; the grant terminates if you sue claiming the materials infringe a patent or copyright; there are no restrictions on outputs. The card adds that the Gemma 4 base is governed by Apache-2.0 and that the model is 'ready for commercial or non-commercial use'.",
+  "source_url": "https://raw.githubusercontent.com/OpenMDW/OpenMDW/main/1.1/LICENSE.OpenMDW-1.1",
+  "support": "direct-statement"
+ },
+ "params": {
+  "value": "The card states '8B (4B effective)'. The HF API safetensors total is 7,996,156,490 BF16 parameters, including the vision and audio towers. From the safetensors header: decoder layers 7.35 GiB (about 3.95B params), per-layer embeddings (embed_tokens_per_layer) 5.25 GiB (about 2.82B), embed_tokens 1.25 GiB (0.67B, tied lm_head), audio tower 0.56 GiB, vision tower 0.28 GiB. It is dense, with no MoE (enable_moe_block false).",
+  "source_url": "https://huggingface.co/api/models/nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-BF16?blobs=true",
+  "support": "source-backed"
+ },
+ "architecture": {
+  "value": "Gemma4ForConditionalGeneration (model_type gemma4), a post-trained google/gemma-4-E4B-it. Text config: 42 layers, hidden 2560, 8 query heads, 2 KV heads. Sliding layers use head_dim 256; full layers use global_head_dim 512 (transformers sets the full-attention head_dim to global_head_dim). layer_types: 35 sliding_attention (window 512) and 7 full_attention at indices 5, 11, 17, 23, 29, 35, 41. num_kv_shared_layers 18, so layers 24-41 reuse earlier KV and only layers 0-23 own a cache: 4 full layers and 20 sliding layers. vLLM v0.33.0 gemma4.py implements the KV sharing. Per-Layer Embeddings: hidden_size_per_layer_input 256, vocab 262144. final_logit_softcapping 30. The repo also ships model-frozen-shared-kv.safetensors (110 MB, unused k/v projections for layers 24+).",
+  "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-BF16/raw/main/config.json",
+  "support": "direct-statement"
+ },
+ "context_length": {
+  "value": "Native 65,536 tokens: config max_position_embeddings is 65536, against 131072 in the base Gemma 4 E4B. The card says 'Input: up to 64K tokens; output: up to 64K tokens', and the blog says '64k context'. NVIDIA documents no extended or YaRN context. Ollama's tags page shows 128K for the e4b GGUF tags and 64K for the MLX tags, which conflicts with the config. This is exactly the 64k minimum that Ollama's OpenCode doc asks for.",
+  "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-BF16/raw/main/config.json",
+  "support": "contested"
+ },
+ "modalities": {
+  "value": "NVIDIA's card says 'Inputs / Outputs: Text / text', and every NVIDIA serve command sets --limit-mm-per-prompt image/video/audio to 0. The BF16 checkpoint still contains the Gemma 4 vision tower (16 layers) and audio tower (12 layers), its HF tag is image-text-to-text, the RedHatAI card lists Text/Image/Audio input, and Ollama shows vision and audio badges. NVIDIA neither evaluated nor endorses image or audio input. Text-only paths: in vLLM, --limit-mm-per-prompt all zero or --language-model-only (flag present in v0.33.0 arg_utils.py). The official -4GB GGUF ships no mmproj, so it is text-only. Unsloth and bartowski provide mmproj files if you want vision.",
+  "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-BF16/raw/main/README.md",
+  "support": "direct-statement"
+ },
+ "thinking": {
+  "mode": "toggle",
+  "how_to_toggle": "The chat_template.jinja reads enable_thinking (with '| default(false)') and emits '<|think|>' at the top of the system turn when it is true. preserve_thinking keeps reasoning on tool-call turns. A separate conversational_mode kwarg makes replies short and voice-style; leave it off for coding. vLLM: per request extra_body {\"chat_template_kwargs\": {\"enable_thinking\": true|false}}; server default --default-chat-template-kwargs '{\"enable_thinking\": true}'; reasoning comes back in the 'reasoning' field with --reasoning-parser gemma4. llama.cpp llama-server: the same chat_template_kwargs per request (shown in NVIDIA's GGUF card), or server-wide --chat-template-kwargs '{\"enable_thinking\":true}'. Ollama: 'think': true|false on /api/chat, or reasoning_effort on the OpenAI endpoint; supported values via /api/show. Conflict: the card says thinking is enabled by default, but the template defaults to false and the RedHatAI card says 'the template default is off'. Set it explicitly.",
+  "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-BF16/raw/main/chat_template.jinja",
+  "support": "direct-statement"
+ },
+ "tool_calling": {
+  "supported": "yes",
+  "format": "Gemma 4 native: tool declarations rendered as '<|tool>declaration:NAME{description:<|\"|>...<|\"|>,parameters...}<tool|>' in the system turn, calls as '<|tool_call>call:NAME{...}<tool_call|>', results as '<|tool_response>response:NAME{...}<tool_response|>'. vLLM parser gemma4; llama.cpp PEG gemma4 format.",
+  "evidence": "The template renders the tools list (lines 227-233) and maps OpenAI role:tool messages to tool_response blocks by tool_call_id. NVIDIA RL-trained the model for multi-turn tool use. The card gives a tools example with --enable-auto-tool-choice --tool-call-parser gemma4 and reports BFCL-v3, ToolSandbox, Tau2 and When2Call. Caveat from the card: the template rejects 'stray' tool messages that do not directly follow an assistant tool_calls message. llama.cpp b12418 common/chat.cpp detects Gemma4 by the string '<|tool_call>call:', which appears in this template, so --jinja selects the gemma4 parser.",
+  "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-BF16/raw/main/chat_template.jinja",
+  "support": "direct-statement"
+ },
+ "checkpoints": [
+  {
+   "repo": "nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-BF16",
+   "format": "safetensors BF16 (main 15,882,494,698 B + frozen-shared-kv 110,118,048 B; index total_size 15,992,314,836 B = 14.89 GiB)",
+   "official": true,
+   "publisher": "NVIDIA",
+   "size_gb": 15.99,
+   "source_url": "https://huggingface.co/api/models/nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-BF16?blobs=true"
+  },
+  {
+   "repo": "nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-4GB",
+   "format": "GGUF Q4_K_M (imatrix from RL rollouts), file Nemotron-3.5-Bolt-E4B-Q4_K_M.gguf, no mmproj (text only)",
+   "official": true,
+   "publisher": "NVIDIA",
+   "size_gb": 6.18,
+   "source_url": "https://huggingface.co/api/models/nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-4GB?blobs=true"
+  },
+  {
+   "repo": "nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-BF16-DFlash-NVFP4",
+   "format": "DFlash speculative drafter, ModelOpt NVFP4 safetensors (for vLLM)",
+   "official": true,
+   "publisher": "NVIDIA",
+   "size_gb": 0.58,
+   "source_url": "https://huggingface.co/api/models/nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-BF16-DFlash-NVFP4?blobs=true"
+  },
+  {
+   "repo": "nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-4GB-DFlash",
+   "format": "DFlash drafter GGUF BF16 (for llama.cpp --spec-type draft-dflash)",
+   "official": true,
+   "publisher": "NVIDIA",
+   "size_gb": 0.74,
+   "source_url": "https://huggingface.co/api/models/nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-4GB-DFlash?blobs=true"
+  },
+  {
+   "repo": "RedHatAI/NVIDIA-Nemotron-3.5-Bolt-E4B-NVFP4",
+   "format": "compressed-tensors nvfp4-pack-quantized W4A4 (GPTQ) on LM linears; embeddings, PLE, lm_head and vision/audio towers BF16; 10.76 GiB",
+   "official": false,
+   "publisher": "RedHatAI",
+   "size_gb": 11.55,
+   "source_url": "https://huggingface.co/RedHatAI/NVIDIA-Nemotron-3.5-Bolt-E4B-NVFP4"
+  },
+  {
+   "repo": "ggml-org/NVIDIA-Nemotron-3.5-Bolt-E4B-GGUF",
+   "format": "GGUF Q8_0 8.03 GB, BF16 15.05 GB, DFlash NVFP4 drafter 0.60 GB",
+   "official": false,
+   "publisher": "ggml-org",
+   "size_gb": 8.03,
+   "source_url": "https://huggingface.co/api/models/ggml-org/NVIDIA-Nemotron-3.5-Bolt-E4B-GGUF?blobs=true"
+  },
+  {
+   "repo": "unsloth/NVIDIA-Nemotron-3.5-Bolt-E4B-GGUF",
+   "format": "GGUF UD-IQ2_M 3.53 to UD-Q8_K_XL 8.19 GB (UD-Q4_K_XL 5.06, UD-Q6_K_XL 7.26), BF16 15.05; mmproj BF16/F16 0.99, Q8_0 0.56; DFlash Q8_0 0.40",
+   "official": false,
+   "publisher": "unsloth",
+   "size_gb": 5.06,
+   "source_url": "https://huggingface.co/api/models/unsloth/NVIDIA-Nemotron-3.5-Bolt-E4B-GGUF?blobs=true"
+  },
+  {
+   "repo": "bartowski/NVIDIA-Nemotron-3.5-Bolt-E4B-GGUF",
+   "format": "GGUF IQ2_M 3.14 to Q8_0 8.03 GB (Q4_K_M 5.16, Q5_K_M 5.98, Q6_K 6.45, Q6_K_L 6.63), bf16 15.05; mmproj 0.99",
+   "official": false,
+   "publisher": "bartowski",
+   "size_gb": 8.03,
+   "source_url": "https://huggingface.co/api/models/bartowski/NVIDIA-Nemotron-3.5-Bolt-E4B-GGUF?blobs=true"
+  },
+  {
+   "repo": "lmstudio-community/NVIDIA-Nemotron-3.5-Bolt-E4B-GGUF",
+   "format": "GGUF Q4_K_M 6.18, Q6_K 6.22, Q8_0 8.03 GB",
+   "official": false,
+   "publisher": "lmstudio-community",
+   "size_gb": 6.18,
+   "source_url": "https://huggingface.co/api/models/lmstudio-community/NVIDIA-Nemotron-3.5-Bolt-E4B-GGUF?blobs=true"
+  },
+  {
+   "repo": "turintech/Nemotron-3.5-Bolt-E4B-Artemis-FP8",
+   "format": "compressed-tensors FP8 (also -W8A8 12.69 GB, -W4A16 and -NVFP4 11.25 GB); 'Artemis' variants not verified to be plain quantizations",
+   "official": false,
+   "publisher": "turintech",
+   "size_gb": 12.69,
+   "source_url": "https://huggingface.co/api/models?search=Nemotron-3.5-Bolt-E4B&limit=100"
+  }
+ ],
+ "vllm": {
+  "arch_supported": "Yes. At tag v0.33.0, vllm/model_executor/models/registry.py line 427 maps 'Gemma4ForConditionalGeneration' to ('gemma4_mm', ...). gemma4.py implements num_kv_shared_layers. Tool parser 'gemma4' maps to gemma4_engine_tool_parser.Gemma4EngineToolParser (vllm/tool_parsers/__init__.py:253). Reasoning parser 'gemma4' maps to gemma4_engine_reasoning_parser.Gemma4ParserReasoningAdapter (vllm/reasoning/__init__.py:55).",
+  "min_version": "The card pins vllm/vllm-openai:v0.31.0 for the BF16 checkpoint. The lead note about a nightly image plus b12x applies to Bolt 74B, not E4B. v0.33.0 (current stable) has the arch and both parsers, so use v0.33.0.",
+  "best_checkpoint": "RedHatAI/NVIDIA-Nemotron-3.5-Bolt-E4B-NVFP4 (10.76 GiB). The official BF16 (14.89 GiB) does not fit the 0.92 budget.",
+  "weights_gib": 10.76,
+  "kv_bytes_per_token_bf16": 16384,
+  "kv_math": "Budget 16303 MiB x 0.92 = 14999 MiB = 14.65 GiB. BF16 official: 15,992,314,836 B = 14.89 GiB, already over budget. Language-only: 7.35 + 5.25 + 1.25 + 0.05 = 13.95 GiB, plus the 1.2 reserve = 15.15 GiB, still over. So vLLM cannot run the BF16 weights on this GPU. RedHatAI NVFP4: 11,553 MB = 10.76 GiB including towers. Pool = 14.65 - 10.76 - 1.2 = 2.69 GiB. KV per token, counting only the KV-owning full-attention layers (4 of them; the 18 shared layers own no cache): 2 x 4 x 2 heads x 512 head_dim x 2 B = 16,384 B (16 KiB) in BF16, 8 KiB in FP8. The 20 owning sliding layers cost 2 x 2 x 256 x 2 B x 20 = 40 KiB per token, capped at the 512 window, so about 20 MiB per sequence. Max single-request context: BF16 (2.69 GiB - 0.02) / 16 KiB is about 174,800 tokens; FP8 about 350,000; both capped at max_position_embeddings 65,536. A full 64K request uses only about 1.0 GiB of BF16 KV, so 2 to 3 concurrent 64K sequences fit. Cross-check: if KV sharing were not applied (7 full layers), 28 KiB per token still gives about 100k tokens, still capped at 65,536. turintech FP8 (11.82 GiB): pool 1.63 GiB, about 106k BF16-KV tokens, capped at 65,536, so it also fits.",
+  "est_max_context_tokens": 65536,
+  "fits": "yes",
+  "quant_on_sm120": "NVFP4 compressed-tensors in v0.33.0 (vllm/model_executor/kernels/linear/__init__.py _POSSIBLE_NVFP4_KERNELS). FlashInferCuteDsl needs capability family 100, so it is skipped. FlashInferCutlassNvFp4LinearKernel accepts has_device_capability(100), i.e. >= 10.0, so on sm_120 it is auto-selected first if FlashInfer is present. Next come FlashInferB12x (SM120+, needs FlashInfer's Sm120 b12x GEMM), CUTLASS FP4, Marlin W4A16, then the b12x pip-package kernels (docs/features/quantization/b12x.md: 'uv pip install vllm[b12x]', --linear-backend b12x). Inferred, not measured: the first start may JIT-compile FlashInfer kernels; discovery reports about 52 GiB host RAM for that (MAX_JOBS=2 workaround). Embeddings and lm_head stay BF16, so most of the checkpoint is not FP4. RedHatAI's own eval shows GPQA Diamond recovery of only 78.8% (59.6 to 47.0), against 99.7% on GSM8K and 94.9% on MMLU-Pro.",
+  "tool_call_parser": "gemma4",
+  "reasoning_parser": "gemma4",
+  "serve_command": "docker run --rm --gpus all --ipc=host -p 8000:8000 -v $HOME/.cache/huggingface:/root/.cache/huggingface vllm/vllm-openai:v0.33.0 RedHatAI/NVIDIA-Nemotron-3.5-Bolt-E4B-NVFP4 --served-model-name nemotron-bolt --max-model-len 65536 --max-num-seqs 4 --max-num-batched-tokens 8192 --gpu-memory-utilization 0.92 --kv-cache-dtype auto --enable-auto-tool-choice --tool-call-parser gemma4 --reasoning-parser gemma4 --limit-mm-per-prompt '{\"image\":0,\"video\":0,\"audio\":0}' --default-chat-template-kwargs '{\"enable_thinking\": true}'   (adapted from the NVIDIA card (vllm/vllm-openai:v0.31.0, H100, BF16, --gpu-memory-utilization 0.85, --max-num-batched-tokens 65536) and the RedHatAI card. The card's '--chat-template $MODEL/chat_template.jinja' would not resolve for a hub id, so drop it: the template is embedded in tokenizer_config.json.)",
+  "known_issues": "Open vLLM issues on the gemma4 parsers, which Bolt uses: #54256 tool calls dropped when transitioning out of the reasoning channel ('<channel|>call:'); #50889 non-streaming finish_reason=tool_calls with an empty tool_calls array under concurrent load; #53363 tool_choice='required' not enforced; #50477 named forced tool_choice ignored; #47906 bare-value arguments returned as strings; #49717 streaming content empty while reasoning holds the whole output; #57231 and #57232 channel-token leaks when no reasoning parser is set; #39392 <pad> tokens under concurrency; #39072 Gemma4 plus a coding agent missing the required 'path' argument; #50938 text before the reasoning tag escapes the parser. #62609 (B12X NVFP4 needs Blackwell 12x) concerns Bolt 74B on A100. No open issue names Bolt E4B. Also: the card's 1x H100 text mentions a 'Mamba cache dtype FP16', a copy-paste error since this model has no Mamba layers.",
+  "sources": [
+   "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/model_executor/models/registry.py",
+   "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/tool_parsers/__init__.py",
+   "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/reasoning/__init__.py",
+   "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/model_executor/models/gemma4.py",
+   "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/model_executor/kernels/linear/__init__.py",
+   "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/model_executor/kernels/linear/nvfp4/flashinfer.py",
+   "https://github.com/vllm-project/vllm/blob/v0.33.0/docs/features/quantization/b12x.md",
+   "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-BF16/raw/main/README.md",
+   "https://huggingface.co/RedHatAI/NVIDIA-Nemotron-3.5-Bolt-E4B-NVFP4",
+   "https://github.com/huggingface/transformers/blob/main/src/transformers/models/gemma4/configuration_gemma4.py",
+   "https://github.com/vllm-project/vllm/issues/54256",
+   "https://github.com/vllm-project/vllm/issues/50889"
+  ]
+ },
+ "llamacpp": {
+  "arch_supported": "Yes. At build b12418, src/models/gemma4.cpp and common/parsers/gemma4.cpp exist, and common/chat.cpp picks the Gemma4 PEG format when the template contains '<|tool_call>call:', which the Bolt template does. NVIDIA's GGUF card pins ghcr.io/ggml-org/llama.cpp:server-cuda13-b11459 with --jinja (tag b11459 exists on GitHub). Note: the numbered bNNNNN builds are now marked prerelease on GitHub; the 'latest' release is v1.0.0 (2026-11-13).",
+  "gguf_repo": "ggml-org/NVIDIA-Nemotron-3.5-Bolt-E4B-GGUF (Q8_0) for best quality, or the official nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-4GB (Q4_K_M, the build NVIDIA evaluated)",
+  "quant": "Q8_0 (8.03 GB); the official Q4_K_M (6.18 GB) is the NVIDIA-evaluated alternative",
+  "file_gib": 7.48,
+  "est_vram_gib": 6.5,
+  "est_ram_gib": 3,
+  "est_context_tokens": 65536,
+  "offload_plan": "Everything on the GPU (-ngl 999); no --n-cpu-moe because the model is dense. Inferred arithmetic: llama.cpp keeps token-embedding inputs (tok_embd plus about 2.82B per-layer-embedding params) in host RAM. The NVIDIA blog backs this: Q4_K_M uses 3.5 to 4.3 GB of VRAM on an RTX 5070 despite the 6.18 GB file. Q8_0 GPU share: decoder weights about 3.95B x 8.5 bit = 4.2 GB, plus output/tied head about 0.7 GB. KV at 64K: 4 owning full layers x 2 x 2 heads x 512 x 2 B = 16 KiB per token, so 1.0 GiB F16 (about 0.53 GiB with -ctk/-ctv q8_0). Sliding-window cache about 40 KiB x (512 + ubatch) is about 40 MiB. Compute buffers 0.5 to 1 GiB. Total about 6 to 7 GiB VRAM. Even if llama.cpp did not apply KV sharing (7 full layers), KV would be 1.75 GiB and still fit. Host RAM about 3 GiB.",
+  "server_command": "docker run --rm --gpus all -p 8080:8080 -v $HOME/models:/models:ro ghcr.io/ggml-org/llama.cpp:server-cuda13-b12418 -m /models/NVIDIA-Nemotron-3.5-Bolt-E4B-Q8_0.gguf --alias nemotron-bolt --host 0.0.0.0 --port 8080 -c 65536 -ngl 999 -fa on --jinja --temp 1.0 --top-p 0.95 --top-k 64 --chat-template-kwargs '{\"enable_thinking\":true}'   (based on the NVIDIA card command, which uses server-cuda13-b11459, -c 65536 -ngl 999 --jinja. For speculative decoding add --spec-draft-model /models/Nemotron-3.5-Bolt-E4B-DFlash-BF16.gguf --spec-type draft-dflash --spec-draft-n-max 7 --spec-draft-ngl 999 with the NVIDIA -4GB + -4GB-DFlash pair. The server-cuda13-b12418 tag itself was not checked on ghcr.)",
+  "tool_calling_note": "--jinja (on by default) uses the embedded template, and llama.cpp detects the Gemma4 tool format from it, so OpenAI tools and tool_calls work in principle. NVIDIA's GGUF card shows only plain chat and a thinking request against llama-server, not a tool request ('Deployment: llama.cpp (recipe pending)'). No open llama.cpp issue mentions Bolt.",
+  "sources": [
+   "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-4GB/raw/main/README.md",
+   "https://github.com/ggml-org/llama.cpp/blob/b12418/common/chat.cpp",
+   "https://github.com/ggml-org/llama.cpp/tree/b12418/src/models",
+   "https://github.com/ggml-org/llama.cpp/releases/tag/v1.0.0",
+   "https://research.nvidia.com/labs/nemotron/NVIDIA-Nemotron-3.5-Bolt-E4B-4GB/",
+   "https://huggingface.co/api/models/ggml-org/NVIDIA-Nemotron-3.5-Bolt-E4B-GGUF?blobs=true"
+  ]
+ },
+ "ollama": {
+  "tag": "nemotron-3.5-bolt:e4b-q4_K_M (7.9 GB, the Linux GGUF). Also :e4b (7.2 to 7.9 GB, digest 4354fecbfc04), :e4b-q8_0 9.8 GB, :e4b-bf16 17 GB, and MLX-only :e4b-nvfp4 7.2 GB, :e4b-mxfp8 12 GB, :e4b-mlx-bf16 17 GB. WARNING: nemotron-3.5-bolt:latest is the 74B-A9B model (25 GB, 256K), not E4B.",
+  "size_gb": 7.9,
+  "context": "Tags page lists 128K for the GGUF e4b tags and 64K for the MLX tags; the model's config caps at 65,536. Ollama's default context is 4k on GPUs under 24 GiB, so set num_ctx or OLLAMA_CONTEXT_LENGTH=65536.",
+  "capabilities": "Badges: vision, tools, thinking, audio. Input listed as Text, Image. Thinking toggle: 'think': true/false (or reasoning_effort on /v1). 69.2K downloads, updated about 3 weeks ago.",
+  "source_url": "https://ollama.com/library/nemotron-3.5-bolt/tags"
+ },
+ "benchmarks": [
+  {
+   "name": "BFCL-v3",
+   "score": "68.51 (BF16); 67.31 (Q4_K_M). Gemma4 E4B-it 66.39, Qwen3.5-4B 70.95",
+   "setting": "NVIDIA NeMo Gym harness, reasoning mode",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-BF16"
+  },
+  {
+   "name": "Tau2-Bench",
+   "score": "55.10 (BF16); 52.32 (Q4_K_M). Qwen3.5-4B 75.06, Gemma4 E4B 38.50",
+   "setting": "NeMo Gym, reasoning mode, avg accuracy",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-BF16"
+  },
+  {
+   "name": "ToolSandbox",
+   "score": "68.77 (BF16); 74.13 (Q4_K_M)",
+   "setting": "NeMo Gym, reasoning mode",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-BF16"
+  },
+  {
+   "name": "When2Call Multi-Turn",
+   "score": "63.36 (BF16); 60.50 (Q4_K_M)",
+   "setting": "NVIDIA internal benchmark, not yet released",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-BF16"
+  },
+  {
+   "name": "IFBench",
+   "score": "63.79 (BF16) / 64.00 (Q4_K_M) self-reported",
+   "setting": "NeMo Gym, reasoning mode",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-BF16"
+  },
+  {
+   "name": "IFBench (Artificial Analysis)",
+   "score": "61.1%",
+   "setting": "Artificial Analysis independent eval of 'Nemotron 3.5 Bolt E4B 4GB'. AA Intelligence Index v5 = null (not scored); Terminal-Bench 4.0, LiveCodeBench, tau2 = null",
+   "self_reported": false,
+   "source_url": "https://artificialanalysis.ai/models/nemotron-3-5-bolt-e4b-4gb"
+  },
+  {
+   "name": "RULER 64K / LongBench v2 48K",
+   "score": "86.99 / 50.50 (BF16)",
+   "setting": "NeMo Gym; RULER run without reasoning",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-BF16"
+  },
+  {
+   "name": "GPQA Diamond / MMLU-Pro / GSM8K (third-party)",
+   "score": "BF16 59.6 / 71.3 / 93.5; RedHatAI NVFP4 47.0 / 67.7 / 93.2",
+   "setting": "RedHatAI, Inspect inspect_evals, vLLM, thinking on, temp 1.0, pass@1, B200",
+   "self_reported": false,
+   "source_url": "https://huggingface.co/RedHatAI/NVIDIA-Nemotron-3.5-Bolt-E4B-NVFP4"
+  },
+  {
+   "name": "SWE-bench Verified / Pro, Terminal-Bench, LiveCodeBench, Aider",
+   "score": "not reported by NVIDIA or any independent source found",
+   "setting": "n/a",
+   "self_reported": false,
+   "source_url": "https://research.nvidia.com/labs/nemotron/NVIDIA-Nemotron-3.5-Bolt-E4B-4GB/"
+  }
+ ],
+ "speed_notes": "Measured by the vendor, NVIDIA blog (llama.cpp CUDA, Q4_K_M, batch 1, AIPerf): RTX 5070 12GB (672 GB/s) 133.4 tok/s decode, 548 ms TTFT, 3.5 GB VRAM at 0 cached / 3K in / 50 out; 106.2 tok/s, 1,238 ms TTFT, 4.3 GB VRAM at 32k cached / 2K in / 256 out. RTX Spark: 67.0 and 52.0 tok/s. Bandwidth arithmetic (inferred): Q4_K_M reads about 2.4 GB of decoder weights plus about 0.55 GB output head per token, so the ceiling on 896 GB/s is about 300 tok/s. Q8_0 reads about 4.9 GB, ceiling about 180 tok/s. Scaling the measured 5070 result by bandwidth (896/672) suggests about 140 to 180 tok/s on the RTX 5080 Laptop at Q4_K_M, lower at Q8_0, and lower still with the 140 W power limit (inferred). vLLM NVFP4 reads about 2.2 GB of FP4 linears plus 1.34 GB of BF16 tied lm_head per token, a ceiling of about 250 tok/s (inferred). DFlash drafter: NVIDIA claims up to 21% higher throughput than Gemma-4-E4B's MTP drafter. No independent RTX 50-series laptop measurement found.",
+ "opencode_fit": {
+  "verdict": "weak",
+  "recommended_runtime": "llama.cpp server-cuda13 (alternative: Ollama nemotron-3.5-bolt:e4b-q4_K_M with num_ctx 65536; vLLM v0.33.0 with RedHatAI NVFP4 works but adds the FP4 accuracy loss and possible first-start JIT cost)",
+  "recommended_checkpoint": "ggml-org/NVIDIA-Nemotron-3.5-Bolt-E4B-GGUF Q8_0 (8.03 GB), or the official nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-4GB Q4_K_M (6.18 GB)",
+  "recommended_context": "65536 (the hard model maximum, max_position_embeddings)",
+  "caveats": "1) NVIDIA built and positions Bolt E4B for voice/device assistants, NPCs and embedded agents. The blog says outright that 'a model that excels at agentic coding is often not the best fit for a fast home assistant', and NVIDIA publishes no coding or agentic-coding scores (no SWE-bench, Terminal-Bench, LiveCodeBench or Aider). 2) It has only 4B effective parameters. On NVIDIA's own table it trails Qwen3.5-4B on Tau2 (55.1 vs 75.1) and BFCL-v3 (68.5 vs 71.0). 3) The context ceiling is exactly 64K, the minimum OpenCode needs. OpenCode's system prompt plus tool schemas eat a large share of it, and the card's 'up to 64K output' shares the same 65,536 window. 4) The template rejects stray tool messages. Thinking defaults conflict (card says on, template says off), so set enable_thinking explicitly. The card recommends temperature 1.0 / top_p 0.95. 5) Several open vLLM gemma4 tool/reasoning parser bugs (#54256, #50889, #53363, #47906, #39072) can drop or corrupt tool calls. OpenCode v2.3.0 also starts discovered vLLM models with tools disabled, so declare capabilities.tools manually. 6) In Ollama, nemotron-3.5-bolt:latest is the 74B model (25 GB), so pin :e4b-q4_K_M, and the default context is 4k. 7) Where it fits: a fast, low-VRAM helper (title generation, small edits, a sub-agent) running next to a bigger coding model. It fits with lots of headroom and is permissively licensed (OpenMDW-1.1)."
+ },
+ "gaps": [
+  "Did not run anything locally. Tool calling through OpenCode, vLLM gemma4 parsers and llama.cpp's gemma4 PEG parser with this exact template is not end-to-end tested for Bolt.",
+  "Did not confirm that vLLM v0.33.0 skips loading the vision/audio towers when --limit-mm-per-prompt is all zero; the arithmetic conservatively includes them (about 0.88 GiB BF16).",
+  "Did not confirm in llama.cpp source that gemma4 applies num_kv_shared_layers to the KV cache, or that per-layer embeddings stay in host RAM. The VRAM estimate rests on NVIDIA's measured 3.5 to 4.3 GB for Q4_K_M and is inferred.",
+  "Did not check that ghcr.io/ggml-org/llama.cpp:server-cuda13-b12418 (or the card's b11459) image tag exists on ghcr.io; only the GitHub git tag b11459 was confirmed.",
+  "Which NVFP4 kernel is actually selected on sm_120 in the stock v0.33.0 image depends on whether FlashInfer in the image has the CUTLASS FP4 and Sm120 b12x GEMMs. That is inferred from the source order, not observed, and the FlashInfer JIT RAM cost (about 52 GiB, from discovery) was not re-verified.",
+  "No independent coding-agent benchmark exists for Bolt E4B: Artificial Analysis lists it but has Intelligence Index, Terminal-Bench and LiveCodeBench null; SWE-bench, Terminal-Bench, BFCL and Aider leaderboards do not list it.",
+  "Ollama context discrepancy unresolved: e4b GGUF tags show 128K while the config caps at 65,536. The Ollama Modelfile/template/params blobs were not read, and which quant ':e4b' resolves to on Linux (7.2 vs 7.9 GB) was not determined.",
+  "turintech 'Artemis' FP8/W8A8/W4A16/NVFP4 builds were sized but their cards were not read; it is unknown whether they are plain quantizations or modified weights.",
+  "Thinking default is contested: the card says enabled by default, while chat_template.jinja uses enable_thinking | default(false)."
+ ],
+ "within_last_12_months": true
+}

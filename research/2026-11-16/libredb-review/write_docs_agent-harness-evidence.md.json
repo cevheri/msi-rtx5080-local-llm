@@ -1,0 +1,37 @@
+{
+ "file": "$HOME/projects/llm/docs/agent-harness-evidence.md",
+ "summary": "I wrote $HOME/projects/llm/docs/agent-harness-evidence.md. It is the only file I created or changed, and no other document was edited. The main table has 40 rows: the 39 local Ollama tags in the libredb README table plus one hosted Gemini row, marked hosted only. Note the count: that table has 40 rows including Gemini, so it holds 39 local models, not 40. The README says 51 models are supported, so 11 supported models have no published timings and are not covered; the document records this as a gap. Recommendations: 6 to try here first, 4 already in the KB plan (ranks 1, 2, 5 and 9), 10 worth trying, 19 to skip here, and 1 hosted only. All checker corrections are in the document:\n- qwen2.5:14b decode ceiling is 100 vs 68 tok/s.\n- qwen3.6:27b passed on Ollama 0.32.13 without agent-turn suppression; that setting was added for 0.33.0.\n- qwen3:8b: the profile records 3/5 at temperature 0.8, and the failure at temperature 0 traces to a defect in a Studio tool reply.\n- qwen3:14b plan cell conflicts between page and profile.\n- qwen3.6:35b slowest run is 29 s on the page and 172 s in the README.\n- qwen3.8 llama.cpp fit leaves about 0.27 GiB against the 15.47 GiB CUDA reports.\n- qwen3.5:9b has contrary KB evidence: 5/25 with mostly malformed tool calls on llama.cpp.\n- The thermal losses are 18 of 270 runs.\n- The gemma4:e4b 4/5 re-read note belonged to another model and was removed.\n- gemma4:26b empty-turn wording follows the profile; the MLX inference is weakened; the 31b per-turn comparison is fixed.\n- KB never claimed the QAT tag fits.\n- q8_0 KV is 8.5 bits; cogito:14b at 64k is about 15.4 GiB.\n- The 12-month window claim is dropped. The Mac context is stated as 32k or 256k, unknown.\n- Nemotron GGUF tags are byte-identical to the older quant tags, so the drift warning is withdrawn. The Omni encoders are about 3 GiB, not 5.\n- gpt-oss 166 tok/s is about 87% of the desktop-scaled estimate and about 69% of the bandwidth ceiling.\n- OpenCode is among NVIDIA's \"supported harnesses\".\n- ornith is 5.5 GB on the Mac page vs 5.6 GB on the tag; lfm3 minimum version is 0.40.12 on the page vs 0.40.13 in the manifest.\n- ornith:35b should start at --n-cpu-moe 22. The Bonsai vendor note applies to the 27B only. muse-glimmer is \"at risk\" of the turn limit, not \"likely to exceed\" it.\nThe document passes a check for em and en dashes: none found. Prefill claims against the Mac are stated as unmeasured, because the KB's own rule puts laptop prefill at about 0.62x the desktop card.",
+ "try_here_first": [
+  "nemotron-3.5-lightning:30b on llama.cpp with the KB recipe (Q4_0, --n-cpu-moe 16): the only Nemotron with first-hand agent-loop evidence, 30/30 with thinking on and only a longer turn limit; it decides Lightning vs Bolt (rank 7)",
+  "qwen3.5:9b on Ollama at 128k: KB honorable mention, fits fully, zero-build path matching the evidence; tests the parser-path question raised by the 5/25 malformed-tool-call result on llama.cpp",
+  "gemma4:12b on Ollama with thinking off: fastest Gemma in the harness (11 s median), fits at 64k-128k; evidence holds only with reasoning suppressed and is engine-sensitive",
+  "ornith:9b (Ornith-1.0) on Ollama: cleanest pass in its lane with one plan retry, coding-agent fine-tune, fits at 128k; the KB exclusion was aimed at Ornith-1.5 on vLLM",
+  "ministral-3:8b on Ollama with q8_0 KV: every cell passed on its first attempt at defaults; best fast tool-calling sub-agent candidate",
+  "qwen2.5:7b on Ollama: cheapest cross-check that the harness reproduces on this GPU, with a known third-party desktop 5080 ceiling of 177-180 tok/s"
+ ],
+ "kb_changes_suggested": [
+  "docs/sources.md and docs/community-benchmarks.md: add the libredb-studio harness as a first-hand evidence class labelled '(measured on the M5 Max, libredb-studio)', with the 614 GB/s M5 Max transfer rule (1.46x for in-VRAM models, slower for spills) and the note that pass/fail transfers but whole-run seconds do not",
+  "docs/model-selection.md exclusions: reword Ministral 3 8B/14B, Gemma 4 E4B and Qwen3-Coder-30B-A3B so the reason is coding quality, not tool reliability; consider honorable mentions as tool-calling sub-agents",
+  "docs/model-selection.md: re-judge Nemotron 3.5 Lightning vs Bolt order given Lightning's first-hand 30/30; put Lightning next on the measure-first list",
+  "docs/model-selection.md line 300 and vllm/models.md around 690: disambiguate Ornith-1.0-9B (passed, Ollama repo 'ornith') from the excluded Ornith-1.5-9B",
+  "docs/model-selection.md: add an Ollama or llama.cpp Q4_K_M path for Qwen3.5-9B next to the vLLM NVFP4 recipe and record the 5/25 llama.cpp parser conflict",
+  "llamacpp/models.md line 86: the 'digest differs from 27b-q4_K_M' claim for qwen3.8 is stale (shared blob f5f1dd8920d4); recompute rank-1 UD-Q3_K_XL margin against 15.47 GiB (about 0.27 GiB)",
+  "Gemma 4 26B-A4B: add the empty-completion-deep-in-loop caveat beside llama.cpp #29655 and to OpenCode smoke tests; qualify the gemma4:26b-a4b-it-qat Ollama tag as probably spilling with its 1.11 GiB projector (about 16-16.5 GiB at 64k)",
+  "gpt-oss-20b rank 9: cite the 30/30 at low or no reasoning; note Ollama think=false is not the same as llama.cpp reasoning-effort low",
+  "docs/model-selection.md exclusions: add Qwen2.5 family and QwQ, qwen3:8b and :14b (40,960 context), Magistral Small 2506 (40,960 cap), Granite 4.1 30B and Cogito v1 32B (dense, do not fit), Nemotron 3 Nano 30B (superseded by Lightning), Nemotron 3 Nano Omni (Lightning plus encoders), LFM3-1.7B (card advises against agentic coding)",
+  "docs/opencode.md line 201: scope the 'small models fail agent loops' sentence to OpenCode-style long-context loops",
+  "Ollama runtime notes: pin ollama/ollama:0.33.0 to reproduce harness evidence, record digests, and set OLLAMA_CONTEXT_LENGTH at least 65536 since the default here is 4k"
+ ],
+ "unverified": [
+  "Every fit and speed figure except gpt-oss-20b is an estimate; no harness model has run on this laptop and Ollama is not pulled",
+  "The DDR5 configured speed (dmidecode) is unverified, so spill speed estimates assume about 60-80 GB/s effective",
+  "The Mac's Ollama context length for most models, and its runner (GGUF vs MLX) and digests, are not recorded",
+  "Whether each pass used native tool_calls or Studio's prose fallback, especially granite4.2:8b and qwen2.5-coder:14b",
+  "Whether Ollama clamps num_ctx to native context (qwen2.5 32k, qwen3:8b/14b 40,960) or runs past it without YaRN",
+  "Whether Ollama keeps the gemma4 vision projector on the GPU for text-only requests",
+  "Whether Ollama 0.33.0 loads today's gemma4 manifests with draft layers",
+  "Whether llama.cpp b12407 parses Ornith 1.0 and Nemotron Omni tool formats",
+  "The 11 supported libredb models without published timing rows are not covered",
+  "Relative link to llamacpp/models.md#9-gpt-oss-20b anchor taken from the KB README, not re-checked"
+ ]
+}

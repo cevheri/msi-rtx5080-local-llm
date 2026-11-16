@@ -1,0 +1,1 @@
+["-m","/hf/hub/models--ggml-org--NVIDIA-Nemotron-3.5-Lightning-30B-A3B-GGUF/snapshots/ba87e1d2152af029eb0e392b155c72c0dd92aa5b/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-Q4_0.gguf","--alias","local","-ngl","all","--n-cpu-moe","25","--moe-cache-mib","3200","-lm","none","-t","8","-fa","on","-c","131072","-np","1","--jinja","--reasoning","off","--temp","1.0","--top-p","0.95","-lv","4"]

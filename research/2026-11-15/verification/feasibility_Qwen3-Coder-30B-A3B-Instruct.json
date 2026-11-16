@@ -1,0 +1,66 @@
+{
+ "verdicts": [
+  {
+   "claim": "Checkpoint weight sizes: BF16 56.87 GiB, FP8 29.03 GiB, QuantTrio AWQ 15.66 GiB, stelterlab AWQ 15.55 GiB, cyankiwi AWQ 16.85 GiB, NVFP4 community 16.85 GiB; ggml-org GGUF Q4_K_M 16.75 / Q8_0 30.25 / BF16 56.90 GiB; unsloth UD-Q4_K_XL 16.45, UD-Q3_K_XL 12.86, Q4_K_M 17.28 GiB",
+   "verdict": "confirmed",
+   "correction": "All values match the HF API ?blobs=true sums re-read on 2026-11-15. ggml-org GGUF repo createdAt 2026-10-22, lastModified 2026-11-12. Support: direct-statement.",
+   "evidence_url": "https://huggingface.co/api/models/QuantTrio/Qwen3-Coder-30B-A3B-Instruct-AWQ?blobs=true ; https://huggingface.co/api/models/ggml-org/Qwen3-Coder-30B-A3B-Instruct-GGUF?blobs=true"
+  },
+  {
+   "claim": "Architecture: Qwen3MoeForCausalLM, 48 layers all full attention, 4 KV heads, head_dim 128, 128 experts / 8 active, moe_intermediate 768, max_position_embeddings 262144, rope_scaling null",
+   "verdict": "confirmed",
+   "correction": "config.json raw read matches exactly (sliding_window null, use_sliding_window false, mlp_only_layers []). GGUF metadata agrees (qwen3moe.block_count 48, head_count_kv 4, key/value_length 128, context_length 262144).",
+   "evidence_url": "https://huggingface.co/Qwen/Qwen3-Coder-30B-A3B-Instruct/raw/main/config.json"
+  },
+  {
+   "claim": "KV bytes per token 98,304 B BF16 / 49,152 B FP8; vLLM pool 14.65 - 9.55 - 1.2 = 3.90 GiB gives 42.6k BF16 / 85.2k FP8",
+   "verdict": "confirmed",
+   "correction": "Arithmetic is correct (2 x 48 x 4 x 128 x 2 = 98,304; 3.90 GiB = 4.188e9 B / 49,152 = 85.2k). But the premise that 6 GiB of AWQ experts actually leave the GPU is refuted below, so the 3.90 GiB pool is not reachable on v0.33.0. Support: source-backed arithmetic.",
+   "evidence_url": "https://huggingface.co/Qwen/Qwen3-Coder-30B-A3B-Instruct/raw/main/config.json"
+  },
+  {
+   "claim": "vLLM v0.33.0 plan: AWQ checkpoint + --cpu-offload-gb 6 --cpu-offload-params experts keeps 9.55 GiB on GPU and serves 65,536 context with FP8 KV",
+   "verdict": "refuted",
+   "correction": "On v0.33.0 the UVA offload of AWQ MoE experts is silently undone during load. AutoAWQMoEMethod.process_weights_after_loading (vllm/model_executor/layers/quantization/auto_awq.py:644-689) Marlin-repacks w13/w2_qweight and calls replace_parameter; the repacked tensor has a different shape (awq_marlin_repack.cu:261-262 out = {size_k/16, size_n*16/pack_factor} vs the AWQ (K, N/8) layout), so replace_parameter (vllm/model_executor/utils.py:121-131) rebinds .data to a new device tensor while the _vllm_is_uva_offloaded marker survives, and device_loading_context (vllm/model_executor/model_loader/utils.py:254-261) only re-offloads when the marker is absent. Open issue #66264 (2026-11-07, vLLM 0.33.0, sm_120) states 'On 0.33.0 ... every repacked expert tensor leaks' and reproduces an OOM in process_weights_after_loading; fix PR #66265 is still open. Expected result here: the full ~15.5 GiB of AWQ weights end up resident, exceeding the 14.65 GiB budget (OOM at load or no KV pool). Related open issues: #58178 (same un-offload via replace_parameter for MXFP4, pinned-memory 35% waste), #56410 (--cpu-offload-gb uses ~1.9x host RAM, RTX 5070 Ti 16 GB), #56283 (NoopOffloader/OOM with an AWQ model on a 16 GB RTX 5070 Ti, vLLM 0.28). Support: source-backed plus direct-statement in the issue; not run locally.",
+   "evidence_url": "https://github.com/vllm-project/vllm/issues/66264"
+  },
+  {
+   "claim": "Quant on sm_120: AWQ MoE runs through Marlin, an SM80-era kernel with no Blackwell-specific code; sm_120 support only inferred",
+   "verdict": "confirmed",
+   "correction": "Partly corrected: CMakeLists.txt at v0.33.0 compiles Marlin MoE explicitly for sm_120 (line 1388 MARLIN_MOE_ARCHS '8.0+PTX;12.0f', line 1390 '12.0a;12.1a'), so the kernel is built for this GPU, not just PTX-JIT. The WNA16 MoE auto order is RDNA3, FLASHINFER_TRTLLM, MARLIN, BATCHED_MARLIN, TRITON, HUMMING (re-prioritised by prioritize_humming) in fused_moe/oracle/int_wna16.py:126-139. Runtime correctness on sm_120 still untested.",
+   "evidence_url": "https://github.com/vllm-project/vllm/blob/v0.33.0/CMakeLists.txt"
+  },
+  {
+   "claim": "vLLM v0.33.0 registers Qwen3MoeForCausalLM and maps qwen3_coder / qwen3_xml to Qwen3EngineToolParser; flags --cpu-offload-gb and --cpu-offload-params exist",
+   "verdict": "confirmed",
+   "correction": "registry.py:203, tool_parsers/__init__.py:206-219, arg_utils.py:1470-1472 at tag v0.33.0. Add: OpenCode open issue #60202 reproduces qwen3-coder-30b-a3b-instruct on vLLM returning the raw <tool_call> in content (finish_reason stop) because OpenCode v2 omits tool_choice 'auto'; set tool_choice auto explicitly in the provider request options when using vLLM.",
+   "evidence_url": "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/tool_parsers/__init__.py ; https://github.com/anomalyco/opencode/issues/60202"
+  },
+  {
+   "claim": "llama.cpp Q4_K_M split: about 0.331 GiB of experts per layer and about 1.0 GiB of non-expert tensors",
+   "verdict": "confirmed",
+   "correction": "Corrected by parsing the GGUF header (12 MB range read, tensor table only): ggml-org Q4_K_M has all ffn_*_exps in Q4_K, 0.316 GiB per layer (15.19 GiB total), and non-expert tensors 1.56 GiB (token_embd and output both Q8_0, 315 MiB each). Since token_embd normally stays in host memory, GPU-resident non-expert is about 1.25 GiB. Recomputed: 64k q8_0 KV = 49,152 x 34/32 B x 65,536 = 3.19 GiB; 15.5 - 1.25 - 3.19 - 1.0 = 10.06 GiB / 0.316 = 31 layers on GPU, so --n-cpu-moe 17 (5.4 GiB experts in RAM). 128k: 6.38 GiB KV leaves 6.87 GiB = 21 layers, --n-cpu-moe 27 (8.5 GiB RAM). Same N values as the record; the per-layer and non-expert figures were slightly off but cancel out. Support: source-backed from GGUF metadata.",
+   "evidence_url": "https://huggingface.co/ggml-org/Qwen3-Coder-30B-A3B-Instruct-GGUF/resolve/main/Qwen3-Coder-30B-A3B-Instruct-Q4_K_M.gguf"
+  },
+  {
+   "claim": "llama.cpp b12418 and v1.0.0 contain common/parsers/qwen3-coder.cpp and select common_chat_params_init_qwen3_coder for this template; thinking disabled",
+   "verdict": "confirmed",
+   "correction": "b12418 published 2026-11-15 (prerelease=true), v1.0.0 published 2026-11-13 (prerelease=false); qwen3-coder.cpp is 10,316 bytes at both tags. chat.cpp b12418:1420-1427 selects it when the template contains '<tool_call>', '<function=', '<parameter=' and not the no-newline variant; the HF chat_template.jinja (6,211 chars, identical length to the GGUF's embedded tokenizer.chat_template) emits '\\n<tool_call>\\n<function=' (line 85), so the Qwen3-Coder path is taken. The template has no <think>. Open llama.cpp PRs #30193 and #28327 touch Qwen3-Coder argument parsing (key order, array<object> args), so edge cases remain. GGUF also carries sampling defaults (temp 0.7, top_p 0.8, top_k 20, repeat 1.05).",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/blob/b12418/common/chat.cpp"
+  },
+  {
+   "claim": "Ollama qwen3-coder:30b = q4_K_M, 19 GB, tools badge only",
+   "verdict": "confirmed",
+   "correction": "Tags page lists 30b, 30b-a3b-q4_K_M, 30b-a3b-q8_0, 30b-a3b-fp16, latest; 19GB for the 30b/q4 entries. Default 4k context on 16 GB still needs OLLAMA_CONTEXT_LENGTH or num_ctx. Also note OpenCode open issue #63899 (Ollama provider overrides limit.context with GGUF context_length).",
+   "evidence_url": "https://ollama.com/library/qwen3-coder/tags"
+  },
+  {
+   "claim": "Verdict: usable for OpenCode with working tool calls and >= 64k context, recommended runtime llama.cpp with Q4_K_M and --n-cpu-moe 17; vLLM second choice via AWQ + UVA offload reaching about 85k",
+   "verdict": "uncertain",
+   "correction": "The llama.cpp recommendation survives: GGUF exists with that exact name and size, arithmetic re-derived from tensor metadata, parser is source-confirmed. Not run end to end. The vLLM second choice as written is refuted on v0.33.0 (issue #66264). Realistic vLLM alternatives, all unverified: (a) the prefetch backend (--offload-backend prefetch --offload-group-size/--offload-num-in-group --offload-params experts), whose code explicitly re-syncs CPU storage after quantization repack (offloader/prefetch.py:340-347, 715-740), but it streams whole layers of experts (0.33 GiB each) over PCIe per step, so decode would be roughly an order of magnitude slower (inferred); (b) wait for PR #66265 / a release containing it; (c) v0.34.0 pre-release, unchecked. Best realistic config: llama.cpp server-cuda13, ggml-org Q4_K_M, -c 65536 -ctk q8_0 -ctv q8_0 -fa on --n-cpu-moe 17 (or -c 131072 --n-cpu-moe 27), --jinja.",
+   "evidence_url": "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/model_executor/offloader/prefetch.py"
+  }
+ ],
+ "overall": "holds-with-corrections",
+ "summary": "Weight sizes, config, KV arithmetic, parser names and llama.cpp support all re-verify. The primary recommendation (llama.cpp, ggml-org Q4_K_M 16.75 GiB, --n-cpu-moe 17 at 64k q8_0 KV, 27 at 128k) holds. A GGUF header parse corrected the split: experts are 0.316 GiB per layer and non-expert tensors 1.56 GiB (about 1.25 GiB on GPU), and the --n-cpu-moe values come out the same. The vLLM second choice is refuted for v0.33.0. The AWQ MoE Marlin repack goes through replace_parameter, which rebinds the UVA-offloaded expert tensors to device memory, and device_loading_context skips the re-offload because the marker survives (open issue #66264, which reproduces it on 0.33.0 + sm_120; fix PR #66265 is unmerged). As a result --cpu-offload-gb 6 --cpu-offload-params experts would not free VRAM, and the ~15.5 GiB AWQ checkpoint would exceed the 14.65 GiB budget. Marlin MoE is compiled for 12.0f at v0.33.0, so the kernel path itself is built for sm_120. Also, OpenCode issue #60202 reproduces this exact model on vLLM returning raw tool calls unless tool_choice auto is sent. Gaps: nothing was run end to end. Prefetch offload behaviour and speed, the v0.34.0rc state and real tok/s on RTX 50-series remain unverified. Scratch files are in $SCRATCH/q3c/."
+}

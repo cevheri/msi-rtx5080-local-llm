@@ -1,0 +1,91 @@
+{
+ "verdicts": [
+  {
+   "claim": "Repo XiaomiMiMo/MiMo-V2.6-Distill-Qwen-9B is the official Xiaomi MiMo org (fullname 'Xiaomi MiMo', 30 models, isVerified=false), not a re-upload",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/organizations/XiaomiMiMo/overview",
+   "correction": "Independent confirmation: the MiMo-V2.6 technical report (arXiv 2610.11959, sec. 7, footnote 2) links this exact HF repo as the open-sourced model, so ownership is direct-statement from the vendor's own paper."
+  },
+  {
+   "claim": "The card cites the technical report as arXiv 2610.11959 (2026-10-08)",
+   "verdict": "refuted",
+   "evidence_url": "https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Distill-Qwen-9B/raw/main/README.md",
+   "correction": "The 9B card cites 'MiMo-V2.6: Scaling Reinforcement Learning Towards Self-Improvement' with howpublished=https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Pro-RL and no arXiv ID. The Pro-RL card links a PDF on HF. The arXiv paper 2610.11959 does exist, with the same title, submitted 8 Oct 2026 (https://arxiv.org/abs/2610.11959), so the date is right but the card does not cite the ID."
+  },
+  {
+   "claim": "HF createdAt 2026-09-21T18:18:40Z, weights uploaded 2026-09-21T20:32-20:34Z, README edits 2026-09-22 and 2026-10-28; inside the 12-month window",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/XiaomiMiMo/MiMo-V2.6-Distill-Qwen-9B/commits/main"
+  },
+  {
+   "claim": "License MIT with an informational Use Restrictions notice that says it does not amend the licence; base Qwen3.5-9B is Apache 2.0",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Distill-Qwen-9B/raw/main/README.md",
+   "correction": "The card links no LICENSE file in the repo (the sibling list has no LICENSE). MIT comes only from the card metadata tag."
+  },
+  {
+   "claim": "9,409,813,744 BF16 params; 4 shards total 18,819,720,848 bytes (17.53 GiB); includes vision tower; 0 MTP tensors although mtp_num_hidden_layers=1",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/XiaomiMiMo/MiMo-V2.6-Distill-Qwen-9B?blobs=true",
+   "correction": "The index has 760 tensors, 333 of them model.visual.*, and 0 with 'mtp' in the name. My estimate of the vision tower size from the config (27 x 1152 width, 4304 FFN, plus a merger) is about 0.45B, which is consistent with the record's ~0.46B. Qwen3.5-9B total is 9,653,104,368."
+  },
+  {
+   "claim": "Architecture Qwen3_5ForConditionalGeneration, 32 layers (24 linear_attention + 8 full_attention at 3,7,...,31), 16 Q / 4 KV heads, head_dim 256, attn_output_gate, GDN 16 key / 32 value heads dim 128, conv 4, fp32 SSM, hidden 4096, inter 12288, vocab 248320, untied, rope_theta 1e7 partial 0.25 mRoPE, vision depth 27 width 1152",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Distill-Qwen-9B/raw/main/config.json"
+  },
+  {
+   "claim": "Context 262,144 (max_position_embeddings and tokenizer model_max_length); GGUF context_length 262144",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Distill-Qwen-9B/raw/main/config.json"
+  },
+  {
+   "claim": "Modalities: text, image and video in, text out (image-text-to-text, Qwen3VLProcessor); the template has audio placeholders but there is no audio encoder",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Distill-Qwen-9B/raw/main/tokenizer_config.json"
+  },
+  {
+   "claim": "Thinking on by default; enable_thinking=false appends '<think></think>'; past assistant turns re-render reasoning only from message.reasoning_content; vLLM mimo parser defaults enable_thinking True; --default-chat-template-kwargs exists in v0.33.0",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Distill-Qwen-9B/raw/main/chat_template.jinja",
+   "correction": "Strictly, the official template does not open <think> in the generation prompt (it ends at 'assistant\\n'). That the model opens <think> itself is inferred. The ggml-org patch pre-fills '<think>\\n' 'to establish the reasoning boundary', which suggests the unpatched behaviour was not reliable. vllm/parser/mimo.py:30-31 reads chat_template_kwargs.enable_thinking with default True (confirmed). generation_config: temp 0.6, top_p 0.95, top_k 20, eos [248046, 248044]."
+  },
+  {
+   "claim": "Tool calling supported in compact XML form <tool_call><function=NAME><parameter=ARG>v</parameter></function></tool_call>; vLLM parser 'mimo' is the right choice",
+   "verdict": "uncertain",
+   "evidence_url": "https://huggingface.co/api/models/ggml-org/MiMo-V2.6-Distill-Qwen-9B-GGUF",
+   "correction": "Contested. The official template renders <parameter=> only when history arguments are a dict. When arguments is a string (the OpenAI wire format) it emits the raw string, so the result is <function=NAME>{json}</function>. The ggml-org patched template header (also gist d8f56cd6..., 2026-09-22) says: 'Serialize object arguments as JSON, matching the upstream string-argument path and observed native output.' That implies the model was observed to emit JSON bodies, not <parameter=> tags. The vLLM v0.33.0 MiMoToolParser (rust/src/parser/src/tool/mimo.rs) is the Qwen3-Coder <parameter=> grammar with trim_parameter_newlines=false, and its tests cover only <parameter=> forms. If the model emits JSON bodies, vLLM's mimo parser may return empty or failed arguments. This needs an end-to-end test before 'mimo' is called dependable. The template diff against Flash-MOPD differs only in the {% generation %} lines (confirmed). The recipe parser args (--tool-call-parser mimo --enable-auto-tool-choice --reasoning-parser mimo, min_vllm_version 0.31.0) are confirmed."
+  },
+  {
+   "claim": "vLLM v0.33.0 source references: registry.py:204 and :617, tool_parsers/__init__.py:153 'mimo' -> MiMoToolParser, reasoning/__init__.py:119 'mimo' -> MiMoParserReasoningAdapter, parser/mimo.py and rust mimo.rs exist",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/tool_parsers/__init__.py"
+  },
+  {
+   "claim": "llama.cpp #29319 (closed 2026-09-23) fixed by PR #29257 in b11102 (2026-09-22); exclusion present at b12418 common/chat.cpp:1420-1428",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/issues/29319",
+   "correction": "PR #29257 is titled 'convert: add MiMo-V2.6 support', but it does include the common/chat.cpp exclusion. b11102 was published 2026-09-22T13:23Z. Issue #29931 is open and concerns MiMo-V2.6-Flash-RL MXFP4 with an MTP sidecar over Vulkan+RPC (confirmed)."
+  },
+  {
+   "claim": "Community checkpoints and sizes: ggml-org Q8_0 9.53 + mmproj 0.62; bartowski Q4_K_M 5.84 ... Q8_0 9.55, bf16 17.92, mmproj 0.92, ~956k downloads; cyankiwi 8.99 GB AWQ int4 group 32 asymmetric; letechlead 8.98; AxionML 11.87; ycui7 7.91; prithivMLmods 13.52; lovedheart 11.91",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/bartowski/MiMo-V2.6-Distill-Qwen-9B-GGUF?blobs=true",
+   "correction": "License tags differ: prithivMLmods is license:other, and bartowski, ycui7 and lovedheart carry no license tag. The record calls the prithivMLmods FP8 build MIT only implicitly, but treat it as 'other'."
+  },
+  {
+   "claim": "Ollama mimo-v2.6: tags 9b, latest, q4_K_M 6.6GB, q8_0 10GB, gguf-bf16 19GB, nvfp4 8.7GB, mxfp8 11GB, mlx-bf16 19GB; vision/tools/thinking; 256K; 93.3K downloads; 'ollama launch opencode --model mimo-v2.6'",
+   "verdict": "confirmed",
+   "evidence_url": "https://ollama.com/library/mimo-v2.6/tags",
+   "correction": "The page shows both 93.3K and 187.1K counts. Which one is the pull count for the 9b tag was not resolved."
+  },
+  {
+   "claim": "Benchmarks (SFT): SWE-bench Verified 61.1 (base 60.0) avg@3; SWE-bench Pro 44.6 (32.0) avg@3; Terminal Bench 2.1 37.1 (27.0) avg@1; Toolathlon-Verified 35.2 (25.9) avg@1; AutomationBench v1.0.6 30.3 (5.0) avg@1; MiMo Code (mini) 51.6 (19.5) avg@3 internal",
+   "verdict": "confirmed",
+   "evidence_url": "https://arxiv.org/abs/2610.11959",
+   "correction": "The exact values match the card and the report's Table 6. All are vendor self-reported, including the Qwen3.5-9B baselines: Qwen's own 9B card reports no SWE-bench Verified score. 'Harness not disclosed' is only partly true. Report Table 7 gives per-harness SFT SWE-bench Verified numbers: mini-harness1-4 61.7/63.9/61.7/63.1, codex 58.5, claude code 61.7, mini-swe-agent 65.3, mean 62.3. For SWE-bench Pro the mean is 44.4. The report also lists RL checkpoints that were not released (SWE-V 66.2, TB2.1 52.8). Do not attribute those to this repo. The card's 'OfficeQA' is 'OfficeQA Pro' in the report. No independent benchmark was found."
+  }
+ ],
+ "overall": "holds-with-corrections",
+ "summary": "The identity and capability facts hold. The vendor's own arXiv report (2610.11959, submitted 2026-10-08) links this exact repo, the HF createdAt is 2026-09-21, and the license tag is MIT. The params (9,409,813,744; 18.82 GB, vision included, 0 MTP tensors), the config architecture, the 262,144 context, the thinking toggle, the vLLM v0.33.0 source line references, the llama.cpp fix chain and every benchmark value (report Table 6) were all reproduced. One factual correction: the 9B card does not cite the arXiv ID. It cites the report through the Pro-RL HF URL. Main contested item: the ggml-org patched template header (and gist d8f56cd6) says MiMo's 'observed native output' puts JSON arguments inside <function=NAME>, and the official template emits raw JSON when history arguments are strings. vLLM's 'mimo' parser handles only the <parameter=> XML form, so 'mimo parser is dependable for tool calls' is unverified and needs an end-to-end test. Minor points: 'harness not disclosed' is partly wrong, since Table 7 gives per-harness SWE scores, including claude code 61.7 and codex 58.5. All scores and baselines are self-reported. prithivMLmods FP8 is license:other. The Ollama page shows two pull counts (93.3K and 187.1K). Working files are in $SCRATCH/fc9b/."
+}

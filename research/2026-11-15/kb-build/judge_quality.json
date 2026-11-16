@@ -1,0 +1,75 @@
+{
+ "ranking": [
+  {
+   "rank": 1,
+   "name": "Qwen3.8-27B",
+   "runtime": "llama.cpp ghcr.io/ggml-org/llama.cpp:server-cuda-b12407, all on GPU, -c 65536 -ctk/-ctv q8_0 -np 1, docker -e GGML_CUDA_DISABLE_GRAPHS=1 before the image (#27330 reproduced on driver 595.99.02)",
+   "checkpoint": "unsloth/Qwen3.8-27B-GGUF UD-Q3_K_XL (12.24 GiB); UD-IQ4_XS at about 48k as a quality variant",
+   "reason": "Has the strongest independent agentic scores of anything that fits. Artificial Analysis TB2.1 is 79.8 (xhigh), 65.2 (medium), 67.4 (low) and 49.1 (non-reasoning), with tau3-Banking 48.0/47.4/32.2/20.0 and Progress Index 303. Vals AI independently measures TB2.1 58.4 (BenchLM ledger). Every other candidate trails it by 20 points or more on TB2.1. It is dense and fits entirely in VRAM, with a decode bound of about 896/13 GB, roughly 65 tok/s. Independent llama-bench gives 42 tok/s for the Q4 build on a 3090-class card, so it should clear 15 tok/s comfortably. Caveats: 3-bit quality loss is unmeasured, and one community tester called 27B at Q3 with quantized KV 'lobotomized' compared with 35B-A3B at Q6 (Qwen3.5 era, opinion). The q8_0 KV decode penalty (#27623) is unresolved at b12407. Context is capped near 64-88k. It is verbose (AA: about 86-110k output tokens per task), so use reasoning_effort medium."
+  },
+  {
+   "rank": 2,
+   "name": "K2 Horizon MoVA 36B A4B",
+   "runtime": "llama.cpp server-cuda-b12407, -c 65536 -np 1 -ctk/-ctv q8_0, --n-cpu-moe 46 (corrected from 44 for VRAM margin)",
+   "checkpoint": "bartowski/K2-Horizon-MoVA-36B-A4B-GGUF Q4_K_M (21.14 GiB); IFM official Q4_K_M (20.83 GiB) for a thinking-off option",
+   "reason": "Independent Artificial Analysis TB2.1 56.6 and tau3-Banking 32.0, against 44.9 and 9.3 for Qwen3.6-35B-A3B. AutomationBench is 26.1 and Progress Index 281. That makes it the clear second on independent agentic evidence. Corrected memory: about 14.95 GiB VRAM at 64k plus a 0.3-0.5 GiB CUDA context, which is tight, so use --n-cpu-moe 46. About 13.5 GiB of experts sit in RAM. Inferred decode is about 58-70 tok/s as a bound and 25-40 tok/s in practice, which clears 15 tok/s. Ranked below #1 because: context tops out at 64-85k (192 KiB/token KV); reasoning is always on and the vendor wants high effort at temperature 1.0, so turns are long; llama.cpp support is about 6 weeks old; the strict template causes problems; and AA TB 4.0 is 0. Nothing has been run, so it needs a tool-call smoke test first."
+  },
+  {
+   "rank": 3,
+   "name": "Qwen3.6-35B-A3B",
+   "runtime": "llama.cpp server-cuda-b12407, --n-cpu-moe 21-22 (corrected for a 0.3-0.8 GiB margin), -c 131072 f16 KV or q8_0, -np 1",
+   "checkpoint": "ggml-org/Qwen3.6-35B-A3B-GGUF Q4_K_M (19.13 GiB, about 9 GiB of experts in RAM)",
+   "reason": "The best-corroborated independent evidence: AA TB2.1 44.9 and TB-Hard 34.8 agree with NVIDIA's same-harness SWE-bench Verified 70.12 and TB2.1 44.38 to within 1.8 points. It reaches 128k context, the runtime path is the most mature (Qwen3-Coder XML parsers, OpenCode-evaluated by Qwen), and a single-stream anchor exists (42.7 tok/s on the user's DGX Spark). 3B active means decode speed comfortably clears 15 tok/s even with experts in RAM. It sits below MoVA on independent agentic scores (tau3 only 9.3). Open risks: #30118 (tool call leaks into content) and #30357 (re-prefill on the hybrid architecture)."
+  },
+  {
+   "rank": 4,
+   "name": "K2 Horizon 7B",
+   "runtime": "llama.cpp server-cuda-b12407, all on GPU (-ngl 99), -c 65536 q8_0 KV, -np 1",
+   "checkpoint": "bartowski/K2-Horizon-7B-GGUF Q8_0 (8.92 GiB, post-FTPO weights by date, inferred); Q5_K_M for about 96k",
+   "reason": "Independent AA TB2.1 44.2 is level with Qwen3.6-35B-A3B (44.9), and tau3-Banking 27.6 is far above it (9.3). The challenge corrected the claim that it 'matches' Qwen3.6: Qwen3.6 leads on SciCode, LCR and HLE. It is a 7B dense model fully in VRAM, so it is fast and has the simplest deployment. Ranked below Qwen3.6 because thinking is always on with high effort and long outputs (set OpenCode limit.output to about 16k), the SWE-bench Verified claim is vendor-only, runtime support is new, and context is 64-96k rather than 128k. Avoid the vLLM path: only pre-FTPO AWQ with FP8 KV reaches 64k, and #62743 breaks medium and low effort there."
+  },
+  {
+   "rank": 5,
+   "name": "Qwen3-Coder-Next (80B-A3B, non-thinking agentic coder)",
+   "runtime": "llama.cpp server-cuda-b12407 (CUDA 12.8 image, not cuda13), --n-cpu-moe 37, -c 131072 q8_0 KV, -np 1, container --memory sized for about 26 GiB in RAM",
+   "checkpoint": "unsloth/Qwen3-Coder-Next-GGUF UD-IQ4_XS (35.79 GiB, about 25.7 GiB of experts in RAM)",
+   "reason": "Independent AA TB2.1 38.2, tau2 79.5 and TB-Hard 18.2. Community SQL tool-calling scores were 20/25 (desktop RTX 5080) and 16/25 (OpenRouter). It is non-thinking, so OpenCode turns are short, which partly offsets its lower raw scores, and it gets 128k context with native Qwen3-Coder XML tool calls. Speed is DDR5-bound: 30-50 tok/s inferred with no measurement, so 15 tok/s is likely but unproven. Prefill may be slow (#25859). It uses most of the free RAM, and #28581 (IQ-quant garbage on sm_120 with nvcc 13.2) needs a check on the CUDA 12.8 image."
+  },
+  {
+   "rank": 6,
+   "name": "NVIDIA Nemotron 3.5 Bolt 74B-A9B (24GB GGUF)",
+   "runtime": "llama.cpp server-cuda-b12407, --n-cpu-moe 50, -c 65536 to 131072 f16 KV, no mmproj, -np 1",
+   "checkpoint": "nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB-GGUF (20.51 GiB, IQ2_XXS QAT experts; about 8 GiB of experts in RAM)",
+   "reason": "NVIDIA's same-harness table gives TB2.1 50.98 against 44.38 for Qwen3.6, MCP-Atlas 52.2 and tau3 17.0. That harness agrees with AA on other models, but this is NVIDIA's own model, so the placement rests on vendor-run numbers. Independent AA evidence is mixed: TB 4.0 0, AutomationBench 15.5 (above Qwen3.6's 5.2), AA-LCR 69.7. Corrected VRAM: 13.4 GiB source-backed plus about 1.4 GiB assumed compute and context at 128k, so 64k is the safer start. Decode is about 124 tok/s as a bound and 55-80 tok/s inferred. The machine is below NVIDIA's stated 32 GB+ floor, and NVIDIA's own agent replay is 32% slower than Qwen3.6."
+  },
+  {
+   "rank": 7,
+   "name": "Gemma 4 26B-A4B IT",
+   "runtime": "llama.cpp server-cuda-b12407, all on GPU, -c 65536 -ctk/-ctv q8_0 -fa on -np 1 (corrected: f16 KV at 64k does not fit)",
+   "checkpoint": "google/gemma-4-26B-A4B-it-qat-q4_0-gguf (13.45 GiB), text-only",
+   "reason": "Independent scores are consistent across two sources: AA TB2.1 39.0 and NVIDIA 37.22 / SWE-bench Verified 57.4. Community SQL tool-calling scored 21/25. It runs all on GPU, so it is fast. Tool reliability is the weak point: #29655 reports malformed multi-line write and edit tool args in llama.cpp, and the KAT harness saw hallucinated MultiEdit calls. tau2/tau3 (43.6/12.0) are low. Context is 79-129k with q8_0 KV."
+  },
+  {
+   "rank": 8,
+   "name": "Nanbeige4.3-33B",
+   "runtime": "llama.cpp server-cuda-b12407, -c 65536 (49152 fallback) -np 1 -fa on -ctk/-ctv q4_0, let --fit place layers, --override-kv tokenizer.ggml.add_space_prefix=bool:false until PR #31986 ships (corrected; workaround not verified)",
+   "checkpoint": "bartowski/Nanbeige_Nanbeige4.3-33B-GGUF IQ2_M (11.35 GiB)",
+   "reason": "It has the highest independent small-model score: AA Intelligence Index 20.4 (Qwen3.8 xhigh 20.1), TB 4.0 29.8, AutomationBench 53.1. On this card, though, the only config is a dense 33B at 2-bit with q4_0 KV, about 15.5-15.7 of 15.9 GiB. Quality loss there is unmeasured, and a community test saw a 2-bit collapse on a small model. The challenge refuted the claim that the bartowski GGUF fixes the b12407 tokenizer bug: every b12407 image mis-tokenizes until the override or #31986. It reasons at great length (158.5k tokens per AA task). Tool calls route to the Qwen3-Coder handler (corrected), untested. Speed bound about 75 tok/s (inferred), but the q4_0 KV FA dequant penalty is unmeasured. Trial candidate only."
+  },
+  {
+   "rank": 9,
+   "name": "GLM-4.7-Flash",
+   "runtime": "llama.cpp server-cuda-b12407, --n-cpu-moe 17-18, -c 65536 f16 KV (128k with q8_0), -np 1; not vLLM (glm47 parser bugs, offload refuted)",
+   "checkpoint": "unsloth/GLM-4.7-Flash-GGUF Q4_K_M (17.05 GiB)",
+   "reason": "Independent AA scores: tau2 98.8 (best in the set) and TB-Hard 22.0 (above Qwen3-Coder-Next's 18.2 and Gemma's 13.6), but no TB2.1 score. Community SQL tool-calling scored 19/25 at Q6. 3B active with a few experts in RAM puts decode well above 15 tok/s (inferred). Ranked below Gemma and Nanbeige because its evidence is on legacy metrics only, it is older (2026-01), and multi-turn agentic quality depends on round-tripping reasoning, which OpenCode v2.3.0 may not do."
+  },
+  {
+   "rank": 10,
+   "name": "Groot-19B-A3B-261023",
+   "runtime": "llama.cpp server-cuda-b12407, all on GPU, -c 131072 f16 KV (about 13.9 GiB corrected), -np 1; vLLM NVFP4 --language-model-only as second (risk #54331)",
+   "checkpoint": "GrootTeam/Groot-19B-A3B-261023-GGUF Q4_K_M (10.86 GiB)",
+   "reason": "It fits fully at 128k, uses the same Qwen3-Coder tool format and parsers as Qwen3.6, and should be very fast (about 2.06 GB read per token). It takes the last slot ahead of Xing4.0, LFM2.5, Ternary Bonsai 2 and Ornith, which also rest on vendor numbers, because one third-party run exists (Blackwall: tools 100, quality index 78.5, with no Qwen3.6 comparator). Its agentic scores are self-reported, and on the vendor's own chart it loses to its base on SWE-bench Verified. The challenge showed some of the vendor's baselines were copied rather than run. The publisher is anonymous, the repo has no LICENSE file, and there are community reports of altered verbatim path text, which is risky for a coding agent. Measure it A/B against Qwen3.6 before relying on it."
+  }
+ ],
+ "notes": "Method: I read current-knowledge.md, compact-old.json (all 22 records with corrections) and the reviews for artificialanalysis, reddit-18-models, reddit-small-local and benchlm, including their checks. I cross-checked AA values in scratchpad/src/artificialanalysis/own_table.txt. No browsing was needed.\n\nIndependent anchors used: AA TB2.1 / tau3. Qwen3.8 xhigh 79.8/48.0 and medium 65.2/47.4; MoVA 56.6/32.0; Qwen3.6 44.9/9.3; K2 7B 44.2/27.6; Gemma 26B 39.0/12.0; Coder-Next 38.2/5.4; Lightning 24.3/8.9; gpt-oss-20b 13.9. Nanbeige TB4.0 29.8 / II 20.4. Bolt 74B TB4.0 0 / AutomationBench 15.5. AA has no page for LFM2.5-24B, Ternary Bonsai, Ornith, Laguna, KAT, Xing, Groot or Mellum, so those rest on vendor claims only.\n\nLeft out of the top 10:\n- Xing4.0-29B-A4B: all scores self-reported, the vendor's Qwen3.6 comparators were relabelled (corrected), and there is a public report of failed write/edit tool calls.\n- LFM2.5-24B-A2B: vendor-only, and its own OpenCode SWE-V is 51.0 against 66.2 for Qwen3.6. Silent tool-call loss (#30490). The licence bars commercial use above USD 10M revenue.\n- Ternary Bonsai 2 27B: the only independent quality test regresses against Qwen3.8 (12/47 vs 19/47). Vendor tool-call looping issues.\n- Ornith-1.5-9B, KAT-Coder-V2.5-Dev, Laguna XS 2.1 and MiMo-V2.6-9B: vendor-only. Laguna and KAT trail or are contested against Qwen3.6 in their own tables.\n- Nemotron 3.5 Lightning: AA TB2.1 24.3.\n- gpt-oss-20b: AA TB2.1 13.9.\n- Mellum2.1 and the Gemma 4 12B/E4B, Granite, Nano 4B, Bolt E4B and Ministral small models: weak agentic scores.\n- Devstral Small 2: 64k only with q4_0 KV.\n- DeepSeek-R1 8B: no tool calls.\n- gpt-oss-120b: RAM-marginal.\n- Qwen3-Coder-30B-A3B: superseded.\n\nPlacements resting mainly on vendor claims: #6 Bolt (NVIDIA-run table, mixed AA) and #10 Groot.\n\nEvery speed figure is inferred: nothing has run on this machine, and the NVIDIA Container Toolkit with CDI must be installed first. Suggested measurement order for an OpenCode tool-call smoke test plus a short agentic A/B: #1, #2, #3, #4, then #6."
+}

@@ -1,0 +1,376 @@
+{
+ "summary": "I checked vLLM tool calling and reasoning output against main as of 2026-11-15 (latest commit dadf740edf, 2026-11-15T15:27Z). Sources were the raw docs, the parser registries, vLLM recipes, model cards and GitHub issues. Server-side tool calling needs `--enable-auto-tool-choice` plus `--tool-call-parser <name>`. Without a loaded parser, named or \"required\" tool_choice returns HTTP 400 (https://github.com/vllm-project/vllm/blob/main/docs/features/tool_calling.md, last changed 2026-11-10). The tool parser registry on main (vllm/tool_parsers/__init__.py, commit c3a347a548, 2026-11-08) has 62 names. The docs page is behind it: it does not document `qwen3_coder`, `gemma4`, `deepseek_v32/v4/v41`, `minimax_m2/m3` or `seed_oss`, which are all registered. Those flags come from the recipes and model cards instead (https://github.com/vllm-project/recipes). The documented flag sets for the families the user wants are:\n- Qwen3.5, 3.6 and 3.8, Qwen3-Coder(-Next), Nemotron 3 Nano and Nemotron 3.5 Lightning all use `--tool-call-parser qwen3_coder`.\n- Gemma 4 uses `gemma4` for both the tool and reasoning parser, plus `examples/tool_chat_template_gemma4.jinja`.\n- gpt-oss uses `openai`.\n- Devstral and Ministral use `mistral`.\n- GLM-4.7(-Flash) uses `glm47`.\n\nReasoning output comes back in the `reasoning` field. It used to be called `reasoning_content`, and old clients silently read an empty field (https://github.com/vllm-project/vllm/blob/main/docs/features/reasoning_outputs.md, 2026-11-05). Thinking is switched with `chat_template_kwargs.enable_thinking`, the server-wide `--default-chat-template-kwargs`, or `reasoning_effort`: `none` turns it off, `low/medium/high` turn it on. Tool calls are parsed only from `content`, not from `reasoning`. The table on that page marks tool calling with reasoning as supported for qwen3, gemma4, glm45 and others, and as not supported for deepseek_r1 and deepseek_v3.\n\nIn the current source, a request that has tools but no tool_choice defaults to \"auto\", and tool_choice \"auto\" with no tools falls back to \"none\" (vllm/entrypoints/openai/chat_completion/protocol.py check_tool_usage). That matters for OpenCode v2, which leaves tool_choice out (https://github.com/anomalyco/opencode/issues/60202, open). A prompt longer than `--max-model-len` is rejected with a 4xx validation error. Since v0.32.0, `max_tokens` is an upper bound that gets clamped, not a reservation (https://github.com/vllm-project/vllm/releases/tag/v0.32.0).\n\nFor gpt-oss, the recipe says Chat Completions function calling works, streaming included, but only with tool_choice=auto. Responses API streaming does not support function calling (https://github.com/vllm-project/recipes/blob/main/OpenAI/GPT-OSS.md, 2026-05-10). That conflicts with the newer tool_calling.md, which says gpt-oss requests skip the required/named-choice check.\n\nThe `vllm/vllm-openai` image sets WORKDIR /vllm-workspace, copies `examples/` into it, and has ENTRYPOINT `vllm serve` (docker/Dockerfile on main). So the recipe's relative template paths resolve inside the container. Docker Hub has v0.33.0 (2026-11-02), but GitHub's newest release object is v0.33.0rc3.\n\nThese open bugs affect coding agents:\n- gemma4: tool_choice=\"required\" is not enforced (vllm#53363).\n- qwen3 reasoning parser: the whole answer comes back as `reasoning` when a template closes the think block without passing enable_thinking (vllm#53284).\n- Qwen 3.6: \"System message must be at the beginning\" with agents that send more than one system message (vllm#41114, fix PR closed without merging).\n- Structural-tag grammar allows unbounded whitespace, so generation can run until max_tokens (vllm#67029).\n- gpt-oss: 500 errors (vllm#65770).",
+ "facts": [
+  {
+   "topic": "tool_choice modes",
+   "claim": "vLLM Chat Completions supports named function calling plus tool_choice auto, required (since vllm>=0.8.3) and none. Named and required use structured outputs and need a loaded tool parser; without one the request returns HTTP 400. Requests in the official Mistral format and gpt-oss requests are exempt from that check.",
+   "source_url": "https://github.com/vllm-project/vllm/blob/main/docs/features/tool_calling.md",
+   "source_date": "2026-11-10 (commit 57988c08c2)",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "core flags",
+   "claim": "--enable-auto-tool-choice is mandatory: the parser named by --tool-call-parser loads only when it is set. --tool-parser-plugin registers user parsers. --chat-template is optional and can point to a tool-aware Jinja file or be set to 'tool_use'.",
+   "source_url": "https://github.com/vllm-project/vllm/blob/main/docs/features/tool_calling.md",
+   "source_date": "2026-11-10",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "strictness",
+   "claim": "With tool_choice=auto, tool calls are pulled from raw text and the arguments may be malformed, unless a tool sets strict:true or the server sets --tool-strict-level function|parameter. 'function' constrains the call envelope and function name for every request that carries tools, which is useful because agent clients rarely set strict. The default is 'function' for glm47 and 'auto' for every other parser. VLLM_ENFORCE_STRICT_TOOL_CALLING=false turns structural tags off.",
+   "source_url": "https://github.com/vllm-project/vllm/blob/main/docs/features/tool_calling.md",
+   "source_date": "2026-11-10",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "tool_choice none",
+   "claim": "With tool_choice='none', tool definitions are still put into the prompt unless the server is started with --exclude-tools-when-tool-choice-none.",
+   "source_url": "https://github.com/vllm-project/vllm/blob/main/docs/features/tool_calling.md",
+   "source_date": "2026-11-10",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "default tool_choice",
+   "claim": "On current main, a request that has tools but no tool_choice is normalised to tool_choice='auto'. An empty tools array becomes None, and 'auto' with no tools falls back to 'none'. Any other tool_choice without tools raises 'When using `tool_choice`, `tools` must be set.'",
+   "source_url": "https://raw.githubusercontent.com/vllm-project/vllm/main/vllm/entrypoints/openai/chat_completion/protocol.py",
+   "source_date": "main 2026-11-15",
+   "support": "source-backed",
+   "notes": "check_tool_usage validator, lines ~978-1010"
+  },
+  {
+   "topic": "parser registry",
+   "claim": "The tool parser registry on main (vllm/tool_parsers/__init__.py) has 62 names: dots, deepseek_v3, deepseek_v31, deepseek_v32, deepseek_v4, deepseek_v41, cohere_command3, cohere_command4, ernie45, glm45, glm47, ling3, granite-20b-fc, granite, granite4, granite_toolcall_parser, hermes, hf, beam, poolside_v1, hunyuan_a13b, hy_v3, hy_v4, internlm, jamba, lfm2, kimi_k2, kimi_k3, k2_horizon, llama3_json, llama4_json, llama4_pythonic, longcat, mimo, minimax_m2, minimax_m3, minicpm5, mistral, olmo3, plamo3, muse, muse_glimmer, musespark, openai, phi4_mini_json, pythonic, qwen3_coder, qwen3_json, qwen3_xml, ripple, seed_oss, step3, step3p5, step5, inkling, xlam, gigachat3, functiongemma, gemma4, apertus, zaya, zaya_xml.",
+   "source_url": "https://github.com/vllm-project/vllm/blob/main/vllm/tool_parsers/__init__.py",
+   "source_date": "2026-11-08 (commit c3a347a548)",
+   "support": "direct-statement",
+   "notes": "The docs page does not cover qwen3_coder, gemma4, deepseek_v32/v4/v41, minimax_m2/m3, seed_oss, lfm2, phi4_mini_json, llama4_json and others. Use recipes and model cards for those."
+  },
+  {
+   "topic": "parser qwen3_coder / qwen3_xml",
+   "claim": "qwen3_coder and qwen3_xml both map to Qwen3EngineToolParser. The docs list Qwen3-Coder-480B-A35B and Qwen3-Coder-30B-A3B under qwen3_xml. The recipes and model cards use qwen3_coder for Qwen3.5, Qwen3.6, Qwen3.8, Qwen3-Coder-Next, Nemotron 3 Nano and Nemotron 3.5 Lightning.",
+   "source_url": "https://github.com/vllm-project/vllm/blob/main/vllm/tool_parsers/__init__.py",
+   "source_date": "2026-11-08",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "parser qwen3_json / hermes",
+   "claim": "hermes covers NousResearch Hermes 2 Pro, 2 Theta and 3, plus Qwen2.5 and QwQ-32B. qwen3_json is currently an alias of the hermes parser, with a TODO for a dedicated Qwen2.5/QwQ/Qwen3 JSON parser.",
+   "source_url": "https://github.com/vllm-project/vllm/blob/main/vllm/tool_parsers/__init__.py",
+   "source_date": "2026-11-08",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "parser gemma4 / functiongemma",
+   "claim": "gemma4 is Gemma4EngineToolParser. The recipe flags for google/gemma-4-26B-A4B-it are --enable-auto-tool-choice --tool-call-parser gemma4 --chat-template examples/tool_chat_template_gemma4.jinja --reasoning-parser gemma4, with min_vllm_version 0.25.0 and context_length 131072. functiongemma is documented for google/functiongemma-270m-it only.",
+   "source_url": "https://github.com/vllm-project/recipes/blob/main/models/Google/gemma-4-26B-A4B-it.yaml",
+   "source_date": "date_updated 2026-09-27",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "parser openai (gpt-oss)",
+   "claim": "--tool-call-parser openai is documented for openai/gpt-oss-20b and gpt-oss-120b. The gpt-oss-20b recipe uses --tool-call-parser openai --enable-auto-tool-choice and describes the model as 21B total / 3.6B active MXFP4 that 'runs on 16GB', with context_length 131072.",
+   "source_url": "https://github.com/vllm-project/recipes/blob/main/models/openai/gpt-oss-20b.yaml",
+   "source_date": "date_updated 2026-09-12",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "parser mistral",
+   "claim": "mistral is the parser for Mistral, Ministral 3, Magistral and Devstral. In the official Mistral format with a Tekken v11+ tokenizer, tool_choice required or named is not guaranteed to produce a call. The Devstral-Small-2-24B-Instruct-2512 card serves with --tool-call-parser mistral --enable-auto-tool-choice --max-model-len 262144.",
+   "source_url": "https://huggingface.co/mistralai/Devstral-Small-2-24B-Instruct-2512/raw/main/README.md",
+   "source_date": "repo created 2025-11-28",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "parser glm45 / glm47",
+   "claim": "glm45 covers GLM-4.5, 4.5-Air and 4.6. glm47 covers GLM-4.7 and GLM-4.7-Flash. The GLM-4.7-Flash card serves with --tool-call-parser glm47 --reasoning-parser glm45 --enable-auto-tool-choice, while the GLM-4.7 recipe uses --reasoning-parser glm47.",
+   "source_url": "https://huggingface.co/zai-org/GLM-4.7-Flash/raw/main/README.md",
+   "source_date": "lastModified 2026-01-29",
+   "support": "direct-statement",
+   "notes": "The two sources name different reasoning parsers (glm45 vs glm47). Both are registered."
+  },
+  {
+   "topic": "parser deepseek_v3 / v31 / v32 / v4 / v41",
+   "claim": "deepseek_v3 is documented for DeepSeek-V3-0324 and R1-0528, with example chat templates. deepseek_v31 is for DeepSeek-V3.1 and is documented to do tool calling only in non-thinking mode. deepseek_v32, deepseek_v4 and deepseek_v41 are registered but not on the docs page. No DeepSeek model in these parser docs is small enough for one 16 GB GPU.",
+   "source_url": "https://github.com/vllm-project/vllm/blob/main/docs/features/tool_calling.md",
+   "source_date": "2026-11-10",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "parser llama3_json / llama4_pythonic / pythonic",
+   "claim": "llama3_json is for Llama 3.1, 3.2 and 4 and needs examples/tool_chat_template_llama3.1_json.jinja. The docs say it has no parallel tool calls on Llama 3 and can emit wrongly typed arguments. llama4_pythonic with tool_chat_template_llama4_pythonic.jinja is recommended for Llama 4. pythonic is for Llama-3.2-1B/3B and ToolACE-8B, and the docs warn that small Llama models often break the format.",
+   "source_url": "https://github.com/vllm-project/vllm/blob/main/docs/features/tool_calling.md",
+   "source_date": "2026-11-10",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "other parsers",
+   "claim": "The docs map these parsers to these models: granite4 to Granite 4.0; granite_toolcall_parser to Granite 4.2; granite to Granite 3.0/3.1; internlm to internlm2.5; jamba to Jamba-1.5; xlam to Salesforce xLAM; kimi_k2 to Kimi-K2-Instruct; hunyuan_a13b; cohere_command3/4 to Command A Reasoning/Plus and North-Mini-Code (needs the cohere_melody package); longcat; mimo to MiMo-V2.6; step3p5 to Step-3.5/3.7 Flash; olmo3 to Olmo 3; gigachat3; apertus; muse/musespark; zaya to ZAYA1; ripple; hf/beam read the checkpoint response_template.",
+   "source_url": "https://github.com/vllm-project/vllm/blob/main/docs/features/tool_calling.md",
+   "source_date": "2026-11-10",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "hf parser",
+   "claim": "--tool-call-parser hf / --reasoning-parser hf parse output from the checkpoint's tokenizer_config response_template. They reject strict tools, required or named tool_choice, and parallel_tool_calls=false. Added in v0.32.0.",
+   "source_url": "https://github.com/vllm-project/vllm/releases/tag/v0.32.0",
+   "source_date": "2026-10-18",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "reasoning field",
+   "claim": "Reasoning text is returned in message.reasoning (delta.reasoning when streaming). The field used to be called reasoning_content, and clients that still read reasoning_content silently get an empty value.",
+   "source_url": "https://github.com/vllm-project/vllm/blob/main/docs/features/reasoning_outputs.md",
+   "source_date": "2026-11-05 (commit beb72da79f)",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "reasoning parser registry",
+   "claim": "The reasoning parser registry on main has: deepseek_r1, deepseek_v3, deepseek_v4, deepseek_v41, poolside_v1, cohere_command3, cohere_command4, ernie45, gemma4, glm45, glm47, ling3, openai_gptoss, granite, granite_thinking_parser, hf, beam, holo2, hunyuan_a13b, hy_v3, hy_v4, kimi_k2, kimi_k3, k2_horizon, mimo, minicpmv, minimax_m2, minimax_m2_append_think, minimax_m3, mistral, nemotron_v3, olmo3, plamo3, muse, muse_glimmer, musespark, qwen3, ripple, seed_oss, step3, step3p5, step5, inkling, zaya.",
+   "source_url": "https://github.com/vllm-project/vllm/blob/main/vllm/reasoning/__init__.py",
+   "source_date": "2026-11-08 (commit c3a347a548)",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "reasoning + tool calling matrix",
+   "claim": "In the docs table, reasoning parsers documented as working with tool calling include qwen3 (Qwen3 series), gemma4 (Gemma 4), glm45 (GLM-4.5), deepseek_r1 for QwQ-32B, minimax_m2_append_think, ernie45 for ERNIE-4.5-21B-A3B-Thinking, granite_thinking_parser (Granite 4.2), hunyuan_a13b, step3p5, zaya, ripple, hf and cohere. deepseek_r1 for the DeepSeek R1 series and deepseek_v3 for V3.1 are marked as not supporting tool calling.",
+   "source_url": "https://github.com/vllm-project/vllm/blob/main/docs/features/reasoning_outputs.md",
+   "source_date": "2026-11-05",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "reasoning with tools",
+   "claim": "When both parsers are enabled, the reasoning is still returned, and tool calls are parsed only from content, not from reasoning.",
+   "source_url": "https://github.com/vllm-project/vllm/blob/main/docs/features/reasoning_outputs.md",
+   "source_date": "2026-11-05",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "thinking on/off",
+   "claim": "Qwen3 has thinking on by default; turn it off with chat_template_kwargs {enable_thinking:false}. Gemma 4 has it off by default; turn it on with enable_thinking:true or reasoning_effort. A server-wide default is set with --default-chat-template-kwargs '{\"enable_thinking\": false}', and per-request kwargs override it. reasoning_effort low/medium/high injects enable_thinking=true and 'none' injects false. include_reasoning=false hides the reasoning but it is still generated. --reasoning-effort-map rewrites effort values. A per-request thinking_token_budget, with --reasoning-config start/end strings, caps reasoning length.",
+   "source_url": "https://github.com/vllm-project/vllm/blob/main/docs/features/reasoning_outputs.md",
+   "source_date": "2026-11-05",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "Qwen3.6/3.8 recipe flags",
+   "claim": "The Qwen3.6-35B-A3B recipe (min vLLM 0.17.0, context 262144, 35B/3B active, verified on rtx_5090) uses --enable-auto-tool-choice --tool-call-parser qwen3_coder --reasoning-parser qwen3, plus --language-model-only for text-only serving. The Qwen3.8-27B recipe uses the same parsers. It lists rtx_5090 as verified with NVFP4 on one card and --enforce-eager, and names a dedicated docker_image vllm/vllm-openai:qwen38.",
+   "source_url": "https://github.com/vllm-project/recipes/blob/main/models/Qwen/Qwen3.6-35B-A3B.yaml",
+   "source_date": "date_updated 2026-09-14 (3.6); 2026-10-15 (3.8-27B)",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "Qwen preserve_thinking",
+   "claim": "Qwen3.6 has an optional chat_template_kwargs preserve_thinking:true that keeps reasoning from earlier turns. On Qwen3.8-27B, preserve_thinking and enable_thinking are both on by default and can be set to false per request.",
+   "source_url": "https://huggingface.co/Qwen/Qwen3.8-27B/raw/main/README.md",
+   "source_date": "lastModified 2026-11-07",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "Nemotron flags",
+   "claim": "The Nemotron 3.5 Lightning 30B-A3B card and recipe use --reasoning-parser nemotron_v3 --tool-call-parser qwen3_coder --enable-auto-tool-choice. The recipe sets min vLLM 0.27.1, image vllm/vllm-openai:v0.28.0, context 262144, and lists only datacenter GPUs and DGX Spark as verified. The Nemotron-3-Nano-30B-A3B and 4B cards still tell you to download a nano_v3_reasoning_parser.py plugin (--reasoning-parser-plugin ... --reasoning-parser nano_v3), but nemotron_v3 is now a registered built-in.",
+   "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/raw/main/README.md",
+   "source_date": "lastModified 2026-08-24; recipe updated 2026-10-08",
+   "support": "direct-statement",
+   "notes": "Whether nemotron_v3 works for Nemotron-3-Nano (v3) without the plugin is inferred, not documented."
+  },
+  {
+   "topic": "gpt-oss API surface",
+   "claim": "For gpt-oss, function calling works on Chat Completions, including streaming. On the Responses API it works except with streaming. The recipe says only tool_choice='auto' is supported for function calling. Responses API limitations: usage accounting returns zeros, and tool invocations are batched rather than streamed. Reasoning effort is set in the system prompt ('Reasoning: high').",
+   "source_url": "https://github.com/vllm-project/recipes/blob/main/OpenAI/GPT-OSS.md",
+   "source_date": "last commit 2026-05-10",
+   "support": "direct-statement",
+   "notes": "Older than tool_calling.md, which says gpt-oss requests skip the named/required parser check. Whether required or named works for gpt-oss is unclear."
+  },
+  {
+   "topic": "chat vs responses",
+   "claim": "vLLM serves /v1/completions, /v1/chat/completions, /v1/chat/completions/batch, /v1/responses and more. parallel_tool_calls=false limits a response to at most one tool call. By default the server applies the model's generation_config.json sampling defaults; --generation-config vllm turns that off.",
+   "source_url": "https://github.com/vllm-project/vllm/blob/main/docs/serving/online_serving/openai_compatible_server.md",
+   "source_date": "2026-11-12 (commit 02ed6dc75a)",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "--api-key",
+   "claim": "--api-key (or VLLM_API_KEY) protects only /v1, /v2, /inference and /cohere. /invocations is not protected and exposes the same inference, so the docs advise a reverse proxy.",
+   "source_url": "https://github.com/vllm-project/vllm/blob/main/docs/serving/online_serving/openai_compatible_server.md",
+   "source_date": "2026-11-12",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "--served-model-name",
+   "claim": "served_model_name sets the name or names the API answers to. The first one is echoed in responses and used in Prometheus metrics. If unset, it defaults to the --model value. Codex and other clients must use this exact name.",
+   "source_url": "https://raw.githubusercontent.com/vllm-project/vllm/main/vllm/config/model.py",
+   "source_date": "main 2026-11-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "context overflow",
+   "claim": "A prompt longer than max-model-len raises VLLMValidationError (\"This model's maximum context length is N tokens. However, your prompt contains M input tokens...\"). That error is a VLLMClientError, which maps to a 4xx response. Since v0.32.0, max_tokens is clamped to the remaining context instead of being reserved, so a long prompt is no longer rejected just because max_tokens is large.",
+   "source_url": "https://raw.githubusercontent.com/vllm-project/vllm/main/vllm/renderers/params.py",
+   "source_date": "main 2026-11-15; v0.32.0 release 2026-10-18",
+   "support": "source-backed",
+   "notes": "Also see https://raw.githubusercontent.com/vllm-project/vllm/main/vllm/exceptions.py and get_max_tokens in vllm/entrypoints/serve/utils/api_utils.py"
+  },
+  {
+   "topic": "v0.32/v0.33 tool changes",
+   "claim": "v0.32.0 enforces parallel_tool_calls=false, supports tool_choice='required' while streaming, and checks tool parser compatibility at startup. v0.33.0rc3 streams tool arguments in linear time for GLM, Gemma 4, Qwen3 XML and MiniMax M2. In the Rust frontend, an empty tools array returns 400 and unsupported flags or fields fail instead of being ignored.",
+   "source_url": "https://github.com/vllm-project/vllm/releases/tag/v0.33.0rc3",
+   "source_date": "2026-11-02",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "Docker image",
+   "claim": "The vllm-openai image stage uses WORKDIR /vllm-workspace, copies examples/ into it, and has ENTRYPOINT [\"vllm\",\"serve\"]. A relative --chat-template examples/tool_chat_template_*.jinja therefore resolves inside the container, which pip installs do not ship (vllm#47600).",
+   "source_url": "https://raw.githubusercontent.com/vllm-project/vllm/main/docker/Dockerfile",
+   "source_date": "main 2026-11-15",
+   "support": "source-backed"
+  },
+  {
+   "topic": "Docker tags",
+   "claim": "Docker Hub vllm/vllm-openai has v0.33.0 and latest, both pushed 2026-11-02, plus v0.32.0 (2026-10-18). The default v0.32.0 image is built on CUDA 13.0, and cu129 variants exist. GitHub's newest release object is v0.33.0rc3, though a v0.33.0 git tag exists.",
+   "source_url": "https://hub.docker.com/v2/repositories/vllm/vllm-openai/tags?page_size=100&name=v0.3",
+   "source_date": "2026-11-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "Codex integration",
+   "claim": "The vLLM docs explain how to run Codex CLI against vLLM through the Responses API (wire_api='responses'). Their example is Qwen/Qwen3.6-27B with --reasoning-parser qwen3 --enable-auto-tool-choice --tool-call-parser qwen3_coder. The model name in the Codex config must match --served-model-name.",
+   "source_url": "https://github.com/vllm-project/vllm/blob/main/docs/serving/integrations/codex.md",
+   "source_date": "main 2026-11-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "OpenCode issue",
+   "claim": "OpenCode v2 (reported on 2.2.1, still open) does not send tool_choice:'auto' to @ai-sdk/openai-compatible providers. The reporter says a vLLM-backed gateway then leaves raw <tool_call> text in content and the agent stops after one turn. Setting body.tool_choice='auto' worked around it, but broke compaction with 400 'When using tool_choice, tools must be set' (#58821, closed 2026-10-28).",
+   "source_url": "https://github.com/anomalyco/opencode/issues/60202",
+   "source_date": "2026-10-29",
+   "support": "contested",
+   "notes": "On upstream vLLM main, a request with tools and no tool_choice already defaults to auto, and 'auto' with empty tools falls back to none (protocol.py). So a current vLLM server spoken to directly should not show this. The gateway may run an older vLLM or a proxy."
+  },
+  {
+   "topic": "OpenCode discovery",
+   "claim": "OpenCode's built-in vllm provider discovers models from /health and /v1/models. It silently drops entries whose owned_by is not 'vllm' or that have no max_model_len. That is fine for direct vLLM but breaks when a proxy sits in front.",
+   "source_url": "https://github.com/anomalyco/opencode/issues/57460",
+   "source_date": "2026-10-20 (open)",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "open bug gemma4",
+   "claim": "With --tool-call-parser gemma4 --reasoning-parser gemma4, tool_choice='required' can return prose with finish_reason 'tool_calls' and an empty tool_calls list.",
+   "source_url": "https://github.com/vllm-project/vllm/issues/53363",
+   "source_date": "2026-08-22, open, updated 2026-11-11",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "open bug qwen3 reasoning",
+   "claim": "--reasoning-parser qwen3 can return the whole answer as reasoning with content null. This happens when the template closes the think block (for example a community template's reasoning_effort none or auto_disable_thinking_with_tools) but enable_thinking was not passed. Agents then see empty content.",
+   "source_url": "https://github.com/vllm-project/vllm/issues/53284",
+   "source_date": "2026-08-21, open",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "open bug qwen3.6 system message",
+   "claim": "Qwen3.5/3.6 chat templates raise 'System message must be at the beginning' (HTTP 400) when an agent sends more than one system message or a system message later in the conversation. The vLLM fix PR #44505 was closed without merging. Commenters point to a community fixed template.",
+   "source_url": "https://github.com/vllm-project/vllm/issues/41114",
+   "source_date": "2026-04-28, open, updated 2026-10-29",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "qwen3 whitespace bug",
+   "claim": "Issue #48753 (open) says the qwen3_coder/qwen3_xml parser stripped all leading and trailing whitespace from string arguments, which broke exact-match edit tools in OpenCode, Cline and Claude Code. Current main's _qwen3_arg_converter calls _trim_wrapping_newlines rather than strip().",
+   "source_url": "https://github.com/vllm-project/vllm/issues/48753",
+   "source_date": "2026-07-15, open; main vllm/parser/qwen3.py last changed 2026-11-08",
+   "support": "inferred",
+   "notes": "Probably fixed on main, but the issue is not closed and I did not identify the fixing commit or the first release that contains it."
+  },
+  {
+   "topic": "open bug grammar whitespace",
+   "claim": "Tool calls constrained by structural tags (strict, required, or --tool-strict-level) let the grammar accept unbounded whitespace, so generation can run until max_tokens. Reported on v0.33.0 and main; affects the hermes, qwen3_coder and glm_4_7 builders, among others.",
+   "source_url": "https://github.com/vllm-project/vllm/issues/67029",
+   "source_date": "2026-11-11, open",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "open bug gpt-oss",
+   "claim": "gpt-oss chat completions return HTTP 500 when an earlier tool call's name contains special-token text.",
+   "source_url": "https://github.com/vllm-project/vllm/issues/65770",
+   "source_date": "2026-11-05, open",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "interleaved thinking",
+   "claim": "The vLLM docs list only Kimi-K2-Thinking (kimi_k2) and MiniMax-M2 (minimax_m2) as interleaved-thinking models, meaning reasoning between tool calls. Neither fits a 16 GB GPU.",
+   "source_url": "https://github.com/vllm-project/vllm/blob/main/docs/features/interleaved_thinking.md",
+   "source_date": "main 2026-11-15",
+   "support": "direct-statement"
+  }
+ ],
+ "snippets": [
+  {
+   "purpose": "Qwen3.6/3.8 (and Qwen3.5) tool calling + reasoning flags per vLLM recipe",
+   "content": "vllm serve Qwen/Qwen3.6-35B-A3B --enable-auto-tool-choice --tool-call-parser qwen3_coder --reasoning-parser qwen3 --language-model-only --max-model-len <N>\n# disable thinking server-wide: --default-chat-template-kwargs '{\"enable_thinking\": false}'",
+   "source_url": "https://github.com/vllm-project/recipes/blob/main/models/Qwen/Qwen3.6-35B-A3B.yaml"
+  },
+  {
+   "purpose": "Gemma 4 tool calling + reasoning (recipe); thinking is off by default",
+   "content": "vllm serve google/gemma-4-26B-A4B-it --max-model-len 16384 --reasoning-parser gemma4 --tool-call-parser gemma4 --enable-auto-tool-choice --chat-template examples/tool_chat_template_gemma4.jinja\n# per request: extra_body={\"chat_template_kwargs\": {\"enable_thinking\": True}}  or reasoning_effort=\"high\"",
+   "source_url": "https://github.com/vllm-project/recipes/blob/main/models/Google/gemma-4-26B-A4B-it.yaml"
+  },
+  {
+   "purpose": "gpt-oss function calling (harmony)",
+   "content": "vllm serve openai/gpt-oss-20b --tool-call-parser openai --enable-auto-tool-choice\n# only tool_choice=\"auto\" supported for function calling per recipe; reasoning level via system prompt \"Reasoning: high\"",
+   "source_url": "https://github.com/vllm-project/recipes/blob/main/OpenAI/GPT-OSS.md"
+  },
+  {
+   "purpose": "Nemotron 3.5 Lightning (and Nemotron 3 family) flags",
+   "content": "vllm serve nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16 --reasoning-parser nemotron_v3 --tool-call-parser qwen3_coder --enable-auto-tool-choice --mamba-backend flashinfer --enable-prefix-caching\n# older Nemotron-3-Nano cards: --reasoning-parser-plugin nano_v3_reasoning_parser.py --reasoning-parser nano_v3",
+   "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/raw/main/README.md"
+  },
+  {
+   "purpose": "Devstral Small 2 / Mistral family",
+   "content": "vllm serve mistralai/Devstral-Small-2-24B-Instruct-2512 --max-model-len 262144 --tool-call-parser mistral --enable-auto-tool-choice\n# Ministral 3 recipe adds: --tokenizer_mode mistral --config_format mistral --load_format mistral",
+   "source_url": "https://huggingface.co/mistralai/Devstral-Small-2-24B-Instruct-2512/raw/main/README.md"
+  },
+  {
+   "purpose": "GLM-4.7-Flash flags (card)",
+   "content": "vllm serve zai-org/GLM-4.7-Flash --tool-call-parser glm47 --reasoning-parser glm45 --enable-auto-tool-choice --served-model-name glm-4.7-flash",
+   "source_url": "https://huggingface.co/zai-org/GLM-4.7-Flash/raw/main/README.md"
+  },
+  {
+   "purpose": "Raise tool-call strictness for agent clients that never set strict",
+   "content": "vllm serve ... --enable-auto-tool-choice --tool-call-parser <p> --tool-strict-level function   # or parameter to pin all arg schemas",
+   "source_url": "https://github.com/vllm-project/vllm/blob/main/docs/features/tool_calling.md"
+  },
+  {
+   "purpose": "Docker run skeleton (image entrypoint is `vllm serve`, workdir /vllm-workspace contains examples/)",
+   "content": "docker run --gpus all -p 8000:8000 -v ~/.cache/huggingface:/root/.cache/huggingface vllm/vllm-openai:v0.33.0 <model> --served-model-name <name> --api-key <key> --max-model-len <N> --enable-auto-tool-choice --tool-call-parser <p> --reasoning-parser <r>",
+   "source_url": "https://raw.githubusercontent.com/vllm-project/vllm/main/docker/Dockerfile"
+  }
+ ],
+ "gaps": [
+  "I could not open the rendered docs.vllm.ai pages. I read the same Markdown sources from GitHub main instead, so the published 'latest' site may lag main by a build.",
+  "I did not find a vLLM doc section for the qwen3_coder, gemma4, deepseek_v32/v4/v41, minimax_m2/m3, seed_oss, lfm2 or phi4_mini_json tool parsers. Their model mappings come from recipes and model cards only.",
+  "No vLLM recipe lists RTX 5080 Laptop (sm_120, 16 GB) as verified hardware. The nearest consumer entry is rtx_5090 (32 GB). Fit on 16 GB was not measured in this lane.",
+  "It is undocumented whether the built-in nemotron_v3 reasoning parser replaces the nano_v3 plugin for Nemotron-3-Nano-30B-A3B and 4B.",
+  "For gpt-oss, the recipe (2026-05) says only tool_choice=auto, while tool_calling.md (2026-11) says gpt-oss is exempt from the parser check for required/named. I did not resolve which is current.",
+  "I did not check whether the Rust frontend (default_frontend: rust in recipes) is the default for `vllm serve` in v0.33.0, nor which tool and reasoning parsers it covers. Its behaviour differs (empty tools array returns 400).",
+  "I could not confirm whether issue vllm#48753 (qwen3 whitespace stripping) is fixed in a released image. Main uses _trim_wrapping_newlines, but the issue is open and I did not identify the fixing commit.",
+  "GitHub searches on the Cline, Roo Code and Continue repos were not run. I only searched vLLM issues mentioning them and OpenCode issues mentioning vLLM. The unauthenticated GitHub API hit its rate limit, and I used read-only `gh api` after that.",
+  "I did not verify the DeepSeek-R1-Distill models: they predate the 12-month window, and the deepseek_r1 parser is documented without tool calling."
+ ],
+ "candidate_models": [
+  "Qwen/Qwen3.6-35B-A3B (qwen3_coder + qwen3)",
+  "Qwen/Qwen3.6-27B (qwen3_coder + qwen3)",
+  "Qwen/Qwen3.8-27B (qwen3_coder + qwen3)",
+  "Qwen/Qwen3.5-9B (qwen3_coder + qwen3)",
+  "Qwen/Qwen3-Coder-30B-A3B-Instruct (qwen3_xml/qwen3_coder)",
+  "google/gemma-4-26B-A4B-it (gemma4 + gemma4)",
+  "google/gemma-4-12B-it (gemma4 + gemma4)",
+  "openai/gpt-oss-20b (openai)",
+  "nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B (qwen3_coder + nemotron_v3)",
+  "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B (qwen3_coder + nano_v3 plugin)",
+  "nvidia/NVIDIA-Nemotron-3-Nano-4B (qwen3_coder + nano_v3 plugin)",
+  "mistralai/Devstral-Small-2-24B-Instruct-2512 (mistral)",
+  "mistralai/Ministral-3-14B-Instruct-2512 (mistral)",
+  "zai-org/GLM-4.7-Flash (glm47 + glm45)"
+ ]
+}

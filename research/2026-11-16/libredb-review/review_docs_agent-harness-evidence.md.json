@@ -1,0 +1,23 @@
+{
+ "checked_claims": 62,
+ "fixes": [
+  "Line 24: the doc said every run used temperature 0 / top_p 1. That is now stated as the default, and the profile overrides from measured-profiles.json are listed: bonsai-2:2b and :4b at 0.3, gpt-oss:20b and qwen3:8b at 0.8/0.9 on optimize, and the qwen3.8:27b profile at 0.3.",
+  "Dates row: the Granite 4.2 release date of 2026-08-25 was sourced to measured-profiles.json. It now cites research/2026-11-15/verification/verify_IBM_Granite_4.2_8B.json, which says 'Announced 2026-08-25'.",
+  "Ollama size column: five cells held blob sums, but the column header says they are tags-page sizes. I checked the live ollama.com tags pages and corrected them: qwen3.5:4b 3.3 to 3.3-4.0 GB, qwen3.5:9b 6.6 to 6.6-7.6 GB, qwen3.5:27b 17.5 to 17-20 GB, qwen3.6:27b 17.8 to 18-19 GB, qwen3.6:35b 22.6 to 23 GB.",
+  "Line 44: added the (estimate) label to 'Mac holds up to about 48 GiB in fast memory'.",
+  "Line 50: rewrote the circular sentence 'for the harness or for OpenCode, needs ... at least 65536 for OpenCode'. It now gives 65536 for OpenCode and 32768 to get close to the harness condition.",
+  "Thinking-off rule bullet: removed the overclaim. glm-4.7-flash and muse-glimmer only needed thinking off on the plan turn, and glm got worse with thinking off on agent turns (0/3). gpt-oss:20b was added to the list, and nemotron-3.5-lightning is noted as passing with thinking on.",
+  "Re-judge bullet: 'no tool-related guards' for Qwen3-Coder-30B is now 'compiled defaults, first attempt', with a note that its profile sets retryUnreadStop.",
+  "opencode.md:201 nuance: the line covers 2B-4B models, so the doc's '4B-8B models passing' is now '1.7B-4B models (lfm3:1.7b, bonsai-2:2b, qwen3:4b, qwen3.5:4b) passing'.",
+  "gemma4:26b-a4b-it-qat Ollama estimate widened from 16-16.5 to 16-16.7 GiB, in line with the gemma lane check.",
+  "Sources: 'Lane research for this review: research/2026-11-16/' was wrong, because that folder holds only the gpt-oss-20b measurements. It now reads 'This laptop's gpt-oss-20b measurements' and links to that folder's README.md."
+ ],
+ "remaining_concerns": [
+  "I made the edits with a Python string-replace script and one sed command, not the Edit tool. Each replacement was asserted to match exactly once. Only $HOME/projects/llm/docs/agent-harness-evidence.md was changed.",
+  "The lane records cited in the task (qwen-older, gemma and the others) are not saved under research/2026-11-16/. The doc therefore has no in-repo link to the lane evidence. If the lead wants a durable trail, those records should be saved there.",
+  "These items were already in the doc and checked against the lane checker verdicts rather than re-derived live: ornith:9b size 5.5 vs 5.6 GB, the lfm3 minimum of 0.40.12 vs 0.40.13, the granite4.2 tag dated Aug 27, and the nemotron byte-identical manifests. I did not re-fetch the registry manifests myself. The tags-page sizes were re-fetched for all 24 families.",
+  "Every fit and speed figure is still an estimate. Nothing was run on the GPU.",
+  "Checks found clean: all 40 Mac median and slowest pairs match the libredb README table; the README's nine 150 s models match the doc against methodology's six (already listed as a gap); model-selection.md ranks, honorable mentions and exclusions match each KB status cell; the cited KB lines resolve (community-benchmarks.md:75-77, :129, :301; llamacpp/models.md:78 15.92 GiB, :86 digest claim, :391 87% of about 190; opencode.md:201). No U+2013 or U+2014 characters. All relative links and the anchors #9-gpt-oss-20b and #what-to-measure-first resolve."
+ ],
+ "verdict": "ready-with-concerns"
+}

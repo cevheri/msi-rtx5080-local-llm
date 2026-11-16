@@ -1,0 +1,656 @@
+{
+ "summary": "Qwen lane, checked live on 2026-11-15. The Hugging Face listing for the Qwen org, sorted by createdAt, shows these open-weight LLM generations in the window: Qwen3.5 (Feb 2026: 0.8B/2B/4B/9B dense, 27B dense, 35B-A3B, 122B-A10B, 397B-A17B, plus official FP8 and GPTQ-Int4 builds), Qwen3-Coder-Next (80B-A3B, Feb 2026), Qwen3.6 (Apr 2026: 27B and 35B-A3B), and Qwen3.8 (Aug 2026: 27B dense, Flash-Next 176B-total/6B-active, 2.4T-A95B) (https://huggingface.co/api/models?author=Qwen&sort=createdAt&direction=-1&limit=200). No Qwen3.7 open weights exist; Qwen3.7-Plus appears only as an API comparison column. Every Qwen3.5/3.6/3.8 model is natively vision-language (Qwen3_5ForConditionalGeneration), thinks by default and can switch thinking off per request with chat_template_kwargs enable_thinking=false. vLLM's `--language-model-only` flag skips the vision encoder. The vLLM recipes for all of them use `--tool-call-parser qwen3_coder --reasoning-parser qwen3` (https://github.com/vllm-project/recipes/tree/main/models/Qwen). On this 16 GB RTX 5080 Laptop, the strongest Qwen models do NOT fit in vLLM. Qwen3.8-27B needs 19.5-26.4 GB even at INT4/NVFP4, and its recipe needed `--enforce-eager` and a 32K context to fit on a 32 GB RTX 5090 (https://raw.githubusercontent.com/vllm-project/recipes/main/models/Qwen/Qwen3.8-27B.yaml). Qwen3.6-35B-A3B NVFP4 is 23.4 GB. So in vLLM the practical Qwen choices are Qwen3.5-4B in BF16 (9.3 GB), a community 4-bit Qwen3.5-9B (about 9.1-9.4 GB), Qwen3-VL-8B-FP8 and the older Qwen3-8B/14B-AWQ. Larger models need llama.cpp or Ollama. Qwen3.6-35B-A3B (Q4_K_M 20.5 GB GGUF from ggml-org, 3B active) is the best MoE fit, with some experts kept in RAM through `--n-cpu-moe`. Qwen3.8-27B fits on the GPU only at about 3-bit to IQ4_XS (13.1-14.4 GB, unsloth), or at Q4 with partial offload, which will be slow because the model is dense. Qwen3-Coder-Next (official Q4_K_M GGUF 48.4 GB) is possible only with most experts in system RAM, and that is tight given about 41 GiB of free RAM. Because the 3.5/3.6/3.8 models use hybrid attention (Gated DeltaNet), only 1 in 4 layers keeps a KV cache: 32 KiB/token for 9B, 20 KiB/token for 35B-A3B and 64 KiB/token for 27B at BF16. That makes long contexts cheap compared with Qwen3/Qwen3-Coder-30B. Vendor-reported agentic numbers: Qwen3.6-35B-A3B SWE-bench Verified 73.4 and Terminal-Bench 2.0 51.5; Qwen3.6-27B 77.2 / 59.3; Qwen3.8-27B Terminal-Bench 2.1 73.0 and SWE-bench Pro 61.7; Qwen3-Coder-Next SWE-bench Verified 70.6-71.3 depending on scaffold; Qwen3.5-9B BFCL-V4 66.1 and TAU2 79.1. All are self-reported by Qwen. Non-thinking-only (instruct) Qwen options are Qwen3-Coder-Next, Qwen3-Coder-30B-A3B-Instruct and Qwen3-4B-Instruct-2507. Every 3.5+ model is a hybrid that thinks by default.",
+ "models": [
+  {
+   "name": "Qwen3.8-27B",
+   "vendor": "Alibaba Qwen",
+   "family": "Qwen3.8",
+   "hf_repo": "Qwen/Qwen3.8-27B",
+   "release_date": "2026-08-05 (HF createdAt; lastModified 2026-11-07)",
+   "license": "apache-2.0",
+   "architecture": "dense hybrid attention: 64 layers, 16 x (3 Gated DeltaNet + 1 Gated Attention), MTP head, vision encoder (Qwen3_5ForConditionalGeneration)",
+   "total_params_b": 27.8,
+   "active_params_b": 27.8,
+   "context_length": "262,144 native; 1,000,000 with YaRN",
+   "modalities": "text, image, video in; text out",
+   "thinking": "toggle",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "Qwen/Qwen3.8-27B-FP8 (block FP8) 30.9 GB",
+    "No Qwen-published GGUF/AWQ/GPTQ; recipe lists third-party nvidia/Qwen3.8-27B-NVFP4 21.9 GB, Inferact/Qwen3.8-27B-NVFP4 26.4 GB, RedHatAI/Qwen3.8-27B-INT4 19.5 GB, RedHatAI/Qwen3.8-27B-MXFP4 19.8 GB",
+    "Community GGUF unsloth/Qwen3.8-27B-GGUF: UD-Q3_K_XL 13.1 GB, UD-IQ4_XS 14.4 GB, UD-Q4_K_M 16.6 GB, Q8_0 29.0 GB, mmproj 0.9 GB",
+    "Ollama qwen3.8:27b (q4_K_M) 18 GB; qwen3.8:27b-q8_0 30 GB; tags show vision, tools, thinking"
+   ],
+   "vllm": "min_vllm_version 0.17.0 per recipe (runs used image vllm/vllm-openai:qwen38); recipe command: vllm serve Inferact/Qwen3.8-27B-NVFP4 --max-model-len 262144 --kv-cache-dtype fp8 --reasoning-parser qwen3 --enable-auto-tool-choice --tool-call-parser qwen3_coder; optional --language-model-only, --speculative-config '{\"method\":\"mtp\",\"num_speculative_tokens\":3}'. Recipe notes qwen3_xml broke tool calls on Rust frontend (commit 2026-10-08). https://raw.githubusercontent.com/vllm-project/recipes/main/models/Qwen/Qwen3.8-27B.yaml",
+   "llamacpp_ollama": "llama.cpp arch qwen35 supported; Ollama qwen3.8 library page with 27b tags (https://ollama.com/library/qwen3.8/tags)",
+   "fit_16gb": "vLLM: does not fit (smallest vLLM build 19.5 GB; even 32 GB RTX 5090 needed --enforce-eager and 32K context). llama.cpp: UD-Q3_K_XL 13.1 GB or UD-IQ4_XS 14.4 GB fully on GPU with roughly 16-32k context (KV 64 KiB/token BF16, half with q8 KV); Q4_K_M 16.6 GB needs partial layer offload to CPU, which is slow for a dense model.",
+   "coding_agent_evidence": "Vendor self-reported (model card): Terminal Bench 2.1 (Terminus) 73.0, SWE-bench Pro 61.7, SWE-bench Multilingual 73.8 (Flash-Next card), LiveCodeBench v6 90.3, IFBench 79.5. No SWE-bench Verified given. https://huggingface.co/Qwen/Qwen3.8-27B",
+   "confidence": "high",
+   "notes": "Thinking on by default; disable with chat_template_kwargs {\"enable_thinking\": false}; reasoning_effort xhigh(default)/medium/low; preserve_thinking on by default. Strongest Qwen that can be squeezed onto this machine but only via low-bit GGUF.",
+   "sources": [
+    "https://huggingface.co/Qwen/Qwen3.8-27B",
+    "https://huggingface.co/api/models/Qwen/Qwen3.8-27B",
+    "https://raw.githubusercontent.com/vllm-project/recipes/main/models/Qwen/Qwen3.8-27B.yaml",
+    "https://huggingface.co/api/models/unsloth/Qwen3.8-27B-GGUF?blobs=true",
+    "https://ollama.com/library/qwen3.8/tags"
+   ]
+  },
+  {
+   "name": "Qwen3.6-35B-A3B",
+   "vendor": "Alibaba Qwen",
+   "family": "Qwen3.6",
+   "hf_repo": "Qwen/Qwen3.6-35B-A3B",
+   "release_date": "2026-04-15 (lastModified 2026-11-07)",
+   "license": "apache-2.0",
+   "architecture": "MoE hybrid attention, 40 layers (10 x (3 DeltaNet + 1 attention)), 256 experts, 8 routed + 1 shared, MTP, vision encoder",
+   "total_params_b": 36,
+   "active_params_b": 3,
+   "context_length": "262,144 native; 1,010,000 with YaRN",
+   "modalities": "text, image, video in; text out",
+   "thinking": "toggle",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "Qwen/Qwen3.6-35B-A3B-FP8 37.5 GB",
+    "No Qwen-published GGUF; ggml-org/Qwen3.6-35B-A3B-GGUF Q4_K_M 20.5 GB, Q8_0 36.9 GB, mmproj 0.6 GB, MTP draft 2.0 GB",
+    "unsloth/Qwen3.6-35B-A3B-GGUF UD-Q3_K_XL 16.8 GB, UD-IQ4_XS 17.7 GB, UD-Q4_K_XL 22.4 GB",
+    "nvidia/Qwen3.6-35B-A3B-NVFP4 23.4 GB (vLLM >=0.28.0)",
+    "Ollama qwen3.6:35b-a3b 23 GB (also -q4_K_M 24 GB, -nvfp4 23 GB)"
+   ],
+   "vllm": "Card: vllm>=0.19.0 recommended; vllm serve Qwen/Qwen3.6-35B-A3B --max-model-len 262144 --reasoning-parser qwen3 --enable-auto-tool-choice --tool-call-parser qwen3_coder (card shows TP 8); MTP: --speculative-config '{\"method\":\"qwen3_next_mtp\",\"num_speculative_tokens\":2}'; text-only: --language-model-only. Recipe verified on rtx_5090.",
+   "llamacpp_ollama": "llama.cpp arch qwen35moe; Ollama qwen3.6 tags with tools/thinking/vision",
+   "fit_16gb": "vLLM: does not fit (smallest 4-bit build 23.4 GB). llama.cpp/Ollama: Q4_K_M 20.5 GB with some experts kept in RAM via --n-cpu-moe; attention and KV stay on the GPU; KV only ~20 KiB/token BF16 (~2.5 GiB at 128k), so a long context is affordable. Best Qwen MoE for this machine (inferred).",
+   "coding_agent_evidence": "Vendor self-reported: SWE-bench Verified 73.4, SWE-bench Pro 49.5, Terminal-Bench 2.0 51.5, MCPMark 37.0, TAU3-Bench 67.2, LiveCodeBench v6 80.4. https://huggingface.co/Qwen/Qwen3.6-35B-A3B",
+   "confidence": "high",
+   "notes": "Thinking on by default; enable_thinking false to disable; preserve_thinking option.",
+   "sources": [
+    "https://huggingface.co/Qwen/Qwen3.6-35B-A3B",
+    "https://raw.githubusercontent.com/vllm-project/recipes/main/models/Qwen/Qwen3.6-35B-A3B.yaml",
+    "https://huggingface.co/api/models/ggml-org/Qwen3.6-35B-A3B-GGUF?blobs=true",
+    "https://ollama.com/library/qwen3.6/tags"
+   ]
+  },
+  {
+   "name": "Qwen3.6-27B",
+   "vendor": "Alibaba Qwen",
+   "family": "Qwen3.6",
+   "hf_repo": "Qwen/Qwen3.6-27B",
+   "release_date": "2026-04-21",
+   "license": "apache-2.0",
+   "architecture": "dense hybrid attention (same layout as 3.8-27B), MTP, vision encoder",
+   "total_params_b": 27.8,
+   "active_params_b": 27.8,
+   "context_length": "262,144 native; 1,010,000 with YaRN",
+   "modalities": "text, image, video in",
+   "thinking": "toggle",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "Qwen/Qwen3.6-27B-FP8 (recipe vram_minimum 33 GB)",
+    "nvidia/Qwen3.6-27B-NVFP4 (recipe min 27 GB)",
+    "ggml-org/Qwen3.6-27B-GGUF Q4_K_M 19.4 GB, Q8_0 28.6 GB",
+    "Ollama qwen3.6:27b-q4_K_M 17 GB"
+   ],
+   "vllm": "min 0.17.0; --reasoning-parser qwen3 --enable-auto-tool-choice --tool-call-parser qwen3_coder (recipe)",
+   "llamacpp_ollama": "Yes (qwen35 arch; Ollama qwen3.6:27b tags)",
+   "fit_16gb": "vLLM: does not fit. llama.cpp: only at about 3-bit or with partial offload; superseded by Qwen3.8-27B at the same size.",
+   "coding_agent_evidence": "Vendor self-reported: SWE-bench Verified 77.2, SWE-bench Pro 53.5, Terminal-Bench 2.0 59.3, LiveCodeBench v6 83.9. https://huggingface.co/Qwen/Qwen3.6-27B",
+   "confidence": "high",
+   "notes": "Older sibling of Qwen3.8-27B; prefer 3.8 unless a tool stack is pinned to 3.6.",
+   "sources": [
+    "https://huggingface.co/Qwen/Qwen3.6-27B",
+    "https://raw.githubusercontent.com/vllm-project/recipes/main/models/Qwen/Qwen3.6-27B.yaml",
+    "https://huggingface.co/api/models/ggml-org/Qwen3.6-27B-GGUF?blobs=true"
+   ]
+  },
+  {
+   "name": "Qwen3.5-9B",
+   "vendor": "Alibaba Qwen",
+   "family": "Qwen3.5",
+   "hf_repo": "Qwen/Qwen3.5-9B",
+   "release_date": "2026-02-27",
+   "license": "apache-2.0",
+   "architecture": "dense hybrid attention, 32 layers (8 full-attention), MTP, vision encoder",
+   "total_params_b": 9.65,
+   "active_params_b": 9.65,
+   "context_length": "262,144 native; 1,010,000 with YaRN",
+   "modalities": "text, image, video in",
+   "thinking": "toggle",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "No Qwen-published quant for 9B (BF16 repo 19.3 GB)",
+    "RedHatAI/Qwen3.5-9B-FP8-dynamic 14.0 GB (in vLLM recipe)",
+    "Community: cyankiwi/Qwen3.5-9B-AWQ-4bit 9.1 GB, AxionML/Qwen3.5-9B-NVFP4 9.4 GB",
+    "unsloth/Qwen3.5-9B-GGUF Q4_K_M 5.7 GB, Q6_K 7.5 GB, Q8_0 9.5 GB",
+    "Ollama qwen3.5:9b-q4_K_M 6.6 GB, 9b-q8_0 10 GB, 9b-nvfp4 7.2 GB"
+   ],
+   "vllm": "Card: vllm serve Qwen/Qwen3.5-9B --max-model-len 262144 --reasoning-parser qwen3 --enable-auto-tool-choice --tool-call-parser qwen3_coder [--language-model-only] [--speculative-config '{\"method\":\"qwen3_next_mtp\",\"num_speculative_tokens\":2}']; recipe min 0.17.0",
+   "llamacpp_ollama": "Yes; Ollama qwen3.5:9b with tools/thinking/vision",
+   "fit_16gb": "vLLM: BF16 (19.3 GB) does not fit; FP8-dynamic at 14.0 GB is too tight; a community AWQ/NVFP4 build (~9.1-9.4 GB) leaves roughly 4 GiB of KV, about 128k tokens at 32 KiB/token BF16 (inferred, not tested). llama.cpp/Ollama: Q8_0 9.5 GB fully on the GPU with a long context.",
+   "coding_agent_evidence": "Vendor self-reported: BFCL-V4 66.1, TAU2-Bench 79.1, LiveCodeBench v6 65.6. No SWE-bench given. https://huggingface.co/Qwen/Qwen3.5-9B",
+   "confidence": "high",
+   "notes": "Best fully-in-VRAM Qwen with thinking + tools for vLLM if a community 4-bit build is accepted.",
+   "sources": [
+    "https://huggingface.co/Qwen/Qwen3.5-9B",
+    "https://raw.githubusercontent.com/vllm-project/recipes/main/models/Qwen/Qwen3.5-9B.yaml",
+    "https://huggingface.co/api/models/unsloth/Qwen3.5-9B-GGUF?blobs=true",
+    "https://ollama.com/library/qwen3.5/tags"
+   ]
+  },
+  {
+   "name": "Qwen3.5-4B",
+   "vendor": "Alibaba Qwen",
+   "family": "Qwen3.5",
+   "hf_repo": "Qwen/Qwen3.5-4B",
+   "release_date": "2026-02-27",
+   "license": "apache-2.0",
+   "architecture": "dense hybrid attention, 32 layers (8 full-attention), tied embeddings, vision encoder",
+   "total_params_b": 4.66,
+   "active_params_b": 4.66,
+   "context_length": "262,144 native",
+   "modalities": "text, image, video in",
+   "thinking": "toggle",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "BF16 repo 9.3 GB (no Qwen quant)",
+    "Ollama qwen3.5:4b-q4_K_M 3.3 GB, 4b-q8_0 5.2 GB"
+   ],
+   "vllm": "Same flags as Qwen3.5 family: --reasoning-parser qwen3 --enable-auto-tool-choice --tool-call-parser qwen3_coder (recipe Qwen3.5-4B.yaml exists)",
+   "llamacpp_ollama": "Yes",
+   "fit_16gb": "vLLM fits in BF16: weights ~9.3 GB, roughly 4 GiB of KV, about 128k tokens (inferred); more with --language-model-only and fp8 KV.",
+   "coding_agent_evidence": "Vendor self-reported: BFCL-V4 50.3, TAU2-Bench 79.9, LiveCodeBench v6 55.8. https://huggingface.co/Qwen/Qwen3.5-9B (comparison table)",
+   "confidence": "medium",
+   "notes": "Simplest unquantized official option for the vLLM Docker path; weak for serious coding.",
+   "sources": [
+    "https://huggingface.co/api/models/Qwen/Qwen3.5-4B?blobs=true",
+    "https://huggingface.co/Qwen/Qwen3.5-9B",
+    "https://github.com/vllm-project/recipes/tree/main/models/Qwen"
+   ]
+  },
+  {
+   "name": "Qwen3.5-35B-A3B",
+   "vendor": "Alibaba Qwen",
+   "family": "Qwen3.5",
+   "hf_repo": "Qwen/Qwen3.5-35B-A3B",
+   "release_date": "2026-02-24",
+   "license": "apache-2.0",
+   "architecture": "MoE hybrid, 256 experts, vision encoder",
+   "total_params_b": 36,
+   "active_params_b": 3,
+   "context_length": "262,144 native; 1,010,000 YaRN",
+   "modalities": "text, image, video in",
+   "thinking": "toggle",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "Qwen/Qwen3.5-35B-A3B-FP8",
+    "Qwen/Qwen3.5-35B-A3B-GPTQ-Int4 24.4 GB",
+    "Ollama qwen3.5:35b-a3b-q4_K_M 22 GB"
+   ],
+   "vllm": "--reasoning-parser qwen3 --tool-call-parser qwen3_coder; GPTQ-Int4 needs 21 GB per recipe",
+   "llamacpp_ollama": "Yes",
+   "fit_16gb": "vLLM: does not fit. llama.cpp/Ollama with experts in RAM, as for 3.6, but superseded by Qwen3.6-35B-A3B.",
+   "coding_agent_evidence": "Vendor self-reported: SWE-bench Verified 69.2, Terminal Bench 2 40.5, BFCL-V4 67.3, TAU2 81.2. https://huggingface.co/Qwen/Qwen3.5-35B-A3B",
+   "confidence": "high",
+   "notes": "Older than 3.6 at the same size; listed for completeness.",
+   "sources": [
+    "https://huggingface.co/Qwen/Qwen3.5-35B-A3B",
+    "https://raw.githubusercontent.com/vllm-project/recipes/main/models/Qwen/Qwen3.5-35B-A3B.yaml"
+   ]
+  },
+  {
+   "name": "Qwen3-Coder-Next",
+   "vendor": "Alibaba Qwen",
+   "family": "Qwen3-Coder",
+   "hf_repo": "Qwen/Qwen3-Coder-Next",
+   "release_date": "2026-01-30",
+   "license": "apache-2.0",
+   "architecture": "MoE hybrid (Qwen3-Next): 48 layers, 512 experts, 10 routed + 1 shared, text-only",
+   "total_params_b": 79.7,
+   "active_params_b": 3,
+   "context_length": "262,144 native",
+   "modalities": "text",
+   "thinking": "no",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "Qwen/Qwen3-Coder-Next-FP8 80.4 GB",
+    "Qwen/Qwen3-Coder-Next-GGUF Q4_K_M 48.4 GB, Q5_K_M 56.7 GB, Q8_0 84.8 GB",
+    "Ollama qwen3-coder-next:q4_K_M 52 GB (tools)"
+   ],
+   "vllm": "Card: vllm>=0.15.0; vllm serve Qwen/Qwen3-Coder-Next --tensor-parallel-size 2 --enable-auto-tool-choice --tool-call-parser qwen3_coder. https://huggingface.co/Qwen/Qwen3-Coder-Next",
+   "llamacpp_ollama": "Yes (qwen3next arch); Ollama qwen3-coder-next",
+   "fit_16gb": "vLLM: does not fit. llama.cpp with --cpu-moe/--n-cpu-moe: Q4_K_M 48.4 GB, about 34 GB of experts in RAM plus attention on the GPU. Tight because ~41 GiB of RAM is free while the desktop is running (inferred).",
+   "coding_agent_evidence": "Vendor tech report: SWE-bench Verified 70.6 (SWE-Agent) / 71.1 (MiniSWE-Agent) / 71.3 (OpenHands); SWE-bench Pro 44.3; Terminal-Bench 2.0 36.2 (Terminus2-json); Aider shown in figure. https://github.com/QwenLM/Qwen3-Coder/blob/main/qwen3_coder_next_tech_report.pdf",
+   "confidence": "high",
+   "notes": "Non-thinking only, purpose-built for coding agents; card names Claude Code, Qwen Code, Cline, Kilo as supported scaffolds.",
+   "sources": [
+    "https://huggingface.co/Qwen/Qwen3-Coder-Next",
+    "https://huggingface.co/api/models/Qwen/Qwen3-Coder-Next-GGUF?blobs=true",
+    "https://raw.githubusercontent.com/QwenLM/Qwen3-Coder/main/qwen3_coder_next_tech_report.pdf",
+    "https://ollama.com/library/qwen3-coder-next/tags"
+   ]
+  },
+  {
+   "name": "Qwen3-Coder-30B-A3B-Instruct",
+   "vendor": "Alibaba Qwen",
+   "family": "Qwen3-Coder",
+   "hf_repo": "Qwen/Qwen3-Coder-30B-A3B-Instruct",
+   "release_date": "2025-07-31 (older than window; lastModified 2025-12-03)",
+   "license": "apache-2.0",
+   "architecture": "MoE (qwen3_moe), 48 layers, 128 experts, 8 active, standard GQA attention, text-only",
+   "total_params_b": 30.5,
+   "active_params_b": 3.3,
+   "context_length": "262,144 native; 1M with YaRN",
+   "modalities": "text",
+   "thinking": "no",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "Qwen/Qwen3-Coder-30B-A3B-Instruct-FP8 31.2 GB",
+    "No Qwen GGUF; unsloth/lmstudio-community GGUF exist",
+    "Ollama qwen3-coder:30b (q4_K_M) 19 GB"
+   ],
+   "vllm": "vLLM docs: --tool-call-parser qwen3_xml (now same class as qwen3_coder in vllm main). https://raw.githubusercontent.com/vllm-project/vllm/main/docs/features/tool_calling.md",
+   "llamacpp_ollama": "Yes; Ollama qwen3-coder:30b",
+   "fit_16gb": "vLLM: does not fit. llama.cpp/Ollama: Q4 ~19 GB with experts partly in RAM; full-attention KV is much heavier than in the 3.5+ hybrids (inferred from 48 layers and 4 KV heads).",
+   "coding_agent_evidence": "Model card shows benchmarks only as an image; not extracted.",
+   "confidence": "medium",
+   "notes": "Older, non-thinking; superseded on paper by Qwen3.6-35B-A3B and Coder-Next.",
+   "sources": [
+    "https://huggingface.co/Qwen/Qwen3-Coder-30B-A3B-Instruct",
+    "https://ollama.com/library/qwen3-coder/tags"
+   ]
+  },
+  {
+   "name": "Qwen3-Next-80B-A3B-Instruct / -Thinking",
+   "vendor": "Alibaba Qwen",
+   "family": "Qwen3-Next",
+   "hf_repo": "Qwen/Qwen3-Next-80B-A3B-Instruct",
+   "release_date": "2025-09-09 (older; official GGUF 2025-12-03)",
+   "license": "apache-2.0",
+   "architecture": "MoE hybrid, 80B total / 3B active, text-only",
+   "total_params_b": 80,
+   "active_params_b": 3,
+   "context_length": "262,144 native; 1M YaRN",
+   "modalities": "text",
+   "thinking": "separate-variant",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "Qwen/Qwen3-Next-80B-A3B-Instruct-GGUF Q4_K_M 48.4 GB",
+    "Qwen/...-Thinking-GGUF",
+    "Ollama qwen3-next:80b 50 GB"
+   ],
+   "vllm": "Recipe: --tool-call-parser hermes; MTP method qwen3_next_mtp",
+   "llamacpp_ollama": "Yes",
+   "fit_16gb": "Like Coder-Next: needs most experts in RAM; tight.",
+   "coding_agent_evidence": "Not checked; superseded for coding by Qwen3-Coder-Next (same base).",
+   "confidence": "medium",
+   "notes": "Older; listed only because official GGUFs exist.",
+   "sources": [
+    "https://huggingface.co/api/models/Qwen/Qwen3-Next-80B-A3B-Instruct-GGUF?blobs=true",
+    "https://raw.githubusercontent.com/vllm-project/recipes/main/models/Qwen/Qwen3-Next-80B-A3B-Instruct.yaml"
+   ]
+  },
+  {
+   "name": "Qwen3-4B-Instruct-2507",
+   "vendor": "Alibaba Qwen",
+   "family": "Qwen3 2507",
+   "hf_repo": "Qwen/Qwen3-4B-Instruct-2507",
+   "release_date": "2025-08-05 (older)",
+   "license": "apache-2.0",
+   "architecture": "dense transformer",
+   "total_params_b": 4,
+   "active_params_b": 4,
+   "context_length": "262,144 native",
+   "modalities": "text",
+   "thinking": "separate-variant",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "Qwen/Qwen3-4B-Instruct-2507-FP8 5.2 GB",
+    "Ollama qwen3:4b-instruct-2507-q4_K_M 2.5 GB, -q8_0 4.3 GB"
+   ],
+   "vllm": "Card: vllm serve Qwen/Qwen3-4B-Instruct-2507 --max-model-len 262144; Qwen docs use --tool-call-parser hermes for Qwen3",
+   "llamacpp_ollama": "Yes",
+   "fit_16gb": "vLLM fits easily (FP8 5.2 GB); KV per token is not computed here.",
+   "coding_agent_evidence": "Vendor self-reported: BFCL-v3 61.9, TAU2-Retail 40.4, LiveCodeBench v6 35.1. https://huggingface.co/Qwen/Qwen3-4B-Instruct-2507",
+   "confidence": "medium",
+   "notes": "Non-thinking only; Thinking-2507 is a separate checkpoint. Lightweight fallback.",
+   "sources": [
+    "https://huggingface.co/Qwen/Qwen3-4B-Instruct-2507",
+    "https://qwen.readthedocs.io/en/latest/deployment/vllm.html"
+   ]
+  },
+  {
+   "name": "Qwen3-VL-8B-Instruct",
+   "vendor": "Alibaba Qwen",
+   "family": "Qwen3-VL",
+   "hf_repo": "Qwen/Qwen3-VL-8B-Instruct",
+   "release_date": "2025-10-11 (older; GGUF 2025-10-31)",
+   "license": "apache-2.0",
+   "architecture": "dense VLM",
+   "total_params_b": 8.8,
+   "active_params_b": 8.8,
+   "context_length": "256K (Ollama listing)",
+   "modalities": "text, image, video",
+   "thinking": "separate-variant",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "Qwen/Qwen3-VL-8B-Instruct-FP8 10.6 GB",
+    "Qwen/Qwen3-VL-8B-Instruct-GGUF Q4_K_M 5.0 GB, Q8_0 8.7 GB, mmproj 0.8-1.2 GB",
+    "Ollama qwen3-vl:8b 6.2 GB"
+   ],
+   "vllm": "Recipe Qwen3-VL exists; parser not verified in this run",
+   "llamacpp_ollama": "Yes",
+   "fit_16gb": "vLLM fits (FP8 10.6 GB) with modest KV room.",
+   "coding_agent_evidence": "Not checked; superseded by Qwen3.5-9B (natively multimodal).",
+   "confidence": "low",
+   "notes": "Older; Qwen3.5 replaces the separate VL line.",
+   "sources": [
+    "https://huggingface.co/api/models/Qwen/Qwen3-VL-8B-Instruct-GGUF?blobs=true",
+    "https://ollama.com/library/qwen3-vl/tags"
+   ]
+  },
+  {
+   "name": "Qwen3-8B / Qwen3-14B (AWQ)",
+   "vendor": "Alibaba Qwen",
+   "family": "Qwen3",
+   "hf_repo": "Qwen/Qwen3-14B-AWQ",
+   "release_date": "2025-05-01 (older)",
+   "license": "apache-2.0",
+   "architecture": "dense transformer",
+   "total_params_b": 14.8,
+   "active_params_b": 14.8,
+   "context_length": "40,960 per Ollama (32k native, 131k YaRN per Qwen3 recipe)",
+   "modalities": "text",
+   "thinking": "toggle",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "Qwen/Qwen3-14B-AWQ 10.0 GB",
+    "Qwen/Qwen3-8B-AWQ 6.1 GB",
+    "Qwen/Qwen3-14B-GGUF Q4_K_M 9.0 GB",
+    "Ollama qwen3:14b 9.3 GB"
+   ],
+   "vllm": "Qwen docs: --enable-auto-tool-choice --tool-call-parser hermes --reasoning-parser qwen3 (https://qwen.readthedocs.io/en/latest/deployment/vllm.html)",
+   "llamacpp_ollama": "Yes",
+   "fit_16gb": "vLLM fits (14B AWQ 10 GB), but the native context is short for OpenCode.",
+   "coding_agent_evidence": "Not checked.",
+   "confidence": "medium",
+   "notes": "Only official AWQ builds in the family; short native context. Prefer 3.5-9B.",
+   "sources": [
+    "https://huggingface.co/api/models/Qwen/Qwen3-14B-AWQ?blobs=true",
+    "https://ollama.com/library/qwen3/tags",
+    "https://raw.githubusercontent.com/vllm-project/recipes/main/models/Qwen/Qwen3-30B-A3B.yaml"
+   ]
+  },
+  {
+   "name": "Qwen3.8-Flash-Next",
+   "vendor": "Alibaba Qwen",
+   "family": "Qwen3.8",
+   "hf_repo": "Qwen/Qwen3.8-Flash-Next",
+   "release_date": "2026-08-24",
+   "license": "other (qwen-community-1.0)",
+   "architecture": "Qwen4 architecture preview (qwen4_exp): 125B MoE main + 51B n-gram embeddings + 4B MTP, vision",
+   "total_params_b": 176,
+   "active_params_b": 6,
+   "context_length": "262,144 native; 1M YaRN",
+   "modalities": "text, image in",
+   "thinking": "unknown",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "Qwen/Qwen3.8-Flash-Next-FP8 (recipe min 250 GB)",
+    "Community GGUF smallest ~66-76 GB (ISTA-DASLab Q2_0 66.4 GB, unsloth UD-IQ2_XS 75.8 GB)"
+   ],
+   "vllm": "min_vllm_version 0.30.0; --tool-call-parser qwen3_coder --reasoning-parser qwen3",
+   "llamacpp_ollama": "llama.cpp has qwen4exp arch",
+   "fit_16gb": "Does not fit: smallest GGUF 66 GB exceeds 16 GB VRAM plus about 41 GiB of free RAM.",
+   "coding_agent_evidence": "Vendor: SWE-bench Pro 62.5, SWE-bench Multilingual 81.0",
+   "confidence": "medium",
+   "notes": "Not Apache; out of reach for this machine.",
+   "sources": [
+    "https://huggingface.co/Qwen/Qwen3.8-Flash-Next",
+    "https://raw.githubusercontent.com/vllm-project/recipes/main/models/Qwen/Qwen3.8-Flash-Next.yaml",
+    "https://huggingface.co/api/models/unsloth/Qwen3.8-Flash-Next-GGUF?blobs=true"
+   ]
+  }
+ ],
+ "facts": [
+  {
+   "topic": "release inventory",
+   "claim": "The Qwen org has no Qwen3.7 repository. The Qwen3.8 open releases are Qwen3.8-27B (2026-08-05), -FP8 (2026-08-13), Qwen3.8-2.4T-A95B (+FP8, 2026-08-08) and Qwen3.8-Flash-Next (+FP8, 2026-08-24). Qwen3.7-Plus appears only as a benchmark column.",
+   "source_url": "https://huggingface.co/api/models?author=Qwen&sort=createdAt&direction=-1&limit=200",
+   "source_date": "2026-11-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "release inventory",
+   "claim": "Qwen3.6 has only two open models: 35B-A3B (2026-04-15) and 27B (2026-04-21), each with an official FP8 build. Qwen3.5 (Feb 2026) has 0.8B/2B/4B/9B/27B/35B-A3B/122B-A10B/397B-A17B, with official FP8 and GPTQ-Int4 builds only for 27B and larger.",
+   "source_url": "https://huggingface.co/api/models?author=Qwen&sort=createdAt&direction=-1&limit=200",
+   "source_date": "2026-11-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "multimodality",
+   "claim": "Qwen3.8-27B is described as 'Causal Language Model with Vision Encoder'. The 3.5/3.6/3.8 configs use Qwen3_5ForConditionalGeneration with a vision_config, and Qwen publishes no text-only variants. vLLM's --language-model-only flag skips loading the vision encoder to free VRAM for KV cache.",
+   "source_url": "https://raw.githubusercontent.com/vllm-project/recipes/main/models/Qwen/Qwen3.8-27B.yaml",
+   "source_date": "2026-10-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "thinking control",
+   "claim": "Qwen3.8 thinks by default. Thinking is disabled per request with extra_body chat_template_kwargs {\"enable_thinking\": false}. reasoning_effort accepts xhigh (default), medium or low, and preserve_thinking is on by default.",
+   "source_url": "https://huggingface.co/Qwen/Qwen3.8-27B",
+   "source_date": "2026-11-07",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "thinking control",
+   "claim": "The vLLM recipe says --reasoning-parser qwen3 is needed in practice: the template opens every assistant turn with <think>, so without the parser the reasoning lands in message.content. It also says thinking defaults can be set server-wide with --default-chat-template-kwargs.",
+   "source_url": "https://raw.githubusercontent.com/vllm-project/recipes/main/models/Qwen/Qwen3.8-27B.yaml",
+   "source_date": "2026-10-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "tool parser",
+   "claim": "The vLLM recipe for Qwen3.8-27B uses --enable-auto-tool-choice --tool-call-parser qwen3_coder. A recipe commit on 2026-10-08 switched to qwen3_coder because qwen3_xml broke tool calls on the Rust frontend.",
+   "source_url": "https://github.com/vllm-project/recipes/commits/main/models/Qwen/Qwen3.8-27B.yaml",
+   "source_date": "2026-10-08",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "tool parser",
+   "claim": "In vLLM main, qwen3_coder and qwen3_xml both map to Qwen3EngineToolParser, and qwen3_json is an alias of hermes for the Qwen2.5/QwQ/Qwen3 JSON tool format.",
+   "source_url": "https://raw.githubusercontent.com/vllm-project/vllm/main/vllm/tool_parsers/__init__.py",
+   "source_date": "2026-11-08",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "tool parser",
+   "claim": "The Qwen3, Qwen3-30B-A3B and Qwen3-Next vLLM recipes and the Qwen docs use --tool-call-parser hermes for the older Qwen3/Qwen3-Next models, while Qwen3.5/3.6/3.8 and Qwen3-Coder use qwen3_coder.",
+   "source_url": "https://raw.githubusercontent.com/vllm-project/recipes/main/models/Qwen/Qwen3-Next-80B-A3B-Instruct.yaml",
+   "source_date": "2026-09-10",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "vLLM version",
+   "claim": "The Qwen3.8-27B recipe gives min_vllm_version 0.17.0 and docker image vllm/vllm-openai:qwen38, which Docker Hub shows last updated 2026-08-12. The latest stable vLLM is v0.32.0 (2026-10-18), and vllm/vllm-openai:latest was updated 2026-11-02.",
+   "source_url": "https://hub.docker.com/v2/repositories/vllm/vllm-openai/tags/qwen38",
+   "source_date": "2026-11-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "vLLM version",
+   "claim": "The Qwen3.6-35B-A3B card recommends vllm>=0.19.0. The Qwen3-Coder-Next card requires vllm>=0.15.0. The nvidia NVFP4 Qwen3.6 builds need vLLM >=0.28.0 per the recipe.",
+   "source_url": "https://huggingface.co/Qwen/Qwen3.6-35B-A3B",
+   "source_date": "2026-11-07",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "sm_120 support",
+   "claim": "The recipe marks consumer Blackwell (sm120) as verified on 2026-08-15. On sm120 vLLM selects the FlashInferCutlassNvFp4LinearKernel for NVFP4, which is a real kernel and not an emulation. Block-FP8 Qwen3.5-family checkpoints load without disabling DeepGemm.",
+   "source_url": "https://raw.githubusercontent.com/vllm-project/recipes/main/models/Qwen/Qwen3.8-27B.yaml",
+   "source_date": "2026-10-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "16GB fit",
+   "claim": "Even a 32 GB RTX 5090 (31.4 GiB usable) could run Qwen3.8-27B NVFP4 only with --enforce-eager and a 32K context; CUDA graph capture hit OOM otherwise. So no 27B Qwen fits a 16 GB GPU under vLLM.",
+   "source_url": "https://raw.githubusercontent.com/vllm-project/recipes/main/models/Qwen/Qwen3.8-27B.yaml",
+   "source_date": "2026-10-15",
+   "support": "source-backed"
+  },
+  {
+   "topic": "checkpoint sizes",
+   "claim": "Qwen3.8-27B checkpoint sizes: BF16 55.6 GB, official FP8 30.9 GB, nvidia NVFP4 21.9 GB, Inferact NVFP4 26.4 GB, RedHatAI INT4 19.5 GB, RedHatAI MXFP4 19.8 GB.",
+   "source_url": "https://raw.githubusercontent.com/vllm-project/recipes/main/models/Qwen/Qwen3.8-27B.yaml",
+   "source_date": "2026-10-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "checkpoint sizes",
+   "claim": "Measured from HF blobs: Qwen3.5-4B BF16 9.3 GB; Qwen3.5-9B BF16 19.3 GB; RedHatAI/Qwen3.5-9B-FP8-dynamic 14.0 GB; Qwen3.5-35B-A3B-GPTQ-Int4 24.4 GB; nvidia/Qwen3.6-35B-A3B-NVFP4 23.4 GB; Qwen3.6-35B-A3B-FP8 37.5 GB.",
+   "source_url": "https://huggingface.co/api/models/Qwen/Qwen3.5-9B?blobs=true",
+   "source_date": "2026-11-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "KV cache",
+   "claim": "Per config.json, only 1 in 4 layers is full attention. BF16 KV per token is 32 KiB for Qwen3.5-4B/9B (8 layers x 4 KV heads x 256 dim), 20 KiB for 35B-A3B (10 layers x 2 KV heads) and 64 KiB for 27B models (16 layers x 4 KV heads). A 128k context therefore needs about 4.0, 2.5 and 8.0 GiB respectively, plus a fixed DeltaNet recurrent state.",
+   "source_url": "https://huggingface.co/Qwen/Qwen3.8-27B/raw/main/config.json",
+   "source_date": "2026-11-07",
+   "support": "source-backed"
+  },
+  {
+   "topic": "GGUF",
+   "claim": "Qwen publishes official GGUF only for Qwen3 (2025), Qwen3-VL, Qwen3-Next-80B (2025-12-03) and Qwen3-Coder-Next (2026-02-02). Qwen publishes no GGUF for Qwen3.5/3.6/3.8; those come from ggml-org, unsloth, bartowski and lmstudio-community.",
+   "source_url": "https://huggingface.co/api/models?author=Qwen&search=GGUF&limit=100",
+   "source_date": "2026-11-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "GGUF",
+   "claim": "ggml-org/Qwen3.6-35B-A3B-GGUF: Q4_K_M 20.5 GB, Q8_0 36.9 GB, plus an MTP draft (2.0 GB) and a DFlash draft (0.4 GB).",
+   "source_url": "https://huggingface.co/api/models/ggml-org/Qwen3.6-35B-A3B-GGUF?blobs=true",
+   "source_date": "2026-11-12",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "GGUF",
+   "claim": "unsloth/Qwen3.8-27B-GGUF: UD-Q3_K_XL 13.1 GB, UD-IQ4_XS 14.4 GB, UD-Q4_K_M 16.6 GB, UD-Q4_K_XL 17.7 GB, Q8_0 29.0 GB, mmproj-F16 0.9 GB.",
+   "source_url": "https://huggingface.co/api/models/unsloth/Qwen3.8-27B-GGUF?blobs=true",
+   "source_date": "2026-11-12",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "GGUF",
+   "claim": "Official Qwen/Qwen3-Coder-Next-GGUF: Q4_K_M 48.4 GB, Q5_K_M 56.7 GB, Q6_K 65.5 GB, Q8_0 84.8 GB.",
+   "source_url": "https://huggingface.co/api/models/Qwen/Qwen3-Coder-Next-GGUF?blobs=true",
+   "source_date": "2026-02-04",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "llama.cpp",
+   "claim": "llama.cpp has the architectures qwen35, qwen35moe, qwen3next and qwen4exp. llama-server offers --cpu-moe and --n-cpu-moe N to keep MoE expert weights in CPU RAM, --spec-type draft-mtp/draft-dflash, and OpenAI-style tool calling through --jinja, which is on by default. Latest release is b12418 (2026-11-15).",
+   "source_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/master/tools/server/README.md",
+   "source_date": "2026-11-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "Ollama",
+   "claim": "Ollama qwen3.8 lists only 27b tags: qwen3.8:27b (q4_K_M) 18 GB, q8_0 30 GB, 256K context, with vision, tools and thinking. qwen3.6:35b-a3b is 23 GB, qwen3.5:9b-q4_K_M 6.6 GB, qwen3.5:9b-q8_0 10 GB, qwen3-coder-next:q4_K_M 52 GB and qwen3-coder:30b 19 GB.",
+   "source_url": "https://ollama.com/library/qwen3.8/tags",
+   "source_date": "2026-11-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "benchmarks",
+   "claim": "Qwen3.8-27B (vendor self-reported): Terminal Bench 2.1 (Terminus) 73.0 vs 63.4 for Qwen3.6-27B; SWE-bench Pro 61.7; LiveCodeBench v6 90.3; IFBench 79.5. The card gives no SWE-bench Verified number.",
+   "source_url": "https://huggingface.co/Qwen/Qwen3.8-27B",
+   "source_date": "2026-11-07",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "benchmarks",
+   "claim": "Qwen3.6-35B-A3B (vendor): SWE-bench Verified 73.4, Terminal-Bench 2.0 51.5, SWE-bench Pro 49.5, MCPMark 37.0. Qwen3.6-27B: SWE-bench Verified 77.2, Terminal-Bench 2.0 59.3.",
+   "source_url": "https://huggingface.co/Qwen/Qwen3.6-27B",
+   "source_date": "2026-11-07",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "benchmarks",
+   "claim": "Qwen3.5-9B (vendor): BFCL-V4 66.1, TAU2-Bench 79.1, LiveCodeBench v6 65.6. Qwen3.5-4B: BFCL-V4 50.3, TAU2 79.9.",
+   "source_url": "https://huggingface.co/Qwen/Qwen3.5-9B",
+   "source_date": "2026-03-02",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "benchmarks",
+   "claim": "Qwen3-Coder-Next tech report: SWE-bench Verified 70.6 (SWE-Agent), 71.1 (MiniSWE-Agent), 71.3 (OpenHands); SWE-bench Pro 44.3; Terminal-Bench 2.0 36.2 (Terminus2-json) and 30.9 (Claude Code scaffold); max 300 turns.",
+   "source_url": "https://github.com/QwenLM/Qwen3-Coder/blob/main/qwen3_coder_next_tech_report.pdf",
+   "source_date": "2026-02",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "non-thinking models",
+   "claim": "Qwen3-Coder-Next, Qwen3-Coder-30B-A3B-Instruct and Qwen3-4B-Instruct-2507 each state 'supports only non-thinking mode and does not generate <think></think> blocks'.",
+   "source_url": "https://huggingface.co/Qwen/Qwen3-Coder-Next",
+   "source_date": "2026-02",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "chat template",
+   "claim": "The Qwen3.8-27B chat_template.jinja uses <tool_call><function=...><parameter=...> XML tool calls (the qwen3_coder format) and reads enable_thinking, reasoning_effort and preserve_thinking.",
+   "source_url": "https://huggingface.co/Qwen/Qwen3.8-27B/raw/main/chat_template.jinja",
+   "source_date": "2026-11-07",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "context",
+   "claim": "Qwen3.5/3.6/3.8 models have a native context of 262,144 tokens. YaRN with factor 4.0 extends this to about 1M through --hf-overrides on text_config.rope_parameters and VLLM_ALLOW_LONG_MAX_MODEL_LEN=1. Qwen warns that static YaRN can hurt quality on short texts.",
+   "source_url": "https://huggingface.co/Qwen/Qwen3.8-27B",
+   "source_date": "2026-11-07",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "sampling",
+   "claim": "Qwen3.8 recommended sampling. Thinking: temperature 1.0, top_p 0.95, top_k 20, presence_penalty 0.0. Non-thinking: temperature 0.7, top_p 0.80, top_k 20, presence_penalty 1.5.",
+   "source_url": "https://huggingface.co/Qwen/Qwen3.8-27B",
+   "source_date": "2026-11-07",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "out of scope",
+   "claim": "Qwen-AgentWorld-35B-A3B (2026-06-22) is a 'language world model' for simulating agent environments. It is not a coding assistant, and it needs --language-model-only in vLLM.",
+   "source_url": "https://huggingface.co/Qwen/Qwen-AgentWorld-35B-A3B",
+   "source_date": "2026-06-22",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "out of scope",
+   "claim": "Qwen3.8-Flash-Next has 125B parameters with 6B active, plus 51B n-gram embeddings and 4B MTP (176B in total), under license qwen-community-1.0 (not Apache). Its smallest community GGUF is 66.4 GB, so it cannot run on this machine.",
+   "source_url": "https://huggingface.co/Qwen/Qwen3.8-Flash-Next",
+   "source_date": "2026-11-07",
+   "support": "source-backed"
+  },
+  {
+   "topic": "16GB fit estimate",
+   "claim": "In vLLM on 16 GB with gpu-memory-utilization 0.90 (about 14.3 GiB), Qwen3.5-4B BF16 (9.3 GB) or a community 4-bit Qwen3.5-9B (9.1-9.4 GB) leaves roughly 3.5-4.5 GiB for KV. At 32 KiB/token that is about 110-140k tokens of context. This is not tested on hardware.",
+   "source_url": "https://huggingface.co/Qwen/Qwen3.5-9B/raw/main/config.json",
+   "source_date": "2026-11-15",
+   "support": "inferred"
+  },
+  {
+   "topic": "Qwen docs",
+   "claim": "The Qwen readthedocs vLLM page still describes Qwen3-era usage: vllm>=0.8.5, --tool-call-parser hermes, --reasoning-parser qwen3 (since vLLM 0.9.0). It does not cover Qwen3.5+.",
+   "source_url": "https://qwen.readthedocs.io/en/latest/deployment/vllm.html",
+   "source_date": "undated (copyright 2024)",
+   "support": "direct-statement"
+  }
+ ],
+ "gaps": [
+  "Qwen blog posts at qwen.ai and qwenlm.github.io/blog/qwen3-coder-next/ (404) could not be read; Coder-Next numbers come from the tech report PDF on GitHub.",
+  "Qwen3-Coder-30B-A3B-Instruct benchmarks are only in an image on the card and were not extracted.",
+  "No vendor-official 4-bit (AWQ/GPTQ/NVFP4) build exists for Qwen3.5-9B/4B or any Qwen3.6/3.8 size; the 4-bit options are third-party (RedHatAI, nvidia, Inferact, cyankiwi, AxionML, unsloth, ggml-org). Their quality was not verified.",
+  "Nothing in this run was benchmarked on the actual RTX 5080 Laptop: all KV and fit figures are arithmetic on config.json plus the recipe's RTX 5090 results, not measurements.",
+  "Throughput (tokens/s) with --n-cpu-moe for Qwen3.6-35B-A3B and Qwen3-Coder-Next on this CPU/RAM was not found in a primary source.",
+  "The thinking behaviour of Qwen3.8-Flash-Next was not checked; marked unknown.",
+  "Qwen3-4B-Instruct-2507 KV per token was not computed (config not fetched).",
+  "The OpenCode side (provider config, how reasoning_content and tool calls from vLLM's qwen3 parsers are handled) belongs to another lane and was not checked here.",
+  "Whether vllm/vllm-openai:latest or v0.32.0 includes the gated-delta-net MTP speculative fix mentioned in the recipe (vllm#51812/#51674) was not verified."
+ ]
+}

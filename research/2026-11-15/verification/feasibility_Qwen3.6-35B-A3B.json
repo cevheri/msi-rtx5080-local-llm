@@ -1,0 +1,73 @@
+{
+ "verdicts": [
+  {
+   "claim": "Checkpoint sizes: Qwen BF16 66.97 GiB (71.9 GB), nvidia NVFP4 21.8 GiB (23.42 GB), Intel AutoRound 20.0 GiB (21.49 GB), ggml-org Q4_K_M 19.13 GiB (20.54 GB), unsloth UD-IQ4_XS 16.51 GiB (17.73 GB), UD-Q2_K_XL 11.45 GiB (12.29 GB), mmproj Q8_0 0.57 GiB",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/ggml-org/Qwen3.6-35B-A3B-GGUF?blobs=true"
+  },
+  {
+   "claim": "config.json: 40 layers, 10 full-attention (full_attention_interval 4), 2 KV heads, head_dim 256, max_position_embeddings 262144, 256 experts, moe_intermediate 512, hidden 2048, 1 MTP layer; KV = 2x10x2x256x2 = 20,480 B/token BF16, 10,240 FP8",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Qwen/Qwen3.6-35B-A3B/raw/main/config.json"
+  },
+  {
+   "claim": "Q4_K expert share 16.875 GiB (40 x 256 x 3 x 2048 x 512 x 4.5 bits = 18.12e9 B), 0.422 GiB per layer; non-expert about 2.25 GiB",
+   "verdict": "confirmed",
+   "correction": "Source-backed arithmetic reproduces 16.875 GiB exactly; 19.13 - 16.875 = 2.25 GiB non-expert."
+  },
+  {
+   "claim": "vLLM does not fit on 16 GB without offload (14.65 - 19.40 - 1.2 < 0); NVFP4 is the smallest vLLM-native checkpoint",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/nvidia/Qwen3.6-35B-A3B-NVFP4?blobs=true",
+   "correction": "Intel AutoRound (20.02 GiB total) is slightly smaller in total but still over budget; conclusion unchanged."
+  },
+  {
+   "claim": "vLLM v0.33.0 registers Qwen3_5MoeForConditionalGeneration (registry.py 618-620), Qwen3_5MoeForCausalLM (205), Qwen3_5MoeMTP (740); qwen3_coder -> Qwen3EngineToolParser; qwen3 reasoning -> Qwen3ParserReasoningAdapter; --cpu-offload-params and --language-model-only exist in arg_utils.py (1472, 1497)",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/models/registry.py"
+  },
+  {
+   "claim": "vLLM blockers on 16 GB sm_120: #66264 (UVA offload undone by replace_parameter, open 2026-11-07), #49476 (b12x OOM on 16 GB with this exact NVFP4 model, open), #66423 (segfault with reasoning parser, flashinfer_cutlass, open)",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/vllm-project/vllm/issues/49476"
+  },
+  {
+   "claim": "Recipe rtx_5090 profile: modelopt_fp4, fp8 KV, block-size 128, moe-backend marlin, flashinfer attention with trtllm, util 0.85, max-model-len 65536; no 16 GB profile; min_vllm_version 0.17.0, NVFP4 variant 0.28.0",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/recipes/main/models/Qwen/Qwen3.6-35B-A3B.yaml",
+   "correction": "Recipe prose says SM120 parts run a 4-token MTP draft on flashinfer_cutlass, while the rtx_5090 extra_args list marlin; minor inconsistency inside the recipe, not in the record."
+  },
+  {
+   "claim": "llama.cpp v1.0.0 (latest release, 2026-11-13) has LLM_ARCH_QWEN35MOE 'qwen35moe' (llama-arch.cpp line 46) and chat.cpp routes <tool_call>/<function=/<parameter= templates to the Qwen3-Coder parser 'also used by ... Qwen3.5'",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/v1.0.0/common/chat.cpp"
+  },
+  {
+   "claim": "Image ghcr.io/ggml-org/llama.cpp:server-cuda13 exists",
+   "verdict": "confirmed",
+   "correction": "GHCR manifest request returned HTTP 200; contents (CUDA version) not re-read."
+  },
+  {
+   "claim": "llama.cpp plan: Q4_K_M, -c 131072 f16 KV (2.50 GiB), --n-cpu-moe 20, GPU about 14.5 GiB, RAM about 9 GiB + prompt cache",
+   "verdict": "uncertain",
+   "correction": "Arithmetic reproduces: 1.98 non-expert + 8.44 experts (20 layers) + 2.50 KV + 0.06 recurrent + 1.0-1.5 compute = 14.0-14.5 GiB vs about 14.8 GiB usable. Margin is only 0.3-0.8 GiB and the compute buffer for qwen35moe at -ub 2048 is unmeasured; plan for --n-cpu-moe 21-22 or rely on --fit. Not refuted."
+  },
+  {
+   "claim": "Open tool-call/runtime bugs: llama.cpp #30118 (Qwen3.6 omits <tool_call>, leaks to content), #27330 (sm_120 laptop CUDA graph hang), #30357 (prefix-cache invalidation); vLLM #65774 (qwen3_coder repeated parameter)",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/issues/30118"
+  },
+  {
+   "claim": "Decode speed estimate 40-90 tok/s with --n-cpu-moe 20",
+   "verdict": "uncertain",
+   "correction": "Bandwidth-bound arithmetic only; no measurement on this machine; DDR5 bandwidth unverified."
+  },
+  {
+   "claim": "Verdict: good for OpenCode via llama.cpp with expert offload at >=64k (131k) context with working tool calls; vLLM not recommended on 16 GB",
+   "verdict": "confirmed",
+   "correction": "Feasible on paper and backed by source; tool calls work through the dedicated parser but with a known intermittent leak (#30118), so OpenCode may see occasional missed tool calls. Best realistic config: llama.cpp server-cuda13, ggml-org Q4_K_M, -c 131072 (or 262144 with q8_0 KV), --n-cpu-moe 20-22, no mmproj, GGML_CUDA_DISABLE_GRAPHS=1 if Xid 8 hangs appear."
+  }
+ ],
+ "overall": "holds",
+ "summary": "I could not refute any runtime claim in the record. Live reads match its numbers. Weight sizes match the HF API (Q4_K_M 19.13 GiB, NVFP4 21.82 GiB, AutoRound 20.02 GiB, UD-IQ4_XS 16.51 GiB, UD-Q2_K_XL 11.45 GiB). From config.json, KV is 20,480 B per token at BF16: 10 full-attention layers x 2 KV heads x head_dim 256. The Q4_K expert share works out to exactly 16.875 GiB. vLLM v0.33.0 registers the architecture and both parsers (qwen3_coder, qwen3) and has the offload and language-model-only flags. The 16 GB blockers are real and open: #66264, #49476 (this exact NVFP4 model OOMs on a 16 GB sm_120 card) and #66423. So the \"vLLM does not fit\" verdict holds. On the llama.cpp side, release v1.0.0 has the qwen35moe architecture and routes this chat template to the Qwen3-Coder tool-call parser. The server-cuda13 image tag exists. The plan recomputes to 14.0-14.5 GiB of VRAM against about 14.8 GiB usable, so 131k context with --n-cpu-moe 20 is feasible but tight. The weak point is the compute buffer, which nobody has measured: be ready to use --n-cpu-moe 21-22, or let --fit choose. Tool calls work, but open issue #30118 means some calls are occasionally missed. The speed figures are only bandwidth arithmetic. Gaps: no measured throughput or VRAM on this laptop. Ollama's offload behaviour for this model was not checked."
+}

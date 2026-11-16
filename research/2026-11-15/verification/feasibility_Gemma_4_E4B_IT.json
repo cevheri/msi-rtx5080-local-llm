@@ -1,0 +1,77 @@
+{
+ "verdicts": [
+  {
+   "claim": "Weight sizes: google/gemma-4-E4B-it model.safetensors 15.99 GB (14.894 GiB); qat-w4a16-ct 11.51 GB (10.723 GiB); qat-q4_0-gguf 5.15 GB + mmproj 0.99 GB; ggml-org Q8_0 8.03 GB (7.48 GiB), Q4_0 4.59, BF16 15.05; unsloth NVFP4 8.11 GB",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/google/gemma-4-E4B-it-qat-w4a16-ct?blobs=true",
+   "correction": "Exact bytes from the HF API on 2026-11-15: BF16 15,992,595,884; W4A16 11,513,861,828; QAT Q4_0 gguf 5,154,941,280 + mmproj 991,552,256; ggml-org Q8_0 8,031,237,344 (7.48 GiB); NVFP4 8,108,662,836. I range-read the W4A16 safetensors header (364,408 B). Per-group totals: decoder linears/norms 3.332 GiB (int4 packed plus BF16 scales), PLE 5.25, embed_tokens 1.25, audio 0.575, vision 0.315, total 10.723 GiB. Text-only is 9.833 GiB, as the record says. Vision and audio stay BF16 (vision is in the 'ignore' list, and audio is the same size as in BF16)."
+  },
+  {
+   "claim": "Architecture and KV layout: 42 layers, full attention at 5,11,...,41; num_kv_shared_layers 18, so only layers 0-23 own KV (4 full: 5,11,17,23, and 20 sliding); kv heads 2, head_dim 256 sliding, global_head_dim 512, window 512, max_position_embeddings 131072",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/google/gemma-4-E4B-it/raw/main/config.json",
+   "correction": "The header read backs this up. The W4A16 checkpoint has k_proj and k_norm for layers 0-23 only. The BF16 checkpoint carries them for all 42 layers, and the vLLM v0.33.0 gemma4.py WeightsMapper (lines 120-125) drops them for shared layers."
+  },
+  {
+   "claim": "KV bytes per token = 16,384 B BF16 (8,192 B FP8); vLLM pool 14.65 - 9.833 - 1.2 = 3.617 GiB, so about 237k BF16 / 474k FP8 tokens, capped at 131,072; one 128K sequence uses 2.0 GiB",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/google/gemma-4-E4B-it/raw/main/config.json",
+   "correction": "The arithmetic holds: 2 x 4 x 2 x 512 x 2 = 16,384. One small correction (inferred): vLLM's hybrid allocator sizes each sliding-window group as about window plus max_num_batched_tokens per sequence, and since v0.26 it adds in-flight sizing (issue #49878, open, comment traced to #47728). So the sliding-layer cost is about 20 layers x 2,048 B x ~2,600 tokens, roughly 100 MiB per sequence, not the record's 21-26 MiB. Real capacity is therefore somewhat lower than the arithmetic. 128K still fits, with about 1.4 GiB to spare in BF16 KV."
+  },
+  {
+   "claim": "BF16 checkpoint does not fit vLLM (14.004 GiB text-only + 1.2 > 14.65)",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/google/gemma-4-E4B-it?blobs=true",
+   "correction": "Dropping the unused shared-layer k/v_proj saves under 0.1 GiB, which does not change the result."
+  },
+  {
+   "claim": "vLLM v0.33.0 registers Gemma4ForConditionalGeneration (registry.py:427), Gemma4ForCausalLM (:117), Gemma4MTPModel (:723); tool parser 'gemma4' -> Gemma4EngineToolParser; reasoning parser 'gemma4' -> Gemma4ParserReasoningAdapter; --language-model-only exists",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/model_executor/models/registry.py",
+   "correction": "Read at the v0.33.0 tag: tool_parsers/__init__.py:253-255, reasoning/__init__.py:55-57, config/multimodal.py:304 language_model_only. The recipe (date_updated 2026-09-12, min_vllm_version 0.19.1) lists --tool-call-parser gemma4, --reasoning-parser gemma4, --chat-template examples/tool_chat_template_gemma4.jinja and the text_only feature --language-model-only."
+  },
+  {
+   "claim": "W4A16 on sm_120 runs on the Marlin kernel (Machete is Hopper-only)",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/model_executor/kernels/linear/mixed_precision/marlin.py",
+   "correction": "This was inferred before and is now source-backed. The CUDA order at __init__.py:539-547 is CutlassW4A8, Machete, Marlin. Machete requires is_device_capability(90) (machete.py:33). Marlin get_min_capability is 75, and MARLIN_SUPPORTED_GROUP_SIZES = [-1, 32, 64, 128] includes the checkpoint's group_size 32 (symmetric int4, no zero points). CutlassW4A8 needs int8 activations, and input_activations is null. It is still not confirmed by a run."
+  },
+  {
+   "claim": "Attention on sm_120 is forced to TRITON_ATTN because FA4 is gated to capability major 10",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/vllm-project/flash-attention/blob/b273a02621d3c94bc747df67204f591b67f38fae/vllm_flash_attn/flash_attn_interface.py",
+   "correction": "cmake/external_projects/vllm_flash_attn.cmake:42 at v0.33.0 pins b273a026, and _is_fa4_supported returns False unless the capability major is 10. Gemma4Config (models/config.py:301-367) falls back to Triton. One related issue: #57712 (open) is a Triton head_dim=512 shared-memory overflow (98,304 B needed) on Turing's 64 KB. sm_120 has about 99 KB per block, so it should fit, but nothing found confirms that on sm_120."
+  },
+  {
+   "claim": "No blocking vLLM issue for this checkpoint on sm_120",
+   "verdict": "uncertain",
+   "evidence_url": "https://github.com/vllm-project/vllm/issues/44788",
+   "correction": "No open sm_120 issue targets E4B W4A16. #40677 only applies when FLASHINFER is forced, and the record's command does not do that. #44788 (open, stale) reports a crash on KV-shared checkpoints that lack k_norm. The W4A16 checkpoint does lack k_norm for layers 24-41, but v0.33.0 gemma4.py:409-411 builds shared layers with q_proj only, so I judge it fixed in the code; I did not test this with a run. #45070 (QAT config missing num_soft_tokens) could not be reproduced on main by its reviewer. #62354 (open PR) means the PLE table (5.25 GiB) stays on the GPU in v0.33.0, which the budget already counts."
+  },
+  {
+   "claim": "Cited open parser bugs #54256, #53363, #50889, #51284, #57231, #66430, #49717, #67454, #49878, #40677, #38887 exist and are open",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/vllm-project/vllm/issues/54256",
+   "correction": "All are open on 2026-11-15, with titles matching the record. The record also omits #39468 (open, wrong tool-call format) and #39392 (pad tokens under concurrent requests with the gemma4 tool parser), and PR #66269 (open, 2026-11-07: preserve assistant content before tool calls)."
+  },
+  {
+   "claim": "llama.cpp: gemma4 arch in b12418, KV sharing via n_layer_kv_from_start/kv_source, Gemma4 template detection by '<|tool_call>call:' with the PEG gemma4 parser; v1.0.0 is GitHub latest (2026-11-13) and b-builds are prerelease",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/blob/b12418/common/chat.cpp",
+   "correction": "Confirmed: llama-arch.cpp:65-66, models/gemma4.cpp:8-17, chat.cpp:1399-1402. The releases API shows v1.0.0 as latest, b12414-b12420 as prerelease, and b12420 is now the newest. The ghcr manifest server-cuda13 returns HTTP 200. The flags --no-mmproj, -fa on|off|auto, -ctk, --jinja and -rea/--reasoning all exist in arg.cpp at b12418. The CUDA FA kernel handles D=512 when gqa_ratio >= 2 (here 8/2 = 4) and allows quantized K/V (fattn.cu:657-664), so -fa on with q8_0 KV works for the global layers."
+  },
+  {
+   "claim": "llama.cpp VRAM about 10.5 GiB for Q8_0 at 131072 ctx (about 9.6 GiB with q8_0 KV)",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/blob/b12418/src/llama-kv-cache-iswa.cpp",
+   "correction": "7.48 GiB + 2.0 GiB F16 full KV (1.06 GiB at q8_0) + compute buffers. The SWA cache is GGML_PAD(min(size, n_swa x n_seq + n_ubatch), 256) (iswa.cpp:73). With several server slots that is up to about 2,560 tokens x 40 KiB, about 100 MiB, which is negligible. The fit holds, with about 5 GiB of headroom."
+  },
+  {
+   "claim": "Verdict: serves OpenCode with working tool calls and >=64k context on this machine",
+   "verdict": "uncertain",
+   "correction": "Capacity and support are confirmed: 128K fits on both runtimes, and the parsers and template are present. Whether tool calls work end to end is not established. Many open gemma4 parser bugs remain in vLLM (#54256, #50889, #53363, #66430), there is no run evidence on sm_120, the model is small (Tau2 42.2% self-reported), and OpenCode v2.3.0 needs capabilities.tools set manually. The best realistic configuration is the record's own: vLLM v0.33.0 with google/gemma-4-E4B-it-qat-w4a16-ct, --language-model-only, --max-model-len 131072 (or 65536), gemma4 tool and reasoning parsers together; or llama.cpp server-cuda13 with ggml-org Q8_0 and -c 131072 -fa on -ctk/-ctv q8_0. Use it as a stack smoke test, not as the daily agent."
+  }
+ ],
+ "overall": "holds-with-corrections",
+ "summary": "Nothing in the record is refuted. Every file size matches the HF API to the byte. I range-read the W4A16 safetensors header, and it reproduces the 9.833 GiB text-only weight figure. From config.json the KV cost is 16,384 B/token in BF16 (4 KV-owning full-attention layers x 2 KV heads x 512 head_dim), so a 128K context fits in both vLLM (pool about 3.6 GiB, 2.0 GiB per 128K sequence) and llama.cpp (Q8_0 about 9.6-10.5 GiB VRAM).\n\nSource at the v0.33.0 tag confirms that the architecture is registered, both gemma4 parsers exist, and --language-model-only is available. It also confirms that Marlin serves W4A16 on sm_120 (Machete is Hopper-only, Marlin min capability 75, group size 32 supported), which upgrades that claim from inferred to source-backed. Triton attention is forced on sm_120 because the pinned FA build (b273a026) gates FA4 to capability major 10.\n\nOn llama.cpp b12418, gemma4 support, KV sharing, the Gemma4 tool template detection, the flags in the commands, and CUDA flash attention at head_dim 512 with q8_0 KV are all confirmed.\n\nCorrections:\n1. vLLM's sliding-window KV is closer to 100 MiB per sequence than 21-26 MiB, because it sizes for the window plus the batched-token chunk and adds in-flight sizing (#49878). This has no effect on the 128K fit.\n2. #44788 (crash on KV-shared checkpoints without k_norm) is still open, and the W4A16 checkpoint does lack k_norm for layers 24-41. I judge it handled in v0.33.0 gemma4.py, but I did not test it.\n3. The record omits the open issues #39468 and #39392.\n\nGaps: there is no measured run on sm_120. Reliability of end-to-end OpenCode tool calls is unproven given the open gemma4 parser bugs. The Triton head_dim=512 shared-memory fit on sm_120 is not confirmed.\n\nScratch data: $SCRATCH/g4v/hdr.json (W4A16 header) and $SCRATCH/g4v/bhdr.json (BF16 header)."
+}

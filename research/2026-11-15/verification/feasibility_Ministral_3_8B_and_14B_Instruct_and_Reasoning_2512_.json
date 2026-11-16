@@ -1,0 +1,102 @@
+{
+ "overall": "holds-with-corrections",
+ "summary": "I could not refute any runtime claim in the record. On this machine Ministral 3 can serve OpenCode with tool calls and at least 64k context. The safest setup is llama.cpp with the official 14B Q4_K_M GGUF, q8_0 KV cache, -c 65536 and -fa on. My estimate is 13.8 GiB of VRAM, inside the 15.81 GiB free. In vLLM v0.33.0, the 8B Instruct FP8 (about 70k) and the 8B Reasoning AWQ (about 116k) reach 64k comfortably. Both need --language-model-only, FP8 KV and --attention-backend TRITON_ATTN. The 14B Reasoning AWQ in vLLM is the weak point: at the default 0.92 it gets about 60.0k, and at 0.95 about 66.2k against the 65,536 requested, a 1% margin that depends on the guessed 1.2 GiB reserve. Corrections: (a) PR #65744, which causes issue #67520, merged 2026-11-09 and is not an ancestor of the v0.33.0 tag, so v0.33.0 does not have that regression. (b) A new open issue, #67755 (2026-11-15, seen on main), reports that Tekken tokenizers garble emoji and other multi-byte text when special tokens are kept. In v0.33.0, vllm/parser/mistral.py:378 sets skip_special_tokens=False on its non-grammar path when tools are present, so whether v0.33.0 is affected is unverified. (c) The NVIDIA Container Toolkit is not installed yet, and every docker --gpus command needs it. (d) Independent agentic scores are low (AA Terminal-Bench 9.7% for the 14B), so the 'weak' quality verdict stands; it is a feasibility pass, not a recommendation for coding work.",
+ "verdicts": [
+  {
+   "claim": "Weight sizes: 8B Instruct FP8 9.70 GiB, 14B Reasoning AWQ 9.68-9.69 GiB, 8B Reasoning AWQ 6.69 GiB, 14B Instruct FP8 14.65 GiB, official 14B GGUF Q4_K_M 7.67 GiB / Q5_K_M 8.96 / Q8_0 13.37, 8B GGUF Q4_K_M 4.84 / Q8_0 8.41 GiB",
+   "verdict": "confirmed",
+   "correction": "HF API ?blobs=true values: 8B-Instruct shards 4983094790+4992892530+444667504 = 9.705 GiB; cyankiwi 14B AWQ shards = 9.691 GiB; cyankiwi 8B AWQ = 6.684 GiB; 14B-Instruct FP8 shards = 14.647 GiB; 14B Q4_K_M 8239591488 B = 7.674 GiB; 8B Q8_0 9029392800 B = 8.409 GiB. Each repo also carries a duplicate consolidated.safetensors, and model.safetensors.index.json is present.",
+   "evidence_url": "https://huggingface.co/api/models/mistralai/Ministral-3-8B-Instruct-2512?blobs=true"
+  },
+  {
+   "claim": "Vision tower plus projector is about 0.80 GiB (8B) and 0.82 GiB (14B), so --language-model-only frees that much",
+   "verdict": "confirmed",
+   "correction": "Safetensors header range-read: 8B Instruct vision+projector 856944640 B = 0.798 GiB; 14B AWQ 877916160 B = 0.818 GiB; 8B AWQ 0.798 GiB. lm_head is 1.0 GiB (8B) and 1.25 GiB (14B), BF16, unquantized in all of them.",
+   "evidence_url": "https://huggingface.co/cyankiwi/Ministral-3-14B-Reasoning-2512-AWQ-4bit/resolve/main/model-00001-of-00003.safetensors"
+  },
+  {
+   "claim": "KV bytes/token: all layers full GQA; 14B 40 layers x 8 KV x 128 -> 163,840 B BF16; 8B 34 layers -> 139,264 B; max_position_embeddings 262144",
+   "verdict": "confirmed",
+   "correction": "config.json text_config: 14B num_hidden_layers 40, num_key_value_heads 8, head_dim 128, sliding_window null, no layer_types; 8B 34/8/128. YaRN factor 16 over 16384 confirmed. The cyankiwi AWQ config is identical.",
+   "evidence_url": "https://huggingface.co/mistralai/Ministral-3-14B-Reasoning-2512/raw/main/config.json"
+  },
+  {
+   "claim": "vLLM context: 8B Instruct FP8, language-only, FP8 KV about 70k; 8B Reasoning AWQ, language-only, about 116k FP8 / 58k BF16",
+   "verdict": "confirmed",
+   "correction": "8B FP8: 14.648 - (9.705 - 0.798) - 1.2 = 4.541 GiB / 69,632 B = 70.0k (FP8), 35.0k (BF16). 8B AWQ: 14.648 - 5.886 - 1.2 = 7.562 GiB, which gives 116.6k (FP8) or 58.3k (BF16). Both clear 64k with FP8 KV.",
+   "evidence_url": "https://huggingface.co/api/models/cyankiwi/Ministral-3-8B-Reasoning-2512-AWQ-4bit?blobs=true"
+  },
+  {
+   "claim": "14B Reasoning AWQ in vLLM reaches 64k with --gpu-memory-utilization 0.95, language-only and FP8 KV (about 66k)",
+   "verdict": "uncertain",
+   "correction": "Arithmetic: 16303 x 0.95 = 15488 MiB = 15.125 GiB; minus 8.873 GiB of language-model weights and the 1.2 GiB reserve leaves 5.052 GiB, or 66.2k tokens at 81,920 B/token. That is about 1% above 65,536. At the default 0.92 it is 60.0k, which falls short of 64k. Free VRAM at idle (16191 MiB) does cover 0.95. Whether it starts depends on the real activation and CUDA-graph reserve, so treat it as marginal. Fallbacks: --max-model-len 57344, the 8B, or llama.cpp.",
+   "evidence_url": "https://huggingface.co/api/models/cyankiwi/Ministral-3-14B-Reasoning-2512-AWQ-4bit?blobs=true"
+  },
+  {
+   "claim": "Official 14B Instruct FP8 (14.65 GiB) and the BF16 checkpoints do not fit in vLLM",
+   "verdict": "confirmed",
+   "correction": "14.647 GiB of shards against a 14.648 GiB budget. Even language-only (13.85 GiB) leaves no room for the 1.2 GiB reserve plus KV.",
+   "evidence_url": "https://huggingface.co/api/models/mistralai/Ministral-3-14B-Instruct-2512?blobs=true"
+  },
+  {
+   "claim": "vLLM v0.33.0 registers Mistral3ForConditionalGeneration (registry.py:541) and Ministral3ForCausalLM (:178), and has --language-model-only (arg_utils.py:1497) and --attention-backend with TRITON_ATTN",
+   "verdict": "confirmed",
+   "correction": "Raw source at tag v0.33.0: registry.py lines 178 and 541; arg_utils.py 1497 '--language-model-only' and 1114 '--attention-backend'; v1/attention/backends/registry.py:48 TRITON_ATTN.",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/models/registry.py"
+  },
+  {
+   "claim": "Parsers: --tool-call-parser mistral and --reasoning-parser mistral exist in v0.33.0",
+   "verdict": "confirmed",
+   "correction": "tool_parsers/__init__.py:169 'mistral'; reasoning/__init__.py:139 'mistral' maps to (mistral_reasoning_parser, MistralParserReasoningAdapter).",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/reasoning/__init__.py"
+  },
+  {
+   "claim": "W4A16 compressed-tensors group 32 runs on Marlin on sm_120",
+   "verdict": "confirmed",
+   "correction": "marlin.py get_min_capability returns 75; marlin_utils.py:37 MARLIN_SUPPORTED_GROUP_SIZES = [-1, 32, 64, 128], and the cyankiwi config uses group_size 32, symmetric int4. Static support only, not tested on this machine.",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/layers/quantization/utils/marlin_utils.py"
+  },
+  {
+   "claim": "Open issues #53481 (FlashInfer garbage for Mistral3 on sm_120; TRITON_ATTN correct with fp8 KV), #48945, #66113, #64309, #58145, #55571 and PR #53754 (unmerged)",
+   "verdict": "confirmed",
+   "correction": "All are open as of 2026-11-15. The #53481 body states that TRITON_ATTN is correct with fp8_e4m3 KV and that forcing fp8 KV removes FLASH_ATTN, so auto-selection lands on FlashInfer. --attention-backend TRITON_ATTN is therefore mandatory with FP8 KV.",
+   "evidence_url": "https://github.com/vllm-project/vllm/issues/53481"
+  },
+  {
+   "claim": "#67520 mistral parser regression is on main only; check v0.34",
+   "verdict": "confirmed",
+   "correction": "The cause, PR #65744, merged 2026-11-09 (merge sha 5c5f126). GitHub's compare of v0.33.0 with that sha returns 'diverged', so the commit is not in v0.33.0, which therefore does not have the regression. It may land in v0.34.",
+   "evidence_url": "https://github.com/vllm-project/vllm/pull/65744"
+  },
+  {
+   "claim": "Known-issues list is complete for this model on vLLM",
+   "verdict": "uncertain",
+   "correction": "Missing: #67755 (open, 2026-11-15, main @ 730194d) says Tekken tokenizers garble emoji and multi-byte characters when skip_special_tokens=False. The v0.33.0 vllm/parser/mistral.py:378 sets skip_special_tokens=False when tools are present on the non-grammar path. Whether v0.33.0 is affected was not checked; the impact on code is mostly limited to emoji and CJK text.",
+   "evidence_url": "https://github.com/vllm-project/vllm/issues/67755"
+  },
+  {
+   "claim": "llama.cpp b12418 supports mistral3, with a dedicated Ministral 3 handler selected at common/chat.cpp:1271 by the [SYSTEM_PROMPT]/[TOOL_CALLS]/[ARGS] markers and the absence of [CALL_ID]",
+   "verdict": "confirmed",
+   "correction": "llama-arch.cpp:157 LLM_ARCH_MISTRAL3 'mistral3'; chat.cpp lines 1271-1275 hold the detection logic; common/parsers/ministral3.cpp returns HTTP 200 at b12418; the release (2026-11-15T15:53:48Z) is marked prerelease=true. The parser was not exercised end to end.",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/blob/b12418/common/chat.cpp"
+  },
+  {
+   "claim": "llama.cpp 14B Q4_K_M at 64k with q8_0 KV needs about 13.8 GiB; F16 KV needs 18.5 GiB; 8B Q4_K_M at 128k about 14.7 GiB; 8B Q8_0 at 64k 13.7 GiB",
+   "verdict": "confirmed",
+   "correction": "q8_0 = 1.0625 B/element: 14B 2 x 40 x 1024 x 1.0625 = 87,040 B/token, so 65,536 tokens take 5.31 GiB, plus 7.674 GiB of weights and 0.8 GiB of buffers = 13.79 GiB. 8B: 73,984 B/token; at 131,072 tokens that is 9.03 GiB, plus 4.84 + 0.8 = 14.67 GiB. All fit in 15.81 GiB free. A q8_0 V cache needs -fa on, which the command includes.",
+   "evidence_url": "https://huggingface.co/api/models/mistralai/Ministral-3-14B-Reasoning-2512-GGUF?blobs=true"
+  },
+  {
+   "claim": "Ollama has Instruct-only tags (3b/8b/14b in q4_K_M, q8_0 and fp16)",
+   "verdict": "confirmed",
+   "correction": "The tags page lists only *-instruct-2512-* tags; there is no reasoning tag.",
+   "evidence_url": "https://ollama.com/library/ministral-3/tags"
+  },
+  {
+   "claim": "Verdict: serves OpenCode with working tool calls at 64k or more on this machine",
+   "verdict": "uncertain",
+   "correction": "Memory feasibility is confirmed for llama.cpp 14B Q4_K_M at 64k and for vLLM 8B (FP8 Instruct or AWQ Reasoning) at 64k and above. Working tool calls are supported by the source (both parsers exist) but were not tested end to end with OpenCode v2.3.0, whose vLLM discovery starts with tools disabled (issue #60202, tool_choice omitted). Prerequisite: install the NVIDIA Container Toolkit before any docker --gpus run. Best realistic configuration: llama.cpp server-cuda13 with mistralai Ministral-3-14B-{Reasoning|Instruct}-2512 Q4_K_M, -ngl 99 -c 65536 -fa on -ctk q8_0 -ctv q8_0, no mmproj.",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/blob/b12418/common/parsers/ministral3.cpp"
+  }
+ ]
+}

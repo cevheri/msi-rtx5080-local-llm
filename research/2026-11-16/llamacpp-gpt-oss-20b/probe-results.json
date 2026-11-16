@@ -1,0 +1,193 @@
+{
+ "label": "llamacpp-gpt-oss-20b-mxfp4",
+ "base": "http://127.0.0.1:8080/v1",
+ "model": "local",
+ "started": "2026-11-16T00:26:23+0300",
+ "models": [
+  "local"
+ ],
+ "ok_test": {
+  "content": "OK",
+  "reasoning_chars": 151,
+  "finish": "stop",
+  "usage": {
+   "completion_tokens": 49,
+   "prompt_tokens": 72,
+   "total_tokens": 121,
+   "prompt_tokens_details": {
+    "cached_tokens": 0
+   }
+  },
+  "seconds": 0.49
+ },
+ "tool_test": {
+  "finish": "tool_calls",
+  "calls": [
+   {
+    "name": "get_weather",
+    "arguments": "{\"city\":\"Paris\"}"
+   }
+  ],
+  "content": "",
+  "seconds": 0.26
+ },
+ "decode_runs": [
+  {
+   "ttft_s": 0.059,
+   "total_s": 9.076,
+   "usage": {
+    "completion_tokens": 1500,
+    "prompt_tokens": 93,
+    "total_tokens": 1593,
+    "prompt_tokens_details": {
+     "cached_tokens": 60
+    }
+   },
+   "stream_pieces": 1491,
+   "decode_tok_s": 166.2,
+   "server_timings": {
+    "prompt_n": 33,
+    "prompt_per_second": 962.6885265031068,
+    "predicted_n": 1500,
+    "predicted_per_second": 165.93714469220873,
+    "cache_n": 60
+   }
+  },
+  {
+   "ttft_s": 0.067,
+   "total_s": 9.069,
+   "usage": {
+    "completion_tokens": 1500,
+    "prompt_tokens": 93,
+    "total_tokens": 1593,
+    "prompt_tokens_details": {
+     "cached_tokens": 60
+    }
+   },
+   "stream_pieces": 1491,
+   "decode_tok_s": 166.5,
+   "server_timings": {
+    "prompt_n": 33,
+    "prompt_per_second": 935.9312515953374,
+    "predicted_n": 1500,
+    "predicted_per_second": 166.18909014632845,
+    "cache_n": 60
+   }
+  },
+  {
+   "ttft_s": 0.066,
+   "total_s": 9.093,
+   "usage": {
+    "completion_tokens": 1500,
+    "prompt_tokens": 93,
+    "total_tokens": 1593,
+    "prompt_tokens_details": {
+     "cached_tokens": 60
+    }
+   },
+   "stream_pieces": 1489,
+   "decode_tok_s": 166.0,
+   "server_timings": {
+    "prompt_n": 33,
+    "prompt_per_second": 955.5800081079516,
+    "predicted_n": 1500,
+    "predicted_per_second": 165.7176502895471,
+    "cache_n": 60
+   }
+  }
+ ],
+ "decode_tok_s_median": 166.2,
+ "long_prompt": [
+  {
+   "target_tokens": 8000,
+   "first": {
+    "ttft_s": 1.124,
+    "total_s": 1.537,
+    "usage": {
+     "completion_tokens": 64,
+     "prompt_tokens": 8058,
+     "total_tokens": 8122,
+     "prompt_tokens_details": {
+      "cached_tokens": 60
+     }
+    },
+    "stream_pieces": 61,
+    "decode_tok_s": 152.7,
+    "server_timings": {
+     "prompt_n": 7998,
+     "prompt_per_second": 7436.292230106663,
+     "predicted_n": 64,
+     "predicted_per_second": 145.05700970730717,
+     "cache_n": 60
+    }
+   },
+   "repeat_same_prompt": {
+    "ttft_s": 0.047,
+    "total_s": 0.462,
+    "usage": {
+     "completion_tokens": 64,
+     "prompt_tokens": 8058,
+     "total_tokens": 8122,
+     "prompt_tokens_details": {
+      "cached_tokens": 8057
+     }
+    },
+    "stream_pieces": 61,
+    "decode_tok_s": 151.7,
+    "server_timings": {
+     "prompt_n": 1,
+     "prompt_per_second": 121.69891687963977,
+     "predicted_n": 64,
+     "predicted_per_second": 145.1084628176839,
+     "cache_n": 8057
+    }
+   }
+  },
+  {
+   "target_tokens": 30000,
+   "first": {
+    "ttft_s": 4.048,
+    "total_s": 4.615,
+    "usage": {
+     "completion_tokens": 64,
+     "prompt_tokens": 30003,
+     "total_tokens": 30067,
+     "prompt_tokens_details": {
+      "cached_tokens": 8043
+     }
+    },
+    "stream_pieces": 61,
+    "decode_tok_s": 111.2,
+    "server_timings": {
+     "prompt_n": 21960,
+     "prompt_per_second": 5546.352326222502,
+     "predicted_n": 64,
+     "predicted_per_second": 105.50325050490841,
+     "cache_n": 8043
+    }
+   },
+   "repeat_same_prompt": {
+    "ttft_s": 0.095,
+    "total_s": 0.652,
+    "usage": {
+     "completion_tokens": 64,
+     "prompt_tokens": 30003,
+     "total_tokens": 30067,
+     "prompt_tokens_details": {
+      "cached_tokens": 30002
+     }
+    },
+    "stream_pieces": 61,
+    "decode_tok_s": 113.1,
+    "server_timings": {
+     "prompt_n": 1,
+     "prompt_per_second": 90.92562284051647,
+     "predicted_n": 64,
+     "predicted_per_second": 108.40798571079502,
+     "cache_n": 30002
+    }
+   }
+  }
+ ],
+ "finished": "2026-11-16T00:26:58+0300"
+}

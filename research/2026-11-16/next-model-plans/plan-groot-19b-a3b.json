@@ -1,0 +1,136 @@
+{
+ "key": "groot-19b-a3b",
+ "repo": "GrootTeam/Groot-19B-A3B-261023-GGUF",
+ "file": "Groot-19B-A3B-261023-Q4_K_M.gguf",
+ "size_bytes": 11657618560,
+ "header_ok": true,
+ "header_facts": "GGUF v3, arch qwen35moe, 753 tensors, header 11.0 MB (fit in the first 32 MiB). block_count 41 = 40 trunk blocks + 1 NextN/MTP block (nextn_predict_layers 1, blk.40 holds nextn.eh_proj etc.). All 40 trunk blocks are MoE: 128 experts, 8 used, expert FFN 512, shared expert FFN 512; no dense blocks. Attention layout: hybrid Gated DeltaNet, full_attention_interval 4, so blocks 3,7,...,39 are full attention (10 layers) and 30 are recurrent (block 40, the MTP block, is also attention but is not loaded by default). Attention: 16 Q heads, 2 KV heads, key and value length 256, no sliding window. SSM: conv kernel 4, inner 4096, state 128, group 16, time-step rank 32. embedding 2048, vocab 248,320 (tokenizer pre qwen35), native context 262,144, rope base 1e7, IMROPE. Tensor bytes 10.847 GiB (Q4_K 8.06, Q6_K 2.74, F32 0.04). Experts 9.325 GiB in total: 0.2109 or 0.2432 GiB per block; blocks 0-39 hold 9.082 GiB, MTP block 40 holds 0.243 GiB. Non-expert block tensors 0.845 GiB for blocks 0-39 (+0.022 GiB in blk.40). output.weight Q6_K + output_norm 0.389 GiB. token_embd Q4_K 0.266 GiB (stays on the host). Non-expert GPU GiB as loaded (MTP skipped): 0.845 + 0.389 = 1.234 GiB (script says 1.255 because it counts blk.40). Embedded chat template 7,536 chars: Qwen3-Coder XML tools, thinking on by default, enable_thinking false emits an empty think block, every past assistant turn is re-rendered with its reasoning, no preserve_thinking variable.",
+ "kv_math": "Full-attention KV (f16): 10 layers x 2 KV heads x (256 K + 256 V) x 2 B = 20,480 B/token = 20 KiB/token; x 131,072 = 2.500 GiB = 2,560 MiB. llama.cpp b12407 builds the hybrid memory with filter_attn = il < n_layer() && !is_recr(il) (src/llama-model.cpp:3334-3340), so the MTP block 40 adds no KV in the main context. No SWA, so iswa sizing and --swa-full do not apply. Recurrent state (f32, -np 1): conv (4-1) x (4096 + 2 x 16 x 128) = 24,576 elements = 96 KiB per layer; SSM 32 heads x 128 x 128 = 524,288 elements = 2 MiB per layer; 30 layers x 2.094 MiB = 62.8 MiB (inside the 0.8 GiB overhead, same layout as Qwen3.6). Alternative q8_0 at 262,144: 20,480 x 1.0625/2 = 10,880 B/token x 262,144 = 2.656 GiB = 2,720 MiB, plus about 128 to 256 MiB more compute buffer for the larger KQ mask (estimate). f16 at 262,144 would be 5.0 GiB and does not fit (10,563 + 5,120 + 819 + 112 = 16,614 MiB).",
+ "recommended": {
+  "context": 131072,
+  "kv_type": "f16",
+  "n_cpu_moe": 0,
+  "moe_cache_mib": null,
+  "load_mode": "mmap",
+  "threads": null,
+  "vram_breakdown": "Experts blocks 0-39 9,300 MiB (9.082 GiB) + non-expert block weights 865 MiB (0.845 GiB) + output.weight/output_norm 398 MiB (0.389 GiB) = 10,563 MiB weights; MTP block 40 (271 MiB) skipped because load_mtp defaults to false (src/llama-model.cpp:4118-4119); token_embd 273 MiB on the host. KV f16 at 131,072: 2,560 MiB. CUDA context, compute buffers at -ub 512 and 63 MiB recurrent state: 819 MiB (0.8 GiB; Qwen3.6-35B-A3B measured 0.72 GiB with the same hidden size 2048, vocab 248k and 10+30 layer layout). CUDA total 13,942 MiB + desktop 112 MiB = 14,054 MiB nvidia-smi peak. The same method underpredicted the Qwen3.6 peak by about 100 MiB (15,092 predicted vs 15,190 measured), so expect 14,050 to 14,150 MiB. If the MTP block were loaded anyway: +271 MiB, 14,325 MiB.",
+  "predicted_peak_mib": 14054,
+  "predicted_free_mib": 1787,
+  "memory_cap": "16g",
+  "predicted_container_ram_gib": 4.5,
+  "server_args": [
+   "-m",
+   "MODEL_PATH",
+   "--alias",
+   "local",
+   "-ngl",
+   "all",
+   "--n-cpu-moe",
+   "0",
+   "-fa",
+   "on",
+   "-c",
+   "131072",
+   "-np",
+   "1",
+   "--jinja",
+   "--reasoning",
+   "off",
+   "--temp",
+   "0.6",
+   "--top-p",
+   "0.95",
+   "--top-k",
+   "20",
+   "--min-p",
+   "0",
+   "--presence-penalty",
+   "0"
+  ]
+ },
+ "alternative": "Native context with quantized KV: replace -c 131072 with -c 262144 -ctk q8_0 -ctv q8_0 (everything else the same). VRAM 10,563 weights + 2,720 KV + 819 overhead + about 256 larger KQ mask + 112 desktop = about 14,470 MiB predicted nvidia-smi peak (1,371 MiB free). Worth one short run with probes 8000,30000,100000,200000 to measure the q8_0 decode penalty of #27623 against the f16 run at the same 8k and 30k positions; adopt only if decode stays within about 10% of f16, since the card asks for at least 128K and OpenCode would gain 2x window.",
+ "thinking": "Toggle, on by default in the template (card line 74; template ends with '<think>\\n' unless enable_thinking is false). Server default: --reasoning off, which sets default_template_kwargs enable_thinking=false (common/arg.cpp:3741-3756 at b12407). Per request: chat_template_kwargs {\"enable_thinking\": true} or false as a JSON boolean; OpenCode variants thinking and none send exactly that. --reasoning-effort does nothing for this template (no reasoning_effort variable). The official GGUF template re-emits every past assistant turn's reasoning and has no preserve_thinking, so with thinking on, long sessions grow faster; with thinking off each past turn carries an empty think block.",
+ "per_request_thinking_on": "{\"chat_template_kwargs\": {\"enable_thinking\": true}}",
+ "tool_calling": "The embedded template contains '<tool_call>', '<function=' and '<parameter=' and not the no-newline form, so common/chat.cpp at b12407 (lines 1420-1427) selects common_chat_params_init_qwen3_coder: Qwen3-Coder XML parsed into OpenAI tool_calls, same path as Qwen3.6. The template raises on unknown roles, but llama.cpp maps developer to system for every non-gpt-oss template (chat.cpp:1524-1526), so OpenCode developer messages are safe. Open issues that likely apply by family: #30118 (open, call leaks into content when the opener is missing) and #30357 (open, whitespace round-trip forces full re-prefill on hybrid models); #32316 (open) means --cache-reuse is inactive, keep default --ctx-checkpoints. Smoke test the get_weather tool call before OpenCode.",
+ "sampling": "Model card lines 86-88 (re-read 2026-11-16): general thinking temperature 1.0, top_p 0.95, top_k 20, min_p 0, presence_penalty 1.5; precise coding temperature 0.6, top_p 0.95, top_k 20, min_p 0, presence_penalty 0; non-thinking temperature 0.7, top_p 0.8, top_k 20, min_p 0, presence_penalty 1.5; repetition_penalty 1.0 everywhere. Recommended server default: the precise coding set (0.6/0.95/20/0/0), identical to the measured Qwen3.6 launch, so the A/B against Qwen3.6 compares models and not samplers; note that with thinking off this is not the card's non-thinking preset.",
+ "opencode_entry": "{\"groot-19b-a3b\": {\"modelID\": \"local\", \"name\": \"Groot-19B-A3B-261023 Q4_K_M (llama.cpp)\", \"capabilities\": {\"tools\": true, \"input\": [\"text\"], \"output\": [\"text\"], \"reasoning\": {\"supported\": true}}, \"limit\": {\"context\": 131072, \"output\": 16384}, \"variants\": [{\"id\": \"thinking\", \"body\": {\"chat_template_kwargs\": {\"enable_thinking\": true}}}, {\"id\": \"none\", \"body\": {\"chat_template_kwargs\": {\"enable_thinking\": false}}}]}}",
+ "probe_long_tokens": "8000,30000,100000",
+ "expected_speed": "Decode 140 to 180 tok/s at short context, falling to roughly 110 to 140 tok/s after 100k (estimate). Reasoning: everything is in VRAM, so no expert cache misses and no PCIe copies; per token it reads about 1.80 GiB (1.94 GB): 0.845 GiB non-expert block weights, 0.389 GiB output head, and 8/128 of 9.082 GiB experts = 0.568 GiB, giving a 896 GB/s roofline near 460 tok/s; small-batch MoE kernels plus Gated DeltaNet recurrence typically reach 30 to 40% of that. Bracketing measurements on this laptop: gpt-oss-20b all on GPU 166 tok/s; Qwen3.6-35B-A3B with 17% of expert lookups missing to RAM 122 tok/s short and 92.6 at 107k. Prefill should beat Qwen3.6's 1,990 tok/s at 8.6k clearly, roughly 3,000 to 5,000 tok/s (estimate), since #25859 serial H2D copies do not apply.",
+ "issues": [
+  {
+   "id": "ggml-org/llama.cpp#30118",
+   "state": "open (updated 2026-10-28)",
+   "note": "Qwen3.6 tool call leaks into content when <tool_call> is omitted; same template family and parser, so likely applies (untested on Groot)."
+  },
+  {
+   "id": "ggml-org/llama.cpp#30357",
+   "state": "open (updated 2026-10-30)",
+   "note": "Qwen3.5+ reasoning/content whitespace not round-trippable, full re-prefill on hybrid models; watch timings.cache_n."
+  },
+  {
+   "id": "ggml-org/llama.cpp#32316",
+   "state": "open (updated 2026-11-15)",
+   "note": "cache reuse disabled for IMROPE models; Groot is IMROPE qwen35moe; keep default --ctx-checkpoints."
+  },
+  {
+   "id": "ggml-org/llama.cpp#27330",
+   "state": "open (updated 2026-10-28)",
+   "note": "CUDA graphs hang on sm_120 laptops; the lead's -e GGML_CUDA_DISABLE_GRAPHS=1 covers it."
+  },
+  {
+   "id": "ggml-org/llama.cpp#27623",
+   "state": "open (updated 2026-10-22)",
+   "note": "q8_0 KV decode penalty on CUDA; only relevant to the q8_0 262k alternative. Fix PR #31802 still open (updated 2026-11-15)."
+  },
+  {
+   "id": "ggml-org/llama.cpp#31974",
+   "state": "open (updated 2026-11-15)",
+   "note": "CUDA VMM-pool OOM during prefill aborts the server when placement is pinned; the 1.8 GiB free margin makes it unlikely at 131k f16."
+  },
+  {
+   "id": "ggml-org/llama.cpp#25859",
+   "state": "open, reopened (updated 2026-11-06)",
+   "note": "Serial expert copies in offloaded prefill; does not apply because no experts are offloaded."
+  },
+  {
+   "id": "hf GrootTeam/Groot-19B-A3B-261023 discussion #5",
+   "state": "open",
+   "note": "Model changes Polish words in file paths when asked to copy verbatim; check path fidelity in the OpenCode A/B."
+  }
+ ],
+ "kb_discrepancies": [
+  "Memory estimate is too high: models.md section 8 says about 13.9-14.4 GiB plus about 0.4 GiB CUDA context (14.3-14.8 GiB). The header gives 10.316 GiB of GPU weights (token_embd 0.266 GiB stays on the host and the MTP block 40, 0.265 GiB, is skipped because load_mtp defaults to false, src/llama-model.cpp:4118-4119 at b12407) + 2.50 GiB KV + 0.8 GiB measured overhead = 13.62 GiB CUDA, 14,054 MiB nvidia-smi peak with the desktop.",
+  "The recipe compares against 15.92 GiB of capacity; CUDA can use 15,841 MiB (15.47 GiB) on this laptop (machine facts 2026-11-16).",
+  "The 262144 q8_0 claim (about 15.0 GiB, tight) is pessimistic: 10,563 MiB weights + 2,720 MiB q8_0 KV + 819 MiB overhead + about 256 MiB larger mask + 112 MiB desktop is about 14,470 MiB at the nvidia-smi peak, leaving about 1.37 GiB free (estimate).",
+  "The recipe does not say the GGUF has 41 blocks with blk.40 being the NextN/MTP block; this matters for any --n-cpu-moe count and explains why block_count differs from the 40 trunk layers; KV is filtered to il < n_layer() (llama-model.cpp:3437-3441 and 3334-3340), so 10 attention layers is correct.",
+  "Bytes read per token: the recipe says about 2.06 GB; the header gives about 1.80 GiB (1.94 GB): 0.845 GiB block non-expert + 0.389 GiB output + 0.568 GiB of routed experts (8 of 128).",
+  "The recipe sets -ngl all without --n-cpu-moe; README.md line 172 only documents --fit for the case where both are unset, so add --n-cpu-moe 0 to pin the all-GPU placement as models.md line 55 describes for the both-set case.",
+  "The recipe uses -e HF_TOKEN and -hf with --no-mmproj, while the measured convention is --user, the cache at /hf and -m with the cached file; the repo is public, so HF_TOKEN is unnecessary, and --no-mmproj is moot with -m.",
+  "The model card (line 98) recommends keeping at least 128K context to preserve thinking capabilities; the recipe does not cite this, though it supports the 131072 target.",
+  "docs/opencode.md has only the vLLM NVFP4 Groot entry (vllm-docker/groot-19b-a3b); there is no llamacpp-docker entry for the Q4_K_M recipe.",
+  "Sampling: the server default in the recipe is the card's thinking precise-coding preset while --reasoning off makes non-thinking the default; the card's non-thinking preset is 0.7/0.8/20/presence 1.5. Not wrong for an A/B with Qwen3.6, but undocumented.",
+  "Verified as correct: file size 11,657,618,560 B, mmproj 902,822,016 B (0.84 GiB), KV 20 KiB/token, recurrent state 0.06 GiB, official template re-emits all past reasoning and ignores preserve_thinking, Qwen3-Coder parser at chat.cpp:1420-1427 (b12407), --reasoning off semantics, card sampling lines 86-88, card license apache-2.0 with license_link LICENSE but no LICENSE file in the repo, discussion #5 still open. bartowski's template claim was not re-checked."
+ ],
+ "risks": [
+  "Groot is unproven: self-reported scores, anonymous publisher, loses to its base on SWE-bench Verified on the vendor chart; run the OpenCode A/B against Qwen3.6 and check verbatim file paths (discussion #5).",
+  "With thinking on, the official template re-renders every past turn's reasoning, so OpenCode with requireReasoning grows context faster; measure prompt tokens per turn in a #thinking session.",
+  "--fit is still on; if the load log shows experts moved to CPU despite -ngl all --n-cpu-moe 0, the overhead estimate is wrong; report the device memory line rather than raising the margin.",
+  "Compute buffers for qwen35moe could exceed the Qwen3.6 0.72 GiB calibration if a kernel path differs for 128 instead of 256 experts; margin is 1.29 GiB beyond the 500 MiB target, so low risk.",
+  "Container RAM: mmap page cache for the 10.9 GiB file counts toward the cgroup during load but is reclaimable; the 16g cap leaves room for the 8 GiB --cache-ram prompt cache (bound about 10.3 GiB: 0.27 token_embd + 8 prompt cache + 2 process). Typical with a 107k prompt cached: about 4.5 GiB (Qwen3.6 measured 4.4 GiB beyond its pinned experts).",
+  "Process deviation: my first source download wrote six b12407 files (arg.cpp, chat.cpp, llama-arch.cpp, llama-kv-cache.cpp, llama-memory-hybrid.cpp, llama-model.cpp) into the pre-existing shared $SCRATCH/src12407 instead of my own directory; contents are the unmodified b12407 sources. Copies live in $SCRATCH/headers/groot-19b-a3b/src, and my parser is in $SCRATCH/headers/groot-19b-a3b-tools/blk.py (also outside the assigned directory)."
+ ],
+ "sources": [
+  "$HOME/projects/llm/llamacpp/models.md section 8 (lines 348-384) and section 2",
+  "$HOME/projects/llm/llamacpp/README.md lines 161-306",
+  "$HOME/projects/llm/docs/opencode.md lines 1-206",
+  "GGUF header: https://huggingface.co/GrootTeam/Groot-19B-A3B-261023-GGUF/resolve/main/Groot-19B-A3B-261023-Q4_K_M.gguf bytes 0-33554431, saved at $SCRATCH/headers/groot-19b-a3b/head.gguf; template at $SCRATCH/headers/groot-19b-a3b/chat_template.jinja",
+  "gguf_plan.py output (131072, 2 B) and a per-block parser for blk.40 and per-block non-expert bytes",
+  "https://huggingface.co/api/models/GrootTeam/Groot-19B-A3B-261023-GGUF?blobs=true (sha 2fa1ec95, lastModified 2026-10-23, LFS sha256 0716cae1...)",
+  "https://huggingface.co/GrootTeam/Groot-19B-A3B-261023/raw/main/README.md (lines 3-4, 55, 74, 86-88, 98) and the repo file list (no LICENSE)",
+  "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/src/llama-model.cpp (lines 355, 1504-1505, 3284-3340, 3431-3441, 4104-4122)",
+  "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/common/chat.cpp (lines 1420-1427, 1524-1526)",
+  "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/common/arg.cpp (lines 2860-2866, 3741-3770)",
+  "gh api repos/ggml-org/llama.cpp/issues/{30118,30357,32316,25859,27623,27330,31802,31974} on 2026-11-16",
+  "https://huggingface.co/api/models/GrootTeam/Groot-19B-A3B-261023/discussions/5 (open)"
+ ]
+}

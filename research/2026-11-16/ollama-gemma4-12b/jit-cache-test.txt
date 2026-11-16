@@ -1,0 +1,12 @@
+CUDA JIT cache test, 2026-11-16, ollama/ollama:0.40.16, gemma4:12b, 65536 context, f16 KV.
+
+The measured container (no cache) wrote 104 MB in 26 files to /root/.nv/ComputeCache.
+Measured run without the cache: model load (POST /api/generate, empty prompt) 29.4 s;
+first request (the LibreDB tool_calls probe) prompt eval 23,585.80 ms for 70 tokens, then 75 tokens at 13.06 tok/s.
+
+Fresh container with a copy of that cache mounted at /root/.nv/ComputeCache (jit-cache-test.sh):
+load 3.7 s
+first request 0.47 s: "tool_calls":[{"id":"call_7rbb9cm3","function":{"index":0,"name":"inspect_operations",...
+prompt eval time =     176.95 ms /    70 tokens (    2.53 ms per token,   395.60 tokens per second)
+       eval time =     276.54 ms /    47 tokens (    6.01 ms per token,   166.34 tokens per second)
+cache files before 26, after 26

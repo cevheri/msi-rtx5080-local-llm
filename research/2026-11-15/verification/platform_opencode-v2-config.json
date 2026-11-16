@@ -1,0 +1,181 @@
+{
+ "summary": "I checked OpenCode v2.3.0 against its source at tag v2.3.0 (commit a6b15d33, sparse clone in $SCRATCH/oc/repo) and against the live JSON schema at https://opencode.ai/config.json. Every example config below validates against that schema with Python jsonschema Draft 2020-12. A negative test confirmed the validator rejects V1 keys such as npm, options and tool_call. The example files are in $SCRATCH/oc/cfg/.\n\n**Config shape.** The V2 top-level key is `providers`. The V1 key `provider` is still accepted but marked deprecated. On each provider: `package` is `@opencode/ai/providers/openai-compatible`; `baseURL`, `apiKey`, `headerTimeout` and `chunkTimeout` go in `settings`; `compatibility`, `headers` and `body` sit next to it; models go under `models`. The older name `@ai-sdk/openai-compatible`, or `aisdk:@ai-sdk/openai-compatible`, is mapped to the same native package (aisdk-native.ts:127). Each model takes `modelID`, `capabilities` (tools, freeform, input, output, temperature, reasoning), `compatibility`, `limit` (context, input, output), `variants` (an array of objects with id plus settings, headers or body), `body` and `disabled`. The default model is set with the root `model` field, written `provider/model`. Agents can pin `provider/model#variant`.\n\n**Reasoning variants.** A `variants` entry with `body.chat_template_kwargs.enable_thinking` passes straight into the request body. For gpt-oss, `capabilities.reasoning.effort` builds low, medium and high variants that send `reasoning_effort`. Note that a custom openai-compatible model with neither `variants` nor `capabilities.reasoning` set automatically gets low, medium and high effort variants (variant.ts openaiChat, config/plugin/provider.ts).\n\n**Built-in vLLM discovery.** It hard-codes `tools: spec.tools ?? false` and vllm.ts never sets tools, so discovered vLLM models have tools off. The config overlay runs later (ConfigProviderPlugin is in the `post` list in plugin/internal.ts). So `providers.vllm.models.<served-id>.capabilities.tools: true` should switch tools back on. That conclusion comes from reading the code, not from running it. To turn discovery off, add `plugins: [\"-opencode.provider.vllm\"]`.\n\n**Ollama discovery context limit.** Ollama discovery takes the context limit from `model_info.*.context_length`, which is the model's trained maximum. It does not read the server's OLLAMA_CONTEXT_LENGTH. So `limit.context` must be set by hand to match the server, or OpenCode never compacts while Ollama truncates.\n\n**Fixed prompt overhead (estimate).** The default build agent with a non-GPT model starts at roughly 19k to 24k characters. That is about 5.5k to 7k tokens at 3.5 characters per token, before any AGENTS.md, skills or MCP tools. It breaks down as:\n- system prompt about 2k characters\n- 13 direct tools with about 8.9k characters of descriptions plus about 3.7k of JSON-schema structure\n- the Code Mode `execute` tool and its catalog, about 1.7k to 9.7k characters\n\nWith compaction defaults (buffer 15% or at least 16k tokens, and about 15k recent tokens kept), 64k is the smallest window that works in practice. At 32k, compaction would start after only about 9k tokens of conversation.\n\n**Open issues.** #60202, #58019, #55378 and #50814 are all still open, and their fix PRs #60219 and #58053 are unmerged. Even so, #60202 does not affect vLLM v0.33.0 used directly: protocol.py lines 988-991 at the v0.33.0 tag set tool_choice to \"auto\" when tools are present and none is given. #58019 should not affect llama.cpp b12418, because llama.cpp PR #26939 (merged 2026-08-20) falls back on unsupported regex patterns; I did not test this.\n\n**Ollama token limit.** Ollama's /v1 endpoint reads only `max_tokens` (v0.40.16 openai.go:116), but OpenCode sends `max_completion_tokens` by default. Set `compatibility.maxTokensField` to `max_tokens` for Ollama.\n\n**Docker image.** ghcr.io/anomalyco/opencode:2.3.0 and :latest both exist (the 2.3.0 manifest returns HTTP 200; v2.3.0 returns 404). The docs say only that images use versioned tags.",
+ "resolved": [
+  {
+   "question": "Top-level key, package key and openai-compatible package name in V2",
+   "answer": "Top-level `providers`. The legacy `provider` key is still in the schema as deprecated. The package goes in `package`; the native name is `@opencode/ai/providers/openai-compatible` (also `/responses`). `@ai-sdk/openai-compatible` (V1 npm, or V2 `aisdk:@ai-sdk/openai-compatible`) is mapped to the same native package. The schema's Config.ProviderEncoded allows only canonical, name, env, package, compatibility, settings, headers, body and models; additionalProperties is false.",
+   "support": "direct-statement",
+   "source_url": "https://opencode.ai/config.json ; https://github.com/anomalyco/opencode/blob/v2.3.0/packages/core/src/aisdk-native.ts#L127 ; https://opencode.ai/docs/models.md (Local > Compatible)"
+  },
+  {
+   "question": "Where baseURL and apiKey go",
+   "answer": "In provider `settings`: settings.baseURL and settings.apiKey (use {env:VAR} for the key). Config.Provider.Settings accepts any key, plus typed timeout, headerTimeout (default 5 min), chunkTimeout, compaction, cache, transport, encoding and tls. Local discovery itself writes provider.settings = {baseURL, provider, apiKey}.",
+   "support": "direct-statement",
+   "source_url": "https://opencode.ai/docs/providers.md ; https://github.com/anomalyco/opencode/blob/v2.3.0/packages/core/src/plugin/provider/local.ts"
+  },
+  {
+   "question": "Model-level keys: limit, capabilities, compatibility, variants",
+   "answer": "Config.ModelEncoded allows modelID, type, family, name, releaseDate, compatibility, package, settings, headers, body, capabilities, variants, cost, disabled and limit {context, input, output}. capabilities allows tools (bool), freeform ([text|regex|lark]), input, output, temperature (bool) and reasoning ({supported:false} or {supported:true, toggle, effort[], budget{min,max}}). compatibility allows reasoningField (reasoning|reasoning_content|reasoning_text|custom), requireReasoning, maxTokensField (max_completion_tokens|max_tokens), requireFinishReason, requireAssistantAfterTool, supportsPromptCacheKey, streamUsage, cacheFormat, supportsThinkingBlockBinding, supportsEffortUpdates and mediaInput. variants is an array of objects with id plus settings, headers or body. Without explicit limits, a custom model gets 200k context and 32k output.",
+   "support": "direct-statement",
+   "source_url": "https://opencode.ai/config.json ; https://opencode.ai/docs/models.md"
+  },
+  {
+   "question": "compatibility.reasoningField for each server",
+   "answer": "vLLM v0.33.0 returns `reasoning`, so set reasoningField \"reasoning\". Ollama v0.40.16 /v1 also uses `reasoning` (openai.go:36,47). llama-server b12418 uses `reasoning_content` (README line 1575). If reasoningField is unset, OpenCode uses whatever field it sees in the stream, else reasoning_content. Setting reasoningField also turns requireReasoning on by default, which re-sends that field on earlier assistant messages.",
+   "support": "source-backed",
+   "source_url": "https://opencode.ai/docs/models.md#compatibility ; https://raw.githubusercontent.com/ollama/ollama/v0.40.16/openai/openai.go ; https://raw.githubusercontent.com/ggml-org/llama.cpp/b12418/tools/server/README.md"
+  },
+  {
+   "question": "Thinking on/off variants (Qwen, Gemma, Nemotron) and reasoning_effort (gpt-oss)",
+   "answer": "Qwen, Gemma and Nemotron on vLLM or llama.cpp: variants [{id:'thinking', body:{chat_template_kwargs:{enable_thinking:true}}}, {id:'none', body:{chat_template_kwargs:{enable_thinking:false}}}]. OpenCode merges body in the order provider, then model, then variant. Its own NVIDIA protocol uses this same body.chat_template_kwargs.enable_thinking pattern for Qwen, Gemma and Nemotron. gpt-oss: capabilities.reasoning {supported:true, effort:[low,medium,high]} builds variants with settings.reasoningEffort, which openai-chat.ts:856 sends as `reasoning_effort`. If `variants` and `capabilities.reasoning` are both left unset, a custom openai-compatible model gets low, medium and high reasoning_effort variants automatically. On Ollama, reasoning_effort 'none' turns thinking off (openai.go ThinkingFromReasoningEffort). Select a variant as provider/model#variant.",
+   "support": "source-backed",
+   "source_url": "https://github.com/anomalyco/opencode/blob/v2.3.0/packages/core/src/variant.ts ; https://github.com/anomalyco/opencode/blob/v2.3.0/packages/ai/src/protocols/openai-chat.ts ; https://github.com/anomalyco/opencode/blob/v2.3.0/packages/core/src/config/plugin/provider.ts"
+  },
+  {
+   "question": "How to set the default model",
+   "answer": "Root `model`: \"provider/model\" (pattern ^[^/#]+/[^#]+(#[^#]+)?$), or the object form {providerID, model, variant}. The root default does not keep a #variant, so set variants per agent, session or run. One-off runs: `opencode run --model provider/model#variant`. Per agent: agents.<id>.model.",
+   "support": "direct-statement",
+   "source_url": "https://opencode.ai/docs/models.md (References, Caveats) ; https://opencode.ai/config.json"
+  },
+  {
+   "question": "Does built-in vLLM discovery disable tools?",
+   "answer": "Yes. local.ts sets capabilities.tools = spec.tools ?? false, and vllm.ts maps only id and max_model_len, with the comment 'Tool calling depends on vLLM server flags and parsers that model discovery does not report.' Discovery checks /health and /v1/models (owned_by 'vllm'), uses max_model_len as limit.context, removes the provider's existing models and re-adds the discovered ones. Discovery requests time out after 15 s and refresh every 30 s.",
+   "support": "direct-statement",
+   "source_url": "https://github.com/anomalyco/opencode/blob/v2.3.0/packages/core/src/plugin/provider/vllm.ts ; https://github.com/anomalyco/opencode/blob/v2.3.0/packages/core/src/plugin/provider/local.ts ; https://opencode.ai/docs/models.md#vllm"
+  },
+  {
+   "question": "How to override tools on discovered vLLM models",
+   "answer": "Option 1: providers.vllm.models[\"<served model id>\"].capabilities.tools = true. ConfigProviderPlugin is in the plugin list's `post` group, and its model.transform overlays config capabilities (Model.mergeCapabilities) after the discovery transform. I derived this from plugin order and comments; I did not run it. Option 2, more robust: disable discovery and define a separate custom provider ID with tools:true and explicit limits.",
+   "support": "inferred",
+   "source_url": "https://github.com/anomalyco/opencode/blob/v2.3.0/packages/core/src/plugin/internal.ts ; https://github.com/anomalyco/opencode/blob/v2.3.0/packages/core/src/config/plugin/provider.ts"
+  },
+  {
+   "question": "How to disable discovery",
+   "answer": "plugins: [\"-opencode.provider.vllm\"], [\"-opencode.provider.ollama\"] or [\"-opencode.provider.lmstudio\"]. A leading '-' is parsed as a remove directive in config/plugin/source.ts:120. Ollama and LM Studio discovery do read tool support (Ollama /api/show capabilities includes 'tools'; LM Studio trained_for_tool_use).",
+   "support": "direct-statement",
+   "source_url": "https://opencode.ai/docs/models.md#local ; https://github.com/anomalyco/opencode/blob/v2.3.0/packages/core/src/config/plugin/source.ts"
+  },
+  {
+   "question": "Ollama discovery context limit",
+   "answer": "ollama.ts sets context from show.model_info keys ending in '.context_length', which is the GGUF's trained maximum (for example 262144). It does not use the server's OLLAMA_CONTEXT_LENGTH or num_ctx. OpenCode would therefore assume a far larger window than Ollama serves (default 4k on GPUs under 24 GiB). Override with providers.ollama.models[\"<tag>\"].limit.context equal to OLLAMA_CONTEXT_LENGTH, or use a custom provider.",
+   "support": "source-backed",
+   "source_url": "https://github.com/anomalyco/opencode/blob/v2.3.0/packages/core/src/plugin/provider/ollama.ts"
+  },
+  {
+   "question": "Max output tokens field for Ollama and llama.cpp",
+   "answer": "OpenCode sends max_completion_tokens by default (detectMaxTokensField). llama-server b12418 accepts it as an alias of n_predict (server-schema.cpp:48). vLLM v0.33.0 accepts it (protocol.py:249). Ollama v0.40.16 /v1 reads only max_tokens (openai.go:116), so set compatibility.maxTokensField to \"max_tokens\" for Ollama.",
+   "support": "direct-statement",
+   "source_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12418/tools/server/server-schema.cpp ; https://raw.githubusercontent.com/ollama/ollama/v0.40.16/openai/openai.go ; https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/entrypoints/openai/chat_completion/protocol.py"
+  },
+  {
+   "question": "Fixed prompt overhead of the default build agent (sets minimum context)",
+   "answer": "Character counts from the v2.3.0 source (non-GPT model, no AGENTS.md, skills or MCP):\n- System prompt: session/runner/prompt/system.txt (756 chars) plus tool-guidance lines from session/system-prompt.ts (775 chars) plus the env and date block from instructions/builtins.ts (about 450), so about 2.0k.\n- Direct tools (codemode:false): read 662, edit 1166, write 288, glob 287, grep 634, shell 1359, todo 120+512 (todowrite.txt), question 612, skill 292, subagent 1542 plus about 700 for the appended agent list, webfetch 431, websearch 324. That is about 8.9k of descriptions, plus an estimated 3.7k of JSON-schema structure.\n- Code Mode: `execute` description 1097 (codemode/tool.ts), catalog header about 650 (codemode/instructions.ts) and an inline catalog capped at 2,000 tokens (catalog.ts INLINE_BUDGET), so 1.7k to 9.7k.\nTotal about 19k to 24k chars, roughly 5.5k to 7k tokens. A model ID containing 'gpt' swaps system.txt for plugin/system-prompt/gpt.txt (2572 chars), and IDs with 'gpt-' but not 'oss' get patch instead of edit/write (patch.ts hook).\nCompaction keeps max(15%, 16k) free and about 15k recent tokens. At 32k, compaction triggers at about 16k used, leaving about 9k of conversation. At 64k, the threshold is about 48k, leaving about 41k. So 64k is the practical minimum, which matches Ollama's 64k guidance.",
+   "support": "inferred",
+   "source_url": "https://github.com/anomalyco/opencode/tree/v2.3.0/packages/core/src/tool/plugin ; https://github.com/anomalyco/opencode/blob/v2.3.0/packages/core/src/session/model-request.ts ; https://github.com/anomalyco/opencode/blob/v2.3.0/packages/core/src/tool.ts ; https://opencode.ai/docs/compaction.md"
+  },
+  {
+   "question": "Issue #60202 (tool_choice omitted) status and impact",
+   "answer": "Open with the 'reproduced' label (updated 2026-10-29). Fix PR #60219 is open and unmerged. At v2.3.0, session/runner/llm.ts:280 passes toolChoice undefined unless the step limit is reached, and openai-chat.ts:898 then omits tool_choice. vLLM v0.33.0 sets tool_choice to 'auto' when tools are present and none is given (protocol.py:988-991 at tag v0.33.0), so plain vLLM is not affected; gateways in front of vLLM may be. Workaround if needed: model body {tool_choice:'auto'}. That breaks requests without tools (vLLM: 'When using `tool_choice`, `tools` must be set'; reported for compaction in #58821), so point agents.title.model and agents.compaction.model at an alias of the same modelID without that body.",
+   "support": "source-backed",
+   "source_url": "https://github.com/anomalyco/opencode/issues/60202 ; https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/entrypoints/openai/chat_completion/protocol.py"
+  },
+  {
+   "question": "Issue #58019 ('^ses' pattern rejected by llama.cpp) status",
+   "answer": "Open, 'reproduced', last confirmed on v2.2.5 (2026-11-02). Fix PR #58053 is open and unmerged. At v2.3.0, packages/schema/src/session-id.ts:5 still uses Schema.isStartingWith('ses'). The rejection only happens on llama.cpp builds older than PR #26939, which was merged 2026-08-20 and makes llama.cpp fall back gracefully on unsupported regex; build b12418 is much newer, so it should not be affected (not tested). Workaround: deny the subagent tool on the build agent. A last-matching rule {action:'subagent', resource:'*', effect:'deny'} removes the tool from the snapshot (tool.ts whollyDisabled).",
+   "support": "source-backed",
+   "source_url": "https://github.com/anomalyco/opencode/issues/58019 ; https://github.com/ggml-org/llama.cpp/pull/26939 ; https://github.com/anomalyco/opencode/blob/v2.3.0/packages/core/src/tool.ts"
+  },
+  {
+   "question": "Issue #55378 (reasoning-only empty turns) status",
+   "answer": "Open, 'reproduced' (updated 2026-11-09). A step that ends with finish 'stop' and no text or tool call is settled silently and the agent stops. Reported with vLLM via LiteLLM too. There is no config workaround; the user has to send 'continue'. It matters most for thinking models; the 'none' (thinking off) variant reduces exposure (inferred).",
+   "support": "direct-statement",
+   "source_url": "https://github.com/anomalyco/opencode/issues/55378"
+  },
+  {
+   "question": "Issue #50814 (tool calls as text after compaction) status",
+   "answer": "Open (last comment 2026-11-09, still reproducing on v2.2.6). Summary compaction writes earlier tool calls as '[Assistant tool call]: name(input)' text inside <recent-context>, and some models copy that format afterwards. Mitigations from the thread: start a new session, and use a model that resists it. Larger windows and a larger compaction.keep.tokens mean fewer compactions (inferred).",
+   "support": "direct-statement",
+   "source_url": "https://github.com/anomalyco/opencode/issues/50814"
+  },
+  {
+   "question": "Title / small model in V2",
+   "answer": "agents.title.model (the hidden built-in 'title' agent). small_model is deprecated and maps to it. agents.compaction.model sets the summary model, falling back to the session model if it cannot be resolved. Both accept provider/model#variant, so a local thinking model can use its #none variant for titles.",
+   "support": "direct-statement",
+   "source_url": "https://opencode.ai/docs/migrate-v1.md ; https://opencode.ai/docs/compaction.md ; https://github.com/anomalyco/opencode/blob/v2.3.0/packages/core/src/plugin/agent.ts"
+  },
+  {
+   "question": "Compaction settings for small windows",
+   "answer": "compaction {auto (default true), keep.tokens (default 15000), buffer ('15%' with a 16k minimum, or a token count)}; prune, tail_turns, preserve_recent_tokens and reserved are deprecated. experimental.background_compaction is available. Docs warn that compaction cannot help when fixed instructions and tools fill most of the window. For 64k local windows, keep.tokens of about 10k to 12k is reasonable (inferred).",
+   "support": "direct-statement",
+   "source_url": "https://opencode.ai/docs/compaction.md ; https://opencode.ai/config.json"
+  },
+  {
+   "question": "Official Docker image",
+   "answer": "The docs say only: 'Docker images use versioned tags, for example ghcr.io/anomalyco/opencode:2.0.0'. On GHCR, tag 2.3.0 returns manifest HTTP 200 and 'latest' exists; 'v2.3.0' returns 404.",
+   "support": "direct-statement",
+   "source_url": "https://opencode.ai/docs/index.md (Docker section) ; https://ghcr.io/v2/anomalyco/opencode/manifests/2.3.0"
+  },
+  {
+   "question": "Local CLI surface relevant to setup",
+   "answer": "opencode v2.3.0 subcommands: upgrade, uninstall, acp, api, debug (agents, config, heap-dump, paths), auth, mcp, plugin, models, stats, mini, run, session, service (start, restart, status, stop, get, set, unset), reload, pair, serve. Flags include --standalone and --server <url>. There is no command that prints the tool schemas without a running server.",
+   "support": "direct-statement",
+   "source_url": "local: ~/.opencode/bin/opencode --help, debug --help, api --help, service --help (2026-11-15)"
+  }
+ ],
+ "gaps": [
+  "I measured the prompt overhead by counting characters in the source, not from a real request. I did not capture an actual /v1/chat/completions payload because the task said not to start servers. The JSON-schema structure (about 3.7k chars) and the Code Mode catalog size (0 to 8k chars, depending on which opencode-namespace tools are registered) are estimates. Whether websearch and the Code Mode tools (artifact, schedule, opencode.*) are registered by default was not confirmed. AGENTS.md, discovered skills (OpenCode also scans .claude directories) and MCP tools add to the overhead on this machine. To measure exactly, point OpenCode at a logging proxy and record the token count of the first request.",
+  "Not run end to end: whether providers.vllm.models.<id>.capabilities.tools=true actually survives discovery. The conclusion comes from plugin order (ConfigProviderPlugin runs after the provider plugins) and code comments.",
+  "Not checked: whether vLLM v0.33.0 chat templates (Qwen3.x, Gemma 4, Nemotron) accept the assistant-message field 'reasoning' that OpenCode re-sends when compatibility.reasoningField is set (requireReasoning defaults to true). If a template ignores it, earlier reasoning is silently dropped. Setting requireReasoning:false is the fallback.",
+  "Possible risk, not tested: openai-chat.ts sends `tools: []` when no tools are active but tool history exists, for example the compaction fallback at compaction.ts:787 or an agent with every tool denied. vLLM v0.33.0 rejects an empty tools array ('`tools` must not be an empty array', protocol.py around line 981).",
+  "No direct test of llama.cpp b12418 against the '^ses' pattern (#58019). My conclusion that it is unaffected rests only on llama.cpp PR #26939 being merged on 2026-08-20.",
+  "The Docker image docs give only the tag format. I found no documented run command, volume or config-mount guidance for ghcr.io/anomalyco/opencode.",
+  "The served model names in the snippets (qwen-coder, gemma, nemotron, gpt-oss-20b, qwen3.6:35b-a3b, gpt-oss:20b) and the context and output limits are placeholders. They must match the --served-model-name / Ollama tag and the --max-model-len / OLLAMA_CONTEXT_LENGTH / --ctx-size the model lane chooses."
+ ],
+ "snippets": [
+  {
+   "purpose": "vLLM in Docker at 127.0.0.1:8000/v1. Custom provider with tools on and built-in discovery off. Thinking toggle variants for Qwen, Gemma and Nemotron; effort variants for gpt-oss; one non-thinking model. Title and compaction use the thinking-off variant. VALIDATED against https://opencode.ai/config.json (file: $SCRATCH/oc/cfg/vllm.json). vLLM needs --enable-auto-tool-choice --tool-call-parser <parser> --reasoning-parser <parser> --served-model-name <key> --max-model-len equal to limit.context.",
+   "content": "{\n  \"$schema\": \"https://opencode.ai/config.json\",\n  \"model\": \"vllm-docker/qwen-coder\",\n  \"plugins\": [\"-opencode.provider.vllm\"],\n  \"agents\": {\n    \"title\": { \"model\": \"vllm-docker/qwen-coder#none\" },\n    \"compaction\": { \"model\": \"vllm-docker/qwen-coder#none\" }\n  },\n  \"compaction\": { \"auto\": true, \"keep\": { \"tokens\": 12000 }, \"buffer\": \"20%\" },\n  \"providers\": {\n    \"vllm-docker\": {\n      \"name\": \"vLLM (Docker)\",\n      \"package\": \"@opencode/ai/providers/openai-compatible\",\n      \"settings\": {\n        \"baseURL\": \"http://127.0.0.1:8000/v1\",\n        \"apiKey\": \"{env:VLLM_API_KEY}\",\n        \"headerTimeout\": 600000\n      },\n      \"compatibility\": { \"reasoningField\": \"reasoning\" },\n      \"models\": {\n        \"qwen-coder\": {\n          \"modelID\": \"qwen-coder\",\n          \"name\": \"Qwen (vLLM, thinking toggle)\",\n          \"capabilities\": { \"tools\": true, \"input\": [\"text\"], \"output\": [\"text\"], \"reasoning\": { \"supported\": true } },\n          \"limit\": { \"context\": 65536, \"output\": 16384 },\n          \"variants\": [\n            { \"id\": \"thinking\", \"body\": { \"chat_template_kwargs\": { \"enable_thinking\": true } } },\n            { \"id\": \"none\", \"body\": { \"chat_template_kwargs\": { \"enable_thinking\": false } } }\n          ]\n        },\n        \"gemma\": {\n          \"modelID\": \"gemma\",\n          \"capabilities\": { \"tools\": true, \"input\": [\"text\"], \"output\": [\"text\"], \"reasoning\": { \"supported\": true } },\n          \"limit\": { \"context\": 65536, \"output\": 16384 },\n          \"variants\": [\n            { \"id\": \"thinking\", \"body\": { \"chat_template_kwargs\": { \"enable_thinking\": true } } },\n            { \"id\": \"none\", \"body\": { \"chat_template_kwargs\": { \"enable_thinking\": false } } }\n          ]\n        },\n        \"nemotron\": {\n          \"modelID\": \"nemotron\",\n          \"capabilities\": { \"tools\": true, \"input\": [\"text\"], \"output\": [\"text\"], \"reasoning\": { \"supported\": true } },\n          \"limit\": { \"context\": 131072, \"output\": 16384 },\n          \"variants\": [\n            { \"id\": \"thinking\", \"body\": { \"chat_template_kwargs\": { \"enable_thinking\": true } } },\n            { \"id\": \"none\", \"body\": { \"chat_template_kwargs\": { \"enable_thinking\": false } } }\n          ]\n        },\n        \"gpt-oss-20b\": {\n          \"modelID\": \"gpt-oss-20b\",\n          \"capabilities\": { \"tools\": true, \"input\": [\"text\"], \"output\": [\"text\"], \"reasoning\": { \"supported\": true, \"effort\": [\"low\", \"medium\", \"high\"] } },\n          \"limit\": { \"context\": 131072, \"output\": 16384 }\n        },\n        \"coder-instruct\": {\n          \"modelID\": \"coder-instruct\",\n          \"capabilities\": { \"tools\": true, \"input\": [\"text\"], \"output\": [\"text\"], \"reasoning\": { \"supported\": false } },\n          \"limit\": { \"context\": 65536, \"output\": 16384 }\n        }\n      }\n    }\n  }\n}",
+   "source_url": "https://opencode.ai/config.json ; https://opencode.ai/docs/models.md ; https://github.com/anomalyco/opencode/blob/v2.3.0/packages/core/src/variant.ts"
+  },
+  {
+   "purpose": "Ollama in Docker at 127.0.0.1:11434/v1. Custom provider with discovery off. maxTokensField is max_tokens because Ollama /v1 ignores max_completion_tokens. Thinking toggle through reasoning_effort none/high. VALIDATED (file: $SCRATCH/oc/cfg/ollama.json). Run Ollama with OLLAMA_CONTEXT_LENGTH=65536 to match limit.context.",
+   "content": "{\n  \"$schema\": \"https://opencode.ai/config.json\",\n  \"model\": \"ollama-local/qwen-coder\",\n  \"plugins\": [\"-opencode.provider.ollama\"],\n  \"providers\": {\n    \"ollama-local\": {\n      \"name\": \"Ollama (Docker)\",\n      \"package\": \"@opencode/ai/providers/openai-compatible\",\n      \"settings\": { \"baseURL\": \"http://127.0.0.1:11434/v1\", \"headerTimeout\": 600000 },\n      \"compatibility\": { \"reasoningField\": \"reasoning\", \"maxTokensField\": \"max_tokens\" },\n      \"models\": {\n        \"qwen-coder\": {\n          \"modelID\": \"qwen3.6:35b-a3b\",\n          \"capabilities\": { \"tools\": true, \"input\": [\"text\"], \"output\": [\"text\"], \"reasoning\": { \"supported\": true, \"effort\": [\"none\", \"high\"] } },\n          \"limit\": { \"context\": 65536, \"output\": 16384 }\n        },\n        \"gpt-oss-20b\": {\n          \"modelID\": \"gpt-oss:20b\",\n          \"capabilities\": { \"tools\": true, \"input\": [\"text\"], \"output\": [\"text\"], \"reasoning\": { \"supported\": true, \"effort\": [\"low\", \"medium\", \"high\"] } },\n          \"limit\": { \"context\": 65536, \"output\": 16384 }\n        }\n      }\n    }\n  }\n}",
+   "source_url": "https://opencode.ai/config.json ; https://raw.githubusercontent.com/ollama/ollama/v0.40.16/openai/openai.go"
+  },
+  {
+   "purpose": "Alternative for Ollama: keep built-in discovery, which reads tool support from /api/show, but override the context limit. Discovery reports the GGUF's trained maximum, not OLLAMA_CONTEXT_LENGTH. VALIDATED (file: $SCRATCH/oc/cfg/ollama-discovery.json).",
+   "content": "{\n  \"$schema\": \"https://opencode.ai/config.json\",\n  \"model\": \"ollama/qwen3-coder:30b\",\n  \"providers\": {\n    \"ollama\": {\n      \"settings\": { \"baseURL\": \"http://127.0.0.1:11434/v1\" },\n      \"models\": {\n        \"qwen3-coder:30b\": { \"limit\": { \"context\": 65536, \"output\": 16384 } }\n      }\n    }\n  }\n}",
+   "source_url": "https://github.com/anomalyco/opencode/blob/v2.3.0/packages/core/src/plugin/provider/ollama.ts"
+  },
+  {
+   "purpose": "llama.cpp llama-server in Docker at 127.0.0.1:8080/v1. llama-server returns reasoning_content and accepts chat_template_kwargs per request (README b12418, lines 1455 and 1575); --jinja is on by default. VALIDATED (file: $SCRATCH/oc/cfg/llamacpp.json). Start llama-server with --alias local --ctx-size 65536.",
+   "content": "{\n  \"$schema\": \"https://opencode.ai/config.json\",\n  \"model\": \"llamacpp/local\",\n  \"providers\": {\n    \"llamacpp\": {\n      \"name\": \"llama.cpp server (Docker)\",\n      \"package\": \"@opencode/ai/providers/openai-compatible\",\n      \"settings\": { \"baseURL\": \"http://127.0.0.1:8080/v1\", \"headerTimeout\": 600000 },\n      \"compatibility\": { \"reasoningField\": \"reasoning_content\" },\n      \"models\": {\n        \"local\": {\n          \"modelID\": \"local\",\n          \"name\": \"llama-server model\",\n          \"capabilities\": { \"tools\": true, \"input\": [\"text\"], \"output\": [\"text\"], \"reasoning\": { \"supported\": true } },\n          \"limit\": { \"context\": 65536, \"output\": 16384 },\n          \"variants\": [\n            { \"id\": \"thinking\", \"body\": { \"chat_template_kwargs\": { \"enable_thinking\": true } } },\n            { \"id\": \"none\", \"body\": { \"chat_template_kwargs\": { \"enable_thinking\": false } } }\n          ]\n        }\n      }\n    }\n  }\n}",
+   "source_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12418/tools/server/README.md ; https://opencode.ai/config.json"
+  },
+  {
+   "purpose": "Alternative for vLLM: keep built-in discovery and switch tools back on for one discovered model. The key must equal the vLLM served model id. Whether this override wins over discovery is inferred from plugin order, not tested. VALIDATED against the schema (file: $SCRATCH/oc/cfg/vllm-discovery-tools.json).",
+   "content": "{\n  \"$schema\": \"https://opencode.ai/config.json\",\n  \"model\": \"vllm/qwen-coder\",\n  \"providers\": {\n    \"vllm\": {\n      \"settings\": { \"baseURL\": \"http://127.0.0.1:8000/v1\" },\n      \"models\": {\n        \"qwen-coder\": {\n          \"capabilities\": { \"tools\": true },\n          \"compatibility\": { \"reasoningField\": \"reasoning\" },\n          \"limit\": { \"output\": 16384 }\n        }\n      }\n    }\n  }\n}",
+   "source_url": "https://github.com/anomalyco/opencode/blob/v2.3.0/packages/core/src/plugin/provider/local.ts ; https://github.com/anomalyco/opencode/blob/v2.3.0/packages/core/src/config/plugin/provider.ts"
+  },
+  {
+   "purpose": "Workaround for #60202, needed only for gateways that require an explicit tool_choice; vLLM v0.33.0 used directly defaults to auto. Title and compaction use an alias without the forced tool_choice, so requests without tools do not fail with 'When using tool_choice, tools must be set'. VALIDATED (file: $SCRATCH/oc/cfg/vllm-tool-choice-aliases.json).",
+   "content": "{\n  \"$schema\": \"https://opencode.ai/config.json\",\n  \"model\": \"vllm-docker/coder\",\n  \"agents\": {\n    \"title\": { \"model\": \"vllm-docker/coder-plain\" },\n    \"compaction\": { \"model\": \"vllm-docker/coder-plain\" }\n  },\n  \"providers\": {\n    \"vllm-docker\": {\n      \"package\": \"@opencode/ai/providers/openai-compatible\",\n      \"settings\": { \"baseURL\": \"http://127.0.0.1:8000/v1\" },\n      \"models\": {\n        \"coder\": {\n          \"modelID\": \"qwen-coder\",\n          \"capabilities\": { \"tools\": true, \"input\": [\"text\"], \"output\": [\"text\"] },\n          \"limit\": { \"context\": 65536, \"output\": 16384 },\n          \"body\": { \"tool_choice\": \"auto\" }\n        },\n        \"coder-plain\": {\n          \"modelID\": \"qwen-coder\",\n          \"capabilities\": { \"tools\": true, \"input\": [\"text\"], \"output\": [\"text\"] },\n          \"limit\": { \"context\": 65536, \"output\": 16384 }\n        }\n      }\n    }\n  }\n}",
+   "source_url": "https://github.com/anomalyco/opencode/issues/60202 ; https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/entrypoints/openai/chat_completion/protocol.py"
+  },
+  {
+   "purpose": "Workaround for #58019, needed only on llama.cpp builds older than PR #26939. Removes the subagent tool (and its '^ses' schema pattern) from the build agent; a last-matching resource '*' deny drops the tool (tool.ts whollyDisabled). This also cuts about 2.2k chars of prompt overhead. VALIDATED (file: $SCRATCH/oc/cfg/no-subagent.json).",
+   "content": "{\n  \"$schema\": \"https://opencode.ai/config.json\",\n  \"agents\": {\n    \"build\": {\n      \"permissions\": [ { \"action\": \"subagent\", \"resource\": \"*\", \"effect\": \"deny\" } ]\n    }\n  }\n}",
+   "source_url": "https://github.com/anomalyco/opencode/blob/v2.3.0/packages/core/src/tool.ts ; https://opencode.ai/docs/permissions.md"
+  },
+  {
+   "purpose": "Source proof that V2 omits tool_choice on normal steps (#60202) and that vLLM v0.33.0 defaults it to auto",
+   "content": "opencode v2.3.0 packages/core/src/session/runner/llm.ts:280  toolChoice: stepLimitReached ? \"none\" : undefined,\nopencode v2.3.0 packages/ai/src/protocols/openai-chat.ts:898  tool_choice: hasActiveTools && request.toolChoice ? yield* lowerToolChoice(...) : undefined,\nvLLM v0.33.0 vllm/entrypoints/openai/chat_completion/protocol.py:988-991\n        # if \"tool_choice\" is not specified but tools are provided,\n        # default to \"auto\" tool_choice\n        if \"tool_choice\" not in data and data.get(\"tools\"):\n            data[\"tool_choice\"] = \"auto\"",
+   "source_url": "https://github.com/anomalyco/opencode/blob/v2.3.0/packages/core/src/session/runner/llm.ts ; https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/entrypoints/openai/chat_completion/protocol.py"
+  },
+  {
+   "purpose": "Source proof that built-in vLLM discovery disables tools",
+   "content": "packages/core/src/plugin/provider/vllm.ts:\n  // Tool calling depends on vLLM server flags and parsers that model discovery does not report.\n  model: (item) => ({ id: item.id, context: item.max_model_len }),\npackages/core/src/plugin/provider/local.ts:\n  model.capabilities = { tools: spec.tools ?? false, input: [\"text\", ...(spec.vision ? [\"image\"] : [])], output: [\"text\"] }",
+   "source_url": "https://github.com/anomalyco/opencode/blob/v2.3.0/packages/core/src/plugin/provider/vllm.ts"
+  }
+ ]
+}

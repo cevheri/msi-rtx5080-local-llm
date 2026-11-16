@@ -1,0 +1,100 @@
+{
+ "overall": "holds-with-corrections",
+ "summary": "The core verdict holds. On this 16 GB RTX 5080 Laptop, Gemma 4 26B-A4B should run on llama.cpp with Google's Q4_0 QAT GGUF, text-only, at -c 65536 with q8_0 KV. It does not fit in vLLM at 0.92.\n\nConfirmed from raw sources:\n- config.json: 25 sliding and 5 full layers, 2 KV heads x 512 on the full layers, window 1024, num_kv_shared_layers 0, max_position_embeddings 262144.\n- Checkpoint sizes from the HF API and safetensors header range reads: Intel AutoRound text 13.24 GiB plus vision 1.067 GiB; RedHatAI NVFP4 text 14.22 GiB; QAT GGUF 14,439,363,584 B.\n- vLLM v0.33.0 registers the architecture and both gemma4 parsers.\n- llama.cpp b12418: gemma4.cpp sets Vcur = Kcur, the Gemma4 PEG detection string is present in the HF template, and the FA case for head dim 512 exists.\n\nCorrections:\n1. The llama.cpp Plan A arithmetic is off by about 0.25 GiB. 15.81 - 13.45 - 0.4 - (0.5 to 1.0) leaves 0.96 to 1.46 GiB, not 1.2 to 1.7. That gives about 79k to 129k tokens with q8_0 KV and about 35k to 61k with F16 KV. 64k is therefore q8_0 only, not F16.\n2. With quantized KV, the MMA flash-attention path makes temporary F16 copies of K and V (fattn-common.cuh:1087-1147). That is about 256 MiB at 64k and about 1 GiB at 256k, so 256k likely needs --n-cpu-moe of about 9, not 6 (inferred).\n3. An open llama.cpp issue exists for Gemma 4 tool calling, contrary to the record: #29655, unstable tool calls with multi-line edits.\n4. Ollama's QAT blob is 2,144 B smaller than Google's GGUF, so the files are not byte-identical.\n5. On sm_120, vLLM forces TRITON_ATTN for Gemma 4 because of the mixed head dims, not FA2.\n\nBest realistic setup: llama.cpp server-cuda13 with -m gemma-4-26B_q4_0-it.gguf -ngl 99 -c 65536 -fa on -ctk q8_0 -ctv q8_0 -np 1 --jinja, with no mmproj. Tool calls are expected to work, but long edit calls should be tested in OpenCode.",
+ "verdicts": [
+  {
+   "claim": "config.json: 30 layers, 5 full_attention (5,11,17,23,29) with 2 KV heads x head_dim 512, 25 sliding (window 1024, 8 KV heads x 256), attention_k_eq_v true, max_position_embeddings 262144",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/google/gemma-4-26B-A4B-it/raw/main/config.json",
+   "correction": "Also num_kv_shared_layers = 0, so there is no cross-layer KV sharing that would lower the KV cost."
+  },
+  {
+   "claim": "KV bytes/token: full-attention 20480 B BF16 / 10240 B FP8; sliding 204800 B/token capped at window (~200 MiB BF16 per sequence); llama.cpp q8_0 ~10880 B/token",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/google/gemma-4-26B-A4B-it/raw/main/config.json",
+   "correction": "Arithmetic re-done: 2x5x2x512x2 = 20480; 2x25x8x256x2 = 204800; q8_0 is 34 B per 32 elements, so 20480/2 x 1.0625 = 10880. Both runtimes store V separately on k_eq_v layers; llama.cpp src/models/gemma4.cpp:279-281 at b12418 sets Vcur = Kcur and passes it to build_attn."
+  },
+  {
+   "claim": "Intel int4 AutoRound text-only weights 13.24 GiB (vision 1.067 GiB); RedHatAI NVFP4 text 14.22 GiB",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/Intel/gemma-4-26B-A4B-it-int4-AutoRound?blobs=true",
+   "correction": "Independent safetensors header range read: Intel files total 14.312 GiB = vision 1.0669 + other 13.2406 GiB; RedHatAI model.safetensors 16,423,500,596 B = vision 1.0669 + other 14.2226 GiB."
+  },
+  {
+   "claim": "vLLM does not fit usefully at 0.92: Intel text-only pool 0.21 GiB gives about 0.75k BF16 / 11.8k FP8 tokens; NVFP4 and AWQ do not fit; 0.97 stretch about 94k FP8",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/vllm-project/vllm/issues/49878",
+   "correction": "Recomputed: 14.65 - 13.24 - 1.2 = 0.21 GiB; (215 - 100) MiB / 10240 B gives about 11.8k; at 0.97, (1.0 GiB - 100 MiB) / 10240 gives about 94k. The 0.97 stretch is fragile. Open issue #49878 (KV cache about 40% larger for Gemma4 since v0.26, and a v0.33.0 regression comment) means real vLLM capacity is probably below this arithmetic."
+  },
+  {
+   "claim": "vLLM v0.33.0 registers Gemma4ForConditionalGeneration (registry.py line 427), tool parser gemma4 -> Gemma4EngineToolParser, reasoning parser gemma4 -> Gemma4ParserReasoningAdapter, examples/tool_chat_template_gemma4.jinja exists",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/model_executor/models/registry.py",
+   "correction": "Confirmed at: registry.py:427; tool_parsers/__init__.py:253-256; reasoning/__init__.py:55-58; the examples directory listing."
+  },
+  {
+   "claim": "On sm_120 the attention backend is FlashAttention 2 (inherited platform lead)",
+   "verdict": "refuted",
+   "evidence_url": "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/model_executor/models/config.py",
+   "correction": "For Gemma 4, Gemma4Config.verify_and_update_config (config.py:300-370) detects the mixed head dims (256 and 512). If FA4 is unavailable it forces TRITON_ATTN. FA4 is presumably unavailable on sm_120 (not verified); the alternative is FA4."
+  },
+  {
+   "claim": "llama.cpp supports LLM_ARCH_GEMMA4 in a released build; stable v1.0.0 published 2026-11-13; b12418 exists",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/releases/tag/v1.0.0",
+   "correction": "v1.0.0 published 2026-11-13T10:20Z (prerelease false). b12418, b12419 and b12420 are all marked prerelease on 2026-11-15."
+  },
+  {
+   "claim": "CUDA FA kernel supports head dim 512 (fattn.cu line 382)",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/blob/b12418/ggml/src/ggml-cuda/fattn.cu",
+   "correction": "Case 512 needs V dim 512 and gqa_opt_applies. The GQA ratio is 16/2 = 8, so this holds. With q8_0 KV the MMA path dequantizes K/V to temporary F16 buffers (fattn-common.cuh:1087-1147). These are about 2 x n_ctx x 2 x 512 x 2 B per op: about 256 MiB at 64k and about 1 GiB at 256k. The record does not count them."
+  },
+  {
+   "claim": "Google QAT GGUF gemma-4-26B_q4_0-it.gguf is 14,439,363,584 B (13.45 GiB); mmproj 1.19 GB",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/google/gemma-4-26B-A4B-it-qat-q4_0-gguf?blobs=true",
+   "correction": "14,439,363,584 B and mmproj 1,194,828,160 B. The repo was created 2026-05-01."
+  },
+  {
+   "claim": "Google QAT GGUF is byte-identical to the Ollama gemma4:26b-a4b-it-qat model blob",
+   "verdict": "refuted",
+   "evidence_url": "https://registry.ollama.ai/v2/library/gemma4/manifests/26b-a4b-it-qat",
+   "correction": "The Ollama model layer is 14,439,361,440 B, 2,144 B smaller than Google's file. It is the same tensors with different metadata, not identical bytes. The projector is 1,194,827,744 B. The lmstudio-community identity claim was not checked."
+  },
+  {
+   "claim": "llama.cpp Plan A: 1.2 to 1.7 GiB left for KV, so q8_0 gives 104k to 152k and F16 gives 48k to 74k; -c 65536 q8_0 fits with margin",
+   "verdict": "refuted",
+   "evidence_url": "https://huggingface.co/api/models/google/gemma-4-26B-A4B-it-qat-q4_0-gguf?blobs=true",
+   "correction": "Subtraction error. 15.81 - 13.45 - 0.4 - (0.5 to 1.0) = 0.96 to 1.46 GiB. q8_0: (0.96 to 1.46 GiB - 0.156) / 10880 B gives about 79k to 129k. F16: (0.96 to 1.46 - 0.293) / 20480 gives about 35k to 61k, so F16 at 64k does NOT fit. Counting the about 256 MiB F16 dequant buffer at 64k in the pessimistic case gives about 55k. So -c 65536 with q8_0 is likely to fit but is not 'with margin'; it is borderline at the low end (inferred)."
+  },
+  {
+   "claim": "Plan B: --n-cpu-moe 6 (2.4 GiB of experts to RAM) frees enough VRAM for 262144 tokens with q8_0",
+   "verdict": "uncertain",
+   "correction": "The KV itself checks out: 262144 x 10880 B = 2.66 GiB plus 0.16 GiB SWA. Not counted: the F16 dequant temporaries for the 512-dim layers, about 1 GiB at 256k. Realistically about --n-cpu-moe 9 (about 3.6 GiB of experts in RAM) for 256k, or use -c 131072 with --n-cpu-moe 6 (inferred)."
+  },
+  {
+   "claim": "llama.cpp tool calling works via --jinja with the embedded template; common/chat.cpp detects '<|tool_call>call:' and uses PEG Gemma4; no open llama.cpp issue for gemma4 tool calling",
+   "verdict": "refuted",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/issues/29655",
+   "correction": "Detection is confirmed: chat.cpp:1399-1402 at b12418 matches the quoted literal, and the HF chat_template.jinja line 248 contains it. However, open issue #29655 (2026-09-29) reports unstable Gemma 4 26B tool calling: partial or malformed multi-line write/edit args in streaming. The reporter later could not reproduce on master but still saw failures on long edit commands. Treat tool calling as working with a caveat for long OpenCode edits."
+  },
+  {
+   "claim": "Cited vLLM open issues #66430, #54256, #50889, #49878, #50577 exist and are open",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/vllm-project/vllm/issues/66430",
+   "correction": "All open as of 2026-11-15. #60202 is an OpenCode issue (anomalyco/opencode#60202, open: openai-compatible provider omits tool_choice auto). vllm#60202 is unrelated."
+  },
+  {
+   "claim": "Ollama default gemma4:26b is Q4_K_M 17.07 GB + 0.46 GB draft + 1.19 GB projector and does not fit fully in 16 GB",
+   "verdict": "confirmed",
+   "evidence_url": "https://registry.ollama.ai/v2/library/gemma4/manifests/26b",
+   "correction": "Model layer 17,074,419,072 B, draft 461,766,752 B, projector 1,194,828,128 B."
+  },
+  {
+   "claim": "Final verdict: good for OpenCode via llama.cpp QAT Q4_0 text-only at 64k fully on GPU; not vLLM on 16 GB",
+   "verdict": "confirmed",
+   "correction": "Holds with the caveats above. Use -ctk/-ctv q8_0 (mandatory, F16 will not reach 64k) and do not load the mmproj. If the start-up log shows less than 64k after --fit, add --n-cpu-moe 2 (about 0.8 GiB freed). Test OpenCode edit/write tools against llama.cpp #29655. vLLM stays non-viable on this card."
+  }
+ ]
+}

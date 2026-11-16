@@ -1,0 +1,87 @@
+{
+ "overall": "holds-with-corrections",
+ "summary": "I could not refute any runtime claim in the record. Every value I re-read live matches:\n- HF file sizes.\n- The safetensors-header weight splits.\n- The config.json layer layout.\n- The vLLM v0.33.0 registry entries, parser names, CLI flags and NVFP4 kernel order.\n- The llama.cpp b12418 architecture and template detection.\n- The unsloth GGUF sizes.\n- The ghcr image tags.\n\nThe KV arithmetic is correct: 8 of 32 layers are full attention, with 4 KV heads and head_dim 256, which gives 32 KiB per token in BF16. On vLLM with NVFP4 and --language-model-only, that leaves about 197k tokens at BF16 KV, and the native limit of 262,144 is reachable with FP8 KV. On llama.cpp, Q8_0 with 131k context comes to about 13.9 GiB.\n\nCorrections and additions:\n1. Open vLLM issue #45238 says that on hybrid GDN models (the Qwen3.5 family), prefix caching can drop silently to 0%. This happens when the align-mode Mamba checkpoint falls in request-unique tokens. Issue #67674 measures 1.6-1.7x more recompute on agent traces. For OpenCode, whose multi-turn prompts are long, that can mean re-prefilling 50k-130k tokens per turn. The record does not mention this cost.\n2. RedHatAI validated its NVFP4 checkpoint only on a B200 with vLLM nightly, not on sm_120.\n3. PR #66864 (open) confirms the record's reading of the auto kernel path on sm_120: it selects FlashInferCutlassNvFp4 and runs a JIT build of fp4_gemm_cutlass_sm120 that can be OOM-killed. The PR also confirms that an explicit MAX_JOBS is respected, so the record's MAX_JOBS=2 is a sound mitigation. The --linear-backend cutlass alternative is still inferred.\n\nVerdict: the record's recommended configurations are realistic and should serve OpenCode with tool calls and 128k or more of context. Either one works:\n- vLLM: RedHatAI NVFP4 with --language-model-only, MAX_JOBS=2, qwen3_coder and qwen3 parsers, 131072 context.\n- llama.cpp: unsloth Q8_0 with -c 131072, F16 KV and --no-mmproj (or q8_0 KV for 262k).\n\nStill unverified: end-to-end OpenCode tool-call reliability, measured speed on this GPU, and prefix-cache effectiveness for agent traces.",
+ "verdicts": [
+  {
+   "claim": "Weight sizes: Qwen/Qwen3.5-9B safetensors 19,306,310,880 B (17.98 GiB); RedHatAI NVFP4 9,361,053,856 B (8.718 GiB); RedHatAI FP8-dynamic 14,006,785,856 B (13.045 GiB)",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/RedHatAI/Qwen3.5-9B-NVFP4?blobs=true"
+  },
+  {
+   "claim": "Weight split from the safetensors headers: vision 0.849 GiB, MTP 0.453 GiB, embed 1.895, lm_head 1.895 (both BF16); NVFP4 LM body 3.626 GiB, so language-only NVFP4 = 7.42 GiB; FP8-dynamic language-only = 11.74 GiB",
+   "verdict": "confirmed",
+   "correction": "Re-derived by range-reading the safetensors headers of both RedHatAI repos: NVFP4 lm 3.626 + embed 1.895 + lm_head 1.895 + visual 0.849 + mtp 0.453 = 8.718 GiB; FP8 lm 7.953 + 1.895 + 1.895 + 0.849 + 0.453 = 13.045 GiB. The NVFP4 config ignore list keeps visual.*, lm_head and mtp.* unquantized.",
+   "evidence_url": "https://huggingface.co/RedHatAI/Qwen3.5-9B-NVFP4/raw/main/config.json"
+  },
+  {
+   "claim": "Architecture: 32 layers, 8 full-attention (full_attention_interval 4), 4 KV heads, head_dim 256, GDN 16 K heads / 32 V heads at 128, conv kernel 4, vocab 248320, max_position_embeddings 262144",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Qwen/Qwen3.5-9B/raw/main/config.json"
+  },
+  {
+   "claim": "KV bytes per token = 2 x 8 x 4 x 256 x 2 = 32,768 B BF16 (16 KiB FP8); vLLM NVFP4 language-only pool 13.45 - 7.42 = 6.03 GiB -> ~197k tokens BF16, ~395k FP8 (capped at 262,144)",
+   "verdict": "confirmed",
+   "correction": "The arithmetic is correct: 6.03 x 2^30 / 32768 = 197.6k. A small caveat: vLLM's hybrid allocator raises the attention block size to about 528-576 tokens so that a page matches the GDN state page (issue #67674 logs 576), and each running sequence holds about 49 MiB of fixed GDN state. One request loses only about 1-2k tokens of headroom, so the conclusion holds.",
+   "evidence_url": "https://github.com/vllm-project/vllm/issues/67674"
+  },
+  {
+   "claim": "llama.cpp: unsloth Q8_0 = 9,527,502,048 B (8.873 GiB); at 131072 ctx F16 KV (4.0 GiB) total ~13.9 GiB; q8_0 KV at 262k ~4.25 GiB -> ~14.2 GiB; F16 KV at 262k ~17.9 GiB does not fit",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/unsloth/Qwen3.5-9B-GGUF/tree/main"
+  },
+  {
+   "claim": "vLLM v0.33.0 registers Qwen3_5ForConditionalGeneration (registry.py line 617), Qwen3_5ForCausalLM (line 204), Qwen3_5MTP (line 739)",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/models/registry.py"
+  },
+  {
+   "claim": "Parsers: tool parser qwen3_coder (tool_parsers/__init__.py line 206, alias qwen3_xml at line 217) and reasoning parser qwen3 (reasoning/__init__.py line 168); these match the vLLM recipe and the RedHatAI card commands",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/vllm-project/recipes/blob/main/models/Qwen/Qwen3.5-9B.yaml"
+  },
+  {
+   "claim": "Flags exist in v0.33.0: --language-model-only (arg_utils.py line 1497), --linear-backend with 'cutlass' as an option (config/kernel.py LinearBackend), --cpu-offload-params, --default-chat-template-kwargs",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/config/kernel.py"
+  },
+  {
+   "claim": "NVFP4 on sm_120: auto order is FlashInferCuteDsl (sm_10x only, skipped), then FlashInferCutlass (has_device_capability(100), true on 12.0), which JIT-builds and can spike host RAM; MAX_JOBS=2 mitigates it",
+   "verdict": "confirmed",
+   "correction": "Open PR #66864 (2026-11-10) states that selecting FlashInferCutlassNvFp4LinearKernel on an RTX 5090 (sm_120) triggers the fp4_gemm_cutlass_sm120 JIT build, which was OOM-killed on a 15 GiB host, and that an explicit user MAX_JOBS is respected. Whether --linear-backend cutlass actually avoids the build (CutlassNvFp4 is gated on cutlass_fp4_supported()) is still inferred and was not run.",
+   "evidence_url": "https://github.com/vllm-project/vllm/pull/66864"
+  },
+  {
+   "claim": "RedHatAI/Qwen3.5-9B-NVFP4 is a reliable best checkpoint on this GPU",
+   "verdict": "uncertain",
+   "correction": "The card's evaluations ran on a single B200 with vLLM nightly. I found no sm_120 or RTX 50 validation and no sm_120-specific bug for this model. Searches for 'Qwen3.5 sm_120', '5090', '5080' and 'RTX 50' returned nothing relevant.",
+   "evidence_url": "https://huggingface.co/RedHatAI/Qwen3.5-9B-NVFP4"
+  },
+  {
+   "claim": "llama.cpp b12418 supports the architecture (LLM_ARCH_QWEN35 'qwen35', llama-arch.cpp line 45) and common/chat.cpp detects the template as Qwen3-Coder XML, naming Qwen3.5 explicitly (around line 1420)",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12418/common/chat.cpp"
+  },
+  {
+   "claim": "llama.cpp server flags used: -fa on|off|auto, --no-mmproj, --jinja default enabled, --chat-template-kwargs, --reasoning-budget 0; images ghcr.io/ggml-org/llama.cpp:server-cuda13 and :server-cuda exist",
+   "verdict": "confirmed",
+   "correction": "Both ghcr manifests returned HTTP 200. There is no per-build tag 'server-cuda13-b12418' (HTTP 404), so to pin a version use a digest.",
+   "evidence_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12418/tools/server/README.md"
+  },
+  {
+   "claim": "Verdict 'usable': serves OpenCode with working tool calls and >=64k context on this machine",
+   "verdict": "confirmed",
+   "correction": "Memory, architecture and parser support all check out. Missing caveat: open vLLM issue #45238 reports that hybrid GDN prefix caching can silently fall to 0% hits when the align-mode Mamba checkpoint lands in request-unique tokens, and issue #67674 measures 1.6-1.7x more prompt recompute on coding-agent traces than a full-attention model. Under OpenCode this can mean re-prefilling most of a long context on every turn, which costs latency rather than correctness. Tool-call reliability under OpenCode itself is still not tested end to end.",
+   "evidence_url": "https://github.com/vllm-project/vllm/issues/45238"
+  },
+  {
+   "claim": "Speed ceiling: NVFP4 reads ~5.52 GiB per token (3.63 LM + 1.90 lm_head) -> ~150 tok/s cap; Q8_0 ~105 tok/s cap",
+   "verdict": "uncertain",
+   "correction": "The arithmetic is consistent with the header split (896e9 / (5.52 x 2^30) = 151). It is still inferred, and no measured RTX 50 numbers were found."
+  },
+  {
+   "claim": "Ollama tag qwen3.5:9b-q8_0 10 GB with tools/thinking badges",
+   "verdict": "uncertain",
+   "correction": "Not re-checked in this pass."
+  }
+ ]
+}

@@ -1,0 +1,465 @@
+{
+ "review": {
+  "key": "reddit-small-local",
+  "url": "https://www.reddit.com/r/LocalLLaMA/comments/1s7r9wu/i_tested_as_many_of_the_small_local_and/",
+  "title": "I tested as many of the small local and OpenRouter models I could with my own agentic text-to-SQL benchmark. Surprises ensured...",
+  "publisher": "Reddit r/LocalLLaMA, u/nickl (Nick Lothian); benchmark site sql-benchmark.nicklothian.com, repo github.com/nlothian/llm-sql-benchmark",
+  "as_of": "Post 2026-03-30 13:55 UTC (score 196, 63 comments, last comment 2026-06-03). Benchmark data in repo runs 2026-03-17 to 2026-06-10 (last push 2026-06-10T00:18Z).",
+  "source_type": "community-measurement",
+  "accessible": true,
+  "access_notes": "Reddit blocked every direct read: old.reddit.com .json returned 403 \"Blocked\", www.reddit.com and api.reddit.com .json returned 403, the slug .json redirected to a login page. The only Wayback snapshot (20260401165538) is an empty shreddit shell with no post text. Post and full comment tree were read from the Arctic Shift Reddit archive API (arctic-shift.photon-reddit.com/api/posts/ids?ids=1s7r9wu and /api/comments/tree?link_id=1s7r9wu; post retrieved 2026-04-01). The benchmark write-up was read raw from sql-benchmark.nicklothian.com (site /data/index.json is an SPA fallback, not JSON). All 109 per-run result files were downloaded raw from github.com/nlothian/llm-sql-benchmark data/benchmarks/*.json into scratchpad/src/reddit-small-local/bench and tabulated with python3 -I; harness code (openai-tool-call.ts, runBenchmark.ts, check.ts, benchmark.ts) read raw. Images in the post and comments (charts, heatmaps) were not read.",
+  "credibility": "medium",
+  "credibility_reason": "Transparent and reproducible: open harness, per-question traces and result JSON published, run-it-yourself in browser. But it is a narrow task (25 text-to-SQL questions on AdventureWorks/DuckDB), single run per model, temperature hardcoded 0.1 (openai-tool-call.ts line 102, overrides vendor sampling; open issue #4), scoring checks only row count, column names and first row (check.ts), 120 s default per-question timeout, and most models ran through OpenRouter with unpinned providers (author admitted he did not know providers could be pinned), so quantization/provider varies. Local runs used the author's GTX 1070 8 GB with CPU offload. None of our top picks except Gemma 4 26B-A4B, gpt-oss-20b and Qwen3-Coder-Next were tested, and those only via OpenRouter. The write-up text and the published data disagree once (Qwen3.5-35B-A3B UD-IQ3_S: text 19/25, data 20/25).",
+  "summary": "An author-built agentic text-to-SQL benchmark (25 questions, tool-calling loop run_sql_query/results_ok with DuckDB, at most 20 tool calls, 120 s per question by default, temperature 0.1) run on about 100 configurations, mostly via OpenRouter plus some local llama.cpp GGUF runs on a GTX 1070 8 GB. Headline: Qwen3.5-27B 23/25 matched the best open models (Kimi K2.5, Qwen3.5-397B-A17B), Qwen3.5-35B-A3B 21/25, Gemma 4 26B-A4B 21/25, Qwen3-Coder-Next only 16/25 (4 errors), gpt-oss-20b 10/25 paid vs 20/25 free (provider variance), Nemotron 3 Nano 30B-A3B 15/25 with about 79k output tokens. Thinking mode hurt small Qwen3.5 models (9B 16 off vs 15 on; 4B Q4_0 10 off vs 7 on). Small models fail mostly on tool-call errors, not wrong SQL, and degrade as context grows. Quant: Qwen3.5-4B Q4_0 equal to Q8_0 (10/25 each), UD-IQ2_XXS collapsed to 1/25. For our picks this is weak, indirect evidence: it supports the Qwen 27B dense and 35B-A3B MoE families, Gemma 4 26B-A4B, thinking-off by default, and q8_0 KV use; it gives a mild negative signal on Qwen3-Coder-Next for non-coding tool loops; it tells us nothing about Qwen3.6, Qwen3.8, Nemotron 3.5 Lightning, Ornith, Gemma 4 12B or GLM-4.7-Flash, which postdate or were not tested. Useful as a fast (under 5 minutes) tool-calling smoke benchmark we can point at our own llama.cpp/vLLM endpoints.",
+  "findings": [
+   {
+    "topic": "Harness",
+    "claim": "Agentic text-to-SQL loop: model gets English question plus schema of the relevant tables, must call run_sql_query (DuckDB on AdventureWorks CSV) and then results_ok; up to 20 tool calls (MAX_TOOL_CALLS=20), per-question timeout default 120 s (CLI --timeout), outcomes pass / fail (wrong result) / error (tool-call failure, invalid SQL, timeout).",
+    "evidence": "documented",
+    "location": "sql-benchmark.nicklothian.com 'Query generation'; repo packages/core/src/runBenchmark.ts line 25; apps/cli/src/benchmark.ts line 71",
+    "target": "benchmarking",
+    "relevance": "medium"
+   },
+   {
+    "topic": "Harness bias",
+    "claim": "Temperature is hardcoded to 0.1 for every model, overriding vendor sampling (for example NVIDIA's 1.0 for Nemotron Cascade); GitHub issue #4 'Reddit feedback on temp and token cap' is still open.",
+    "evidence": "documented",
+    "location": "apps/cli/src/openai-tool-call.ts line 102 'temperature: 0.1'; api.github.com/repos/nlothian/llm-sql-benchmark/issues/4 state open",
+    "target": "benchmarking",
+    "relevance": "medium"
+   },
+   {
+    "topic": "Harness bias",
+    "claim": "Scoring compares only row count, column count and names, and first-row values (with rounding allowance), not the full result set; one run per model, no repeat runs. Author confirmed both in comments.",
+    "evidence": "documented",
+    "location": "packages/core/src/check.ts lines 30-60; author reply to rm-rf-rm 2026-03-31",
+    "target": "benchmarking",
+    "relevance": "medium"
+   },
+   {
+    "topic": "Provider variance",
+    "claim": "OpenRouter results are not pinned to a provider: gpt-oss-20b scored 20/25 on the free endpoint (600 s timeout) and 10/25 on the paid endpoint (120 s timeout, 14 errors); Qwen3.5-9B via OpenRouter scored 6/25 vs 16/25 for unsloth Q4_K_M run locally.",
+    "evidence": "measured",
+    "location": "data/benchmarks/benchmark-openai_gpt-oss-20b*.json, benchmark-qwen_qwen3.5-9b-openrouter.json; comment thread SpiritualWindow3855/nickl",
+    "target": "benchmarking",
+    "relevance": "high"
+   },
+   {
+    "topic": "Qwen 27B dense",
+    "claim": "Qwen3.5-27B (OpenRouter) 23/25, tied with Kimi K2.5 and Qwen3.5-397B-A17B as best open models; two commenters reproduced 23/25 locally with bartowski Q4_K_L, and one got 22/25 at Q6_K and 20/25 at Q5_K_S (both q8_0 KV). Supports the family behind our pick #2 (Qwen3.8-27B), which was not tested.",
+    "evidence": "measured",
+    "location": "post body; data benchmark-qwen_qwen3.5-27b.json; comments tmvr, Tormeister 2026-03-30/31",
+    "target": "models",
+    "relevance": "high"
+   },
+   {
+    "topic": "Qwen MoE 35B-A3B",
+    "claim": "Qwen3.5-35B-A3B scored 21/25 via OpenRouter, 20/25 local unsloth UD-IQ3_S (13.1 GB) and 18/25 local UD-IQ2_XXS (10.7 GB) with expert offload on an 8 GB GPU. Write-up text says 19/25 for IQ3_S, the data file says 20 (passed 20, failed 4, errored 1).",
+    "evidence": "measured",
+    "location": "data/benchmarks/benchmark-unsloth_Qwen3.5-35B-A3B-GGUF_UD-IQ3_S-MoE-offload.json; site 'Quantization and CPU Offload'",
+    "target": "models",
+    "relevance": "high"
+   },
+   {
+    "topic": "Gemma 4 26B-A4B",
+    "claim": "google/gemma-4-26b-a4b-it via OpenRouter scored 21/25 (4 fail, 0 errors, 2026-04-14); Gemma 4 31B scored 20/25. Consistent with our pick #3.",
+    "evidence": "measured",
+    "location": "data/benchmarks/benchmark-google_gemma-4-26b-a4b-it.json",
+    "target": "models",
+    "relevance": "medium"
+   },
+   {
+    "topic": "Qwen3-Coder-Next",
+    "claim": "qwen3-coder-next via OpenRouter scored only 16/25 (5 fail, 4 errors) on this non-coding tool loop, below Qwen3.5-27B and 35B-A3B; Nemotron-Cascade-2-30B-A3B IQ3_XXS beat it (21/25).",
+    "evidence": "measured",
+    "location": "data/benchmarks/benchmark-qwen_qwen3-coder-next.json; comment RedParaglider",
+    "target": "models",
+    "relevance": "medium"
+   },
+   {
+    "topic": "Nemotron",
+    "claim": "Nemotron-Cascade-2-30B-A3B bartowski IQ3_XXS, local on GTX 1070 8 GB with offload and 300 s timeout, scored 21/25 (3 errors, mostly timeouts) but used 65k output tokens over 2788 s. Nemotron 3 Nano 30B-A3B via OpenRouter scored 15/25 and used about 79k output tokens vs 20-23k for Qwen3.5-35B-A3B: poor token efficiency.",
+    "evidence": "measured",
+    "location": "data/benchmarks/benchmark-bartowski_nvidia_Nemotron-Cascade-2-30B-A3B-GGUF_IQ3_XXS.json, benchmark-nvidia_nemotron-3-nano-30b-a3b.json; site 'Token Efficiency and Speed'",
+    "target": "models",
+    "relevance": "medium"
+   },
+   {
+    "topic": "Thinking mode",
+    "claim": "For small Qwen3.5 models thinking made results worse (9B Q4_K_M 16/25 off vs 15/25 on; 4B Q4_0 10/25 off vs 7/25 on); author attributes it to reasoning tokens filling context and degrading tool use. Caveat: at temperature 0.1, which is below Qwen's recommended thinking sampling.",
+    "evidence": "measured",
+    "location": "site 'Thinking vs Non-Thinking'; data unsloth_Qwen3.5-9B/4B *-thinking/no-thinking",
+    "target": "models",
+    "relevance": "high"
+   },
+   {
+    "topic": "Tool-call reliability",
+    "claim": "Small models (under about 9B) fail mostly through tool-call errors rather than wrong SQL, and tool calling gets less reliable as context grows. Qwen3.5-2B scored 4-5/25, 0.8B 1/25, Gemma 4 E2B 12/25 (12 errors), Gemma 4 E4B 15/25.",
+    "evidence": "measured",
+    "location": "site 'Small models', 'Grammar Mode'; author reply to duridsukar",
+    "target": "opencode",
+    "relevance": "high"
+   },
+   {
+    "topic": "Grammar mode",
+    "claim": "llama.cpp GBNF grammar mode (model returns raw SQL instead of tool calls) did not help small models: Qwen3.5-9B 16 to 10, Qwen3.5-4B Q4_0 10 to 7, Qwen3.5-2B 4 to 0.",
+    "evidence": "measured",
+    "location": "data *-grammar*.json; site 'Grammar Mode'",
+    "target": "llamacpp",
+    "relevance": "low"
+   },
+   {
+    "topic": "Quantization",
+    "claim": "Qwen3.5-4B: Q8_0 (4.48 GB) 10/25 = Q4_0 (2.58 GB) 10/25, UD-IQ2_XXS (1.52 GB) 1/25. Jackrong Qwen3.5-9B Opus-distill Q8_0 thinking 15/25 vs Q4_K_M thinking 17/25 (single runs, Q8_0 heavily CPU-offloaded).",
+    "evidence": "measured",
+    "location": "site 'Quantization'; data unsloth_Qwen3.5-4B-GGUF_*.json, Jackrong_*.json",
+    "target": "models",
+    "relevance": "medium"
+   },
+   {
+    "topic": "Heavy quant MoE vs small dense",
+    "claim": "On an 8 GB GPU the 10.7 GB Qwen3.5-35B-A3B UD-IQ2_XXS with expert offload (18/25, about 1200 s) beat the 9.53 GB Qwen3.5-9B distill Q8_0 with layer offload (15/25, about 3800 s): partial MoE expert offload costs much less speed than dense layer offload.",
+    "evidence": "measured",
+    "location": "site 'Heavy Quantization vs Smaller Model'",
+    "target": "llamacpp",
+    "relevance": "medium"
+   },
+   {
+    "topic": "llama.cpp offload commands",
+    "claim": "Author's commands for Qwen3.5-35B-A3B used -hf unsloth/...:UD-IQ3_S --jinja -ngl 99 --ctx-size 32768 --temp 0.7 --top-p 0.80 --top-k 20 --min-p 0.0 --repeat-penalty 1.05 -ot \".ffn_(up|down)_exps.=CPU\". Our baseline replaces -ot regexes with --n-cpu-moe / --fit at b12418.",
+    "evidence": "documented",
+    "location": "site 'Quantization and CPU Offload'",
+    "target": "llamacpp",
+    "relevance": "low"
+   },
+   {
+    "topic": "Interactive speed floor",
+    "claim": "Author: 16 tok/s (3-bit) and 19 tok/s (2-bit) Qwen3.5-35B-A3B on GTX 1070 + i5 offload are 'the very lowest speeds you'd ever want for a useful interactive agentic process'. Our laptop should be far above this for the same class.",
+    "evidence": "opinion",
+    "location": "site 'Quantization and CPU Offload'",
+    "target": "general",
+    "relevance": "medium"
+   },
+   {
+    "topic": "KV cache and context",
+    "claim": "Commenter on RTX 4090 24 GB (Windows, 1.1 GB VRAM used by desktop): Qwen3.5-27B bartowski Q4_K_L fits 90112 context with default f16 KV and 159744 with q8_0 KV. q8_0 KV used by every local commenter.",
+    "evidence": "measured",
+    "location": "comment tmvr 2026-03-30",
+    "target": "llamacpp",
+    "relevance": "medium"
+   },
+   {
+    "topic": "Benchmark as smoke test",
+    "claim": "The benchmark can be pointed at any OpenAI-compatible endpoint (llama.cpp, LM Studio, OpenRouter) from the browser or the CLI, takes under 5 minutes for most models, and stores per-question traces. One user saw 'Model failed to produce a tool call in 3 consecutive attempts' against llama-server while the same model worked in OpenCode; another got HTTP 404 with llama-server.",
+    "evidence": "documented",
+    "location": "post body; site 'Run Your Own Benchmark'; comments grumd, Comfortable_Ebb7015",
+    "target": "benchmarking",
+    "relevance": "medium"
+   },
+   {
+    "topic": "Laguna",
+    "claim": "poolside/laguna-xs.2 (free, OpenRouter, 2026-04-30) scored 7/25 with 18 errors; laguna-m.1 free 20/25. Weak evidence against the baseline honorable mention Laguna XS (our baseline names Laguna XS 2.1, a later version not tested).",
+    "evidence": "measured",
+    "location": "data/benchmarks/benchmark-poolside_laguna-xs.2_free.json",
+    "target": "models",
+    "relevance": "low"
+   },
+   {
+    "topic": "Untested picks",
+    "claim": "Not tested at all: Qwen3.6-35B-A3B, Qwen3.8-27B, Nemotron 3.5 Lightning, Ornith-1.5-9B, Gemma 4 12B, GLM-4.7-Flash, DeepSeek-R1-0528-Qwen3-8B. Qwen3.6 appears only as closed qwen3.6-plus (23/25).",
+    "evidence": "documented",
+    "location": "repo data/benchmarks file list (109 files, last 2026-06-10)",
+    "target": "models",
+    "relevance": "high"
+   },
+   {
+    "topic": "Hardware context",
+    "claim": "All author local runs: GTX 1070 8 GB with CPU offload to a 2015 Intel i5 (post and write-up). Write-up states Qwen3.5-27B runs at '~44 TPS for an 8-bit quantization on an RTX-5090' without stating who measured it. No RTX 5080 (desktop or laptop) data anywhere in the source.",
+    "evidence": "documented",
+    "location": "site 'NVIDIA: A Rising Star', 'Best for self-hosting'",
+    "target": "hardware",
+    "relevance": "medium"
+   }
+  ],
+  "measurements": [
+   {
+    "model": "Qwen3.5-35B-A3B unsloth UD-IQ3_S (13.1 GB)",
+    "gpu": "GTX 1070 8 GB + 2015 Intel i5 (author)",
+    "measured_or_estimated": "measured",
+    "runtime": "llama.cpp llama-server, -ot ffn_(up|down)_exps on CPU",
+    "quant": "UD-IQ3_S",
+    "context": "32768",
+    "gen_tok_s": "16.0 effective (20173 output tokens / 1259 s summed question time, includes prefill and SQL; author states 16 tok/s)",
+    "settings": "temp 0.7 top-p 0.8 top-k 20; harness score 20/25",
+    "vram": "8 GB card"
+   },
+   {
+    "model": "Qwen3.5-35B-A3B unsloth UD-IQ2_XXS (10.7 GB)",
+    "gpu": "GTX 1070 8 GB + Intel i5 (author)",
+    "measured_or_estimated": "measured",
+    "runtime": "llama.cpp, more down-exps on GPU",
+    "quant": "UD-IQ2_XXS",
+    "context": "32768",
+    "gen_tok_s": "19.3 effective (23175 / 1200 s; author states 19 tok/s)",
+    "settings": "score 18/25"
+   },
+   {
+    "model": "Nemotron-Cascade-2-30B-A3B bartowski IQ3_XXS",
+    "gpu": "GTX 1070 8 GB + Intel i5 (author)",
+    "measured_or_estimated": "measured",
+    "runtime": "llama.cpp with CPU offload",
+    "quant": "IQ3_XXS",
+    "gen_tok_s": "23.4 effective (65279 / 2788 s)",
+    "settings": "300 s timeout; score 21/25, 3 errors mostly timeouts"
+   },
+   {
+    "model": "Qwen3.5-9B Opus-distill Jackrong Q8_0 (9.53 GB)",
+    "gpu": "GTX 1070 8 GB + Intel i5 (author)",
+    "measured_or_estimated": "measured",
+    "runtime": "llama.cpp -ngl 18",
+    "quant": "Q8_0",
+    "context": "16384",
+    "gen_tok_s": "5.2 effective (19988 / 3815 s)",
+    "settings": "thinking on; score 15/25"
+   },
+   {
+    "model": "Qwen3.5-9B unsloth Q4_K_M",
+    "gpu": "author local endpoint (GTX 1070 8 GB per write-up)",
+    "measured_or_estimated": "measured",
+    "runtime": "llama.cpp",
+    "quant": "Q4_K_M",
+    "gen_tok_s": "22.3 effective",
+    "settings": "no-thinking 16/25; thinking 15/25 (24.0 effective tok/s)"
+   },
+   {
+    "model": "Qwen3.5-27B",
+    "gpu": "RTX 3090 24 GB (commenter Adorable_Weakness_39)",
+    "measured_or_estimated": "measured",
+    "runtime": "llama.cpp, -ngl 99",
+    "context": "240k",
+    "gen_tok_s": "40 (claimed, method not stated)",
+    "settings": "q8 KV cache; quant not stated"
+   },
+   {
+    "model": "Qwen3.5-27B Opus distill (bartowski)",
+    "gpu": "RTX 3090 at 400 W (commenter Technical-Earth-3254)",
+    "measured_or_estimated": "measured",
+    "runtime": "local, runtime not stated",
+    "quant": "Q4_K_M",
+    "context": "about 60k",
+    "gen_tok_s": "about 20 (harness mouse-over TPS)",
+    "settings": "q8 KV; score 21/25; Windows"
+   },
+   {
+    "model": "Qwen3.5-27B bartowski Q4_K_L",
+    "gpu": "RTX 4090 24 GB, Windows (commenter tmvr)",
+    "measured_or_estimated": "measured",
+    "runtime": "llama.cpp (implied)",
+    "quant": "Q4_K_L",
+    "context": "max 90112 with f16 KV, 159744 with q8_0 KV",
+    "settings": "1.1 GB VRAM used by Windows; score 23/25"
+   },
+   {
+    "model": "Qwen3.5-27B",
+    "gpu": "RTX 5090",
+    "measured_or_estimated": "estimated",
+    "quant": "8-bit",
+    "gen_tok_s": "about 44 (author statement, source not given)"
+   },
+   {
+    "model": "gpt-oss-20b",
+    "gpu": "RTX 3090 (commenter LowMental5202)",
+    "measured_or_estimated": "measured",
+    "gen_tok_s": "over 100 (claimed)",
+    "settings": "runtime and quant not stated"
+   },
+   {
+    "model": "Qwen3.5-27B",
+    "gpu": "OpenRouter (provider unpinned)",
+    "measured_or_estimated": "measured",
+    "runtime": "OpenRouter API",
+    "settings": "score 23/25, 250 s, 16634 output tokens, $0.056"
+   },
+   {
+    "model": "Gemma 4 26B-A4B it",
+    "gpu": "OpenRouter (provider unpinned)",
+    "measured_or_estimated": "measured",
+    "runtime": "OpenRouter API",
+    "settings": "score 21/25, 237 s, 7110 output tokens"
+   },
+   {
+    "model": "Qwen3-Coder-Next",
+    "gpu": "OpenRouter (provider unpinned)",
+    "measured_or_estimated": "measured",
+    "runtime": "OpenRouter API",
+    "settings": "score 16/25 (5 fail, 4 error), 245 s"
+   },
+   {
+    "model": "gpt-oss-20b",
+    "gpu": "OpenRouter paid vs free (providers unpinned)",
+    "measured_or_estimated": "measured",
+    "runtime": "OpenRouter API",
+    "settings": "paid 10/25 (14 errors, 120 s timeout); free 20/25 (600 s timeout)"
+   },
+   {
+    "model": "Nemotron 3 Nano 30B-A3B",
+    "gpu": "OpenRouter",
+    "measured_or_estimated": "measured",
+    "runtime": "OpenRouter API",
+    "settings": "15/25, 78823 output tokens (vs 23393 for Qwen3.5-35B-A3B at 21/25)"
+   },
+   {
+    "model": "Qwen3.5-27B bartowski",
+    "gpu": "commenter Tormeister, GPU not stated",
+    "measured_or_estimated": "measured",
+    "runtime": "llama.cpp (implied), q8_0 KV + Hadamard",
+    "quant": "Q5_K_S / Q6_K",
+    "settings": "Q5_K_S 20/25, Q6_K 22/25, 2-3 runs each"
+   }
+  ],
+  "conflicts": [
+   {
+    "baseline_claim": "Qwen3-Coder-Next is pick #5 for the coding agent (AA tau2 79.5, TB2.1 38.2).",
+    "source_claim": "Qwen3-Coder-Next scored 16/25 on this agentic SQL tool loop, below Qwen3.5-27B (23), Qwen3.5-35B-A3B (21) and Gemma 4 26B-A4B (21).",
+    "assessment": "Not a real conflict for coding use: different task, one unpinned OpenRouter run at temperature 0.1. Worth noting as a signal that its tool loop is weaker outside coding; keep the pick but measure it in our own harness."
+   },
+   {
+    "baseline_claim": "Honorable mention: Laguna XS 2.1.",
+    "source_claim": "poolside laguna-xs.2 free on OpenRouter scored 7/25 with 18 errors.",
+    "assessment": "Different version (XS.2 vs XS 2.1) and a free endpoint; weak negative signal only, no change needed."
+   },
+   {
+    "baseline_claim": "gpt-oss-20b is pick #4.",
+    "source_claim": "gpt-oss-20b scored 10/25 on paid OpenRouter (14 errors) and 20/25 on free OpenRouter.",
+    "assessment": "Shows provider/settings variance, not model quality; the 120 s vs 600 s timeout and unpinned providers explain much of it. No change; self-hosted measurement needed."
+   }
+  ],
+  "agreements": [
+   "Thinking off by default for agent loops: small Qwen3.5 models scored lower with thinking on (9B 16 vs 15, 4B 10 vs 7), matching the baseline's DGX lesson.",
+   "Qwen 27B dense and 35B-A3B MoE families are the strongest local-size models on tool loops, consistent with picks #1 and #2.",
+   "Gemma 4 26B-A4B 21/25 supports pick #3.",
+   "q8_0 KV cache is the common community setting for long context on 24 GB cards, consistent with the baseline's -ctk/-ctv q8_0.",
+   "Partial MoE expert offload to CPU is much cheaper in speed than dense layer offload, consistent with the baseline's --n-cpu-moe plans for Qwen3.6-35B-A3B and Qwen3-Coder-Next.",
+   "Very low-bit quants (UD-IQ2_XXS on a 4B) collapse, while Q4 is close to Q8, consistent with preferring Q4-class or better quants.",
+   "Tool calls from small models are the main failure mode, consistent with the baseline's emphasis on correct parsers and a tool-call smoke test."
+  ],
+  "kb_notes": [
+   {
+    "target_doc": "docs/community-benchmarks.md",
+    "note": "LLM SQL Benchmark (Nick Lothian, r/LocalLLaMA post 2026-03-30, data to 2026-06-10, https://sql-benchmark.nicklothian.com/ and https://www.reddit.com/r/LocalLLaMA/comments/1s7r9wu/): 25 agentic text-to-SQL questions with a run_sql_query/results_ok tool loop, one run per model, temperature fixed at 0.1, first-row-only scoring, most models via unpinned OpenRouter providers. Scores: Qwen3.5-27B 23/25, Qwen3.5-35B-A3B 21/25, Gemma 4 26B-A4B 21/25, Qwen3-Coder-Next 16/25, Nemotron 3 Nano 30B-A3B 15/25, gpt-oss-20b 10/25 paid and 20/25 free. None of our current picks except Gemma 4 26B-A4B, gpt-oss-20b and Qwen3-Coder-Next were tested, and no RTX 5080 data exists in it."
+   },
+   {
+    "target_doc": "docs/community-benchmarks.md",
+    "note": "The same model can score 10/25 or 20/25 depending on the OpenRouter provider and timeout (gpt-oss-20b in the LLM SQL Benchmark, https://github.com/nlothian/llm-sql-benchmark data/benchmarks): treat OpenRouter-hosted community scores as provider-dependent, not as model properties."
+   },
+   {
+    "target_doc": "docs/model-selection.md",
+    "note": "Community evidence for thinking off in tool loops: in the LLM SQL Benchmark, Qwen3.5-9B Q4_K_M scored 16/25 with thinking off and 15/25 with it on, and Qwen3.5-4B Q4_0 10/25 vs 7/25; the author attributes it to reasoning tokens filling context (https://sql-benchmark.nicklothian.com/#thinking-vs-non-thinking). The harness forces temperature 0.1, so this is weak evidence and our own runs should compare both modes."
+   },
+   {
+    "target_doc": "docs/model-selection.md",
+    "note": "For 4B-class models, Q4_0 matched Q8_0 (10/25 each) while unsloth UD-IQ2_XXS dropped to 1/25 in the LLM SQL Benchmark (https://sql-benchmark.nicklothian.com/#quantization); avoid 2-bit quants for agent work unless the model is large."
+   },
+   {
+    "target_doc": "llamacpp/benchmarking.md",
+    "note": "The LLM SQL Benchmark CLI (https://github.com/nlothian/llm-sql-benchmark, apps/cli) can be pointed at our llama-server /v1/chat/completions endpoint as a sub-5-minute tool-calling smoke benchmark with per-question traces; note it hardcodes temperature 0.1 (apps/cli/src/openai-tool-call.ts) and defaults to a 120 s per-question timeout (--timeout), so record both when comparing with published scores."
+   },
+   {
+    "target_doc": "llamacpp/README.md",
+    "note": "Partial MoE expert offload costs far less speed than dense layer offload: on a GTX 1070 8 GB, Qwen3.5-35B-A3B UD-IQ2_XXS with experts on CPU finished the LLM SQL Benchmark in about 1200 s (18/25), while Qwen3.5-9B Q8_0 with -ngl 18 took about 3800 s (15/25) (https://sql-benchmark.nicklothian.com/#heavy-quantization-vs-smaller-model)."
+   },
+   {
+    "target_doc": "docs/opencode.md",
+    "note": "Small local models fail agent loops mainly through malformed or missing tool calls, which get worse as the context grows (LLM SQL Benchmark author, https://www.reddit.com/r/LocalLLaMA/comments/1s7r9wu/); a 2-4B model is not a viable OpenCode backend even if its chat answers look good."
+   },
+   {
+    "target_doc": "docs/sources.md",
+    "note": "reddit-small-local: https://www.reddit.com/r/LocalLLaMA/comments/1s7r9wu/ (2026-03-30, u/nickl). Reddit blocks direct and .json reads (403); content was read via the Arctic Shift archive API and the author's raw result files at https://github.com/nlothian/llm-sql-benchmark. Type: community measurement, credibility medium (open harness, single runs, temperature 0.1, OpenRouter providers unpinned, local runs on GTX 1070 8 GB)."
+   }
+  ],
+  "gaps": [
+   "No RTX 5080 (desktop or laptop) numbers; local runs are GTX 1070 8 GB plus commenters' RTX 3090/4090.",
+   "Our picks Qwen3.6-35B-A3B, Qwen3.8-27B, Nemotron 3.5 Lightning, Ornith-1.5-9B, Gemma 4 12B, GLM-4.7-Flash and DeepSeek-R1-0528-Qwen3-8B are not in the dataset (last run 2026-06-10).",
+   "Speeds in the result files are wall-clock effective rates (output tokens over summed question time, including prefill and SQL execution), not decode tok/s; no prompt-processing numbers.",
+   "Single run per configuration, no variance; temperature fixed at 0.1; first-row scoring.",
+   "Charts and heatmap images in the post and comments were not read; one comment by Evening_Ad6637 (GLM-4.7 23/25, GLM-4.5-Air 19/25) is not in the repo data and is unverified.",
+   "The '~44 TPS for 8-bit Qwen3.5-27B on RTX 5090' statement has no stated measurer or settings."
+  ],
+  "new_candidates": [
+   {
+    "name": "Nemotron-Cascade-2-30B-A3B",
+    "hf_repo": "bartowski/nvidia_Nemotron-Cascade-2-30B-A3B-GGUF",
+    "why": "Scored 21/25 at IQ3_XXS on an 8 GB GPU in this tool-loop benchmark, above Qwen3-Coder-Next and Nemotron 3 Nano; likely superseded by Nemotron 3.5 Lightning in our baseline, but worth a check if not already excluded. Very token-hungry."
+   },
+   {
+    "name": "Qwen3.5-9B Claude-4.6-Opus-Reasoning-Distilled-v2",
+    "hf_repo": "Jackrong/Qwen3.5-9B-Claude-4.6-Opus-Reasoning-Distilled-v2-GGUF",
+    "why": "Author calls it the strongest 9B he knows (17/25 thinking Q4_K_M vs 15/25 base Qwen3.5-9B); a distill from an unofficial publisher, and Qwen3.5 is two generations old, so low priority."
+   }
+  ],
+  "methodology": "Reddit direct reads failed (403 on old/www/api .json; Wayback snapshot empty). Post and full comment tree taken from the Arctic Shift archive API. The benchmark write-up HTML was fetched raw and stripped to text. All 109 result JSON files were fetched raw from GitHub (nlothian/llm-sql-benchmark main) into $SCRATCH/src/reddit-small-local/bench and tabulated with python3 -I (passed/failed/errored, endpoint local vs OpenRouter, summed durationMs, output tokens, timestamp, timeout). Harness parameters were confirmed in the source (temperature 0.1, MAX_TOOL_CALLS 20, default 120 s timeout, first-row check). The \"effective tok/s\" values are my computation from the data files, not reported decode speeds."
+ },
+ "check": {
+  "verdicts": [
+   {
+    "item": "Publisher, type, as-of date",
+    "verdict": "confirmed",
+    "evidence": "Arctic Shift /api/posts/ids?ids=1s7r9wu (re-fetched): author nickl, created_utc 2026-03-30 13:55:28 UTC, score 196, num_comments 63, _meta.retrieved_2nd_on 1775011124 (2026-04-01 02:38 UTC), so the score/comment count is an archive snapshot. GitHub contents API lists 109 files in data/benchmarks. community-measurement is the right type."
+   },
+   {
+    "item": "Harness: temperature 0.1, MAX_TOOL_CALLS 20, issue #4 open",
+    "verdict": "confirmed",
+    "evidence": "raw apps/cli/src/openai-tool-call.ts line 102 'temperature: 0.1,'; packages/core/src/runBenchmark.ts line 25 'const MAX_TOOL_CALLS = 20;'; api.github.com issue 4 'Reddit feedback on temp and token cap' state open."
+   },
+   {
+    "item": "Qwen3.5-27B 23/25 OpenRouter, 16634 output tokens, $0.056, 250 s",
+    "verdict": "confirmed",
+    "evidence": "benchmark-qwen_qwen3.5-27b.json: passed 23, failed 2, errored 0, totalOutputTokens 16634, totalCost 0.056291895, summed durationMs 250 s, timeoutSec 120, endpoint openrouter, model qwen/qwen3.5-27b-20260224, 2026-03-23."
+   },
+   {
+    "item": "Qwen3.5-35B-A3B: OpenRouter 21/25; UD-IQ3_S data 20/25 vs write-up 19/25; UD-IQ2_XXS 18/25",
+    "verdict": "confirmed",
+    "evidence": "Data: openrouter 21/3/1, 23393 tokens; UD-IQ3_S-MoE-offload 20/4/1, 20173 tokens, 1259 s; UD-IQ2_XXS 18/4/3, 23175 tokens, 1200 s. Site text verbatim: 'a 13.1 GB 3-bit quantization scored 19/25, and a 10.7 GB 2-bit quantization scored 18/25'. The text/data discrepancy is real."
+   },
+   {
+    "item": "Gemma 4 26B-A4B 21/25, Qwen3-Coder-Next 16/25, Nemotron 3 Nano 15/25 with 78823 tokens",
+    "verdict": "confirmed",
+    "evidence": "gemma-4-26b-a4b-it 21/4/0, 7110 tokens, 237 s, 2026-04-14; qwen3-coder-next 16/5/4, 245 s; nemotron-3-nano-30b-a3b 15/3/7, 78823 tokens. All OpenRouter, timeout 120 s."
+   },
+   {
+    "item": "gpt-oss-20b paid 10/25 (14 errors, 120 s) vs free 20/25 (600 s); Qwen3.5-9B OpenRouter 6/25 vs local Q4_K_M 16/25",
+    "verdict": "confirmed",
+    "evidence": "openai_gpt-oss-20b.json 10/1/14 timeoutSec 120 (2026-03-21); _free 20/3/2 timeoutSec 600 (2026-03-22); qwen3.5-9b-openrouter 6/3/16; unsloth Qwen3.5-9B Q4_K_M no-thinking 16/4/5 on local endpoint (timeout 300)."
+   },
+   {
+    "item": "Thinking hurt small Qwen3.5 (9B 16 vs 15; 4B Q4_0 10 vs 7) and quant (4B Q8_0 10 = Q4_0 10, UD-IQ2_XXS 1)",
+    "verdict": "confirmed",
+    "evidence": "Data: 9B Q4_K_M no-thinking 16, thinking 15; 4B Q4_0 no-thinking 10, thinking 7; 4B Q8_0 10; UD-IQ2_XXS 1/5/19. Site: 'Q8_0 (4.48 GB), 4-bit Q4_0 (2.58 GB) and 2-bit UD-IQ2_XXS (1.52 GB)'. Note: local small-model runs used timeout 300 s, not the 120 s default; the review's caveat on temperature 0.1 is correct."
+   },
+   {
+    "item": "MoE expert offload vs dense layer offload (~1200 s vs ~3800 s) and 16/19 tok/s speed-floor quote",
+    "verdict": "confirmed",
+    "evidence": "Site verbatim: '(~3800 seconds vs ~1200 seconds)' and '19 tokens/second for 2-bit and 16 tokens/second for 3-bit are the very lowest speeds you'd ever want for a useful interactive agentic process'. Data: Jackrong 9B Q8_0 thinking 15/5/5, 3815 s; effective rates 16.0 and 19.3 tok/s recomputed identically (my computation, wall-clock, not decode)."
+   },
+   {
+    "item": "Commenter measurements: tmvr RTX 4090 Q4_K_L 90112 ctx f16 KV / 159744 q8_0 KV, 23/25; Tormeister Q5_K_S 20, Q6_K 22; RTX 3090 claims 40 tok/s, ~20 tps, >100 t/s gpt-oss-20b",
+    "verdict": "confirmed",
+    "evidence": "Arctic Shift comment tree, verbatim: tmvr 'up to 88K (90112) with the default KV and up to 156K (159744) with KV at q8_0. Windows and the apps are using 1.1GB VRAM' and 'same 23/25'; Tormeister 'Q5_K_S: 20/25 ... Q6_K: 22/25 ... All using q8_0 kv + Hadamard transform', 'ran 2 or 3 times'; Adorable_Weakness_39 '40 tok/s' with 'llama.cpp, 99 gpu layers, 240k context, q8 kv_cache'; Technical-Earth-3254 '21/25' and 'Around 20tps on a 3090 at 400W ... ~60k context'; LowMental5202 'beyond a 100t/s on my 3090'. All self-reported, not reproducible."
+   },
+   {
+    "item": "'~44 TPS for 8-bit Qwen3.5-27B on RTX 5090' and no RTX 5080 data",
+    "verdict": "confirmed",
+    "evidence": "Site verbatim: 'expect ~44 TPS for an 8-bit quantization on an RTX-5090'; no measurer given, so 'estimated' label is fair. Strings '5080' and 'RTX 5080' do not occur in the write-up."
+   },
+   {
+    "item": "Conflicts with baseline (Qwen3-Coder-Next pick #5, gpt-oss-20b pick #4, Laguna XS 2.1 honorable)",
+    "verdict": "confirmed",
+    "evidence": "Baseline current-knowledge.md lines 70-71 and 78 list these picks. Source scores are on a non-coding SQL tool loop, single unpinned OpenRouter runs at temp 0.1; laguna-xs.2_free 7/0/18 is a different version and endpoint. The review correctly treats none as a real conflict."
+   }
+  ],
+  "credibility_fair": true,
+  "credibility_note": "Medium is fair. Open harness, raw per-run JSON and traces make scores reproducible, but it is one narrow task (25 questions), single runs, fixed temperature 0.1, first-row scoring, unpinned OpenRouter providers, and local runs on a GTX 1070 8 GB. Speed numbers are wall-clock effective rates, not decode tok/s, and the review labels them so. Minor nits: the 'post retrieved 2026-04-01' is Arctic Shift's second retrieval (retrieved_on was 2026-03-30 13:55:56, retrieved_2nd_on 2026-04-01), and local small-model runs used a 300 s timeout rather than the 120 s default, which the kb note about the 120 s default should mention.",
+  "overall": "holds",
+  "summary": "Re-checked independently via Arctic Shift (post plus comment tree), the raw write-up at sql-benchmark.nicklothian.com, raw harness source and 19 re-downloaded result JSONs from nlothian/llm-sql-benchmark (into $SCRATCH/src/reddit-small-local-check/b). Every load-bearing score, token count, timeout, duration, harness parameter and commenter quote matched exactly, including the write-up vs data discrepancy for Qwen3.5-35B-A3B UD-IQ3_S (text 19/25, data 20/25). No RTX 5080 data exists in the source. The conflict assessments (Qwen3-Coder-Next, gpt-oss-20b, Laguna) are correctly judged as weak signals rather than real conflicts. Only small refinements: local small-model runs used timeoutSec 300 (not the 120 s default), and the archive score/comment snapshot dates from 2026-04-01."
+ }
+}

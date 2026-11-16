@@ -1,0 +1,65 @@
+{
+ "file": "$HOME/projects/llm/llamacpp/README.md",
+ "checked_claims": 31,
+ "fixes": [
+  {
+   "what": "Rewrote the server-cuda13 NVIDIA_REQUIRE_CUDA sentence. It had quoted the constraint with a literal 'OR' and a made-up 'driver>=595,<596' form. It now gives the real form, cuda>=13.5 followed by clauses such as brand=nvidiartx,driver>=595,driver<596, adds NVIDIA's rule that space-separated constraints are ORed, and labels it as read from the GHCR image config on 2026-11-15.",
+   "why": "I read the amd64 image configs from the GHCR registry on 2026-11-15. The old quote was not the literal value. The NVIDIA Container Toolkit docs state the OR/AND semantics.",
+   "source": "ghcr.io registry API (image config blobs for server-cuda-b12407 and server-cuda13-b12407); https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/docker-specialized.html"
+  },
+  {
+   "what": "Labeled the server-cuda NVIDIA_REQUIRE_CUDA=cuda>=12.8 value as read from the GHCR image config.",
+   "why": "The value came from the image config, not from docker.yml or cuda.Dockerfile, so the inline source was missing.",
+   "source": "GHCR image config, read 2026-11-15"
+  },
+  {
+   "what": "Light image contents changed from 'llama-cli and llama-completion' to 'llama, llama-cli and llama-completion'.",
+   "why": "cuda.Dockerfile line 119 at b12418 also copies /app/full/llama into the light stage.",
+   "source": "https://github.com/ggml-org/llama.cpp/blob/b12418/.devops/cuda.Dockerfile"
+  },
+  {
+   "what": "Linked the --no-mmap guide claim to the ggml-org gpt-oss guide and reworded it to 'the 16 GB example'. Also added the guide to Sources.",
+   "why": "The claim had no source. The guide (discussion #15396) does show --no-mmap in its 'Devices with 16GB RAM' example.",
+   "source": "https://github.com/ggml-org/llama.cpp/discussions/15396"
+  },
+  {
+   "what": "Renamed the link text 'audit of the Lightning config' to 'Lightning config.json'.",
+   "why": "The link goes to the primary config.json, not to an audit. The old text pointed readers at an internal record.",
+   "source": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/raw/main/config.json"
+  },
+  {
+   "what": "Added a server README line 89 citation for '--fit adjusts only the arguments you did not set'.",
+   "why": "The fit-params README does not say this. The server README flag text does ('whether to adjust unset arguments').",
+   "source": "https://github.com/ggml-org/llama.cpp/blob/b12418/tools/server/README.md"
+  },
+  {
+   "what": "Added --memory 20g --memory-swap 20g to the llama-fit-params docker run example.",
+   "why": "Writing rule 9 requires a memory cap on container commands.",
+   "source": "writing rules"
+  },
+  {
+   "what": "#27623 q8_0 KV penalty: added the commenter's full hardware and runtime (RTX 2000 Ada 16 GB, sm_89, CUDA 13.3, Qwen3.8-27B UD-IQ4_XS, short prompt). The MMA f16-only explanation is now attributed to a different, later commenter, with a note that AMD Vulkan and HIP data in the same thread show no penalty.",
+   "why": "The 5.9 vs 13.3 tok/s numbers and the MMA explanation came from two different commenters (2026-09-16 and 2026-09-20), and the old sentence blended them. Rule 7 also requires hardware and runtime labels on third-party numbers.",
+   "source": "https://github.com/ggml-org/llama.cpp/issues/27623 comments via GitHub API"
+  },
+  {
+   "what": "Added an inline Artificial Analysis link to the Qwen3.8-27B TB2.1 49.1 / 67.4 claim, labeled it 'measured through an API on BF16 weights', and added it to Sources.",
+   "why": "A load-bearing score had only an internal KB link. The values match current-knowledge.md, and the BF16/API caveat comes from synthesis.json.",
+   "source": "https://artificialanalysis.ai/models/qwen3-8-27b"
+  },
+  {
+   "what": "Added the Unsloth Dynamic 3.0 link to the 1-bit / UD-Q2_K_XL agentic-floor claim.",
+   "why": "The vendor claim had no inline source. The page has the section '1-bit should not be used for agentic use-cases'.",
+   "source": "https://unsloth.ai/docs/basics/dynamic-3.0-ggufs"
+  }
+ ],
+ "remaining_concerns": [
+  "The 20g container cap and --n-cpu-moe 21 are still estimates; that is stated in the doc. With the default mmap load mode, file-backed page cache may also count against the cgroup cap; measure on the first run.",
+  "#27330: the 2026-10-12 comment that reproduces the hang on Ubuntu 26.04 with driver 595.99.02 says 'RTX 5090' without saying laptop or desktop. The doc only claims driver and OS for that comment, which is accurate, but it is not proof of a laptop repro.",
+  "The claim that server-cuda13 is likely refused is still an inference from the image config. It has not been tested on this machine, and the doc says so.",
+  "llama-fit-params at /app/llama-fit-params in the full image follows from cuda.Dockerfile, which copies build/bin/*. I did not check it by listing the image contents (no pulls allowed).",
+  "llamacpp/models.md, vllm/README.md and docs/model-selection.md do not exist yet. The relative links point to the planned paths."
+ ],
+ "verdict": "ready",
+ "used_playwright": false
+}

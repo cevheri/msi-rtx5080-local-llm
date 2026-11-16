@@ -1,0 +1,339 @@
+{
+ "review": {
+  "key": "vllm-docker",
+  "url": "https://docs.vllm.ai/en/latest/deployment/docker/",
+  "title": "vLLM docs: Using Docker",
+  "publisher": "vLLM project (docs.vllm.ai, built from vllm-project/vllm docs/deployment/docker.md on main)",
+  "as_of": "Page git-revision date August 11, 2026 13:53:51 UTC (rendered from main, read 2026-11-15). The Docker sections (pre-built images, Recipes, compile cache, non-root) are also present in docs/deployment/docker.md at tag v0.33.0. Docker Hub tags read live 2026-11-15.",
+  "source_type": "official-doc",
+  "accessible": true,
+  "access_notes": "Raw HTML fetched with curl (Mozilla/5.0 UA) and parsed with python3 -I; no WebFetch summarizer used. Cross-checked against raw GitHub files at tag v0.33.0 (docker/Dockerfile, docs/deployment/docker.md, vllm/config/cache.py), main and v0.34.0rc4 cache.py, the linked Faster Startup section (docs.vllm.ai/en/latest/configuration/optimization/), and the Docker Hub tags API. Files in $SCRATCH/src/vllm-docker/.",
+  "credibility": "high",
+  "credibility_reason": "These are the project's own docs and they match the v0.33.0 Dockerfile. One caveat: /en/latest/ is built from main. Linked pages such as Faster Startup / GPU Memory Utilization already describe post-v0.33.0 behaviour (gpu_memory_utilization defaults to 1.0 with the extensible KV cache), which does not apply to the pinned v0.33.0 image.",
+  "summary": "Gives the canonical docker run for vllm/vllm-openai: --runtime nvidia --gpus all, HF cache mounted at /root/.cache/huggingface, HF_TOKEN env, -p 8000:8000, --ipc=host (or --shm-size), with engine args after the image name (ENTRYPOINT is \"vllm serve\"). Also covers: tag naming (no -ubuntu2404 tags; latest / v<ver> / -x86_64 / -aarch64), a named volume at /root/.cache/vllm so torch.compile/Triton/AOT artifacts persist, non-root mode (--user 2000:0, mounts under /home/vllm), Recipes via vllm serve --config with an env.sh, VLLM_ENABLE_CUDA_COMPATIBILITY (datacenter/pro GPUs only), and source builds (default torch_cuda_arch_list includes 12.0; VLLM_USE_PRECOMPILED=1). It has no Compose guidance, no CDI (--device nvidia.com/gpu=all) example for Docker (only for Podman), and nothing on --memory limits or localhost-only port binding. All of those must come from the baseline. The page contains no performance numbers.",
+  "findings": [
+   {
+    "topic": "canonical run command",
+    "claim": "Documented NVIDIA run: docker run --runtime nvidia --gpus all -v ~/.cache/huggingface:/root/.cache/huggingface --env \"HF_TOKEN=$HF_TOKEN\" -p 8000:8000 --ipc=host vllm/vllm-openai:latest --model Qwen/Qwen3-0.6B. Any engine args go after the image tag.",
+    "evidence": "documented",
+    "target": "vllm",
+    "relevance": "high",
+    "location": "Pre-built images, NVIDIA CUDA tab"
+   },
+   {
+    "topic": "entrypoint",
+    "claim": "The vllm-openai target has ENTRYPOINT [\"vllm\", \"serve\"] at v0.33.0, so the first positional arg after the image can be the model (docs also show 'vllm/vllm-openai:latest meta-llama/Llama-3.1-8B-Instruct'). The --entrypoint /bin/bash override is used for Recipes.",
+    "evidence": "documented",
+    "target": "vllm",
+    "relevance": "high",
+    "location": "docker/Dockerfile@v0.33.0 line 1344; compile-cache and non-root examples"
+   },
+   {
+    "topic": "shared memory",
+    "claim": "Use either --ipc=host or --shm-size. PyTorch uses shared memory between processes, 'particularly for tensor parallel inference'. The page gives no size value for --shm-size.",
+    "evidence": "documented",
+    "target": "vllm",
+    "relevance": "high",
+    "location": "Note under Pre-built images"
+   },
+   {
+    "topic": "image tags",
+    "claim": "Default CUDA release images use Ubuntu 24.04. -ubuntu2404 tags are no longer published. Use latest or v<version>, and latest-x86_64 / v<version>-x86_64 for an arch-specific tag.",
+    "evidence": "documented",
+    "target": "vllm",
+    "relevance": "medium",
+    "location": "Pre-built images"
+   },
+   {
+    "topic": "Docker Hub tags v0.33.0",
+    "claim": "Live Docker Hub API: v0.33.0 and latest share index digest sha256:d825baf9ce4b (pushed 2026-11-02). The amd64 image is sha256:91ee972ab751, 9738495250 bytes compressed (v0.33.0-x86_64). Also published: v0.33.0-x86_64-zstd (sha256:c538a4975bfc, 7702613782 bytes, about 2 GB smaller to pull) and v0.33.0-efa / -x86_64-efa (10527242776 bytes, EFA networking, not useful on a laptop).",
+    "evidence": "documented",
+    "target": "vllm",
+    "relevance": "medium",
+    "location": "hub.docker.com/v2/repositories/vllm/vllm-openai/tags (registry, not the docs page)"
+   },
+   {
+    "topic": "nightly tags",
+    "claim": "Docker Hub carries nightly, nightly-<sha>, cu134-nightly and cu135-nightly (all updated 2026-11-15 or 2026-11-11), plus model-specific tags (kimi-k31-mc, inkling-2-small, muse-spark-open, minimax-m31-flash). The docs page does not describe the NVIDIA nightly or cuXXX tags. cu135 needs a newer driver than R595/CUDA 13.2, and CUDA forward compatibility does not cover GeForce, so avoid cu134/cu135 nightlies on this laptop.",
+    "evidence": "documented",
+    "target": "vllm",
+    "relevance": "medium",
+    "location": "Docker Hub tags API; compatibility statement from the docs' Older CUDA Drivers section"
+   },
+   {
+    "topic": "HF cache path",
+    "claim": "For root-mode containers, mount the HF cache at /root/.cache/huggingface. For non-root containers, mount it at /home/vllm/.cache/huggingface and make it writable by group 0.",
+    "evidence": "documented",
+    "target": "vllm",
+    "relevance": "high",
+    "location": "Pre-built images; Run as a non-root user"
+   },
+   {
+    "topic": "compile cache volume",
+    "claim": "Each new container starts with an empty VLLM_CACHE_ROOT (default ~/.cache/vllm) and recompiles. Mount a named volume (-v vllm-cache:/root/.cache/vllm) so inductor, Triton and AOT artifacts are reused from the second container onward.",
+    "evidence": "documented",
+    "target": "vllm",
+    "relevance": "high",
+    "location": "Persist the compile cache across containers"
+   },
+   {
+    "topic": "compile cache invalidation",
+    "claim": "Faster Startup: any change to the model, config, relevant VLLM_* env vars, torch build or GPU model invalidates the cache. VLLM_FORCE_AOT_LOAD=1 makes a cache miss fail loudly instead of recompiling silently.",
+    "evidence": "documented",
+    "target": "vllm",
+    "relevance": "medium",
+    "location": "docs.vllm.ai/en/latest/configuration/optimization/#faster-startup (linked page, main branch)"
+   },
+   {
+    "topic": "faster boot flags",
+    "claim": "Faster Startup: vLLM logs the exact --kv-cache-memory value at startup, and passing it back skips memory profiling (valid only for the same GPU and the same initial free memory). --enforce-eager skips compile and CUDA-graph capture at the cost of decode speed.",
+    "evidence": "documented",
+    "target": "vllm",
+    "relevance": "medium",
+    "location": "configuration/optimization Faster Startup (main docs; check flag availability in v0.33.0 before use)"
+   },
+   {
+    "topic": "non-root mode",
+    "claim": "The CUDA image runs as root by default. A built-in user vllm exists (UID 2000, GID 0), so --user 2000:0 works. Writable mounts go under /home/vllm. An opt-in build target vllm-openai-nonroot defaults to USER vllm and supports arbitrary UIDs in group 0. UIDs outside group 0 are unsupported because they may not be able to write /home/vllm or /opt/uv/cache.",
+    "evidence": "documented",
+    "target": "vllm",
+    "relevance": "medium",
+    "location": "Run as a non-root user; docker/Dockerfile@v0.33.0 lines 876-892, 1346-1365"
+   },
+   {
+    "topic": "HF_TOKEN",
+    "claim": "Pass HF_TOKEN via --env \"HF_TOKEN=$HF_TOKEN\". This is the only HF env var the page uses. It needs no HF_HOME override because the cache is mounted at the library default.",
+    "evidence": "documented",
+    "target": "vllm",
+    "relevance": "medium",
+    "location": "all run examples"
+   },
+   {
+    "topic": "VLLM_ENABLE_CUDA_COMPATIBILITY",
+    "claim": "VLLM_ENABLE_CUDA_COMPATIBILITY=1 loads the bundled CUDA forward-compat libraries for hosts whose driver is older than the image's CUDA. It 'only supports select professional and datacenter NVIDIA GPUs', with R535/R570 as compat-mode drivers. CUDA 13 images normally need R580+. Not needed or usable here: GeForce laptop, driver 595, image CUDA 13.0.3.",
+    "evidence": "documented",
+    "target": "vllm",
+    "relevance": "medium",
+    "location": "Running on Systems with Older CUDA Drivers"
+   },
+   {
+    "topic": "image env",
+    "claim": "The v0.33.0 image sets ENV VLLM_USAGE_SOURCE=production-docker-image (usage stats). Set VLLM_NO_USAGE_STATS=1 or DO_NOT_TRACK=1 to opt out; this follows from vLLM's usage-stats docs, not from this page.",
+    "evidence": "documented",
+    "target": "vllm",
+    "relevance": "low",
+    "location": "docker/Dockerfile@v0.33.0 line 1315"
+   },
+   {
+    "topic": "Recipes config",
+    "claim": "vLLM Recipes (recipes.vllm.ai) convert into config.yaml + env.sh. Mount both read-only at /recipe/ and run with --entrypoint /bin/bash vllm/vllm-openai:latest -lc 'source /recipe/env.sh && exec vllm serve --config /recipe/config.yaml'.",
+    "evidence": "documented",
+    "target": "vllm",
+    "relevance": "high",
+    "location": "Run a vLLM Recipes configuration"
+   },
+   {
+    "topic": "optional deps and transformers",
+    "claim": "Optional deps (for example vllm[audio]) are not in the image for licensing reasons. Add them with a derived Dockerfile: RUN uv pip install --system vllm[audio]==<same version>. Brand-new models may need transformers from git in a derived image.",
+    "evidence": "documented",
+    "target": "vllm",
+    "relevance": "medium",
+    "location": "Notes under Pre-built images"
+   },
+   {
+    "topic": "CUDA arch list",
+    "claim": "Release images build for all GPU types. At v0.33.0 the default is torch_cuda_arch_list='7.5 8.0 8.6 8.9 9.0 10.0 11.0 12.0' (includes sm_120) and CUDA_VERSION=13.0.3. torch_cuda_arch_list=\"\" delegates to PyTorch but needs a GPU visible during the build, which standard BuildKit lacks. For a local-only build, set torch_cuda_arch_list='12.0' explicitly.",
+    "evidence": "documented",
+    "target": "vllm",
+    "relevance": "medium",
+    "location": "Build image from source note; docker/Dockerfile@v0.33.0 lines 25, 274, 1205"
+   },
+   {
+    "topic": "source build speed",
+    "claim": "--build-arg VLLM_USE_PRECOMPILED=1 reuses nightly wheels when no C++/CUDA code changed. VLLM_PRECOMPILED_WHEEL_COMMIT pins one. Build parallelism comes from max_jobs / nvcc_threads, and the docs warn that memory use 'can be substantial' (GH200 example: ~15 GB, ~25 min, max_jobs=66).",
+    "evidence": "documented",
+    "target": "vllm",
+    "relevance": "low",
+    "location": "Build image from source"
+   },
+   {
+    "topic": "GPU exposure",
+    "claim": "For Docker the page shows only --runtime nvidia --gpus all (the Recipes and compile-cache examples use --gpus all alone). CDI --device nvidia.com/gpu=all appears only in the Podman example. The page has no Docker Compose guidance.",
+    "evidence": "documented",
+    "target": "host",
+    "relevance": "medium",
+    "location": "Pre-built images (Podman example)"
+   },
+   {
+    "topic": "ports",
+    "claim": "Every example publishes -p 8000:8000 on all interfaces. On this host, Docker-published ports bypass ufw (baseline), so the KB should use -p 127.0.0.1:8000:8000.",
+    "evidence": "documented",
+    "target": "host",
+    "relevance": "high",
+    "location": "all run examples"
+   },
+   {
+    "topic": "docs vs pinned version drift",
+    "claim": "The latest docs (main) say gpu_memory_utilization defaults to 1.0 with the extensible KV cache on CUDA. v0.33.0 cache.py still has default=0.92, and v0.34.0rc4 has default=None plus enable_extensible_kv_cache. Pin docs reading to the image tag.",
+    "evidence": "documented",
+    "target": "vllm",
+    "relevance": "high",
+    "location": "configuration/optimization GPU Memory Utilization (main); vllm/config/cache.py at v0.33.0 line 215, v0.34.0rc4 line 216"
+   }
+  ],
+  "measurements": [],
+  "conflicts": [
+   {
+    "baseline_claim": "Default --gpu-memory-utilization 0.92 (14.65 GiB of 16303 MiB).",
+    "source_claim": "The latest docs (linked from this page's Faster Startup reference) say that on CUDA, gpu_memory_utilization defaults to 1.0 with the extensible KV cache, and that values below 1.0 take memory from the KV cache.",
+    "assessment": "No real conflict for the pinned image: v0.33.0 cache.py has Field(default=0.92). The 1.0 / extensible behaviour is on main and in v0.34.0rc4 (default=None). The KB should say 0.92 for v0.33.0 and flag that the default changes on upgrade to 0.34. On the laptop the iGPU drives the desktop, so 1.0 would not starve a display, but other CUDA apps must be closed."
+   },
+   {
+    "baseline_claim": "CDI (--device nvidia.com/gpu=all) is preferred because systemctl daemon-reload can drop GPUs from --gpus containers on systemd-cgroup hosts.",
+    "source_claim": "The Docker examples use --runtime nvidia --gpus all. CDI is shown only for Podman.",
+    "assessment": "The baseline is more specific to this host and wins. The docs' form also works but carries the daemon-reload risk. Keep CDI in the KB and mention --gpus all as the upstream form."
+   },
+   {
+    "baseline_claim": "Publish ports on 127.0.0.1 only; containers need --memory because heavy does not cap Docker.",
+    "source_claim": "Examples use -p 8000:8000 and no memory limits.",
+    "assessment": "The docs target generic servers. Keep the baseline's 127.0.0.1 binding and --memory for this laptop."
+   }
+  ],
+  "agreements": [
+   "Image vllm/vllm-openai:v0.33.0 = latest: Docker Hub index digest sha256:d825baf9ce4b on both tags, amd64 compressed size 9738495250 bytes (9.74 GB), pushed 2026-11-02, matching the baseline.",
+   "v0.33.0 Dockerfile: ARG CUDA_VERSION=13.0.3 and torch_cuda_arch_list includes 12.0, matching the baseline (CUDA 13.0.3, sm_120 included).",
+   "CUDA 13 images need an R580+ driver; driver 595 satisfies this without compat mode, consistent with the baseline running the stock image on driver 595.99.",
+   "Mounting ~/.cache/huggingface into the container (HF hub layout) is consistent with the baseline's shared HF cache between vLLM and llama.cpp."
+  ],
+  "kb_notes": [
+   {
+    "target_doc": "vllm/README.md",
+    "note": "Run vLLM with the official image pinned by tag, not latest: vllm/vllm-openai:v0.33.0 (index digest sha256:d825baf9ce4b, same as latest on 2026-11-15). The image ENTRYPOINT is `vllm serve`, so the model id and engine args go directly after the image name (https://docs.vllm.ai/en/latest/deployment/docker/)."
+   },
+   {
+    "target_doc": "vllm/README.md",
+    "note": "Upstream base command: docker run --runtime nvidia --gpus all -v ~/.cache/huggingface:/root/.cache/huggingface --env \"HF_TOKEN=$HF_TOKEN\" -p 8000:8000 --ipc=host vllm/vllm-openai:<tag> <model> [args]. On this laptop, replace the GPU flags with --device nvidia.com/gpu=all (CDI), publish as -p 127.0.0.1:8000:8000, and add --memory (https://docs.vllm.ai/en/latest/deployment/docker/)."
+   },
+   {
+    "target_doc": "vllm/README.md",
+    "note": "Pass --ipc=host (or --shm-size) because PyTorch shares tensors between vLLM processes through /dev/shm. The docs give no --shm-size value, so prefer --ipc=host on this single-user laptop (https://docs.vllm.ai/en/latest/deployment/docker/)."
+   },
+   {
+    "target_doc": "vllm/README.md",
+    "note": "Mount a named volume at /root/.cache/vllm (for example -v vllm-cache:/root/.cache/vllm). This keeps torch.compile, Triton and AOT artifacts (VLLM_CACHE_ROOT) between containers, so only the first start of a model/config pays the compile time. Changing the model, config, relevant VLLM_* env vars, torch build or GPU invalidates it, and VLLM_FORCE_AOT_LOAD=1 turns a silent recompile into an error (https://docs.vllm.ai/en/latest/deployment/docker/ and https://docs.vllm.ai/en/latest/configuration/optimization/#faster-startup)."
+   },
+   {
+    "target_doc": "vllm/README.md",
+    "note": "To run without root, use --user 2000:0 (built-in user vllm, UID 2000, GID 0) and mount caches under /home/vllm, for example -v ~/.cache/huggingface:/home/vllm/.cache/huggingface and -v vllm-cache:/home/vllm/.cache/vllm. Host directories must be writable by group 0 (https://docs.vllm.ai/en/latest/deployment/docker/)."
+   },
+   {
+    "target_doc": "vllm/README.md",
+    "note": "vLLM Recipes can be run reproducibly: convert a recipe to config.yaml + env.sh, mount both read-only under /recipe/, and start with --entrypoint /bin/bash vllm/vllm-openai:<tag> -lc 'source /recipe/env.sh && exec vllm serve --config /recipe/config.yaml'. Keeping per-model config.yaml files in the repo is a clean way to version our serve settings (https://docs.vllm.ai/en/latest/deployment/docker/)."
+   },
+   {
+    "target_doc": "vllm/README.md",
+    "note": "Do not set VLLM_ENABLE_CUDA_COMPATIBILITY on this laptop. It loads CUDA forward-compat libraries that only support select professional/datacenter GPUs, and driver 595 already meets the R580+ requirement of the CUDA 13 image (https://docs.vllm.ai/en/latest/deployment/docker/)."
+   },
+   {
+    "target_doc": "vllm/README.md",
+    "note": "docs.vllm.ai/en/latest is built from main and can describe behaviour newer than the pinned image. Example: latest docs say gpu_memory_utilization defaults to 1.0 with the extensible KV cache, but v0.33.0 still defaults to 0.92 (vllm/config/cache.py at tag v0.33.0). When the docs and the image disagree, read the docs at the release tag (https://github.com/vllm-project/vllm/tree/v0.33.0/docs)."
+   },
+   {
+    "target_doc": "vllm/README.md",
+    "note": "Optional extras (for example vllm[audio]) and development transformers are not in the image. Add them in a small derived Dockerfile (FROM vllm/vllm-openai:v0.33.0; RUN uv pip install --system 'vllm[audio]==0.33.0'), keeping the vLLM version equal to the base tag (https://docs.vllm.ai/en/latest/deployment/docker/)."
+   },
+   {
+    "target_doc": "vllm/README.md",
+    "note": "If a custom image is ever built, the v0.33.0 Dockerfile default torch_cuda_arch_list='7.5 8.0 8.6 8.9 9.0 10.0 11.0 12.0' already covers sm_120. A local-only build can set --build-arg torch_cuda_arch_list='12.0' (an empty value needs a GPU visible during BuildKit builds, which Docker does not provide). Add --build-arg VLLM_USE_PRECOMPILED=1 when no kernels change, and run the build through heavy with a low max_jobs because nvcc memory use is large (https://docs.vllm.ai/en/latest/deployment/docker/)."
+   },
+   {
+    "target_doc": "docs/host-setup.md",
+    "note": "The vLLM docs show GPU access for Docker only as --runtime nvidia --gpus all, and CDI (--device nvidia.com/gpu=all) only for Podman. This KB uses CDI for Docker as well because of the systemd daemon-reload GPU-loss issue. The vLLM docs have no Compose example, so the Compose file follows the host-setup guidance (https://docs.vllm.ai/en/latest/deployment/docker/)."
+   },
+   {
+    "target_doc": "docs/host-setup.md",
+    "note": "Docker Hub also publishes v0.33.0-x86_64-zstd (7702613782 bytes compressed vs 9738495250 for v0.33.0-x86_64). zstd layers need Docker 23+, and Docker 29.9.3 here qualifies, so this tag is a smaller pull of the same release (registry observation 2026-11-15, https://hub.docker.com/r/vllm/vllm-openai/tags)."
+   },
+   {
+    "target_doc": "docs/sources.md",
+    "note": "vLLM Docker deployment docs (official, page revision 2026-08-11, rendered from main; Docker sections identical in spirit to docs/deployment/docker.md at v0.33.0): run command, shm, HF/compile cache volumes, non-root, Recipes, build args. No performance data. https://docs.vllm.ai/en/latest/deployment/docker/"
+   }
+  ],
+  "new_candidates": [],
+  "gaps": [
+   "The page has no Docker Compose example, so Compose guidance must come from Docker/NVIDIA docs (baseline).",
+   "The page gives no --shm-size value.",
+   "The page does not document the NVIDIA nightly, cu134-nightly or cu135-nightly tags, or which CUDA version the plain 'nightly' tag uses. Not verified here.",
+   "The page does not say whether the v0.33.0-x86_64-zstd tag is byte-identical in content to v0.33.0-x86_64. It is inferred from naming only.",
+   "Usage-stats opt-out env var (VLLM_NO_USAGE_STATS / DO_NOT_TRACK) is not on this page. Confirm in the vLLM usage-stats docs before putting it in the KB.",
+   "Whether --kv-cache-memory and VLLM_FORCE_AOT_LOAD exist in v0.33.0 was not checked. The Faster Startup text is from main."
+  ],
+  "methodology": "curl raw HTML of the docs page plus python3 -I tag stripping; checked the git-revision date in the HTML; compared with raw GitHub files at tag v0.33.0 (docker/Dockerfile, docs/deployment/docker.md, vllm/config/cache.py), main and v0.34.0rc4 cache.py; read the Docker Hub v2 tags API for v0.33.0, latest and recent tags. No containers pulled or run."
+ },
+ "check": {
+  "verdicts": [
+   {
+    "item": "Publisher, type, as-of: vLLM project official doc, page git-revision August 11, 2026, rendered from main",
+    "verdict": "confirmed",
+    "evidence": "Raw HTML (curl, Mozilla/5.0) git-revision-date = 'August 11, 2026'. Page content matches the v0.33.0 Dockerfile."
+   },
+   {
+    "item": "Canonical run command: --runtime nvidia --gpus all, HF cache at /root/.cache/huggingface, HF_TOKEN, -p 8000:8000, --ipc=host, engine args after the image tag; CDI shown only for Podman",
+    "verdict": "confirmed",
+    "evidence": "page.txt lines 478-494: exact docker run with '--model Qwen/Qwen3-0.6B'. 'podman run --device nvidia.com/gpu=all' is the only CDI form. Text: 'You can add any other engine-args you need after the image tag'."
+   },
+   {
+    "item": "ENTRYPOINT [\"vllm\",\"serve\"] for vllm-openai at v0.33.0; ARG CUDA_VERSION=13.0.3; torch_cuda_arch_list includes 12.0; VLLM_USAGE_SOURCE env; user vllm UID 2000 GID 0",
+    "verdict": "confirmed",
+    "evidence": "raw docker/Dockerfile@v0.33.0: line 25 'ARG CUDA_VERSION=13.0.3', lines 274/1205 \"torch_cuda_arch_list='7.5 8.0 8.6 8.9 9.0 10.0 11.0 12.0'\", line 1315 'ENV VLLM_USAGE_SOURCE production-docker-image', line 1344 'ENTRYPOINT [\"vllm\", \"serve\"]', line 889 'useradd --uid 2000 --gid 0'."
+   },
+   {
+    "item": "Shared memory: --ipc=host or --shm-size, no size given for CUDA",
+    "verdict": "confirmed",
+    "evidence": "Note quoted verbatim: 'particularly for tensor parallel inference'. The only --shm-size value on the page is '--shm-size=4g' in the Intel XPU build, not in the CUDA section."
+   },
+   {
+    "item": "Compile-cache volume -v vllm-cache:/root/.cache/vllm; Faster Startup invalidation list and VLLM_FORCE_AOT_LOAD; --kv-cache-memory skips profiling",
+    "verdict": "confirmed",
+    "evidence": "page.txt lines 610-620. optimization page: 'any change to the model, config, relevant VLLM_* environment variables, torch build, or GPU model invalidates it'. v0.33.0 envs.py line 122 defines VLLM_FORCE_AOT_LOAD, and cache.py line 374 has kv_cache_memory_bytes. Both exist at the pinned tag, which closes the review's gap item.",
+    "correction": "Remove the gap 'whether --kv-cache-memory and VLLM_FORCE_AOT_LOAD exist in v0.33.0': both exist (envs.py@v0.33.0 L122; cache.py@v0.33.0 L374). Main's note that --kv-cache-memory also disables the extensible KV cache does not apply to v0.33.0."
+   },
+   {
+    "item": "Docker Hub: v0.33.0 = latest index sha256:d825baf9ce4b; amd64 sha256:91ee972ab751, 9738495250 bytes; -x86_64-zstd sha256:c538a4975bfc, 7702613782 bytes; pushed 2026-11-02",
+    "verdict": "confirmed",
+    "evidence": "Tags API: v0.33.0 and latest both have digest sha256:d825baf9ce4b, amd64 sha256:91ee972ab751 at 9738495250 bytes. v0.33.0-x86_64-zstd: index sha256:c538a4975bfc, 7702613782 bytes, pushed 2026-11-02T03:10:52Z. Its amd64 manifest digest is sha256:0b6e0dcf7982, which differs from the gzip image, as expected for recompressed layers."
+   },
+   {
+    "item": "VLLM_ENABLE_CUDA_COMPATIBILITY: professional/datacenter only; CUDA 13 needs R580+; compat for R535/R570",
+    "verdict": "confirmed",
+    "evidence": "Verbatim: 'only supports select professional and datacenter NVIDIA GPUs'; 'CUDA 13 requires an R580 or newer driver. Compatibility mode supports R535 and R570 host drivers'."
+   },
+   {
+    "item": "Nightly / cu135 tags not described by the page; avoid cu135 on R595",
+    "verdict": "uncertain",
+    "evidence": "The page has a CUDA 13.5 private staging-image section (Rubin prerelease build) with a warning: 'Run the image on hosts with an R620 or newer driver... The image's NVIDIA_REQUIRE_CUDA does not list R570 or R590 drivers, so the toolkit refuses to start it on those.' This refers to the custom vllm-rubin-openai staging build, not the Docker Hub cu135-nightly tag. It still supports the review's advice to avoid CUDA 13.5 images on driver 595. I did not re-check the nightly tags themselves.",
+    "correction": "The review says the page does not touch CUDA 13.5 at all, but it does: it has a CUDA 13.5 staging-build section with an explicit R620+ driver requirement. Cite that section as stronger evidence for 'avoid cu135 images on driver 595'."
+   },
+   {
+    "item": "Docs vs pinned drift: main says gpu_memory_utilization defaults to 1.0 with extensible KV cache; v0.33.0 default=0.92; v0.34.0rc4 default=None",
+    "verdict": "confirmed",
+    "evidence": "cache.py@v0.33.0 L215 'Field(default=0.92, gt=0, le=1)'. cache.py@v0.34.0rc4 L216 'float | None = Field(default=None...)', with 9 'extensible' mentions. The optimization page reads 'With the extensible KV cache (the default on CUDA and ROCm) it defaults to 1.0'."
+   },
+   {
+    "item": "Conflicts assessment (0.92 vs 1.0; CDI vs --gpus; 127.0.0.1 and --memory)",
+    "verdict": "confirmed",
+    "evidence": "All three are real differences in scope and none is a factual contradiction for the pinned image. The 0.92 default holds at v0.33.0. CDI and localhost binding are host-specific choices the page simply does not cover."
+   },
+   {
+    "item": "Usage-stats opt-out VLLM_NO_USAGE_STATS / DO_NOT_TRACK",
+    "verdict": "confirmed",
+    "evidence": "envs.py@v0.33.0 L842 VLLM_NO_USAGE_STATS. L843-846: VLLM_DO_NOT_TRACK also reads DO_NOT_TRACK. The review flagged this as unverified, but it is valid at v0.33.0 (sourced from envs.py, not from this page).",
+    "correction": "Remove the gap; the env vars exist in v0.33.0 envs.py."
+   }
+  ],
+  "credibility_fair": true,
+  "credibility_note": "A 'high' rating fits: these are the official docs, and the claims I checked match the v0.33.0 Dockerfile and cache.py byte for byte. The review is right to warn that /en/latest/ is built from main. The CUDA 13.5 staging and Rubin sections on the same page show main already moving past the pinned image.",
+  "overall": "holds-with-corrections",
+  "summary": "The review holds up. I re-checked every load-bearing claim from raw sources and found no refutations: the docs page HTML (revision August 11, 2026), docker/Dockerfile and vllm/config/cache.py at v0.33.0, cache.py at v0.34.0rc4, envs.py at v0.33.0, the Docker Hub tags API and the Faster Startup page. Confirmed values: the run command, ENTRYPOINT vllm serve, CUDA_VERSION=13.0.3, an arch list that includes 12.0, UID 2000:0, the vllm-cache volume path, the compat-mode wording, digests d825baf9ce4b and 91ee972ab751, 9738495250 bytes vs 7702613782 bytes for zstd, and the default of 0.92 at v0.33.0 vs None (extensible) at rc4. Three corrections are needed. (1) The page does cover CUDA 13.5: a private staging-build section warns 'Run the image on hosts with an R620 or newer driver' and says R570/R590 are refused. That is better evidence for avoiding cu135 images on driver 595. (2) VLLM_FORCE_AOT_LOAD and kv_cache_memory_bytes both exist at v0.33.0, so that gap item can be dropped. (3) VLLM_NO_USAGE_STATS and DO_NOT_TRACK are defined in envs.py at v0.33.0, so that gap can be dropped too. Raw files are in $SCRATCH/src/vllm-docker-check/."
+ }
+}

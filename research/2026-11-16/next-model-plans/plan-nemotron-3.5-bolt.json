@@ -1,0 +1,126 @@
+{
+ "key": "nemotron-3.5-bolt",
+ "repo": "nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB-GGUF",
+ "file": "NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB.gguf",
+ "size_bytes": 22018326528,
+ "header_ok": true,
+ "header_facts": "GGUF v3, arch nemotron_h_moe, 843 tensors, header 7.9 MB (fetched first 32 MiB, anonymous). 88 blocks: 40 Mamba-2 blocks (ssm_in/ssm_out NVFP4 with per-tensor scales, d_inner 8192, d_state 128, 8 groups, conv kernel 4, dt rank 128), 40 MoE blocks (496 routed experts, 9 used per layer, 1 shared expert of 5376, moe_latent_size 1024 so routed experts work in a 1024-wide latent with Q8_0 latent up/down projections, per-layer expert widths 1536 to 2560), 8 GQA attention blocks (7, 16, 25, 36, 47, 58, 69, 78; 32 Q heads, 2 KV heads, head size 128/128). No dense FFN blocks and no sliding window. MoE blocks are the odd-ish indices 1,3,5,8,10,...,87, so --n-cpu-moe values come in equal pairs (49=50, 51=52 and so on). Vocab 131072 (tokenizer.ggml.pre pixtral, mapped to Tekken at b12407), native context 262144. Types: IQ2_XXS 16.30 GiB (routed and shared experts), NVFP4 2.30 GiB (Mamba in/out), Q8_0 1.68 GiB, F32 0.22 GiB; total 20.499 GiB. Routed experts 15.882 GiB (16,263 MiB), per MoE block 0.181 to 0.624 GiB. Non-expert GPU weights 4,184 MiB (4.086 GiB, includes untied output.weight Q8_0 544 MiB). token_embd Q8_0 544 MiB (0.531 GiB) stays on the host. NVFP4 has CUDA MMQ/MMVQ paths using Blackwell FP4 MMA at b12407 (ggml-cuda/mmq.cu line 127). Note: the lead's gguf_plan.py lacks ggml type 40 (NVFP4: 64 elements, 36 bytes per block) and crashed with KeyError 40; a patched copy is at $SCRATCH/headers/nemotron-3.5-bolt/tool/plan.py.",
+ "kv_math": "KV: only the 8 attention layers keep K and V: 8 layers x 2 KV heads x (128+128) x 2 B (f16) = 8,192 B per token. At 131072: 8,192 x 131072 = 1,024 MiB (q8_0 would be 544 MiB; at 65536 f16 512 MiB). Mamba-2 recurrent state per sequence (F32 r and s caches at b12407, llama-model.cpp line 3105; FP16 SSM cache is only proposed in open PR #31810): conv state (4-1) x (8192 + 2x8x128) = 30,720 floats, SSM state 128 x 8192 = 1,048,576 floats, (30,720 + 1,048,576) x 4 B = 4.117 MiB per layer x 40 Mamba layers = 164.7 MiB, one sequence with -np 1. Each context checkpoint (default 32 per slot, server-context.cpp, saved with LLAMA_STATE_SEQ_FLAGS_PARTIAL_ONLY) copies that 164.7 MiB state into host RAM, up to 5.15 GiB.",
+ "recommended": {
+  "context": 131072,
+  "kv_type": "f16",
+  "n_cpu_moe": 60,
+  "moe_cache_mib": 3200,
+  "load_mode": "none",
+  "threads": 8,
+  "vram_breakdown": "non-expert weights 4,184 MiB + GPU-resident experts of blocks 60-87 5,783 MiB + MoE cache 3,200 MiB + KV f16 at 131072 1,024 MiB + Mamba state 165 MiB + CUDA context and compute buffers 819 MiB (0.8 GiB: the 131k vocab halves the logits buffer against Qwen's 248k, the Mamba scan buffers at -ub 512 are small, so the measured Qwen value is kept and the recurrent state is counted separately to stay conservative) = 15,175 MiB for llama-server + 112 MiB desktop = 15,287 MiB at the nvidia-smi peak. Experts in pinned RAM: blocks 0-59, 27 of 40 MoE blocks, 10,480 MiB (10.23 GiB).",
+  "predicted_peak_mib": 15287,
+  "predicted_free_mib": 554,
+  "memory_cap": "26g",
+  "predicted_container_ram_gib": 16,
+  "server_args": [
+   "-m",
+   "MODEL_PATH",
+   "--alias",
+   "local",
+   "-c",
+   "131072",
+   "-np",
+   "1",
+   "-fa",
+   "on",
+   "--jinja",
+   "-ngl",
+   "all",
+   "--n-cpu-moe",
+   "60",
+   "-lm",
+   "none",
+   "-t",
+   "8",
+   "--moe-cache-mib",
+   "3200",
+   "--reasoning",
+   "off",
+   "--temp",
+   "1.0",
+   "--top-p",
+   "0.95"
+  ]
+ },
+ "alternative": "--n-cpu-moe 50 --moe-cache-mib 1152 (the KB's block split plus the spare VRAM as cache): non-expert 4,184 + experts of blocks 50-87 7,833 + cache 1,152 + KV 1,024 + state 165 + overhead 819 = 15,177 MiB + 112 desktop = 15,289 MiB peak (552 free), pinned experts 8.23 GiB. It tests whole GPU blocks against cache on a model whose 496 experts per layer make cache hit rates less certain than on Qwen3.6. If the 3,200 MiB run shows less than 500 MiB free, step the cache down to 2,688.",
+ "thinking": "toggle. The GGUF template defaults enable_thinking to True and emits '<think>\\n' (on) or '<think></think>' (off) in the generation prompt. Server default: --reasoning off (sets the template kwarg enable_thinking=false, arg.cpp line 3741). Per request: chat_template_kwargs {\"enable_thinking\": true}; {\"enable_thinking\": true, \"medium_effort\": true} appends '{reasoning effort: efficient}' to the last user message (template line 212); {\"enable_thinking\": false} forces it off. --reasoning-effort and reasoning_effort have no effect: the template does not read reasoning_effort. The template also has truncate_history_thinking (default True), which drops reasoning of assistant turns before the last user message; preserve_reasoning is not used by this template. Reasoning arrives in message.reasoning_content.",
+ "per_request_thinking_on": "{\"chat_template_kwargs\": {\"enable_thinking\": true}}",
+ "tool_calling": "The embedded template contains '<tool_call>', '<function=' and '<parameter=' and not the no-newline exclusion string, so common/chat.cpp at b12407 (line 1420) routes it to the specialized Qwen3-Coder handler (common/parsers/qwen3-coder.cpp). That handler detects '<think>' in the template, sets supports_thinking, and ends reasoning at '</think>' or at a '<tool_call>' opener, so a call made without closing the think block still parses. Tool results render as '<|im_start|>user\\n<tool_response>'. Requires --jinja. The open issue #30118 (Qwen3.6 tool call leaks into content when the model omits <tool_call>) is on the same parser path and applies as a risk; run smoke test 5 from llamacpp/README.md.",
+ "sampling": "temperature 1.0, top_p 0.95 for thinking and non-thinking (model card \"Recommended Sampling\" row and every vendor llama-server recipe); no top_k or min_p given, so leave the llama.cpp defaults. Set server-side with --temp 1.0 --top-p 0.95.",
+ "opencode_entry": "{\"nemotron-3.5-bolt\": {\"modelID\": \"local\", \"name\": \"Nemotron 3.5 Bolt 74B-A9B 24GB GGUF (llama.cpp)\", \"capabilities\": {\"tools\": true, \"input\": [\"text\"], \"output\": [\"text\"], \"reasoning\": {\"supported\": true}}, \"limit\": {\"context\": 131072, \"output\": 16384}, \"variants\": [{\"id\": \"thinking\", \"body\": {\"chat_template_kwargs\": {\"enable_thinking\": true}}}, {\"id\": \"medium\", \"body\": {\"chat_template_kwargs\": {\"enable_thinking\": true, \"medium_effort\": true}}}, {\"id\": \"none\", \"body\": {\"chat_template_kwargs\": {\"enable_thinking\": false}}}]}}",
+ "probe_long_tokens": "8000,30000,100000",
+ "expected_speed": "Decode about 45-75 tok/s (estimate), most likely near 60. Reasoning: each token reads about 4.1 GiB of non-expert weights on the GPU (Mamba NVFP4 2.3 GiB, shared experts, latent projections, 0.53 GiB output), about 2.5 times the GPU bytes of Qwen3.6 Q4_K_M, which measured 120 tok/s with the same 25-of-40-style split and a 3,200 MiB cache; at roughly 700 GB/s effective that alone is about 6.5 ms per token. The model has 88 layers against Qwen3.6's 40, and GGML_CUDA_DISABLE_GRAPHS=1 makes kernel launch overhead scale with layer count. Routed experts add about 295 MiB per token across all MoE layers, 64% of them in pinned RAM; cache misses upload at PCIe 5.0 speed, and with 496 experts per layer the hit rate is likely lower than Qwen3.6's. Prefill: at -ub 512 almost every RAM expert (10.2 GiB) is uploaded per ubatch, which caps prefill near 2,000 tok/s from transfer alone; expect about 900-1,600 tok/s at 8k (estimate). A larger -ub (vendor recipes use 512 to 2048) would amortize the uploads but grows the compute buffer and was not budgeted.",
+ "issues": [
+  {
+   "id": "PR #30520",
+   "state": "merged 2026-10-15 (merge commit cd0a5b6 is 739 commits before b12407)",
+   "note": "Adds Nemotron Super 3.5 VL and Nemotron Bolt 74B-A9B support; nemotron_h_moe present in src/llama-arch.cpp line 105 and src/models/nemotron-h.cpp reads per-layer expert widths and moe_latent_size at b12407."
+  },
+  {
+   "id": "#30894",
+   "state": "closed 2026-10-22",
+   "note": "Nemotron 3/3.5 GGUFs tagged pixtral got the wrong pre-tokenizer. This GGUF still carries tokenizer.ggml.pre = pixtral."
+  },
+  {
+   "id": "PR #30960",
+   "state": "merged 2026-10-22 (merge commit e197cef is 594 commits before b12407)",
+   "note": "pixtral now maps to LLAMA_VOCAB_PRE_TYPE_TEKKEN in src/llama-vocab.cpp line 2624 at b12407; fixed in the image."
+  },
+  {
+   "id": "#30118",
+   "state": "open",
+   "note": "Qwen3.6 tool call leaks into content when <tool_call> is omitted; same Qwen3-Coder parser handles this model, so it is a live risk."
+  },
+  {
+   "id": "PR #31810",
+   "state": "open",
+   "note": "Opt-in FP16 Mamba-2 SSM cache; not in b12407, so the state stays F32 (164.7 MiB per sequence and per checkpoint)."
+  },
+  {
+   "id": "#30798 / PR #32220",
+   "state": "open",
+   "note": "Tensor split for nemotron_h_moe; multi-GPU only, irrelevant on one GPU."
+  },
+  {
+   "id": "#27330",
+   "state": "open (per KB)",
+   "note": "CUDA graph hang on sm_120 laptops; GGML_CUDA_DISABLE_GRAPHS=1 stays, and its launch-overhead cost is larger on this 88-layer model."
+  }
+ ],
+ "kb_discrepancies": [
+  "Memory section counts 4.617 GiB of non-routed tensors on the GPU; that includes token_embd (0.531 GiB Q8_0), which stays in host memory. GPU non-expert weights are 4.086 GiB (4,184 MiB) from the header.",
+  "Memory section assumes 1.0 GiB compute plus 0.4 GiB CUDA context and a 15.92 GiB budget; the measured overhead on this laptop is about 0.8 GiB, and CUDA can use 15,841 MiB (15.47 GiB) including the 112 MiB desktop, with 500 MiB to stay free. With the measured numbers, the recipe's --n-cpu-moe 50 at 128k f16 peaks near 14,137 MiB and leaves about 1.7 GiB of VRAM idle that should go to --moe-cache-mib.",
+  "Recipe predates the 2026-11-16 Qwen3.6 findings: it has no -lm none (pinned host experts doubled prefill), no -t 8 and no --moe-cache-mib (nearly doubled decode). llamacpp/README.md lines 161-192 already say to give spare VRAM to the cache.",
+  "Memory cap 20g is too low with -lm none and default checkpoints: pinned experts 8.23 GiB (at --n-cpu-moe 50) + token_embd 0.53 + --cache-ram 8 GiB + up to 32 context checkpoints x 164.7 MiB = 5.15 GiB + about 2 GiB process = 23.9 GiB worst case. The recipe ignores token_embd and the checkpoints; each checkpoint holds the full 40-layer Mamba state.",
+  "Mamba state stated as about 162 MiB; the b12407 formulas (llama-hparams.cpp n_embd_r and n_embd_s, F32 types) give 164.7 MiB. Minor. The model card says the architecture budget assumes 16-bit SSM states; llama.cpp b12407 stores F32 (FP16 only in open PR #31810).",
+  "Context plan 'start at 65536, then 131072' is more cautious than needed: 128k f16 KV is only 1,024 MiB and fits with the cache split at 554 MiB free; q8_0 KV (vendor recipe) would save another 480 MiB if needed.",
+  "The recipe's docker form (-hf, --hf-file, -e HF_TOKEN, --no-mmproj, /root/.cache mount) differs from the lead's launch convention (-m with the cached file, HF cache at /hf, --user); with -m and no --mmproj the projector is not loaded, so --no-mmproj is unnecessary.",
+  "The 'ceiling of about 124 tok/s' has no derivation in the KB; at 896 GB/s the GPU-resident bytes alone allow about 200 tok/s in theory, and the 88-layer depth with CUDA graphs disabled is the more likely limit. Treat the 55-80 tok/s range as unsourced; this plan estimates 45-75.",
+  "Thinking line is correct but incomplete: the template ignores reasoning_effort (so --reasoning-effort does nothing), and it has a truncate_history_thinking kwarg (default True) that the KB does not mention.",
+  "opencode.md line 122 says Nemotron 3.5 Bolt follows the qwen3.6-35b-a3b shape; that works, but a 'medium' variant with medium_effort true is available from the template and the model card (line 471)."
+ ],
+ "risks": [
+  "The 554 MiB free margin rests on the 0.8 GiB overhead taken from Qwen measurements; Nemotron's compute buffers are unmeasured. If nvidia-smi shows less than 500 MiB free after the long probe, lower --moe-cache-mib to 2,688 rather than changing --n-cpu-moe.",
+  "Cache effectiveness is unproven: 496 experts per layer with top-9 routing may spread usage more than Qwen3.6, so misses (uploaded at PCIe speed with CPU share 0) could cost more; the alternative split exists to test this.",
+  "Prefill: with -ub 512, each ubatch uploads nearly all 10.2 GiB of pinned experts, so prefill on long OpenCode prompts may stay near 1,000-2,000 tok/s.",
+  "Hybrid recurrent model: prefix reuse depends on context checkpoints; never set --ctx-checkpoints 0. truncate_history_thinking=True rewrites earlier assistant turns once a new user message arrives, which can force a re-prefill from the last checkpoint when thinking is on.",
+  "Container RAM can reach about 25.9 GiB in long sessions (10.23 pinned + 0.53 embd + 8 prompt cache + 5.15 checkpoints + 2 process), hence the 26g cap; typical use is about 16 GiB. If RAM is tight, add --cache-ram 4096 or --ctx-checkpoints 16 and lower the cap to match.",
+  "Tool-call leakage (#30118 class) on the shared Qwen3-Coder parser.",
+  "Quality: 2-bit QAT experts on a machine below NVIDIA's stated 32 GB floor; the vendor benchmarks are vendor-run.",
+  "The lead's gguf_plan.py does not know NVFP4 (type 40) or F8_E4M3 (type 43) and crashes on this file; the patched copy is in my header directory.",
+  "--fit defaults on and adjusts only unset arguments; all placement arguments are set explicitly here, as in the measured Qwen3.6 launch."
+ ],
+ "sources": [
+  "GGUF header, first 32 MiB of https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB-GGUF/resolve/main/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB.gguf, saved at $SCRATCH/headers/nemotron-3.5-bolt/head.gguf, metadata dump dump.json and template chat_template.jinja in the same directory",
+  "Model card https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB-GGUF/raw/main/README.md (lines 61-67, 185, 263-264, 397-437, 471)",
+  "llama.cpp b12407: common/chat.cpp (line 1420), common/parsers/qwen3-coder.cpp, common/arg.cpp (lines 1677, 1695, 2662, 2738-2760, 2781, 2860, 3741-3766), common/common.h (lines 619-664), src/llama-arch.cpp, src/models/nemotron-h.cpp, src/llama-hparams.cpp, src/llama-model.cpp (line 3105), src/llama-vocab.cpp (line 2624), tools/server/server-context.cpp, docs/moe-cache.md, ggml/include/ggml.h (NVFP4 = 40), ggml/src/ggml-common.h (block_nvfp4 36 B per 64), ggml/src/ggml-cuda/mmq.cu, all from raw.githubusercontent.com/ggml-org/llama.cpp/b12407",
+  "gh api repos/ggml-org/llama.cpp/issues/{30520,30118,30894,30960,31810,32095,30798,32220} and compare of merge commits against b12407",
+  "$HOME/projects/llm/llamacpp/models.md section 7, $HOME/projects/llm/llamacpp/README.md (run template, MoE offload, thinking, prompt cache, tool calling), $HOME/projects/llm/docs/opencode.md lines 50-123 and 165-179"
+ ]
+}

@@ -1,0 +1,1096 @@
+{
+ "docs": [
+  {
+   "doc": "vllm/README.md",
+   "writer": {
+    "summary": "I wrote $HOME/projects/llm/vllm/README.md (441 lines), and it is the only file I created or changed. Its opening answer: on this laptop, use vLLM only for Ornith-1.5-9B NVFP4 W4A16, Gemma 4 12B QAT W4A16, and gpt-oss-20b as a 64k option (it needs 0.95 utilization plus FP8 KV). Every larger MoE model goes to llama.cpp, because vLLM's expert CPU offload is undone on v0.33.0 (#66264). This ap",
+    "unverified": [
+     "Whether the vllm/vllm-openai:v0.33.0 image actually contains the `hf` CLI. I inferred it from requirements/common.txt (huggingface_hub >= 1.31.0); the download command has not been run.",
+     "The 1.2 GiB reserve in the memory budget, and all context figures (Ornith about 214k BF16, gpt-oss 27.6k/55k), are arithmetic estimates. The Ornith feasibility record arrived at a slightly lower 6.49 GiB / 212k.",
+     "The 32g container memory cap and the --max-num-batched-tokens 8192 suggestion are untested estimates.",
+     "That W4A16 checkpoints avoid the FlashInfer FP4 JIT is inferred from source (kernels/linear/__init__.py), not measured.",
+     "Whether the image's precompiled FlashInfer kernels already include fp4_gemm_cutlass_sm120, which would avoid the 52 GiB JIT, is unknown.",
+     "--attention-backend TRITON_ATTN or --no-async-scheduling as a mitigation for #61239 is inferred, not upstream guidance.",
+     "That KV offloading does not raise the maximum live context is inferred.",
+     "In the Mistral row of the parser table, the reasoning parser is given only as 'mistral is registered; check the card'. Its exact use is not verified.",
+     "The exact argparse error text when `vllm serve` is repeated after the image name is not verified, so the troubleshooting row describes it generically.",
+     "Docker's exact error text when the CDI device or --gpus fails without the toolkit was not checked, so the row is generic.",
+     "The Qwen3.6 qwen3_xml parser and the thinking measurements come only from the user's private DGX Spark runbook (vLLM 0.20.1 on GB10), not from this laptop.",
+     "Nothing was run on this laptop: no image pull, no container start, no smoke test."
+    ],
+    "playwright": false
+   },
+   "review": {
+    "verdict": "ready",
+    "checked": 46,
+    "fixes": 7,
+    "concerns": [
+     "The table row 'Dense or small MoE checkpoint at or below about 13 GiB' is a rule of thumb taken from the 14.65 GiB budget minus the 1.2 GiB reserve. It has no separate source. It is consistent with the budget section but is not labelled as an estimate.",
+     "The Gemma 4 Triton claim (models/config.py) holds only when Gemma's head dimensions differ, because FA4 is not available on sm_120. I read this from Gemma4Config.verify_and_update_config. It has not been observed in a log.",
+     "The claim that NGC images have no 'vllm serve' entrypoint is inferred from the runbook command (nvcr.io/nvidia/vllm:26.05-py3 followed by 'vllm serve ...'). I did not read the NGC image config.",
+     "--limit-mm-per-prompt for Gemma 4 lists image and audio only. Gemma 4 12B also takes video (facts_Gemma_4_12B_IT.json). This does not matter when --language-model-only is used, which the doc recommends.",
+     "Nothing has been run on this laptop. Every memory and context figure is still an estimate, as the doc says."
+    ],
+    "playwright": false
+   }
+  },
+  {
+   "doc": "vllm/benchmarking.md",
+   "writer": {
+    "summary": "I wrote $HOME/projects/llm/vllm/benchmarking.md, and it is the only file I created or changed. Nothing was run on the laptop, and the document says so: its results table is empty and is marked \"No results yet\".\n\nThe document covers:\n- What to measure and why: TPOT, a TTFT ladder at 8k, 32k and 61k tokens (plus 120k where the server allows it), the prefix-cache effect, concurrency 2, thinki",
+    "unverified": [
+     "That the published vllm/vllm-openai:v0.33.0 image actually contains a working `vllm bench serve` and the benchmarks/ directory (the check found that the Dockerfile stage graph does not prove it).",
+     "Whether the image ships pandas (needed by the custom dataset in S5) and the HF `datasets` package (needed by BFCL).",
+     "Whether the bench client starts in a container with no GPU attached.",
+     "That HF_HUB_OFFLINE=1 with a read-only cache mount resolves the tokenizer for each served repo.",
+     "The served-model names gpt-oss-20b, gemma-4-12b and ornith-1.5-9b as written in models.md and opencode.md (taken from synthesis.json, not from the final sibling documents); the gpt-oss-20b served name is assumed.",
+     "Whether chat_template_kwargs enable_thinking is ignored or rejected by gpt-oss-20b (the document tells the reader to use reasoning_effort for gpt-oss instead).",
+     "Install steps and the Node.js version for the LLM SQL Benchmark CLI; only its help text was read.",
+     "GuideLLM's current version and container image.",
+     "That bench serve works against llama-server (not claimed in the document, only deferred to llamacpp/benchmarking.md).",
+     "The NVIDIA 50-series laptop spec page URL for 896 GB/s was taken from the research records and not re-fetched."
+    ],
+    "playwright": false
+   },
+   "review": {
+    "verdict": "ready-with-concerns",
+    "checked": 31,
+    "fixes": 8,
+    "concerns": [
+     "vllm/README.md and vllm/models.md do not exist yet, so the links to them, and the served names, tokenizer repos, --max-num-seqs values (Gemma 2, Ornith 4) and max-model-len values this file quotes, need a cross-check once those files are written. They match ver/synthesis.json today.",
+     "The SQL benchmark GitHub URLs (apps/cli/src/openai-tool-call.ts, issues/4, data/benchmarks) come from the review records' paths and were not opened live in this pass.",
+     "The new histogram procedure is derived from source and has not been run; mean prompt size is an average if OpenCode sends more than one request per turn.",
+     "Whether the v0.33.0 image ships pandas (needed for S5 custom dataset) and datasets (BFCL) is still unverified; the document already says so.",
+     "Verified without running anything (as the doc already states): bench serve defaults (backend, endpoint, num-prompts 1000, request-rate inf, max-concurrency None, random 1024/128/0.0, seed 0, num-warmups 0, percentile defaults ttft,tpot,itl and 99, --model from /v1/models, tokenizer fallback, result filename format), Dockerfile ENTRYPOINT [vllm, serve] for vllm-openai target, gpu_memory_utilization 0.92, enable_prefix_caching True, mamba align semantics, VLLM_SERVER_DEV_MODE and /reset_prefix_cache, KV log line text, five /metrics names, tool_choice auto default, latency.py 32/128/8 defaults, sweeps 3 runs and cache resets, GuideLLM recommendation, prefix-cache warning text, BFCL multi-turn unsupported, prefix_repetition and custom options, --no-enable-prefix-caching via BooleanOptionalAction, and the SQL benchmark CLI usage string. Each was checked against the local v0.33.0 clone (commit 4ba787e) or the review records.",
+     "Rule checks: no U+2013 or U+2014, no emoji, one sentence per prose line, Last verified line, Sources and Maintenance sections present, no published ports or restart policies in commands, and the client container has --memory 8g --memory-swap 8g."
+    ],
+    "playwright": false
+   }
+  },
+  {
+   "doc": "llamacpp/README.md",
+   "writer": {
+    "summary": "I wrote $HOME/projects/llm/llamacpp/README.md. No other file in the project was created or changed. My only other writes were source fetches into the scratchpad (lc-src, lc-reg, tools).\n\nThe document covers the image choice, a run template, a Compose equivalent, MoE expert offload, KV quantization, thinking control, the prompt cache, tool calling, Unsloth Dynamic quants, a known-issues tab",
+    "unverified": [
+     "Whether server-cuda13-b12407 is actually refused on this GeForce laptop: inferred from the image's NVIDIA_REQUIRE_CUDA and NVIDIA's docs, not tested (the toolkit is not installed).",
+     "The 2026-10-12 comment on #27330 reproducing the hang on Ubuntu 26.04 with driver 595.99.02: taken from the input records. I read the issue body and early comments, not that comment itself.",
+     "The speed cost of GGML_CUDA_DISABLE_GRAPHS=1 on this laptop: unmeasured.",
+     "The 20g container cap, --n-cpu-moe 21 and every VRAM or RAM figure: estimates. Nothing was run on this laptop.",
+     "That b12407 (the pinned image) has the same flags and defaults as b12418, where they were read. Only the tags and digest were checked for b12407.",
+     "Whether --cache-reuse is also disabled for qwen35moe (Qwen3.6-35B-A3B), not only qwen35: #32316 names LLM_ARCH_QWEN35.",
+     "The #28581 fix in CUDA 13.2.2 and later: from the audit/challenger record, not re-read.",
+     "Whether llama-bench accepts -hf: not checked, so the README only points to benchmarking.md.",
+     "Configured DDR5 DIMM speed on this machine (102.4 GB/s is the theoretical spec figure).",
+     "Compose passthrough of an unset HF_TOKEN: not verified, so the Compose example omits HF_TOKEN and just says to add it for gated repos."
+    ],
+    "playwright": false
+   },
+   "review": {
+    "verdict": "ready",
+    "checked": 31,
+    "fixes": 10,
+    "concerns": [
+     "The 20g container cap and --n-cpu-moe 21 are still estimates; that is stated in the doc. With the default mmap load mode, file-backed page cache may also count against the cgroup cap; measure on the first run.",
+     "#27330: the 2026-10-12 comment that reproduces the hang on Ubuntu 26.04 with driver 595.99.02 says 'RTX 5090' without saying laptop or desktop. The doc only claims driver and OS for that comment, which is accurate, but it is not proof of a laptop repro.",
+     "The claim that server-cuda13 is likely refused is still an inference from the image config. It has not been tested on this machine, and the doc says so.",
+     "llama-fit-params at /app/llama-fit-params in the full image follows from cuda.Dockerfile, which copies build/bin/*. I did not check it by listing the image contents (no pulls allowed).",
+     "llamacpp/models.md, vllm/README.md and docs/model-selection.md do not exist yet. The relative links point to the planned paths."
+    ],
+    "playwright": false
+   }
+  },
+  {
+   "doc": "llamacpp/benchmarking.md",
+   "writer": {
+    "summary": "I wrote $HOME/projects/llm/llamacpp/benchmarking.md (359 lines). It is the only file I created or changed. Scratch copies of the fetched sources are under $SCRATCH/bench-src/. A tool notice said the file changed on disk after my first write. My later edits went through, but I did not re-read the whole file, ",
+    "unverified": [
+     "The full-cuda-b12407 image was not pulled, so llama-bench inside it was not run. Its presence comes from cuda.Dockerfile and tools.sh at b12418.",
+     "Whether llama-bench -hf/-hff downloads correctly inside the full image (TLS libraries, cache path) was not tested.",
+     "The /metrics endpoint's API-key behaviour when --api-key is set was not checked.",
+     "The note that the timings object is present on non-streaming /v1/chat/completions responses comes from the b12418 README example. Whether it is in streaming final chunks was not checked.",
+     "The expected decode loss from GGML_CUDA_DISABLE_GRAPHS=1 is an inference, not a measurement.",
+     "The cgroup memory.peak path (system.slice/docker-<id>.scope) comes from the host-setup research record. It was not checked against a running container.",
+     "The laptop's configured DIMM speed is unknown. Only the Intel spec (DDR5-6400 dual channel, 102.4 GB/s) was used.",
+     "The TechFuelHQ llama.cpp b10507 figure (222-238 tok/s) comes from the hf-rtx5080-throughput check record. I did not re-fetch the page.",
+     "#27623: the claim that the cliff in its title was retracted comes from the baseline. I read only part of the issue thread live, and it still shows the original title."
+    ],
+    "playwright": false
+   },
+   "review": {
+    "verdict": "ready-with-concerns",
+    "checked": 27,
+    "fixes": 12,
+    "concerns": [
+     "The Reddit comment permalinks (/r/LocalLLaMA/comments/<post>/comment/<id>/) were built from the archive's post and comment ids. They could not be opened live because reddit.com returns 403 to non-browser clients.",
+     "The thinking-on vs thinking-off example (all 1024 tokens used vs answered in 1.5 s) comes from the user's private DGX Spark runbook, so it cannot carry a public link. It is attributed to that runbook in the text.",
+     "The probe sends model 'bench' while the server runs with --alias gpt-oss-20b. This relies on single-model llama-server ignoring the model field, which was not re-verified at b12418.",
+     "The '-ub 512 under 300 tok/s vs about 1500 tok/s' comment (oe1j3hk) does not name the model itself. The Qwen3.5-122B-A10B attribution comes from the review's reading of the surrounding thread context.",
+     "Verified live and correct: full-cuda-b12407 exists (CUDA 12.8.1, entrypoint /app/tools.sh, about 3.62 GB compressed, built 2026-11-15); full-cuda13-b12407 exists with CUDA 13.5.0 and cuda>=13.5; full-cuda-b12418 returns 404. Also checked against source copies: the llama-bench options, defaults and JSONL fields, n_ctx = p + n + d, server timings and metrics names, --cache-ram 8192, the scoreboard (with FA) and gpt-oss guide numbers, the issue states (#27330, #30357, #25859, #27623 and PR #31802 all open), and the 191 and 68 tok/s estimates.",
+     "Writing-rule scan: no em or en dashes, no emoji, one sentence per prose line, ports only on 127.0.0.1, no restart policies, and --memory with an equal --memory-swap in every docker run. All relative links point to planned KB documents."
+    ],
+    "playwright": false
+   }
+  },
+  {
+   "doc": "docs/community-benchmarks.md",
+   "writer": {
+    "summary": "I wrote $HOME/projects/llm/docs/community-benchmarks.md (342 lines). It is the only file I created or changed.\n\n**What it says.** None of the reviewed sources measured an RTX 5080 Laptop, and nothing has been run on this machine yet. Every number is labelled as a desktop measurement, an estimate or vendor-reported.\n\n**How it is organised:**\n- **Reading third-party numbers.** It compares de",
+    "unverified": [
+     "Desktop RTX 5080 bandwidth of 960 GB/s: NVIDIA's desktop spec page does not print it (only 16 GB GDDR7, 256-bit), so it is cited to ModelFit and Twoody instead.",
+     "Tech Centurion's desktop RTX 5080 Llama 2 7B row (195 tok/s decode, 9,305 tok/s prefill): the page names no backend, build or date, and it differs from the #15013 CUDA row (184.68 / 9487.70).",
+     "Laptop prefill at about 0.62 of desktop: arithmetic from cores times boost clock only. Whether the laptop holds boost at 140 W is unknown.",
+     "Artificial Analysis scores for Qwen3-Coder-Next, Gemma 4 12B, Nemotron 3.5 Lightning, GLM-4.7-Flash and DeepSeek R1 0528 Qwen3 8B come from the review's raw-JSON parse; the independent check did not re-check them. Their page addresses were not confirmed, so the document links the AA home page for them.",
+     "The gpt-oss-20b pp32768 5531 tok/s figure from #15396, and the issue-thread numbers (#27623, #25859, PRs #30489 and #30196), are taken from the per-model verification records. I did not re-fetch them in this step.",
+     "BenchLM ledger counts for gpt-oss-20b, Gemma 4 26B-A4B and GLM-4.7-Flash were not re-checked (the download stalled during the check).",
+     "The protoLabsAI Ornith-1.5-9B NVFP4 speeds (151 / 192.5 tok/s) are community-reported on a model card and were not independently reproduced.",
+     "Baseline per-pick speeds on this laptop (for example Gemma 4 26B-A4B 150-220 tok/s, Qwen3.6-35B-A3B 40-90 tok/s) are inferred bandwidth arithmetic, not measurements.",
+     "Twoody's 20-measurement validation set and ModelFit's fitted parameters (eta, alpha, overhead) are not published.",
+     "The TechFuelHQ 80-row CSV was not reviewed."
+    ],
+    "playwright": false
+   },
+   "review": {
+    "verdict": "ready-with-concerns",
+    "checked": 34,
+    "fixes": 10,
+    "concerns": [
+     "The baseline estimate column in the calculator comparison table (e.g. gpt-oss ceiling about 240, Gemma 26B 150-220, GLM 40-80 with --n-cpu-moe 18 vs config 20) comes from per-model verify records. I spot-checked it (it matches) but did not re-derive every row.",
+     "The upstream record verify_Qwen3.8-27B.json still has the 4080 SUPER / 40.92 misattribution. Other KB docs that copied it (llamacpp/models.md, model-selection.md, llamacpp/benchmarking.md) may carry the same error and should be grepped for '40.92'.",
+     "Nick Lothian SQL-benchmark details (data date range, the per-model scores) and the TechFuelHQ coding eval grid were checked only against the review checks, not re-fetched.",
+     "Maintenance bullet calls the RTX 5090 Laptop 'same GB203M chip'. This is consistent with NVIDIA's spec table (896 GB/s, 10496 cores) but the chip name was not verified from a primary source in this pass.",
+     "The doc contains no docker commands, so the port, restart-policy and memory-cap rules did not apply. Relative links point to opencode.md, sources.md, model-selection.md, ../llamacpp/README.md, ../llamacpp/benchmarking.md, ../llamacpp/models.md, ../vllm/README.md and ../vllm/benchmarking.md. These are all planned KB files, though model-selection.md, llamacpp/models.md and vllm/README.md do not exist on disk yet."
+    ],
+    "playwright": false
+   }
+  },
+  {
+   "doc": "docs/host-setup.md",
+   "writer": {
+    "summary": "I wrote $HOME/projects/llm/docs/host-setup.md (367 lines). No other file was touched.\n\nThe document follows the suggested outline:\n- **Current host state (observed):** includes facts I checked read-only today. Docker is rootful, the user is in the docker group, only the runc runtime is configured, there is no daemon.json, the CDI spec directories are configured but not on disk, nvidia-ctk ",
+    "unverified": [
+     "Toolkit v1.20.2 has no release note or GitHub release object; the doc uses the documented 1.20.1-1 pin.",
+     "Whether 'docker run --gpus' with the default runc runtime uses the legacy hook (affected by the daemon-reload issue) or JIT-CDI was not confirmed from Docker docs; the doc relies on NVIDIA's troubleshooting wording.",
+     "Aggregate cap via a system llm.slice plus --cgroup-parent is inferred from dockerd/systemd semantics, not tested; marked inferred.",
+     "That headless CUDA containers need no PRIME offload variables is inferred; marked inferred.",
+     "The reason for the 175 W max power limit (OEM, Dynamic Boost) is inferred, and whether nvidia-powerd runs on this laptop was not checked.",
+     "That the hf CLI is on PATH in vllm/vllm-openai:v0.33.0 is inferred from requirements (huggingface_hub>=1.31.0) and the earlier DGX image; whether that version has 'hf cache verify/rm/prune' is unknown and stated as such.",
+     "Memory cap values (32g vLLM, 8g llama.cpp all-GPU, 14g/30g offload, 8g for the download helper) are estimates, not measured.",
+     "Uncompressed image sizes on disk and the size of the vLLM compile cache volume are unknown.",
+     "Configured DIMM speed is unverified (needs sudo dmidecode).",
+     "That passing --host 127.0.0.1 inside the container breaks the published port is inferred from Docker bridge networking; marked inferred.",
+     "The Launchpad link is the human source page, while the research read the Launchpad API for the 1.19.0 resolute-proposed fact."
+    ],
+    "playwright": false
+   },
+   "review": {
+    "verdict": "ready-with-concerns",
+    "checked": 28,
+    "fixes": 9,
+    "concerns": [
+     "Verified live and unchanged (OK): toolkit docs pin 1.20.1-1. Apt Packages index serves 1.20.0-1, 1.20.1-1 and 1.20.2-1. GitHub latest release is v1.20.1 (2026-09-19). Launchpad has 1.19.0+dfsg1-0ubuntu1~26.04.1 (inputs place it in resolute-proposed). 1.20.1 release notes cover cdi-refresh ordering before Docker, preservation of Docker feature flags, and NVIDIA_GPU_MEMORY_LIMIT needing R615. CDI schema v0.7.0 needs docker >= 26.1.0. Auto-generation since 1.18.0 and the removal limitation. NVIDIA_DRIVER_CAPABILITIES default utility,compute. CUDA 13.0-13.5 to R580-R620 mapping. Forward compatibility limited to data center, NGC Server Ready RTX and Jetson. RTD3 0x03 default, UVM persistence disables RTD3, the procfs path. Open modules: Blackwell open-only, slower init and longer RTD3 entry and exit. Docker: CDI default since 28.3.0, systemd.slice parent and slice-name rule, ufw bypass in the nat table, Ubuntu Resolute 26.04 support, loopback publish, pre-28.0.0 L2 issue (moby#45610 closed), ip and host_binding_ipv4 daemon options, memory-swap semantics, Compose gpus requires 2.30.0, deploy capabilities required and count/device_ids exclusive. Docker Hub: vllm v0.33.0 is 9738495250 B, x86_64-zstd is 7702613782 B, ubuntu26.04 CUDA base tags start at 13.3.0. vLLM v0.33.0: CUDA_VERSION=13.0.3, huggingface_hub >= 1.31.0, host None / port 8000, --api-key wins over VLLM_API_KEY, docker.md ipc=host and the cache mounts. vllm#46268 (about 52 GiB, open). llama.cpp b12418: hf-cache.cpp search order, --api-key / LLAMA_API_KEY / --api-key-file, /health public. HF: hf cache ls/verify/rm/prune and .incomplete blobs.",
+     "Not re-verified live: the NVIDIA laptop compare page values (80-150 W, 896 GB/s), because the page is JS-rendered. They match kb/current-knowledge.md, which records them from the NVIDIA spec page.",
+     "The disk-budget row 'about 164 GiB, sum of the sizes in model-selection.md' cannot be checked yet: docs/model-selection.md does not exist on disk. Re-check the sum once that file is written.",
+     "These relative link targets are planned but do not exist yet: ../vllm/README.md, ../vllm/models.md, ../llamacpp/models.md, model-selection.md. Present: community-benchmarks.md, opencode.md, sources.md, ../llamacpp/README.md.",
+     "Out of scope (not my file): llamacpp/README.md line 162 shows a docker run of llama-fit-params with no --memory cap. Its owner should fix it.",
+     "Writing-rule scan of host-setup.md: no U+2013 or U+2014, no emoji, no restart policies in commands, every published port uses 127.0.0.1, the 'Last verified' line, Sources and Maintenance sections are present, and no physical line holds more than one prose sentence."
+    ],
+    "playwright": false
+   }
+  },
+  {
+   "doc": "docs/opencode.md",
+   "writer": {
+    "summary": "I wrote $HOME/projects/llm/docs/opencode.md. That is the only file I created or changed. I wrote it with the Write tool, then made two small edits with a Python string replace.\n\nThe doc covers:\n- the OpenCode v2.3.0 config shape, as a key table with links to the docs and the v2.3.0 source;\n- the validated two-provider config, as a JSON block;\n- matching rules: modelID must equal --served-m",
+    "unverified": [
+     "That settings.provider (data_collection, zdr, require_parameters) actually reaches OpenRouter in a real request. I read this from the source and did not run it.",
+     "That the providers.vllm.models.<id>.capabilities.tools=true override beats discovery. I inferred this from plugin order and did not test it.",
+     "Whether each vLLM or llama.cpp chat template accepts the earlier reasoning that OpenCode re-sends when requireReasoning is on (the default once reasoningField is set).",
+     "The untested risk that OpenCode sends tools: [] (for example in the compaction fallback) and vLLM v0.33.0 rejects it with HTTP 400.",
+     "That llama.cpp b12407/b12418 is unaffected by #58019. This rests only on PR #26939 being merged; I did not test it.",
+     "That the Qwen3.8 reasoning_effort none/low/medium variants behave as intended through llama.cpp. The server README documents reasoning_effort, but I did not run it.",
+     "Whether Ollama's gemma4:26b-a4b-it-qat honors reasoning_effort none/high for thinking, and whether its 1.11 GiB projector leaves enough VRAM for 64k context.",
+     "The 5.5k to 7k token fixed prompt overhead. It is an estimate from character counts in the source, not a logged request.",
+     "Whether a variant is applied by default when a model is selected without #variant. I assumed the request carries no variant body, so the server default applies.",
+     "OpenRouter prices, endpoint counts and per-endpoint tool support. These are live data from 2026-11-15 and drift.",
+     "Nothing has been run on this laptop: no OpenCode session against vLLM, llama.cpp, Ollama or OpenRouter."
+    ],
+    "playwright": false
+   },
+   "review": {
+    "verdict": "ready",
+    "checked": 31,
+    "fixes": 8,
+    "concerns": [
+     "Not verified: that the Ollama example config (gemma4:26b-a4b-it-qat at 65536 context, effort ['none','high']) fits in 16 GB once the 1.11 GiB projector is loaded. The tag sizes are confirmed, but KV headroom with the projector was not recalculated.",
+     "These conclusions come from reading the source and have not been run: the discovery override in providers.vllm, `tools: []` hitting vLLM, and the OpenRouter `provider` object reaching the request body. The document already labels each of them as untested.",
+     "These relative links point to documents that do not exist yet: docs/model-selection.md, vllm/models.md and llamacpp/models.md. All three are planned knowledge base documents.",
+     "Sentences that contain 'I re-validated' are written in the first person. That is acceptable under the rules, but the lead may want a neutral voice.",
+     "What I re-checked live on 2026-11-15:\n- All three JSON blocks validate with 0 errors against the schema copy, which is byte-identical to the live https://opencode.ai/config.json. A config with a V1 `npm` key is rejected.\n- The four issues and the two fix PRs are open. llama.cpp PR #26939 was merged on 2026-08-20 and is included in b12407.\n- The v2.3.0 release was published on 2026-11-13.\n- vLLM v0.33.0 protocol.py lines 980-991 match the document.\n- llama.cpp b12418 README lines 191, 221, 240, 242, 1384, 1457 and 1575 match.\n- The OpenCode docs match: the 200k/32k defaults, the 5-minute header timeout, the root model not keeping a variant, the plugin removal syntax, the compaction defaults and its warning, and the agents.title.model migration.\n- The OpenRouter contexts, the endpoints that lack tools, and the privacy, ZDR and provider-selection docs match.\n- `opencode --help` lists the `reload` command and `debug config`."
+    ],
+    "playwright": false
+   }
+  },
+  {
+   "doc": "docs/sources.md",
+   "writer": {
+    "summary": "I wrote $HOME/projects/llm/docs/sources.md (171 lines). It is the only file I created or changed.\n\nWhat it contains, in order:\n- An H1 title, the \"Last verified\" line and a four-sentence summary.\n- An evidence-class legend with seven classes, plus how to label each one. It also gives two rules for hardware: desktop RTX 5080 numbers are not laptop numbers, and every laptop result must recor",
+    "unverified": [
+     "Statement that NGC vLLM builds lag upstream vLLM releases rests on the version list in current-knowledge.md (NGC 26.10 = vLLM 0.31.0 vs upstream 0.33.0); the NGC catalog page itself was only checked for HTTP 200, not read.",
+     "Leaderboard staleness dates (SWE-bench 2026-02-26, BFCL 2026-04-12, Aider 2025-10, LiveCodeBench 2025-04, Terminal-Bench no model of 32B or less) come from the disc/sweep-leaderboards.json discovery lane and were not re-fetched.",
+     "Gemma 4 26B-A4B SWE-bench Verified 17.4 (Qwen table) vs 57.40 (NVIDIA table) conflict comes from the discovery sweep; only the NVIDIA value was confirmed by audit.json.",
+     "arena.ai returned HTTP 403, so LMArena was left out of the catalog.",
+     "kb/newcand/ was empty while I worked, so no new-candidate verification records are reflected.",
+     "OpenCode issue #50814 and llama.cpp #30118 are not linked individually; they are tracked in the topic docs."
+    ],
+    "playwright": false
+   },
+   "review": {
+    "verdict": "ready-with-concerns",
+    "checked": 24,
+    "fixes": 10,
+    "concerns": [
+     "Other documents that say vLLM v0.33.0 was released on 2026-11-02 on tag v0.33.0, or link releases/tag/v0.33.0, should be aligned. The GitHub release object is on tag v0.33.0rc3 (same commit 4ba787e). The URL releases/tag/v0.33.0 still returns HTTP 200 as a tag page, so those links are not broken.",
+     "llama.cpp v1.0.0 (published 2026-11-13, removes the deprecated public API) is not covered in any input. The lead may want llamacpp/README.md to say whether the b12418 / b12407 image pins are post-v1.0.0 and whether anything changed for the server.",
+     "Relative links to docs/model-selection.md, vllm/README.md, vllm/models.md and llamacpp/models.md point to planned documents that do not exist on disk yet. host-setup.md, opencode.md, llamacpp/README.md and both benchmarking.md files exist.",
+     "The Artificial Analysis 404 for Laguna XS 2.1 and KAT-Coder-V2.5-Dev is unverified. I did not know their AA slugs, and a guessed slug returned 404, which proves nothing.",
+     "GitHub returned 429 on curl for the Ollama faq.mdx and the vLLM envs.py links, so those two were not re-fetched. Both are backed by the input records.",
+     "I checked these and found no problem: NVIDIA laptop page (896, 1334 AI TOPS, 7680 CUDA cores all present in the raw HTML), Intel ark SKU 245960, review verdict counts, AA 1.8 points, Kumar 2024-11-30, Ternary Bonsai 5.95 / 7.21 GB, Xing iq2_M-slim 10.99 GiB, MindStudio 17.05-19.13 GiB, OpenRouter 1,024,000 context, grumd 1000-1500 prefill, Twoody @Hedede and 32 GB static page, SQL benchmark 300 s timeout, leaderboard dates, local.ts tools false, the dockerd cgroup parent, and that OpenCode v2.3.0 (2026-11-13) and Ollama v0.40.16 (2026-11-09) releases exist. No en or em dashes, no emoji, no commands with ports, restart policies or memory caps (none needed). The Last verified line, Sources section and Maintenance section are present."
+    ],
+    "playwright": false
+   }
+  },
+  {
+   "doc": "docs/model-selection.md",
+   "writer": {
+    "summary": "I wrote $HOME/projects/llm/docs/model-selection.md (379 lines). No other file was created or changed. The top 10, its order and the per-model settings come straight from the updated ranking.\n\nWhat the file contains:\n- **Decision summary**: Borda ranking plus the forced DeepSeek swap, and the runtime rules every pick shares (GGML_CUDA_DISABLE_GRAPHS=1 passed to docker before the image name,",
+    "unverified": [
+     "The human-facing Hugging Face repo URLs used as table links (for example huggingface.co/bartowski/K2-Horizon-MoVA-36B-A4B-GGUF, bartowski/K2-Horizon-7B-GGUF, unsloth/Qwen3.8-27B-GGUF, unsloth/DeepSeek-R1-0528-Qwen3-8B-GGUF, GrootTeam/Groot-19B-A3B-261023-GGUF) were built from the repo ids in the inputs and were not fetched live.",
+     "vLLM issues #62743, #65770, #58825, #59738, #66989 and llama.cpp #30490 are cited by number only, without links: no URL for them was in the inputs I read.",
+     "AA Gemma 4 26B TB2.1 39.0, tau2 43.6 and tau3 12.0, and AA gpt-oss-20b TB2.1 13.9, are linked to the model cards and the NVIDIA table rather than to AA pages, because no AA URL for those models was in the ranking refs.",
+     "Release dates follow the ranking JSON (Qwen3.6 2026-04-16, Gemma 4 26B 2026-04-02), which differ from the HF creation dates in current-knowledge.md (2026-04-15 and 2026-03-11).",
+     "The description of the three research runs is my reading of the inputs (discovery, verification, judges and audit; the 19-source review; new-candidate verification with re-judging). The count of 13 discovery lanes and 22 verified candidates comes from the files in disc/ and ver/.",
+     "Everything the ranking marks as inferred or unverified is labelled that way in the file: speed bounds, the Nanbeige --override-kv workaround, the IFM official Q4_K_M as a thinking-off option, and K2 7B Q8_0 being post-FTPO weights."
+    ],
+    "playwright": false
+   },
+   "review": {
+    "verdict": "ready-with-concerns",
+    "checked": 31,
+    "fixes": 13,
+    "concerns": [
+     "The relative links ../llamacpp/models.md and ../vllm/models.md point to planned documents that do not exist on disk yet: llamacpp/ and vllm/ currently hold only README.md and benchmarking.md. The links will work once those writers finish.",
+     "Release dates follow the authoritative ranking, which uses announcement or AA dates (Gemma 2026-04-02, Qwen3-Coder-Next 2026-02-03, gpt-oss 2025-08-05). The HF createdAt dates are a few days earlier, and the document does not mention them.",
+     "Some secondary figures came from the input records and the ranking and were not re-fetched live: KAT-Coder in-house scores, the Laguna and Xing details, the LFM table values, the InsiderLLM 12/47 vs 19/47 result, the Mellum figures and the GLM-4.7-Flash sizes.",
+     "The 'NVIDIA same-harness' TB2.1 numbers for Qwen3.6 and Gemma come from the Lightning card table (44.38 and 37.22), and the Bolt card repeats them. Lightning itself differs between the two tables (24.58 vs 23.46), which suggests the tables are separate runs. The document now names the table each time.",
+     "The document contains no docker commands, only flags and links to the recipe documents. Port, restart-policy and memory-cap compliance is therefore enforced in llamacpp/models.md and vllm/models.md, not here."
+    ],
+    "playwright": false
+   }
+  },
+  {
+   "doc": "vllm/models.md",
+   "writer": {
+    "summary": "I wrote $HOME/projects/llm/vllm/models.md (715 lines). It follows the updated ranking. A summary table lists the eight models that fit fully under vLLM v0.33.0. Each has a full recipe card: checkpoint and size, budget arithmetic, a complete docker run command, thinking and sampling, an OpenCode entry, caveats with open issues, and evidence.\n\nThe cards cover four ranked picks:\n- gpt-oss-20b",
+    "unverified": [
+     "Nothing was run on this laptop: every context window, VRAM margin and speed figure is arithmetic (1.2 GiB reserve assumed), not measured.",
+     "Groot NVFP4 language-model-only weight of 10.94 GiB assumes the vision tower equals the 0.84 GiB mmproj size; which chat template vLLM applies for Groot is unconfirmed.",
+     "Whether the k2_horizon reasoning parser picks up reasoning_effort from --default-chat-template-kwargs is untested; that the cyankiwi AWQ carries pre-FTPO weights is inferred from upload dates.",
+     "DeepSeek online FP8 resident size of 8.79 GiB is an estimate; 65536 with FP8 KV has only about 3% margin; the Intel INT4 AutoRound Marlin path on sm_120 is not checked.",
+     "--linear-backend cutlass avoiding the NVFP4 FlashInfer JIT for Qwen3.5-9B is inferred and untested.",
+     "TRITON_ATTN as the mitigation for #61239 is inferred, not upstream guidance; the MARLIN log line for gpt-oss is inferred from source.",
+     "The transformers version inside vllm/vllm-openai:v0.33.0 (needed for Mellum via the Transformers backend) was not read.",
+     "The AA Terminal-Bench 2.1 value of 13.9 for gpt-oss-20b comes from the ranking input; I only confirmed the value 0.1386 appears on the AA page, which embeds several models.",
+     "Community claim that Groot alters verbatim path text, and the Groot repo-id typo, come from the input records and were not re-read live.",
+     "The hf CLI --exclude flag was checked on huggingface_hub main, not against the exact version inside the image."
+    ],
+    "playwright": false
+   },
+   "review": {
+    "verdict": "ready",
+    "checked": 34,
+    "fixes": 4,
+    "concerns": [
+     "Not verified live: the line ranges cited for gemma4.py (L1447-L1454) and kv_cache_interface.py (L918-L955). I read gemma4.py near those lines and the lm_head tie_weights code is at about 1452-1453, so the range is roughly right. I did not open kv_cache_interface.py.",
+     "vLLM #46268 could not be re-read because the GitHub API hit its rate limit. Its open state rests on the inputs (current-knowledge.md and the platform record). I re-read #66264, #61239, #54331, #62743, #66989, #65770 and #59738 live, and all are open.",
+     "The Nemotron Lightning community W4A16 at 16.60 GiB and the Intel Gemma 4 26B language-model-only figure of 13.24 GiB were not rechecked live. The file totals of those two repos were rechecked and match: Lightning NVFP4 20.08, Gemma 26B AutoRound 14.31.",
+     "Some list items hold more than one sentence. The task rules allow this ('list items stay on single lines'), so I left them as they are."
+    ],
+    "playwright": false
+   }
+  },
+  {
+   "doc": "llamacpp/models.md",
+   "writer": {
+    "summary": "I wrote $HOME/projects/llm/llamacpp/models.md, about 490 lines, with the Write tool. No other file was touched; scratch reads went into the scratchpad's live/ folder.\n\nWhat it contains:\n- The summary, then an at-a-glance table covering all 10 ranked picks: GGUF, size, --n-cpu-moe, context, KV type, estimated GPU and RAM use, and the memory cap.\n- Shared rules for every recipe, mostly as li",
+    "unverified": [
+     "Every VRAM, RAM, context and tok/s figure is arithmetic from GGUF headers and configs in the research records; compute-buffer and CUDA-context sizes (0.4 GiB context, 0.5-1.5 GiB compute) are assumptions, nothing was run on the laptop.",
+     "Memory caps (16g/20g/24g/32g) are my estimates from experts-in-RAM plus --cache-ram plus 2-3 GiB process overhead; not measured.",
+     "Qwen3.6 general-thinking presence_penalty: the model card (per the facts check) says 1.5, Unsloth says 0.0; I cited the card without re-reading it live.",
+     "Unsloth's Gemma 4 KLD comparison (Q4_0 14.44 GB) most likely refers to Google's QAT GGUF, but the page does not name the repo (inferred from the size match).",
+     "Whether llama.cpp #30781 (gpt-oss array params without items) affects gpt-oss-20b with OpenCode tool schemas.",
+     "Whether the fix for closed issue #30490 (LFM2.5 tool calls lost as content) is in b12407.",
+     "Whether the official IFM K2 Horizon GGUFs (uploaded before mainline support) load in b12407, and whether the bartowski K2 7B GGUF carries post-FTPO weights (inferred from upload dates).",
+     "Groot: the community reports of altered verbatim path text, and whether #30118 and #30357 reproduce on it.",
+     "The DeepSeek Unsloth GGUF template injecting a tool list, and llama.cpp lacking a dedicated R1 tool handler, come from the research records; not re-read live.",
+     "Artificial Analysis, NVIDIA and vendor scores, plus Ollama tag sizes and digests, were taken from the verified records and the ranking; only page reachability was checked live, not the numbers.",
+     "Whether -hf with only a repo plus --hf-file resolves the intended file in b12407 (flag semantics read from arg.cpp; not executed).",
+     "Whether -lm none puts the experts in anonymous memory that counts against the container cap: taken from benchmarking.md, not verified in the source.",
+     "The Bolt LiLiCorr drafter benefit and the CPU-side IQ2_XXS decode cost are unmeasured."
+    ],
+    "playwright": false
+   },
+   "review": {
+    "verdict": "ready-with-concerns",
+    "checked": 52,
+    "fixes": 5,
+    "concerns": [
+     "The table's GPU column is not consistent: some rows include about 0.4 GiB CUDA context (Qwen3.8 15.2, Bolt 14.8) and others follow the ranking values that leave it out (Groot 13.9-14.4, K2 7B 14.5, DeepSeek 13.7). I left the values as the authoritative ranking gives them; the lead may want one convention.",
+     "Qwen3.6 (20g vs about 16g) and Bolt (20g vs 16g) use a larger --memory cap than the ranking. The file justifies this with the 8 GiB default --cache-ram, confirmed at common.h cache_ram_mib = 8192, and 20g matches llamacpp/README.md. I kept the file's values.",
+     "Artificial Analysis scores (TB2.1, tau3) were checked against the research records and the ranking, not re-read live, because AA pages are rendered by JavaScript.",
+     "vllm/models.md is linked three times but does not exist yet. It is a planned KB document, so the links are correct once it is written.",
+     "A few minor figures still have no inline link: the Bolt LiLiCorr drafter size of 0.93 GiB, and the REAP-pruned Bolt GGUF at 12.46 GiB in the rejected table.",
+     "Nothing was run on this laptop. All VRAM, context and speed figures stay estimates or inferences and are labelled that way."
+    ],
+    "playwright": false
+   }
+  }
+ ],
+ "borda": [
+  {
+   "name": "Qwen3.8-27B",
+   "points": 29,
+   "votes": [
+    "quality:1",
+    "practicality:2",
+    "coverage:1"
+   ],
+   "runtimes": [
+    "quality: llama.cpp ghcr.io/ggml-org/llama.cpp:server-cuda-b12407, all on GPU, -c 65536 -ctk/-ctv q8_0 -np 1, docker -e GGML_CUDA_DISABLE_GRAPHS=1 before the image (#27330 reproduced on driver 595.99.02) / unsloth/Qwen3.8-27B-GGUF UD-Q3_K_XL (12.24 GiB); UD-IQ4_XS at about 48k as a quality variant",
+    "practicality: llama.cpp server-cuda-b12407, all on GPU, -c 65536 -ctk/-ctv q8_0, -np 1 / unsloth/Qwen3.8-27B-GGUF UD-Q3_K_XL (12.24 GiB)",
+    "coverage: llama.cpp ghcr.io/ggml-org/llama.cpp:server-cuda-b12407, unsloth/Qwen3.8-27B-GGUF UD-Q3_K_XL (12.24 GiB), all on GPU, -c 65536 -ctk/-ctv q8_0 -np 1 (up to about 88k); vLLM does not fit (smallest INT4/AWQ 17.29-18.12 GiB) / unsloth/Qwen3.8-27B-GGUF UD-Q3_K_XL"
+   ]
+  },
+  {
+   "name": "Qwen3.6-35B-A3B",
+   "points": 27,
+   "votes": [
+    "quality:3",
+    "practicality:1",
+    "coverage:2"
+   ],
+   "runtimes": [
+    "quality: llama.cpp server-cuda-b12407, --n-cpu-moe 21-22 (corrected for a 0.3-0.8 GiB margin), -c 131072 f16 KV or q8_0, -np 1 / ggml-org/Qwen3.6-35B-A3B-GGUF Q4_K_M (19.13 GiB, about 9 GiB of experts in RAM)",
+    "practicality: llama.cpp ghcr.io/ggml-org/llama.cpp:server-cuda-b12407 (not server-cuda13: CUDA 13.5 floor vs driver CUDA 13.2), -e GGML_CUDA_DISABLE_GRAPHS=1, -np 1, --jinja, --n-cpu-moe 20-21, 128k f16 KV / ggml-org/Qwen3.6-35B-A3B-GGUF Q4_K_M (19.12 GiB, about 9 GiB experts in RAM)",
+    "coverage: llama.cpp server-cuda-b12407, ggml-org/Qwen3.6-35B-A3B-GGUF Q4_K_M (19.12 GiB) with --n-cpu-moe 20-21 (about 9 GiB experts in RAM), 131072 f16 KV / ggml-org/Qwen3.6-35B-A3B-GGUF Q4_K_M"
+   ]
+  },
+  {
+   "name": "K2 Horizon MoVA 36B A4B",
+   "points": 24,
+   "votes": [
+    "quality:2",
+    "practicality:4",
+    "coverage:3"
+   ],
+   "runtimes": [
+    "quality: llama.cpp server-cuda-b12407, -c 65536 -np 1 -ctk/-ctv q8_0, --n-cpu-moe 46 (corrected from 44 for VRAM margin) / bartowski/K2-Horizon-MoVA-36B-A4B-GGUF Q4_K_M (21.14 GiB); IFM official Q4_K_M (20.83 GiB) for a thinking-off option",
+    "practicality: llama.cpp server-cuda-b12407, -c 65536 q8_0 KV, -np 1, --n-cpu-moe 46 (checker's margin advice over 44) / bartowski/K2-Horizon-MoVA-36B-A4B-GGUF Q4_K_M (21.14 GiB, about 13.5 GiB experts in RAM)",
+    "coverage: llama.cpp server-cuda-b12407 (arch k2-horizon at llama-arch.cpp L178), bartowski/K2-Horizon-MoVA-36B-A4B-GGUF Q4_K_M (21.14 GiB), -c 65536 -ctk/-ctv q8_0 -np 1 with --n-cpu-moe 46 (challenge correction: 44 gives about 14.95 GiB plus 0.3-0.5 GiB CUDA context, too tight); about 13.5-14.9 GiB experts in RAM. vLLM does not fit (smallest GPTQ 20.25 GiB). / bartowski/K2-Horizon-MoVA-36B-A4B-GGUF Q4_K_M"
+   ]
+  },
+  {
+   "name": "K2 Horizon 7B",
+   "points": 20,
+   "votes": [
+    "quality:4",
+    "practicality:3",
+    "coverage:6"
+   ],
+   "runtimes": [
+    "quality: llama.cpp server-cuda-b12407, all on GPU (-ngl 99), -c 65536 q8_0 KV, -np 1 / bartowski/K2-Horizon-7B-GGUF Q8_0 (8.92 GiB, post-FTPO weights by date, inferred); Q5_K_M for about 96k",
+    "practicality: llama.cpp server-cuda-b12407 (k2-horizon arch and dedicated parser at b12407), all on GPU, -c 65536 q8_0 KV, -np 1 / bartowski/K2-Horizon-7B-GGUF Q8_0 (8.92 GiB); Q5_K_M (6.39 GiB) for about 96k",
+    "coverage: llama.cpp server-cuda-b12407, bartowski/K2-Horizon-7B-GGUF Q8_0 (8.92 GiB), all on GPU, 65536 q8_0 KV (Q5_K_M for about 96k). vLLM alternative: cyankiwi/K2-Horizon-7B-AWQ-INT4 (7.56 GiB) with FP8 KV, about 85.7k pool, keep --chat-template-content-format string; pre-FTPO weights (inferred). / bartowski/K2-Horizon-7B-GGUF Q8_0"
+   ]
+  },
+  {
+   "name": "Gemma 4 26B-A4B IT",
+   "points": 16,
+   "votes": [
+    "quality:7",
+    "practicality:5",
+    "coverage:5"
+   ],
+   "runtimes": [
+    "quality: llama.cpp server-cuda-b12407, all on GPU, -c 65536 -ctk/-ctv q8_0 -fa on -np 1 (corrected: f16 KV at 64k does not fit) / google/gemma-4-26B-A4B-it-qat-q4_0-gguf (13.45 GiB), text-only",
+    "practicality: llama.cpp server-cuda-b12407, all on GPU, -c 65536 -ctk/-ctv q8_0 -fa on -np 1 (128k with --n-cpu-moe 6) / google/gemma-4-26B-A4B-it-qat-q4_0-gguf (13.45 GiB), no mmproj",
+    "coverage: llama.cpp server-cuda-b12407, google/gemma-4-26B-A4B-it-qat-q4_0-gguf (13.45 GiB), all on GPU, 65536 q8_0 KV -fa on -np 1 (131072+ with --n-cpu-moe 6); vLLM does not fit / google/gemma-4-26B-A4B-it-qat-q4_0-gguf"
+   ]
+  },
+  {
+   "name": "Qwen3-Coder-Next (80B-A3B, non-thinking agentic coder)",
+   "points": 15,
+   "votes": [
+    "quality:5",
+    "practicality:6",
+    "coverage:7"
+   ],
+   "runtimes": [
+    "quality: llama.cpp server-cuda-b12407 (CUDA 12.8 image, not cuda13), --n-cpu-moe 37, -c 131072 q8_0 KV, -np 1, container --memory sized for about 26 GiB in RAM / unsloth/Qwen3-Coder-Next-GGUF UD-IQ4_XS (35.79 GiB, about 25.7 GiB of experts in RAM)",
+    "practicality: llama.cpp server-cuda-b12407, --n-cpu-moe 37, 128k q8_0 KV, -np 1, Docker --memory sized for about 26 GiB host experts / unsloth/Qwen3-Coder-Next-GGUF UD-IQ4_XS (35.79 GiB, about 26 GiB in RAM)",
+    "coverage: llama.cpp server-cuda-b12407, unsloth/Qwen3-Coder-Next-GGUF UD-IQ4_XS (35.79 GiB) with --n-cpu-moe 37 (about 26 GiB in RAM of about 40 GiB free), 131072 q8_0 KV; vLLM does not fit / unsloth/Qwen3-Coder-Next-GGUF UD-IQ4_XS"
+   ]
+  },
+  {
+   "name": "NVIDIA Nemotron 3.5 Bolt 74B-A9B (24GB GGUF)",
+   "points": 15,
+   "votes": [
+    "quality:6",
+    "practicality:8",
+    "coverage:4"
+   ],
+   "runtimes": [
+    "quality: llama.cpp server-cuda-b12407, --n-cpu-moe 50, -c 65536 to 131072 f16 KV, no mmproj, -np 1 / nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB-GGUF (20.51 GiB, IQ2_XXS QAT experts; about 8 GiB of experts in RAM)",
+    "practicality: llama.cpp server-cuda-b12407, --n-cpu-moe 50 (or 52 for margin), -c 131072 f16 KV, -np 1, no mmproj / nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB-GGUF (20.51 GiB, about 8 GiB experts in RAM)",
+    "coverage: llama.cpp server-cuda-b12407 (nemotron_h_moe), nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB-GGUF (20.51 GiB, IQ2_XXS QAT experts) with --n-cpu-moe 50, 131072 f16 KV (about 13.4 GiB source-backed plus estimated compute/CUDA context), no mmproj; fall back to 65536 if startup OOMs. vLLM does not fit (22.43 GiB). / nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB-GGUF"
+   ]
+  },
+  {
+   "name": "Groot-19B-A3B-261023",
+   "points": 5,
+   "votes": [
+    "quality:10",
+    "practicality:7"
+   ],
+   "runtimes": [
+    "quality: llama.cpp server-cuda-b12407, all on GPU, -c 131072 f16 KV (about 13.9 GiB corrected), -np 1; vLLM NVFP4 --language-model-only as second (risk #54331) / GrootTeam/Groot-19B-A3B-261023-GGUF Q4_K_M (10.86 GiB)",
+    "practicality: llama.cpp server-cuda-b12407 (qwen35moe arch), all on GPU, -c 131072 f16 KV, -np 1; vLLM v0.33.0 NVFP4 --language-model-only as second path / GrootTeam/Groot-19B-A3B-261023-GGUF Q4_K_M (10.86 GiB)"
+   ]
+  },
+  {
+   "name": "gpt-oss-20b",
+   "points": 5,
+   "votes": [
+    "practicality:9",
+    "coverage:8"
+   ],
+   "runtimes": [
+    "practicality: llama.cpp server-cuda-b12407 all on GPU, 128k q8_0 KV (vLLM v0.33.0 secondary: 64k with util 0.95 + FP8 KV + TRITON_ATTN) / ggml-org/gpt-oss-20b-GGUF MXFP4 (11.28 GiB)",
+    "coverage: vLLM vllm/vllm-openai:v0.33.0, openai/gpt-oss-20b (MXFP4 native, 12.82 GiB), --gpu-memory-utilization 0.95 --kv-cache-dtype fp8 --attention-backend TRITON_ATTN, max-model-len 65536, tool parser openai, reasoning parser openai_gptoss, Python frontend (#66989). llama.cpp alternative: ggml-org/gpt-oss-20b-GGUF MXFP4 at 131072. / openai/gpt-oss-20b"
+   ]
+  },
+  {
+   "name": "Nanbeige4.3-33B",
+   "points": 3,
+   "votes": [
+    "quality:8"
+   ],
+   "runtimes": [
+    "quality: llama.cpp server-cuda-b12407, -c 65536 (49152 fallback) -np 1 -fa on -ctk/-ctv q4_0, let --fit place layers, --override-kv tokenizer.ggml.add_space_prefix=bool:false until PR #31986 ships (corrected; workaround not verified) / bartowski/Nanbeige_Nanbeige4.3-33B-GGUF IQ2_M (11.35 GiB)"
+   ]
+  },
+  {
+   "name": "Gemma 4 12B IT (Unified, encoder-free)",
+   "points": 3,
+   "votes": [
+    "practicality:10",
+    "coverage:9"
+   ],
+   "runtimes": [
+    "practicality: vLLM vllm/vllm-openai:v0.33.0, --tool-call-parser gemma4 --reasoning-parser gemma4, max-num-seqs 1, 128k BF16 KV / google/gemma-4-12B-it-qat-w4a16-ct (9.56 GiB)",
+    "coverage: vLLM vllm/vllm-openai:v0.33.0, google/gemma-4-12B-it-qat-w4a16-ct (official QAT W4A16, Marlin), 131072 BF16 KV (262144 with FP8 KV), tool/reasoning parser gemma4, max-num-seqs 1-2 / google/gemma-4-12B-it-qat-w4a16-ct"
+   ]
+  },
+  {
+   "name": "GLM-4.7-Flash",
+   "points": 2,
+   "votes": [
+    "quality:9"
+   ],
+   "runtimes": [
+    "quality: llama.cpp server-cuda-b12407, --n-cpu-moe 17-18, -c 65536 f16 KV (128k with q8_0), -np 1; not vLLM (glm47 parser bugs, offload refuted) / unsloth/GLM-4.7-Flash-GGUF Q4_K_M (17.05 GiB)"
+   ]
+  },
+  {
+   "name": "DeepSeek-R1-0528-Qwen3-8B",
+   "points": 1,
+   "votes": [
+    "coverage:10"
+   ],
+   "runtimes": [
+    "coverage: llama.cpp server-cuda-b12407, unsloth/DeepSeek-R1-0528-Qwen3-8B-GGUF Q8_0 (8.11 GiB), all on GPU, 65536 q8_0 KV (Ollama deepseek-r1:8b for chat only) / unsloth/DeepSeek-R1-0528-Qwen3-8B-GGUF Q8_0"
+   ]
+  }
+ ],
+ "final": {
+  "decision_summary": "The top 10 follows the Borda aggregate of the three judges (quality, practicality, coverage), with one forced swap. Ranks 1 to 9 are Borda ranks 1 to 9: Qwen3.8-27B (29 points), Qwen3.6-35B-A3B (27), K2 Horizon MoVA 36B A4B (24), K2 Horizon 7B (20), Gemma 4 26B-A4B (16), Qwen3-Coder-Next (15), Nemotron 3.5 Bolt 74B-A9B (15), Groot-19B-A3B-261023 (5) and gpt-oss-20b (5). Ties are kept in the order the aggregate lists them. Borda rank 10 was Nanbeige4.3-33B (3 points, quality judge only, tied with Gemma 4 12B). That left out the DeepSeek family, which the user requires, so DeepSeek-R1-0528-Qwen3-8B (1 point) takes rank 10. It is labelled chat and reasoning only: it has no tool calling and is not for OpenCode agent mode. Nanbeige moves to honorable mentions as a trial candidate. The other required families are covered: Qwen (1, 2, 6), Gemma (5), Nemotron (7, Bolt now replaces Lightning as the best Nemotron), gpt-oss (9).\n\nRuntime: llama.cpp ghcr.io/ggml-org/llama.cpp:server-cuda-b12407 (CUDA 12.8.1) is the primary runtime for all ten. Every llama.cpp command on this laptop needs docker -e GGML_CUDA_DISABLE_GRAPHS=1 placed before the image name (#27330 reproduced on driver 595.99.02); after the image, llama-server parses -e as --escape and refuses to start. Use -np 1 and --jinja. Avoid server-cuda13-b12407 because its NVIDIA_REQUIRE_CUDA is cuda>=13.5 while driver 595.99.02 offers CUDA 13.2, so the container is likely refused (inferred); #28581 is not the reason. --n-cpu-moe N moves the experts of blocks 0 to N-1 to system RAM and counts all blocks, not only MoE layers. vLLM v0.33.0 is a secondary path only: for gpt-oss-20b at 64k (needs --gpu-memory-utilization 0.95, --kv-cache-dtype fp8 and --attention-backend TRITON_ATTN) and for Groot NVFP4 with --language-model-only. None of the four highest-ranked models fits vLLM's 14.65 GiB budget, and vLLM expert offload is undone for Marlin weights (#66264).\n\nThe new picks rest on independent Artificial Analysis data (MoVA TB2.1 56.6 / tau3 32.0, K2 7B 44.2 / 27.6) or on vendor data only (Bolt: NVIDIA's own table; Groot: self-reported, anonymous publisher). Every context and speed figure is an estimate from source-backed arithmetic. Nothing has run on this machine. The NVIDIA Container Toolkit with CDI must be installed first, and each pick needs a /v1/models check plus an OpenCode tool-call smoke test before use. I rechecked the load-bearing GGUF sizes live on 2026-11-15 through the HF tree API (MoVA Q4_K_M 21.14, K2 7B Q8_0 8.92 / Q5_K_M 6.39, Bolt 20.51 plus 1.61 GiB mmproj, Groot Q4_K_M 10.86 GiB). I also confirmed the sampling recommendations in the raw README of each new pick.",
+  "changes_vs_previous": "Compared with ver/synthesis.json:\n- Qwen3.8-27B moved from 2 to 1. Two of three judges put it first on independent AA evidence (TB2.1 79.8 xhigh / 65.2 medium, tau3-Banking 48.0). The practicality judge kept Qwen3.6 first.\n- Qwen3.6-35B-A3B moved from 1 to 2. Its evidence is unchanged, but the AA review added tau3-Banking 9.3, which is weak next to Qwen3.8 and the K2 models. It is still the 128k pick with the most mature runtime path.\n- New at 3: K2 Horizon MoVA 36B A4B (AA TB2.1 56.6, tau3 32.0). New at 4: K2 Horizon 7B (AA TB2.1 44.2, tau3 27.6). Both are llama.cpp only in practice.\n- Gemma 4 26B-A4B moved from 3 to 5. Its evidence is unchanged; it was pushed down by the two K2 models.\n- Qwen3-Coder-Next moved from 5 to 6.\n- New at 7: Nemotron 3.5 Bolt 74B-A9B replaces Nemotron 3.5 Lightning (previous 6) as the Nemotron pick. NVIDIA's same-harness TB2.1 for Bolt is 50.98 vs 24.58 for Lightning. Lightning moves to honorable mentions as the fallback if Bolt does not fit in VRAM.\n- New at 8: Groot-19B-A3B-261023. It takes the slot that the previous Ornith-1.5-9B (rank 7) held as the fast all-in-VRAM option. Ornith received no votes this round and is excluded; it is vendor-only from an unverified org.\n- gpt-oss-20b moved from 4 to 9. Its independent agentic scores are weak (AA TB2.1 13.9, NVIDIA 15.17) next to the new candidates. It stays as the required gpt-oss family member and the pipeline baseline.\n- DeepSeek-R1-0528-Qwen3-8B stays at 10 through the same required-family swap. This time it displaces Nanbeige4.3-33B rather than KAT-Coder.\n- Dropped from the top 10: Nemotron Lightning (honorable), Ornith-1.5-9B (excluded), Gemma 4 12B (3 points, honorable as the vLLM-native Gemma), GLM-4.7-Flash (2 points, honorable).\n- Audit fixes applied:\n  - GGML_CUDA_DISABLE_GRAPHS=1 is a docker -e flag placed before the image and is stated for every llama.cpp command.\n  - gpt-oss-20b runs primarily on llama.cpp, with vLLM as an option at 64k using util 0.95, FP8 KV and TRITON_ATTN.\n  - #28581 is no longer given as the image reason; the reason is cuda>=13.5. A soft IQ-quant sanity note is kept for Coder-Next.\n  - --n-cpu-moe is described as counting blocks from 0.\n  - The Qwen3.6 smallest vLLM checkpoint is corrected to the 18.75 GiB AutoRound (LM only).\n  - DeepSeek is described as the newest DeepSeek that fits, not the only one.\n  - Qwen3.8 medium effort now has a mechanism.\n  - 65536 is the tested-safe target for Qwen3.8; 88k is an untested estimate.",
+  "top10": [
+   {
+    "rank": 1,
+    "name": "Qwen3.8-27B",
+    "vendor": "Qwen (Alibaba)",
+    "hf_repo": "Qwen/Qwen3.8-27B",
+    "release_date": "2026-08-14 (AA and synthesis; HF createdAt 2026-08-05)",
+    "license": "Apache-2.0",
+    "params": "27.8B dense (incl. vision)",
+    "runtime": "llama.cpp: docker run ... -e GGML_CUDA_DISABLE_GRAPHS=1 ghcr.io/ggml-org/llama.cpp:server-cuda-b12407, all on GPU. vLLM does not fit: the smallest build (AutoRound, 15.59 GiB) exceeds the 14.65 GiB budget. Ollama qwen3.8:27b (18 GB) spills to the CPU.",
+    "checkpoint": "unsloth/Qwen3.8-27B-GGUF UD-Q3_K_XL (quality variant: UD-IQ4_XS at about 48k)",
+    "weights_gb": "12.24 GiB (HF API)",
+    "est_context": "Estimate: 65536 is the safe target. Up to about 88k is untested. KV = 2 x 16 full-attention layers x 4 KV heads x 256 x 2 B = 64 KiB/token f16, about 34 KiB in q8_0, so 2.1 GiB at 64k. GPU: about 11.6 GiB of weights (token_embd stays on the host) + 2.1 KV + about 0.4 CUDA context + compute = about 15.2 GiB of 15.92.",
+    "thinking": "Toggle, on by default. reasoning_effort is xhigh (default), medium or low; enable_thinking false turns thinking off. In OpenCode use medium: add --reasoning-effort medium to llama-server, or a variant body {\"chat_template_kwargs\":{\"enable_thinking\":true,\"reasoning_effort\":\"medium\"}}, plus a #none variant with enable_thinking false.",
+    "tool_calling": "Yes. Qwen3-Coder XML through llama.cpp's Qwen3-Coder PEG parser (--jinja).",
+    "parsers_or_flags": "docker run --rm --device nvidia.com/gpu=all -p 127.0.0.1:8080:8080 --memory 16g -e GGML_CUDA_DISABLE_GRAPHS=1 ghcr.io/ggml-org/llama.cpp:server-cuda-b12407 -hf unsloth/Qwen3.8-27B-GGUF:UD-Q3_K_XL --no-mmproj -ngl all -fa on -c 65536 -ctk q8_0 -ctv q8_0 -np 1 --jinja --reasoning-effort medium. OpenCode compatibility.reasoningField reasoning_content.",
+    "sampling": "temperature 1.0, top_p 0.95, top_k 20 (card)",
+    "why": "Borda 1 with 29 points (quality 1, practicality 2, coverage 1). It has the strongest independent agentic scores of anything that fits. AA TB2.1 is 79.8 (xhigh), 65.2 (medium), 67.4 (low) and 49.1 (non-reasoning), with tau3-Banking 48.0 and Intelligence Index 20.1. Vendor reports TB2.1 73.0 and SWE-bench Pro 61.7. It is dense and fully in VRAM; the decode bound is about 896/13 GB, roughly 65 tok/s, so 40-45 tok/s in practice (inferred).",
+    "caveats": "AA measured BF16 through the API; the 3-bit quality loss is unmeasured. AA TB 4.0 is only 5.6. The q8_0 KV decode penalty (#27623, from a comment; the >80K cliff in its title was retracted; fix PR #31802 open) may slow decode. If it falls below 15 tok/s, use f16 KV at a shorter context. Output is verbose (AA 86-110k output tokens per task at medium/xhigh). Hybrid prefix-cache misses (#30357) and tool calls leaking into content (#30118) apply.",
+    "evidence_level": "Independent (Artificial Analysis, BF16 via API) plus vendor. Memory is source-backed; speed is inferred.",
+    "refs": [
+     "https://huggingface.co/Qwen/Qwen3.8-27B/raw/main/README.md",
+     "https://huggingface.co/Qwen/Qwen3.8-27B/raw/main/chat_template.jinja",
+     "https://huggingface.co/api/models/unsloth/Qwen3.8-27B-GGUF/tree/main",
+     "https://artificialanalysis.ai/models/qwen3-8-27b",
+     "https://github.com/ggml-org/llama.cpp/issues/27330",
+     "https://github.com/ggml-org/llama.cpp/pull/31802",
+     "https://ollama.com/library/qwen3.8/tags"
+    ]
+   },
+   {
+    "rank": 2,
+    "name": "Qwen3.6-35B-A3B",
+    "vendor": "Qwen (Alibaba)",
+    "hf_repo": "Qwen/Qwen3.6-35B-A3B",
+    "release_date": "2026-04-16",
+    "license": "Apache-2.0",
+    "params": "35B total / 3B active MoE (35.95B incl. vision)",
+    "runtime": "llama.cpp: -e GGML_CUDA_DISABLE_GRAPHS=1 before ghcr.io/ggml-org/llama.cpp:server-cuda-b12407, with partial expert offload. Fallback: Ollama qwen3.6:35b-a3b with OLLAMA_CONTEXT_LENGTH=65536. vLLM is not viable: the smallest vLLM checkpoint (Intel AutoRound int4, 18.75 GiB language-model-only) exceeds the 14.65 GiB budget, and #66264 undoes expert offload.",
+    "checkpoint": "ggml-org/Qwen3.6-35B-A3B-GGUF Q4_K_M",
+    "weights_gb": "19.13 GiB (experts 16.875 GiB = 0.422 GiB per layer x 40)",
+    "est_context": "Estimate: 131072 with f16 KV, or 262144 with q8_0. KV = 2 x 10 full-attention layers x 2 KV heads x 256 x 2 B = 20 KiB/token, 2.5 GiB at 128k. --n-cpu-moe 21 moves the experts of blocks 0-20 (about 8.9 GiB) to RAM. GPU holds 1.98 GiB non-expert + 19 x 0.422 = 8.0 GiB experts + 2.5 KV + 1.0-1.5 compute = about 13.5-14.0 GiB.",
+    "thinking": "Toggle, on by default. Per request: chat_template_kwargs {enable_thinking:false}. In OpenCode use the #thinking and #none variants.",
+    "tool_calling": "Yes. Native Qwen3-Coder XML; llama.cpp --jinja routes it to the dedicated Qwen3-Coder parser.",
+    "parsers_or_flags": "docker run ... -e GGML_CUDA_DISABLE_GRAPHS=1 ghcr.io/ggml-org/llama.cpp:server-cuda-b12407 -hf ggml-org/Qwen3.6-35B-A3B-GGUF:Q4_K_M --no-mmproj --jinja -c 131072 -np 1 -fa on --n-cpu-moe 21 (21-22; 20 leaves only 0.3-0.8 GiB). Give the container an explicit --memory of about 16g. If served by vLLM elsewhere: qwen3_coder / qwen3.",
+    "sampling": "Precise coding: temperature 0.6, top_p 0.95, top_k 20, presence 0. General thinking: temperature 1.0, presence 1.5 (card).",
+    "why": "Borda 2 with 27 points (quality 3, practicality 1, coverage 2). It has the best-corroborated independent evidence: NVIDIA same-harness SWE-bench Verified 70.12 / TB2.1 44.38 agrees with AA TB2.1 44.9 within 1 point, and AA tau2 is 95.3. Qwen evaluated SkillsBench through OpenCode. It is the only top pick at 128k with a cheap KV cache, and it has a measured anchor on the user's DGX Spark (42.7 tok/s NVFP4). Decode is estimated at 40-90 tok/s (inferred).",
+    "caveats": "AA tau3-Banking is only 9.3. Decode is bounded by DDR5 for the experts in RAM. llama.cpp #30118 (a missing <tool_call> opener leaks the call into content) and #30357 (re-prefill on hybrid models) apply. Thinking is verbose.",
+    "evidence_level": "Independent (NVIDIA same-harness and Artificial Analysis agree) plus vendor. Measured anchor on another machine.",
+    "refs": [
+     "https://huggingface.co/Qwen/Qwen3.6-35B-A3B/raw/main/README.md",
+     "https://huggingface.co/Qwen/Qwen3.6-35B-A3B/raw/main/config.json",
+     "https://huggingface.co/api/models/ggml-org/Qwen3.6-35B-A3B-GGUF?blobs=true",
+     "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/raw/main/README.md",
+     "https://artificialanalysis.ai/models/qwen3-6-35b-a3b",
+     "https://github.com/vllm-project/vllm/issues/66264",
+     "https://github.com/ggml-org/llama.cpp/issues/27330",
+     "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12418/common/chat.cpp"
+    ]
+   },
+   {
+    "rank": 3,
+    "name": "K2 Horizon MoVA 36B A4B",
+    "vendor": "IFM (HF org not verified)",
+    "hf_repo": "IFM/K2-Horizon-MoVA-36B-A4B",
+    "release_date": "2026-09-03 (AA; HF createdAt 2026-09-01; main promoted to sft_2_2500 on 2026-10-01)",
+    "license": "Apache-2.0, not gated",
+    "params": "37.44B total (HF safetensors, BF16). Vendor says 4B active; the vLLM v0.33.0 recipe says 5.95B active including embeddings.",
+    "runtime": "llama.cpp: -e GGML_CUDA_DISABLE_GRAPHS=1 before ghcr.io/ggml-org/llama.cpp:server-cuda-b12407. The k2-horizon arch is at src/llama-arch.cpp line 178, with a dedicated parser in common/parsers/k2-horizon.cpp. vLLM does not fit: the smallest build (GPTQ-Int4) is 20.25 GiB. The Ollama ifm/k2-horizon:36b tag (22 GB) is in the vendor namespace and is not recommended.",
+    "checkpoint": "bartowski/K2-Horizon-MoVA-36B-A4B-GGUF Q4_K_M",
+    "weights_gb": "21.14 GiB (HF tree API, rechecked 2026-11-15)",
+    "est_context": "Estimate: 65536 with q8_0 KV; about 85k at most. KV is heavy: 192 KiB/token in f16, about 6.375 GiB at 64k in q8_0. From the GGUF header, MoE blocks 3-47 hold about 0.33 GiB of experts each. --n-cpu-moe matches only ffn_*_exps, so attn_v_exps (3.96 GiB) stays on the GPU. At --n-cpu-moe 44: 1.898 non-expert + 3.955 v-experts + 1.425 GPU experts (blocks 44-47) + 6.375 KV + about 1.3 compute = 14.95 GiB, plus 0.3-0.5 GiB CUDA context, which is too tight. At --n-cpu-moe 46 (experts of blocks 0-45 in RAM, about 14.2 GiB), GPU is about 14.2 + 0.3-0.5 = 14.5-14.7 GiB of 15.92.",
+    "thinking": "Always on. Effort is set by chat_template_kwargs reasoning_effort; the card says always use high, and medium and low are not recommended. The judges note the IFM official Q4_K_M (20.83 GiB) as a thinking-off option, which is unverified.",
+    "tool_calling": "Yes. Dedicated k2-horizon PEG parser in llama.cpp b12407 (xml tool_call_format). In vLLM the parsers would be k2_horizon / k2_horizon, but vLLM does not fit.",
+    "parsers_or_flags": "docker run ... --memory 24g -e GGML_CUDA_DISABLE_GRAPHS=1 ghcr.io/ggml-org/llama.cpp:server-cuda-b12407 -hf bartowski/K2-Horizon-MoVA-36B-A4B-GGUF:Q4_K_M --jinja -c 65536 -ctk q8_0 -ctv q8_0 -fa on -np 1 --n-cpu-moe 46. Request body chat_template_kwargs {\"reasoning_effort\":\"high\",\"tool_call_format\":\"xml\"}. In OpenCode set limit.output to about 16k at 64k context. The strict template rejects malformed tool schemas.",
+    "sampling": "temperature 1.0, top_p 0.95, reasoning_effort high (README lines 85 and 206)",
+    "why": "Borda 3 with 24 points (quality 2, practicality 4, coverage 3). It has the second-best independent agentic scores that fit: AA TB2.1 56.6, tau3-Banking 32.0, AutomationBench 26.1 and Progress Index 281, against 44.9 and 9.3 for Qwen3.6. Decode is about 58-70 tok/s as a bound: 2.43 GB per token from the GPU plus 1.16 GB from DDR5 at 80-100 GB/s. In practice it should be 25-40 tok/s (inferred).",
+    "caveats": "Context is capped at 64-85k. Always-on high-effort reasoning at temperature 1.0 makes turns long. The VRAM margin is thin even at 46. About 14 GiB of RAM goes to experts. llama.cpp support is about 6 weeks old. The q8_0 KV decode penalty is unmeasured. AA TB 4.0 is 0. Nothing has run here, so an OpenCode tool-call smoke test comes first.",
+    "evidence_level": "Independent (Artificial Analysis) plus vendor. Memory is source-backed from the GGUF header; speed is inferred.",
+    "refs": [
+     "https://huggingface.co/IFM/K2-Horizon-MoVA-36B-A4B",
+     "https://huggingface.co/IFM/K2-Horizon-MoVA-36B-A4B/raw/main/README.md",
+     "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/recipes/models/IFM/K2-Horizon-MoVA-36B-A4B.yaml",
+     "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/src/llama-arch.cpp",
+     "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/src/models/k2-horizon.cpp",
+     "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/common/parsers/k2-horizon.cpp",
+     "https://artificialanalysis.ai/models/k2-horizon-mova-36b-a4b"
+    ]
+   },
+   {
+    "rank": 4,
+    "name": "K2 Horizon 7B",
+    "vendor": "IFM (HF org not verified)",
+    "hf_repo": "IFM/K2-Horizon-7B",
+    "release_date": "2026-09-03 (AA; HF createdAt 2026-09-01; FTPO anti-doom-loop checkpoint promoted 2026-10-01)",
+    "license": "Apache-2.0",
+    "params": "9.0B dense BF16 (7B core + untied embeddings and lm_head)",
+    "runtime": "llama.cpp: -e GGML_CUDA_DISABLE_GRAPHS=1 before ghcr.io/ggml-org/llama.cpp:server-cuda-b12407, all on GPU. vLLM alternative (weak): cyankiwi/K2-Horizon-7B-AWQ-INT4 (7.56 GiB) with FP8 KV and TRITON_ATTN. Pool 14.65 - 7.56 - 1.2 = 5.89 GiB, about 85.7k tokens. Keep --chat-template-content-format string. These are pre-FTPO weights (inferred), and #62743 breaks medium and low effort. vLLM support starts at v0.30.0.",
+    "checkpoint": "bartowski/K2-Horizon-7B-GGUF Q8_0 (made 2026-10-07, after the FTPO promotion, so likely the released weights: inferred). Q5_K_M for about 96k.",
+    "weights_gb": "8.92 GiB Q8_0; 6.39 GiB Q5_K_M (HF tree API, rechecked 2026-11-15)",
+    "est_context": "Estimate: 65536 with q8_0 KV: 8.92 + 4.78 KV + 0.8 = 14.5 GiB. f16 KV at 64k would need 18.7 GiB, which does not fit. Q5_K_M 6.39 + 96k q8_0 KV 7.17 + 0.8 = 14.4 GiB. Native window 524,288.",
+    "thinking": "Always on. Effort via chat_template_kwargs reasoning_effort; the card recommends high and at least 32,768 output tokens.",
+    "tool_calling": "Yes. Dedicated k2-horizon parser in llama.cpp b12407 and k2_horizon in vLLM v0.33.0.",
+    "parsers_or_flags": "docker run ... -e GGML_CUDA_DISABLE_GRAPHS=1 ghcr.io/ggml-org/llama.cpp:server-cuda-b12407 -hf bartowski/K2-Horizon-7B-GGUF:Q8_0 -ngl 99 --jinja -c 65536 -ctk q8_0 -ctv q8_0 -fa on -np 1. Body chat_template_kwargs {\"reasoning_effort\":\"high\",\"tool_call_format\":\"xml\"}. OpenCode limit.output about 16k at 64k. On vLLM: --tool-call-parser k2_horizon --reasoning-parser k2_horizon, and OpenCode compatibility.reasoningField 'reasoning'.",
+    "sampling": "temperature 1.0, top_p 0.95, reasoning_effort high (README lines 109 and 244)",
+    "why": "Borda 4 with 20 points (quality 4, practicality 3, coverage 6). It is the most practical new candidate with independent evidence: AA TB2.1 44.2 is level with Qwen3.6's 44.9, and tau3-Banking 27.6 is far above it (9.3). It is dense and fully in VRAM, so it is the fastest credible agent and the simplest to deploy.",
+    "caveats": "It only matches Qwen3.6 on TB2.1; Qwen3.6 leads on SciCode (36.6 vs 27.5), LCR (71.7 vs 69.7) and HLE (22.2 vs 18.2). Thinking is always on, with long outputs. Context is 64-96k, not 128k. The vendor's SWE-V 72.4 is not confirmed independently. The IFM org is not HF-verified. Runtime support is new.",
+    "evidence_level": "Independent (Artificial Analysis) plus vendor. Memory is source-backed; speed is inferred.",
+    "refs": [
+     "https://huggingface.co/IFM/K2-Horizon-7B",
+     "https://huggingface.co/IFM/K2-Horizon-7B/raw/main/README.md",
+     "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/recipes/models/IFM/K2-Horizon-7B.yaml",
+     "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/reasoning/k2_horizon_reasoning_parser.py",
+     "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/common/parsers/k2-horizon.cpp",
+     "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/tools/server/server-common.cpp",
+     "https://artificialanalysis.ai/models/k2-horizon-7b"
+    ]
+   },
+   {
+    "rank": 5,
+    "name": "Gemma 4 26B-A4B IT",
+    "vendor": "Google DeepMind",
+    "hf_repo": "google/gemma-4-26B-A4B-it",
+    "release_date": "2026-04-02",
+    "license": "Apache-2.0",
+    "params": "25.2B total / 3.8B active MoE",
+    "runtime": "llama.cpp: -e GGML_CUDA_DISABLE_GRAPHS=1 before ghcr.io/ggml-org/llama.cpp:server-cuda-b12407, text only, all on GPU. Alternative: Ollama gemma4:26b-a4b-it-qat. vLLM does not fit: at 0.92 the Intel AutoRound build leaves about 11.8k context.",
+    "checkpoint": "google/gemma-4-26B-A4B-it-qat-q4_0-gguf (gemma-4-26B_q4_0-it.gguf, official QAT)",
+    "weights_gb": "13.45 GiB",
+    "est_context": "Estimate: 65536 with q8_0 KV, which is required; f16 KV at 64k does not fit. The corrected q8_0 headroom is about 79k-129k. Full-attention KV is 20480 B/token f16 and about 10880 B q8_0, plus about 0.16 GiB of SWA cache. For 128k add --n-cpu-moe 6.",
+    "thinking": "Toggle, off by default. chat_template_kwargs {enable_thinking:true}.",
+    "tool_calling": "Yes. Native Gemma 4 tool tokens through llama.cpp's PEG_GEMMA4 format.",
+    "parsers_or_flags": "docker run ... -e GGML_CUDA_DISABLE_GRAPHS=1 ghcr.io/ggml-org/llama.cpp:server-cuda-b12407 -m gemma-4-26B_q4_0-it.gguf -ngl 99 -c 65536 -np 1 -fa on -ctk q8_0 -ctv q8_0 --jinja (no mmproj). Keep the 2026-07-09 template. vLLM parsers if used elsewhere: gemma4 / gemma4.",
+    "sampling": "temperature 1.0, top_p 0.95, top_k 64",
+    "why": "Borda 5 with 16 points (quality 7, practicality 5, coverage 5). It is the best Gemma, and two independent sources agree: NVIDIA same-harness SWE-V 57.40 / TB2.1 37.22 and AA TB2.1 39.0. It is an official QAT build fully in VRAM, fast, and non-thinking by default. Community SQL tool-calling scored 21/25.",
+    "caveats": "Tool reliability is the weak point. llama.cpp #29655 reports malformed multi-line write and edit arguments when streaming, so test OpenCode's edit tool first. AA tau2 43.6 and tau3 12.0 are low. Results are harness-sensitive (Qwen scaffold SWE-V 17.4, KAT 35.8). The Ollama default gemma4:26b (17 GB) does not fit; use the qat tag.",
+    "evidence_level": "Independent (NVIDIA same-harness and Artificial Analysis), contested by other harnesses",
+    "refs": [
+     "https://huggingface.co/google/gemma-4-26B-A4B-it/raw/main/README.md",
+     "https://huggingface.co/api/models/google/gemma-4-26B-A4B-it-qat-q4_0-gguf?blobs=true",
+     "https://huggingface.co/google/gemma-4-26B-A4B-it/raw/main/chat_template.jinja",
+     "https://github.com/ggml-org/llama.cpp/issues/29655",
+     "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/raw/main/README.md",
+     "https://registry.ollama.ai/v2/library/gemma4/manifests/26b-a4b-it-qat"
+    ]
+   },
+   {
+    "rank": 6,
+    "name": "Qwen3-Coder-Next",
+    "vendor": "Qwen (Alibaba)",
+    "hf_repo": "Qwen/Qwen3-Coder-Next",
+    "release_date": "2026-02-03",
+    "license": "Apache-2.0",
+    "params": "79.7B total / 3B active hybrid MoE",
+    "runtime": "llama.cpp: -e GGML_CUDA_DISABLE_GRAPHS=1 before ghcr.io/ggml-org/llama.cpp:server-cuda-b12407, with heavy expert offload. Cap the container with --memory sized for about 26 GiB of host experts. vLLM does not fit (the smallest 4-bit is 40.5 GiB). Ollama q4_K_M (52 GB) is too large.",
+    "checkpoint": "unsloth/Qwen3-Coder-Next-GGUF UD-IQ4_XS",
+    "weights_gb": "35.79 GiB (experts 33.38 GiB = 0.695 GiB per layer x 48)",
+    "est_context": "Estimate: 131072 with q8_0 KV. --n-cpu-moe 37 moves the experts of blocks 0-36 (37 x 0.695 = 25.7 GiB) to RAM. The GPU holds about 13.2 GiB plus about 0.4 GiB CUDA context. KV is 12 attention layers at 24 KiB/token f16, so 1.59 GiB in q8_0 at 131k. 262k is marginal.",
+    "thinking": "No (non-thinking only)",
+    "tool_calling": "Yes. Native Qwen3-Coder XML.",
+    "parsers_or_flags": "docker run ... --memory 32g -e GGML_CUDA_DISABLE_GRAPHS=1 ghcr.io/ggml-org/llama.cpp:server-cuda-b12407 -m Qwen3-Coder-Next-UD-IQ4_XS.gguf -c 131072 -ngl all --n-cpu-moe 37 -fa on -ctk q8_0 -ctv q8_0 -np 1 --jinja. If UD-IQ4_XS contains IQ3_S or IQ2_S tensors, sanity-check the output on the first run (#28581 affected nvcc 13.2 builds).",
+    "sampling": "temperature 1.0, top_p 0.95, top_k 40",
+    "why": "Borda 6 with 15 points (quality 5, practicality 6, coverage 7). It is the best non-thinking tool caller, so OpenCode turns stay short and it avoids #55378 (reasoning-only turns that end silently). Independent AA results: tau2 79.5 and TB2.1 38.2. Vendor SWE-V is 70.6-71.3. It has 128k context with native Qwen3-Coder XML.",
+    "caveats": "It uses about 26 of the roughly 40 GiB of free RAM. Decode is DDR5-bound (inferred 30-50 tok/s, unmeasured). Prefill may be slow (#25859). Community SQL tool-loop tests scored it 16/25 (OpenRouter) and 20/25 (desktop RTX 5080). AA TB 4.0 is 0.",
+    "evidence_level": "Independent (Artificial Analysis) plus vendor. Speed is inferred.",
+    "refs": [
+     "https://huggingface.co/Qwen/Qwen3-Coder-Next/raw/main/README.md",
+     "https://raw.githubusercontent.com/QwenLM/Qwen3-Coder/main/qwen3_coder_next_tech_report.pdf",
+     "https://github.com/ggml-org/llama.cpp/issues/28581",
+     "https://github.com/ggml-org/llama.cpp/issues/25859",
+     "https://ollama.com/library/qwen3-coder-next/tags"
+    ]
+   },
+   {
+    "rank": 7,
+    "name": "NVIDIA Nemotron 3.5 Bolt 74B-A9B (24GB GGUF)",
+    "vendor": "NVIDIA",
+    "hf_repo": "nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB-GGUF",
+    "release_date": "2026-10-15 (card and NVIDIA blog)",
+    "license": "OpenMDW-1.1 (permissive, commercial use allowed)",
+    "params": "74B total / 9B active hybrid Mamba-2 + MoE (GGUF metadata 74.04B)",
+    "runtime": "llama.cpp: -e GGML_CUDA_DISABLE_GRAPHS=1 before ghcr.io/ggml-org/llama.cpp:server-cuda-b12407 (nemotron_h_moe arch), no mmproj. vLLM does not fit (22.43 GiB). Ollama nemotron-3.5-bolt:74b-a9b (24.75 GB) is a slower fallback.",
+    "checkpoint": "nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB-GGUF (single GGUF: IQ2_XXS QAT experts, NVFP4 Mamba, Q8_0 rest)",
+    "weights_gb": "20.51 GiB, plus a 1.61 GiB mmproj that is not used (HF tree API, rechecked 2026-11-15)",
+    "est_context": "Estimate: start at 65536; 131072 is likely. KV is 8 KiB/token f16 (1.00 GiB at 128k), and the Mamba state is about 162 MiB per sequence. --n-cpu-moe 50 moves the routed experts of blocks 0-49 to RAM, about 8.2 GiB; N counts all hybrid blocks. GPU at 128k f16: 4.617 non-routed + 7.65 routed + 1.00 KV + 0.16 Mamba = 13.43 GiB (source-backed), plus about 1.0 compute and 0.4 CUDA context (assumed) = about 14.8 GiB of 15.92. Use --n-cpu-moe 52 for more margin.",
+    "thinking": "Toggle, on by default. chat_template_kwargs {enable_thinking:false} turns it off; {enable_thinking:true, medium_effort:true} gives medium effort (README line 471).",
+    "tool_calling": "Yes. Qwen3-Coder XML through llama.cpp's Qwen3-Coder handler (vLLM would use qwen3_coder).",
+    "parsers_or_flags": "docker run ... --memory 16g -e GGML_CUDA_DISABLE_GRAPHS=1 ghcr.io/ggml-org/llama.cpp:server-cuda-b12407 -hf nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB-GGUF --no-mmproj --jinja -c 65536 (then 131072) -fa on -np 1 --n-cpu-moe 50. OpenCode compatibility.reasoningField reasoning_content.",
+    "sampling": "temperature 1.0, top_p 0.95 (README line 66)",
+    "why": "Borda 7 with 15 points (quality 6, practicality 8, coverage 4). It is the best Nemotron for this machine and replaces Lightning. NVIDIA's same-harness table gives TB2.1 50.98 against 44.38 for Qwen3.6 and 23.46 for Lightning, plus MCP-Atlas 52.2 and tau3 17.0. That table's Qwen3.6 row matches AA within 0.5 points. The KV cache is tiny, so 128k is cheap. The decode bound is about 124 tok/s, and 55-80 tok/s is inferred.",
+    "caveats": "The Bolt numbers are NVIDIA-run only: there is no SWE-bench Verified score and no independent run. Independent AA signals are mixed (TB 4.0 0, AutomationBench 15.5). The machine is below NVIDIA's stated 32 GB+ hardware floor. NVIDIA's own agent replay is 32% slower than Qwen3.6. The IQ2_XXS dequantisation cost on the CPU is unmeasured. #30118 risk on the Qwen3-Coder path.",
+    "evidence_level": "Vendor-run, in a harness shared with competitors. Memory is source-backed except the compute and CUDA context; speed is inferred.",
+    "refs": [
+     "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB-GGUF",
+     "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB-GGUF/raw/main/README.md",
+     "https://raw.githubusercontent.com/OpenMDW/OpenMDW/main/1.1/LICENSE.OpenMDW-1.1",
+     "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/src/llama-arch.cpp",
+     "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/src/models/nemotron-h.cpp",
+     "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/common/chat.cpp",
+     "https://benchlm.ai/models/nemotron-3-5-bolt-74b-a9b"
+    ]
+   },
+   {
+    "rank": 8,
+    "name": "Groot-19B-A3B-261023",
+    "vendor": "GrootTeam (anonymous publisher, unverified org)",
+    "hf_repo": "GrootTeam/Groot-19B-A3B-261023",
+    "release_date": "2026-10-23 (HF createdAt; no blog or paper)",
+    "license": "Apache-2.0 in the card metadata, but the repo has no LICENSE file (raw/main/LICENSE returns 404)",
+    "params": "About 19B total / about 3B active (qwen35moe arch). The 19.43B count includes the vision tower and the MTP head.",
+    "runtime": "llama.cpp: -e GGML_CUDA_DISABLE_GRAPHS=1 before ghcr.io/ggml-org/llama.cpp:server-cuda-b12407, all on GPU. Second path: vLLM vllm/vllm-openai:v0.33.0 with GrootTeam/Groot-19B-A3B-261023-NVFP4 --language-model-only (10.94 GiB, W4A16 experts on Marlin). Risk: hybrid GDN NVFP4 crash under load (#54331).",
+    "checkpoint": "GrootTeam/Groot-19B-A3B-261023-GGUF Groot-19B-A3B-261023-Q4_K_M.gguf",
+    "weights_gb": "10.86 GiB (HF tree API, rechecked 2026-11-15)",
+    "est_context": "Estimate. llama.cpp: 131072 with f16 KV. KV = 2 x 10 full-attention layers x 2 x 256 x 2 B = 20 KiB/token, 2.50 GiB at 128k, plus 0.06 GiB recurrent state and about 1 GiB compute, giving about 13.9-14.4 GiB. vLLM: pool 14.65 - 10.94 - 1.2 = 2.51 GiB, so about 128.5k tokens with BF16 KV and the 262144 cap with FP8 KV (FP8 KV needs TRITON_ATTN).",
+    "thinking": "Toggle, on by default (Qwen3.6-style). chat_template_kwargs {enable_thinking:false}.",
+    "tool_calling": "Yes. Qwen3-Coder XML, the same as Qwen3.6.",
+    "parsers_or_flags": "llama.cpp: docker run ... -e GGML_CUDA_DISABLE_GRAPHS=1 ghcr.io/ggml-org/llama.cpp:server-cuda-b12407 -hf GrootTeam/Groot-19B-A3B-261023-GGUF:Q4_K_M --no-mmproj --jinja -ngl 99 -c 131072 -fa on -np 1. vLLM: --language-model-only --max-model-len 131072 --max-num-seqs 1 --enable-auto-tool-choice --tool-call-parser qwen3_coder --reasoning-parser qwen3. Keep --enforce-eager in reserve for #54331.",
+    "sampling": "Precise coding: temperature 0.6, top_p 0.95, top_k 20, presence 0. Thinking general: temperature 1.0, top_p 0.95, top_k 20, presence 1.5. Non-thinking: temperature 0.7, top_p 0.8, top_k 20, presence 1.5 (README lines 86-88).",
+    "why": "Borda 8 with 5 points (quality 10, practicality 7). It is the most practical fast option: fully in VRAM at 128k, the same tool format and parsers as Qwen3.6 in both pinned runtimes, and about 2.06 GB read per token, so the decode bound is very high (inferred). One third-party run exists (Blackwall: tools 100, quality index 78.5).",
+    "caveats": "All agentic scores are self-reported. Some Qwen3.6 baselines were copied from Qwen's card rather than run, and on the vendor's own chart Groot loses to its base on SWE-bench Verified (31.66 vs 36.27). The Blackwall run has no Qwen3.6 comparator. The publisher is anonymous, there is no LICENSE file, and the pruning method and data are undisclosed. Community reports describe altered verbatim path text, which is a direct risk for a coding agent. Run an A/B against Qwen3.6 before relying on it.",
+    "evidence_level": "Vendor-reported, plus one third-party run without a comparator. Memory is source-backed; speed is inferred.",
+    "refs": [
+     "https://huggingface.co/GrootTeam/Groot-19B-A3B-261023",
+     "https://huggingface.co/GrootTeam/Groot-19B-A3B-261023/raw/main/README.md",
+     "https://huggingface.co/api/models/GrootTeam/Groot-19B-A3B-261023-GGUF?expand[]=gguf",
+     "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/tool_parsers/__init__.py",
+     "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/reasoning/__init__.py",
+     "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/src/llama-arch.cpp",
+     "https://guitaripod.github.io/blackwall/#groot-19b-a3b-nvfp4~medium",
+     "https://github.com/vllm-project/vllm/issues/54331"
+    ]
+   },
+   {
+    "rank": 9,
+    "name": "gpt-oss-20b",
+    "vendor": "OpenAI",
+    "hf_repo": "openai/gpt-oss-20b",
+    "release_date": "2025-08-05",
+    "license": "Apache-2.0",
+    "params": "21B total / 3.6B active MoE",
+    "runtime": "Primary: llama.cpp with -e GGML_CUDA_DISABLE_GRAPHS=1 before ghcr.io/ggml-org/llama.cpp:server-cuda-b12407, all on GPU, full 128k. Option: vLLM vllm/vllm-openai:v0.33.0 with the official checkpoint at 64k, Python frontend (the Rust frontend breaks the parser flags, #66989).",
+    "checkpoint": "llama.cpp: ggml-org/gpt-oss-20b-GGUF MXFP4. vLLM: openai/gpt-oss-20b (native MXFP4, MARLIN on sm_120).",
+    "weights_gb": "11.28 GiB GGUF; 12.82 GiB safetensors",
+    "est_context": "Estimate. llama.cpp: 131072 with q8_0 KV, about 13.9 GiB VRAM (12 full layers x 2 x 8 x 64 x 2 B = 24 KiB/token f16; SWA window 128). vLLM at 0.92: pool 14.65 - 12.82 - 1.2 = 0.63 GiB, so 27.6k with BF16 KV or 55k with FP8. At 0.95: 1.11 GiB, so 48.5k BF16 or 97k FP8. 65536 therefore needs util 0.95 plus FP8 KV plus TRITON_ATTN.",
+    "thinking": "Always on. Effort low, medium (default) or high via reasoning_effort; it cannot be turned off.",
+    "tool_calling": "Yes (Harmony). vLLM supports only tool_choice=auto; llama.cpp enforces calls by grammar.",
+    "parsers_or_flags": "llama.cpp: docker run ... -e GGML_CUDA_DISABLE_GRAPHS=1 ghcr.io/ggml-org/llama.cpp:server-cuda-b12407 -hf ggml-org/gpt-oss-20b-GGUF:MXFP4 -c 131072 -ctk q8_0 -ctv q8_0 -fa on -np 1 --jinja. vLLM: --gpu-memory-utilization 0.95 --max-model-len 65536 --kv-cache-dtype fp8 --attention-backend TRITON_ATTN --enable-auto-tool-choice --tool-call-parser openai --reasoning-parser openai_gptoss --reasoning-effort-map '{\"none\":\"low\",\"minimal\":\"low\",\"xhigh\":\"high\",\"max\":\"high\"}'.",
+    "sampling": "temperature 1.0, top_p 1.0 (OpenAI default); reasoning_effort medium",
+    "why": "Borda 9 with 5 points (practicality 9, coverage 8), and the required gpt-oss family member (120b needs 49-52 GiB of RAM). It is the most mature in both pinned runtimes, the only official checkpoint that runs entirely in vLLM, and the fastest (about 205 tok/s tg128 on a desktop RTX 5080, which is a different card), so it is the safe pipeline baseline.",
+    "caveats": "Agentic strength is weak on independent measures: AA TB2.1 13.9 and NVIDIA SWE-V 52.44 / TB2.1 15.17. Open Harmony bugs: vLLM #65770 and #58825, llama.cpp #30781 (HTTP 500 for array parameters without items; that it hits 20b is inferred). #61239 FlashInfer race (fix not in v0.33.0), so force TRITON_ATTN with FP8 KV. It is the oldest pick.",
+    "evidence_level": "Independent (NVIDIA same-harness, Artificial Analysis) plus vendor. Speed measured on a desktop card only.",
+    "refs": [
+     "https://huggingface.co/openai/gpt-oss-20b/raw/main/README.md",
+     "https://huggingface.co/api/models/ggml-org/gpt-oss-20b-GGUF?blobs=true",
+     "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/model_executor/layers/fused_moe/oracle/mxfp4.py",
+     "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/v1/attention/backends/triton_attn.py",
+     "https://github.com/vllm-project/vllm/issues/61239",
+     "https://github.com/ggml-org/llama.cpp/discussions/15396",
+     "https://github.com/ggml-org/llama.cpp/issues/30781"
+    ]
+   },
+   {
+    "rank": 10,
+    "name": "DeepSeek-R1-0528-Qwen3-8B (chat and reasoning only, not for OpenCode agent mode)",
+    "vendor": "DeepSeek",
+    "hf_repo": "deepseek-ai/DeepSeek-R1-0528-Qwen3-8B",
+    "release_date": "2025-05-29",
+    "license": "MIT",
+    "params": "8.19B dense",
+    "runtime": "llama.cpp: -e GGML_CUDA_DISABLE_GRAPHS=1 before ghcr.io/ggml-org/llama.cpp:server-cuda-b12407, all on GPU, or Ollama deepseek-r1:8b. vLLM also works with --reasoning-parser deepseek_r1 (online fp8_per_tensor), without tools.",
+    "checkpoint": "unsloth/DeepSeek-R1-0528-Qwen3-8B-GGUF Q8_0",
+    "weights_gb": "8.11 GiB",
+    "est_context": "Estimate: 65536 with q8_0 KV. KV = 2 x 36 x 8 x 128 x 2 B = 144 KiB/token f16, about 76.5 KiB q8_0, so 4.78 GiB at 64k. 8.11 + 4.78 + 0.8 = 13.7 GiB. f16 KV at 64k (17.9 GiB) does not fit.",
+    "thinking": "Always on. There is no official off switch; Ollama's think flag is the only toggle.",
+    "tool_calling": "No. The template never renders tools, vLLM's deepseek_v3 parser raises at init, and AA measured tau2 0%.",
+    "parsers_or_flags": "docker run ... -e GGML_CUDA_DISABLE_GRAPHS=1 ghcr.io/ggml-org/llama.cpp:server-cuda-b12407 -hf unsloth/DeepSeek-R1-0528-Qwen3-8B-GGUF:Q8_0 -c 65536 -ngl 99 -ctk q8_0 -ctv q8_0 -fa on -np 1 --reasoning-format deepseek. Do not set capabilities.tools in OpenCode.",
+    "sampling": "temperature 0.6, top_p 0.95",
+    "why": "Required-family swap. It replaces Borda rank 10, Nanbeige4.3-33B (3 points), because the DeepSeek family was otherwise missing. It received 1 point (coverage 10). It is the newest DeepSeek checkpoint that runs on 16 GB; the January 2025 R1 distills are older and also lack tool calling, and V4-Flash (159.6 GB) does not fit. Use it for reasoning or Q&A next to an agent model.",
+    "caveats": "No tool calling, so it is unusable as an OpenCode agent. It is old and superseded by small Qwen3.x models. vLLM '--quantization fp8' is deprecated in v0.33.0 (use fp8_per_tensor). #59738: deepseek_r1 streaming reasoning deltas are not detokenized.",
+    "evidence_level": "Independent (Artificial Analysis) plus vendor",
+    "refs": [
+     "https://huggingface.co/deepseek-ai/DeepSeek-R1-0528-Qwen3-8B/raw/main/README.md",
+     "https://huggingface.co/deepseek-ai/DeepSeek-R1-0528-Qwen3-8B/raw/main/tokenizer_config.json",
+     "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/tool_parsers/deepseekv3_tool_parser.py",
+     "https://artificialanalysis.ai/models/deepseek-r1-qwen3-8b",
+     "https://registry.ollama.ai/v2/library/deepseek-r1/manifests/8b"
+    ]
+   }
+  ],
+  "capability_lists": {
+   "thinking_and_tools": [
+    "Qwen3.8-27B (toggle; effort xhigh/medium/low)",
+    "Qwen3.6-35B-A3B (toggle)",
+    "K2 Horizon MoVA 36B A4B (always on; effort high recommended)",
+    "K2 Horizon 7B (always on; effort high recommended)",
+    "Gemma 4 26B-A4B IT (toggle, off by default)",
+    "NVIDIA Nemotron 3.5 Bolt 74B-A9B (toggle; medium_effort option)",
+    "Groot-19B-A3B-261023 (toggle)",
+    "gpt-oss-20b (always on; effort low/medium/high)",
+    "Nanbeige4.3-33B (toggle; honorable, trial only)",
+    "Xing4.0-29B-A4B (toggle; excluded)",
+    "LFM2.5-24B-A2B (always on in the template; excluded)",
+    "Ternary Bonsai 2 27B (toggle; excluded)",
+    "Mellum2.1 12B-A2.5B Thinking (toggle; honorable)",
+    "NVIDIA Nemotron 3.5 Lightning 30B-A3B (toggle)",
+    "Gemma 4 12B IT (toggle, off by default)",
+    "GLM-4.7-Flash (toggle)",
+    "Ornith-1.5-9B (toggle)",
+    "KAT-Coder-V2.5-Dev (toggle)",
+    "Laguna XS 2.1 (toggle, off by default)",
+    "Qwen3.5-9B (toggle)"
+   ],
+   "tools_without_thinking": [
+    "Qwen3-Coder-Next (non-thinking only)",
+    "Qwen3-Coder-30B-A3B-Instruct (non-thinking only)",
+    "Devstral Small 2 24B (non-thinking only)",
+    "Every toggle model above with enable_thinking=false (OpenCode #none variant)"
+   ],
+   "thinking_without_tools": [
+    "DeepSeek-R1-0528-Qwen3-8B (always thinking, no tool calling)"
+   ],
+   "neither": [
+    "None among the verified candidates"
+   ]
+  },
+  "new_candidates_assessment": [
+   {
+    "name": "K2 Horizon MoVA 36B A4B",
+    "verdict": "Top 10, rank 3",
+    "reason": "Borda 24 points. Independent AA TB2.1 56.6 and tau3-Banking 32.0 are second only to Qwen3.8 among models that fit. It runs only on llama.cpp (vLLM's smallest build is 20.25 GiB). Use --n-cpu-moe 46, not 44: at 44 the GPU needs 14.95 GiB plus 0.3-0.5 GiB CUDA context. Context is capped at 64-85k, and always-on high-effort reasoning makes turns slow.",
+    "refs": [
+     "https://huggingface.co/IFM/K2-Horizon-MoVA-36B-A4B/raw/main/README.md",
+     "https://artificialanalysis.ai/models/k2-horizon-mova-36b-a4b",
+     "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/common/parsers/k2-horizon.cpp"
+    ]
+   },
+   {
+    "name": "K2 Horizon 7B",
+    "verdict": "Top 10, rank 4",
+    "reason": "Borda 20 points. AA TB2.1 44.2 (level with Qwen3.6 on that benchmark only) and tau3 27.6, at 9B dense fully in VRAM (Q8_0 8.92 GiB + 64k q8_0 KV = 14.5 GiB). Corrections applied: it does not match Qwen3.6 on SciCode, LCR or HLE, and the first vLLM release with support is v0.30.0. The vLLM path is weak (pre-FTPO AWQ, #62743).",
+    "refs": [
+     "https://huggingface.co/IFM/K2-Horizon-7B/raw/main/README.md",
+     "https://artificialanalysis.ai/models/k2-horizon-7b",
+     "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/recipes/models/IFM/K2-Horizon-7B.yaml"
+    ]
+   },
+   {
+    "name": "Nanbeige4.3-33B",
+    "verdict": "Honorable mention (trial only). It was Borda rank 10 and was displaced by the required DeepSeek swap.",
+    "reason": "It has the highest independent small-model score (AA Intelligence Index 20.4, TB 4.0 29.8, AutomationBench 53.1). But on 16 GB it only runs as a dense 33B at IQ2_M with q4_0 KV (about 15.5-15.7 of 15.92 GiB), with unmeasured quality loss. b12407 mis-tokenizes its chat prompts even with the bartowski GGUF (refuted mitigation), so it needs --override-kv tokenizer.ggml.add_space_prefix=bool:false (unverified) until PR #31986 ships. It reasons for 158.5k output tokens per AA task. Tool calls route to the Qwen3-Coder handler, untested. vLLM does not fit (smallest 19.34 GiB).",
+    "refs": [
+     "https://huggingface.co/Nanbeige/Nanbeige4.3-33B/raw/main/README.md",
+     "https://github.com/ggml-org/llama.cpp/pull/31986",
+     "https://artificialanalysis.ai/models/nanbeige4-3-33b"
+    ]
+   },
+   {
+    "name": "Xing4.0-29B-A4B",
+    "verdict": "Excluded",
+    "reason": "No judge ranked it. All scores are self-reported, and the comparators are mislabelled: Qwen's TB2.0 51.5 is relabelled as TB2.1, and the Qwen3.6 SWE-V is given as 76.0 against Qwen's own 73.4. There is no xing parser in common/parsers at b12407, so tool calls rely on the generic auto-parser (untested). There is a public report of failed write and edit tool calls. The official GGUFs predate the 2026-11-05 mainline merge. vLLM does not fit (FP8 30.89 GiB).",
+    "refs": [
+     "https://huggingface.co/XingChen-AGI/Xing4.0-29B-A4B/raw/main/README.md",
+     "https://github.com/ggml-org/llama.cpp/pull/31589",
+     "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/src/llama-arch.cpp"
+    ]
+   },
+   {
+    "name": "Groot-19B-A3B-261023",
+    "verdict": "Top 10, rank 8 (vendor claims only; A/B against Qwen3.6 before relying on it)",
+    "reason": "Borda 5 points. It is fully in VRAM at 128k on llama.cpp (Q4_K_M 10.86 GiB, about 13.9 GiB total) and has a vLLM NVFP4 path, using the Qwen3.6 tool format and parsers. Agentic scores are self-reported with copied baselines, and it loses to its base on SWE-V in its own chart. The publisher is anonymous, the repo has no LICENSE file, and community reports describe altered verbatim path text.",
+    "refs": [
+     "https://huggingface.co/GrootTeam/Groot-19B-A3B-261023/raw/main/README.md",
+     "https://guitaripod.github.io/blackwall/#groot-19b-a3b-nvfp4~medium",
+     "https://github.com/vllm-project/vllm/issues/54331"
+    ]
+   },
+   {
+    "name": "LFM2.5-24B-A2B",
+    "verdict": "Excluded",
+    "reason": "No judge ranked it. It fits fully in VRAM at 131k (QAD-Q4_0 12.65 GiB + q8_0 KV, about 14.7 GiB), and a correction shows that vLLM fits via the 12.92 GiB NVFP4A16. But quality is vendor-only: in its own OpenCode table SWE-V is 51.0 against 66.2 for Qwen3.6, AA has no page, and BenchLM gives 34.4 (estimated). #30490 silently loses tool calls as XML text. The LFM Open License bars commercial use by entities with revenue of USD 10M or more.",
+    "refs": [
+     "https://huggingface.co/LiquidAI/LFM2.5-24B-A2B",
+     "https://huggingface.co/LiquidAI/LFM2.5-24B-A2B/raw/main/LICENSE",
+     "https://benchlm.ai/models/lfm2-5-24b-a2b"
+    ]
+   },
+   {
+    "name": "Ternary Bonsai 2 27B",
+    "verdict": "Excluded",
+    "reason": "No judge ranked it. It is fast and fits at 128k with q8_0 KV (Q2_0 7.10 GiB, about 13.1 GiB total; 196608 q8_0 is not safe). But the only independent quality test regresses against Qwen3.8-27B (12/47 vs 19/47 on the InsiderLLM intent-routing split). Every agentic score is Prism's own, the vendor lists looping and malformed tool calls, and the stock image runs only Q2_0, not PQ2_0.",
+    "refs": [
+     "https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-gguf/raw/main/README.md",
+     "https://insiderllm.com/guides/bonsai-2-27b-vs-qwen3-8-27b-rtx-3090/",
+     "https://benchlm.ai/models/ternary-bonsai-2-27b"
+    ]
+   },
+   {
+    "name": "NVIDIA Nemotron 3.5 Bolt 74B-A9B (24GB GGUF)",
+    "verdict": "Top 10, rank 7 (replaces Nemotron 3.5 Lightning as the Nemotron pick)",
+    "reason": "Borda 15 points. NVIDIA's same-harness TB2.1 is 50.98 against 44.38 for Qwen3.6 and 23.46 for Lightning. The KV cache is tiny, so 128k is cheap. With --n-cpu-moe 50, about 8.2 GiB of experts sit in RAM and the GPU needs about 13.4 GiB (source-backed) plus an assumed 1.4 GiB. Quality is vendor-run only, the machine is below NVIDIA's 32 GB+ floor, and the corrected Mamba state is 162 MiB.",
+    "refs": [
+     "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB-GGUF/raw/main/README.md",
+     "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/src/models/nemotron-h.cpp",
+     "https://benchlm.ai/models/nemotron-3-5-bolt-74b-a9b"
+    ]
+   },
+   {
+    "name": "Mellum2.1 12B-A2.5B Thinking",
+    "verdict": "Excluded from the top 10; honorable mention as a fast sub-agent",
+    "reason": "No judge ranked it. It is a real JetBrains Apache-2.0 release that fits fully at 128k on both runtimes (GGUF Q6_K 10.13 GiB; vLLM AWQ-INT4 7.15 GiB with the hermes / qwen3 parsers). But its own table puts it below Qwen3.5-9B (SWE-V 47, TB2.1 17.4), and there is no independent benchmark.",
+    "refs": [
+     "https://huggingface.co/JetBrains/Mellum2.1-12B-A2.5B-Thinking/raw/main/README.md",
+     "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/src/models/mellum.cpp",
+     "https://github.com/ggml-org/llama.cpp/issues/30704"
+    ]
+   }
+  ],
+  "honorable_mentions": [
+   {
+    "name": "Nanbeige4.3-33B",
+    "reason": "Borda rank 10 (3 points), displaced by the required DeepSeek swap. It has the top AA small-model index (20.4) but is a 2-bit dense trial only, with the b12407 tokenizer bug unresolved until PR #31986. Re-judge after #31986 ships and a smoke test passes.",
+    "ref": "https://artificialanalysis.ai/models/nanbeige4-3-33b"
+   },
+   {
+    "name": "Gemma 4 12B IT",
+    "reason": "3 points (practicality 10, coverage 9). It is the vLLM-native Gemma: official QAT W4A16 at 9.56 GiB and 128k with FP8 KV. AA TB2.1 27.3. A fast fallback or sub-agent; open gemma4 parser bugs remain.",
+    "ref": "https://huggingface.co/google/gemma-4-12B-it/raw/main/README.md"
+   },
+   {
+    "name": "GLM-4.7-Flash",
+    "reason": "2 points (quality 9). AA tau2 98.8 and TB-Hard 22.0, but no TB2.1 score, and it is older (2026-01). llama.cpp unsloth Q4_K_M 17.05 GiB with --n-cpu-moe 20 (17-18 is too tight because block 0 is dense).",
+    "ref": "https://huggingface.co/zai-org/GLM-4.7-Flash/raw/main/README.md"
+   },
+   {
+    "name": "NVIDIA Nemotron 3.5 Lightning 30B-A3B",
+    "reason": "Previous rank 6, now the fallback if Bolt does not fit in VRAM. ggml-org Q4_0 17.60 GiB with --n-cpu-moe 16, which moves the experts of blocks 0-15 (7 of the 23 MoE layers, about 4.7 GiB) to RAM; 128k-256k context. NVIDIA TB2.1 24.58, AA 24.3.",
+    "ref": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/raw/main/README.md"
+   },
+   {
+    "name": "Mellum2.1 12B-A2.5B Thinking",
+    "reason": "A fast, fully in-VRAM JetBrains sub-agent with 128k on either runtime. Vendor-only, and weaker than Qwen3.5-9B in its own table.",
+    "ref": "https://huggingface.co/JetBrains/Mellum2.1-12B-A2.5B-Thinking/raw/main/README.md"
+   },
+   {
+    "name": "KAT-Coder-V2.5-Dev",
+    "reason": "Qwen3.6 fine-tune with the same runtime. In-house SWE-V 69.4 / TB2.1 41.02, contested. Try it only if your own tests beat Qwen3.6.",
+    "ref": "https://huggingface.co/Kwaipilot/KAT-Coder-V2.5-Dev/raw/main/README.md"
+   },
+   {
+    "name": "Qwen3.5-9B",
+    "reason": "Conservative vLLM-native 9B (RedHatAI NVFP4 7.42 GiB, 131k, MAX_JOBS=2) if every vendor-only small model is rejected.",
+    "ref": "https://huggingface.co/RedHatAI/Qwen3.5-9B-NVFP4"
+   }
+  ],
+  "excluded": [
+   {
+    "name": "Xing4.0-29B-A4B",
+    "reason": "Self-reported scores with mislabelled comparators, no xing parser at b12407, a public report of failed write and edit tool calls, and GGUFs that predate the mainline merge.",
+    "ref": "https://huggingface.co/XingChen-AGI/Xing4.0-29B-A4B/raw/main/README.md"
+   },
+   {
+    "name": "LFM2.5-24B-A2B",
+    "reason": "Vendor-only quality (OpenCode SWE-V 51.0 vs Qwen3.6 66.2 in its own table), silent tool-call loss (#30490), and a licence revenue cap.",
+    "ref": "https://huggingface.co/LiquidAI/LFM2.5-24B-A2B/raw/main/LICENSE"
+   },
+   {
+    "name": "Ternary Bonsai 2 27B",
+    "reason": "The only independent quality test regresses against Qwen3.8-27B (12/47 vs 19/47); all agentic scores are Prism's own; there are vendor-listed tool-call looping issues.",
+    "ref": "https://insiderllm.com/guides/bonsai-2-27b-vs-qwen3-8-27b-rtx-3090/"
+   },
+   {
+    "name": "Ornith-1.5-9B",
+    "reason": "Previous rank 7. It received no votes this round: every score comes from an anonymous, unverified org, and the NVFP4 hybrid GDN crash #54331 applies. Groot and K2 7B now cover the fast in-VRAM slot.",
+    "ref": "https://huggingface.co/ornith-ai/Ornith-1.5-9B/raw/main/README.md"
+   },
+   {
+    "name": "Laguna XS 2.1",
+    "reason": "Vendor table below Qwen3.6 on every benchmark; tool calls untested in llama.cpp.",
+    "ref": "https://huggingface.co/poolside/Laguna-XS-2.1"
+   },
+   {
+    "name": "gpt-oss-120b",
+    "reason": "Needs about 49-52 GiB of RAM against about 40 GiB free; weak independent agentic scores.",
+    "ref": "https://huggingface.co/api/models/ggml-org/gpt-oss-120b-GGUF?blobs=true"
+   },
+   {
+    "name": "Devstral Small 2 24B",
+    "reason": "Dense, so it reaches only about 32k with q8_0 KV; 64k needs q4_0 KV or 3-bit weights.",
+    "ref": "https://raw.githubusercontent.com/SWE-bench/swe-bench.github.io/master/data/leaderboards.json"
+   },
+   {
+    "name": "Qwen3-Coder-30B-A3B-Instruct",
+    "reason": "Older and weaker (independent SWE-V 31.8, TB2.1 13.5); superseded by Qwen3-Coder-Next and Qwen3.6.",
+    "ref": "https://github.com/vllm-project/vllm/issues/66264"
+   },
+   {
+    "name": "IBM Granite 4.2 8B, Ministral 3 (8B/14B), Nemotron 3 Nano 4B, Nemotron 3.5 Bolt E4B, Gemma 4 E4B, MiMo-V2.6-Distill-Qwen-9B",
+    "reason": "Weak or missing agentic scores, or a 64k hard cap (Bolt E4B), or a contested tool format (MiMo).",
+    "ref": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-BF16/raw/main/config.json"
+   },
+   {
+    "name": "DeepSeek V4-Flash",
+    "reason": "284B total, 159.6 GB; far above VRAM plus free RAM.",
+    "ref": "https://huggingface.co/api/models/deepseek-ai/DeepSeek-V4-Flash?blobs=true"
+   },
+   {
+    "name": "Qwen3.5-27B, Qwen3.6-27B, Gemma 4 31B, Nemotron 3 Super, Mistral Small 4, Ripple-65B, Muse Glimmer 30B, Flint, Ornith-1.5-35B, North Mini Code",
+    "reason": "Superseded by Qwen3.8-27B, do not fit, or remain unverified discovery leads (carried over from the previous run).",
+    "ref": "https://huggingface.co/Qwen/Qwen3.6-27B/raw/main/README.md"
+   }
+  ],
+  "to_measure_first": [
+   "Install the NVIDIA Container Toolkit with CDI and confirm `docker run --device nvidia.com/gpu=all` sees the RTX 5080 Laptop GPU. Also confirm that server-cuda-b12407 starts with -e GGML_CUDA_DISABLE_GRAPHS=1 placed before the image name.",
+   "Qwen3.8-27B UD-Q3_K_XL: real VRAM at -c 65536 with q8_0 KV, decode tok/s with q8_0 vs f16 KV (#27623), and an OpenCode tool-call and edit smoke test at reasoning_effort medium.",
+   "Qwen3.6-35B-A3B Q4_K_M at --n-cpu-moe 21 and 131072: VRAM margin, decode tok/s with experts in DDR5, and how often #30118 tool-call leaks occur in OpenCode.",
+   "K2 Horizon MoVA Q4_K_M: whether --n-cpu-moe 46 at 64k q8_0 starts without OOM, real tok/s, and the length of high-effort turns in OpenCode.",
+   "K2 Horizon 7B Q8_0: OpenCode tool-call smoke test with the k2-horizon parser, tok/s, and whether limit.output 16k truncates answers.",
+   "Nemotron Bolt at --n-cpu-moe 50: whether 131072 starts or 65536 is needed, CPU-side IQ2_XXS decode speed, and the tool-call path.",
+   "Groot Q4_K_M: an A/B against Qwen3.6 on the same OpenCode tasks, checking verbatim path fidelity.",
+   "The host DDR5 configured speed (dmidecode), because every expert-offload speed estimate depends on it.",
+   "A short agentic A/B (thinking on and off) across ranks 1 to 4 and 7, to replace the inferred speed and quality ordering with measurements."
+  ]
+ },
+ "consistency": {
+  "fixes": [
+   {
+    "file": "$HOME/projects/llm/docs/opencode.md",
+    "what": "The validated config used the old ranking, so I updated it. Default model changed from llamacpp-docker/qwen3.6-35b-a3b to llamacpp-docker/qwen3.8-27b. Added llama.cpp entries k2-horizon-mova-36b and k2-horizon-7b (modelID local, 65536/16384, no variants, values from llamacpp/models.md). Replaced the vLLM gemma-4-12b entry (now an honorable mention) with groot-19b-a3b, copied from vllm/models.md. Re-validated with python3 -I and jsonschema 4.19.2 Draft 2020-12 against scratchpad/opencode-schema.json: 0 errors. Negative tests (V1 npm key, string tools value) are rejected, and the Ollama and OpenRouter JSON blocks still validate with 0 errors. The document now says all of this. Also updated: the matching table, the thinking-variants table (Groot added; new K2 Horizon row), the summary line about server thinking defaults (Qwen3.8 runs at medium effort; K2 and gpt-oss always think), and the toggle-model wording. Labelled Lightning and GLM-4.7-Flash as honorable in the OpenRouter table."
+   },
+   {
+    "file": "$HOME/projects/llm/vllm/README.md",
+    "what": "The summary named Ornith-1.5-9B and Gemma 4 12B as the vLLM picks. It now names the ranked vLLM paths (gpt-oss-20b, Groot NVFP4, K2 Horizon 7B AWQ, DeepSeek chat only) plus Gemma 4 12B as the honorable mention. The 'larger model' list now matches the top picks (Qwen3.8, Qwen3.6, K2 MoVA, Gemma 26B, Coder-Next, Bolt). Added a line saying the Ornith worked example is kept only for the method. Replaced 'recommended Ornith and Gemma 12B builds' with Groot and Gemma 4 12B, and the #54331 row now says Groot instead of Ornith. Added Groot to the Qwen parser row and added a K2 Horizon 7B row (k2_horizon / k2_horizon, #62743), both from vllm/models.md."
+   },
+   {
+    "file": "$HOME/projects/llm/vllm/benchmarking.md",
+    "what": "The client table and examples used Ornith and Gemma 4 12B as served models. They now use gpt-oss-20b, groot-19b-a3b, k2-horizon-7b, and gemma-4-12b labelled honorable; the export and S6 examples use groot-19b-a3b. Fixed the 120000-rung list (Groot, Gemma 4 12B, Qwen3.5-9B, Mellum2.1) and the GDN hybrid example (Groot and Qwen3.5-9B instead of Ornith). The S4 note said 'Gemma 4 12B uses 2 and Ornith 4', which contradicted models.md, where every ranked recipe uses --max-num-seqs 1."
+   },
+   {
+    "file": "$HOME/projects/llm/llamacpp/README.md",
+    "what": "The run template called Qwen3.6-35B-A3B 'the top pick'. It now says rank 2, the 128k pick, chosen because it shows expert offload."
+   },
+   {
+    "file": "$HOME/projects/llm/docs/host-setup.md",
+    "what": "The memory-cap table contradicted llamacpp/models.md (8g for all-on-GPU; 14g for Qwen3.6 and 30g for Coder-Next). It now says 16g, 20g and 32g, with the --cache-ram reasoning from the runtime docs. Changed '30g offload container' to 32g. Recomputed the disk budget for the new top 10 (161.43 GiB of GGUFs plus 12.82 GiB of gpt-oss safetensors): from about 164 GiB to about 174 GiB."
+   },
+   {
+    "file": "$HOME/projects/llm/docs/community-benchmarks.md",
+    "what": "'pick 3' for the Gemma QAT A/B is now pick 5 (Gemma 4 26B-A4B). 'A/B pick 2 against pick 1' now names Qwen3.6-35B-A3B and Qwen3.8-27B. Labelled Gemma 4 12B, Nemotron Lightning and GLM-4.7-Flash as honorable mentions in the calculator table. The GLM estimate is now marked as made at --n-cpu-moe 18 while the recipe uses 20. The new-candidates intro now says the K2 models are ranks 3 and 4 and Nanbeige is an honorable mention."
+   },
+   {
+    "file": "$HOME/projects/llm/docs/model-selection.md",
+    "what": "The summary said vLLM is a secondary path 'only for gpt-oss-20b and Groot'. It now matches vllm/models.md and the ranking: mainly gpt-oss and Groot, with weaker options for K2 7B and DeepSeek. 'the two vLLM paths' became 'the vLLM paths', and DeepSeek was added to the vLLM recipes list. The Coder-Next note said 'if UD-IQ4_XS contains IQ3_S'; it now states the 20.6 GiB of IQ3_S tensors given in llamacpp/models.md. The Qwen3.8 GPU weights changed from 11.6 to 11.7 GiB to match llamacpp/models.md (12.24 - 0.51)."
+   },
+   {
+    "file": "$HOME/projects/llm/docs/sources.md",
+    "what": "It said the pinned llama.cpp build is b12418. It now says the pinned image is server-cuda-b12407 (no b12418 image exists yet) and that flags and source were read at b12418, matching llamacpp/README.md."
+   }
+  ],
+  "remaining": [
+   "Mechanical checks found nothing to fix, before or after my edits: no U+2013, U+2014 or emoji in any of the 11 files; every relative link and #anchor resolves; and the only multi-sentence prose lines my heuristic flags are numbered headings like '### 1. Qwen3.8-27B' (false positives). List items and table rows that hold several sentences were left on single lines, as rule 2 allows.",
+   "docs/opencode.md: the OpenRouter table has no rows for the new picks (K2 Horizon MoVA, K2 Horizon 7B, Nemotron 3.5 Bolt, Groot). Their OpenRouter availability is not in the inputs and was not verified live, so I added nothing.",
+   "docs/community-benchmarks.md: the calculator comparison table has no rows for K2 Horizon MoVA, K2 Horizon 7B, Bolt, Groot or DeepSeek, because no calculator data for them is in the inputs. The honorable-mention rows are labelled, not removed.",
+   "The Qwen3.8-27B decode ceiling differs slightly between documents: about 65 tok/s (model-selection), 65-70 (llamacpp/models), about 68 (llamacpp/benchmarking) and about 72 (community-benchmarks). These come from different weight-size bases (12.24 GiB file vs about 11.7 GiB on the GPU). I left them as they are, since all are labelled estimates.",
+   "Style difference I left alone: the vLLM run template and recipes use 'docker run -d --rm', while the llama.cpp docs say no --rm, to keep logs. Neither uses a restart policy, so it does not break rule 9. The lead may want one convention.",
+   "llamacpp/benchmarking.md describes #27623 as reported on an RTX 4080 SUPER, with the q8_0 penalty 'in dispute'. llamacpp/README.md stresses the RTX 2000 Ada commenter's penalty and says to assume it applies. These do not contradict each other (community-benchmarks.md documents both reports), so I left them.",
+   "The new OpenCode K2 Horizon entries on llama.cpp set reasoning supported true with no effort list. From the description in opencode.md, this should stop OpenCode from adding automatic low/medium/high variants, but that is read from source and was not tested against a live server.",
+   "I did not use the Playwright browser tools or any network access. All edits are confined to the 11 knowledge base files, plus a scratch config at $SCRATCH/xdoc/opencode-new.json and the checker script $SCRATCH/multisent.py."
+  ]
+ }
+}

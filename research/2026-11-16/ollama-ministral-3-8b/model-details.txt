@@ -1,0 +1,1 @@
+details: {"parent_model": "", "format": "gguf", "family": "mistral3", "families": ["mistral3"], "parameter_size": "8.9B", "quantization_level": "Q4_K_M"} | capabilities: ['completion', 'vision', 'tools']

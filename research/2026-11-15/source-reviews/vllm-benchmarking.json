@@ -1,0 +1,364 @@
+{
+ "review": {
+  "key": "vllm-benchmarking",
+  "url": "https://docs.vllm.ai/en/latest/benchmarking/",
+  "source_type": "official-doc",
+  "accessible": true,
+  "access_notes": "Rendered page fetched with curl (HTTP 200, title \"Benchmark Suites - vLLM\", page footer date August 11, 2026). It is only an index to cli.md, sweeps.md, dashboard.md and the recipes tool. Raw docs read at tag v0.33.0 (raw.githubusercontent.com/vllm-project/vllm/v0.33.0/docs/benchmarking/{README,cli,sweeps,dashboard}.md) and compared with main: README identical; cli.md on main only adds a `vllm bench forward --routing zipf` section; sweeps.md on main only adds process-group cleanup text and changes an example JSON. Option defaults confirmed in source at v0.33.0: vllm/benchmarks/serve.py, vllm/benchmarks/datasets/datasets.py, vllm/benchmarks/latency.py, vllm/benchmarks/lib/endpoint_request_func.py, docker/Dockerfile, setup.py. Files saved in $SCRATCH/src/vllm-benchmarking/. The vllm/vllm-openai image is not present locally, so nothing was run.",
+  "publisher": "vLLM project (docs.vllm.ai, generated from github.com/vllm-project/vllm docs/benchmarking)",
+  "as_of": "Rendered latest page dated 2026-08-11 (index page); content verified against tag v0.33.0 (2026-11-02) and main on 2026-11-15",
+  "title": "vLLM Benchmark Suites (Benchmark CLI, Parameter Sweeps, Performance Dashboard)",
+  "credibility": "high",
+  "credibility_reason": "Upstream official docs, checked line by line against the v0.33.0 source for flags and defaults. Example numbers in the docs are illustrative outputs on unspecified hardware and are not usable as performance data.",
+  "summary": "The index page links to the Benchmark CLI (vllm bench serve / throughput / latency / forward / startup), Parameter Sweeps (vllm bench sweep serve, serve_workload, startup, plot) and the CI dashboard. vllm bench serve is a client that load-tests any OpenAI-compatible endpoint and reports throughput, TTFT, TPOT, ITL and optionally E2EL, with a configurable request rate, burstiness, concurrency cap and percentiles. The docs say vllm bench serve is mainly for feature and regression testing, and they recommend GuideLLM for benchmarking production servers. The docs do not cover Docker. From the v0.33.0 Dockerfile, the vllm-openai image has ENTRYPOINT [\"vllm\",\"serve\"], WORKDIR /vllm-workspace and a copy of benchmarks/, so a client run needs --entrypoint vllm. bench latency and bench throughput are offline: they load the model in-process. On a 16 GB GPU they cannot run beside a running server. For an agent workload, the docs offer BFCL tool-calling traffic, prefix_repetition, timed trace replay, the long-document-QA and prefix-caching scripts, and benchmarks/multi_turn. They warn that repeated runs inflate throughput through the prefix cache.",
+  "findings": [
+   {
+    "topic": "bench serve basic CLI",
+    "claim": "Client command shape: vllm bench serve --backend vllm --model <id> --endpoint /v1/completions --dataset-name sharegpt --dataset-path <file> --num-prompts 10. Defaults at v0.33.0: --backend openai, --host 127.0.0.1, --port 8000, --endpoint /v1/completions, --dataset-name random, --num-prompts 1000 (DEFAULT_NUM_PROMPTS), --seed 0, --base-url overrides host and port. If --model is omitted, the first model from /v1/models is used.",
+    "evidence": "documented",
+    "location": "docs/benchmarking/cli.md L81-105 @v0.33.0; vllm/benchmarks/serve.py L1661-1668; datasets.py L70, L1585-1596",
+    "target": "benchmarking",
+    "relevance": "high"
+   },
+   {
+    "topic": "Backends and endpoints",
+    "claim": "Generative backends: vllm and openai (both /v1/completions), openai-chat (/v1/chat/completions), openai-responses (/v1/responses), openai-audio. Use openai-chat with --endpoint /v1/chat/completions to exercise the chat template and the tool and reasoning parsers that OpenCode uses.",
+    "evidence": "documented",
+    "location": "vllm/benchmarks/lib/endpoint_request_func.py L1156-1160; cli.md BFCL and Responses sections",
+    "target": "benchmarking",
+    "relevance": "high"
+   },
+   {
+    "topic": "Random dataset options",
+    "claim": "--random-input-len default 1024, --random-output-len default 128, --random-range-ratio default 0.0 (a float, or JSON {\"input\":r,\"output\":r}, in [0,1)), --random-prefix-len default 0 (fixed prefix tokens before the random context). Generic --input-len and --output-len map to the dataset-specific options. The docs recommend --ignore-eos for random runs, so the output length is fixed.",
+    "evidence": "documented",
+    "location": "datasets.py L1888-1915; serve.py L1700-1715; cli.md L1324",
+    "target": "benchmarking",
+    "relevance": "high"
+   },
+   {
+    "topic": "Datasets",
+    "claim": "--dataset-name choices at v0.33.0: sharegpt, burstgpt, random, random-mm, random-rerank, hf, custom, custom_audio, custom_image, prefix_repetition, spec_bench, speed_bench, timed_trace. hf covers InstructCoder, HumanEval, GSM8K, MT-Bench, AIMO, Blazedit (edit_5k_char and edit_10k_char), BFCL and others. custom takes JSONL with a \"prompt\" field, plus --skip-chat-template.",
+    "evidence": "documented",
+    "location": "datasets.py L1593-1610; cli.md Dataset Overview L31-77",
+    "target": "benchmarking",
+    "relevance": "high"
+   },
+   {
+    "topic": "Metrics definitions",
+    "claim": "Measured at the client. TTFT runs from sending the request to the first streamed output. ITL is the gap between consecutive streamed outputs, aggregated over all requests. TPOT = (E2E latency - TTFT) / (output tokens - 1), computed per request and then aggregated. With speculative decoding, ITL undercounts tokens per gap, so compare TPOT across runs, not ITL. The summary reports request throughput, output token throughput and total token throughput.",
+    "evidence": "documented",
+    "location": "cli.md L141-178",
+    "target": "benchmarking",
+    "relevance": "high"
+   },
+   {
+    "topic": "--percentile-metrics and --metric-percentiles",
+    "claim": "Allowed metrics are ttft, tpot, itl, e2el, client_queue_time and e2el_including_client_queue. The default is ttft,tpot,itl for generative models. --metric-percentiles defaults to \"99\"; pass for example 50,90,99. --goodput takes KEY:VALUE SLOs in ms for ttft, tpot and e2el.",
+    "evidence": "documented",
+    "location": "serve.py L1848-1878",
+    "target": "benchmarking",
+    "relevance": "high"
+   },
+   {
+    "topic": "Load shape",
+    "claim": "--request-rate defaults to inf, which sends all requests at t=0. A finite rate uses Poisson arrivals (--burstiness 1.0) or a Gamma distribution, and burstiness has no effect at inf. --max-concurrency defaults to unlimited. The docs call --request-rate inf with a concurrency limit the most common configuration. Ramp-up uses --ramp-up-strategy linear|exponential with --ramp-up-start-rps and --ramp-up-end-rps. --num-warmups defaults to 0.",
+    "evidence": "documented",
+    "location": "cli.md L725-834; serve.py argparse",
+    "target": "benchmarking",
+    "relevance": "high"
+   },
+   {
+    "topic": "Prefix cache inflation",
+    "claim": "Repeating vllm bench serve against the same server can reuse prompts left in the prefix cache and inflate throughput. The random dataset is reproducible because --seed defaults to 0. Vary --seed, reset or restart the server, or use vllm bench sweep serve, which calls the /reset_*_cache endpoints between runs.",
+    "evidence": "documented",
+    "location": "cli.md L130-139; sweeps.md important box",
+    "target": "benchmarking",
+    "relevance": "high"
+   },
+   {
+    "topic": "KV capacity to concurrency",
+    "claim": "At startup vLLM logs 'GPU KV cache size: N tokens' and 'Maximum concurrency for X tokens per request'. max_concurrency = kv_cache_size / max_model_len. For capacity tests, set --max-concurrency to 80-90% of that figure.",
+    "evidence": "documented",
+    "location": "cli.md L812-834",
+    "target": "vllm",
+    "relevance": "high"
+   },
+   {
+    "topic": "Tool-calling workload",
+    "claim": "The BFCL dataset (--dataset-name hf --dataset-path gorilla-llm/Berkeley-Function-Calling-Leaderboard --bfcl-categories simple,live_simple,multiple) sends a per-sample tools schema and chat history through openai-chat. The server needs --enable-auto-tool-choice and a --tool-call-parser. Multi-turn BFCL categories are not supported.",
+    "evidence": "documented",
+    "location": "cli.md L524-563",
+    "target": "benchmarking",
+    "relevance": "high"
+   },
+   {
+    "topic": "Reasoning models",
+    "claim": "Reasoning deltas count toward TTFT and ITL, and only output text counts as generated text. Do not pass --extra-body '{\"include_reasoning\": false}' for reasoning models: the reasoning phase is then absorbed into TTFT.",
+    "evidence": "documented",
+    "location": "cli.md L687-705",
+    "target": "benchmarking",
+    "relevance": "medium"
+   },
+   {
+    "topic": "Long-context and agent-like workloads",
+    "claim": "Several tools are available. prefix_repetition (--prefix-repetition-prefix-len/-suffix-len/-num-prefixes/-output-len) models shared system prompts. timed_trace replays Mooncake conversation traces (--self-timed, --timed-trace-sec-multiplier). benchmarks/benchmark_long_document_qa_throughput.py and benchmarks/benchmark_prefix_caching.py are offline scripts. benchmarks/multi_turn/benchmark_serving_multi_turn.py runs synthetic multi-turn chats against a server (--num-clients, --max-active-conversations) and has its own requirements.txt.",
+    "evidence": "documented",
+    "location": "cli.md L1049-1183; benchmarks/multi_turn/README.md @v0.33.0",
+    "target": "benchmarking",
+    "relevance": "high"
+   },
+   {
+    "topic": "Results output and plots",
+    "claim": "--save-result writes JSON (default name {label}-{request_rate}qps-{model}-{datetime}.json; set --result-dir and --result-filename). --save-detailed adds per-request ttfts, itls and errors. --metadata k=v records the configuration. --plot-timeline writes an HTML timeline, colored by --timeline-itl-thresholds (default 25,50 ms). --plot-dataset-stats writes a matplotlib figure.",
+    "evidence": "documented",
+    "location": "cli.md L230-260; serve.py argparse",
+    "target": "benchmarking",
+    "relevance": "medium"
+   },
+   {
+    "topic": "Server-side per-request metrics",
+    "claim": "With the server started with --enable-per-request-metrics, --save-detailed also stores server_queue_times and server_ttfts. TTFT is approximately server_queue_time + server_ttft + frontend/network overhead. The docs say this adds CPU overhead, so use it for diagnostic runs only.",
+    "evidence": "documented",
+    "location": "cli.md L180-228",
+    "target": "benchmarking",
+    "relevance": "low"
+   },
+   {
+    "topic": "Sweeps",
+    "claim": "vllm bench sweep serve --serve-cmd '...' --bench-cmd '...' --serve-params serve.json --bench-params bench.json --output-dir DIR --experiment-name NAME starts the server itself and runs the Cartesian product, with 3 runs per combination by default (--num-runs). It also takes --warmup-num-prompts, --dry-run, --resume and --continue-on-error. vllm bench sweep serve_workload sweeps --workload-var request_rate (default) or max_concurrency, and the docs call max_concurrency more reliable. vllm bench sweep plot DIR --var-x max_concurrency --var-y median_ttft_ms|total_token_throughput draws the curves. vllm bench sweep startup compares cold and warm start times.",
+    "evidence": "documented",
+    "location": "docs/benchmarking/sweeps.md @v0.33.0",
+    "target": "benchmarking",
+    "relevance": "medium"
+   },
+   {
+    "topic": "Offline throughput",
+    "claim": "vllm bench throughput --model M --dataset-name random --random-input-len 500 --random-output-len 150 --num-prompts 10 loads the model in-process (backends vllm, hf, mii, vllm-chat). It needs the GPU to itself.",
+    "evidence": "documented",
+    "location": "cli.md L836-856; throughput.py L779-782",
+    "target": "vllm",
+    "relevance": "medium"
+   },
+   {
+    "topic": "bench latency",
+    "claim": "vllm bench latency is not described in the benchmarking docs. In source, its defaults are --input-len 32, --output-len 128, --batch-size 8, --num-iters-warmup 10, --num-iters 30, and --output-json. It is offline: it loads the model in-process and measures batch latency.",
+    "evidence": "documented",
+    "location": "vllm/benchmarks/latency.py L35-66 @v0.33.0",
+    "target": "vllm",
+    "relevance": "medium"
+   },
+   {
+    "topic": "Running from the vllm-openai image",
+    "claim": "The docs do not cover Docker. The v0.33.0 Dockerfile sets ENTRYPOINT [\"vllm\",\"serve\"] and WORKDIR /vllm-workspace and copies examples/ and benchmarks/, so a client run must override the entrypoint: docker run --rm --network host --entrypoint vllm vllm/vllm-openai:v0.33.0 bench serve .... The bench extra in setup.py (pandas, matplotlib, seaborn, datasets, scipy, plotly) is optional, and the Dockerfile has no visible install of it. hf datasets, plots and sweep plot may need it. This is unverified because the image is not local.",
+    "evidence": "documented",
+    "location": "docker/Dockerfile L1049-1053, L1336-1344; setup.py L1715 @v0.33.0",
+    "target": "benchmarking",
+    "relevance": "high"
+   },
+   {
+    "topic": "Tokenizer access for the client",
+    "claim": "The client loads a tokenizer for --model, or for --tokenizer if given, to count tokens and build random prompts. Inside a container, mount the HF cache or the model directory, or pass --tokenizer <local path>. --served-model-name sets the API model name when it differs from the tokenizer path.",
+    "evidence": "documented",
+    "location": "serve.py argparse (--tokenizer, --served-model-name)",
+    "target": "benchmarking",
+    "relevance": "medium"
+   },
+   {
+    "topic": "GuideLLM recommendation",
+    "claim": "The docs recommend GuideLLM (github.com/vllm-project/guidellm) for benchmarking production servers, as more flexible in datasets, request formatting and workload patterns. They say vllm bench is mainly for feature and regression testing.",
+    "evidence": "documented",
+    "location": "cli.md L7-10; sweeps.md tip",
+    "target": "benchmarking",
+    "relevance": "medium"
+   },
+   {
+    "topic": "Against llama-server",
+    "claim": "Not documented. Because bench serve speaks plain OpenAI HTTP (openai or openai-chat backend), it should be able to target llama-server's /v1/completions or /v1/chat/completions with --base-url and an HF --tokenizer that matches the GGUF. This would let vLLM and llama.cpp be compared with the same client. It needs a test run.",
+    "evidence": "opinion",
+    "location": "inference from endpoint_request_func.py",
+    "target": "llamacpp",
+    "relevance": "medium"
+   }
+  ],
+  "measurements": [
+   {
+    "model": "NousResearch/Hermes-3-Llama-3.1-8B",
+    "gpu": "unspecified (docs example output)",
+    "runtime": "vLLM, vllm bench serve, sharegpt, 10 prompts, backend vllm, /v1/completions",
+    "settings": "--num-prompts 10, request-rate inf, default server flags",
+    "prompt_tok_s": "",
+    "gen_tok_s": "382.89 output tok/s aggregate; mean TPOT 7.91 ms; mean TTFT 71.54 ms",
+    "measured_or_estimated": "measured",
+    "context": "1369 input / 2212 output tokens total; illustrative only, hardware and version unknown"
+   },
+   {
+    "model": "NousResearch/Hermes-3-Llama-3.1-8B",
+    "gpu": "unspecified (docs example output)",
+    "runtime": "vLLM, vllm bench throughput (offline)",
+    "settings": "random 500 in / 150 out, 10 prompts",
+    "gen_tok_s": "1072.50 output tok/s; 4647.50 total tok/s; 7.15 req/s",
+    "measured_or_estimated": "measured",
+    "context": "illustrative only, hardware unknown"
+   },
+   {
+    "model": "Meta-Llama-3.1-8B-Instruct",
+    "gpu": "unspecified (multi_turn README example)",
+    "runtime": "vLLM, benchmarks/multi_turn/benchmark_serving_multi_turn.py",
+    "settings": "--num-clients 2 --max-active-conversations 6",
+    "gen_tok_s": "mean TPOT 25.37 ms (about 39 tok/s per stream); mean TTFT 78.22 ms, p99 353.18 ms",
+    "measured_or_estimated": "measured",
+    "context": "mean input 2006 tokens, 7.43 turns; illustrative only"
+   }
+  ],
+  "conflicts": [],
+  "agreements": [
+   "Baseline: prefix caching is on by default in v0.33.0. The docs agree, warning that repeated bench serve runs reuse the prefix cache and inflate throughput, so the KB method must vary --seed or reset the cache between runs.",
+   "Baseline: vllm/vllm-openai:v0.33.0 is the target image. Its Dockerfile at v0.33.0 ships the benchmarks/ directory and an entrypoint of `vllm serve`, which fits running the client from the same image with --entrypoint vllm.",
+   "Baseline parser setup (--enable-auto-tool-choice plus a tool-call parser) is the same precondition the docs give for the BFCL tool-calling benchmark."
+  ],
+  "kb_notes": [
+   {
+    "target_doc": "vllm/benchmarking.md",
+    "note": "Benchmark a running server with the client inside the same image: `docker run --rm --network host -v ~/.cache/huggingface:/root/.cache/huggingface --entrypoint vllm vllm/vllm-openai:v0.33.0 bench serve --backend openai-chat --endpoint /v1/chat/completions --base-url http://127.0.0.1:8000 --model <served-name> --tokenizer <hf-id> --dataset-name random --random-input-len 8192 --random-output-len 512 --ignore-eos --num-prompts 32 --max-concurrency 1 --percentile-metrics ttft,tpot,itl,e2el --metric-percentiles 50,90,99 --seed $RANDOM --save-result --result-dir /results`. The image's entrypoint is `vllm serve`, so --entrypoint vllm is required (source: https://docs.vllm.ai/en/latest/benchmarking/ and docker/Dockerfile at v0.33.0)."
+   },
+   {
+    "target_doc": "vllm/benchmarking.md",
+    "note": "Defaults at v0.33.0 that silently shape results: --num-prompts 1000, --request-rate inf (all requests at t=0), --max-concurrency unlimited, --random-input-len 1024, --random-output-len 128, --random-range-ratio 0.0, --seed 0, --num-warmups 0, --metric-percentiles 99. Always set prompts, concurrency, lengths and seed explicitly (source: vllm/benchmarks/serve.py and datasets.py at v0.33.0)."
+   },
+   {
+    "target_doc": "vllm/benchmarking.md",
+    "note": "Prefix caching is on by default, and the random dataset is reproducible for a fixed seed, so a second identical run hits the cache and reports inflated throughput. Change --seed per run, restart the container, or use `vllm bench sweep serve`, which calls the /reset_*_cache endpoints between runs (https://docs.vllm.ai/en/latest/benchmarking/cli/)."
+   },
+   {
+    "target_doc": "vllm/benchmarking.md",
+    "note": "For a single-user coding agent, the headline numbers are TTFT at a long prompt (prefill speed) and TPOT at --max-concurrency 1 (decode speed). Run a ladder of --random-input-len 2048, 8192, 32768, 65536 with --max-concurrency 1, then a concurrency sweep of 1, 2, 4 at a fixed length to see how parallel subagents share the GPU."
+   },
+   {
+    "target_doc": "vllm/benchmarking.md",
+    "note": "Metric definitions per the vLLM docs: TTFT runs from request send to the first streamed output; ITL is the gap between streamed outputs; TPOT = (E2EL - TTFT)/(output_tokens - 1) per request. With speculative decoding, compare TPOT rather than ITL, because one streamed chunk can hold several tokens."
+   },
+   {
+    "target_doc": "vllm/benchmarking.md",
+    "note": "Use `--backend openai-chat --endpoint /v1/chat/completions` so the chat template, reasoning parser and tool parser are on the measured path, as they are in OpenCode traffic. For reasoning models, do not pass --extra-body '{\"include_reasoning\": false}': the reasoning phase then disappears into TTFT."
+   },
+   {
+    "target_doc": "vllm/benchmarking.md",
+    "note": "Tool-calling load test: `vllm bench serve --backend openai-chat --endpoint /v1/chat/completions --dataset-name hf --dataset-path gorilla-llm/Berkeley-Function-Calling-Leaderboard --bfcl-categories simple,live_simple,multiple --num-prompts 200`. It needs a server with --enable-auto-tool-choice and a tool-call parser. Multi-turn BFCL categories are unsupported, and this measures latency, not tool-call accuracy."
+   },
+   {
+    "target_doc": "vllm/benchmarking.md",
+    "note": "Agent-like shared prompts: --dataset-name prefix_repetition with --prefix-repetition-prefix-len (for example 8000 to mimic a long system prompt and tool schema), --prefix-repetition-suffix-len, --prefix-repetition-num-prefixes and --prefix-repetition-output-len measures prefix-cache benefit. benchmarks/multi_turn/benchmark_serving_multi_turn.py (in the image under /vllm-workspace/benchmarks, with its own requirements.txt) runs multi-turn conversations against a live server."
+   },
+   {
+    "target_doc": "vllm/benchmarking.md",
+    "note": "`vllm bench latency` and `vllm bench throughput` are offline: they load the model inside the benchmark process. On the 16 GB laptop GPU, stop the server first. Do not run them beside a running vLLM or llama.cpp container."
+   },
+   {
+    "target_doc": "vllm/benchmarking.md",
+    "note": "Concurrency ceiling: the server log at startup prints 'GPU KV cache size: N tokens' and 'Maximum concurrency for <max_model_len> tokens per request: X'. The docs give max_concurrency = kv_cache_size / max_model_len and suggest testing at 80-90% of X. Record both lines with every benchmark result."
+   },
+   {
+    "target_doc": "vllm/benchmarking.md",
+    "note": "Parameter sweeps: `vllm bench sweep serve --serve-cmd 'vllm serve ...' --bench-cmd 'vllm bench serve ...' --serve-params serve.json --bench-params bench.json --output-dir results --experiment-name NAME` runs the Cartesian product, 3 runs each by default (--num-runs). `vllm bench sweep serve_workload --workload-var max_concurrency` finds the latency and throughput knee, and `vllm bench sweep plot` draws it. The sweep starts its own `vllm serve`, so run it inside a container started with a shell entrypoint, not against a separately started server."
+   },
+   {
+    "target_doc": "vllm/benchmarking.md",
+    "note": "Save every run with --save-result --save-detailed --metadata gpu=rtx5080-laptop-140W driver=595.99 vllm=0.33.0 model=<id> quant=<q> kv=<dtype> max_model_len=<n>, so results can be compared later. Add --plot-timeline for an HTML per-request timeline."
+   },
+   {
+    "target_doc": "docs/community-benchmarks.md",
+    "note": "The example outputs in the vLLM benchmarking docs (for example 382.89 output tok/s for Hermes-3-Llama-3.1-8B on 10 ShareGPT prompts) come from unspecified hardware and versions. They show output format only and must not be quoted as performance data for any GPU."
+   },
+   {
+    "target_doc": "llamacpp/benchmarking.md",
+    "note": "Candidate for one client across runtimes, not yet tested: vllm bench serve speaks plain OpenAI HTTP, so `--backend openai-chat --endpoint /v1/chat/completions --base-url http://127.0.0.1:8080 --tokenizer <matching HF repo>` should be able to load-test llama-server with the same prompts used for vLLM. Verify that token counts match llama-server's usage block before comparing."
+   },
+   {
+    "target_doc": "docs/sources.md",
+    "note": "vLLM benchmarking docs: https://docs.vllm.ai/en/latest/benchmarking/ (index; subpages cli/, sweeps/, dashboard/). Official, high credibility for CLI usage. Verified against tag v0.33.0 source on 2026-11-15. The docs recommend GuideLLM for production-style benchmarking."
+   }
+  ],
+  "gaps": [
+   "Not verified whether vllm/vllm-openai:v0.33.0 ships the optional bench extras (pandas, datasets, matplotlib, plotly): the image is not local and pulls were out of scope. Check with `docker run --rm --entrypoint python3 vllm/vllm-openai:v0.33.0 -c 'import pandas, datasets, matplotlib'` after the pull.",
+   "The docs do not document using vllm bench serve against llama-server. Token accounting and the streaming usage block need a real run.",
+   "No guidance specific to long context (64k to 128k) beyond the offline long-document-QA script. The 2048 to 65536 input-length ladder is a recommendation, not upstream text.",
+   "The rendered per-subpage docs at docs.vllm.ai/en/latest/benchmarking/cli/ were not fetched separately. The v0.33.0 and main raw markdown were used instead (main cli.md differs only by the bench forward --routing section).",
+   "GuideLLM was not reviewed: its current version and container image are unknown."
+  ],
+  "new_candidates": [],
+  "methodology": "curl with a generic User-Agent for the rendered page. GitHub contents API plus raw.githubusercontent.com for docs/benchmarking/*.md at v0.33.0 and main, compared with diff. Option defaults extracted from vllm/benchmarks/serve.py, datasets.py, latency.py, throughput.py and endpoint_request_func.py at v0.33.0 using python3 -I and grep. Image behaviour inferred from docker/Dockerfile and setup.py at v0.33.0. Nothing was installed or run."
+ },
+ "check": {
+  "verdicts": [
+   {
+    "item": "Publisher, type, as-of: official-doc from the vLLM project; rendered index page 'Benchmark Suites - vLLM' dated August 11, 2026; content checked at tag v0.33.0",
+    "verdict": "confirmed",
+    "evidence": "curl -A Mozilla/5.0 https://docs.vllm.ai/en/latest/benchmarking/ gave HTTP 200, <title>Benchmark Suites - vLLM, and the only date string on the page is 'August 11, 2026'. Raw docs/benchmarking/cli.md, sweeps.md and source files at v0.33.0 all fetched with HTTP 200.",
+    "correction": "The v0.33.0 annotated tag's tagger date is 2026-11-01T09:21:10Z (git/tags/3a4d82f..., commit 4ba787e). The 2026-11-02 date in the review and the baseline is probably the release publication date. The releases API returned no published_at, so the one-day difference is unresolved and minor."
+   },
+   {
+    "item": "Defaults: --num-prompts 1000, --seed 0, --request-rate inf, --burstiness 1.0, --num-warmups 0, --metric-percentiles 99, percentile metrics default ttft,tpot,itl",
+    "verdict": "confirmed",
+    "evidence": "datasets.py:70 'DEFAULT_NUM_PROMPTS = 1000'; datasets.py:1585 '--seed', type=int, default=0; serve.py:1746 --request-rate default=float(\"inf\"), --burstiness default=1.0, serve.py:1781 --num-warmups default=0, serve.py:1859 --metric-percentiles default=\"99\", and the help text says 'defaults to \"ttft,tpot,itl\" for generative models'."
+   },
+   {
+    "item": "Prefix cache inflation warning (vary --seed, reset or restart, or use sweep serve)",
+    "verdict": "confirmed",
+    "evidence": "cli.md L133-139 at v0.33.0: 'Repeating `vllm bench serve` against the same server can reuse prompts left in the prefix cache and inflate throughput... vary `--seed`, reset or restart the server, or use `vllm bench sweep serve`, which resets server caches between runs.' This matches the baseline line 27: prefix caching is on by default."
+   },
+   {
+    "item": "KV capacity: max_concurrency = kv_cache_size / max_model_len; set --max-concurrency to 80-90% for capacity planning",
+    "verdict": "confirmed",
+    "evidence": "cli.md L825 'Calculation: `max_concurrency = kv_cache_size / max_model_len`'; L829 'Set `--max-concurrency` to 80-90% of the reported maximum'. The docs' example log lines are 'GPU KV cache size: 15,728,640 tokens' and 'Maximum concurrency for 8,192 tokens per request: 1920'.",
+    "correction": "That example is illustrative, from a large multi-GPU setup, and must not be used as a figure for the 16 GB laptop GPU."
+   },
+   {
+    "item": "GuideLLM recommended for production benchmarking",
+    "verdict": "confirmed",
+    "evidence": "cli.md L10: 'For benchmarking production vLLM servers, we recommend [GuideLLM](https://github.com/vllm-project/guidellm)... more flexible than `vllm bench serve` in terms of dataset loading, request formatting, and workload patterns.'"
+   },
+   {
+    "item": "Do not pass --extra-body '{\"include_reasoning\": false}' for reasoning models",
+    "verdict": "confirmed",
+    "evidence": "cli.md L703: 'Do not pass `--extra-body '{\"include_reasoning\": false}'` when benchmarking...'"
+   },
+   {
+    "item": "Docker: vllm-openai stage has ENTRYPOINT [\"vllm\",\"serve\"], WORKDIR /vllm-workspace, copies benchmarks/, so a client run needs --entrypoint vllm",
+    "verdict": "confirmed",
+    "evidence": "Dockerfile at v0.33.0: L1336 'FROM vllm-openai-base AS vllm-openai', L1344 'ENTRYPOINT [\"vllm\", \"serve\"]', L754 'WORKDIR /vllm-workspace', L1051 'COPY benchmarks benchmarks'.",
+    "correction": "L1051 is in the test-deps/vllm-base region. Whether benchmarks/ reaches the published vllm-openai image was not proven from the stage graph, and the image is not local. There is also a vllm-openai-nonroot stage (L1361-1365) with a different entrypoint. The docker run recipe is plausible but untested."
+   },
+   {
+    "item": "bench latency defaults: --input-len 32, --output-len 128, --batch-size 8, --num-iters-warmup 10, --num-iters 30",
+    "verdict": "confirmed",
+    "evidence": "latency.py L35-52 at v0.33.0: default=32, default=128, default=8, --num-iters-warmup default=10, --num-iters default=30."
+   },
+   {
+    "item": "Measurement row: Hermes-3-Llama-3.1-8B bench serve example, 382.89 output tok/s, mean TPOT 7.91 ms, mean TTFT 71.54 ms, 1369 input / 2212 output tokens; hardware unspecified, illustrative",
+    "verdict": "confirmed",
+    "evidence": "cli.md L108-128 verbatim: 'Output token throughput (tok/s): 382.89', 'Mean TTFT (ms): 71.54', 'Mean TPOT (ms): 7.91', 'Total input tokens: 1369', 'Total generated tokens: 2212'. No GPU or version is stated.",
+    "correction": "Labelling the row 'measured' is technically correct but misleading for a knowledge base. Treat it as illustrative docs output with unknown hardware and version, never as performance data. The review's context field and kb_notes already say this."
+   },
+   {
+    "item": "Measurement row: bench throughput example, 7.15 req/s, 4647.50 total tok/s, 1072.50 output tok/s",
+    "verdict": "confirmed",
+    "evidence": "cli.md L853: 'Throughput: 7.15 requests/s, 4647.50 total tokens/s, 1072.50 output tokens/s'. No hardware is stated."
+   },
+   {
+    "item": "Conflicts with baseline: none; agreements on prefix caching default, v0.33.0 image, tool parser precondition",
+    "verdict": "confirmed",
+    "evidence": "Baseline current-knowledge.md L23 (v0.33.0 image), L26 (tool_choice auto), L27 (prefix caching on by default) are all consistent with the docs. No contradiction found."
+   },
+   {
+    "item": "Credibility rating high",
+    "verdict": "confirmed",
+    "evidence": "These are upstream official docs, and every flag and default checked matches the v0.33.0 source exactly. The review correctly limits 'high' to CLI usage and excludes the example numbers."
+   }
+  ],
+  "credibility_fair": true,
+  "credibility_note": "High is fair for CLI usage and defaults: every quoted number and default I re-read matches the v0.33.0 raw files verbatim. The docs' example outputs are correctly flagged as illustrative, from unknown hardware.",
+  "overall": "holds-with-corrections",
+  "summary": "I re-fetched the rendered index page (HTTP 200, title 'Benchmark Suites - vLLM', dated August 11, 2026) and the raw v0.33.0 cli.md, sweeps.md, serve.py, datasets.py, latency.py and Dockerfile into $SCRATCH/src/vllm-benchmarking-check/. All 10 load-bearing items checked match verbatim: the defaults, the prefix-cache warning, the KV concurrency formula with the 80-90% guidance, the GuideLLM recommendation, the include_reasoning warning, the bench latency defaults, and the example outputs (382.89 tok/s, 71.54 ms TTFT, 7.91 ms TPOT, 1072.50 output tok/s). The review reports no conflicts with the baseline, and I found none. There are three small corrections. First, the v0.33.0 tag's tagger date is 2026-11-01, not 2026-11-02. Second, the Dockerfile shows 'COPY benchmarks benchmarks' at L1051, but the stage graph does not prove it reaches the published vllm-openai image, and there is also a nonroot variant with its own entrypoint. The '--entrypoint vllm bench serve' recipe is plausible but untested. Third, the docs' example rows should be labelled illustrative rather than 'measured'."
+ }
+}

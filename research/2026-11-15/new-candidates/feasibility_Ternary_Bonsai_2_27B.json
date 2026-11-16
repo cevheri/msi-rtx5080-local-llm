@@ -1,0 +1,90 @@
+{
+ "overall": "holds-with-corrections",
+ "summary": "I could not refute the core runtime claim. The stock llama.cpp b12407 CUDA image with Ternary-Bonsai-2-27B-Q2_0.gguf runs fully on the GPU of this RTX 5080 Laptop and serves OpenCode with Qwen3-Coder XML tool calls at 128k q8_0 context. Source-backed VRAM is about 12.7 GiB, about 13.1 GiB once the CUDA context is counted.\n\nConfirmed live:\n- **HF API sizes (blobs=true):** Q2_0 7,626,008,928 B = 7.102 GiB; PQ2_0 6.711 GiB; PTQ1_0 5.538 GiB; F16 50.113 GiB; mmproj Q8_0 0.586 GiB and BF16 0.867 GiB. GGUF arch is qwen35, context_length 262144, total 26,895,998,464 params (text only).\n- **config.json KV inputs:** 16 full-attention layers, 4 KV heads, head_dim 256, max_position_embeddings 262144. That gives 65,536 B/token f16 and 34,816 B/token q8_0.\n- **llama.cpp b12407:** qwen35 and prism.hadamard.* keys present, GGML_TYPE_Q2_0=42, CUDA Q2_0 matmul paths and a 1024-wide FWHT kernel. The image builds 120a-real by default, and the q8_0-q8_0 flash-attention kernels are compiled by default.\n- **vLLM v0.33.0:** no Bonsai, Prism or Hadamard architecture in the registry, and no loadable Bonsai 2 27B safetensors checkpoint.\n\nCorrections to the record:\n1. The README does not state the 128k / 200k / 96-110k context figures. They are the record's own arithmetic, so label them source-backed, not direct-statement.\n2. The 196608 q8_0 \"safe maximum\" is too tight. Counting the CUDA context it needs about 15.2 of 15.8 GiB, and the vendor lists unreproduced crashes with quantized KV near 200K. A realistic ceiling is about 160k; keep 131072.\n3. OpenCode v2.3.0 does not trigger two of the vendor's HTTP 500 paths. It joins all system parts into one leading system message, turns later system messages into user text, and sends empty tool arguments as '{}'. It sends reasoning_effort only when one is configured, so never configure 'high'.\n4. b12407 has a --reasoning-effort flag. Setting enable_thinking through --chat-template-kwargs is deprecated there and prints a warning.\n5. --cache-ram 16384 plus the default 32 context checkpoints may come close to the container's --memory 24g limit. Use 32g, or --cache-ram 8192.\n6. The prism-ml org lists 42 public repos, not 50+.\n\nOpen risks: llama.cpp issue #30056 (tool grammar fails with about 60 tools; matters if MCP servers are added to OpenCode). Hadamard kernels are unfused on CUDA (PR #31398 open), so decode speed is unmeasured. No independent agentic benchmark exists.\n\nBest configuration: the record's command with --memory 32g (or --cache-ram 8192), -c 131072 -ctk q8_0 -ctv q8_0, and either --reasoning-effort medium or the template kwarg. In OpenCode set limit.context 131072 and limit.output 16384 or more. Run a tool-call smoke test first.",
+ "verdicts": [
+  {
+   "claim": "Checkpoint sizes: Q2_0 7.10 GiB, PQ2_0 6.71, PTQ1_0 5.54, F16 50.11, mmproj Q8_0 0.586 / BF16 0.867 GiB; GGUF arch qwen35, context_length 262144",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/prism-ml/Ternary-Bonsai-2-27B-gguf?blobs=true",
+   "correction": "Exact bytes: 7,626,008,928 / 7,206,168,928 / 5,946,648,928 / 53,808,408,928 / 629,246,976 / 931,145,856. gguf.total = 26,895,998,464 params (text only), which matches card 27.36B minus the 0.46B vision tower. Repo createdAt 2026-09-16, lastModified 2026-11-04, license apache-2.0. Support: direct-statement."
+  },
+  {
+   "claim": "KV per token 65,536 B f16 / 34,816 B q8_0 (2 x 16 full-attn layers x 4 KV heads x 256); GDN state about 0.15 GiB per sequence",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Qwen/Qwen3.8-27B/raw/main/config.json",
+   "correction": "config.json: num_hidden_layers 64, full_attention_interval 4 (16 full_attention in layer_types), num_key_value_heads 4, head_dim 256, linear_num_value_heads 48, key/value dim 128, conv kernel 4, max_position_embeddings 262144. Recurrent state 48 layers x 48 x 128 x 128 x 4 B = 144 MiB; conv 48 x 3 x 10240 x 4 B = 5.6 MiB. Vendor MLX config: model_type prism_hadamard_qwen35, mtp_num_hidden_layers 0 (the base model has 1). Support: source-backed."
+  },
+  {
+   "claim": "128k q8_0 fits fully on GPU at about 12.7 GiB; f16 at 131072 does not fit; 196608 q8_0 or 98304 f16 are safe maxima",
+   "verdict": "uncertain",
+   "evidence_url": "https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-gguf/raw/main/KNOWN_ISSUES.md",
+   "correction": "The 128k figure holds: 7.10 + 4.25 KV + 0.15 GDN + about 1.2 compute = 12.7 GiB, plus an uncounted CUDA context and cuBLAS of about 0.3-0.5 GiB, so about 13.1 GiB of 15.81 usable (inferred). 196608 q8_0 is not safe: 7.10 + 6.375 + 0.15 + 1.2 + 0.4 = about 15.2 GiB of 15.81, and KNOWN_ISSUES lists 'Connection resets or crashes with a quantized KV cache at very long contexts (around 200K tokens)' as under investigation. Realistic ceiling is about 160k q8_0; recommend 131072. The record's context_length field cites the README for these limits, but the README only states 262K; label them source-backed, not direct-statement."
+  },
+  {
+   "claim": "vLLM v0.33.0 cannot serve it: registry has Qwen3_5ForConditionalGeneration but nothing Prism/Bonsai/Hadamard; no Bonsai 2 27B safetensors/AWQ checkpoint",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/models/registry.py",
+   "correction": "registry.py lines 204 (Qwen3_5ForCausalLM) and 617 (Qwen3_5ForConditionalGeneration); grep for prism|bonsai|hadamard finds nothing. The HF author=prism-ml listing has 42 public repos, not 50+. The only safetensors are MLX (Apple) for Bonsai 2 27B, plus AWQ/unpacked for the older Bonsai 27B (2026-07). Support: direct-statement."
+  },
+  {
+   "claim": "Stock llama.cpp b12407 supports Q2_0 + Hadamard (PR #29600 merged 2026-10-11 as b11556); qwen35 arch and prism.hadamard.* keys; GGML_TYPE_Q2_0=42; CUDA FWHT 1024-wide kernel; PQ2_0/PTQ1_0 unsupported in stock",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/ggml/src/ggml-cuda/fwht.cu",
+   "correction": "The PR #29600 title is 'Runtime support for Prism Bonsai 2 27B'; merge commit a9d27ac6 = tag b11556 (release 2026-10-11T13:31Z). llama-arch.cpp 45 and 509-519; ggml.h 261-263 (Q2_0=42, F8_E4M3=43, COUNT=44); fwht.cu case 1024 at line 194; Q2_0 in mmvq.cu, mmq.cu, ggml-cuda.cu 6304/6344. The sm_120 path is native: the cuda.Dockerfile has CUDA_DOCKER_ARCH=default, and ggml-cuda CMakeLists appends 120a-real for CUDA >= 12.8 (image is 12.8.1). Hadamard sign-multiply and FWHT are separate unfused kernels (fusion PR #31398 still open), so decode efficiency is unmeasured."
+  },
+  {
+   "claim": "-fa on with -ctk q8_0 -ctv q8_0 works in the stock CUDA image",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/ggml/CMakeLists.txt",
+   "correction": "Default GGML_CUDA_FA_QUANTS is 'q4_0-q4_0;q8_0-q8_0;f16-f16;bf16-bf16;f8_e4m3-f8_e4m3' (line 208), so the q8_0/q8_0 vector kernel with D=256 is compiled without the FA_ALL_QUANTS caveat that KNOWN_ISSUES mentions."
+  },
+  {
+   "claim": "Tool calling routes to llama.cpp's Qwen3-Coder XML parser (chat.cpp 1420-1427)",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/common/chat.cpp",
+   "correction": "Detection needs '<tool_call>', '<function=' and '<parameter=' in the template, and the GGUF template emits all three with newlines (lines 68 and 128-143). Additional risk: llama.cpp #30056 (open), where the tool-call grammar fails with HTTP 400 at about 60 tools. It was reported with this exact model. OpenCode's built-in set is well below that, but adding MCP servers can reach it."
+  },
+  {
+   "claim": "OpenCode may trigger template HTTP 500s (multiple or non-leading system messages, reasoning_effort 'high', empty tool args) - listed as unverified gap",
+   "verdict": "refuted",
+   "evidence_url": "https://raw.githubusercontent.com/anomalyco/opencode/v2.3.0/packages/ai/src/protocols/openai-chat.ts",
+   "correction": "Most of the gap is resolved by OpenCode v2.3.0 source. openai-compatible-chat.ts reuses OpenAIChat.protocol. lowerMessages (lines 642-656) joins request.system into one leading system message, and later system messages are merged into or sent as user messages (lines 695-730). Tool-call arguments are encoded as '{}' when input is undefined (line 460). reasoning_effort is sent only when options.reasoningEffort is configured (line 856), so it is safe as long as no 'high' variant is configured. Remaining risk: setting compatibility.reasoningField replays reasoning, and the template's preserve_thinking defaults to true (line 116), which feeds the vendor's open prompt-cache-miss issue."
+  },
+  {
+   "claim": "Thinking control on b12407: reasoning_effort 'none' maps to enable_thinking=false (server-common.cpp 1566-1574); effort accepts only xhigh|medium|low; '--reasoning on' overrides client none; server default off via --chat-template-kwargs enable_thinking false",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/common/arg.cpp",
+   "correction": "server-common.cpp 1566-1575 and template lines 46-56 and 165-168 confirmed. At b12407, setting enable_thinking via --chat-template-kwargs is deprecated (arg.cpp 3577 prints a warning). There is a dedicated --reasoning-effort LEVEL flag (arg.cpp 3759), so '--reasoning-effort medium' is the cleaner server default. Note that llama.cpp's --reasoning-preserve sets 'preserve_reasoning', while this template reads 'preserve_thinking', so that flag has no effect here."
+  },
+  {
+   "claim": "Recommended docker command (stock image, Q2_0, -c 131072 q8_0, -np 1, --cache-ram 16384, --memory 24g) serves OpenCode",
+   "verdict": "uncertain",
+   "evidence_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/common/common.h",
+   "correction": "Flags exist at b12407 (-hff, --no-mmproj, -cram, -np, -rea, --chat-template-kwargs). Host RAM risk (inferred): --cache-ram 16384 plus the default 32 context checkpoints (common.h 661; about 0.15 GiB GDN state each, about 4.7 GiB) plus process RSS is about 22-23 GiB of anonymous memory against --memory 24g. Raise to --memory 32g (within about 40 GiB free) or use --cache-ram 8192. Prerequisites: NVIDIA Container Toolkit and a CDI spec, because --device nvidia.com/gpu=all needs both."
+  },
+  {
+   "claim": "Independent InsiderLLM RTX 3090 test: 12/47 vs 19/47 routing exact; tool 28/28, scope 18 vs 28, valid JSON 47/47; tg128 77.62 tok/s; peak 8,118 MiB at 8k",
+   "verdict": "confirmed",
+   "evidence_url": "https://insiderllm.com/guides/bonsai-2-27b-vs-qwen3-8-27b-rtx-3090/",
+   "correction": "Numbers are on the page. The 'tool' field is a JSON intent-routing label, not native tool-call execution, and the author says code was not measured."
+  },
+  {
+   "claim": "Decode estimate 45-75 tok/s on this GPU, bandwidth ceiling about 117 tok/s",
+   "verdict": "uncertain",
+   "evidence_url": "https://huggingface.co/prism-ml/Ternary-Bonsai-2-27B-gguf/raw/main/README.md",
+   "correction": "The README (line 212) says batch-1 decode on Blackwell is limited by instruction throughput and launch overhead, not bandwidth. Vendor RTX 5090 PQ2_0 reaches 129.9 tok/s, about 52% of its 1792 GB/s ceiling. Stock Q2_0 uses unfused Hadamard kernels (#31398 open), and this laptop runs with CUDA graphs disabled, so the lower half of the range is likelier. Inferred, unmeasured."
+  },
+  {
+   "claim": "Ollama bonsai-2:27b = digest f3c4f4208659, 8.3 GB, 256K, tools/thinking/vision",
+   "verdict": "confirmed",
+   "evidence_url": "https://ollama.com/library/bonsai-2/tags",
+   "correction": "Tag page shows bonsai-2:27b f3c4f4208659, 8.3GB, 256K, Text+Image, '1 month ago'; bonsai-2:latest = 9b (c8b5462f8688). Whether Ollama's engine applies the Hadamard transform correctly and the minimum Ollama version are both unverified."
+  },
+  {
+   "claim": "PrismML fork caveats: latest prism-b12128-d7b2896 (2026-10-31); #199 sm_120 erratic decode open; #222 CUDA 13 segfault open",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/PrismML-Eng/llama.cpp/issues/199",
+   "correction": "Releases API: prism-b12128-d7b2896 published 2026-10-31T04:49Z. Issues #199 and #222 are both open. The KNOWN_ISSUES header says 'Last checked: 2026-09-23' but mentions b11556 (2026-10-11), so the header date is stale."
+  }
+ ]
+}

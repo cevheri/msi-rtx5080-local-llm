@@ -1,0 +1,126 @@
+{
+ "overall": "holds-with-corrections",
+ "summary": "I could not refute any of the identity or capability facts. I read these sources raw: the HF API (repo and org), config.json, README.md, chat_template.jinja, the HF blog, Artificial Analysis embedded data, vLLM source at tags v0.30.0, v0.31.0 and v0.33.0 plus PRs 55957 and 65216, the llama.cpp b12418 source and the Ollama manifest.\n\nConfirmed:\n- **Identity:** the repo is ibm-granite's (author ibm-granite, org plan enterprise, isVerified false, 214 members, 252 models). ibm.com/granite mentions Granite 4.2 and links to the HF org.\n- **Dates:** createdAt 2026-08-07, card release date August 25, 2026, blog published August 25, 2026. That is inside the window.\n- **License and size:** Apache-2.0 and not gated. Safetensors total 8,791,592,960, all BF16.\n- **Config:** 40 layers, 32 query heads, 8 KV heads, hidden 4096, intermediate 12800, rope theta 1e7, rope_scaling null, max_position_embeddings 131072, embeddings untied.\n- **Template:** thinking is on by default; low_effort and reasoning_effort work as described; tools use Qwen3-Coder-style XML.\n- **Parsers:** the card says qwen3_coder for tools and granite_thinking_parser for reasoning, with nemotron_v3 as an alternative. vLLM PR 55957 merged 2026-09-25; granite_thinking_parser is absent at v0.30.0 and present at v0.31.0 and v0.33.0. PR 65216 merged 2026-11-03; v0.33.0 has granite4 and granite tool parsers but no granite_toolcall_parser.\n- **Checkpoint sizes and dates:** all match.\n- **Benchmarks:** every vendor number is in the card's 8B column. The BFCL conflict is real: card 52.39, blog 50.29. The AA values match: index 5.098, TB2.1 0.1835, TB4.0 0, SciCode 0.3148, tau-Banking 0.0763, 131k context, 66 tok/s, 62.49 s.\n\nCorrections:\n1. The embeddings plus lm_head arithmetic is wrong: 2 x 100352 x 4096 = 822,083,584 (822.1M), not 822.4M.\n2. The card gives no per-benchmark mode, so the 'thinking' setting on SWE-bench Verified and LiveCodeBench is not supported by the cited source.\n3. The card's SGLang section names nemotron_3 for --reasoning-parser auto. nemotron_v3 is the name the card gives for vLLM.\n\nNot verified here: the Ollama readme's think low/medium/high wording, and the MXFP4/NVFP4 kernel-path claims (these were outside this identity check).",
+ "verdicts": [
+  {
+   "claim": "Repo ibm-granite/granite-4.2-8b is officially IBM's (org ibm-granite, isVerified=false, plan enterprise, 252 models, 214 members; ibm.com/granite mentions Granite 4.2 and links to HF org)",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/organizations/ibm-granite/overview"
+  },
+  {
+   "claim": "HF createdAt 2026-08-07T16:29:09Z, lastModified 2026-10-20; card Release Date August 25, 2026; blog published August 25, 2026; inside 2025-11-15..2026-11-15",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/ibm-granite/granite-4.2-8b"
+  },
+  {
+   "claim": "Quant repos fp8/mxfp4/nvfp4 created 2026-08-13 and GGUF 2026-08-12, all Apache-2.0; sizes 9.617 / 5.879 / 6.128 GB (5.707 GiB NVFP4, 5.475 GiB MXFP4, 8.957 GiB FP8); GGUF Q4_K_M 5.348, Q5_K_M 6.254, Q6_K 7.216, Q8_0 9.346, BF16 17.587 GB",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/ibm-granite/granite-4.2-8b-nvfp4?blobs=true"
+  },
+  {
+   "claim": "License Apache-2.0, not gated, the card's 'All Granite models are released under the Apache 2.0 license' quote",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/ibm-granite/granite-4.2-8b/raw/main/README.md"
+  },
+  {
+   "claim": "Dense 8.79B params (8,791,592,960 BF16); untied embeddings account for 822.4M",
+   "verdict": "confirmed",
+   "correction": "The parameter total is confirmed. The embedding arithmetic is wrong: 2 x 100352 x 4096 = 822,083,584 (822.1M), not 822.4M.",
+   "evidence_url": "https://huggingface.co/api/models/ibm-granite/granite-4.2-8b"
+  },
+  {
+   "claim": "GraniteForCausalLM: 40 layers, 32 query heads / 8 KV heads, head_dim 128, hidden 4096, intermediate 12800, rope_theta 1e7, rope_scaling null, vocab 100352, base granite-4.1-8b-base",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/ibm-granite/granite-4.2-8b/raw/main/config.json"
+  },
+  {
+   "claim": "Context 131072; the card's 512K claim is tied by the blog to the Granite 4.1 base pre-training; RULER 64K 80.99 and 128K 71.41",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/blog/ibm-granite/granite-4-2"
+  },
+  {
+   "claim": "Text-only modality",
+   "verdict": "confirmed",
+   "evidence_url": "https://artificialanalysis.ai/models/granite-4-2-8b"
+  },
+  {
+   "claim": "Thinking on by default (generation prompt ends '<think>\\n'), off gives '<think></think>', low_effort or reasoning_effort=='low' appends '{reasoning effort: low}', truncate_history_thinking defaults to True",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/ibm-granite/granite-4.2-8b/raw/main/chat_template.jinja"
+  },
+  {
+   "claim": "The template re-injects prior reasoning only from message.reasoning_content or from <think> inside content",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/ibm-granite/granite-4.2-8b/raw/main/chat_template.jinja"
+  },
+  {
+   "claim": "Tool calling uses Qwen3-Coder XML (<tool_call><function=..><parameter=..>), tool results in <tool_response> inside a user turn; the card says use qwen3_coder",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/ibm-granite/granite-4.2-8b/raw/main/chat_template.jinja"
+  },
+  {
+   "claim": "The card's vLLM section uses the plugin granite_thinking_parser (requires v0.20+), says nemotron_v3 also works, and includes an OpenCode config with chat_template_kwargs.enable_thinking and reasoningField 'reasoning'",
+   "verdict": "confirmed",
+   "correction": "Also note that the card's SGLang section says --reasoning-parser auto resolves to 'nemotron_3', not nemotron_v3.",
+   "evidence_url": "https://huggingface.co/ibm-granite/granite-4.2-8b/raw/main/README.md"
+  },
+  {
+   "claim": "vLLM granite_thinking_parser is built in from v0.31.0 (PR #55957); granite_toolcall_parser (PR #65216, merged 2026-11-03) is not in v0.33.0; GraniteForCausalLM is registered at v0.33.0 line 131",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/vllm-project/vllm/pull/55957"
+  },
+  {
+   "claim": "llama.cpp b12418 routes templates that contain <function= and <parameter= to the qwen3_coder handler; LLM_ARCH_GRANITE is 'granite'",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/blob/b12418/common/chat.cpp"
+  },
+  {
+   "claim": "Ollama granite4.2:8b manifest has only model, license and params layers (no template)",
+   "verdict": "confirmed",
+   "evidence_url": "https://registry.ollama.ai/v2/library/granite4.2/manifests/8b"
+  },
+  {
+   "claim": "Ollama library page has no tools/thinking badge and the readme documents think low/medium/high",
+   "verdict": "uncertain",
+   "correction": "The page description does mention 'tool use, thinking'. I did not check the badge or the low/medium/high wording.",
+   "evidence_url": "https://ollama.com/library/granite4.2"
+  },
+  {
+   "claim": "SWE-bench Verified 47.67 (thinking setting)",
+   "verdict": "uncertain",
+   "correction": "The value 47.67 is confirmed in the card's 8B column. The card states no thinking mode and no scaffold, only 'based on NeMo Evaluator SDK'. The 'thinking' setting label is unsupported.",
+   "evidence_url": "https://huggingface.co/ibm-granite/granite-4.2-8b/raw/main/README.md"
+  },
+  {
+   "claim": "SWE-bench Pro 19.11, SWE-bench Multilingual 30.78, Terminal-Bench 2.1 20.56, tau3-bench AVG 58.06, SciCode 36.09 (vendor)",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/ibm-granite/granite-4.2-8b/raw/main/README.md"
+  },
+  {
+   "claim": "LiveCodeBench v6 73.24 (thinking)",
+   "verdict": "confirmed",
+   "correction": "The value is confirmed. The thinking mode is not stated in the card.",
+   "evidence_url": "https://huggingface.co/ibm-granite/granite-4.2-8b/raw/main/README.md"
+  },
+  {
+   "claim": "BFCL v4: card 52.39 vs blog 50.29 conflict",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/blog/ibm-granite/granite-4-2"
+  },
+  {
+   "claim": "AA Intelligence Index v5.0.1 = 5.1 (median 8, 'among the least intelligent'); TB2.1 18.4%, TB4.0 0%, SciCode 31.5%, tau-Banking 7.6%; 66 tok/s, TTFAT 62.5 s, providers CoreWeave/DeepInfra, 131k context",
+   "verdict": "confirmed",
+   "evidence_url": "https://artificialanalysis.ai/models/granite-4-2-8b"
+  },
+  {
+   "claim": "Vendor requires temperature 1.0 / top_p 0.95 for all modes; max_new_tokens 8192 for thinking",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/ibm-granite/granite-4.2-8b/raw/main/README.md"
+  },
+  {
+   "claim": "KV bytes per token 163,840 BF16; NVFP4 pool 7.740 GiB gives 50,725 / 101,450 tokens",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/ibm-granite/granite-4.2-8b/raw/main/config.json"
+  }
+ ]
+}

@@ -1,0 +1,524 @@
+{
+ "summary": "Gemma lane result: Gemma 4 (released 2026-03-31/04-02, https://ai.google.dev/gemma/docs/releases , https://blog.google/innovation-and-ai/technology/developers-tools/gemma-4/) replaces Gemma 3 as Google's relevant family. It is Apache 2.0, unlike Gemma 3/3n which use the Gemma Terms of Use. Every size has configurable thinking and native function calling through dedicated special tokens (https://huggingface.co/google/gemma-4-31B-it). vLLM serves it with `--tool-call-parser gemma4 --reasoning-parser gemma4 --enable-auto-tool-choice`. Gemma 4 support arrived in v0.19.0 (2026-04-03), and the current release is v0.32.0 (2026-10-18; Docker default is CUDA 13.0) (https://github.com/vllm-project/recipes/blob/main/Google/Gemma4.md , https://github.com/vllm-project/vllm/releases/tag/v0.32.0). llama.cpp has a dedicated Gemma 4 chat/tool parser (https://github.com/ggml-org/llama.cpp/blob/master/common/chat.cpp). Ollama's gemma4 tags carry the tools and thinking capabilities and offer `ollama launch opencode --model gemma4` (https://ollama.com/library/gemma4).\n\nFor this 16 GB RTX 5080 Laptop, the best vLLM option is Gemma 4 12B (Unified, dense, released 2026-06-03). Google's official QAT W4A16 checkpoint google/gemma-4-12B-it-qat-w4a16-ct is 10.26 GB and leaves several GB for KV cache. Gemma 4 uses a hybrid sliding/global attention design with very few KV heads on the global layers, so 100k+ tokens of context look feasible; this is inferred from config.json. Its self-reported Tau2 is 69.0% and LiveCodeBench v6 is 72.0%.\n\nThe stronger 26B-A4B MoE (LiveCodeBench 77.1%, Tau2 68.2%) does not realistically fit in vLLM on 16 GB. Google publishes no W4A16 for it, and its NVFP4 checkpoints are 16.4 to 18.8 GB of weights. It is the best Gemma choice through llama.cpp or Ollama, using Google's QAT Q4_0 GGUF (14.44 GB plus a 1.19 GB mmproj) with some experts kept in system RAM if needed. The 31B dense model (best scores: LCB 80.0%, Tau2 76.9%, Codeforces 2150) does not fit: Q4_0 is 17.65 to 17.99 GB and W4A16 is 23.27 GB. E4B and E2B fit easily but are much weaker (Tau2 42.2% and 24.5%).\n\nGemma 3 (12B and 27B QAT) and Gemma 3n are older (March to June 2025). They have no native tool-call tokens, no thinking mode, and 128K or 32K context, so they are poor choices for OpenCode. Google publishes no SWE-bench Verified, Terminal-Bench, BFCL or Aider numbers for any Gemma 4 model; the only agentic number is Tau2.",
+ "models": [
+  {
+   "name": "Gemma 4 12B IT (Unified, encoder-free)",
+   "vendor": "Google DeepMind",
+   "family": "Gemma 4",
+   "hf_repo": "google/gemma-4-12B-it",
+   "release_date": "2026-06-03 (HF createdAt 2026-05-23; lastModified 2026-10-30)",
+   "architecture": "Dense, 48 layers (40 sliding-window 1024 + 8 global), Gemma4UnifiedForConditionalGeneration; global layers 1 KV head x head_dim 512 with unified K/V",
+   "total_params_b": 11.96,
+   "active_params_b": 11.96,
+   "context_length": "256K (config.json max_position_embeddings 262144 since HF commit 2026-06-04; vLLM recipe YAML still says 131072)",
+   "license": "Apache 2.0",
+   "modalities": "Text, image, video (frames), audio input via linear projections (no vision/audio encoder towers); text output",
+   "thinking": "toggle",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "google/gemma-4-12B-it-qat-w4a16-ct (compressed-tensors W4A16, 10.26 GB)",
+    "google/gemma-4-12B-it-qat-q4_0-gguf (6.98 GB gguf)",
+    "google/gemma-4-12B-it-qat-q4_0-unquantized (QAT weights in bf16)",
+    "google/gemma-4-12B-it-assistant (MTP drafter)",
+    "ggml-org/gemma-4-12B-it-GGUF: Q4_0 7.22 GB, Q8_0 12.67 GB, mtp-Q4_0 0.25 GB",
+    "RedHatAI/gemma-4-12B-it-NVFP4 10.26 GB (third party, vLLM-recipe listed)",
+    "RedHatAI/gemma-4-12B-it-FP8-Dynamic 15.04 GB",
+    "Ollama gemma4:12b 7.7-8.0GB, gemma4:12b-it-qat 7.2GB, gemma4:12b-it-q8_0 13GB, gemma4:12b-it-bf16 24GB"
+   ],
+   "vllm": "min_vllm_version 0.23.0 (recipe YAML). Serve: vllm serve google/gemma-4-12B-it-qat-w4a16-ct --max-model-len 32768 --gpu-memory-utilization 0.90 --enable-auto-tool-choice --tool-call-parser gemma4 --reasoning-parser gemma4 [--chat-template examples/tool_chat_template_gemma4.jinja] [--kv-cache-dtype fp8] [--limit-mm-per-prompt '{\"image\":0,\"audio\":0}' for text-only]. MTP: --speculative-config '{\"model\":\"google/gemma-4-12B-it-assistant\",\"num_speculative_tokens\":4}' (QAT target needs QAT assistant, i.e. gemma-4-12B-it-qat-q4_0-unquantized-assistant per QAT card). https://github.com/vllm-project/recipes/blob/main/models/Google/gemma-4-12B-it.yaml",
+   "fit_16gb": "vLLM fits: QAT W4A16 weights 10.26 GB; roughly 3-4 GB left for KV at 0.90 utilization. Estimated KV ~16 KB/token bf16 on global layers (8 KB if unified K=V is exploited) + ~0.34 GB fixed sliding-window per sequence, so ~128K-200K tokens for a single sequence (inferred from config.json). llama.cpp/Ollama Q4_0 ~7 GB fits fully.",
+   "coding_agent_evidence": "Vendor self-reported (model card): LiveCodeBench v6 72.0%, Codeforces ELO 1659, Tau2 (avg of 3) 69.0%, GPQA Diamond 78.8%, MRCR v2 128k 43.4%. No SWE-bench/Terminal-Bench/BFCL/Aider published. https://huggingface.co/google/gemma-4-31B-it",
+   "llamacpp_ollama": "llama.cpp: ggml-org/gemma-4-12B-it-GGUF and google QAT Q4_0 GGUF; native Gemma4 PEG chat/tool format in common/chat.cpp (use --jinja). Ollama: gemma4:12b (tools, thinking, vision, audio badges).",
+   "confidence": "high",
+   "notes": "Best Gemma 4 for vLLM on this GPU. Its Tau2 (69.0) is slightly above the 26B-A4B (68.2) on the vendor card. vLLM recipe YAML context_length 131072 is stale vs config.json 262144. Chat template got fixes 2026-07-15 (null handling, reasoning preservation) and tokenizer glitch-token fix 2026-10-30: pull latest revision.",
+   "sources": [
+    "https://huggingface.co/api/models/google/gemma-4-12B-it?blobs=true",
+    "https://huggingface.co/google/gemma-4-12B-it/raw/main/config.json",
+    "https://huggingface.co/api/models/google/gemma-4-12B-it/commits/main",
+    "https://huggingface.co/api/models/google/gemma-4-12B-it-qat-w4a16-ct?blobs=true",
+    "https://raw.githubusercontent.com/vllm-project/recipes/main/models/Google/gemma-4-12B-it.yaml",
+    "https://ollama.com/library/gemma4/tags",
+    "https://ai.google.dev/gemma/docs/releases"
+   ]
+  },
+  {
+   "name": "Gemma 4 26B A4B IT (MoE)",
+   "vendor": "Google DeepMind",
+   "family": "Gemma 4",
+   "hf_repo": "google/gemma-4-26B-A4B-it",
+   "release_date": "2026-03-31 (HF createdAt 2026-03-11, lastModified 2026-07-20)",
+   "architecture": "MoE, 30 layers (25 sliding 1024 + 5 global), 128 experts top-8 + 1 shared, expert intermediate size 704; global layers 2 KV heads x 512 unified K/V",
+   "total_params_b": 25.2,
+   "active_params_b": 3.8,
+   "context_length": "256K (max_position_embeddings 262144; vLLM YAML lists 131072)",
+   "license": "Apache 2.0",
+   "modalities": "Text, image (+video frames); ~550M vision encoder; no audio",
+   "thinking": "toggle",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "google/gemma-4-26B-A4B-it-qat-q4_0-gguf: 14.44 GB gguf + 1.19 GB mmproj",
+    "google/gemma-4-26B-A4B-it-qat-q4_0-unquantized (bf16 QAT weights, 51.6 GB)",
+    "google/gemma-4-26B-A4B-it-assistant (MTP drafter)",
+    "No Google W4A16: recipe says 4-bit hurts this MoE; suggests online --quantization int8_per_channel_weight_only",
+    "nvidia/Gemma-4-26B-A4B-NVFP4 18.79 GB (NVIDIA ModelOpt)",
+    "RedHatAI/gemma-4-26B-A4B-it-NVFP4 16.42 GB; RedHatAI FP8-dynamic 28.64 GB",
+    "ggml-org/gemma-4-26B-A4B-it-GGUF: Q4_0 14.62 GB, Q8_0 26.86 GB, mtp-Q4_0 0.25 GB, dflash drafter",
+    "Ollama gemma4:26b 16-19GB, gemma4:26b-a4b-it-qat 16GB (Q4_0 14GB + projector 1.2GB), gemma4:26b-a4b-it-q4_K_M 18GB, gemma4:26b-nvfp4 16GB (MLX)"
+   ],
+   "vllm": "min_vllm_version 0.25.0 per recipe YAML (general Gemma 4 support from v0.19.0). Recipe full-featured command: vllm serve google/gemma-4-26B-A4B-it --max-model-len 16384 --gpu-memory-utilization 0.90 --enable-auto-tool-choice --reasoning-parser gemma4 --tool-call-parser gemma4 --chat-template examples/tool_chat_template_gemma4.jinja; text-only flag --language-model-only. RTX 5090 override for NVFP4: VLLM_USE_V2_MODEL_RUNNER=1, --kv-cache-dtype fp8, --max-num-seqs 4. https://raw.githubusercontent.com/vllm-project/recipes/main/models/Google/gemma-4-26B-A4B-it.yaml",
+   "fit_16gb": "vLLM: does not fit practically. The smallest checkpoint (RedHat NVFP4) is 16.42 GB of weights against ~15.9 GiB VRAM, though the recipe YAML lists vram_minimum_gb 16 (inferred: no KV room). Needs llama.cpp/Ollama: Google QAT Q4_0 14.44 GB (+1.19 GB mmproj, optional). It may just fit fully at 32-64K context with q8/f16 KV (~20 KB/token on global layers, ~0.21 GB sliding), else offload some experts with --n-cpu-moe into the 64 GB RAM (inferred).",
+   "coding_agent_evidence": "Vendor self-reported: LiveCodeBench v6 77.1%, Codeforces ELO 1718, Tau2 68.2%, GPQA Diamond 82.3%, MRCR v2 128k 44.1%. Arena AI text #6 open model at launch (blog). No SWE-bench/Terminal-Bench/BFCL published.",
+   "llamacpp_ollama": "llama.cpp native Gemma4 tool/reasoning format (common/chat.cpp COMMON_CHAT_FORMAT_PEG_GEMMA4); ggml-org GGUF updated 2026-11-12 incl. MTP and DFlash drafters. Ollama gemma4:26b with tools+thinking badges; 'ollama launch opencode --model gemma4' documented on library page.",
+   "confidence": "high",
+   "notes": "Strongest Gemma that is usable on this machine, via llama.cpp/Ollama rather than vLLM. Speed should be good since only 3.8B params are active.",
+   "sources": [
+    "https://huggingface.co/google/gemma-4-31B-it",
+    "https://huggingface.co/google/gemma-4-26B-A4B-it/raw/main/config.json",
+    "https://huggingface.co/api/models/google/gemma-4-26B-A4B-it-qat-q4_0-gguf?blobs=true",
+    "https://huggingface.co/api/models/RedHatAI/gemma-4-26B-A4B-it-NVFP4?blobs=true",
+    "https://huggingface.co/api/models/nvidia/Gemma-4-26B-A4B-NVFP4?blobs=true",
+    "https://raw.githubusercontent.com/vllm-project/recipes/main/models/Google/gemma-4-26B-A4B-it.yaml",
+    "https://github.com/vllm-project/recipes/blob/main/Google/Gemma4.md",
+    "https://ollama.com/library/gemma4:26b-a4b-it-qat"
+   ]
+  },
+  {
+   "name": "Gemma 4 31B IT (dense)",
+   "vendor": "Google DeepMind",
+   "family": "Gemma 4",
+   "hf_repo": "google/gemma-4-31B-it",
+   "release_date": "2026-03-31 (HF createdAt 2026-03-11, lastModified 2026-07-20)",
+   "architecture": "Dense, 60 layers (50 sliding 1024 + 10 global); global 4 KV heads x 512 unified K/V; ~550M vision encoder",
+   "total_params_b": 30.7,
+   "active_params_b": 30.7,
+   "context_length": "256K (262144)",
+   "license": "Apache 2.0",
+   "modalities": "Text, image (+video frames); no audio",
+   "thinking": "toggle",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "google/gemma-4-31B-it-qat-w4a16-ct 23.27 GB",
+    "google/gemma-4-31B-it-qat-q4_0-gguf: 17.65 GB + 1.2 GB mmproj",
+    "google/gemma-4-31B-it-assistant MTP drafter 0.94 GB",
+    "nvidia/Gemma-4-31B-IT-NVFP4 ~32.6 GB files",
+    "RedHatAI/gemma-4-31B-it-NVFP4 23.27 GB",
+    "ggml-org/gemma-4-31B-it-GGUF Q4_0 17.99 GB, Q8_0 32.64 GB",
+    "Ollama gemma4:31b 19-20GB, gemma4:31b-it-qat 19GB, gemma4:31b-it-q4_K_M 20GB"
+   ],
+   "vllm": "min_vllm_version 0.19.1 (recipe YAML). Same parsers: --tool-call-parser gemma4 --reasoning-parser gemma4 --enable-auto-tool-choice. Recipe W4A16 variant vram_minimum_gb 20, NVFP4 19.",
+   "fit_16gb": "Does not fit in VRAM. vLLM: no. llama.cpp: Q4_0 17.65 GB needs partial layer offload to CPU (dense, so expect slow decode; inferred). KV ~80 KB/token f16 on global layers.",
+   "coding_agent_evidence": "Vendor self-reported: LiveCodeBench v6 80.0%, Codeforces ELO 2150, Tau2 76.9%, GPQA Diamond 84.3%, HLE 19.5%, MRCR v2 128k 66.4%; Arena AI text #3 open model at launch. No SWE-bench/Terminal-Bench published.",
+   "llamacpp_ollama": "Supported (ggml-org GGUF, Ollama gemma4:31b).",
+   "confidence": "high",
+   "notes": "Flagship. Too big for 16 GB; listed for reference.",
+   "sources": [
+    "https://huggingface.co/google/gemma-4-31B-it",
+    "https://huggingface.co/google/gemma-4-31B-it/raw/main/config.json",
+    "https://huggingface.co/api/models/google/gemma-4-31B-it-qat-q4_0-gguf?blobs=true",
+    "https://huggingface.co/api/models/google/gemma-4-31B-it-qat-w4a16-ct?blobs=true",
+    "https://raw.githubusercontent.com/vllm-project/recipes/main/models/Google/gemma-4-31B-it.yaml"
+   ]
+  },
+  {
+   "name": "Gemma 4 E4B IT",
+   "vendor": "Google DeepMind",
+   "family": "Gemma 4",
+   "hf_repo": "google/gemma-4-E4B-it",
+   "release_date": "2026-03-31 (HF lastModified 2026-11-03)",
+   "architecture": "Dense with Per-Layer Embeddings, 42 layers, sliding window 512; 4.5B effective / 8B with embeddings; ~150M vision + ~300M audio encoders",
+   "total_params_b": 8,
+   "active_params_b": 4.5,
+   "context_length": "128K",
+   "license": "Apache 2.0",
+   "modalities": "Text, image, video frames, audio (30 s max)",
+   "thinking": "toggle",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "google/gemma-4-E4B-it-qat-w4a16-ct 11.51 GB (PLE embeddings stay large)",
+    "google/gemma-4-E4B-it-qat-q4_0-gguf 5.15 GB + 0.99 GB mmproj",
+    "google/gemma-4-E4B-it-qat-mobile-ct (mixed int2/4/8, ~3.7 GB weights per recipe)",
+    "Ollama gemma4:e4b (latest) 6.6-9.5GB, gemma4:e4b-it-qat 6.1GB"
+   ],
+   "vllm": "min_vllm_version 0.19.1; same gemma4 parsers; --language-model-only skips vision/audio encoders.",
+   "fit_16gb": "vLLM fits easily (BF16 ~16 GB is too tight; W4A16 11.5 GB or FP8 fits); llama.cpp Q4_0 ~5 GB.",
+   "coding_agent_evidence": "Vendor self-reported: LiveCodeBench v6 52.0%, Tau2 42.2%, Codeforces 940.",
+   "llamacpp_ollama": "Supported; Ollama default gemma4 tag.",
+   "confidence": "high",
+   "notes": "Too weak for agentic coding compared with 12B. With thinking off, E2B/E4B emit no empty thought block (other sizes do).",
+   "sources": [
+    "https://huggingface.co/google/gemma-4-31B-it",
+    "https://huggingface.co/api/models/google/gemma-4-E4B-it?blobs=true",
+    "https://huggingface.co/api/models/google/gemma-4-E4B-it-qat-w4a16-ct?blobs=true",
+    "https://raw.githubusercontent.com/vllm-project/recipes/main/models/Google/gemma-4-E4B-it.yaml",
+    "https://ollama.com/library/gemma4/tags"
+   ]
+  },
+  {
+   "name": "Gemma 4 E2B IT",
+   "vendor": "Google DeepMind",
+   "family": "Gemma 4",
+   "hf_repo": "google/gemma-4-E2B-it",
+   "release_date": "2026-03-31",
+   "architecture": "Dense with PLE, 35 layers; 2.3B effective / 5.1B with embeddings",
+   "total_params_b": 5.1,
+   "active_params_b": 2.3,
+   "context_length": "128K",
+   "license": "Apache 2.0",
+   "modalities": "Text, image, video frames, audio",
+   "thinking": "toggle",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "google/gemma-4-E2B-it-qat-w4a16-ct (~7.3 GB per recipe)",
+    "google/gemma-4-E2B-it-qat-q4_0-gguf",
+    "google/gemma-4-E2B-it-qat-mobile-ct (~2.7 GB)",
+    "Ollama gemma4:e2b 4.6-7.5GB, gemma4:e2b-it-qat 4.3GB"
+   ],
+   "vllm": "min 0.19.1; gemma4 parsers.",
+   "fit_16gb": "Fits trivially.",
+   "coding_agent_evidence": "Vendor self-reported: LiveCodeBench v6 44.0%, Tau2 24.5%.",
+   "llamacpp_ollama": "Supported.",
+   "confidence": "high",
+   "notes": "Not suitable as an OpenCode main model; possibly a small/title model.",
+   "sources": [
+    "https://huggingface.co/google/gemma-4-31B-it",
+    "https://huggingface.co/api/models/google/gemma-4-E2B-it?blobs=true",
+    "https://github.com/vllm-project/recipes/blob/main/Google/Gemma4.md"
+   ]
+  },
+  {
+   "name": "Gemma 3 27B IT (QAT) [older]",
+   "vendor": "Google DeepMind",
+   "family": "Gemma 3",
+   "hf_repo": "google/gemma-3-27b-it",
+   "release_date": "2025-03-10 (QAT GGUF 2025-03-20; outside 12-month window)",
+   "architecture": "Dense, multimodal (SigLIP vision)",
+   "total_params_b": 27,
+   "context_length": "128K",
+   "license": "Gemma Terms of Use (HF license tag 'gemma', gated manual)",
+   "modalities": "Text, image",
+   "thinking": "no",
+   "tool_calling": "no",
+   "official_quantized": [
+    "google/gemma-3-27b-it-qat-q4_0-gguf: 17.23 GB + 0.86 GB mmproj",
+    "google/gemma-3-27b-it-qat-q4_0-unquantized",
+    "Ollama gemma3:27b 17GB, gemma3:27b-it-qat 18GB"
+   ],
+   "vllm": "No native tool tokens; vLLM ships a community template examples/tool_chat_template_gemma3_pythonic.jinja for the pythonic parser (not Google-official).",
+   "fit_16gb": "Does not fit in VRAM at Q4_0 (17.2 GB); partial offload only.",
+   "coding_agent_evidence": "Model card: LiveCodeBench 29.7%, HumanEval 87.8% (old, self-reported). Gemma 4 card lists Gemma 3 27B Tau2 16.2%.",
+   "llamacpp_ollama": "Supported; Ollama gemma3 page shows only the 'vision' capability (no tools/thinking badge).",
+   "confidence": "medium",
+   "notes": "Superseded by Gemma 4 for agent use.",
+   "sources": [
+    "https://ai.google.dev/gemma/docs/core/model_card_3",
+    "https://huggingface.co/api/models/google/gemma-3-27b-it-qat-q4_0-gguf?blobs=true",
+    "https://ollama.com/library/gemma3/tags",
+    "https://raw.githubusercontent.com/vllm-project/vllm/main/examples/tool_chat_template_gemma3_pythonic.jinja"
+   ]
+  },
+  {
+   "name": "Gemma 3 12B IT (QAT) [older]",
+   "vendor": "Google DeepMind",
+   "family": "Gemma 3",
+   "hf_repo": "google/gemma-3-12b-it",
+   "release_date": "2025-03-10 (QAT GGUF 2025-03-12)",
+   "architecture": "Dense, multimodal",
+   "total_params_b": 12,
+   "context_length": "128K",
+   "license": "Gemma Terms of Use",
+   "modalities": "Text, image",
+   "thinking": "no",
+   "tool_calling": "no",
+   "official_quantized": [
+    "google/gemma-3-12b-it-qat-q4_0-gguf 8.07 GB + 0.85 GB mmproj",
+    "google/gemma-3-12b-it-qat-int4-unquantized",
+    "Ollama gemma3:12b 8.2GB, gemma3:12b-it-qat 8.9GB"
+   ],
+   "vllm": "Pythonic community template only.",
+   "fit_16gb": "Fits.",
+   "coding_agent_evidence": "Model card: LiveCodeBench 24.6%, HumanEval 85.4%.",
+   "llamacpp_ollama": "Supported, no Ollama tools badge.",
+   "confidence": "medium",
+   "notes": "Older; Gemma 4 12B dominates it.",
+   "sources": [
+    "https://ai.google.dev/gemma/docs/core/model_card_3",
+    "https://huggingface.co/api/models/google/gemma-3-12b-it-qat-q4_0-gguf?blobs=true",
+    "https://ollama.com/library/gemma3/tags"
+   ]
+  },
+  {
+   "name": "Gemma 3n E4B IT [older]",
+   "vendor": "Google DeepMind",
+   "family": "Gemma 3n",
+   "hf_repo": "google/gemma-3n-E4B-it",
+   "release_date": "2025-06-26",
+   "architecture": "Dense MatFormer with PLE, on-device",
+   "total_params_b": 8,
+   "active_params_b": 4,
+   "context_length": "32K",
+   "license": "Gemma Terms of Use",
+   "modalities": "Text, image, audio, video",
+   "thinking": "no",
+   "tool_calling": "no",
+   "official_quantized": [
+    "Ollama gemma3n:e4b",
+    "ggml-org/gemma-3n-E4B-it-GGUF"
+   ],
+   "vllm": "Not checked for tool parser; no native tool format.",
+   "fit_16gb": "Fits (BF16 15.7 GB tight; quantized easily).",
+   "coding_agent_evidence": "Model card: LiveCodeBench v5 25.7%.",
+   "llamacpp_ollama": "Ollama gemma3n shows only 'vision' capability.",
+   "confidence": "medium",
+   "notes": "32K context and no tool calling: not for OpenCode.",
+   "sources": [
+    "https://ai.google.dev/gemma/docs/gemma-3n/model_card",
+    "https://huggingface.co/api/models/google/gemma-3n-E4B-it",
+    "https://ollama.com/library/gemma3n"
+   ]
+  }
+ ],
+ "facts": [
+  {
+   "topic": "license",
+   "claim": "Gemma 4 is released under Apache 2.0 ('commercially permissive Apache 2.0 license'); HF cards carry license: apache-2.0 with license_link https://ai.google.dev/gemma/docs/gemma_4_license, a page holding the Apache License 2.0 text (last updated 2026-04-01).",
+   "source_url": "https://blog.google/innovation-and-ai/technology/developers-tools/gemma-4/",
+   "source_date": "2026-04-02",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "license",
+   "claim": "Gemma 3 and Gemma 3n repos use license 'gemma' (Gemma Terms of Use) and are gated (manual acceptance) on HF; Gemma 4 repos are not gated.",
+   "source_url": "https://huggingface.co/api/models/google/gemma-3-27b-it",
+   "source_date": "2025-03-21",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "release timeline",
+   "claim": "Releases: Gemma 4 E2B/E4B/31B/26B A4B 2026-03-31; Gemma 4 MTP drafters 2026-04-16; Gemma 4 12B Unified 2026-06-03; FunctionGemma 270M 2025-12-18; TranslateGemma 2026-01-15; EmbeddingGemma 2 2026-10-06. The ai.google.dev docs now say they are deprecated in favour of gemma.ai.",
+   "source_url": "https://ai.google.dev/gemma/docs/releases",
+   "source_date": "2026-10",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "QAT releases",
+   "claim": "Google QAT checkpoints were published 2026-04-28 to 2026-06-05: q4_0 GGUF for E2B/E4B/12B/26B-A4B/31B; compressed-tensors W4A16 for E2B/E4B/12B/31B (no 26B-A4B); mobile mixed int2/4/8 for E2B/E4B; QAT assistant (MTP) drafters. Per the QAT card, an MTP assistant used with a QAT target must also be the QAT checkpoint of the same precision.",
+   "source_url": "https://huggingface.co/google/gemma-4-26B-A4B-it-qat-q4_0-gguf",
+   "source_date": "2026-07-17",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "sizes",
+   "claim": "Gemma 4 sizes: E2B (2.3B eff / 5.1B), E4B (4.5B eff / 8B), 12B Unified (11.95B), 31B dense (30.7B), 26B A4B MoE (25.2B total, 3.8B active, 128 experts, 8 active + 1 shared). Context: 128K for E2B/E4B, 256K for 12B/26B/31B.",
+   "source_url": "https://huggingface.co/google/gemma-4-31B-it",
+   "source_date": "2026-07-20",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "thinking",
+   "claim": "Thinking is toggled per request: <|think|> at start of system prompt (chat template variable enable_thinking); output uses <|channel>thought ...<channel|>. With thinking off, all sizes except E2B/E4B still emit an empty thought block. Prior-turn thoughts must be dropped except on tool-call turns.",
+   "source_url": "https://huggingface.co/google/gemma-4-31B-it",
+   "source_date": "2026-07-20",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "tool calling format",
+   "claim": "Gemma 4 function calling uses dedicated special tokens (<|tool>, <|tool_call>...<tool_call|>, <|tool_response>...); all appear in the official chat_template.jinja; the card claims 'native support for structured tool use'.",
+   "source_url": "https://huggingface.co/google/gemma-4-26B-A4B-it/raw/main/chat_template.jinja",
+   "source_date": "2026-07-20",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "vLLM parsers",
+   "claim": "vLLM registers tool parser 'gemma4' (Gemma4EngineToolParser) and reasoning parser 'gemma4' (Gemma4ParserReasoningAdapter); recipe flags: --enable-auto-tool-choice --tool-call-parser gemma4 --reasoning-parser gemma4 --chat-template examples/tool_chat_template_gemma4.jinja (template is said to be included in the official container).",
+   "source_url": "https://github.com/vllm-project/recipes/blob/main/Google/Gemma4.md",
+   "source_date": "2026-10-17",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "vLLM versions",
+   "claim": "Gemma 4 support landed in vLLM v0.19.0 (2026-04-03, requires transformers>=5.5.0, with Gemma 4 tool parser #38847); Gemma 4 Unified 12B and MTP in v0.23.0 (2026-06-15); recipe YAML min versions: 31B/E4B 0.19.1, 12B 0.23.0, 26B-A4B 0.25.0. v0.33.0rc3 (2026-11-02) adds linear-time streaming tool arguments for Gemma 4.",
+   "source_url": "https://github.com/vllm-project/vllm/releases/tag/v0.19.0",
+   "source_date": "2026-04-03",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "vLLM Docker",
+   "claim": "Latest stable vLLM is v0.32.0 (2026-10-18); docker vllm/vllm-openai:v0.32.0 is CUDA 13.0 (default), -cu129 variant for CUDA 12.9. Special gemma4 tags (gemma4, gemma4-0505-cu130, gemma4-unified, gemma) date from April-June 2026 and are older than v0.32.0.",
+   "source_url": "https://github.com/vllm-project/vllm/releases/tag/v0.32.0",
+   "source_date": "2026-10-18",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "vLLM Docker",
+   "claim": "Prefer pinned vllm/vllm-openai:v0.32.0 (CUDA 13.0, matches host driver API 13.2) over the stale gemma4-* tags for this sm_120 GPU.",
+   "source_url": "https://hub.docker.com/v2/repositories/vllm/vllm-openai/tags?page_size=100&name=gemma",
+   "source_date": "2026-11-15",
+   "support": "inferred"
+  },
+  {
+   "topic": "26B MoE quantization",
+   "claim": "vLLM recipe: the 26B-A4B has no QAT W4A16 because 'its small expert dimensions (704) cause excessive quality loss with 4-bit quantization'; it recommends --quantization int8_per_channel_weight_only (~47% savings) instead.",
+   "source_url": "https://github.com/vllm-project/recipes/blob/main/Google/Gemma4.md",
+   "source_date": "2026-06-05",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "26B MoE fit",
+   "claim": "Smallest vLLM-loadable 26B-A4B checkpoints are RedHatAI NVFP4 16.42 GB and NVIDIA NVFP4 18.79 GB of weights, above the ~15.9 GiB usable VRAM once CUDA context and KV are counted, so vLLM is not practical for 26B-A4B on this GPU even though recipe lists vram_minimum_gb 16 (tested on RTX 5090 32 GB).",
+   "source_url": "https://raw.githubusercontent.com/vllm-project/recipes/main/models/Google/gemma-4-26B-A4B-it.yaml",
+   "source_date": "2026-09-27",
+   "support": "inferred"
+  },
+  {
+   "topic": "26B MoE NVFP4 caution",
+   "claim": "vLLM recipe notes for nvidia/Gemma-4-26B-A4B-NVFP4 that 'vLLM 0.24 and the generic nightly both fail on GB10 with this checkpoint'; Blackwell desktop MTP drafts need moe_backend triton because the fused CUTLASS path is not built for GB10/GB300/RTX PRO.",
+   "source_url": "https://raw.githubusercontent.com/vllm-project/recipes/main/models/Google/gemma-4-26B-A4B-it.yaml",
+   "source_date": "2026-09-27",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "12B fit",
+   "claim": "google/gemma-4-12B-it-qat-w4a16-ct weights total 10.26 GB (single model.safetensors); recipe lists vram_minimum_gb 9 and says W4A16 'runs on any GPU'.",
+   "source_url": "https://huggingface.co/api/models/google/gemma-4-12B-it-qat-w4a16-ct?blobs=true",
+   "source_date": "2026-07-20",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "KV cache",
+   "claim": "Config: 12B has 48 layers (40 sliding window 1024, 8 global) with 1 global KV head of dim 512 and attention_k_eq_v true; 26B-A4B 30 layers (5 global, 2 global KV heads); 31B 60 layers (10 global, 4 global KV heads). Global-layer KV is therefore ~16 KB/token (12B), ~20 KB/token (26B), ~80 KB/token (31B) in bf16 counting K and V separately.",
+   "source_url": "https://huggingface.co/google/gemma-4-12B-it/raw/main/config.json",
+   "source_date": "2026-10-30",
+   "support": "source-backed"
+  },
+  {
+   "topic": "context discrepancy",
+   "claim": "gemma-4-12B-it config.json max_position_embeddings is 262144 (HF commit 'Update max_position_embeddings to full context length' 2026-06-04) while the vLLM recipe YAML still pins 131072 and says to raise --max-model-len only if the build accepts it.",
+   "source_url": "https://huggingface.co/api/models/google/gemma-4-12B-it/commits/main",
+   "source_date": "2026-06-04",
+   "support": "contested"
+  },
+  {
+   "topic": "chat template fixes",
+   "claim": "Gemma 4 HF repos received chat template fixes on 2026-07-15 (null handling, reasoning preservation, turn-tag balance) and a tokenizer glitch-token fix on 2026-10-30 (12B), so use the latest HF revision.",
+   "source_url": "https://huggingface.co/api/models/google/gemma-4-12B-it/commits/main",
+   "source_date": "2026-10-30",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "memory flags",
+   "claim": "Recipe: '--limit-mm-per-prompt {\"image\": 0, \"audio\": 0}' skips multimodal profiling for text-only; '--language-model-only' skips loading the vision encoder; '--kv-cache-dtype fp8' cuts KV ~50%.",
+   "source_url": "https://github.com/vllm-project/recipes/blob/main/Google/Gemma4.md",
+   "source_date": "2026-10-17",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "MTP speculative decoding",
+   "claim": "Gemma 4 has official MTP drafters (google/gemma-4-*-it-assistant, ~0.47B for 31B, 0.94 GB) usable via --speculative-config '{\"model\":\"google/gemma-4-12B-it-assistant\",\"num_speculative_tokens\":4}'; recommended 4-8 tokens for 12B.",
+   "source_url": "https://github.com/vllm-project/recipes/blob/main/Google/Gemma4.md",
+   "source_date": "2026-10-17",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "sampling",
+   "claim": "Recommended sampling for all Gemma 4 use cases: temperature 1.0, top_p 0.95, top_k 64 (Ollama params match).",
+   "source_url": "https://huggingface.co/google/gemma-4-31B-it",
+   "source_date": "2026-07-20",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "benchmarks",
+   "claim": "Vendor-reported (instruction-tuned): LiveCodeBench v6 31B 80.0 / 26B-A4B 77.1 / 12B 72.0 / E4B 52.0 / E2B 44.0 / Gemma 3 27B 29.1; Tau2 (avg of 3) 76.9 / 68.2 / 69.0 / 42.2 / 24.5 / 16.2; Codeforces ELO 2150 / 1718 / 1659 / 940 / 633 / 110.",
+   "source_url": "https://huggingface.co/google/gemma-4-31B-it",
+   "source_date": "2026-07-20",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "benchmarks gap",
+   "claim": "No SWE-bench Verified, Terminal-Bench, BFCL or Aider numbers for Gemma 4 appear on the model card, QAT card or launch blog.",
+   "source_url": "https://huggingface.co/google/gemma-4-31B-it",
+   "source_date": "2026-07-20",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "GGUF sizes",
+   "claim": "Google QAT Q4_0 GGUF: 31B 17.65 GB (+1.2 mmproj), 26B-A4B 14.44 GB (+1.19 mmproj), 12B 6.98 GB, E4B 5.15 GB (+0.99 mmproj). ggml-org GGUF (updated 2026-11-12): 26B Q4_0 14.62, 31B Q4_0 17.99, 12B Q4_0 7.22, plus mtp/dflash drafter GGUFs.",
+   "source_url": "https://huggingface.co/api/models/google/gemma-4-26B-A4B-it-qat-q4_0-gguf?blobs=true",
+   "source_date": "2026-07-17",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "llama.cpp",
+   "claim": "llama.cpp has a specialized Gemma4 chat format (COMMON_CHAT_FORMAT_PEG_GEMMA4, common_chat_params_init_gemma4) for tool calls/reasoning; function calling requires llama-server --jinja. Latest release b12418 (2026-11-15).",
+   "source_url": "https://github.com/ggml-org/llama.cpp/blob/master/common/chat.cpp",
+   "source_date": "2026-11-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "Ollama",
+   "claim": "Ollama library gemma4 (29.2M downloads) shows capabilities vision, tools, thinking, audio; tags gemma4:12b 7.7-8.0GB 256K, gemma4:26b 16-19GB 256K, gemma4:26b-a4b-it-qat 16GB, gemma4:31b 19-20GB, gemma4:e4b (latest) 6.6-9.5GB 128K; page documents 'ollama launch opencode --model gemma4'.",
+   "source_url": "https://ollama.com/library/gemma4/tags",
+   "source_date": "2026-11-15 (tags updated ~1 month ago)",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "Ollama Gemma 3",
+   "claim": "Ollama gemma3 and gemma3n pages show only the 'vision' capability, i.e. no tools or thinking badge.",
+   "source_url": "https://ollama.com/library/gemma3/tags",
+   "source_date": "2026-11-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "Gemma 3 tool calling",
+   "claim": "vLLM ships only a community pythonic template for Gemma 3 (examples/tool_chat_template_gemma3_pythonic.jinja); the vLLM tool calling doc lists Gemma parsers only for FunctionGemma ('functiongemma').",
+   "source_url": "https://raw.githubusercontent.com/vllm-project/vllm/main/docs/features/tool_calling.md",
+   "source_date": "2026-11-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "Gemma 3/3n context",
+   "claim": "Gemma 3 4B/12B/27B: 128K input context; Gemma 3n E2B/E4B: 32K total input context.",
+   "source_url": "https://ai.google.dev/gemma/docs/gemma-3n/model_card",
+   "source_date": "2025-06-17",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "coding variants",
+   "claim": "No Gemma 4 coding-specific checkpoint exists in the google HF org; CodeGemma is from 2024. Ollama lists an unexplained tag gemma4:31b-coding-mtp-bf16 (64 GB, too large).",
+   "source_url": "https://huggingface.co/api/models?author=google&search=code&limit=50",
+   "source_date": "2026-11-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "DiffusionGemma",
+   "claim": "google/diffusiongemma-26B-A4B-it (2026-06-09, Apache 2.0) is a block-diffusion variant with thinking and function calling, but vLLM recipe needs 1x 80 GB GPU (BF16) and it requires a special image; not suitable here.",
+   "source_url": "https://github.com/vllm-project/recipes/blob/main/Google/Gemma4.md",
+   "source_date": "2026-06-11",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "FunctionGemma",
+   "claim": "FunctionGemma 270M (2025-12-18) is a tiny tool-calling model meant to be fine-tuned per task; vLLM parser 'functiongemma'. Not a coding agent model.",
+   "source_url": "https://raw.githubusercontent.com/vllm-project/vllm/main/docs/features/tool_calling.md",
+   "source_date": "2026-11-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "recommendation",
+   "claim": "On this machine, the Gemma choice for vLLM+OpenCode is google/gemma-4-12B-it-qat-w4a16-ct with gemma4 tool/reasoning parsers. For llama.cpp/Ollama, gemma-4-26B-A4B QAT Q4_0 gives better coding scores (LCB 77.1 vs 72.0) at similar Tau2.",
+   "source_url": "https://huggingface.co/google/gemma-4-31B-it",
+   "source_date": "2026-11-15",
+   "support": "inferred"
+  }
+ ],
+ "gaps": [
+  "No official Gemma 4 SWE-bench Verified, Terminal-Bench, BFCL, or Aider scores found on the model card, QAT card, launch blog, or Ollama page; Tau2 is the only agentic metric.",
+  "No QAT-vs-BF16 quality numbers published on the QAT cards I read (google/gemma-4-26B-A4B-it-qat-q4_0-gguf README).",
+  "Did not verify that vLLM actually exploits Gemma 4 unified K=V on global layers; KV-per-token estimates assume separate K and V (upper bound).",
+  "Not measured: real VRAM headroom and tokens/s on RTX 5080 Laptop (sm_120); vLLM recipe hardware lists cover RTX 5090 / RTX PRO 6000 / DGX Spark, not 16 GB laptops.",
+  "Did not confirm the exact in-container path of examples/tool_chat_template_gemma4.jinja inside vllm/vllm-openai:v0.32.0 (recipe says it is included); the dgx_spark override omits --chat-template, suggesting the HF template also works (unverified).",
+  "Meaning of the Ollama tag gemma4:31b-coding-mtp-bf16 is not documented on the page; no matching Google HF repo.",
+  "Did not read OpenCode docs in this lane (other lanes cover OpenCode provider config).",
+  "Did not test Gemma 3n tool calling in vLLM; assumed none (no native format, no Ollama tools badge).",
+  "Google AI docs at ai.google.dev say they are deprecated in favour of gemma.ai; gemma.ai pages were not read."
+ ]
+}

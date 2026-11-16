@@ -1,0 +1,1 @@
+["-m","/hf/hub/models--bartowski--K2-Horizon-7B-GGUF/snapshots/0367e1981a5c01c45904b881c5a229694f626085/K2-Horizon-7B-Q8_0.gguf","--alias","local","-ngl","all","-fa","on","-c","81920","-ctk","q8_0","-ctv","q8_0","-np","1","--jinja","--chat-template-kwargs","{\"reasoning_effort\":\"high\",\"tool_call_format\":\"xml\"}","--temp","1.0","--top-p","0.95"]

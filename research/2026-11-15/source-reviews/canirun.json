@@ -1,0 +1,398 @@
+{
+ "review": {
+  "key": "canirun",
+  "url": "https://canirun.ai/device/rtx-5080-laptop",
+  "title": "Best local AI models for RTX 5080 Laptop | CanIRun.ai",
+  "publisher": "CanIRun.ai, built by midudev (open source: github.com/midudev/canirun.ai, 560 stars, last push 2026-11-15T14:09:13Z)",
+  "as_of": "2026-11-15 (live page; code bundle ui.CT57RnAH.js read the same day; Wayback snapshot exists 2026-11-02)",
+  "source_type": "calculator-estimate",
+  "accessible": true,
+  "access_notes": "curl with bare \"Mozilla/5.0\" UA got a Cloudflare 403 block page; a full Chrome UA string got HTTP 200 (1,642,215 bytes). Server-rendered HTML holds per-model data attributes (146 models, data-quants with vramGB/diskGB per quant) but no device numbers or tok/s; those are computed client-side. Device table and formula read directly from https://canirun.ai/_astro/ui.CT57RnAH.js. Replication script $SCRATCH/canirun_calc.py, raw files in $SCRATCH/src/canirun/. Rendered values then confirmed in a Playwright browser (selected hw: count 1, VRAM 16, BW 896, system RAM 16; grade chips S49 A5 B2 C15 D11 F64). Side effect to report: the Playwright MCP navigate wrote a snapshot and console log into $HOME/projects/llm/.playwright-mcp/; I deleted exactly those two files and the then-empty directory right away. Other agents using Playwright will hit the same thing.",
+  "credibility": "low",
+  "credibility_reason": "All numbers are formula output, nothing is measured. The device specs are correct (16 GB, 896 GB/s), but tok/s is bandwidth/bytes x 0.7 with no runtime, KV-cache, context or power modelling. MoE speeds come out 1.5-2x above real measurements, and the fit logic marks 16 GB cards as unable to offload when system RAM is left at its default of 16 GB. It is useful only as a rough sanity check of size per quant.",
+  "summary": "CanIRun.ai is an open-source client-side calculator. For the RTX 5080 Laptop it uses VRAM 16 GB, bandwidth 896 GB/s and 7,680 cores, which match NVIDIA's laptop spec. It lists no TGP or power. It sets the desktop RTX 5080 apart at 960 GB/s and 10,752 cores. The footer says \"Estimates based on browser APIs. Actual specs may vary.\" and \"Data sourced from llama.cpp, Ollama and LM Studio\". Decode tok/s is round(896 / effective_GB x 0.7). For MoE, effective_GB = max(0.5, active/total x quant_vramGB), so gpt-oss-20b Q4_K_M shows ~324 tok/s. That is well above the measured ~205 tok/s tg128 on the faster desktop card. Fit: up to 0.85 x VRAM is \"can-run\", up to 1.1 x VRAM is \"tight\", and offload (\"can-run-slow\") only applies when systemRAM > VRAM. The default system RAM is 16 GB, so on this page every model over 17.6 GB is \"Too heavy (F)\". That includes our picks #1 Qwen3.6-35B-A3B Q4_K_M (18.9 GB) and #5 Qwen3-Coder-Next, which the baseline runs with --n-cpu-moe and 61 GiB RAM. Sizes per quant are generic Q-level estimates and do not cover MXFP4, UD, QAT Q4_0 or NVFP4 files. GLM-4.7-Flash is not listed.",
+  "methodology": "Read from ui.CT57RnAH.js on 2026-11-15. Device entry \"RTX 5080 Laptop\":{vram:16,bw:896,cores:7680}, \"RTX 5080\":{vram:16,bw:960,cores:10752}. Fit A(): e<=VRAM*0.85 can-run; e<=VRAM*1.1 tight; if systemRAM>VRAM and e<=VRAM+systemRAM*0.7 can-run-slow; else cannot-run. Speed M(): efficiency 0.7 for discrete GPU (0.65 unified, 0.4 mobile). If the model exceeds VRAM, it uses a harmonic mix of VRAM bandwidth and a fixed 50 GB/s for RAM, x0.85. MoE effective bytes = max(0.5, active/total x size). Score = (speed score x0.55 + memory-headroom score x0.35 + min(12, 2*log2(params+1))) x (0.6 slow / 0.75 tight / 1). Grades: S>=85, A>=70, B>=55, C>=40, D>=20. vramGB per quant is a precomputed per-model table on the page with no stated context or KV size. It ignores prompt processing, context length, KV cache, runtime, power limit and clocks.",
+  "findings": [
+   {
+    "topic": "device specs",
+    "claim": "RTX 5080 Laptop entry: vram 16, bw 896 GB/s, cores 7680. It matches NVIDIA laptop spec (16 GB GDDR7, 896 GB/s); no TGP, memory bus or power field exists in the model.",
+    "evidence": "documented",
+    "location": "https://canirun.ai/_astro/ui.CT57RnAH.js device table",
+    "target": "hardware",
+    "relevance": "medium"
+   },
+   {
+    "topic": "desktop vs laptop",
+    "claim": "The site keeps desktop RTX 5080 separate: vram 16, bw 960, cores 10752. Its estimates scale only with bandwidth, so the laptop shows about 7% lower tok/s than the desktop for every model.",
+    "evidence": "documented",
+    "location": "ui.CT57RnAH.js",
+    "target": "hardware",
+    "relevance": "medium"
+   },
+   {
+    "topic": "methodology",
+    "claim": "Decode tok/s = round(bandwidth / effective_model_GB x 0.7), a pure memory-bandwidth roofline with a fixed 0.7 efficiency. Nothing is measured. The footer says 'Estimates based on browser APIs. Actual specs may vary.'",
+    "evidence": "computed",
+    "location": "ui.CT57RnAH.js function M; page footer",
+    "target": "benchmarking",
+    "relevance": "high"
+   },
+   {
+    "topic": "MoE overestimate",
+    "claim": "For MoE models, bytes read per token = active/total x file size, ignoring attention, KV reads, shared experts and router overhead. gpt-oss-20b Q4_K_M is shown at ~324 tok/s on the laptop, versus the baseline's measured ~205 tok/s tg128 on the faster desktop RTX 5080 (ggml-org guide).",
+    "evidence": "computed",
+    "location": "rendered card gpt-oss-20b '~324 tok/s'",
+    "target": "models",
+    "relevance": "high"
+   },
+   {
+    "topic": "offload quirk",
+    "claim": "Offload status (can-run-slow) needs systemRAM > VRAM. The device page defaults system RAM to 16 GB, which equals the 16 GB VRAM, so anything over 17.6 GB (1.1 x VRAM) is graded F 'Too heavy' with ~0 tok/s. This contradicts the baseline's llama.cpp --n-cpu-moe plans on a 61 GiB RAM host.",
+    "evidence": "computed",
+    "location": "ui.CT57RnAH.js function A; rendered hw-sysram-select=16; Qwen3.6-35B-A3B card '18.9GB 118% ~0 tok/s'",
+    "target": "llamacpp",
+    "relevance": "high"
+   },
+   {
+    "topic": "offload speed model",
+    "claim": "When a user raises system RAM, offloaded speed uses a fixed 50 GB/s host-memory bandwidth and an extra 0.85 factor. Intel spec for this CPU is DDR5-6400 dual channel, 102.4 GB/s peak, so the site's host term is a generic guess.",
+    "evidence": "computed",
+    "location": "ui.CT57RnAH.js const j=50",
+    "target": "llamacpp",
+    "relevance": "medium"
+   },
+   {
+    "topic": "fit thresholds",
+    "claim": "'Can run' means quant vramGB <= 13.6 GB (0.85 x 16) and 'tight' means <= 17.6 GB. The vramGB figures carry no stated context length or KV-cache size, so they say nothing about 64k-128k agent contexts.",
+    "evidence": "computed",
+    "location": "ui.CT57RnAH.js function A; page data-quants",
+    "target": "models",
+    "relevance": "high"
+   },
+   {
+    "topic": "quant coverage",
+    "claim": "Quant options are generic Q2_K..F16 (Gemma 4 26B-A4B only Q4_K_M/Q6_K/Q8_0). There are no entries for MXFP4 (gpt-oss), unsloth UD quants, Google QAT Q4_0 or NVFP4/W4A16, so sizes do not match the baseline files.",
+    "evidence": "documented",
+    "location": "page data-quants attributes",
+    "target": "models",
+    "relevance": "medium"
+   },
+   {
+    "topic": "default quant shown",
+    "claim": "The Gemma 4 26B-A4B card renders with Q8_0 28.2 GB and grade 'Too heavy 0/100' on this device. That can hide that its Q4_K_M (14.3 GB) is rated 'tight' (C).",
+    "evidence": "documented",
+    "location": "rendered card gemma4-26b-a4b-it",
+    "target": "models",
+    "relevance": "low"
+   },
+   {
+    "topic": "grade distribution",
+    "claim": "Of 146 models (LLM, image, video), the rendered grade chips for this device are S49 A5 B2 C15 D11 F64.",
+    "evidence": "computed",
+    "location": "rendered page data-grade-chip",
+    "target": "models",
+    "relevance": "low"
+   },
+   {
+    "topic": "model catalog",
+    "claim": "The catalog includes Qwen 3.8 27B (AA 52), Qwen 3.6 35B-A3B (AA 32), Gemma 4 26B-A4B (AA 26), Gemma 4 12B (AA 22*), gpt-oss-20b (AA 15), Nemotron 3.5 Lightning 30B-A3B, Qwen3-Coder-Next 80B-A3B, Ornith 1.5 9B, and Qwen 3.5 9B (AA 22, listed ctx 32K). The AA column is an Artificial Analysis index copied in. GLM-4.7-Flash is absent.",
+    "evidence": "documented",
+    "location": "page data-model-id / data-aa attributes",
+    "target": "models",
+    "relevance": "low"
+   },
+   {
+    "topic": "inconsistent metadata",
+    "claim": "Qwen 3.5 9B is listed with a 32K context. Other Qwen 3.x entries show 256K, so the catalog's context metadata is not reliable.",
+    "evidence": "documented",
+    "location": "page data-context for qwen3.5-9b",
+    "target": "models",
+    "relevance": "low"
+   },
+   {
+    "topic": "new candidates in catalog",
+    "claim": "The catalog lists Ornith 1.5 35B-A3B (2026-08), Nemotron 3.5 Bolt E4B (2026-10) and Nemotron 3.5 Bolt 74B-A9B (2026-10). These are not in the baseline picks.",
+    "evidence": "documented",
+    "location": "page data-model-id",
+    "target": "models",
+    "relevance": "low"
+   },
+   {
+    "topic": "access",
+    "claim": "Cloudflare blocks the minimal 'Mozilla/5.0' UA with a 403; a full Chrome UA string works. Device numbers and tok/s render only in the browser.",
+    "evidence": "measured",
+    "location": "curl -A tests 2026-11-15",
+    "target": "general",
+    "relevance": "low"
+   }
+  ],
+  "measurements": [
+   {
+    "model": "gpt-oss-20b",
+    "quant": "Q4_K_M (site size 11.3 GB)",
+    "gpu": "RTX 5080 Laptop (site profile 16 GB, 896 GB/s)",
+    "runtime": "none (formula)",
+    "gen_tok_s": "~324",
+    "vram": "11.3 GB (71%)",
+    "settings": "MoE 3.6B active of 21B; grade A",
+    "measured_or_estimated": "estimated"
+   },
+   {
+    "model": "gpt-oss-20b",
+    "quant": "Q5_K_M 13.9 GB",
+    "gpu": "RTX 5080 Laptop",
+    "runtime": "none (formula)",
+    "gen_tok_s": "263",
+    "vram": "13.9 GB",
+    "settings": "tight, grade C (replicated from site JS)",
+    "measured_or_estimated": "estimated"
+   },
+   {
+    "model": "Qwen3.8-27B",
+    "quant": "Q4_K_M 14.3 GB",
+    "gpu": "RTX 5080 Laptop",
+    "runtime": "none (formula)",
+    "gen_tok_s": "~44",
+    "vram": "14.3 GB (89%)",
+    "settings": "dense; tight, grade C",
+    "measured_or_estimated": "estimated"
+   },
+   {
+    "model": "Qwen3.8-27B",
+    "quant": "Q3_K_M 12.6 GB",
+    "gpu": "RTX 5080 Laptop",
+    "runtime": "none (formula)",
+    "gen_tok_s": "50",
+    "vram": "12.6 GB",
+    "settings": "can-run, grade B (replicated)",
+    "measured_or_estimated": "estimated"
+   },
+   {
+    "model": "Qwen3.6-35B-A3B",
+    "quant": "Q4_K_M 18.9 GB",
+    "gpu": "RTX 5080 Laptop",
+    "runtime": "none (formula)",
+    "gen_tok_s": "~0 (shown); formula would give 94 if offload were allowed",
+    "vram": "18.9 GB (118%)",
+    "settings": "cannot-run because default system RAM 16 GB is not > VRAM; grade F",
+    "measured_or_estimated": "estimated"
+   },
+   {
+    "model": "Qwen3.6-35B-A3B",
+    "quant": "Q3_K_M 16.6 GB",
+    "gpu": "RTX 5080 Laptop",
+    "runtime": "none (formula)",
+    "gen_tok_s": "239",
+    "vram": "16.6 GB",
+    "settings": "tight, grade C (replicated)",
+    "measured_or_estimated": "estimated"
+   },
+   {
+    "model": "Gemma 4 26B-A4B IT",
+    "quant": "Q4_K_M 14.3 GB",
+    "gpu": "RTX 5080 Laptop",
+    "runtime": "none (formula)",
+    "gen_tok_s": "296",
+    "vram": "14.3 GB",
+    "settings": "tight, grade C (replicated); card defaults to Q8_0 28.2 GB = F",
+    "measured_or_estimated": "estimated"
+   },
+   {
+    "model": "Gemma 4 12B IT",
+    "quant": "Q4_K_M 6.6 GB",
+    "gpu": "RTX 5080 Laptop",
+    "runtime": "none (formula)",
+    "gen_tok_s": "~95",
+    "vram": "6.6 GB (41%)",
+    "settings": "dense; grade S 88/100",
+    "measured_or_estimated": "estimated"
+   },
+   {
+    "model": "Nemotron 3.5 Lightning 30B-A3B",
+    "quant": "Q4_K_M 15.9 GB",
+    "gpu": "RTX 5080 Laptop",
+    "runtime": "none (formula)",
+    "gen_tok_s": "~394",
+    "vram": "15.9 GB (99%)",
+    "settings": "MoE 3B active; tight, grade C",
+    "measured_or_estimated": "estimated"
+   },
+   {
+    "model": "Qwen3-Coder-Next 80B-A3B",
+    "quant": "Q4_K_M 41.5 GB",
+    "gpu": "RTX 5080 Laptop",
+    "runtime": "none (formula)",
+    "gen_tok_s": "~0 (shown)",
+    "vram": "41.5 GB (259%)",
+    "settings": "cannot-run; grade F",
+    "measured_or_estimated": "estimated"
+   },
+   {
+    "model": "Ornith 1.5 9B",
+    "quant": "Q4_K_M 5.5 GB",
+    "gpu": "RTX 5080 Laptop",
+    "runtime": "none (formula)",
+    "gen_tok_s": "~114",
+    "vram": "5.5 GB (34%)",
+    "settings": "dense; grade S",
+    "measured_or_estimated": "estimated"
+   },
+   {
+    "model": "Qwen 3.5 9B",
+    "quant": "Q4_K_M 5.1 GB",
+    "gpu": "RTX 5080 Laptop",
+    "runtime": "none (formula)",
+    "gen_tok_s": "123",
+    "vram": "5.1 GB",
+    "settings": "grade S (replicated)",
+    "measured_or_estimated": "estimated"
+   },
+   {
+    "model": "DeepSeek R1 Distill 7B",
+    "quant": "Q8_0 7.7 GB",
+    "gpu": "RTX 5080 Laptop",
+    "runtime": "none (formula)",
+    "gen_tok_s": "81",
+    "vram": "7.7 GB",
+    "settings": "grade A (replicated); not the Qwen3-8B 0528 distill in baseline",
+    "measured_or_estimated": "estimated"
+   }
+  ],
+  "conflicts": [
+   {
+    "baseline_claim": "Pick #1 Qwen3.6-35B-A3B Q4_K_M (19.13 GiB) runs on llama.cpp with --n-cpu-moe 21, about 9 GiB of experts in RAM, 128k context.",
+    "source_claim": "Qwen 3.6 35B-A3B Q4_K_M 18.9 GB: 'Too heavy', ~0 tok/s, grade F.",
+    "assessment": "Source artifact. The site allows offload only when system RAM > VRAM, and its default system RAM is 16 GB. It does not model a 61 GiB host or llama.cpp expert offload. The baseline stands."
+   },
+   {
+    "baseline_claim": "Pick #5 Qwen3-Coder-Next UD-IQ4_XS 35.79 GiB with --n-cpu-moe 37 (about 26 GiB in RAM).",
+    "source_claim": "Qwen 3 Coder Next 80B-A3B: every quant 'cannot-run' (Q2_K 26.1 GB upward).",
+    "assessment": "Same artifact as above. The baseline stands."
+   },
+   {
+    "baseline_claim": "Measured anchor: desktop RTX 5080 llama.cpp gpt-oss-20b about 205 tok/s tg128 (ggml-org guide).",
+    "source_claim": "Laptop RTX 5080 gpt-oss-20b Q4_K_M ~324 tok/s.",
+    "assessment": "The site's number is a roofline estimate for a slower card, about 1.6x above a real measurement on the faster desktop card. Do not cite it as an expected speed."
+   },
+   {
+    "baseline_claim": "gpt-oss-20b MXFP4 GGUF is 11.28 GiB; Gemma 4 26B-A4B QAT Q4_0 13.45 GiB; Qwen3.8-27B UD-Q3_K_XL 12.24 GiB.",
+    "source_claim": "Generic quant sizes: gpt-oss-20b Q4_K_M 11.3 GB, Gemma 4 26B-A4B Q4_K_M 14.3 GB, Qwen 3.8 27B Q3_K_M 12.6 GB / Q4_K_M 14.3 GB.",
+    "assessment": "Broadly consistent in magnitude, but these are different file formats (and GB vs GiB). Use the baseline's real file sizes."
+   }
+  ],
+  "agreements": [
+   "Laptop GPU memory 16 GB and bandwidth 896 GB/s match NVIDIA spec and the baseline nvidia-smi observation.",
+   "Desktop RTX 5080 is a separate profile at 960 GB/s, consistent with the baseline rule that desktop numbers are not laptop numbers.",
+   "Dense ~27B at Q3/Q4 (12.6-14.3 GB) fits in 16 GB VRAM, consistent with baseline pick #2 Qwen3.8-27B all on GPU.",
+   "Gemma 4 12B and ~9B models fit comfortably (grade S), consistent with baseline picks #7 and #8."
+  ],
+  "gaps": [
+   "No TGP/power, memory clock or bus width in the device profile; the laptop's 140 W limit (80 W default) is not modelled.",
+   "No measured data at all; no prompt-processing estimate; no context or KV-cache modelling.",
+   "No runtime distinction (vLLM vs llama.cpp vs Ollama) and no MXFP4/NVFP4/UD/QAT quant sizes.",
+   "GLM-4.7-Flash (pick #9) is not in the catalog; DeepSeek-R1-0528-Qwen3-8B (pick #10) is not listed, only older R1 distills."
+  ],
+  "new_candidates": [
+   {
+    "name": "Nemotron 3.5 Bolt E4B",
+    "why": "Listed 2026-10 release, 8B, 64K ctx; small enough for an all-GPU fast tier. Not in the baseline; needs verification on HF before any use."
+   },
+   {
+    "name": "Ornith 1.5 35B-A3B",
+    "why": "Listed 2026-08 MoE 36B/3B active, same size class as Qwen3.6-35B-A3B; the baseline excluded Ornith-35B as unverified, so this is only a pointer."
+   }
+  ],
+  "kb_notes": [
+   {
+    "target_doc": "docs/community-benchmarks.md",
+    "note": "CanIRun.ai (https://canirun.ai/device/rtx-5080-laptop, read 2026-11-15) is a calculator, not a benchmark. Its tok/s is round(896 GB/s / effective model GB x 0.7). For MoE it uses active/total x file size, which gives gpt-oss-20b ~324 tok/s on the laptop, while the desktop RTX 5080 measures about 205 tok/s tg128 in llama.cpp. Treat its speeds as optimistic upper bounds only."
+   },
+   {
+    "target_doc": "docs/model-selection.md",
+    "note": "CanIRun.ai grades Qwen3.6-35B-A3B Q4_K_M and Qwen3-Coder-Next as 'Too heavy' on the RTX 5080 Laptop. That is because its device page assumes 16 GB system RAM and allows offload only when system RAM exceeds VRAM. It does not reflect llama.cpp --n-cpu-moe on this 61 GiB host (https://canirun.ai/device/rtx-5080-laptop, logic in /_astro/ui.CT57RnAH.js)."
+   },
+   {
+    "target_doc": "docs/sources.md",
+    "note": "canirun.ai: open-source (github.com/midudev/canirun.ai) client-side fit calculator. Credibility low for speed and fit, adequate as a quick per-quant size reference. Laptop profile is 16 GB / 896 GB/s / 7,680 cores and matches NVIDIA. Cloudflare blocks minimal user agents."
+   },
+   {
+    "target_doc": "docs/sources.md",
+    "note": "Reviewer note: the Playwright MCP writes snapshots to .playwright-mcp/ in the working directory ($HOME/projects/llm). Agents using it for source reviews should expect that and clean up, or run from a scratch working directory."
+   },
+   {
+    "target_doc": "docs/host-setup.md",
+    "note": "Third-party calculators such as canirun.ai model only VRAM and bandwidth (896 GB/s for the RTX 5080 Laptop). They ignore the configurable power limit (80 W default, 140 W set here, 175 W max), so laptop measurements must record the active power limit next to every tok/s figure."
+   }
+  ]
+ },
+ "check": {
+  "verdicts": [
+   {
+    "item": "Publisher, type, as-of: CanIRun.ai by midudev, open source, calculator-estimate, live 2026-11-15, Wayback 2026-11-02",
+    "verdict": "confirmed",
+    "evidence": "GitHub API midudev/canirun.ai: stars 560, pushed_at 2026-11-15T14:09:13Z (no SPDX license field). Wayback available API: closest snapshot 20261102080008. Footer in raw HTML: 'Estimates based on browser APIs. Actual specs may vary.' and 'Data sourced from llama.cpp, Ollama...'.",
+    "correction": "The GitHub API reports no license, so 'open source' should read 'public source repo, license not declared'."
+   },
+   {
+    "item": "Access: bare 'Mozilla/5.0' UA gets 403, full Chrome UA gets 200",
+    "verdict": "confirmed",
+    "evidence": "curl -A 'Mozilla/5.0' gave 403. A Chrome UA gives 307 to the trailing-slash URL, then 200 with 1,641,848 bytes. The page has 146 unique data-model-id entries.",
+    "correction": "Minor: the 200 needs redirects followed (curl -L), and the size is 1,641,848 bytes in this read, not 1,642,215."
+   },
+   {
+    "item": "Device table: RTX 5080 Laptop {vram:16,bw:896,cores:7680}; desktop RTX 5080 {vram:16,bw:960,cores:10752}",
+    "verdict": "confirmed",
+    "evidence": "Verbatim strings in https://canirun.ai/_astro/ui.CT57RnAH.js (35,225 bytes, HTTP 200): \"RTX 5080\":{vram:16,bw:960,cores:10752} and \"RTX 5080 Laptop\":{vram:16,bw:896,cores:7680}."
+   },
+   {
+    "item": "Speed formula M(): bw/effective_GB x 0.7 (discrete), 0.65 unified, 0.4 mobile; if size > VRAM, harmonic mix with j=50 GB/s, x0.85",
+    "verdict": "confirmed",
+    "evidence": "ui.js: 'i=t.isMobile&&!t.isAppleSilicon?.4:t.isAppleSilicon||t.isUnifiedMemory?.65:.7' and 'if(o&&a>o&&t.systemRAM){... s=1/(t/r+n/j)/e*i*.85' with 'var j=50'. In L(): MoE effective size 'Math.max(.5,a/n*e)'.",
+    "correction": "The harmonic RAM mix applies whenever size > VRAM, including 'tight' models between 16 and 17.6 GB, for example Qwen3.6 Q3_K_M at 16.6 GB. It is not only for can-run-slow."
+   },
+   {
+    "item": "Fit A(): <=0.85xVRAM can-run, <=1.1xVRAM tight, can-run-slow only if systemRAM > VRAM and size <= VRAM + 0.7 x systemRAM",
+    "verdict": "confirmed",
+    "evidence": "ui.js: 'e<=n*.85?`can-run`:e<=n*1.1?`tight`:t.systemRAM&&t.systemRAM>n&&e<=n+t.systemRAM*.7?`can-run-slow`:`cannot-run`'."
+   },
+   {
+    "item": "Default system RAM 16 GB on this device page, so anything above 17.6 GB is F",
+    "verdict": "confirmed",
+    "evidence": "ModelListContent bundle: 'i=t.systemRAM??e.systemRAM??16'. The detected browser value is 'e==null||e>=8?16:4', from navigator.deviceMemory, which caps at 8. Replication with sys=16 gives Qwen3.6-35B-A3B Q4_K_M 18.9 GB 'cannot'. With sys=64 it gives 'can-run-slow', 94 tok/s.",
+    "correction": "The 16 GB comes from the visitor's browser detection (deviceMemory >= 8 or unavailable gives 16, a low-memory device gives 4), not from a value fixed by the device page. A user can raise it in the select."
+   },
+   {
+    "item": "gpt-oss-20b Q4_K_M 11.3 GB ~324 tok/s (estimate); Q5_K_M 13.9 GB 263 tight",
+    "verdict": "confirmed",
+    "evidence": "Page data: params 21, active-params 3.6, Q4_K_M vramGB 11.3, Q5_K_M 13.9. Replication: 896/(3.6/21*11.3)*0.7 = 324; Q5 gives 263, tight."
+   },
+   {
+    "item": "Other replicated rows: Qwen3.8-27B Q4 14.3 GB 44 tight / Q3 12.6 GB 50; Qwen3.6 Q3 16.6 GB 239 tight; Gemma 4 26B-A4B Q4 14.3 GB 296; Nemotron 3.5 Lightning Q4 15.9 GB 394; Qwen 3.5 9B 5.1 GB 123; Ornith 1.5 9B 5.5 GB 114",
+    "verdict": "confirmed",
+    "evidence": "All reproduced exactly from the page data-quants and data-active-params (Qwen3.6 active 3, Gemma 4 active 4, Nemotron active 3, Ornith 1.5 9B params 9.7) through the ui.js formulas."
+   },
+   {
+    "item": "Catalog metadata: Qwen 3.5 9B context 32768 vs 256K for other Qwen 3.x; Gemma 4 26B-A4B only Q4_K_M/Q6_K/Q8_0; GLM-4.7-Flash absent; Ornith 1.5 35B-A3B, Nemotron 3.5 Bolt E4B (8B, 64K) and Bolt 74B-A9B present; AA values 52/32/26/15/22",
+    "verdict": "confirmed",
+    "evidence": "Raw data attributes: qwen3.5-9b context 32768 aa 22; qwen3.8-27b aa 52; qwen3.6-35b-a3b aa 32; gemma4-26b-a4b-it aa 26 with three quants; gpt-oss-20b aa 15. The GLM ids are glm-4-9b, 4.5-air, 4.6, 5, 5.1, 5.2, 5.3, 5.3-flash and glm-image, with no 4.7-flash. nemotron-3.5-bolt-e4b params 8 context 65536.",
+    "correction": "I did not re-check the release months (2026-08, 2026-10). Ornith 1.5 35B-A3B has the same quant sizes as Qwen3.6-35B-A3B (18.9 GB Q4_K_M), which suggests a templated size table."
+   },
+   {
+    "item": "Conflicts with baseline (Qwen3.6-35B-A3B and Qwen3-Coder-Next shown as F; gpt-oss 324 vs desktop 205 measured; generic vs real file sizes)",
+    "verdict": "confirmed",
+    "evidence": "Baseline current-knowledge.md lines 67, 71 and 81 match the quoted baseline claims (19.13 GiB --n-cpu-moe 21; 35.79 GiB --n-cpu-moe 37; desktop ~205 tok/s tg128). The F grades come from the systemRAM > VRAM gate and the RAM default, not from a real limit. The 324 is a roofline estimate. These are source artifacts, and the baseline stands.",
+    "correction": "Qwen3-Coder-Next UD-IQ4_XS at 35.79 GiB (about 38.4 GB) would still exceed the site's slow limit even with 61 GiB entered only if 16+0.7*61=58.7 GB < size, and it does not. So with real RAM the site would rate it can-run-slow. This strengthens the 'artifact' assessment."
+   },
+   {
+    "item": "Side effect: reviewer deleted its .playwright-mcp files",
+    "verdict": "uncertain",
+    "evidence": "At 2026-11-15 18:55 UTC, $HOME/projects/llm/.playwright-mcp/ exists with page-*.yml and console-*.log files timestamped 18:54:40-18:54:52 UTC. They are canirun-style navigation snapshots, but I cannot tell which agent wrote them. They are probably a different, concurrent agent, since the reviewer said it removed its own. I left them in place (read-only rule).",
+    "correction": "The orchestrator should note that .playwright-mcp/ is currently present in the project directory and decide on cleanup."
+   }
+  ],
+  "credibility_fair": true,
+  "credibility_note": "Calling it 'low' for speed and fit is fair. Every tok/s figure is a bandwidth roofline (x0.7) with no runtime, KV, context or power modelling. The fit gate depends on a browser-detected system RAM default of 16 GB. Device specs (16 GB, 896 GB/s) are accurate, and per-quant size tables are usable only as rough magnitude references. One wording fix: the repo declares no license on GitHub, so 'open source' should be 'public source'.",
+  "overall": "holds-with-corrections",
+  "summary": "I reproduced the review from raw sources on 2026-11-15: device HTML via a Chrome UA with -L, plus https://canirun.ai/_astro/ui.CT57RnAH.js and the ModelListContent bundle. The device entries, fit thresholds, speed formula (0.7 efficiency, MoE active/total scaling, 50 GB/s RAM term, x0.85) and every spot-checked number (324, 263, 44, 50, 239, 296, 394, 123, 114) match exactly. The conflicts with the baseline are real source artifacts. Corrections: (1) the 16 GB system RAM default comes from the visitor's browser (navigator.deviceMemory, capped so desktop shows 16), not from the device page; (2) the RAM harmonic mix also applies to 'tight' models above 16 GB; (3) the GitHub repo declares no license; (4) the 200 response needs a redirect follow, and the page is 1,641,848 bytes now. Separately, $HOME/projects/llm/.playwright-mcp/ currently holds four files written 18:54 UTC by some agent. I did not touch them. Raw files are in $SCRATCH/src/canirun-check/."
+ }
+}

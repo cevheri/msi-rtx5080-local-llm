@@ -1,0 +1,88 @@
+{
+ "overall": "holds-with-corrections",
+ "summary": "Most of the record holds up. All 15 live registry manifests match the stated blob sizes, digests, renderer and parser, requires and params, and the tag aliases are as stated. Apple's spec page confirms that 64 GB comes only with the M5 Max 40-core GPU at 614 GB/s. The Ollama context defaults match docs.ollama.com/context-length. The KB status mapping matches model-selection.md lines 45-46, 291, 304 and 307, and llamacpp/models.md line 86 is indeed stale. Five things need correcting. (1) qwen3.6:27b: it reached 30/30 on Ollama 0.32.13 with only the 150 s turn limit and plan-reasoning suppression. suppressAgentReasoning was added later, because Ollama 0.33.0 dropped optimize to 1/5. With that switch, optimize passes in 76 s, so the claims that it 'only completes agent turns with thinking off' and 'would time out here' are wrong. (2) qwen3:8b: the profile records only 3/5 at temperature 0.8 on optimize, and puts the 0/5 at temperature 0 down to a false 'no object' reply from Studio's own tool, not to the model choosing tools badly. (3) qwen3:14b: the profile says plan was 4/5 with a single loss, which contradicts the page's 'lost four times in five'. (4) qwen3.6:35b: README.md line 31 lists the slowest run as 172 s, but the page says 0:29. (5) qwen3.8 llama.cpp fit: the KB's 15.2 GiB is measured against 15.92 GiB, not the 15.47 GiB that CUDA reports, so the margin is about 0.27 GiB. The record also leaves out a KB row against Qwen3.5-9B: 5/25 with 'mostly malformed tool calls'. Speed and fit arithmetic is plausible but cannot be refuted without running the models.",
+ "verdicts": [
+  {
+   "item": "Ollama tag facts (blob sizes, quants, model_type, family, renderer/parser, requires, params) for all ten tags",
+   "verdict": "confirmed",
+   "evidence": "The live manifests at https://registry.ollama.ai/v2/library/<name>/manifests/<tag> and their config and params blobs match exactly. qwen3:4b: 2,497,280,480 B, config e18a783aae55, identical to 4b-thinking-2507-q4_K_M. qwen3:8b: 5,225,374,496. qwen3:14b: 9,276,184,896. qwen3-coder:30b: 18,556,688,736, renderer and parser qwen3-coder, temperature 0.7, top_p 0.8, repeat_penalty 1.05. qwen3.5:4b, 9b and 27b: 2,648,593,216+675,569,120, 5,629,109,120+921,704,832 and 16,547,399,008+931,145,984, all requiring 0.30.0 with presence_penalty 1.5. qwen3.6:27b: 16,837,919,680+931,145,568 with draft_num_predict 3, while 27b-q4_K_M is a separate 17,420,420,832 B blob. qwen3.6:35b equals 35b-a3b: 21,718,480,960+902,821,728, presence 1.5, draft 2. qwen3.8 latest, 27b and 27b-q4_K_M share config 492b2922d38e and model blob f5f1dd8920d4 (16,810,714,464 B), with renderer qwen3.8, parser qwen3.5 and requires 0.32.12. On https://ollama.com/library/<name>/tags, qwen3:4b shows 256K, qwen3:8b (as latest) and 14b show 40K, qwen3.5 tags were updated 1 month ago, qwen3.6:35b-a3b 2 weeks ago, and qwen3.8 is 18GB."
+  },
+  {
+   "item": "M5 Max bandwidth and the 1.46x scaling basis",
+   "verdict": "confirmed",
+   "evidence": "https://www.apple.com/macbook-pro/specs/ lists 'M5 Max with 40-core GPU 48GB, 64GB, or 128GB unified memory' and '614GB/s memory bandwidth'. The 32-core M5 Max is 36GB only, at 460GB/s. 896/614 = 1.46."
+  },
+  {
+   "item": "Ollama default context by VRAM (4k under 24 GiB) and the need for OLLAMA_CONTEXT_LENGTH >= 65536",
+   "verdict": "confirmed",
+   "evidence": "https://docs.ollama.com/context-length: '< 24 GiB VRAM: 4k context, 24-48 GiB VRAM: 32k, >= 48 GiB: 256k', and coding tools 'should be set to at least 64000'."
+  },
+  {
+   "item": "Mac setup notes (hardware, engines, /v1 endpoint, thermal, best-case wording, dates, turn limits, knobs)",
+   "verdict": "confirmed",
+   "evidence": "methodology.md:10 (22-23 Aug), :47-50, :58 (gemma4:12b 5/5 to 1/5), :70-71 (16 GB laptop lower bound), :88-91 (252 of 270, re-measured rested); setup.md:30-33 (/v1). Profiles: qwen3.8:27b 'Chosen off the library listing on 2026-10-09'; retryUnreadStop on qwen3-coder:30b, qwen3.5:27b and qwen3.6:35b; turnTimeoutMs 150000 on qwen3.5:9b, qwen3.6:27b and qwen3.6:35b; planStatementRetries 1 on qwen3:14b. The sweep figure is '252 of 270' runs, so 'cells' is loose wording.",
+   "correction": "Say '18 of 270 runs' rather than cells, because methodology.md counts runs."
+  },
+  {
+   "item": "qwen3:4b Mac result, fit and recommendation",
+   "verdict": "confirmed",
+   "evidence": "qwen/qwen3.md table: 41s, 2:04, 1:13, 1:12, 1:43, 46s, median 1:12, slowest 2:40, 'Nothing' needed. The profile is all defaults. Fit: 2.33 GiB + 9.0 GiB f16 KV at 64k (36x8x128x2x2 = 144 KiB/token) + ~1 GiB is about 12.3 GiB, under 15.47 (estimate). The tag has been unchanged for about a year, so the measured build is today's build."
+  },
+  {
+   "item": "qwen3:8b Mac result and reasoning",
+   "verdict": "uncertain",
+   "evidence": "The page table matches: 10s, 1:18, 46s, 36s, 46s, 26s, median 36s, slowest 1:48. However, the profile's 'measured' string reads 'query-optimization: 3/5 at temperature 0.8, then 1/5 and 0/5 at temperature 0'. No 5/5 at 0.8 is recorded anywhere in the profile. Its rationale says the losing branch loses because Studio's inspect_schema reply 'There is no object of that name' is false, and calls the override 'honest but temporary' (measured-profiles.json lines ~1060-1090).",
+   "correction": "Add a gap: the profile records only 3/5 at 0.8 for optimize, so its 30/30 rests on the page alone. Replace 'a sign of brittle tool choice' with this: the 0/5 at temperature 0 came from a Studio tool-reply defect that put the model on a losing branch. The skip-here verdict still holds on the 40K-context grounds."
+  },
+  {
+   "item": "qwen3:14b Mac result",
+   "verdict": "uncertain",
+   "evidence": "The page (qwen3.md) says plan 'lost four times in five'. The profile's measured string says 'Plan 4/5. The single loss is no-statement', and its rationale says 'on one run in five'.",
+   "correction": "The two sources contradict each other. Report it as plan 4/5 with one loss per the profile (the page wording looks like an error), not '4 runs in 5 lost'. The skip-here verdict is unaffected."
+  },
+  {
+   "item": "qwen3-coder:30b Mac result, KB status, fit and speed",
+   "verdict": "confirmed",
+   "evidence": "qwen3-coder.md: 11s, 12s, 16s, 11s, 11s, 3s, median 11s, slowest 0:21, under six minutes, zero argument-shape errors. model-selection.md:304 excludes it with SWE-bench Verified 31.8 and TB2.1 13.5. community-benchmarks.md:80-81 has decode at 61.55-61.89 tok/s (4k) and 51.62-51.65 tok/s (16k), prefill 1525-2369 tok/s, and 74% GPU at 8k. KV is 48x4x128x2x2 = 96 KiB/token. The --n-cpu-moe ~20 figure is the agent's own estimate. With 28 blocks of experts on the GPU at ~0.34 GiB each, plus 1 GiB non-expert, 3.2 GiB q8 KV and buffers, the total is about 15 GiB, so the margin is thin (estimate)."
+  },
+  {
+   "item": "qwen3.5:4b and qwen3.5:9b Mac results, fit, KB status",
+   "verdict": "confirmed",
+   "evidence": "qwen3.5.md: 4b at 5s, 41s, 21s, 7s, 34s, 1s, 11s and 2:47, with a 3/5 re-read on analyze. 9b at 31s, 31s, 52s, 21s, 26s, 1:38, 33s and 1:38, with a 92-94 s plan turn. Profiles: 9b has turnTimeoutMs 150000 and retryEmptyTurn; 4b has suppressPlanReasoning. model-selection.md:291 lists Qwen3.5-9B as an honorable mention (RedHatAI NVFP4 7.42 GiB). The README lists 9b at 5.8 GB, while the tags page now shows 6.6-7.6 GB.",
+   "correction": "For qwen3.5:9b, add the KB's contrary evidence from community-benchmarks.md:129: 'Qwen3.5-9B UD-Q6_K_XL (mostly malformed tool calls) 5/25' on the SQL benchmark under llama.cpp. It argues for testing the parser path here before calling 9b 'try-here-first'."
+  },
+  {
+   "item": "qwen3.5:27b Mac result, KB exclusion, spill arithmetic",
+   "verdict": "confirmed",
+   "evidence": "qwen3.5.md: 78s, 91s, 149s, 41s, 66s, 48s, median 78s, slowest 2:29 (README:58 says 239s), 52 minutes, optimize unaided. model-selection.md:307 lists it under 'Superseded by Qwen3.8-27B'. Spill: 15.41+0.87+4+~1 is about 21.3 GiB, so about 6 GiB spills. 10 GiB from VRAM (~12 ms) plus 5 GiB from DDR5 at 75 GB/s (~72 ms) gives about 12 tok/s (estimate)."
+  },
+  {
+   "item": "qwen3.6:27b Mac result and suitability/speed claims",
+   "verdict": "refuted",
+   "evidence": "The profile's measured string reads '30/30, with turnTimeoutMs at 150000 and no reasoning on the plan turn'. The suppressAgentReasoning rationale reads 'A later Ollama - 0.33.0, against the 0.32.13 the figures above were taken on - took this model's optimize cell from 5/5 to 1/5 ... With the switch the cell reads 5/5 at 76 seconds against 311'. qwen3.6.md also says the 27b's figures were taken before the agent-side suppression was added.",
+   "correction": "Two corrections. First, the table's 30/30 and its timings (optimize 238 s, assess 216 s) were taken on 0.32.13 with agent thinking on and only suppressPlanReasoning and 150 s set. suppressAgentReasoning was added to recover optimize on 0.33.0, where it then ran in 76 s. So 'only completes agent turns with thinking off' is false on 0.32.13. Second, 'its optimize runs would time out here' overstates the problem, because under the shipped set optimize is about 76 s on the Mac. The skip-here verdict still holds: KB supersession plus a dense spill."
+  },
+  {
+   "item": "qwen3.6:35b Mac result, context bound, KB rank 2 mapping",
+   "verdict": "confirmed",
+   "evidence": "qwen3.6.md: 8s, 19s, 18s, 7s, 13s, 2s, median 13s, slowest 0:29, OLLAMA_CONTEXT_LENGTH=32768, optimize 2-4/5 at 200-350 s before the set. model-selection.md:46 has rank 2 with --n-cpu-moe 21 at 128k f16, and :89 has the Ollama fallback. llamacpp/models.md:110-115 adds --reasoning off and 13.5-14.1 GiB on the GPU.",
+   "correction": "README.md:31 lists the slowest run as 172s, against the page's 0:29. Record the discrepancy; the README may count runs from before the set was applied."
+  },
+  {
+   "item": "qwen3.8:latest Mac result, KB rank 1 mapping, fit",
+   "verdict": "uncertain",
+   "evidence": "qwen3.8.md: 31s, 2:19, 2:50, 1:12, 1:38, 57s, median 1:12, slowest 3:15, defaults, and 19 GB on the README. The qwen3.8:27b profile uses temperature 0.3 (45/80/130/48/59/29 s). model-selection.md:45 and :73 confirm rank 1 and that Ollama spills. llamacpp/models.md:86 says 'its digest differs from 27b-q4_K_M', which is refuted by the live manifests (same config and blob). llamacpp/models.md:78 computes '15.2 GiB of 15.92, a margin of about 0.6 GiB'.",
+   "correction": "The UD-Q3_K_XL fit of about 15.2 GiB is checked against 15.92 GiB, which is nvidia-smi's 16,303 MiB. CUDA reports 15.47 GiB, so the real margin is about 0.27 GiB (estimate). Add that to the kb_implications next to the line-86 fix."
+  },
+  {
+   "item": "Speed transfer reasoning (in-VRAM faster, spill slower)",
+   "verdict": "uncertain",
+   "evidence": "The method follows evidence rule 3 and the inputs are verified (614 GB/s Apple, 896 GB/s here, DDR5-6400 at 102.4 GB/s peak). The tok/s ranges are scaled from TechFuelHQ desktop qwen2.5 rows (community-benchmarks.md:75-78) and are unmeasured. The run-duration shrink factors (1.3-2x) are guesses and cannot be checked without running the models."
+  },
+  {
+   "item": "Tool-parser claim (Ollama qwen3.5 parser, not llama.cpp Qwen3-Coder XML)",
+   "verdict": "confirmed",
+   "evidence": "The config blobs show parser 'qwen3.5' for the qwen3.5, qwen3.6 and qwen3.8 tags and 'qwen3-coder' for qwen3-coder:30b. testing-your-own.md:21-22 confirms that qwen3.8:latest lacks a .Tools block and still clears all six surfaces."
+  }
+ ]
+}

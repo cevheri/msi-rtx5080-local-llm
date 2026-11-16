@@ -1,0 +1,62 @@
+{
+ "overall": "holds-with-corrections",
+ "summary": "I found nothing in the lane record that I could refute. I re-read the four libredb-studio pages and the README table. I re-fetched all seven Ollama registry manifests, plus the config and params blobs for four of them. I also checked the four tag pages, apple.com, the HF configs, the unsloth and Ornith GGUF listings, llama-arch.cpp at b12407, and the KB line references.\n\nEverything I checked matches: every Mac figure (medians, slowest runs, per-surface times, settings, engine versions), every manifest byte size, quant, requires-version and params, the 614 GB/s M5 Max 40-core bandwidth (the only M5 Max sold with 64 GB) and every KV-per-token figure. All the KB line citations point to the right rows.\n\nCorrections are needed in four places:\n- **ornith:9b disk size.** The Mac page and README show 5.5 GB, but the tag lists 5.6 GB (blob of 5,629,108,640 B). So \"Mac disk sizes match the Linux tags for ornith\" is not exact.\n- **lfm3 minimum version.** The lfm3 page says it refuses versions below 0.40.12, while the manifest requires 0.40.13.\n- **ornith:35b --n-cpu-moe.** The Ornith GGUF is 0.58 GiB larger than the KB's Qwen3.6-35B-A3B Q4_K_M (19.71 vs 19.13 GiB), and the KB already calls 20 too tight. So the 128k value is more likely 22 than 21, and the 64k value about 19-20 (estimate).\n- **Two over-reaches in wording.** The vendor's looping and malformed-tool-call note was made for the 27B only, not for the whole Bonsai family. And the claim that muse-glimmer would \"likely exceed\" the 150 s turn limit here is speculation, not something the bandwidth arithmetic shows.",
+ "verdicts": [
+  {
+   "item": "Mac results quoted (all 7 tags: medians, slowest, per-surface, settings, engines)",
+   "verdict": "confirmed",
+   "evidence": "bonsai-2.md:16-18 (2b 52s/5:24, 4b 46s/3:18, 9b 55s/1:53, per-surface match), :35-46 (temp 0.3, holds 5, blank-locator fix), :63-71 (9b refusal examples plus suppressAgentReasoning, no temp 0.3), :75-77 (27b 25/30, plan 0/5), :82-83 (17-22 Oct, Ollama 0.40.6, four builds). lfm3.md:15 (84s/5:33, Optimize 4:13), :23-25 (4 of 5 investigate runs call no tool), :34-36 (Assess and Optimize 4/5 then re-roll), :41 (0.40.13). ornith.md:15-16, :28, :32-35. muse-glimmer.md:15, :25-39 (three settings), :48 (model-unavailable). README.md:41-62 slowest-run seconds (118, 150, 198, 324, 113, 333, 285) agree."
+  },
+  {
+   "item": "Mac setup notes: 614 GB/s, 1.46x, 2.8x power mode, lower-bound guidance, temperature 0/topP 1, 32k context for six models, answer correctness unchecked",
+   "verdict": "confirmed",
+   "evidence": "apple.com/macbook-pro/specs: 'M5 Max with 40-core GPU 48GB, 64GB, or 128GB unified memory', '614GB/s memory bandwidth' (the 32-core is 36GB only, at 460GB/s). 896/614 = 1.459. methodology.md:69-73 (lower bound, 2.8x), :89-91 (rested machine), :130. model-tuning.md:114 default {temperature: 0, topP: 1}. qwen/qwen3.6.md:68-69 says it is one of six models needing OLLAMA_CONTEXT_LENGTH=32768."
+  },
+  {
+   "item": "Mac disk sizes match the Linux GGUF tags for bonsai, ornith and muse",
+   "verdict": "uncertain",
+   "correction": "Bonsai and muse match (911MB, 1.6GB, 3.2GB, 18GB). ornith:9b does not: the Mac page and README show 5.5 GB, while the tag page shows 5.6 GB (blob 5,629,108,640 B). This is either rounding or a different digest; I cannot tell which from here.",
+   "evidence": "ornith.md:15 and README.md:41 show 5.5 GB. ollama.com/library/ornith/tags shows 'ornith:9b latest 5.6GB'. https://registry.ollama.ai/v2/library/ornith/manifests/9b model layer is 5629108640."
+  },
+  {
+   "item": "Ollama tag facts (sizes, quant, requires, params, context, capabilities)",
+   "verdict": "confirmed",
+   "correction": "lfm3.md:41 says it 'refuses to be pulled below Ollama v0.40.12', while the manifest requires 0.40.13. That is a source inconsistency, and the record's 0.40.13 follows the manifest.",
+   "evidence": "Registry manifests: bonsai-2 2b 546689504 + 364664352; 4b 1212103520 + 366894624; 9b 2556640128 + 624229664 (Q2_0, qwen35, requires 0.40.6, temp 1/top_k 20/top_p 0.95/presence_penalty 1). lfm3 1.7b 1099627808 (Q4_K_M, requires 0.40.13, capabilities completion/tools/thinking, temp 0.1/top_k 50/repeat_penalty 1.1). ornith 9b 5629108640, 35b 21166757664 (Q4_K_M, requires 0.30.11, parser ornith, SYSTEM text as quoted, temp 0.6). muse-glimmer latest 16756681056 + projector 1400328928 (Q4_K_M, 27.9B, requires 0.32.8, parser glimmer, temp 1/top_k 64). Tag pages: lfm3:1.7b '1.1GB - 1.7GB', lfm3:1.7b-nvfp4 MLX 1.7GB; bonsai 256K Text,Image; ornith 256K Text; muse 128K Text,Image. Ornith-1.0-35B GGUF Q4_K_M is 21,166,757,760 B, 96 B more than the Ollama blob, so it is the same at GiB precision."
+  },
+  {
+   "item": "lfm3 Mac artifact was likely MLX",
+   "verdict": "uncertain",
+   "evidence": "Plausible: the tag page shows a per-platform range of 1.1GB - 1.7GB, and the nvfp4 MLX tag is 1.7GB. No registry evidence for darwin is available, so this stays an inference, as the record says."
+  },
+  {
+   "item": "Fit arithmetic (KV per token, totals vs 15.47 GiB at 64k)",
+   "verdict": "confirmed",
+   "evidence": "The HF configs give: Qwen3.5-2B 6 full x 2 KV x 256 = 12 KiB; Qwen3.5-4B and 9B and Ornith-1.0-9B 8 x 4 x 256 = 32 KiB; Ornith-1.0-35B 10 x 2 x 256 = 20 KiB, 256 experts, top-8, 40 layers; LFM3 6 full x 4 x 128 = 12 KiB plus 5 SWA layers with window 256 and 13 conv; Muse 13 full x 2 x 128 = 13 KiB plus 39 SWA layers with window 2048 (about 78 MiB). Muse Q4_K_M 15.61 + 1.30 GiB is more than 15.47, so it spills. The unsloth UD-Q3_K_XL 12.44 and UD-IQ3_XXS 12.23 GiB sizes are confirmed. ornith:35b at 0.49 GiB per layer and 24-26 layers on GPU is consistent."
+  },
+  {
+   "item": "ornith:35b llama.cpp recipe --n-cpu-moe ~21 at 128k, 18-19 at 64k",
+   "verdict": "uncertain",
+   "correction": "The Ornith Q4_K_M is 19.71 GiB, against 19.13 GiB for the KB's Qwen3.6-35B-A3B ggml-org Q4_K_M. llamacpp/models.md:115 says the margin at 20 is only 0.3-0.8 GiB. With 0.58 GiB more to place, start at --n-cpu-moe 22 for 128k and about 19-20 for 64k (estimate).",
+   "evidence": "llamacpp/models.md:22 (19.13 GiB, n-cpu-moe 21) and :115 (margin note). HF API ornith-ai/Ornith-1.0-35B-GGUF ornith-1.0-35b-Q4_K_M.gguf is 21166757760 B (19.71 GiB)."
+  },
+  {
+   "item": "KB status mapping",
+   "verdict": "confirmed",
+   "correction": "research/2026-11-15/baseline.md:79 names only 'Ornith-35B' (unverified) without the version. 'Ornith-1.5-35B' appears only in model-selection.md:307.",
+   "evidence": "model-selection.md:266 and :298 (LFM2.5), :267 and :299 (Bonsai 27B), :300 (Ornith-1.5-9B, vLLM #54331), :307 (Muse Glimmer 30B and Ornith-1.5-35B carried-over group). vllm/models.md:511, :690-695, :716. artificialanalysis.json:105 (Muse TB2.1 51.7). README.md:22 (Ollama 'Not installed'), :49 (rank 2 Qwen3.6-35B-A3B). ornith-1.5:9b tag shows 6.6GB, Text and Image. Ornith-1.0-9B was created 2026-06-21, MIT."
+  },
+  {
+   "item": "Speed reasoning (all-in-VRAM scale by 1.46x, spill cases slower)",
+   "verdict": "confirmed",
+   "correction": "For muse-glimmer, the arithmetic does support decode at about 0.4-0.5x the Mac. But 'the 115 s median and 150 s turn limit would likely be exceeded' is speculation, because whole-run time also includes prefill and tool turns. Restate it as 'at risk' and label it an estimate. For ornith:35b, the KB infers 40-90 tok/s with experts in DDR5 (llamacpp/models.md:123), so 'slower than the Mac' is plausible but not by a large factor.",
+   "evidence": "ornith:9b: 5.63 GB / 896 = 159 tok/s and / 614 = 109 tok/s. muse: 75% of 16.76 GB at 896 GB/s is about 14 ms, and 25% at 80-102 GB/s is about 41-52 ms, against about 27 ms for everything at 614 GB/s."
+  },
+  {
+   "item": "Recommendations (ornith:9b try first; bonsai-2:9b worth trying; others skip)",
+   "verdict": "confirmed",
+   "correction": "In the bonsai-2:9b OpenCode note, KB line 299/279 attributes looping and malformed tool calls to the 27B only. Do not generalise it to 'the family'.",
+   "evidence": "These follow from the confirmed facts above. lfm3 has the slowest median of the small models (84s, against 31-55s). The ollama.com/library/lfm3 card says it is 'not recommended for agentic coding or complex multi-step reasoning due to its small size'. llama-arch.cpp at b12407 has LLM_ARCH_LFM3 at line 141 and LLM_ARCH_MUSE_GLIMMER at line 83."
+  }
+ ]
+}

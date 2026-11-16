@@ -1,0 +1,669 @@
+{
+ "summary": "Quality evidence for ranking small open-weight coding-agent models, as of 2026-11-15. The main public coding-agent leaderboards no longer rank the newest small models. SWE-bench (https://www.swebench.com, data file https://raw.githubusercontent.com/SWE-bench/swe-bench.github.io/master/data/leaderboards.json) has no results newer than 2026-02-26, and it dropped the bash-only board on 2026-09-01. The best small rows there are Devstral Small 2512 at 56.4 (mini-SWE-agent, checked) and Qwen3-Coder-30B-A3B at 51.6 (OpenHands). Terminal-Bench (https://www.tbench.ai/leaderboard) now runs v4.1, and its smallest open entries are GLM-5.3-Flash (321B) at 37.0% and Nemotron 3.5 Super VL (120B-A12B) at 0.3%; no model of 32B or less is listed. BFCL (https://gorilla.cs.berkeley.edu/leaderboard.html, last updated 2026-04-12) and Aider polyglot (last data 2025-10) stop at Qwen3 and gpt-oss. LiveCodeBench's public data stops at 2025-04. Ranking therefore rests on three things: the Artificial Analysis small and medium views (Intelligence Index v5, with many small models scored 0 or missing), LMArena/arena.ai text Elo (updated 2026-11-11), and vendor model cards. NVIDIA's Nemotron 3.5 Lightning card is the most useful single source because it measures Qwen3.6-35B-A3B, Gemma 4 26B-A4B, gpt-oss-20b and Nemotron under one harness (https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16). On that and the vendor cards, the strongest models that could run on this machine are Qwen3.8-27B (Aug 2026, dense; vendor reports Terminal-Bench 2.1 73.0 and SWE-bench Pro 61.7), Qwen3.6-27B and Qwen3.6-35B-A3B, Meta Muse Glimmer 30B (vendor SWE-bench Verified 76.0), Gemma 4 31B and 26B-A4B, GLM-4.7-Flash (30B-A3B), Devstral Small 2 (24B), Nemotron 3.5 Lightning 30B-A3B, Nemotron 3.5 Bolt 74B-A9B-24GB (2-bit, 22 GB GGUF) and gpt-oss-20b. Vendor scores conflict sharply. Gemma 4 26B-A4B gets SWE-bench Verified 17.4 in Qwen's table and 57.40 in NVIDIA's, and Gemma 4 31B gets 52.0 from Qwen and 66.6 from Meta. Independent results on harder agentic tests are far below vendor claims: Artificial Analysis measured Qwen3.8 27B at only 5.6% on Terminal-Bench 4.0. For 16 GB of VRAM the hard limit is weight size. In vLLM, only gpt-oss-20b (MXFP4, 13.8 GB of weights, tight), Gemma 4 12B (QAT w4a16, 10.3 GB) and smaller models fit. Every strong 27B to 35B model needs a llama.cpp or Ollama GGUF, either at about 3 to 4 bits (Qwen3.8-27B UD-IQ4_XS is 14.35 GB, UD-Q3_K_XL is 13.15 GB) or with MoE experts offloaded to system RAM. Ollama's OpenCode integration doc says OpenCode needs a context window of at least 64k (https://docs.ollama.com/integrations/opencode). OpenCode's providers doc says vLLM models it discovers start with tools disabled (https://opencode.ai/docs/providers/).",
+ "models": [
+  {
+   "name": "Qwen3.8-27B",
+   "vendor": "Alibaba Qwen",
+   "family": "Qwen3.8",
+   "release_date": "2026-08-05 (HF createdAt)",
+   "hf_repo": "Qwen/Qwen3.8-27B",
+   "architecture": "dense hybrid attention (linear attention on 48 of 64 layers), vision tower, built-in MTP head",
+   "total_params_b": 27.8,
+   "context_length": "262,144 native, YaRN to 1M",
+   "license": "apache-2.0",
+   "modalities": "text+image in, text out",
+   "thinking": "toggle",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "Qwen/Qwen3.8-27B-FP8 (official)",
+    "nvidia/Qwen3.8-27B-NVFP4 21.9 GB",
+    "unsloth/Qwen3.8-27B-GGUF: UD-IQ4_XS 14.35 GB, UD-Q3_K_XL 13.15 GB, UD-Q4_K_XL 17.66 GB",
+    "Ollama qwen3.8:27b (q4_K_M) 18 GB, 256K"
+   ],
+   "vllm": "recipe https://recipes.vllm.ai/Qwen/Qwen3.8-27B: vLLM 0.17.0+, image vllm/vllm-openai:qwen38, --enable-auto-tool-choice --tool-call-parser qwen3_coder --reasoning-parser qwen3. On a single 32 GB RTX 5090, NVFP4 needs --enforce-eager and --max-model-len 32768.",
+   "llamacpp_ollama": "Unsloth: 4-bit quants run on 16-19 GB VRAM such as an RTX 5080; Ollama qwen3.8 has tools, thinking and vision tags",
+   "fit_16gb": "vLLM does not fit (NVFP4 is about 21 GB). llama.cpp: UD-IQ4_XS 14.35 GB or UD-Q3_K_XL 13.15 GB fits in VRAM with modest KV (only 16 of 64 layers keep a KV cache); Q4_K_M at 18 GB needs partial offload.",
+   "coding_agent_evidence": "Vendor self-reported: Terminal Bench 2.1 (Terminus) 73.0, SWE-bench Pro 61.7, LiveCodeBench v6 90.3 (Claude Code harness). Independent: Artificial Analysis Terminal-Bench 4.0 is 5.6% at Xhigh and Intelligence Index v5 is 20.1 (best small model except Nanbeige4.3-33B). arena.ai text Elo 1434.",
+   "confidence": "high",
+   "sources": [
+    "https://huggingface.co/Qwen/Qwen3.8-27B/raw/main/README.md",
+    "https://recipes.vllm.ai/Qwen/Qwen3.8-27B",
+    "https://unsloth.ai/docs/models/qwen3.8.md",
+    "https://huggingface.co/api/models/unsloth/Qwen3.8-27B-GGUF?blobs=true",
+    "https://ollama.com/library/qwen3.8/tags",
+    "https://artificialanalysis.ai/models/open-source/small"
+   ],
+   "notes": "Thinking is on by default, and preserve_thinking is on by default. Sampling settings: thinking mode temp 1.0, top_p 0.95, top_k 20; non-thinking mode temp 0.7, top_p 0.8, presence_penalty 1.5."
+  },
+  {
+   "name": "Qwen3.6-35B-A3B",
+   "vendor": "Alibaba Qwen",
+   "family": "Qwen3.6",
+   "release_date": "2026-04-15",
+   "hf_repo": "Qwen/Qwen3.6-35B-A3B",
+   "architecture": "MoE, 256 experts, 8 routed + 1 shared",
+   "total_params_b": 35.95,
+   "active_params_b": 3,
+   "context_length": "262,144 native, up to 1,010,000",
+   "license": "apache-2.0",
+   "modalities": "text+image",
+   "thinking": "toggle",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "Qwen/Qwen3.6-35B-A3B-FP8 37.5 GB",
+    "unsloth GGUF: UD-IQ3_XXS 13.21 GB, UD-Q3_K_XL 16.85 GB, UD-IQ4_XS 17.73 GB, MXFP4_MOE 21.71 GB",
+    "Ollama qwen3.6:35b-a3b (q4_K_M) 24 GB"
+   ],
+   "vllm": "recipe: vLLM 0.28.0 (vllm/vllm-openai:v0.28.0), --tool-call-parser qwen3_coder --reasoning-parser qwen3; the card recommends vllm>=0.19.0",
+   "llamacpp_ollama": "Ollama qwen3.6 has tools, thinking and vision tags",
+   "fit_16gb": "vLLM does not fit. Needs llama.cpp/Ollama with experts in RAM: Q4 is about 22-24 GB total (3B active keeps it fast), or UD-IQ3_XXS 13.2 GB fully in VRAM.",
+   "coding_agent_evidence": "Vendor: SWE-bench Verified 73.4, SWE-bench Pro 49.5, Terminal-Bench 2.0 51.5. NVIDIA, same harness: SWE-bench Verified 70.12, Terminal-Bench 2.1 44.38. Artificial Analysis tau2 95.3% (reasoning).",
+   "confidence": "high",
+   "sources": [
+    "https://huggingface.co/Qwen/Qwen3.6-35B-A3B/raw/main/README.md",
+    "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/raw/main/README.md",
+    "https://recipes.vllm.ai/Qwen/Qwen3.6-35B-A3B.json",
+    "https://artificialanalysis.ai/models/open-source/small"
+   ]
+  },
+  {
+   "name": "Qwen3.6-27B",
+   "vendor": "Alibaba Qwen",
+   "family": "Qwen3.6",
+   "release_date": "2026-04-21",
+   "hf_repo": "Qwen/Qwen3.6-27B",
+   "architecture": "dense hybrid attention",
+   "total_params_b": 27.8,
+   "context_length": "262,144",
+   "license": "apache-2.0",
+   "modalities": "text+image",
+   "thinking": "toggle",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "Qwen/Qwen3.6-27B-FP8",
+    "Ollama qwen3.6:27b-q4_K_M 17 GB; 27b-coding variants"
+   ],
+   "vllm": "vllm>=0.19.0; vllm serve Qwen/Qwen3.6-27B --reasoning-parser qwen3 --enable-auto-tool-choice --tool-call-parser qwen3_coder",
+   "fit_16gb": "vLLM does not fit; llama.cpp at about 3-4 bits as for Qwen3.8-27B",
+   "coding_agent_evidence": "Vendor: SWE-bench Verified 77.2, SWE-bench Pro 53.5, Terminal-Bench 2.0 59.3. Meta's Muse card puts its TB2.1 at 60.7.",
+   "confidence": "high",
+   "sources": [
+    "https://huggingface.co/Qwen/Qwen3.6-27B/raw/main/README.md",
+    "https://ollama.com/library/qwen3.6/tags"
+   ],
+   "notes": "Qwen3.8-27B replaces this model at the same size."
+  },
+  {
+   "name": "Qwen3.5-9B",
+   "vendor": "Alibaba Qwen",
+   "family": "Qwen3.5",
+   "release_date": "2026-02-27",
+   "hf_repo": "Qwen/Qwen3.5-9B",
+   "total_params_b": 9,
+   "context_length": "262,144",
+   "license": "apache-2.0",
+   "thinking": "toggle",
+   "tool_calling": "yes",
+   "official_quantized": [],
+   "fit_16gb": "BF16 weights are 19.3 GB, so vLLM BF16 does not fit; a 4-8 bit GGUF fits easily with long context",
+   "coding_agent_evidence": "Vendor: BFCL-V4 66.1, TAU2-Bench 79.1, LiveCodeBench v6 65.6",
+   "confidence": "medium",
+   "sources": [
+    "https://huggingface.co/Qwen/Qwen3.5-9B/raw/main/README.md"
+   ]
+  },
+  {
+   "name": "Qwen3-Coder-Next",
+   "vendor": "Alibaba Qwen",
+   "family": "Qwen3-Coder",
+   "release_date": "2026-01-30",
+   "hf_repo": "Qwen/Qwen3-Coder-Next",
+   "architecture": "MoE (Qwen3-Next base)",
+   "total_params_b": 79.7,
+   "active_params_b": 3,
+   "context_length": "262,144",
+   "license": "apache-2.0",
+   "thinking": "no",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "Qwen/Qwen3-Coder-Next-FP8",
+    "Qwen/Qwen3-Coder-Next-GGUF Q4_K_M 48.4 GB",
+    "Ollama qwen3-coder-next q4_K_M 52 GB"
+   ],
+   "vllm": "vllm>=0.15.0, --enable-auto-tool-choice --tool-call-parser qwen3_coder",
+   "fit_16gb": "needs llama.cpp/Ollama with experts in RAM: Q4_K_M 48-52 GB total, which barely fits in 61 GiB RAM + 16 GB VRAM next to a desktop using about 20 GiB",
+   "coding_agent_evidence": "The card gives its SWE-bench Pro result only as an image (no text). Artificial Analysis tau2 79.5%.",
+   "confidence": "medium",
+   "sources": [
+    "https://huggingface.co/Qwen/Qwen3-Coder-Next/raw/main/README.md",
+    "https://ollama.com/library/qwen3-coder-next/tags",
+    "https://artificialanalysis.ai/models/open-source/medium"
+   ],
+   "notes": "Non-thinking only, per the card."
+  },
+  {
+   "name": "Gemma 4 31B",
+   "vendor": "Google",
+   "family": "Gemma 4",
+   "release_date": "2026-03-11",
+   "hf_repo": "google/gemma-4-31B-it",
+   "architecture": "dense, hybrid sliding-window/global attention",
+   "total_params_b": 31.3,
+   "context_length": "256K",
+   "license": "apache-2.0",
+   "modalities": "text+image",
+   "thinking": "toggle",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "google/gemma-4-31B-it-qat-q4_0-gguf 17.65 GB",
+    "google/gemma-4-31B-it-qat-w4a16-ct 23.3 GB",
+    "Ollama gemma4:31b-it-qat 19 GB, q4_K_M 20 GB"
+   ],
+   "vllm": "not confirmed from a primary source this run",
+   "fit_16gb": "vLLM does not fit; llama.cpp QAT Q4_0 at 17.65 GB needs partial offload",
+   "coding_agent_evidence": "Google: LiveCodeBench v6 80.0%, Tau2 76.9%; no SWE-bench in the card. Third parties: SWE-bench Verified 52.0 (Qwen card) and 66.6 (Meta Muse card). arena.ai text Elo 1452, the top open model of 32B or less. Artificial Analysis Intelligence Index v5 4.4, Terminal-Bench 4.0 0%.",
+   "confidence": "high",
+   "sources": [
+    "https://huggingface.co/google/gemma-4-31B-it/raw/main/README.md",
+    "https://ollama.com/library/gemma4/tags",
+    "https://arena.ai/leaderboard/text"
+   ],
+   "notes": "Thinking is switched on with the <|think|> token in the system prompt."
+  },
+  {
+   "name": "Gemma 4 26B A4B",
+   "vendor": "Google",
+   "family": "Gemma 4",
+   "release_date": "2026-03-11",
+   "hf_repo": "google/gemma-4-26B-A4B-it",
+   "architecture": "MoE",
+   "total_params_b": 25.8,
+   "active_params_b": 4,
+   "context_length": "256K",
+   "license": "apache-2.0",
+   "thinking": "toggle",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "google/gemma-4-26B-A4B-it-qat-q4_0-gguf 14.44 GB",
+    "Ollama gemma4:26b-a4b-it-qat 16 GB, q4_K_M 18 GB"
+   ],
+   "fit_16gb": "llama.cpp QAT Q4_0 at 14.44 GB fits in VRAM with little KV room; for long context, offload some experts to RAM",
+   "coding_agent_evidence": "Google: LiveCodeBench v6 77.1%, Tau2 68.2%. NVIDIA, same harness: SWE-bench Verified 57.40, TB2.1 37.22. Qwen card: SWE-bench Verified 17.4 (contested). arena.ai text Elo 1437.",
+   "confidence": "high",
+   "sources": [
+    "https://huggingface.co/google/gemma-4-31B-it/raw/main/README.md",
+    "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/raw/main/README.md",
+    "https://huggingface.co/api/models/google/gemma-4-26B-A4B-it-qat-q4_0-gguf?blobs=true"
+   ]
+  },
+  {
+   "name": "Gemma 4 12B",
+   "vendor": "Google",
+   "family": "Gemma 4",
+   "release_date": "2026-05-23",
+   "hf_repo": "google/gemma-4-12B-it",
+   "total_params_b": 12,
+   "context_length": "256K",
+   "license": "apache-2.0",
+   "modalities": "text+image+audio",
+   "thinking": "toggle",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "google/gemma-4-12B-it-qat-w4a16-ct 10.26 GB (vLLM-loadable compressed-tensors)",
+    "google/gemma-4-12B-it-qat-q4_0-gguf 6.98 GB",
+    "Ollama gemma4:12b-it-qat 7.2 GB"
+   ],
+   "fit_16gb": "vLLM fits: w4a16 QAT, weights about 10.3 GB, a few GB left for KV",
+   "coding_agent_evidence": "Google: LiveCodeBench v6 72.0%, Tau2 69.0%",
+   "confidence": "medium",
+   "sources": [
+    "https://huggingface.co/google/gemma-4-12B-it/raw/main/README.md",
+    "https://ollama.com/library/gemma4/tags"
+   ]
+  },
+  {
+   "name": "Muse Glimmer 30B",
+   "vendor": "Meta (HF org meta-models, verified 'Meta Inc.')",
+   "family": "Muse",
+   "release_date": "2026-08-09",
+   "hf_repo": "meta-models/Muse-Glimmer-30B",
+   "architecture": "dense + perception encoder",
+   "total_params_b": 29.8,
+   "context_length": "131,072+",
+   "license": "apache-2.0",
+   "thinking": "toggle",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "meta-models/Muse-Glimmer-30B-GGUF: Q4_K_M 16.76 GB, Q4_K_XL 19.65 GB, DFlash draft 1.63 GB"
+   ],
+   "fit_16gb": "llama.cpp Q4_K_M at 16.76 GB is over 16 GB, so it needs partial offload",
+   "coding_agent_evidence": "Vendor: SWE-bench Verified 76.0, SWE-bench Pro 51.2, TerminalBench 2.1 51.7. Terminal-Bench 4.1 leaderboard lists only the larger Muse Ember (30.61%). AA Intelligence Index 6.3.",
+   "confidence": "medium",
+   "sources": [
+    "https://huggingface.co/meta-models/Muse-Glimmer-30B/raw/main/README.md",
+    "https://huggingface.co/api/organizations/meta-models/overview"
+   ],
+   "notes": "Reasoning strength is set in the system prompt; vLLM parser not checked"
+  },
+  {
+   "name": "GLM-4.7-Flash",
+   "vendor": "Z.ai",
+   "family": "GLM-4.7",
+   "release_date": "2026-01-19",
+   "hf_repo": "zai-org/GLM-4.7-Flash",
+   "architecture": "MoE 30B-A3B",
+   "total_params_b": 31.2,
+   "active_params_b": 3,
+   "license": "mit",
+   "thinking": "toggle",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "Ollama glm-4.7-flash q4_K_M 19 GB, 198K ctx",
+    "unsloth GGUF IQ4_XS 16.27 GB, UD-IQ3_XXS 12.91 GB (community)"
+   ],
+   "vllm": "vLLM nightly; --tool-call-parser glm47 --reasoning-parser glm45",
+   "fit_16gb": "needs llama.cpp/Ollama with experts in RAM (Q4 about 17-19 GB)",
+   "coding_agent_evidence": "Vendor: SWE-bench Verified 59.2, tau2 79.5, LCB v6 64.0",
+   "confidence": "high",
+   "sources": [
+    "https://huggingface.co/zai-org/GLM-4.7-Flash/raw/main/README.md",
+    "https://ollama.com/library/glm-4.7-flash/tags"
+   ],
+   "notes": "Older (Jan 2026). GLM-5.3-Flash has 321B params and does not fit."
+  },
+  {
+   "name": "Devstral Small 2 (24B, 2512)",
+   "vendor": "Mistral AI",
+   "family": "Devstral",
+   "release_date": "2025-11-28",
+   "hf_repo": "mistralai/Devstral-Small-2-24B-Instruct-2512",
+   "architecture": "dense",
+   "total_params_b": 24,
+   "context_length": "256K (Ollama lists 384K)",
+   "license": "apache-2.0",
+   "thinking": "no",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "HF weights are FP8, about 25.8 GB",
+    "Ollama devstral-small-2:24b q4_K_M 15 GB"
+   ],
+   "vllm": "--tool-call-parser mistral --enable-auto-tool-choice; mistral_common>=1.8.6",
+   "fit_16gb": "vLLM FP8 does not fit; Ollama/llama.cpp Q4_K_M at 15 GB is tight",
+   "coding_agent_evidence": "Vendor: SWE-bench Verified 68.0%, Terminal Bench 2 22.5%. Official SWE-bench leaderboard: 56.4 (mini-SWE-agent, checked, 2025-12-09), the highest independently checked small-model row.",
+   "confidence": "high",
+   "sources": [
+    "https://huggingface.co/mistralai/Devstral-Small-2-24B-Instruct-2512/raw/main/README.md",
+    "https://raw.githubusercontent.com/SWE-bench/swe-bench.github.io/master/data/leaderboards.json"
+   ]
+  },
+  {
+   "name": "NVIDIA Nemotron 3.5 Lightning 30B-A3B",
+   "vendor": "NVIDIA",
+   "family": "Nemotron 3.5",
+   "release_date": "2026-08-01",
+   "hf_repo": "nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16",
+   "architecture": "hybrid MoE with MTP",
+   "total_params_b": 31.6,
+   "active_params_b": 3,
+   "context_length": "up to 1M",
+   "license": "openmdw-1.1",
+   "thinking": "toggle",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "nvidia/...-NVFP4 21.56 GB",
+    "ggml-org/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-GGUF Q4_0 18.9 GB",
+    "Ollama nemotron-3.5-lightning:30b"
+   ],
+   "vllm": "vllm/vllm-openai:v0.27.1; --reasoning-parser nemotron_v3 --tool-call-parser qwen3_coder",
+   "fit_16gb": "needs llama.cpp/Ollama with experts in RAM (Q4_0 18.9 GB)",
+   "coding_agent_evidence": "NVIDIA: SWE-bench Verified 51.56, Terminal-Bench 2.1 24.58 (below Qwen3.6-35B-A3B under the same harness)",
+   "confidence": "high",
+   "sources": [
+    "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/raw/main/README.md",
+    "https://blogs.nvidia.com/blog/nemotron-lightning-switchyard-rtx-dgx/"
+   ]
+  },
+  {
+   "name": "NVIDIA Nemotron 3.5 Bolt 74B-A9B 24GB",
+   "vendor": "NVIDIA",
+   "family": "Nemotron 3.5",
+   "release_date": "2026-10-07",
+   "hf_repo": "nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB",
+   "architecture": "MoE compressed from Super VL 120B-A12B; experts in IQ2-XXS (2-bit)",
+   "total_params_b": 74,
+   "active_params_b": 9,
+   "context_length": "256K",
+   "license": "openmdw-1.1",
+   "modalities": "text+image",
+   "thinking": "toggle",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "nvidia/...-24GB-GGUF 22.02 GB + mmproj 1.73 GB",
+    "LiLiCorr DFlash drafter"
+   ],
+   "vllm": "nightly image vllm/vllm-openai:nightly-77154ca6...; --tool-call-parser qwen3_coder --reasoning-parser ultra_v3 (plugin file)",
+   "fit_16gb": "does not fit in VRAM alone; llama.cpp GGUF at 22 GB with part of it in RAM",
+   "coding_agent_evidence": "NVIDIA: Terminal-Bench 2.1 50.98 vs Qwen3.6-35B-A3B 44.38 and Gemma4 26B 37.22",
+   "confidence": "medium",
+   "sources": [
+    "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB/raw/main/README.md"
+   ],
+   "notes": "Released about 5 weeks ago; little third-party evidence yet."
+  },
+  {
+   "name": "NVIDIA Nemotron 3 Nano 30B-A3B",
+   "vendor": "NVIDIA",
+   "family": "Nemotron 3",
+   "release_date": "2025-12-04",
+   "hf_repo": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16",
+   "total_params_b": 30,
+   "active_params_b": 3,
+   "context_length": "256K default, up to 1M",
+   "license": "nvidia-nemotron-open-model-license",
+   "thinking": "toggle",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "FP8",
+    "NVFP4",
+    "Ollama nemotron-3-nano:30b-a3b"
+   ],
+   "vllm": "vllm>=0.12.0; --tool-call-parser qwen3_coder --reasoning-parser nano_v3 (plugin)",
+   "fit_16gb": "needs llama.cpp/Ollama with experts in RAM",
+   "coding_agent_evidence": "NVIDIA: SWE-Bench (OpenHands) 38.8, BFCL v4 53.8, TauBench V2 avg 49.0",
+   "confidence": "high",
+   "sources": [
+    "https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16/raw/main/README.md"
+   ],
+   "notes": "Older; replaced by Lightning."
+  },
+  {
+   "name": "gpt-oss-20b",
+   "vendor": "OpenAI",
+   "family": "gpt-oss",
+   "release_date": "2025-08-05 (older than the 12-month window)",
+   "hf_repo": "openai/gpt-oss-20b",
+   "architecture": "MoE",
+   "total_params_b": 20.9,
+   "active_params_b": 3.6,
+   "context_length": "128K",
+   "license": "apache-2.0",
+   "thinking": "always",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "native MXFP4 HF weights 13.76 GB",
+    "Ollama gpt-oss:20b 14 GB"
+   ],
+   "vllm": "vllm serve openai/gpt-oss-20b; recipe --tool-call-parser openai",
+   "fit_16gb": "vLLM fits but is tight: 13.8 GB of weights leaves about 1 GB for KV at 0.90 utilization; Ollama is easier",
+   "coding_agent_evidence": "OpenAI model card (high effort): SWE-bench Verified 60.7, Tau-Bench Retail 54.8, Aider Polyglot 34.2. NVIDIA, same harness: SWE-bench Verified 52.44, TB2.1 15.17. GLM card: SWE-bench Verified 34.0 (contested).",
+   "confidence": "high",
+   "sources": [
+    "https://arxiv.org/html/2508.10925v1",
+    "https://huggingface.co/openai/gpt-oss-20b/raw/main/README.md",
+    "https://ollama.com/library/gpt-oss/tags"
+   ],
+   "notes": "Reasoning effort is low/medium/high and cannot be turned off. OpenAI has released no new open LLM since (the openai HF org has only privacy-filter and circuit-sparsity)."
+  },
+  {
+   "name": "gpt-oss-120b",
+   "vendor": "OpenAI",
+   "family": "gpt-oss",
+   "release_date": "2025-08-05 (older)",
+   "hf_repo": "openai/gpt-oss-120b",
+   "total_params_b": 116.8,
+   "active_params_b": 5.1,
+   "context_length": "128K",
+   "license": "apache-2.0",
+   "thinking": "always",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "MXFP4 native",
+    "Ollama gpt-oss:120b 65 GB"
+   ],
+   "fit_16gb": "needs llama.cpp/Ollama with experts in RAM: 65 GB total, which exceeds the RAM free next to the desktop",
+   "coding_agent_evidence": "OpenAI: SWE-bench Verified 62.4 (high). SWE-bench leaderboard: 26.0 (mini-SWE-agent). Aider polyglot: 41.8.",
+   "confidence": "high",
+   "sources": [
+    "https://arxiv.org/html/2508.10925v1",
+    "https://raw.githubusercontent.com/SWE-bench/swe-bench.github.io/master/data/leaderboards.json"
+   ]
+  }
+ ],
+ "facts": [
+  {
+   "topic": "SWE-bench leaderboard freshness",
+   "claim": "The newest result date in leaderboards.json is 2026-02-26; the 2026-09-01 commit is titled 'Drop bash-only board'",
+   "source_url": "https://raw.githubusercontent.com/SWE-bench/swe-bench.github.io/master/data/leaderboards.json",
+   "source_date": "2026-09-01",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "SWE-bench Verified small rows",
+   "claim": "Devstral Small (2512): 56.4, mini-SWE-agent 1.17.2, checked, 2025-12-09",
+   "source_url": "https://raw.githubusercontent.com/SWE-bench/swe-bench.github.io/master/data/leaderboards.json",
+   "source_date": "2025-12-09",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "SWE-bench Verified small rows",
+   "claim": "Qwen3-Coder-30B-A3B-Instruct: 51.6 with OpenHands (2025-08-05, not checked); gpt-oss-120b: 26.0 with mini-SWE-agent (2025-08-07)",
+   "source_url": "https://raw.githubusercontent.com/SWE-bench/swe-bench.github.io/master/data/leaderboards.json",
+   "source_date": "2025-08",
+   "support": "direct-statement",
+   "notes": "older than 12 months"
+  },
+  {
+   "topic": "Terminal-Bench",
+   "claim": "The leaderboard now shows Terminal-Bench 4.1 only. Open-weight rows: GLM-5.3 41.21, DeepSeek V4.1 Flash 1017 38.48, GLM-5.3-Flash 36.97, Qwen3.8-Max 26.97, Nemotron 3.5 Super VL 0.3. No model of 32B or less is listed.",
+   "source_url": "https://www.tbench.ai/leaderboard",
+   "source_date": "rows dated up to 2026-11-12",
+   "support": "direct-statement",
+   "notes": "Parsed from raw page data"
+  },
+  {
+   "topic": "Terminal-Bench",
+   "claim": "GLM-5.3-Flash has 321B parameters, so it is not a local candidate",
+   "source_url": "https://huggingface.co/api/models/zai-org/GLM-5.3-Flash",
+   "source_date": "2026-08-25",
+   "support": "source-backed"
+  },
+  {
+   "topic": "BFCL",
+   "claim": "Page says 'Last Updated: 2026-04-12', but the overall CSV lists only older small models: Qwen3-32B (FC) 48.71%, Qwen3-8B (FC) 42.57%, Qwen3-30B-A3B-Instruct-2507 (FC) 41.39%, Qwen3-14B (FC) 41.03%; no Qwen3.5+, Gemma 4, gpt-oss or Nemotron 3 rows",
+   "source_url": "https://gorilla.cs.berkeley.edu/data_overall.csv",
+   "source_date": "2026-04-12",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "Aider polyglot",
+   "claim": "Last data commit is 2025-10-04. Small or medium rows: gpt-oss-120b (high) 41.8, Qwen3 32B 40.0, gemma-3-27b-it 4.9",
+   "source_url": "https://raw.githubusercontent.com/Aider-AI/aider/main/aider/website/_data/polyglot_leaderboard.yml",
+   "source_date": "2025-10-04",
+   "support": "direct-statement",
+   "notes": "stale"
+  },
+  {
+   "topic": "LiveCodeBench",
+   "claim": "The public performances JSON covers 28 models with problems up to April 2025 and none of the current small open models",
+   "source_url": "https://livecodebench.github.io/performances_generation.json",
+   "support": "direct-statement",
+   "notes": "stale"
+  },
+  {
+   "topic": "Artificial Analysis small view",
+   "claim": "Intelligence Index v5: Nanbeige4.3-33B 20.4, Qwen3.8 27B (Xhigh) 20.1, Qwen3.8 27B (Medium) 17.5, Qwen3.8 27B (Non-reasoning) 10.0, Muse Glimmer (High) 6.3, Gemma 4 31B (Reasoning) 4.4; Qwen3.6 35B A3B shows 0 (index not computed)",
+   "source_url": "https://artificialanalysis.ai/models/open-source/small",
+   "source_date": "2026-11-15 fetch",
+   "support": "direct-statement",
+   "notes": "Parsed from embedded page JSON. A score of 0 likely means missing data."
+  },
+  {
+   "topic": "Artificial Analysis Terminal-Bench 4.0",
+   "claim": "Qwen3.8 27B scores 5.6% (Xhigh), 5.1% (Medium) and 0% (Non-reasoning); Gemma 4 31B 0%; Nanbeige4.3-33B 29.8%",
+   "source_url": "https://artificialanalysis.ai/models/open-source/small",
+   "source_date": "2026-11-15 fetch",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "Artificial Analysis tau2",
+   "claim": "Qwen3.6 35B A3B Reasoning 95.3%, Non-reasoning 85.1%; Gemma 4 31B 59.9%; gpt-oss-120b (High) 65.8%; Qwen3 Coder Next 79.5%; Qwen3.5 122B A10B 93.6%",
+   "source_url": "https://artificialanalysis.ai/models/open-source/medium",
+   "source_date": "2026-11-15 fetch",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "LMArena text",
+   "claim": "arena.ai text leaderboard, updated Nov 11 2026. Open models of 32B or less: Gemma 4 31B 1452 (rank 79), Gemma 4 26B A4B 1437 (rank 102), Qwen3.8-27B 1434 (rank 111), Muse Glimmer 1425 (rank 126)",
+   "source_url": "https://arena.ai/leaderboard/text",
+   "source_date": "2026-11-11",
+   "support": "direct-statement",
+   "notes": "Single WebFetch read; Cloudflare blocked a raw read, so it was not second-source verified"
+  },
+  {
+   "topic": "NVIDIA same-harness comparison",
+   "claim": "SWE-bench Verified / Terminal-Bench 2.1: Qwen3.6-35B-A3B 70.12/44.38, Gemma 4 26B A4B 57.40/37.22, gpt-oss-20b 52.44/15.17, Nemotron 3.5 Lightning 51.56/24.58, Nemotron 3 Nano 34.08/8.29",
+   "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/raw/main/README.md",
+   "source_date": "2026-08-24",
+   "support": "direct-statement",
+   "notes": "NVIDIA measured all models with NeMo Evaluator, so these are vendor-run but cross-model"
+  },
+  {
+   "topic": "Nemotron Bolt",
+   "claim": "Terminal-Bench 2.1: Nemotron 3.5 Bolt 74B-A9B-24GB (IQ2) 50.98 vs Qwen3.6-35B-A3B 44.38, Gemma4 26B-A4B 37.22, Lightning 23.46",
+   "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB/raw/main/README.md",
+   "source_date": "2026-10-15",
+   "support": "direct-statement",
+   "notes": "vendor self-reported"
+  },
+  {
+   "topic": "Qwen3.8-27B",
+   "claim": "Vendor reports Terminal Bench 2.1 (Terminus) 73.0, SWE-bench Pro 61.7 and LiveCodeBench v6 90.3, vs Qwen3.6-27B at 63.4 / 53.5 / 83.9",
+   "source_url": "https://huggingface.co/Qwen/Qwen3.8-27B/raw/main/README.md",
+   "source_date": "2026-08-05",
+   "support": "direct-statement",
+   "notes": "vendor self-reported; conflicts with Artificial Analysis TB 4.0 at 5.6% (a different, harder benchmark version)"
+  },
+  {
+   "topic": "Qwen3.6 vendor",
+   "claim": "SWE-bench Verified: Qwen3.6-27B 77.2, Qwen3.6-35B-A3B 73.4, Qwen3.5-27B 75.0, Gemma4-31B 52.0, Gemma4-26B-A4B 17.4. Terminal-Bench 2.0: 59.3 / 51.5 / 41.6 / 42.9 / 34.2.",
+   "source_url": "https://huggingface.co/Qwen/Qwen3.6-27B/raw/main/README.md",
+   "source_date": "2026-04-21",
+   "support": "direct-statement",
+   "notes": "Uses an internal scaffold and a corrected task set"
+  },
+  {
+   "topic": "Contested Gemma scores",
+   "claim": "Gemma 4 26B-A4B SWE-bench Verified is 17.4 in Qwen's card and 57.40 in NVIDIA's. Gemma 4 31B is 52.0 in Qwen's card and 66.6 in Meta's Muse card.",
+   "source_url": "https://huggingface.co/meta-models/Muse-Glimmer-30B/raw/main/README.md",
+   "support": "contested"
+  },
+  {
+   "topic": "Qwen3.5 BFCL/TAU2",
+   "claim": "BFCL-V4 / TAU2-Bench: Qwen3.5-27B 68.5/79.0, Qwen3.5-35B-A3B 67.3/81.2, Qwen3.5-122B-A10B 72.2/79.5, GPT-5-mini 55.5/69.8. SWE-bench Verified: 27B 72.4, 35B-A3B 69.2, gpt-oss-120b 62.0.",
+   "source_url": "https://huggingface.co/Qwen/Qwen3.5-27B/raw/main/README.md",
+   "source_date": "2026-02-24",
+   "support": "direct-statement",
+   "notes": "vendor self-reported"
+  },
+  {
+   "topic": "gpt-oss",
+   "claim": "OpenAI model card, high reasoning: SWE-bench Verified 120b 62.4 and 20b 60.7; Tau-Bench Retail 67.8 / 54.8; Aider Polyglot 44.4 / 34.2",
+   "source_url": "https://arxiv.org/html/2508.10925v1",
+   "source_date": "2025-08-05",
+   "support": "direct-statement",
+   "notes": "older than 12 months"
+  },
+  {
+   "topic": "Muse Glimmer",
+   "claim": "Meta reports SWE-Bench Verified 76.0, SWE-Bench Pro 51.2 and TerminalBench 2.1 51.7 for a 30B dense Apache-2.0 model released Aug 2026, vs Qwen3.6-27B at 77.2 / 50.2 / 60.7",
+   "source_url": "https://huggingface.co/meta-models/Muse-Glimmer-30B/raw/main/README.md",
+   "source_date": "2026-08-09",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "GLM-4.7-Flash",
+   "claim": "Vendor: SWE-bench Verified 59.2, tau2 79.5 (vs gpt-oss-20b at 34.0 / 47.7 in the same table)",
+   "source_url": "https://huggingface.co/zai-org/GLM-4.7-Flash/raw/main/README.md",
+   "source_date": "2026-01-19",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "Devstral Small 2",
+   "claim": "Vendor: SWE-bench Verified 68.0%, Multilingual 55.7%, Terminal Bench 2 22.5%",
+   "source_url": "https://huggingface.co/mistralai/Devstral-Small-2-24B-Instruct-2512/raw/main/README.md",
+   "source_date": "2025-11-28",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "Gemma 4",
+   "claim": "Google card gives no SWE-bench numbers. LiveCodeBench v6 / Tau2: 31B 80.0/76.9, 26B A4B 77.1/68.2, 12B 72.0/69.0. Context is 256K for 12B and up, 128K for E2B/E4B.",
+   "source_url": "https://huggingface.co/google/gemma-4-31B-it/raw/main/README.md",
+   "source_date": "2026-07-20 lastModified",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "16GB guidance",
+   "claim": "Unsloth: 'Qwen3.8-27B 4-bit quants work on 16-19GB VRAM like RTX 5080'. Recommended UD-Q4_K_XL is 17.66 GB, so 16 GB VRAM means partial offload or UD-IQ4_XS at 14.35 GB.",
+   "source_url": "https://unsloth.ai/docs/models/qwen3.8.md",
+   "support": "direct-statement",
+   "notes": "file sizes from https://huggingface.co/api/models/unsloth/Qwen3.8-27B-GGUF?blobs=true"
+  },
+  {
+   "topic": "vLLM consumer Blackwell",
+   "claim": "vLLM recipe: on one RTX 5090 (32 GB), Qwen3.8-27B NVFP4 starts only with --enforce-eager and --max-model-len 32768. On 2x RTX 5090, NVFP4 weights are 10.6-12.0 GiB per GPU, about 21-24 GiB in total.",
+   "source_url": "https://recipes.vllm.ai/Qwen/Qwen3.8-27B",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "16GB fit",
+   "claim": "No 27B+ model has a vendor checkpoint that fits in 16 GB VRAM under vLLM: Qwen3.8-27B-NVFP4 21.9 GB, Gemma-4-31B w4a16 23.3 GB, Qwen3.6-35B-A3B-FP8 37.5 GB, Lightning NVFP4 21.6 GB. gpt-oss-20b at 13.76 GB and Gemma-4-12B w4a16 at 10.26 GB do fit.",
+   "source_url": "https://huggingface.co/api/models/nvidia/Qwen3.8-27B-NVFP4?blobs=true",
+   "support": "source-backed"
+  },
+  {
+   "topic": "OpenCode",
+   "claim": "Ollama docs: 'OpenCode requires a context length of 64k or higher'",
+   "source_url": "https://docs.ollama.com/integrations/opencode",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "OpenCode",
+   "claim": "OpenCode providers doc: vLLM models it discovers 'start with tools disabled'; default local endpoint http://127.0.0.1:8000/v1",
+   "source_url": "https://opencode.ai/docs/providers/",
+   "support": "direct-statement",
+   "notes": "single WebFetch read"
+  },
+  {
+   "topic": "NVIDIA guidance",
+   "claim": "NVIDIA's Aug 11 2026 local-AI posts name no GPU or VRAM-specific model picks. They cite Qwen3.8-27B at 131 tok/s on an RTX 5090 with MTP (llama.cpp Q4_K_M) and list llama.cpp, Ollama, LM Studio, vLLM and Unsloth as runtimes.",
+   "source_url": "https://blogs.nvidia.com/blog/local-ai-open-source-models-agents-nemotron/",
+   "source_date": "2026-08-11",
+   "support": "direct-statement",
+   "notes": "single WebFetch read"
+  },
+  {
+   "topic": "Ollama sizes",
+   "claim": "Ollama tags: qwen3.8:27b 18GB/256K; qwen3.6:27b-q4_K_M 17GB; gemma4:26b-a4b-it-qat 16GB; gemma4:12b-it-qat 7.2GB; gpt-oss:20b 14GB/128K; devstral-small-2:24b 15GB/384K; glm-4.7-flash 19GB/198K; qwen3-coder-next 52GB",
+   "source_url": "https://ollama.com/library/gemma4/tags",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "DeepSeek",
+   "claim": "DeepSeek released no small models in the last 12 months. DeepSeek-V4-Flash has about 291B params and V4.1-Flash-1017 about 763B (HF safetensors totals); the only small option is the older R1-0528-Qwen3-8B distill (2025-05-29).",
+   "source_url": "https://huggingface.co/api/models?author=deepseek-ai&sort=createdAt&direction=-1&limit=100",
+   "support": "source-backed"
+  }
+ ],
+ "gaps": [
+  "No independent coding-agent leaderboard covers the current small models (Qwen3.6/3.8, Gemma 4, Nemotron 3.5, Muse Glimmer). The SWE-bench board stops at 2026-02-26 and dropped bash-only, Terminal-Bench 4.1 lists no model of 32B or less, BFCL has no rows after Qwen3, and Aider and LiveCodeBench are stale. The ranking leans on vendor cards.",
+  "No tau2-bench official leaderboard was checked (no URL found in time); tau2 values come from Artificial Analysis and the vendor cards.",
+  "LMArena/arena.ai rows come from a single WebFetch summary; Cloudflare blocked a raw read. The webdev board was not read.",
+  "Artificial Analysis Coding and Agentic index values were not in the page data (null). Intelligence Index v5 reads 0 for several small models, which likely means not yet computed.",
+  "Gemma 4 vLLM tool-call and reasoning parser names were not confirmed: the vLLM recipe JSON for google/gemma-4-* returned a Next.js error page and the HF card does not give them.",
+  "Muse Glimmer vLLM support and parser names were not checked; its card mentions only llama.cpp for RTX.",
+  "Qwen3-Coder-Next SWE-bench numbers appear only as an image in the card; not extracted.",
+  "No official NVIDIA, Ollama or OpenCode page names a recommended model for 16 GB GPUs; such lists exist only in third-party blogs (not used).",
+  "Real throughput and KV-cache capacity on an 80-175 W RTX 5080 Laptop with 16 GB were not measured; fit estimates come from file sizes only.",
+  "Nanbeige4.3-33B (top of the AA small view) and K2 Horizon models were not evaluated for tool calling or license."
+ ]
+}

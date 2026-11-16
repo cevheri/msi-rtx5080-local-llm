@@ -1,0 +1,66 @@
+{
+ "verdicts": [
+  {
+   "claim": "Checkpoint weight sizes: zai-org BF16 62.44 GB, Intel int4 AutoRound 17.24 GB / 16.06 GiB, QuantTrio AWQ 18.41 GiB, pirola REAP NVFP4 12.91 GiB, unsloth Q4_K_M 18,312,339,808 B (17.05 GiB), UD-Q4_K_XL 16.32 GiB, UD-Q3_K_XL 12.84 GiB, Ollama blob 19,019,269,280 B",
+   "verdict": "confirmed",
+   "correction": "All re-read from the HF API (?blobs=true) on 2026-11-15 and match exactly (zai-org 58.156 GiB; Intel 16.060 GiB; QuantTrio 18.406 GiB; pirola 12.906 GiB; unsloth Q4_K_M 17.055 GiB, UD-Q4_K_XL 16.317 GiB, UD-Q3_K_XL 12.835 GiB). The Ollama manifest model layer is 19,019,269,280 B (sha256:9eba2761cf0b).",
+   "evidence_url": "https://huggingface.co/api/models/unsloth/GLM-4.7-Flash-GGUF?blobs=true ; https://huggingface.co/api/models/Intel/GLM-4.7-Flash-int4-AutoRound?blobs=true ; https://registry.ollama.ai/v2/library/glm-4.7-flash/manifests/latest"
+  },
+  {
+   "claim": "Architecture and KV math: 47 MLA layers, all full attention, kv_lora_rank 512 + qk_rope 64 gives 54,144 B/token BF16 and 27,072 B/token FP8; max_position_embeddings 202,752",
+   "verdict": "confirmed",
+   "correction": "config.json gives num_hidden_layers 47, kv_lora_rank 512, qk_rope_head_dim 64, max_position_embeddings 202752 and rope_scaling null. The unsloth GGUF header agrees: deepseek2.block_count 47, attention.key_length 576, head_count_kv 1, context_length 202752. llama.cpp b12418 llama-kv-cache.cpp:231 has has_v = !is_mla, so only the 576-wide K latent is cached: 576 x 47 x 2 = 54,144 B per token at f16. q8_0 is 576 x 47 x 34/32 = 28,764 B per token.",
+   "evidence_url": "https://huggingface.co/zai-org/GLM-4.7-Flash/raw/main/config.json ; https://github.com/ggml-org/llama.cpp/blob/b12418/src/llama-kv-cache.cpp#L231"
+  },
+  {
+   "claim": "vLLM v0.33.0 registers Glm4MoeLiteForCausalLM (registry.py line 125, MTP at line 730); glm45 and glm47 both map to Glm47MoeModelToolParser and to Glm47MoeParserReasoningAdapter",
+   "verdict": "confirmed",
+   "correction": "Re-read at tag v0.33.0: registry.py:125 and :730; tool_parsers/__init__.py:61-67; reasoning/__init__.py:59-65.",
+   "evidence_url": "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/model_executor/models/registry.py#L125"
+  },
+  {
+   "claim": "On sm_120 vLLM v0.33.0 selects TRITON_MLA (then FLASHINFER_MLA_SPARSE_SM120), and TRITON_MLA accepts an fp8 KV cache on SM89+",
+   "verdict": "confirmed",
+   "correction": "cuda.py, branch device_capability.major == 12, returns [TRITON_MLA, FLASHINFER_MLA_SPARSE_SM120]. triton_mla.py:101-106 lists fp8 and fp8_e4m3, and lines 203-228 gate them on SM89+ with dequantization to BF16. The earlier gap (#35577: fp8 KV blocked on RTX 5080) was closed for inactivity, but the v0.33.0 code now accepts fp8.",
+   "evidence_url": "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/platforms/cuda.py ; https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/v1/attention/backends/mla/triton_mla.py"
+  },
+  {
+   "claim": "vLLM budget arithmetic: Intel int4 gives 14.65 - 16.06 - 1.2 = -2.61 GiB, so nothing full-size fits without offload; REAP-23B NVFP4 leaves 0.54 GiB, which is about 10.6k BF16 / 21.3k FP8 tokens",
+   "verdict": "confirmed",
+   "correction": "Recomputed. 0.54 GiB / 54,144 B = 10.7k tokens, and / 27,072 B = 21.4k tokens. Below OpenCode's 64k minimum.",
+   "evidence_url": "https://huggingface.co/api/models/pirola/GLM-4.7-Flash-REAP-23B-A3B-NVFP4?blobs=true"
+  },
+  {
+   "claim": "vLLM v0.33.0 serve command: Intel/GLM-4.7-Flash-int4-AutoRound with --cpu-offload-gb 6 --cpu-offload-params experts --kv-cache-dtype fp8 --max-model-len 65536 fits and gives a 3.39 GiB KV pool (about 134k FP8 tokens)",
+   "verdict": "refuted",
+   "correction": "On v0.33.0 the UVA expert offload is undone for Marlin-repacked int4 MoE weights. The INC W4A16 MoE path (inc_wna16_moe.py:349-373) uses AutoGPTQMoEMethod. Its process_weights_after_loading (auto_gptq.py:630-677) transposes and converts the weights, then calls replace_parameter. Because the repacked shape differs, executor_utils.replace_parameter (model_executor/utils.py, rebinding branch) rebinds .data to a new device tensor. The _vllm_is_uva_offloaded marker survives, so device_loading_context (model_loader/utils.py:254-261) skips re-offloading. Open issue #66264 (2026-11-07, vLLM 0.33.0, sm_120) states that 'On 0.33.0 ... every repacked expert tensor leaks' and that it OOMs at load. The fix PRs #66265 and #67332 are open and unmerged. Expected outcome: all 16.06 GiB of weights end up on the GPU, so startup fails with an OOM. The arithmetic itself (N=6: 3.39 GiB pool, 67.2k BF16 / 134.5k FP8 tokens) is correct but does not apply until a fix ships. The prefetch offload backend (--offload-group-size) was not checked.",
+   "evidence_url": "https://github.com/vllm-project/vllm/issues/66264 ; https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/model_executor/model_loader/utils.py#L254 ; https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/model_executor/layers/quantization/auto_gptq.py#L630"
+  },
+  {
+   "claim": "llama.cpp b12418 supports the architecture (conversion/glm.py line 248 maps Glm4MoeLiteForCausalLM to DEEPSEEK2) and ships models/templates/GLM-4.7-Flash.jinja, byte-identical to the HF chat_template.jinja",
+   "verdict": "confirmed",
+   "correction": "glm.py:248-251 verified. cmp of the b12418 template against the HF raw chat_template.jinja shows no difference. Version labelling needs a fix: b12418 (2026-11-15) is a GitHub prerelease, and the latest stable release is llama.cpp v1.0.0 (2026-11-13), with b12420 the newest build. ghcr.io/ggml-org/llama.cpp:server-cuda13 and :server-cuda exist (HTTP 200).",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/blob/b12418/conversion/glm.py#L248 ; https://github.com/ggml-org/llama.cpp/releases/tag/v1.0.0"
+  },
+  {
+   "claim": "llama.cpp offload plan: Q4_K_M expert share about 0.344 GiB per MoE layer; 64k f16 KV needs 5.54 GiB moved, so --n-cpu-moe 17 (5.85 GiB RAM); the command uses 18",
+   "verdict": "confirmed",
+   "correction": "The command (--n-cpu-moe 18) works, but the reasoning for 17 is wrong. From the parsed Q4_K_M GGUF header, experts total 15.62 GiB and non-expert tensors 1.43 GiB. Per-layer expert size is 0.316 or 0.365 GiB (down_exps is Q4_K in 24 layers and Q6_K in 22). --n-cpu-moe N covers layers 0..N-1, and layer 0 is dense with no experts. So N=17 moves only 16 MoE layers, 5.45 GiB, which is short of the 5.54 GiB needed. N=18 moves 5.77 GiB. GPU estimate at N=18 and -c 65536 f16: 17.05 - 0.17 (token_embd stays on the host) - 5.77 = 11.11 GiB weights, + 3.30 GiB KV + about 1.0 GiB compute = 15.41 GiB, against 15.81 GiB free. That leaves about 0.4 GiB before the CUDA context (about 0.3 GiB), which is tight. Use --n-cpu-moe 20 (6.41 GiB in RAM) or -ctk q8_0 (1.76 GiB KV) for headroom. Note that --fit is on by default with a 1024 MiB fit-target. RAM use (6-7 GiB) is well within the 40 GiB budget.",
+   "evidence_url": "https://huggingface.co/unsloth/GLM-4.7-Flash-GGUF/resolve/main/GLM-4.7-Flash-Q4_K_M.gguf (header bytes 0-25MB parsed) ; https://github.com/ggml-org/llama.cpp/blob/b12418/tools/server/README.md"
+  },
+  {
+   "claim": "-ctk q8_0 works with the V-less MLA cache on CUDA",
+   "verdict": "uncertain",
+   "correction": "Issue #19724 (CUDA crash at about 65k context on GLM-4.7-Flash with FA on and a quantized KV cache) was closed as completed on 2026-03-01, which suggests it was fixed, but no fixing PR was traced. #25382 (DeepSeek-V4 q8_0 K garbage) concerns another model. v1.0.0 adds -ctk f8_e4m3 as another option. Test before relying on it.",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/issues/19724"
+  },
+  {
+   "claim": "Verdict 'good' for OpenCode: llama.cpp server with Q4_K_M, --n-cpu-moe 17-18, 64k context and working tool calls; vLLM v0.33.0 only with UVA expert offload",
+   "verdict": "confirmed",
+   "correction": "The llama.cpp part holds: the architecture is supported, the template is shipped and identical to HF, --jinja is on by default, and 64k fits with --n-cpu-moe 18 (or 20 for headroom). The vLLM fallback should be downgraded from 'untested' to 'not viable on v0.33.0' because of #66264. The only vLLM build that fits without offload, the pruned REAP-23B NVFP4, gives about 21k FP8 tokens, below 64k. Ollama glm-4.7-flash (17.71 GiB blob) needs OLLAMA_CONTEXT_LENGTH=65536 and partial offload; its expert-only offload behaviour was not checked.",
+   "evidence_url": "https://github.com/vllm-project/vllm/issues/66264"
+  }
+ ],
+ "overall": "holds-with-corrections",
+ "summary": "I could not refute the llama.cpp recommendation. GLM-4.7-Flash fits this RTX 5080 Laptop GPU through llama.cpp as unsloth Q4_K_M (17.05 GiB) with --n-cpu-moe 18, -c 65536, -fa on, --jinja, f16 KV (3.30 GiB at 54,144 B/token). The GPU estimate is about 15.4 GiB plus the CUDA context against 15.81 GiB free, which is tight; --n-cpu-moe 20 or -ctk q8_0 gives headroom. The record's '--n-cpu-moe 17 is enough' reasoning is wrong: layer 0 is dense, so 17 moves only 16 MoE layers (5.45 GiB, measured from the GGUF header), short of the 5.54 GiB needed. The vLLM path is refuted on v0.33.0. The Intel int4 AutoRound MoE goes through AutoGPTQMoEMethod and Marlin repack. replace_parameter then rebinds .data to a new device tensor while the UVA marker survives, so the offload is skipped (open issue #66264, fix PRs #66265 and #67332 unmerged), and 16.06 GiB of weights would OOM a 14.65 GiB budget. Without offload, only the pruned REAP NVFP4 fits (about 21k FP8 tokens). Confirmed: all checkpoint sizes, the config and KV math, the vLLM registry and parser names, TRITON_MLA on sm_120 with fp8 KV, and the llama.cpp conversion and byte-identical template. Correction: llama.cpp's latest stable release is v1.0.0 (2026-11-13); b12418 is a prerelease build. Gaps: no measured RTX 5080 speed, q8_0 KV with MLA on CUDA not verified, Ollama expert-only offload not checked, and the vLLM prefetch offload backend not examined. Work files are in $SCRATCH/glmv/ (GGUF parser gg.py there)."
+}

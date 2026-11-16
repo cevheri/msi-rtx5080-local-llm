@@ -1,0 +1,318 @@
+{
+ "review": {
+  "key": "ollama-local",
+  "url": "https://ollama.com/search?c=local",
+  "source_type": "registry",
+  "publisher": "Ollama (ollama.com library and registry.ollama.ai)",
+  "as_of": "2026-11-15 (live read; newest entry ripple-preview updated 2026-11-09)",
+  "title": "Local models · Ollama",
+  "accessible": true,
+  "access_notes": "Read raw with curl -A \"Mozilla/5.0\". Page 1 plus HX-Request pages 2-13 of /search?c=local&page=N returned 252 unique models (page 13 had 12, page 14 empty); page 2 differs from the unfiltered list, so the c=local filter holds on pagination. Default sort is not one of popular/newest/name (no option marked selected). Tag pages /library/<name>/tags read for 42 models. For load-bearing sizes and quants, read registry manifests and config blobs (small JSON only) at https://registry.ollama.ai/v2/library/<name>/manifests/<tag> and /blobs/<config digest>; no model layers downloaded. Raw files: $SCRATCH/src/ollama-local/ (p1-p13.html, tags/*.html, man/*.json), parsed list at $SCRATCH/src/ollama-local-parsed.json and $SCRATCH/src/ollama-local/tags.txt.",
+  "credibility": "high",
+  "credibility_reason": "First-party registry: tag names, digests, byte sizes, quant type (file_type), parser and minimum Ollama version come straight from the registry manifests and config blobs. It holds no performance data. Tag-page \"GB\" are rounded decimal GB and some are ranges; the context column is the model maximum, not Ollama's runtime default (4k on GPUs under 24 GiB per baseline). Capability badges (tools, thinking) describe the template, not tool-calling quality.",
+  "summary": "The local category lists 252 models. Default Linux amd64 tags for our picks are GGUF Q4_K_M (gpt-oss MXFP4; Gemma 4 QAT Q4_0 under separate -it-qat tags), and most are larger than the files the baseline chose. Only gemma4:26b-a4b-it-qat (13.45 GiB, byte-identical in size to the baseline Google QAT Q4_0), gemma4:12b, gpt-oss:20b, ornith-1.5:9b, mimo-v2.6:9b and deepseek-r1:8b-0528 fit fully in 16 GB VRAM. The qwen3.8:27b default is 15.66 GiB plus a 0.87 GiB projector, so the baseline's UD-Q3_K_XL in llama.cpp is still needed. Ollama's nvfp4/mxfp8 tags share digests with the -mlx tags, so they are Apple MLX builds and are no use on this laptop. Exception: flint:40b's default is an NVFP4 GGUF. Default tags now carry speculative-decoding settings: a draft_num_predict param, plus a separate gemma4-assistant draft layer for Gemma 4. Two entries are new since the baseline. nimble/nimble-v3 (Bespoke Labs 9B) and tev1 (Together 4B) are decision/classifier models, not coding agents. lfm2.5:24b (24B-A2B, 13.53 GiB Q4_K_M, tools+thinking, 128K) fits all-GPU but is unvetted. ripple-preview needs Ollama 0.40.16.",
+  "findings": [
+   {
+    "topic": "Catalog size",
+    "claim": "ollama.com/search?c=local lists 252 models over 13 HTMX pages (20 per page, 12 on page 13). Filters: c=local|cloud|tools|thinking|vision|embedding|decision, o=popular|newest|name|price|context, s=8|16|32|64|over64 GB download size.",
+    "evidence": "documented",
+    "location": "p1.html select options; p1-p13.html",
+    "target": "ollama",
+    "relevance": "low"
+   },
+   {
+    "topic": "Qwen3.6-35B-A3B on Ollama",
+    "claim": "qwen3.6:35b / :35b-a3b / :latest (digest 86b2d171ce90) = GGUF Q4_K_M, model layer 21,718,480,960 B (20.23 GiB) + projector 0.84 GiB, max context 256K, renderer qwen3.5, parser qwen3.5, requires Ollama 0.30.0, params draft_num_predict 2, temperature 1, top_k 20, top_p 0.95, presence_penalty 1.5. The older :35b-a3b-q4_K_M (07d35212591f) is 22.29 GiB with no projector. Larger than baseline ggml-org Q4_K_M 19.13 GiB, so it needs expert offload; Ollama offloads whole layers.",
+    "evidence": "documented",
+    "location": "registry manifest + config blob qwen3.6:35b",
+    "target": "ollama",
+    "relevance": "high"
+   },
+   {
+    "topic": "Qwen3.8-27B on Ollama",
+    "claim": "qwen3.8:27b / :latest (e118e4d12a70) = GGUF Q4_K_M, 27.3B, model 16,810,714,464 B (15.66 GiB) + projector 0.87 GiB, 256K max, renderer qwen3.8, parser qwen3.5, requires 0.32.12, draft_num_predict 4. No Q3 tag exists, so it cannot sit fully in 16 GB VRAM with KV. The baseline UD-Q3_K_XL (12.24 GiB) on llama.cpp stays the way to run it.",
+    "evidence": "documented",
+    "location": "registry config qwen3.8:27b; tags page",
+    "target": "ollama",
+    "relevance": "high"
+   },
+   {
+    "topic": "Gemma 4 26B-A4B on Ollama",
+    "claim": "gemma4:26b-a4b-it-qat (2dd70431afed) = Q4_0, model 13.45 GiB + projector 1.11 GiB, 256K max, parser gemma4, requires 0.30.5. Same size as the baseline Google QAT Q4_0 (13.45 GiB). Default gemma4:26b (ed3c4359df98) is Q4_K_M 17,074,419,072 B (15.90 GiB) + projector 1.11 GiB + a 0.43 GiB gemma4-assistant draft layer, draft_num_predict 3: too big for 16 GB. Use the -it-qat tag.",
+    "evidence": "documented",
+    "location": "registry manifests gemma4:26b, gemma4:26b-a4b-it-qat",
+    "target": "ollama",
+    "relevance": "high"
+   },
+   {
+    "topic": "Gemma 4 12B on Ollama",
+    "claim": "gemma4:12b (312246b09fab) = Q4_K_M 7,381,383,680 B (6.87 GiB) + projector 0.16 GiB + draft 0.43 GiB, 256K max. gemma4:12b-it-qat = Q4_0 6.50 GiB + 0.16 GiB projector. Both fit fully on GPU.",
+    "evidence": "documented",
+    "location": "registry manifests gemma4:12b, gemma4:12b-it-qat",
+    "target": "ollama",
+    "relevance": "medium"
+   },
+   {
+    "topic": "gpt-oss-20b on Ollama",
+    "claim": "gpt-oss:20b (f38aa0c53da5) = MXFP4, 20.9B, model 13,793,422,816 B (12.85 GiB), 128K, requires 0.30.0, only param temperature 1. That is about 1.6 GiB larger than the baseline ggml-org MXFP4 GGUF (11.28 GiB).",
+    "evidence": "documented",
+    "location": "registry config gpt-oss:20b",
+    "target": "ollama",
+    "relevance": "high"
+   },
+   {
+    "topic": "Qwen3-Coder-Next on Ollama",
+    "claim": "qwen3-coder-next:latest/q4_K_M (ca06e9e4087c) = Q4_K_M 79.7B, 48.19 GiB, 256K, parser qwen3-coder; q8_0 85 GB. There is no IQ4_XS tag: 48 GiB is more than 16 GiB VRAM plus the ~40 GiB of free RAM can hold with margin. The baseline unsloth UD-IQ4_XS 35.79 GiB on llama.cpp is still required.",
+    "evidence": "documented",
+    "location": "registry config qwen3-coder-next:q4_K_M",
+    "target": "ollama",
+    "relevance": "high"
+   },
+   {
+    "topic": "Nemotron 3.5 Lightning on Ollama",
+    "claim": "nemotron-3.5-lightning:30b (14b60fc91804) = Q4_K_M 32.9B nemotron_h_moe, 25,430,738,944 B (23.68 GiB), 1M max context, parser nemotron-3.5-nano, requires 0.32.9. That is about 6 GiB larger than the baseline ggml-org Q4_0 (17.60 GiB). The nvfp4 tag (d1e17d7dabac) is the same digest as the -mlx tag.",
+    "evidence": "documented",
+    "location": "registry config; tags page",
+    "target": "ollama",
+    "relevance": "medium"
+   },
+   {
+    "topic": "GLM-4.7-Flash on Ollama",
+    "claim": "glm-4.7-flash:q4_K_M = 17.71 GiB (glm4moelite 29.9B), 198K max, parser glm-4.7, requires 0.15.0, updated 5 months ago. It is slightly larger than the baseline unsloth Q4_K_M (17.05 GiB).",
+    "evidence": "documented",
+    "location": "registry config glm-4.7-flash:q4_K_M",
+    "target": "ollama",
+    "relevance": "medium"
+   },
+   {
+    "topic": "DeepSeek-R1-0528-Qwen3-8B on Ollama",
+    "claim": "deepseek-r1:8b = :8b-0528-qwen3-q4_K_M (6995872bfe4c) 4.87 GiB; :8b-0528-qwen3-q8_0 8.24 GiB; 128K max; no parser in config. The Ollama card shows tools and thinking badges for the whole deepseek-r1 family.",
+    "evidence": "documented",
+    "location": "registry configs; search card",
+    "target": "ollama",
+    "relevance": "medium"
+   },
+   {
+    "topic": "Ornith-1.5 on Ollama",
+    "claim": "ornith-1.5:9b (e5df7dcdd8a2) = Q4_K_M qwen35 9.0B, 5.24 GiB + projector 0.86 GiB, 256K. ornith-1.5:35b = qwen35moe Q4_K_M 20.22 GiB. Neither config sets a parser or a minimum version. The card has vision/tools/thinking badges and 478,850 downloads. Ornith is hosted in Ollama's own library namespace, but that does not verify the publishing org.",
+    "evidence": "documented",
+    "location": "registry configs ornith-1.5:9b/35b",
+    "target": "models",
+    "relevance": "medium"
+   },
+   {
+    "topic": "nvfp4/mxfp8 tags are MLX",
+    "claim": "On Ollama, -nvfp4 tags share digests with -mlx tags (gemma4:e2b-nvfp4 = gemma4:e2b-mlx f4a8449d1781; gemma4:12b-nvfp4 = 12b-mlx ded7a2735003; qwen3.6:27b-nvfp4 = 27b-mlx d49fd9e0da45; qwen3.8:27b-nvfp4 = 27b-mlx 5642e97495e1; nemotron-3.5-lightning nvfp4 = mlx d1e17d7dabac). They are Apple MLX builds, not CUDA NVFP4, so this laptop has no use for them. Exception: flint:40b default config says model_format gguf, file_type NVFP4, requires 0.40.9.",
+    "evidence": "documented",
+    "location": "tags pages (digest column); registry config flint:40b",
+    "target": "ollama",
+    "relevance": "high"
+   },
+   {
+    "topic": "Size ranges and platform manifests",
+    "claim": "Tag pages show ranges such as '6.6GB - 9.5GB' for platform-dependent defaults. Linux amd64 config blobs carry architecture amd64 / os linux and resolve to GGUF. Use explicit quant tags (for example gemma4:26b-a4b-it-qat) for reproducible pulls.",
+    "evidence": "documented",
+    "location": "tags pages; config blobs qwen3.6:35b, qwen3.8:27b",
+    "target": "ollama",
+    "relevance": "medium"
+   },
+   {
+    "topic": "Speculative decoding in default tags",
+    "claim": "Default tags now set draft_num_predict in params (qwen3.6:35b 2, qwen3.8:27b 4, gemma4 3, nemotron-3.5-lightning 2). Gemma 4 defaults ship a separate draft layer (architecture gemma4-assistant, about 0.43 GiB) that counts against VRAM. There are separate -mtp-q4_K_M tags for Qwen 3.5/3.6/3.8.",
+    "evidence": "documented",
+    "location": "registry params and config blobs",
+    "target": "ollama",
+    "relevance": "medium"
+   },
+   {
+    "topic": "Minimum Ollama versions",
+    "claim": "Config 'requires' field: qwen3.6 0.30.0, gemma4 0.30.9 (qat 0.30.5), qwen3.8 0.32.12, nemotron-3.5-lightning 0.32.9, laguna-xs-2.1 0.32.3, muse-glimmer 0.32.8, flint 0.40.9, lfm2.5:24b 0.40.4, mimo-v2.6 0.40.15, ripple-preview 0.40.16. Baseline v0.40.16 covers all of them.",
+    "evidence": "documented",
+    "location": "registry config blobs",
+    "target": "ollama",
+    "relevance": "medium"
+   },
+   {
+    "topic": "New: LFM2.5-24B-A2B",
+    "claim": "lfm2.5:24b (00a755688d0f) = lfm2moe 24.0B Q4_K_M 13.53 GiB, 128K max, tools+thinking badges, requires 0.40.4, updated 1 month ago; q4_0 14 GB. It fits fully on 16 GB, but there is no coding-agent evidence for it in the baseline. lfm2.5:8b is 8B-A1B, 5.2 GB, 125K.",
+    "evidence": "documented",
+    "location": "tags page; registry config lfm2.5:24b",
+    "target": "models",
+    "relevance": "medium"
+   },
+   {
+    "topic": "New: decision/classifier models",
+    "claim": "nimble (Bespoke Labs 9B, 256K, q4_K_M 5.6 GB), nimble-v3 (9B, 32K), tev1 (Together AI 4B, 4.6 GB), strands-decider, clef, pplx-decider, d1/d3, autotrust-jev and kev form a new 'decision' category for fast classification/routing. None of them is a coding agent, so they are out of scope for OpenCode picks.",
+    "evidence": "documented",
+    "location": "search cards pages 1-2",
+    "target": "models",
+    "relevance": "low"
+   },
+   {
+    "topic": "MiMo-V2.6 9B",
+    "claim": "mimo-v2.6:9b (MiMo-V2.6-Distill-Qwen-9B, Xiaomi) = qwen35 Q4_K_M 5.24 GiB + projector 0.86 GiB, 256K, parser qwen3.5, requires 0.40.15, updated 2026-11-03; q8_0 10 GB. Vision/tools/thinking badges.",
+    "evidence": "documented",
+    "location": "registry config mimo-v2.6:9b",
+    "target": "models",
+    "relevance": "medium"
+   },
+   {
+    "topic": "Over-budget coding models",
+    "claim": "These are too big for full GPU and need offload. ripple-preview:65b: ricursive Q4_K_M 36.13 GiB, 2M context window shown, requires 0.40.16, updated 2026-11-09. flint:40b: NVFP4 21.29 GiB. laguna-xs-2.1: Q4_K_M 18.88 GiB, parser poolside-v1. north-mini-code-1.0: cohere2moe 30.5B Q4_K_M 17.32 GiB, 488K. muse-glimmer:30b: 27.9B Q4_K_M 15.61 GiB + projector 1.30 GiB. nemotron-cascade-2:30b: Q4_K_M 22.61 GiB. devstral-small-2:24b: Q4_K_M 14.14 GiB, 384K. qwen3.8-flash-next: 125b-a6b, 120 GB (exceeds RAM).",
+    "evidence": "documented",
+    "location": "registry configs; tags pages",
+    "target": "models",
+    "relevance": "medium"
+   },
+   {
+    "topic": "Popularity signal",
+    "claim": "Download counts on 2026-11-15 cards: gemma4 29,238,692; qwen3.5 26,143,069; gpt-oss 15,560,715; qwen3.6 7,668,782; qwen3.8 6,616,732; glm-4.7-flash 2,183,184; qwen3-coder-next 2,240,442; nemotron-3.5-lightning 898,300; ornith 777,591; ornith-1.5 478,850; muse-glimmer 393,659; mimo-v2.6 93,759; ripple-preview 41,544.",
+    "evidence": "documented",
+    "location": "search card title='N downloads'",
+    "target": "models",
+    "relevance": "low"
+   }
+  ],
+  "measurements": [],
+  "conflicts": [
+   {
+    "baseline_claim": "DeepSeek-R1-0528-Qwen3-8B: No tools (chat only); AA tau2 0; vLLM has no tool parser for it.",
+    "source_claim": "The Ollama deepseek-r1 card shows 'tools' and 'thinking' capability badges for the whole family, including the 8b-0528-qwen3 tags.",
+    "assessment": "Not a real conflict. The Ollama badge only means the template accepts tools. The measured tau2 score of 0 is the better signal, so keep it chat-only for OpenCode."
+   },
+   {
+    "baseline_claim": "Nemotron 3.5 Lightning file is ggml-org Q4_0 17.60 GiB with --n-cpu-moe 16 (about 5 GiB in RAM).",
+    "source_claim": "Ollama's only GGUF build is Q4_K_M at 23.68 GiB.",
+    "assessment": "Different files, both valid. On Ollama about 8 GiB more spills to RAM with whole-layer offload, so prefer llama.cpp with the baseline file."
+   },
+   {
+    "baseline_claim": "gpt-oss-20b GGUF is 11.28 GiB (ggml-org MXFP4).",
+    "source_claim": "Ollama gpt-oss:20b MXFP4 is 13,793,422,816 B = 12.85 GiB.",
+    "assessment": "Different packaging. Ollama's build is about 1.6 GiB larger, which leaves less room for KV in 16 GB. Either still fits fully on GPU."
+   },
+   {
+    "baseline_claim": "Flint listed as Flint 40B-A2.5B, 4-bit file 22.9 GB.",
+    "source_claim": "Ollama names it flint:40b-a2b (39.8B), default file_type NVFP4 GGUF 21.29 GiB (22.9 GB), plus q4_1 26 GB and qat-int4 23 GB tags.",
+    "assessment": "Sizes agree. The active-parameter label differs (A2B vs A2.5B): check the HF card before quoting it."
+   }
+  ],
+  "agreements": [
+   "Gemma 4 26B-A4B QAT Q4_0 model weights are 13.45 GiB on Ollama (gemma4:26b-a4b-it-qat), matching the baseline Google QAT Q4_0 size exactly.",
+   "Qwen3-Coder-Next has no thinking badge on Ollama, which matches the baseline 'no' thinking.",
+   "Qwen3.6/3.8 use the qwen3.5 parser family and Gemma 4 uses gemma4 in Ollama, consistent with the baseline parser families.",
+   "All required Ollama versions are at or below the baseline v0.40.16 (ripple-preview needs exactly 0.40.16).",
+   "The baseline platform record already noted this page's trending list (qwen3.8, nemotron-3.5-lightning, lfm3, mimo-v2.6, ripple-preview)."
+  ],
+  "kb_notes": [
+   {
+    "target_doc": "docs/model-selection.md",
+    "note": "Ollama tags for our picks, read from registry.ollama.ai manifests on 2026-11-15 (https://ollama.com/search?c=local): qwen3.6:35b Q4_K_M 20.23 GiB + 0.84 GiB projector; qwen3.8:27b Q4_K_M 15.66 GiB + 0.87 GiB projector (no Q3 tag); gemma4:26b-a4b-it-qat Q4_0 13.45 GiB + 1.11 GiB projector; gemma4:12b-it-qat Q4_0 6.50 GiB; gpt-oss:20b MXFP4 12.85 GiB; qwen3-coder-next:q4_K_M 48.19 GiB; nemotron-3.5-lightning:30b Q4_K_M 23.68 GiB; glm-4.7-flash:q4_K_M 17.71 GiB; ornith-1.5:9b Q4_K_M 5.24 GiB; deepseek-r1:8b-0528-qwen3-q8_0 8.24 GiB."
+   },
+   {
+    "target_doc": "docs/model-selection.md",
+    "note": "On Ollama only gemma4:26b-a4b-it-qat, gemma4:12b, gpt-oss:20b, ornith-1.5:9b, mimo-v2.6:9b and deepseek-r1:8b fit fully in 16 GB VRAM. Qwen3.8-27B and Qwen3-Coder-Next need the smaller unsloth GGUFs on llama.cpp because Ollama only ships Q4_K_M and larger (https://ollama.com/library/qwen3.8/tags, https://ollama.com/library/qwen3-coder-next/tags)."
+   },
+   {
+    "target_doc": "docs/model-selection.md",
+    "note": "Watch list from the Ollama local catalog (2026-11-15): lfm2.5:24b (LFM2.5-24B-A2B, Q4_K_M 13.53 GiB, 128K, tools and thinking) fits fully on GPU but has no coding-agent evidence yet. ripple-preview:65b (Q4_K_M 36.13 GiB, needs Ollama 0.40.16) and flint:40b (NVFP4 GGUF 21.29 GiB) need offload (https://ollama.com/search?c=local)."
+   },
+   {
+    "target_doc": "docs/opencode.md",
+    "note": "When using Ollama from OpenCode, pull explicit quant tags (for example gemma4:26b-a4b-it-qat) instead of :latest. Default tags differ by platform (the tag pages show size ranges), and the Gemma 4 defaults add a 0.43 GiB speculative draft layer (https://ollama.com/library/gemma4/tags)."
+   },
+   {
+    "target_doc": "llamacpp/models.md",
+    "note": "Ollama's -nvfp4 and -mxfp8 tags share digests with its -mlx tags (for example qwen3.6:27b-nvfp4 = qwen3.6:27b-mlx d49fd9e0da45), so they are Apple MLX builds, not CUDA NVFP4. Do not take them as evidence of NVFP4 GGUF support on sm_120. The one exception seen is flint:40b, whose config says GGUF NVFP4 (https://ollama.com/library/qwen3.6/tags)."
+   },
+   {
+    "target_doc": "docs/sources.md",
+    "note": "https://ollama.com/search?c=local: first-party registry, 252 models on 2026-11-15. Paginate with header 'HX-Request: true' and ?c=local&page=N. Exact sizes, quant and minimum Ollama version are in https://registry.ollama.ai/v2/library/<name>/manifests/<tag> and the config blob it references. The tag page context column is the model maximum, not Ollama's runtime default."
+   },
+   {
+    "target_doc": "docs/model-selection.md",
+    "note": "Ollama marks the deepseek-r1 family with a 'tools' badge, but that only means the template accepts tools. Keep DeepSeek-R1-0528-Qwen3-8B as chat-only for OpenCode (AA tau2 0) (https://ollama.com/library/deepseek-r1)."
+   }
+  ],
+  "gaps": [
+   "No performance data on this source, so no tok/s rows.",
+   "Default sort order of the search page is not exposed (no sort option marked selected), so the ordering of the 252 entries is not explained.",
+   "Ollama's 'GB' on tag pages is rounded; exact GiB figures above come from registry manifests for the tags checked. Tags not listed in findings were not checked at manifest level.",
+   "The configs for ornith-1.5 and deepseek-r1 set no parser field, and how Ollama handles tool calls for them was not traced.",
+   "Active-parameter count for Flint (A2B per Ollama vs A2.5B in baseline notes) not resolved here.",
+   "Did not check whether the Ollama qwen3.8:27b-mtp/default tags embed MTP heads that add VRAM beyond the 15.66 GiB layer."
+  ],
+  "new_candidates": [
+   {
+    "name": "LFM2.5-24B-A2B (Ollama lfm2.5:24b)",
+    "why": "MoE 24B/2B active, Q4_K_M 13.53 GiB fits fully in 16 GB VRAM, 128K context, tools and thinking badges, Ollama 0.40.4+. Not in the baseline picks; needs a coding/agent benchmark check."
+   },
+   {
+    "name": "MiMo-V2.6-Distill-Qwen-9B (Ollama mimo-v2.6:9b)",
+    "why": "Already noted in baseline research as a second 9B option. Confirmed Q4_K_M 5.24 GiB + 0.86 GiB projector, 256K, parser qwen3.5, requires Ollama 0.40.15, updated 2026-11-03."
+   }
+  ],
+  "methodology": "Fetched the search page and HX-Request pages 2-13 with curl and parsed the cards with python3 -I: 252 models, with capabilities, size badges, downloads and update dates. Fetched tag pages for 42 tools/thinking candidates and our picks. Read registry manifests and config/params blobs (JSON only) to get exact byte sizes, file_type, parser, required Ollama version and draft settings. Confirmed that the nvfp4 tags are MLX builds by matching their digests. Nothing was installed or pulled."
+ },
+ "check": {
+  "verdicts": [
+   {
+    "item": "Publisher, type, as-of: Ollama first-party registry, live 2026-11-15, 252 local models over 13 HTMX pages",
+    "verdict": "confirmed",
+    "evidence": "curl -A Mozilla/5.0 -H 'HX-Request: true' /search?c=local&page=N: page 1 has 20 unique /library/ links, page 13 has 12, page 14 has 0."
+   },
+   {
+    "item": "qwen3.6:35b Q4_K_M 21,718,480,960 B (20.23 GiB) + 0.84 GiB projector, requires 0.30.0, parser qwen3.5",
+    "verdict": "confirmed",
+    "evidence": "manifest model 21718480960, projector 902821728, layer source 'qwen3.6-source:35b-a3b-mtp-q4_K_M-20260824'. config: gguf, qwen35moe, Q4_K_M, requires 0.30.0, parser and renderer qwen3.5, 35.5B.",
+    "correction": "The model layer comes from a '-mtp-' source build, so the default tag may already carry MTP heads. That is a gap to note."
+   },
+   {
+    "item": "qwen3.8:27b Q4_K_M 16,810,714,464 B (15.66 GiB) + 0.87 GiB projector, requires 0.32.12, renderer qwen3.8, parser qwen3.5",
+    "verdict": "confirmed",
+    "evidence": "manifest model 16810714464, projector 931146016. config: Q4_K_M, qwen35, 27.3B, requires 0.32.12, parser qwen3.5, renderer qwen3.8."
+   },
+   {
+    "item": "gemma4:26b-a4b-it-qat Q4_0 13.45 GiB + 1.11 GiB projector, req 0.30.5. Default gemma4:26b Q4_K_M 17,074,419,072 B + 0.43 GiB draft",
+    "verdict": "confirmed",
+    "evidence": "qat manifest model 14439361440 B (13.45 GiB), projector 1194827744. config Q4_0, requires 0.30.5, parser gemma4. gemma4:26b manifest: model 17074419072, projector 1194828128, draft 461766752 (0.43 GiB).",
+    "correction": "The summary calls the QAT file 'byte-identical in size' to the baseline file. The baseline only gives 13.45 GiB, so the match is confirmed at 0.01 GiB precision, not at byte level."
+   },
+   {
+    "item": "gpt-oss:20b MXFP4 13,793,422,816 B (12.85 GiB), requires 0.30.0, vs baseline 11.28 GiB",
+    "verdict": "confirmed",
+    "evidence": "manifest model 13793422816 (from dhiltgen/gpt-oss:20b-llamacpp). config MXFP4, 20.9B, requires 0.30.0, no parser field. Baseline line 70 says 11.28 GiB GGUF."
+   },
+   {
+    "item": "nemotron-3.5-lightning:30b Q4_K_M 25,430,738,944 B (23.68 GiB), req 0.32.9, vs baseline Q4_0 17.60 GiB",
+    "verdict": "confirmed",
+    "evidence": "manifest 25430738944. config nemotron_h_moe, Q4_K_M, 32.9B, requires 0.32.9, parser nemotron-3.5-nano. Baseline line 72 says 17.60 GiB."
+   },
+   {
+    "item": "qwen3-coder-next:q4_K_M 48.19 GiB, so the baseline UD-IQ4_XS on llama.cpp is still required",
+    "verdict": "confirmed",
+    "evidence": "manifest model 51741599936 B = 48.19 GiB. Baseline line 71 says UD-IQ4_XS 35.79 GiB."
+   },
+   {
+    "item": "nvfp4 tags are MLX builds (qwen3.6:27b-nvfp4 = 27b-mlx d49fd9e0da45). Exception: flint:40b is a GGUF NVFP4 at 21.29 GiB, requires 0.40.9",
+    "verdict": "confirmed",
+    "evidence": "The raw manifest files for qwen3.6:27b-nvfp4 and qwen3.6:27b-mlx have the same sha256 prefix (d49fd9e0da45), and the layers are split 'tensor' blobs, which means MLX. flint:40b config: gguf, NVFP4, 39.8B, requires 0.40.9. Model layer 22863084160 B (21.29 GiB) from flint-nvfp4.gguf."
+   },
+   {
+    "item": "lfm2.5:24b lfm2moe 24.0B Q4_K_M 13.53 GiB, requires 0.40.4",
+    "verdict": "confirmed",
+    "evidence": "manifest 14526258464 B. config lfm2moe, Q4_K_M, 24.0B, requires 0.40.4, no parser field.",
+    "correction": "The summary and kb_note list the models that fit fully in 16 GB, and that list leaves out lfm2.5:24b (13.53 GiB) and gemma4:12b-it-qat, although the review's own findings say both fit. Either add them or say the list covers baseline picks only."
+   },
+   {
+    "item": "Conflicts with baseline (DeepSeek tools badge, Nemotron size, gpt-oss size, Flint A2B vs A2.5B)",
+    "verdict": "confirmed",
+    "evidence": "The size conflicts are real packaging differences and are assessed correctly. The DeepSeek badge vs AA tau2 0 (baseline line 80) is correctly called a non-conflict. I did not re-check Flint's active-parameter label (left open in the review's gaps).",
+    "correction": "One conflict is unflagged and I did not check it: the review lists devstral-small-2:24b with 384K context, while baseline line 79 excludes Devstral Small 2 for 'about 32k context only'. Recheck it against the HF card before writing either figure into the KB."
+   }
+  ],
+  "credibility_fair": true,
+  "credibility_note": "High is fair for packaging facts: sizes, quant type, required version and parser come straight from registry manifests and config blobs, and I reproduced them byte for byte. The review correctly says the source has no performance data and that capability badges reflect the template, not quality. It has no measurement rows, which is the right call.",
+  "overall": "holds-with-corrections",
+  "summary": "I re-read the registry manifests and config blobs raw with curl (Mozilla/5.0 UA), and all load-bearing numbers match exactly. These cover: qwen3.6:35b 20.23+0.84 GiB, qwen3.8:27b 15.66+0.87 GiB, gemma4 qat 13.45 GiB and the default with its 0.43 GiB draft, gpt-oss:20b 12.85 GiB, nemotron 23.68 GiB, qwen3-coder-next 48.19 GiB, lfm2.5:24b 13.53 GiB and flint NVFP4 GGUF 21.29 GiB. The nvfp4 = mlx manifest identity holds, and so do the 252-model pagination count, the requires versions and the parsers. The flagged conflicts are real and assessed correctly. Corrections: (1) the 'fits fully in 16 GB' list leaves out lfm2.5:24b and gemma4:12b-it-qat; (2) 'byte-identical' to the baseline QAT file is only confirmed to 0.01 GiB; (3) the qwen3.6:35b default model layer comes from a '-mtp-' source build, so it may already include MTP heads; (4) the devstral-small-2 384K figure conflicts with the baseline 'about 32k' and is not flagged. Raw files are in $SCRATCH/src/ollama-check/."
+ }
+}

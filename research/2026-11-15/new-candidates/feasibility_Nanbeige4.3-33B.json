@@ -1,0 +1,91 @@
+{
+ "verdicts": [
+  {
+   "claim": "Config: LlamaForCausalLM, 52 layers all full attention, 56 Q heads, 8 KV heads, head_dim 128, hidden 7168, intermediate 22016, vocab 166912, untied, max_position_embeddings 524288, rope_theta 1.2e8; 33,118,977,024 BF16 params; repo created 2026-10-24, modified 2026-10-28",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Nanbeige/Nanbeige4.3-33B/raw/main/config.json ; https://huggingface.co/api/models/Nanbeige/Nanbeige4.3-33B?blobs=true"
+  },
+  {
+   "claim": "KV arithmetic: 2 x 52 x 8 x 128 x 2 B = 212,992 B/token BF16 (106,496 FP8); 64k = 13.0 GiB BF16, 6.91 GiB q8_0, 3.66 GiB q4_0 (0.0703 GiB per block)",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Nanbeige/Nanbeige4.3-33B/raw/main/config.json"
+  },
+  {
+   "claim": "Checkpoint sizes: BF16 61.67 GiB, official INT4 21.00, FP8 33.08, Tech2wild AutoRound 19.34, primitive-ai NVFP4 20.55; bartowski IQ2_M 11.35 / IQ2_S 10.38 / IQ3_XXS 13.49 / Q4_K_M 19.36; mradermacher i1-IQ2_M 10.87; AtomicChat AD-IQ3_XXS 13.92",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/bartowski/Nanbeige_Nanbeige4.3-33B-GGUF?blobs=true",
+   "correction": "bartowski also ships IQ2_XS 9.90 GiB and IQ2_XXS 9.38 GiB, which give more VRAM headroom at 64k if IQ2_M is too tight."
+  },
+  {
+   "claim": "vLLM v0.33.0 does not fit: no vLLM-loadable build leaves a positive KV pool (14.65 - 19.34 - 1.2 = -5.89 GiB); LlamaForCausalLM at registry.py:155, NanbeigeForCausalLM at :760 is Transformers backend; qwen3_coder/qwen3_xml and qwen3 reasoning registered",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/model_executor/models/registry.py",
+   "correction": "Source-backed extension: even an ideal 4-bit g128 build is about 30.73B x 4.125/8 = 14.76 GiB plus 2.23 GiB BF16 embed and lm_head = ~17 GiB; 64k FP8 KV (6.5 GiB) would need weights <= 14.65 - 1.2 - 6.5 = 6.95 GiB (about 1.8 bits/param). No vLLM path on 16 GB regardless of which of the ~100 HF quants is chosen."
+  },
+  {
+   "claim": "bartowski IQ2_M tensor layout: token_embd 0.479 GiB, output Q5_K 0.766 GiB, blocks avg 0.194 GiB, GPU weights 10.87 GiB; IQ3_XXS blocks 0.233 GiB",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/bartowski/Nanbeige_Nanbeige4.3-33B-GGUF/resolve/main/Nanbeige_Nanbeige4.3-33B-IQ2_M.gguf (header range read 0-16 MiB)",
+   "correction": "Blocks are not uniform: IQ2_M 0.179-0.242 GiB (sum 10.10), IQ3_XXS 0.214-0.274 GiB (sum 12.10), IQ3_XXS token_embd 0.627 GiB. Header confirms general.architecture=llama, tokenizer.ggml.model=llama (SPM), add_space_prefix=True, add_bos_token=True, bos 166100, metaspace.prepend_scheme=first."
+  },
+  {
+   "claim": "Using the bartowski GGUF (which carries tokenizer.ggml.metaspace.prepend_scheme) mitigates the tokenizer problem",
+   "verdict": "refuted",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/blob/b12407/src/llama-vocab.cpp",
+   "correction": "At b12407 the key is parsed (llama-vocab.cpp:3029-3040) but the SPM tokenize path ignores it ('TODO: honor metaspace_prepend_scheme', line 3836) and prepends a space after every special token when add_space_prefix is true (line 3850). So every b12407 image mis-tokenizes chat prompts with any GGUF until PR #31986 (open, approved by CISC 2026-11-10, files src/llama-vocab.cpp and a test) ships. Inferred workaround, untested: --override-kv tokenizer.ggml.add_space_prefix=bool:false (override supported, arg.cpp:2927, llama-model-loader.cpp:219-258). Because chat prompts always start with the BOS/<|im_start|> special token, HF 'first' semantics then give no prefix on any fragment, matching the PR's 'after' ids. Verify with llama-tokenize against the PR's expected [166100, 2714, 13, 17782, 166101, 13, 166100, 66354, 13, 166103, 13]."
+  },
+  {
+   "claim": "llama.cpp tool calls go through the generic chat auto-parser, inferred from the Nanbeige4.2 template (#26252, #26324)",
+   "verdict": "refuted",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/blob/b12407/common/chat.cpp",
+   "correction": "The 4.3 template contains <tool_call>, <function= and <parameter= and not the excluded single-line literal, so common_chat_template_detect_params_init routes it to the specialized Qwen3-Coder handler (chat.cpp:1418-1427), which also treats <think> as reasoning with end tags \\n</think>, </think>, <tool_call> (common/parsers/qwen3-coder.cpp:13-29). This is the same handler used for Qwen3.5/3.6. Support is source-backed, not inferred from 4.2. Still untested live. Also note #26324 was closed unmerged; #26252 (qwen3 specialized parser) was merged 2026-08-02."
+  },
+  {
+   "claim": "add_bos_token=true with bos=<|im_start|> may produce a double <|im_start|>",
+   "verdict": "refuted",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/blob/b12407/common/chat.cpp",
+   "correction": "chat.cpp:1123-1127 strips a leading bos_token from the rendered template when add_bos is set, so the chat endpoint yields one <|im_start|>. Raw /completion prompts that already start with <|im_start|> would still get two."
+  },
+  {
+   "claim": "IQ2_M all on GPU at 64k with q4_0 K/V: about 15.2 GiB of 15.9 GiB, server command uses -ngl 99",
+   "verdict": "uncertain",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/blob/b12407/ggml/src/ggml-cuda/fattn-common.cuh",
+   "correction": "Arithmetic holds (10.87 + 3.66 + ~0.7 = 15.23 GiB), but it omits the CUDA context and cuBLAS workspace (about 0.3-0.5 GiB, inferred), so the real total is about 15.5-15.7 of 15.92 GiB. The FA path converts quantized K/V to F16 inside the compute buffer (fattn-common.cuh:54-85): 2 x 65536 x 8 x 128 x 2 B = 0.25 GiB at full context, which is plausibly within the 0.7 estimate. Passing -ngl 99 disables --fit, so a near-miss is an OOM rather than an auto-offload. Prefer omitting -ngl so --fit places layers, or use -c 49152, or IQ2_XS (9.90 GiB)."
+  },
+  {
+   "claim": "IQ3_XXS quality option: about 45 of 52 blocks on GPU, 7 blocks (1.63 GiB) in RAM; decode bound about 28 tok/s",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/bartowski/Nanbeige_Nanbeige4.3-33B-GGUF/resolve/main/Nanbeige_Nanbeige4.3-33B-IQ3_XXS.gguf (header range read)",
+   "correction": "Source-backed: 45 x 0.2327 + 0.766 + 45 x 0.0703 KV + 0.7 = 15.1 GiB (plus CUDA context, so tight); 7 blocks = 1.63 GiB = 1.75 GB / 80 GB/s = 21.9 ms + 12.07 GB / 896 GB/s = 13.5 ms = ~28 tok/s bound. Block sizes vary 0.214-0.274 GiB, so let --fit choose."
+  },
+  {
+   "claim": "IQ2_M decode bound 77 tok/s empty, about 60 at 64k",
+   "verdict": "confirmed",
+   "correction": "Source-backed: 11.67 GB / 896 GB/s = 76.8 tok/s; with 3.93 GB q4_0 KV at 64k, 15.6 GB -> ~57 tok/s. Inferred bound only, nothing measured."
+  },
+  {
+   "claim": "Ollama: no official tag; community home-rag/nanbeige4.3:33b-512k-bf16 (66 GB) lists thinking but not tools",
+   "verdict": "refuted",
+   "evidence_url": "https://ollama.com/home-rag/nanbeige4.3/tags",
+   "correction": "library/nanbeige4.3 is 404 (confirmed), but the community tag page lists both 'tools' and 'thinking'. Irrelevant for this machine because the only tag is 66 GB BF16."
+  },
+  {
+   "claim": "No LICENSE file; Apache-2.0 from card metadata; card serves with --tool-call-parser qwen3_coder --reasoning-parser qwen3 and recommends preserve_thinking true for code-agent work",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Nanbeige/Nanbeige4.3-33B/raw/main/README.md"
+  },
+  {
+   "claim": "Chat template: tool_call_format defaults to xml; enable_thinking=false emits empty think block, otherwise generation prompt ends '<think>\\n'; special tokens 166100-166106",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Nanbeige/Nanbeige4.3-33B/raw/main/tokenizer_config.json",
+   "correction": "HF tokenizer.json is BPE with Metaspace pre-tokenizer prepend_scheme 'first' (split false); llama.cpp loads it as SPM."
+  },
+  {
+   "claim": "Recommended configuration serves OpenCode with working tool calls and >=64k context on this machine (verdict 'usable', trial candidate)",
+   "verdict": "uncertain",
+   "correction": "Best realistic config: llama.cpp server-cuda-b12407, bartowski IQ2_M, -c 65536 -np 1 -fa on -ctk q4_0 -ctv q4_0, omit -ngl (let --fit place, or fall back to -c 49152 / IQ2_XS), add --override-kv tokenizer.ggml.add_space_prefix=bool:false until #31986 ships (verify ids with llama-tokenize first), keep --jinja, -e GGML_CUDA_DISABLE_GRAPHS=1 before the image name, publish on 127.0.0.1. Tool calls go through the Qwen3-Coder handler (source-backed). 64k fit, quality at 2-bit weights with q4_0 KV, and an OpenCode tool-call smoke test all remain unmeasured. Keep it a trial candidate behind Qwen3.8-27B."
+  }
+ ],
+ "overall": "holds-with-corrections",
+ "summary": "The core feasibility conclusions hold. vLLM v0.33.0 cannot serve this model on 16 GB: the smallest build (19.34 GiB) leaves a -5.89 GiB KV pool, and even an ideal 4-bit build would be about 17 GiB. The realistic path is llama.cpp b12407 with the bartowski IQ2_M (all on the GPU, 64k with q4_0 K/V) or IQ3_XXS (about 7 blocks in RAM). The config, all sizes, the KV math and the GGUF tensor layouts were confirmed from raw config.json, the HF API and header range reads; vLLM registry and parser lines were confirmed at the tag.\n\nFour claims are refuted.\n1. The bartowski prepend_scheme key does not help at b12407. llama-vocab.cpp:3836/3850 ignores it and prefixes a space after every special token, so every b12407 image mis-tokenizes chat prompts until PR #31986 (still open) ships. An inferred, untested workaround is --override-kv tokenizer.ggml.add_space_prefix=bool:false; check it with llama-tokenize first.\n2. Tool calls are not handled by the generic auto-parser. chat.cpp:1418-1427 routes this template to the specialized Qwen3-Coder handler, which also handles <think>. That makes tool-call support source-backed rather than inferred from 4.2.\n3. There is no double BOS. chat.cpp:1123-1127 strips the leading bos_token.\n4. The Ollama community tag lists tools as well as thinking.\n\nThe 64k IQ2_M fit is still uncertain. The record leaves out the CUDA context (real total about 15.5-15.7 of 15.92 GiB), and -ngl 99 turns off --fit. Drop -ngl, or fall back to -c 49152 or IQ2_XS (9.90 GiB). It stays a trial candidate. Scratch files are in $SCRATCH/nb."
+}

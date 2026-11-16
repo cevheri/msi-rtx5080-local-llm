@@ -1,0 +1,119 @@
+{
+ "overall": "holds-with-corrections",
+ "summary": "I could not refute any identity or capability fact, and every benchmark number matched its cited source exactly. Two small fixes are needed. First, the thinking-mode sampling settings are merged wrongly: the card's general thinking setting is temp 1.0 with presence_penalty 1.5, and temp 0.6 is only for precise coding. Second, the claim that all ggml-org derivatives carry the apache-2.0 tag is too broad: ggml-org/Qwen3.6-35B-A3B-MTP-GGUF has no license tag. The NVIDIA same-harness numbers are confirmed, but NVIDIA is a competing vendor, so calling them 'independent' overstates their neutrality. All raw files are saved in $SCRATCH/fc-q36/. Gaps: I did not open the JS-rendered Qwen blog, and I did not re-check the Ollama 4k default context, the vLLM recipe yaml, or the offload, speed and memory arithmetic beyond the config inputs.",
+ "verdicts": [
+  {
+   "claim": "Official Qwen ownership: HF author=Qwen; vendor GitHub README (QwenLM/Qwen3.6, now QwenLM/Qwen3.8) has a 2026-04-16 news entry linking the HF qwen36 collection and the blog; HF org isVerified=false",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/QwenLM/Qwen3.6/main/README.md"
+  },
+  {
+   "claim": "HF createdAt 2026-04-15T05:59:19Z, lastModified 2026-11-07, inside the 12-month window, not gated",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/Qwen/Qwen3.6-35B-A3B"
+  },
+  {
+   "claim": "License Apache-2.0 (front matter, API tag, LICENSE file is the Apache 2.0 text)",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Qwen/Qwen3.6-35B-A3B/raw/main/LICENSE"
+  },
+  {
+   "claim": "Derivatives (FP8, nvidia NVFP4, RedHatAI, unsloth, ggml-org) carry license:apache-2.0; Intel AutoRound has no tag",
+   "verdict": "refuted",
+   "correction": "Mostly right, but ggml-org/Qwen3.6-35B-A3B-MTP-GGUF has no license tag. ggml-org/Qwen3.6-35B-A3B-GGUF does have apache-2.0. Intel has no tag, as stated.",
+   "evidence_url": "https://huggingface.co/api/models/ggml-org/Qwen3.6-35B-A3B-MTP-GGUF"
+  },
+  {
+   "claim": "35B total / 3B activated, 256 experts, 8 routed + 1 shared; HF safetensors total 35,951,822,704 BF16; files 71.90 GB",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/Qwen/Qwen3.6-35B-A3B?blobs=true"
+  },
+  {
+   "claim": "Architecture: Qwen3_5MoeForConditionalGeneration; 40 layers, 10 full-attention (interval 4); 16 Q / 2 KV heads, head_dim 256, partial rotary 0.25, rope_theta 1e7, interleaved mRoPE; GDN 16 QK / 32 V heads dim 128, conv 4, float32 SSM; moe_intermediate 512, hidden 2048, vocab 248320, untied; 1 MTP layer; ViT depth 27, hidden 1152, patch 16",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Qwen/Qwen3.6-35B-A3B/raw/main/config.json"
+  },
+  {
+   "claim": "Context 262,144 native (max_position_embeddings 262144), extensible to 1,010,000 with static YaRN factor 4.0 via --hf-overrides + VLLM_ALLOW_LONG_MAX_MODEL_LEN=1; card advises at least 128K; static YaRN may hurt short texts",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Qwen/Qwen3.6-35B-A3B/raw/main/README.md"
+  },
+  {
+   "claim": "Modalities: text+image+video in, text out; pipeline image-text-to-text; vLLM --language-model-only in card; Ollama tags Text, Image input; mmproj 0.61 GB Q8_0 / 0.9 GB BF16",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Qwen/Qwen3.6-35B-A3B/raw/main/README.md"
+  },
+  {
+   "claim": "Thinking on by default; enable_thinking=false emits an empty think block (chat_template.jinja lines 153-156); preserve_thinking supported (line 102)",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Qwen/Qwen3.6-35B-A3B/raw/main/chat_template.jinja"
+  },
+  {
+   "claim": "llama.cpp: chat_template_kwargs at server README line 1455; --reasoning on|off|auto, --reasoning-budget, --reasoning-preserve (default enabled)",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12418/tools/server/README.md"
+  },
+  {
+   "claim": "Card sampling: thinking/coding temp 0.6, top_p 0.95, top_k 20; non-thinking temp 0.7, top_p 0.8, top_k 20, presence_penalty 1.5",
+   "verdict": "refuted",
+   "correction": "The card (lines 663-665) lists three settings. General thinking: temp 1.0, top_p 0.95, top_k 20, presence_penalty 1.5. Precise coding thinking (e.g. WebDev): temp 0.6, top_p 0.95, top_k 20, presence_penalty 0.0. Non-thinking: temp 0.7, top_p 0.8, top_k 20, presence_penalty 1.5. Labelling 0.6 as 'thinking/coding' drops the general thinking default of 1.0.",
+   "evidence_url": "https://huggingface.co/Qwen/Qwen3.6-35B-A3B/raw/main/README.md"
+  },
+  {
+   "claim": "The card recommends preserve_thinking for agents",
+   "verdict": "uncertain",
+   "correction": "The card says Qwen3.6 was trained to use historical thinking traces, and its agent example sets enable_thinking and preserve_thinking to true. I found no explicit sentence recommending it for agents, so this is inferred from the example.",
+   "evidence_url": "https://huggingface.co/Qwen/Qwen3.6-35B-A3B/raw/main/README.md"
+  },
+  {
+   "claim": "Tool calling: Qwen3-Coder XML format; tools rendered in <tools> at template line 45/47; format instructions line 53; tool_calls rendered lines 107-129",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Qwen/Qwen3.6-35B-A3B/raw/main/chat_template.jinja"
+  },
+  {
+   "claim": "vLLM v0.33.0: qwen3_coder -> qwen3_engine_tool_parser.Qwen3EngineToolParser; reasoning qwen3 -> Qwen3ParserReasoningAdapter; registry maps Qwen3_5MoeForConditionalGeneration (line 618), Qwen3_5MoeForCausalLM (205), Qwen3_5MoeMTP (740)",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/tool_parsers/__init__.py"
+  },
+  {
+   "claim": "llama.cpp v1.0.0 common/chat.cpp routes <tool_call>/<function=/<parameter= templates to the Qwen3-Coder parser ('also used by ... Qwen3.5'); qwen35moe arch present",
+   "verdict": "confirmed",
+   "correction": "The routing block is at about lines 1432-1440 of v1.0.0 chat.cpp, and qwen35moe is at llama-arch.cpp line 46.",
+   "evidence_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/v1.0.0/common/chat.cpp"
+  },
+  {
+   "claim": "Vendor benchmarks: SWE-V 73.4, SWE-Pro 49.5, SWE-Multilingual 67.2, TB2.0 51.5, SkillsBench Avg5 28.7, TAU3 67.2, MCPMark 37.0, Tool Decathlon 26.9, LCB v6 80.4, with the stated settings (internal scaffold temp 1.0 200K; Terminus-2 avg of 5; SkillsBench via OpenCode on 78 tasks; TAU3 gpt-5.2 low + BM25; MCPMark GitHub MCP v0.30.3)",
+   "verdict": "confirmed",
+   "correction": "All values match the Qwen3.6-35BA3B column. They are self-reported. The SWE-bench Pro score is on Qwen's own corrected version of the task set, so it is not comparable to the public leaderboard. The card table also has MCP-Atlas 62.8, which the record omits.",
+   "evidence_url": "https://huggingface.co/Qwen/Qwen3.6-35B-A3B/raw/main/README.md"
+  },
+  {
+   "claim": "NVIDIA same-harness (NeMo Gym / NeMo Evaluator): Qwen3.6-35B-A3B SWE-V 70.12, SWE-Multilingual 63.40, TB2.1 44.38; Gemma4 26B-A4B 57.40, gpt-oss-20b 52.44, Lightning 51.56",
+   "verdict": "confirmed",
+   "correction": "The numbers are exact. These are NVIDIA's own measurements on its competing model's card, so they are third-party but not neutral. 'Independent' in the opencode_fit caveats is too strong.",
+   "evidence_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/raw/main/README.md"
+  },
+  {
+   "claim": "Artificial Analysis: Intelligence Index N/A, output speed 121 tok/s, TTFT 19.19 s on hosted providers; index v5.0.1",
+   "verdict": "confirmed",
+   "evidence_url": "https://artificialanalysis.ai/models/qwen3-6-35b-a3b"
+  },
+  {
+   "claim": "Checkpoint sizes and publishers: FP8 37.46, nvidia NVFP4 23.42, RedHatAI NVFP4 25.04 / FP8 37.46, unsloth NVFP4-Fast 23.65 / NVFP4 26.49, Intel 21.49, QuantTrio 25.46, cyankiwi 24.97, ggml-org Q4_K_M 20.54 (Q8_0 36.90, BF16 69.38, mmproj 0.61, MTP 1.06/1.99, DFlash 0.42), ggml-org MTP Q8_0 37.8, unsloth GGUF list, unsloth MTP list, lmstudio Q4_K_M 21.17",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/ggml-org/Qwen3.6-35B-A3B-GGUF?blobs=true"
+  },
+  {
+   "claim": "Ollama: qwen3.6:35b-a3b = latest = 35b (digest 86b2d171ce90, 23GB, 256K, Text+Image); other tags and sizes as listed; -nvfp4/-mxfp8 tags MLX-only; badges vision, tools, thinking",
+   "verdict": "confirmed",
+   "correction": "I did not verify the download count (7.7M).",
+   "evidence_url": "https://ollama.com/library/qwen3.6/tags"
+  },
+  {
+   "claim": "Open issues: llama.cpp #30118 (Qwen3.6 tool calls leak into content), vLLM #66264 (UVA offload undone, 2026-11-07), #49476 (b12x OOM on 16 GB with NVFP4 Qwen3.6-35B-A3B)",
+   "verdict": "confirmed",
+   "correction": "All three are open, and their titles match the descriptions. I did not check the other issue numbers.",
+   "evidence_url": "https://github.com/vllm-project/vllm/issues/66264"
+  }
+ ]
+}

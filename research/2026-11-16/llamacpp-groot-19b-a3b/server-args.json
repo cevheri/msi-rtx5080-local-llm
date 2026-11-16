@@ -1,0 +1,1 @@
+["-m","/hf/hub/models--GrootTeam--Groot-19B-A3B-261023-GGUF/snapshots/2fa1ec958e3bbf7312cf0af97802ff26bfdc5260/Groot-19B-A3B-261023-Q4_K_M.gguf","--alias","local","-ngl","all","--n-cpu-moe","0","-fa","on","-c","131072","-np","1","--jinja","--reasoning","off","--temp","0.6","--top-p","0.95","--top-k","20","--min-p","0","--presence-penalty","0"]

@@ -1,0 +1,141 @@
+{
+ "key": "nemotron-3.5-lightning",
+ "repo": "ggml-org/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-GGUF",
+ "file": "NVIDIA-Nemotron-3.5-Lightning-30B-A3B-Q4_0.gguf",
+ "size_bytes": 18898091584,
+ "header_ok": true,
+ "header_facts": "GGUF v3, arch nemotron_h_moe, 401 tensors, 61 keys, header 7.9 MB (32 MiB range was enough). 52 blocks: 23 MoE (blocks 1,3,6,8,10,13,15,17,20,22,24,27,29,31,34,36,38,40,43,45,47,49,51), 6 full-attention (blocks 5,12,19,26,33,42), 23 Mamba-2; no dense FFN blocks and no sliding window. Experts: 128 routed, 6 used, 1 shared (ffn 3712, stays on GPU because LLM_FFN_EXPS_REGEX does not match shexp), expert ffn 1856, relu2 so only up and down tensors (5.35 MiB per Q4_0 expert). Attention: 32 Q heads, 2 KV heads, key/value length 128; rope type NONE in llama.cpp at b12407. SSM: d_inner 4096, d_state 128, 8 groups, conv kernel 4, 64 heads of 64. Embedding 2688, vocab 131072 (tokenizer gpt2/pixtral). Header context_length 1048576 (config.json max_position_embeddings 262144). Tensors 17.593 GiB: Q4_0 15.39, Q8_0 2.17, F32 0.03. Experts 15.389 GiB total, 0.6691 GiB per MoE block, 0 on the other 29 blocks. Non-expert GPU weights 1.856 GiB (block tensors 1.507 plus output/norm 0.349). token_embd 0.349 GiB stays on the host. Embedded chat template is byte-identical to the BF16 repo's chat_template.jinja (9,867 chars).",
+ "kv_math": "Attention KV, f16: 6 layers x 2 KV heads x (128 + 128) x 2 B = 6,144 B/token; x 131,072 = 805,306,368 B = 768 MiB (0.750 GiB). q8_0 would be 408 MiB, so quantizing KV saves only 360 MiB and is not worth the #27623 risk. At 262,144 f16 it is 1,536 MiB. Recurrent state (llama_memory_recurrent, f32, one sequence at -np 1): per Mamba-2 layer conv 3 x (4096 + 2 x 8 x 128) = 18,432 floats plus ssm 4096 x 128 = 524,288 floats = 2,170,880 B; x 23 layers = 49.9 MB = 47.6 MiB on the GPU, included in the 0.8 GiB overhead allowance. Context checkpoints (default 32 per slot, at least 8,192 tokens apart) hold about 47.6 MiB of recurrent state each in host RAM, so at most about 16 x 47.6 = 0.75 GiB at 128k. No SWA cache and no MLA, so the script's KV line (0.750 GiB) is exact.",
+ "recommended": {
+  "context": 131072,
+  "kv_type": "f16",
+  "n_cpu_moe": 21,
+  "moe_cache_mib": 2048,
+  "load_mode": "none",
+  "threads": 8,
+  "vram_breakdown": "Non-expert weights 1,900 MiB (1.856 GiB, incl. 357 MiB output tensor) + GPU experts of blocks 21-51 (14 MoE blocks x 685 MiB = 9,592 MiB) + f16 KV at 131072 768 MiB = 12,260 MiB (script: 11.973 GiB at --n-cpu-moe 21); + MoE cache 2,048 MiB; + overhead 819 MiB (0.8 GiB: CUDA context, compute buffers at -ub 512, 47.6 MiB Mamba state; kept at 0.8 because vocab is 131k, smaller than Qwen's 248k, and the recurrent state is about the same size as Qwen3.6's, so nothing argues for more); + desktop 112 MiB = 15,239 MiB at the nvidia-smi peak. RAM side: blocks 0-20 hold 9 MoE blocks = 6.022 GiB of pinned experts; the cache holds about 380 of those 1,152 host experts (33%), close to the Qwen3.6 25+3200 ratio (about 30%).",
+  "predicted_peak_mib": 15239,
+  "predicted_free_mib": 602,
+  "memory_cap": "18g",
+  "predicted_container_ram_gib": 10.5,
+  "server_args": [
+   "-m",
+   "MODEL_PATH",
+   "--alias",
+   "local",
+   "-ngl",
+   "all",
+   "--n-cpu-moe",
+   "21",
+   "--moe-cache-mib",
+   "2048",
+   "-lm",
+   "none",
+   "-t",
+   "8",
+   "-fa",
+   "on",
+   "-c",
+   "131072",
+   "-np",
+   "1",
+   "--jinja",
+   "--reasoning",
+   "off",
+   "--temp",
+   "1.0",
+   "--top-p",
+   "0.95"
+  ]
+ },
+ "alternative": "--n-cpu-moe 25 --moe-cache-mib 3456 (11 MoE blocks, 7.36 GiB pinned; GPU weights+KV 10,889 MiB + 3,456 cache + 819 + 112 desktop = 15,276 MiB predicted peak, 565 MiB free). It pushes the Qwen3.6 finding further (cache holds about 46% of host experts) and should show whether decode keeps rising at the cost of a few percent of prefill. Do not go below --n-cpu-moe 16 with a cache: 16 + 768 MiB lands at 15,329 MiB, only 12 MiB inside the limit.",
+ "thinking": "Toggle. The template sets enable_thinking=True by default (prompt ends '<think>\\n'; off renders '<think></think>'). Server default: --reasoning off (sets template default enable_thinking=false, arg.cpp at b12407), matching the KB rule for toggle models. Per request: chat_template_kwargs {\"enable_thinking\": true} or false (JSON boolean). The template has no reasoning_effort, medium_effort or budget kwargs, so --reasoning-effort does nothing for this model; --reasoning-budget N still works server-side. truncate_history_thinking defaults True in the template (past reasoning dropped before the last user turn).",
+ "per_request_thinking_on": "{\"chat_template_kwargs\": {\"enable_thinking\": true}}",
+ "tool_calling": "common/chat.cpp at b12407 (lines 1420-1427) selects common_chat_params_init_qwen3_coder because the template contains '<tool_call>', '<function=' and '<parameter=' and not the no-newline variant; the comment there names Nemotron Nano 3. common/parsers/qwen3-coder.cpp sees '<think>' in the template, so it extracts reasoning into reasoning_content with end tags '\\n</think>', '</think>' or '<tool_call>', and tool calls come back as OpenAI tool_calls. NVIDIA's vLLM/SGLang recipes use the qwen3_coder tool parser too. force_nonempty_content (recommended on the NVIDIA card for coding agents) appears 0 times in the GGUF template and 0 times in the BF16 repo's chat_template.jinja, so it is a no-op; leave it out. Run the scripted get_weather test before OpenCode.",
+ "sampling": "NVIDIA model card (BF16 and NVFP4 cards, both modes, thinking on and off): temperature 1.0, top_p 0.95; NVIDIA's own llama.cpp recipe on the NVFP4 card passes only --temp 1.0 --top-p 0.95, so llama.cpp's own top_k 40 and min_p 0.05 defaults stay. Unsloth's page says 'NVIDIA recommends' thinking 0.6 / top_p 0.95 and instruct 0.2 (plus min_p 0.01 in its command); that does not match the primary card, so use the card values.",
+ "opencode_entry": "{\"nemotron-3.5-lightning\": {\"modelID\": \"local\", \"name\": \"Nemotron 3.5 Lightning 30B-A3B Q4_0 (llama.cpp)\", \"capabilities\": {\"tools\": true, \"input\": [\"text\"], \"output\": [\"text\"], \"reasoning\": {\"supported\": true}}, \"limit\": {\"context\": 131072, \"output\": 16384}, \"variants\": [{\"id\": \"thinking\", \"body\": {\"chat_template_kwargs\": {\"enable_thinking\": true}}}, {\"id\": \"none\", \"body\": {\"chat_template_kwargs\": {\"enable_thinking\": false}}}]}}",
+ "probe_long_tokens": "8000,30000,100000",
+ "expected_speed": "Decode 100-140 tok/s at short context (estimate), about 90-125 after 100k. Reasoning: same 3B-active class as Qwen3.6 (measured 120 tok/s at 25 blocks + 3,200 MiB). Here only 9 of 23 MoE blocks (39% of routed-expert reads) sit in RAM, against 25 of 40 (62%) for Qwen, and the cache covers a similar share of them. That favours Nemotron. But each token reads more expert bytes (23 layers x 6 x 5.35 MiB = 738 MiB, Qwen about 540 MiB), and 52 blocks of small Mamba-2 kernels run with CUDA graphs disabled, which costs launch time. Long-context decay should be smaller than Qwen's (122 to 93 at 107k) because only 6 layers carry attention, with 6 KiB/token of KV. Prefill 1,800-2,800 tok/s at 8k (estimate): fewer host blocks to upload than Qwen's 1,990 tok/s run, still limited by serial expert copies (#25859).",
+ "issues": [
+  {
+   "id": "ggml-org/llama.cpp#25859",
+   "state": "open (updated 2026-11-06)",
+   "note": "Serial expert H2D copies in offloaded prefill; mitigated by -lm none, worse at the 25-block alternative."
+  },
+  {
+   "id": "ggml-org/llama.cpp#27330",
+   "state": "open (updated 2026-10-28)",
+   "note": "CUDA graphs hang sm_120 laptops; the lead's -e GGML_CUDA_DISABLE_GRAPHS=1 covers it, and it costs some kernel-launch time over 52 blocks."
+  },
+  {
+   "id": "ggml-org/llama.cpp#27623",
+   "state": "open (updated 2026-10-22)",
+   "note": "q8_0 KV decode penalty on CUDA; avoided by keeping f16 (KV is only 768 MiB)."
+  },
+  {
+   "id": "ggml-org/llama.cpp#31802",
+   "state": "open PR (updated 2026-11-15)",
+   "note": "Fused q8_0 KV dequant fix, not in b12407; irrelevant at f16."
+  },
+  {
+   "id": "ggml-org/llama.cpp#30357",
+   "state": "open (updated 2026-10-30)",
+   "note": "Filed for Qwen3.5+ templates; this template also re-renders <think> blocks and the model is hybrid, so watch timings.cache_n for full re-prefills."
+  },
+  {
+   "id": "ggml-org/llama.cpp#32316",
+   "state": "open (updated 2026-11-15)",
+   "note": "IMROPE/Qwen cache-reuse issue; not this arch, but the lesson holds: keep the default --ctx-checkpoints on this Mamba hybrid."
+  },
+  {
+   "id": "ggml-org/llama.cpp#31703",
+   "state": "open PR, unreviewed, flagged by the PR checker",
+   "note": "Claims Nemotron-H RoPE/activation bugs, tested on BaiZe-2.2B. b12407 sets rope type NONE for nemotron_h_moe, and the header's rope.dimension_count 84 (2688/32, not head_dim 128) looks like a converter default. Low confidence that it applies to Lightning; a sanity answer on first start settles it."
+  },
+  {
+   "id": "ggml-org/llama.cpp#31115",
+   "state": "open",
+   "note": "nemotron_h_moe 15x slower on Vulkan/Intel iGPU; not CUDA, informational."
+  },
+  {
+   "id": "ggml-org/llama.cpp#31810",
+   "state": "open PR",
+   "note": "FP16 Mamba-2 SSM cache; not in b12407; state stays f32 (47.6 MiB)."
+  }
+ ],
+ "kb_discrepancies": [
+  "GPU estimate is high: the KB says about 15.2 GiB at 128k with f16 KV for --n-cpu-moe 16, but the header gives 13.311 GiB of weights+KV, so about 14.1 GiB with 0.8 GiB overhead (about 14,560 MiB at nvidia-smi incl. desktop). About 0.75 GiB of VRAM is left unused, and no expert cache takes it.",
+  "The recipe predates the 2026-11-16 Qwen3.6 tuning: it lacks -lm none (prefill doubled on Qwen), -t 8 and --moe-cache-mib, and it keeps the default mmap load.",
+  "The 16g cap does not fit -lm none at the default prompt cache: pinned experts (4.68 GiB at 16, 6.02 GiB at 21) + 0.35 GiB token_embd + up to 8 GiB --cache-ram + about 0.75 GiB checkpoints + about 2 GiB process = up to 17.1 GiB at 21; use 18g.",
+  "'For 256k use q8_0 KV at the same split' is unnecessary and costly: f16 KV at 262144 is only 1,536 MiB (6 attention layers x 2 KV heads); at --n-cpu-moe 21 it fits by shrinking the cache to 1,280 MiB, while q8_0 brings the #27623 decode penalty for a 768 MiB saving.",
+  "Sampling is stale: the KB (via Unsloth) gives thinking temperature 0.6, instruct 0.2, but NVIDIA's own BF16 and NVFP4 cards say temperature 1.0, top_p 0.95 for both modes and pass only those in their llama.cpp recipe.",
+  "The thinking control is missing from the entry: the template defaults enable_thinking=True, so the KB toggle-model rule (--reasoning off plus thinking/none variants) should be stated. The template has no effort or budget kwargs (unlike Bolt's medium_effort).",
+  "The 'blocks 0-15 hold 7 of the 23 MoE layers, about 4.7 GiB' figure is correct (header: 4.683 GiB), and the layer pattern matches config.json; this is confirmation, not an error.",
+  "'The repo also holds an MTP file' understates it: there are three MTP files (BF16, Q4_0, Q8_0) plus BF16 and Q8_0 main files; the Q4_K_M file was deleted on 2026-08-14, so NVIDIA's NVFP4-card recipe '-hf ...:Q4_K_M' no longer resolves. The repo was re-uploaded on 2026-11-12 (Q4_0 LFS oid 61f87e75974e4b535dcdf9aad056541a9514f1dfa4538b463b081d19b7a00e3c), so a copy cached earlier may be an older build.",
+  "The force_nonempty_content note holds: 0 occurrences in the GGUF template and in the BF16 repo template (byte-identical)."
+ ],
+ "risks": [
+  "The 0.8 GiB overhead is carried over from Qwen measurements; Mamba-2 scan buffers on 23 layers are unmeasured here. If the load log shows more, lower --moe-cache-mib first (each 5.35 MiB is one expert slot), not the block split.",
+  "Prompt-cache misses on this hybrid force full re-prefill (no partial rollback without checkpoints); watch timings.cache_n in the OpenCode session.",
+  "Unverified Nemotron-H logits correctness question from open PR #31703 (BaiZe-specific); check the first answers and the get_weather tool call for sanity.",
+  "Decode at CPU share 0 depends on PCIe uploads of cache misses; Lightning's routed experts are 3x larger than Qwen3.6's (5.35 vs 1.69 MiB), so per-miss cost is higher and the cache may help less per MiB than on Qwen.",
+  "The predicted 602 MiB free at peak depends on the desktop staying near 112 MiB; a browser with GPU acceleration can eat the margin."
+ ],
+ "sources": [
+  "$HOME/projects/llm/llamacpp/models.md lines 455-467 (Lightning entry) and 100-152 (Qwen3.6 measured recipe)",
+  "$HOME/projects/llm/llamacpp/README.md sections MoE expert offload, KV cache quantization, Thinking control, Prompt cache, Tool calling, Known issues",
+  "$HOME/projects/llm/docs/opencode.md (config shape, validated config, thinking variants)",
+  "GGUF header: $SCRATCH/headers/nemotron-3.5-lightning/head.gguf, parsed with $SCRATCH/bench/gguf_plan.py; template at $SCRATCH/headers/nemotron-3.5-lightning/chat_template.jinja",
+  "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/common/chat.cpp (lines 1420-1427)",
+  "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/common/parsers/qwen3-coder.cpp",
+  "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/common/arg.cpp (-lm, --n-cpu-moe, --moe-cache-mib, --reasoning, --ctx-checkpoints, --cache-ram)",
+  "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/common/common.h (LLM_FFN_EXPS_REGEX, n_ctx_checkpoints 32, checkpoint_min_step 8192, cache_ram_mib 8192)",
+  "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/src/llama-model.cpp (nemotron_h_moe hybrid memory filters, rope type NONE)",
+  "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/src/llama-moe-cache.cpp and docs/moe-cache.md",
+  "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/raw/main/README.md, config.json and chat_template.jinja",
+  "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4/raw/main/README.md (Local AI llama.cpp recipe)",
+  "https://huggingface.co/api/models/ggml-org/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-GGUF/tree/main and /commits/main",
+  "https://unsloth.ai/docs/models/nemotron-3.5",
+  "gh api repos/ggml-org/llama.cpp/issues/{25859,27330,27623,31802,30357,32316,31703,31115,31810,28753} on 2026-11-16"
+ ]
+}

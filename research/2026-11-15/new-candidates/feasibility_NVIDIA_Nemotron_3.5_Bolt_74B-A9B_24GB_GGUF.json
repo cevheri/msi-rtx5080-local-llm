@@ -1,0 +1,96 @@
+{
+ "verdicts": [
+  {
+   "claim": "GGUF file sizes: main 22,018,326,528 B (20.51 GiB), mmproj 1,733,692,736 B (1.61 GiB), LiLiCorr drafter 998,242,560 B (0.93 GiB); not gated, license openmdw-1.1; createdAt 2026-10-07, lastModified 2026-10-15",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB-GGUF?blobs=true"
+  },
+  {
+   "claim": "24GB safetensors checkpoint 22.43 GiB incl. vision; BF16 139.5 GiB",
+   "verdict": "confirmed",
+   "correction": "HF API: the 24GB repo totals 24,120,362,148 B (22.46 GiB) with tokenizer/config files included; the safetensors shards are about 22.43 GiB. BF16 repo total is 149,795,738,013 B (139.51 GiB).",
+   "evidence_url": "https://huggingface.co/api/models/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB?blobs=true"
+  },
+  {
+   "claim": "config.json: 88 blocks = 40 Mamba-2 + 40 MoE + 8 attention at 7,16,25,36,47,58,69,78; 2 KV heads, head_dim 128, no sliding window; 240-496 routed experts, width 1536-2560, top-9; latent 1024; max_position_embeddings 262144",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-BF16/raw/main/config.json"
+  },
+  {
+   "claim": "KV bytes/token 2x8x2x128x2 = 8192 B BF16 (4096 FP8); 128k f16 = 1.00 GiB, 256k q8_0 = 1.06 GiB",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-BF16/raw/main/config.json"
+  },
+  {
+   "claim": "vLLM Mamba state about 84 MB/seq bf16",
+   "verdict": "refuted",
+   "correction": "config.json sets mamba_ssm_cache_dtype float32: SSM state 40 x 128 heads x 64 x 128 x 4 B = 160 MiB plus about 2 MiB conv state, so about 162 MiB per sequence (llama.cpp's 0.16 GiB figure is right). Does not change the vLLM no-fit verdict.",
+   "evidence_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-BF16/raw/main/config.json"
+  },
+  {
+   "claim": "vLLM does not fit: 14.65 GiB budget - 22.43 GiB weights - 1.2 GiB = -8.98 GiB; no KV pool",
+   "verdict": "confirmed",
+   "correction": "This holds even without the vision tower (about 20.8 GiB). It also needs b12x kernels for MIXED_PRECISION IQ2_XXS/Q8_0 on SM120 (b12x.md lists IQ2_XXS and Q8_0 for Linear and MoE, installed through vllm[b12x]), and the KB records that b12x is not in the image.",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/docs/features/quantization/b12x.md"
+  },
+  {
+   "claim": "vLLM v0.33.0 registry: NemotronH_Omni_Reasoning_V3 -> nano_nemotron_vl (line 553), NemotronHPuzzleForCausalLM -> nemotron_h (line 187); in-tree reasoning parser nemotron_v3 exists; repo ships ultra_v3_reasoning_parser.py",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/models/registry.py"
+  },
+  {
+   "claim": "llama.cpp b12407 supports nemotron_h_moe (llama-arch.cpp:105, latent tensors 584-585, per-layer expert counts in nemotron-h.cpp 111-131); PR #30520 merged 2026-10-15; PR #30960 (pixtral pre-tokenizer fix, merged 2026-10-22) included in b12407",
+   "verdict": "confirmed",
+   "correction": "Minor: nemotron-h.cpp reads the per-layer expert count from the router tensor shape (ffn_gate_inp ne[1]) and the width from n_ff_exp(i), around lines 111-131. b12407 is 594 commits ahead of the #30960 merge commit e197cef. The b11669 tag contains the #30520 merge cd0a5b6a1.",
+   "evidence_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/src/models/nemotron-h.cpp"
+  },
+  {
+   "claim": "Exact GGUF file NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB.gguf; header: routed experts 15.88 GiB, non-routed 4.617 GiB; --n-cpu-moe 50 puts 8.23 GiB experts in RAM, 7.65 GiB on GPU; 64k f16 needs N=46",
+   "verdict": "confirmed",
+   "correction": "Reproduced from a 25 MB header range-read: tensors total 20.499 GiB; type counts are IQ2_XXS 160 (routed and shared experts), Q8_0 114, NVFP4 80 (Mamba in/out), F32 489. The N=46 and N=48 cumulative values are the same (8.27 GiB stays on GPU). token_embd (544 MiB Q8_0) normally stays in host memory in llama.cpp, which gives about 0.5 GiB more GPU headroom than the record counts. The LLM_FFN_EXPS_REGEX '\\.ffn_(up|down|gate|gate_up)_(ch|)exps' (common.h:1286) matches this GGUF's ffn_up_exps/ffn_down_exps names, so --n-cpu-moe works on it.",
+   "evidence_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB-GGUF/resolve/main/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB.gguf"
+  },
+  {
+   "claim": "Estimated VRAM about 14.4 GiB at -c 131072 f16 KV with --n-cpu-moe 50 fits the 16 GB card",
+   "verdict": "uncertain",
+   "correction": "Source-backed part: 4.617 + 7.65 + 1.00 KV + 0.16 Mamba = 13.43 GiB (about 12.9 if token_embd stays on the host). The 1.0 GiB compute buffer and about 0.4 GiB CUDA context are assumptions. NVIDIA's own 28GB recipe (65,536 ctx, q8_0 KV, -ub 512, mmproj and drafter) is labelled for 32GB+ GPUs, so its non-weight overhead is not small. Start with -c 65536 or use --fit, then read the logged buffer sizes before going to 131072.",
+   "evidence_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB-GGUF/raw/main/README.md"
+  },
+  {
+   "claim": "Tool calls: chat template routes to the Qwen3-Coder handler in b12407 common/chat.cpp:1420-1427; reasoning goes to reasoning_content",
+   "verdict": "confirmed",
+   "correction": "Template has <tool_call>, <function=, <parameter= and not the excluded no-newline string, so the Qwen3-Coder branch is taken. common/parsers/qwen3-coder.cpp detects '<think>' and sets supports_thinking with end tags '\\n</think>', '</think>', '<tool_call>'. With enable_thinking=false the template emits '<think></think>' (chat_template.jinja around line 238). Working tool calls through OpenCode are still unmeasured (#30118 is in the same handler family).",
+   "evidence_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/common/chat.cpp"
+  },
+  {
+   "claim": "Image ghcr.io/ggml-org/llama.cpp:server-cuda-b12407 runs NVFP4/IQ2_XXS kernels on sm_120",
+   "verdict": "confirmed",
+   "correction": "The tag manifest exists (HTTP 200). The cuda.Dockerfile uses CUDA 12.8.1 with GGML_NATIVE=OFF, and ggml-cuda CMakeLists.txt adds 120a-real when CUDA >= 12.8 (required for the Blackwell FP4 MMA path, common.cuh:314). This is a source-backed build path; runtime is unmeasured.",
+   "evidence_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/ggml/src/ggml-cuda/CMakeLists.txt"
+  },
+  {
+   "claim": "Server flags used (--n-cpu-moe, --no-mmproj, --hf-file, --chat-template-kwargs, --reasoning, -np, --spec-type draft-dflash/draft-lilicorr) exist in b12407",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/common/arg.cpp"
+  },
+  {
+   "claim": "Decode ceiling about 125 tok/s at --n-cpu-moe 50 (GPU 4.59 GB in 5.1 ms, RAM 0.235 GB in 2.9 ms); realistic 55-80 tok/s",
+   "verdict": "uncertain",
+   "correction": "The arithmetic reproduces exactly: dense 4.086 GiB, routed per token 0.188 GiB on GPU and 0.219 GiB from RAM, ceiling 124 tok/s. The 55-80 tok/s range is inferred: it borrows a DGX Spark efficiency figure and ignores the CPU compute cost of IQ2_XXS dequantisation on the host experts. Prefill is the bigger unmeasured risk. With 8.23 GiB of experts in RAM, large batches are either computed on the CPU or need host-to-GPU weight copies for each ubatch (#25859). That can add tens of seconds to a 30-60k-token OpenCode first prompt. Measure with -ub 512 and -ub 2048.",
+   "evidence_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB-GGUF/resolve/main/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB.gguf"
+  },
+  {
+   "claim": "Ollama nemotron-3.5-bolt:74b-a9b model blob identical to NVIDIA GGUF (sha256 91d63363e782) plus projector 1.61 GiB and draft 0.93 GiB, total 24.75 GB",
+   "verdict": "confirmed",
+   "evidence_url": "https://registry.ollama.ai/v2/library/nemotron-3.5-bolt/manifests/74b-a9b"
+  },
+  {
+   "claim": "OpenCode fit verdict 'good' with llama.cpp at 131072 context",
+   "verdict": "uncertain",
+   "correction": "No refuting evidence: the arithmetic supports at least 64k and probably 128k on this card, and the tool-call path is wired. But the machine is below NVIDIA's stated hardware floor (README: 'RTX discrete GPUs (32GB+ / 48GB+)', and the 28GB recipe targets dGPU 32GB+). Compute buffers, prefill speed with CPU experts and real tool-call behaviour are all unmeasured. Best realistic starting configuration: the record's command with -c 65536 first (q8_0 KV optional) and --n-cpu-moe 46-50, no mmproj, no drafter. Read the llama.cpp buffer log, then raise to 131072. Downgrade 'good' to 'promising, measure first'.",
+   "evidence_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB-GGUF/raw/main/README.md"
+  }
+ ],
+ "overall": "holds-with-corrections",
+ "summary": "Nothing load-bearing was refuted. HF API sizes, config.json KV arithmetic (8192 B/token BF16, 8 attention layers), the GGUF header split (routed 15.88 GiB, non-routed 4.617 GiB, --n-cpu-moe 50 = 8.23 GiB of experts in RAM and 7.65 GiB on GPU), vLLM v0.33.0 registration and its no-fit verdict, llama.cpp b12407 nemotron_h_moe support, Qwen3-Coder tool/reasoning routing, the 120a-real build in the CUDA 12.8 image, the server flags and the Ollama blob identity all reproduce from primary sources. One refutation: vLLM Mamba state is about 162 MiB/seq because mamba_ssm_cache_dtype is float32, not about 84 MB bf16. Minor corrections: token_embd (0.53 GiB) normally stays on the host, which gives extra VRAM headroom, and N=46 and N=48 are equivalent. Still uncertain: the compute buffer and CUDA context sizes, prefill speed with host experts (#25859), the inferred 55-80 tok/s, and real tool-call behaviour. The machine is also below NVIDIA's stated 32GB+ dGPU guidance. Recommendation: treat it as a measured trial, starting at -c 65536 with --n-cpu-moe 46-50, no mmproj and no drafter, then raise to 131072 once the buffer log shows headroom. Downgrade the verdict from 'good' to 'promising, measure first'. Working files are in $SCRATCH/bolt/ (header parser at scripts/gguf.py)."
+}

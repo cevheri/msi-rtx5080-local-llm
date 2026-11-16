@@ -1,0 +1,281 @@
+{
+ "name": "Laguna XS 2.1 (poolside/Laguna-XS-2.1)",
+ "hf_repo": "poolside/Laguna-XS-2.1",
+ "within_last_12_months": true,
+ "official_org": {
+  "value": "poolside (Poolside AI). The HF org 'poolside' has isVerified=true per https://huggingface.co/api/organizations/poolside/overview. The vendor blog https://poolside.ai/blog/introducing-laguna-xs-2-1 links the release, and the card links back to it.",
+  "source_url": "https://huggingface.co/api/organizations/poolside/overview",
+  "support": "direct-statement"
+ },
+ "release_date": {
+  "value": "HF createdAt 2026-06-20T14:14:26Z (lastModified 2026-08-19). The vendor blog 'Introducing Laguna XS 2.1' is dated 2026-07-02, and benchmarks are 'as of 2 July 2026'. Both dates fall inside 2025-11-15..2026-11-15.",
+  "source_url": "https://huggingface.co/api/models/poolside/Laguna-XS-2.1",
+  "support": "direct-statement"
+ },
+ "license": {
+  "value": "OpenMDW-1.1 (HF tag license:openmdw-1.1). LICENSE.md grants permission 'to deal in the Model Materials without restriction, including under all copyright, patent, database, and trade secret rights'. Its only conditions: keep the agreement and notices when redistributing, and rights terminate if you bring a patent/copyright suit claiming the materials infringe. Outputs are unrestricted. The card calls it 'fully permissive' and allows commercial use. It also points to Poolside's Acceptable Use Policy as guidance.",
+  "source_url": "https://huggingface.co/poolside/Laguna-XS-2.1/raw/main/LICENSE.md",
+  "support": "direct-statement"
+ },
+ "params": {
+  "value": "33B total / 3B active MoE per the card. The HF API reports 33,442,617,088 BF16 params. The BF16 safetensors total 66.9 GB (62.3 GiB).",
+  "source_url": "https://huggingface.co/api/models/poolside/Laguna-XS-2.1?blobs=true",
+  "support": "direct-statement"
+ },
+ "architecture": {
+  "value": "LagunaForCausalLM (model_type laguna, trust_remote_code). 40 layers with hidden 2048. layer_types: 10 full_attention layers (0,4,...,36) and 30 sliding_attention layers with sliding_window 512 (3:1). Attention heads per layer are 48 (global) or 64 (SWA), with num_key_value_heads 8, head_dim 128 and per-head sigmoid gating. Full layers use YaRN rope (factor 32, orig 8192, theta 5e5, partial_rotary 0.5). MoE: 256 experts, top-8, moe_intermediate 512, plus 1 shared expert (512). Layer 0 is a dense MLP (intermediate 8192). Vocab 100352.",
+  "source_url": "https://huggingface.co/poolside/Laguna-XS-2.1/raw/main/config.json",
+  "support": "direct-statement"
+ },
+ "context_length": {
+  "value": "262,144 tokens (max_position_embeddings 262144 via YaRN x32 over a native 8192 original window). The card states a 262,144 context window, and the vendor ran its evals at 256K.",
+  "source_url": "https://huggingface.co/poolside/Laguna-XS-2.1/raw/main/config.json",
+  "support": "direct-statement"
+ },
+ "modalities": {
+  "value": "Text-to-text only (card: 'Modality: text-to-text'). There is no vision tower, so the weights are all language model. Community 'Vision' derivatives (webbrain-one) are unofficial.",
+  "source_url": "https://huggingface.co/poolside/Laguna-XS-2.1",
+  "support": "direct-statement"
+ },
+ "thinking": {
+  "mode": "toggle",
+  "how_to_toggle": "The chat template defaults enable_thinking to false (`enable_thinking | default(false)`) and emits <think> or </think> after <assistant>. vLLM: start the server with --default-chat-template-kwargs '{\"enable_thinking\": true}' (card and recipe), and override per request with extra_body chat_template_kwargs {\"enable_thinking\": false}. Reasoning returns in the 'reasoning' field via --reasoning-parser poolside_v1. llama.cpp b12418: --reasoning on|off (default auto); per request, chat_template_kwargs {\"enable_thinking\": ...}. Setting enable_thinking via --chat-template-kwargs is deprecated in favour of --reasoning. Ollama v0.40.16: the poolside-v1 renderer defaults thinking OFF (Thinking Values [false,true], Default false). Enable it with think:true on /api/chat, or on /v1 with reasoning_effort set to any value except 'none'. The vendor recommends thinking ON with preserved reasoning, meaning prior 'reasoning' is sent back in history; the template re-renders message.reasoning or reasoning_content.",
+  "source_url": "https://huggingface.co/poolside/Laguna-XS-2.1/raw/main/chat_template.jinja",
+  "support": "direct-statement"
+ },
+ "tool_calling": {
+  "supported": "yes",
+  "format": "GLM-4.7-style XML: <tool_call>NAME<arg_key>k</arg_key><arg_value>v</arg_value></tool_call>. The template lists tools as JSON lines inside <available_tools> in the <system> block.",
+  "evidence": "chat_template.jinja renders `{%- for tool in tools -%}{{- (tool | tojson) ~ \"\\n\" -}}` inside '### Tools ... <available_tools>'. It renders assistant tool_calls with arg_key/arg_value and tool results as <tool_response>. The card names 'Interleaved thinking between tool calls'. generation_config.json sets tool_call_parser poolside_v1. The parser is registered in vLLM v0.33.0 (vllm/tool_parsers/__init__.py:97). Ollama manifest config: renderer/parser 'poolside-v1', requires 0.32.3, and the library shows the 'tools' and 'thinking' badges. The template handles later system messages as extra <system> blocks.",
+  "source_url": "https://huggingface.co/poolside/Laguna-XS-2.1/raw/main/chat_template.jinja",
+  "support": "direct-statement"
+ },
+ "checkpoints": [
+  {
+   "repo": "poolside/Laguna-XS-2.1",
+   "format": "safetensors BF16",
+   "size_gb": 66.93,
+   "official": true,
+   "publisher": "poolside",
+   "source_url": "https://huggingface.co/api/models/poolside/Laguna-XS-2.1?blobs=true"
+  },
+  {
+   "repo": "poolside/Laguna-XS-2.1-NVFP4",
+   "format": "compressed-tensors NVFP4 (experts+shared expert W4A4, group 16; attention/router/lm_head/layer0 BF16; FP8 KV scheme)",
+   "size_gb": 21.58,
+   "official": true,
+   "publisher": "poolside",
+   "source_url": "https://huggingface.co/api/models/poolside/Laguna-XS-2.1-NVFP4?blobs=true"
+  },
+  {
+   "repo": "poolside/Laguna-XS-2.1-INT4",
+   "format": "safetensors INT4 W4A16 (I32-packed) + FP8 KV",
+   "size_gb": 23.9,
+   "official": true,
+   "publisher": "poolside",
+   "source_url": "https://huggingface.co/api/models/poolside/Laguna-XS-2.1-INT4?blobs=true"
+  },
+  {
+   "repo": "poolside/Laguna-XS-2.1-FP8",
+   "format": "safetensors block FP8 + FP8 KV",
+   "size_gb": 35.32,
+   "official": true,
+   "publisher": "poolside",
+   "source_url": "https://huggingface.co/api/models/poolside/Laguna-XS-2.1-FP8?blobs=true"
+  },
+  {
+   "repo": "poolside/Laguna-XS-2.1-GGUF",
+   "format": "GGUF Q4_K_M 20.27 GB / BF16 66.93 GB",
+   "size_gb": 20.27,
+   "official": true,
+   "publisher": "poolside",
+   "source_url": "https://huggingface.co/api/models/poolside/Laguna-XS-2.1-GGUF?blobs=true"
+  },
+  {
+   "repo": "poolside/Laguna-XS-2.1-DFlash",
+   "format": "safetensors BF16 DFlash speculator (5 layers); FP8/INT4/NVFP4 variants also published",
+   "size_gb": 0.92,
+   "official": true,
+   "publisher": "poolside",
+   "source_url": "https://huggingface.co/api/models/poolside/Laguna-XS-2.1-DFlash?blobs=true"
+  },
+  {
+   "repo": "ggml-org/Laguna-XS-2.1-GGUF",
+   "format": "GGUF Q4_K_M 19.56 GB (18.22 GiB) / Q8_0 35.60 GB / BF16 66.93 GB (updated 2026-10-19)",
+   "size_gb": 19.56,
+   "official": false,
+   "publisher": "ggml-org",
+   "source_url": "https://huggingface.co/api/models/ggml-org/Laguna-XS-2.1-GGUF?blobs=true"
+  },
+  {
+   "repo": "bartowski/Laguna-XS-2.1-GGUF",
+   "format": "GGUF imatrix, IQ2_XXS 9.40 to Q8_0 35.60 GB: IQ3_XXS 14.29, IQ3_M 16.28, IQ4_XS 18.21, Q4_K_S 19.78, Q4_K_M 20.55, Q5_K_M 24.01, Q6_K 29.04 GB",
+   "size_gb": 20.55,
+   "official": false,
+   "publisher": "bartowski",
+   "source_url": "https://huggingface.co/api/models/bartowski/Laguna-XS-2.1-GGUF?blobs=true"
+  },
+  {
+   "repo": "lmstudio-community/Laguna-XS-2.1-GGUF",
+   "format": "GGUF Q4_K_M 20.27 / Q6_K 27.50 / Q8_0 35.60 GB",
+   "size_gb": 20.27,
+   "official": false,
+   "publisher": "lmstudio-community",
+   "source_url": "https://huggingface.co/api/models/lmstudio-community/Laguna-XS-2.1-GGUF?blobs=true"
+  },
+  {
+   "repo": "noctrex/Laguna-XS-2.1-MXFP4_MOE-GGUF",
+   "format": "GGUF MXFP4_MOE 19.19 GB",
+   "size_gb": 19.19,
+   "official": false,
+   "publisher": "noctrex",
+   "source_url": "https://huggingface.co/api/models/noctrex/Laguna-XS-2.1-MXFP4_MOE-GGUF?blobs=true"
+  },
+  {
+   "repo": "mudler/Laguna-XS-2.1-APEX-GGUF",
+   "format": "GGUF APEX I-Mini 12.83 / Compact 15.78 / Quality 21.82 / Balanced 24.31 GB",
+   "size_gb": 15.78,
+   "official": false,
+   "publisher": "mudler",
+   "source_url": "https://huggingface.co/api/models/mudler/Laguna-XS-2.1-APEX-GGUF?blobs=true"
+  },
+  {
+   "repo": "sahilchachra/Laguna-XS-2.1-W4A16",
+   "format": "safetensors W4A16 (community)",
+   "size_gb": 17.9,
+   "official": false,
+   "publisher": "sahilchachra",
+   "source_url": "https://huggingface.co/api/models/sahilchachra/Laguna-XS-2.1-W4A16?blobs=true"
+  },
+  {
+   "repo": "cyankiwi/Laguna-XS-2.1-AWQ-INT4",
+   "format": "safetensors AWQ INT4 (community)",
+   "size_gb": 23.07,
+   "official": false,
+   "publisher": "cyankiwi",
+   "source_url": "https://huggingface.co/api/models/cyankiwi/Laguna-XS-2.1-AWQ-INT4?blobs=true"
+  }
+ ],
+ "vllm": {
+  "arch_supported": "Yes. v0.33.0 registry.py:154 has 'LagunaForCausalLM': ('laguna','LagunaForCausalLM'), and DFlashLagunaForCausalLM is at :696. Support arrived in PR #41129 (merged 2026-04-28). The DFlash drafter PR #46853 (merged 2026-07-03) is an ancestor of v0.33.0 (gh compare: behind_by 0).",
+  "min_version": "Card and recipe: 0.21.0 for BF16, 0.22.0 for the quantized variants (FP8-KV per-layer-head fix PR #42650). For correct tool calls you need PR #47311 (merged 2026-07-02, commit 258f8de), which is in v0.33.0 (compare 258f8de...v0.33.0 shows behind_by 0). PR #64518, which keeps raw text for union/enum/$ref string params in poolside_v1 (merged 2026-11-03), is NOT in v0.33.0 (diverged, 652 behind) but IS in v0.34.0rc4.",
+  "best_checkpoint": "poolside/Laguna-XS-2.1-NVFP4 (20.09 GiB). It is the smallest official vLLM checkpoint, but it still does not fit 14.65 GiB without CPU offload.",
+  "weights_gib": 20.09,
+  "fits": "no",
+  "kv_bytes_per_token_bf16": 40960,
+  "kv_math": "Budget 16303 MiB x 0.92 = 14999 MiB = 14.65 GiB. NVFP4 weights 21.58 GB = 20.09 GiB, so 14.65 - 20.09 - 1.2 = -6.64 GiB: it does not fit. The BF16 part is 1.913B params x 2 B = 3.56 GiB (attention, embeddings, lm_head, layer 0, routers), which leaves about 16.5 GiB of NVFP4 experts. That matches 31.4B expert params (39 x 256 x 3 x 2048 x 512) at 4.5 bits. With UVA offload --cpu-offload-gb 9 --cpu-offload-params experts, GPU weights are 3.56 + 7.5 = 11.06 GiB and the KV pool is 14.65 - 11.06 - 1.2 = 2.39 GiB (2447 MiB). KV per token covers the 10 full-attention layers only: 2 x 10 x 8 x 128 x 2 B = 40,960 B BF16 or 20,480 B FP8. SWA cost per sequence is 30 layers x 512 tokens x 4096 B = 60 MiB BF16 or 30 MiB FP8. Max single-request context: FP8 (2447-30) MiB / 20 KiB = about 123,700 tokens; BF16 (2447-60) MiB / 40 KiB = about 61,100 tokens. Both are well under the 262,144 cap. Offloading 12 GiB instead would give a 5.39 GiB pool and about 274K tokens FP8, capped at 262,144. The NVFP4 checkpoint ships an FP8 kv_cache_scheme, so FP8 is the native path. The other checkpoints are INT4 22.26 GiB, community W4A16 16.67 GiB and FP8 32.89 GiB, and none fit without offload.",
+  "est_max_context_tokens": 123000,
+  "quant_on_sm120": "Inferred, not tested. The v0.33.0 NVFP4 MoE oracle (vllm/model_executor/layers/fused_moe/oracle/nvfp4.py) auto-selects from FLASHINFER_TRTLLM, CUTEDSL, CUTEDSL_BATCHED, FLASHINFER_CUTLASS, VLLM_CUTLASS, MARLIN, HUMMING and EMULATION. On sm_120 the likely pick is FlashInfer CUTLASS, which hits the reported first-start JIT that uses about 52 GiB host RAM (set MAX_JOBS=2), or VLLM_CUTLASS, with Marlin as fallback. csrc/quantization/fp4/nvfp4_scaled_mm_sm120_kernels.cu exists for the linear path. b12x (docs/features/quantization/b12x.md) supports NVFP4 MoE on SM120/121 but needs the optional 'vllm[b12x]' extra and --moe-backend b12x, so it may not be in the stock image. Whether UVA offload works together with NVFP4 MoE kernels is unverified.",
+  "tool_call_parser": "poolside_v1 (v0.33.0 vllm/tool_parsers/__init__.py:97). The fallback for builds older than PR #47311 is glm47. The parser sets supports_required_and_named = False, so tool_choice 'required' or named is not honoured; 'auto' works.",
+  "reasoning_parser": "poolside_v1 (v0.33.0 vllm/reasoning/__init__.py:39). TRT-LLM calls it 'laguna'.",
+  "serve_command": "docker run --gpus all --ipc=host -p 8000:8000 -e MAX_JOBS=2 -v ~/.cache/huggingface:/root/.cache/huggingface vllm/vllm-openai:v0.33.0 --model poolside/Laguna-XS-2.1-NVFP4 --trust-remote-code --served-model-name laguna-xs-2.1 --max-model-len 65536 --gpu-memory-utilization 0.92 --cpu-offload-gb 9 --cpu-offload-params experts --max-num-seqs 2 --enable-auto-tool-choice --tool-call-parser poolside_v1 --reasoning-parser poolside_v1 --default-chat-template-kwargs '{\"enable_thinking\": true}'   (speculative: built from the card/recipe flags plus the v0.33.0 UVA offload flags in vllm/config/offload.py; never run on this hardware)",
+  "known_issues": "Open vLLM issues: #49379, poolside_v1 reasoning token-ID auto-init warning (filed for Laguna-S-2.1, vLLM 0.25.1). #49711, Responses API reports zero reasoning_tokens. #49712, Responses ignores named tool_choice for XML parsers. #50901, BaseThinkingReasoningParser drops text when <think> appears mid-stream. #50925, NVFP4 MoE falls back to Marlin on sm_121. #65070, CPU WNA16 MoE cannot load the INT4 checkpoint. #64517 (string params with Optional/enum schemas get JSON-decoded) is fixed by PR #64518, which is only in v0.34.0rc4 and later, not v0.33.0. No checkpoint fits 16 GB, so vLLM needs UVA CPU offload over PCIe, which adds per-forward PCIe traffic. Recipe hardware is verified only on H200 (vram_minimum NVFP4 26 GB). DFlash spec decoding needs --moe-backend triton and adds 0.9 GB.",
+  "sources": [
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/models/registry.py",
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/tool_parsers/__init__.py",
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/reasoning/__init__.py",
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/tool_parsers/poolside_v1_tool_parser.py",
+   "https://github.com/vllm-project/vllm/pull/47311",
+   "https://github.com/vllm-project/vllm/pull/41129",
+   "https://github.com/vllm-project/vllm/pull/64518",
+   "https://github.com/vllm-project/recipes/blob/main/models/poolside/Laguna-XS-2.1.yaml",
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/config/offload.py",
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/layers/fused_moe/oracle/nvfp4.py",
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/docs/features/quantization/b12x.md",
+   "https://huggingface.co/poolside/Laguna-XS-2.1-NVFP4/raw/main/config.json",
+   "https://github.com/vllm-project/vllm/issues/49379",
+   "https://github.com/vllm-project/vllm/issues/65070"
+  ]
+ },
+ "llamacpp": {
+  "arch_supported": "Yes. PR #25165 'Add support for Laguna XS.2 & M.1' was merged 2026-07-22 (commit 1f66c3c). The first release containing it is b10087 (2026-07-22; gh compare shows identical), so the card's 'build from the PR branch' note is outdated. b12418 has LLM_ARCH_LAGUNA (src/llama-arch.cpp:129). The tool and reasoning parser come from the auto-parser with a Laguna patch (common/chat-diff-analyzer.cpp:176-195): it triggers on the template string 'laguna_glm_thinking', which the HF template contains, tolerates whitespace between arg tags and adds the stop string </assistant>.",
+  "gguf_repo": "ggml-org/Laguna-XS-2.1-GGUF (Q4_K_M, 19.56 GB / 18.22 GiB). Alternatives are the poolside official Q4_K_M (18.88 GiB) and bartowski IQ4_XS (16.96 GiB) or IQ3_XXS (13.30 GiB).",
+  "quant": "Q4_K_M",
+  "file_gib": 18.22,
+  "est_vram_gib": 14.6,
+  "est_ram_gib": 7.5,
+  "est_context_tokens": 131072,
+  "offload_plan": "Arithmetic (source-backed/inferred). Expert params per MoE layer are 256 x 3 x 2048 x 512 = 805M, which is 2.41% of 33.44B, so about 0.439 GiB per layer at Q4_K_M; 39 MoE layers make about 17.1 GiB, leaving about 1.1 GiB of non-expert weights. KV is f16 for the 10 global layers, 40 KiB/token, so 131072 tokens take 5.0 GiB, or about 2.66 GiB at q8_0 (-ctk/-ctv q8_0). The SWA cache is about 0.12 GiB. Compute buffers are about 1 GiB. Usable VRAM is about 15.8 GiB (16303 MiB minus 112 MiB idle). Use --n-cpu-moe 18: layer 0 is dense, so this offloads 17 MoE layers, about 7.5 GiB, to RAM. GPU then holds 1.1 + 22 x 0.439 = 10.8 GiB of weights + 2.66 KV + 0.12 SWA + 1.0 compute = about 14.6 GiB. At 64K with q8_0 KV (1.33 GiB) use --n-cpu-moe 15, about 6.1 GiB in RAM. Fully on GPU only works at IQ3_XXS (13.30 GiB) with 32K to 64K q8_0 context, which is very tight and costs quality.",
+  "server_command": "docker run --gpus all -p 8080:8080 -v ~/models:/models ghcr.io/ggml-org/llama.cpp:server-cuda13 -m /models/Laguna-XS-2.1-Q4_K_M.gguf --alias laguna-xs-2.1 --jinja -ngl 99 --n-cpu-moe 18 -c 131072 -ctk q8_0 -ctv q8_0 -fa on --reasoning on --temp 1.0 --top-k 20 --top-p 1.0 --host 0.0.0.0 --port 8080   (inferred: flags confirmed in b12418 common/arg.cpp; not run)",
+  "tool_calling_note": "Tool calling should work via --jinja (default on) because b12418's auto-parser has a dedicated Laguna patch keyed on the embedded HF template. Make sure the GGUF embeds the v8 template that contains 'laguna_glm_thinking'; the ggml-org repo was refreshed 2026-10-19. Not tested end to end with OpenCode.",
+  "sources": [
+   "https://github.com/ggml-org/llama.cpp/pull/25165",
+   "https://github.com/ggml-org/llama.cpp/releases/tag/b10087",
+   "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12418/src/llama-arch.cpp",
+   "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12418/common/chat-diff-analyzer.cpp",
+   "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12418/common/arg.cpp",
+   "https://huggingface.co/api/models/ggml-org/Laguna-XS-2.1-GGUF?blobs=true",
+   "https://huggingface.co/api/models/bartowski/Laguna-XS-2.1-GGUF?blobs=true"
+  ]
+ },
+ "ollama": {
+  "tag": "laguna-xs-2.1:latest (= q4_K_M, digest 0175be1e57f4)",
+  "size_gb": 20.27,
+  "context": "256K listed. Ollama's default on a GPU under 24 GiB is 4k, so set OLLAMA_CONTEXT_LENGTH or num_ctx to 65536 or more for OpenCode.",
+  "capabilities": "Badges: tools, thinking. Text input only (no vision). Tags: latest/q4_K_M 20 GB, q8_0 36 GB, bf16 67 GB, plus MLX-only tags (nvfp4 20 GB, mxfp8 40 GB, mlx-bf16 68 GB) that are not for Linux/CUDA. Manifest config: renderer/parser poolside-v1, requires Ollama 0.32.3, model_type 33.4B. Thinking defaults off. 20 GB is more than 16 GB of VRAM, so Ollama splits layers to CPU.",
+  "source_url": "https://ollama.com/library/laguna-xs-2.1/tags"
+ },
+ "benchmarks": [
+  {
+   "name": "SWE-bench Verified",
+   "score": "70.9%",
+   "setting": "mean pass@1 over 4 attempts; Harbor + poolside 'pool' harness, 500 steps, thinking on, 256K ctx, temp 1.0 top_k 20; patched task images",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/poolside/Laguna-XS-2.1"
+  },
+  {
+   "name": "SWE-bench Multilingual",
+   "score": "63.1%",
+   "setting": "mean pass@1 over 4 attempts, same harness",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/poolside/Laguna-XS-2.1"
+  },
+  {
+   "name": "SWE-Bench Pro (public)",
+   "score": "47.6%",
+   "setting": "mean pass@1 over 2 attempts, same harness",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/poolside/Laguna-XS-2.1"
+  },
+  {
+   "name": "Terminal-Bench 2.0",
+   "score": "37.5%",
+   "setting": "mean pass@1 over 5 attempts, 48 GB RAM/32 CPUs sandbox",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/poolside/Laguna-XS-2.1"
+  },
+  {
+   "name": "Comparison on the vendor table (same card, vendor-collected numbers for the other models)",
+   "score": "Qwen3.6-35B-A3B scores higher on all four: 73.4 / 67.2 / 49.5 / 51.5",
+   "setting": "vendor-quoted official scores of the other models",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/poolside/Laguna-XS-2.1"
+  },
+  {
+   "name": "Terminal-Bench 2.0 (FP8 variant, third-party quantization check)",
+   "score": "40.22% (wide CI)",
+   "setting": "Friendli model page, seen in search results only; not verified",
+   "self_reported": false,
+   "source_url": "https://friendli.ai/models/poolside/Laguna-XS-2.1-FP8"
+  }
+ ],
+ "speed_notes": "Inferred bandwidth arithmetic, not measured. Active params are about 3B per token: 8 routed experts x 3 x 2048 x 512 = 25.2M per layer plus the shared expert and attention. At Q4_K_M (about 4.85 bpw) a token reads about 1.8 GB. Fully in GPU memory the bound is 896 GB/s / 1.8 GB, about 500 tok/s; real decode is far lower. With --n-cpu-moe 18, each token reads about 17 x 15.3 MB = 260 MB of expert weights from DDR5 (80-100 GB/s, about 3 ms) plus about 1.5 GB from VRAM (about 1.7 ms), so the upper bound is about 200 tok/s and a realistic guess is 40-80 tok/s, with CPU expert compute as the likely limit. For vLLM NVFP4 with 9 GiB UVA expert offload, decode reads about 300 MB per token over PCIe 5.0 x16 (about 50 GB/s practical), roughly 6 ms per token. Prefill chunks touch nearly every expert, about 9 GiB of PCIe traffic per forward chunk; this is speculative. DFlash speculators claim about 2x tok/s (blog) and 1.67-2.64x (vLLM recipe). Third-party estimator willitrunai.com quotes about 144-158 tok/s on an RTX 5090 32GB at Q4_K_M; that is an estimate, not a measurement, and on a GPU where the model fits entirely. No measured RTX 5080 or 16 GB reports were found.",
+ "opencode_fit": {
+  "verdict": "good",
+  "recommended_runtime": "llama.cpp server (ghcr.io/ggml-org/llama.cpp:server-cuda13, build b10087 or later, current b12418) with --jinja --reasoning on and --n-cpu-moe. Ollama laguna-xs-2.1 is the simpler alternative. vLLM only works with experimental UVA CPU offload.",
+  "recommended_checkpoint": "ggml-org/Laguna-XS-2.1-GGUF Laguna-XS-2.1-Q4_K_M.gguf (18.22 GiB), or the poolside/Laguna-XS-2.1-GGUF Q4_K_M (18.88 GiB)",
+  "recommended_context": "131072 with q8_0 KV and --n-cpu-moe 18 (about 14.6 GiB VRAM and 7.5 GiB RAM), or 65536 with --n-cpu-moe 15",
+  "caveats": "1. Self-reported scores trail Qwen3.6-35B-A3B on every agentic benchmark in the vendor's own table (Terminal-Bench 2.0 37.5 vs 51.5). The upside is the permissive license and a tiny KV cost: only 10 global layers, 40 KiB/token BF16, so long context is cheap. 2. Thinking is off by default in the template and in Ollama; enable it server-side. The vendor says quality depends on sending prior reasoning back, and whether OpenCode v2.3.0 round-trips the 'reasoning' field is unverified. 3. vLLM v0.33.0 poolside_v1 does not support tool_choice required or named (supports_required_and_named=False). It lacks PR #64518, so Optional or enum string arguments may be JSON-decoded; use v0.34 or later or llama.cpp. 4. No checkpoint fits 16 GB under vLLM. 5. Ollama defaults to 4k context; set OLLAMA_CONTEXT_LENGTH. Ollama offloads whole layers rather than experts only, so expect it to be slower than llama.cpp --n-cpu-moe. 6. No independent (Artificial Analysis or leaderboard) result exists for XS 2.1."
+ },
+ "gaps": [
+  "No independent benchmark found for XS 2.1: no Artificial Analysis page, and no official SWE-bench or Terminal-Bench leaderboard entry. Every score is vendor self-reported.",
+  "No BFCL, tau2, LiveCodeBench or Aider numbers were published for XS 2.1.",
+  "Not checked: whether vLLM v0.33.0 applies generation_config.json default_chat_template_kwargs (enable_thinking true) automatically or needs the CLI flag.",
+  "Not verified: which NVFP4 MoE backend v0.33.0 actually selects on sm_120, and whether UVA --cpu-offload-params experts works with NVFP4 MoE kernels. No one is known to have run this on a 16 GB card.",
+  "Not verified: whether llama.cpp --reasoning auto turns thinking on for this template (the template default is false). The recommendation is --reasoning on.",
+  "No measured tok/s on an RTX 5080 or any 16 GB card; the speed numbers are bandwidth bounds only.",
+  "The per-layer KV head count for SWA layers is assumed equal to num_key_value_heads=8 (config has a single value); per-layer head counts in the modeling code were not read.",
+  "Not checked: whether OpenCode v2.3.0 sends assistant 'reasoning' back in history (preserved thinking), and its interaction with open issue #60202 (tool_choice omitted).",
+  "The expert share of the Q4_K_M GGUF is estimated from parameter ratios, not read from GGUF tensor metadata."
+ ]
+}

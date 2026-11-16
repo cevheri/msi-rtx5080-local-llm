@@ -1,0 +1,501 @@
+{
+ "review": {
+  "key": "unsloth-docs",
+  "url": "https://unsloth.ai/docs",
+  "title": "Unsloth Documentation (model run guides, Dynamic GGUF quant docs, OpenCode and tool-calling guides)",
+  "publisher": "Unsloth AI (GitBook-hosted docs; also the publisher of the unsloth/* GGUF and NVFP4 repos on Hugging Face)",
+  "as_of": "Pages read 2026-11-15. GitBook exposes no per-page date, so dates come from the pages' own update notes and the HF repo lastModified values: Qwen3.8 page \"Nov 11 Update\" (Dynamic V3.1, repo unsloth/Qwen3.8-27B-GGUF lastModified 2026-11-12); Qwen3.6 page \"July 10\" NVFP4 note (GGUF repo lastModified 2026-04-20); Gemma 4 page notes Apr 20, Jun 2, Jun 5 (QAT), Jun 9 (MTP) 2026 (QAT repo lastModified 2026-07-17); Nemotron 3.5 Lightning repo 2026-08-13; Qwen3-Coder-Next page \"Feb 19\" note (repo 2026-03-06); GLM-4.7-Flash page \"Jan 21/22\" notes (repo 2026-02-12); gpt-oss page dates from 2025 (repo 2025-12-19); DeepSeek-R1-0528 page dates from 2025 (Qwen3-8B repo 2025-06-16).",
+  "source_type": "official-doc",
+  "accessible": true,
+  "access_notes": "I fetched raw Markdown for each page with curl -s -A \"Mozilla/5.0\" https://unsloth.ai/docs/<page>.md, using the index at https://unsloth.ai/docs/llms.txt. Saved under $SCRATCH/src/unsloth-docs/. I took file sizes from the HF API (huggingface.co/api/models/<repo>/tree/main?recursive=true) and converted them to GiB. Pages read: qwen3.6, qwen3.8, gemma-4, gemma-4/qat, qwen3-coder-next, nemotron-3.5, tutorials/glm-4.7-flash, gpt-oss-how-to-run-and-fine-tune, tutorials/deepseek-r1-0528-how-to-run-locally, basics/dynamic-3.0-ggufs, dynamic-3.1-ggufs, qwen3.5/gguf-benchmarks, integrations/opencode, basics/tool-calling-guide-for-local-llms. The GitBook HTML has no last-updated timestamp: the template shows only \"Last updated ${1}\".",
+  "credibility": "medium",
+  "credibility_reason": "These are the first-party docs of the quant publisher, so their file names, commands and template-fix notes are authoritative for unsloth/* files. Sampling parameters are relayed from the model vendors (Qwen, Google, Z.ai, NVIDIA, OpenAI, DeepSeek). Every quality claim (KLD, top-1, \"best in class\", agentic benchmarks) is Unsloth benchmarking its own product against competitors. Most speed numbers are on B200 or unstated hardware, never on an RTX 5080 Laptop. Memory requirements are rough \"total RAM+VRAM\" guides and sometimes understate real file sizes. All instructions assume a llama.cpp built from source or Unsloth Desktop, not Docker images. There are typos (for example \"unsloth/Qwen3.8-27B-GGUF-GGUF\").",
+  "summary": "The useful parts are the per-model sampling tables, the thinking on/off syntax, template-fix notes and MoE offload patterns. For Gemma 4 26B-A4B, Unsloth says a naive QAT-to-Q4_0 GGUF has mean KLD 0.361 and top-1 70.2% at 14.44 GB. That size matches the baseline's google/gemma-4-26B-A4B-it-qat-q4_0-gguf file (13.45 GiB). Unsloth's QAT UD-Q4_K_XL is 13.27 GiB and scores KLD 0.098, top-1 85.6% (vendor-reported). That is worth an on-machine A/B before the baseline pick is final. Qwen3.8-27B GGUFs moved to Dynamic V3.1 on 2026-11-11, but Unsloth says the 3-bit UD3 files were not replaced. So the baseline UD-Q3_K_XL (12.24 GiB, unchanged in the repo) stands. Qwen3.8 defaults to reasoning_effort xhigh. Qwen3.6 has a preserve_thinking kwarg, which the doc says is enabled by default for 35B-A3B. The Qwen3.6 page warns against CUDA 13.2 builds (gibberish), which matches baseline issue #28581. Unsloth docs use -ot regex and --fit on, never --n-cpu-moe. They say 1-bit quants must not be used for tool calling, with UD-Q2_K_XL as the floor. No number on these pages was measured on an RTX 5080 Laptop.",
+  "methodology": "Unsloth evaluates its quants with mean KLD and top-1 agreement against BF16 on its own corpora. It adds \"Divergence-300 @32\" (greedy 32-token agreement on 300 held-out prompts from Terminal-Bench 2.1, DeepSWE, Harbor and MathArena) and agentic benchmarks (Terminal-Bench 2.1 with mini-swe-agent, 150-step limit, 82 of 89 tasks, 3 attempts; DeepSWE v1.1, T 1.0 / top_p 0.95, 512K context). Speed tables are vLLM on 1x B200 at up to 128 concurrency, or unstated hardware. Dynamic quants are post-training only (no QAT/QAD): per-layer quant-type selection, with an imatrix calibration set aimed at agentic coding, chat and multilingual text.",
+  "findings": [
+   {
+    "topic": "Unsloth Dynamic (UD) quants explained",
+    "claim": "UD quants are post-training GGUF quants. Each layer's quant type is chosen per model (Dynamic 2.0: 'dynamically adjust the quantization type of every possible layer'), and sensitive layers are kept higher (attn_*, ssm_out on hybrids). The imatrix calibration set targets agentic coding, chat and multilingual text, and Unsloth says it does not train on it. No QAT or QAD. Dynamic 3.0 shipped for Qwen3.8-27B. Dynamic V3.1 (preview, Nov 2026) applies to Qwen3.8-27B, DeepSeek-V4.1-Flash-1017 and Qwen3.8-Flash-Next only. Older guides (Qwen3.6, Gemma 4, DeepSeek R1-0528) still say 'Dynamic 2.0'.",
+    "evidence": "documented",
+    "target": "models",
+    "relevance": "high",
+    "location": "https://unsloth.ai/docs/basics/dynamic-3.0-ggufs"
+   },
+   {
+    "topic": "Qwen3.8-27B GGUF update",
+    "claim": "'Nov 11 Update: Qwen3.8-27B GGUFs now use Unsloth Dynamic V3.1'. 'Most quants from 2bit until 6bit are updated. We found 3bit UD3 quants to do on par with UD3.1, so we do not update them.' The repo was last modified 2026-11-12. UD-Q3_K_XL is still 12.24 GiB, UD-IQ4_XS 13.37 GiB, UD-Q4_K_XL 16.45 GiB.",
+    "evidence": "documented",
+    "target": "models",
+    "relevance": "high",
+    "location": "https://unsloth.ai/docs/models/qwen3.8 ; HF API tree unsloth/Qwen3.8-27B-GGUF"
+   },
+   {
+    "topic": "Qwen3.8-27B sampling and thinking",
+    "claim": "Thinking mode: temperature 1.0, top_p 0.95, top_k 20, min_p 0.0, presence_penalty 0.0, repetition_penalty 1.0. Non-thinking (instruct): temperature 0.7, top_p 0.80, top_k 20, min_p 0.0, presence_penalty 1.5. Max context 262,144 (1M with YaRN). reasoning_effort levels are xhigh (default), medium, low and none. In llama-server set it with --chat-template-kwargs '{\"reasoning_effort\":\"medium\"}'. The doc says 4-bit quants 'work on 16-19GB VRAM like RTX 5080'. Allow 1-2 GB extra for MTP.",
+    "evidence": "documented",
+    "target": "models",
+    "relevance": "high",
+    "location": "https://unsloth.ai/docs/models/qwen3.8"
+   },
+   {
+    "topic": "Qwen3.6 sampling and thinking",
+    "claim": "Thinking mode, general tasks: temp 1.0, top_p 0.95, top_k 20, min_p 0.0, presence 0.0. Thinking mode, precise coding: temp 0.6 with the rest unchanged. Non-thinking: temp 0.7, top_p 0.8, top_k 20, min_p 0.0, presence_penalty 1.5. Max context 262,144. Recommended output length 32,768. Disable thinking with --chat-template-kwargs '{\"enable_thinking\":false}'. preserve_thinking is a separate kwarg ('{\"preserve_thinking\":true}'), described as 'default is enabled' in the 35B-A3B example. Reasoning returns in message.reasoning_content on llama-server. If output is gibberish, try --cache-type-k bf16 --cache-type-v bf16 or a larger context.",
+    "evidence": "documented",
+    "target": "models",
+    "relevance": "high",
+    "location": "https://unsloth.ai/docs/models/qwen3.6"
+   },
+   {
+    "topic": "CUDA 13.2 warning",
+    "claim": "The Qwen3.6 page says 'Do NOT use CUDA 13.2 as you may get gibberish outputs. Use below CUDA 13.2 or CUDA 13.3.' This is about the CUDA toolkit llama.cpp is built with, not the driver. The baseline llama.cpp image server-cuda-b12407 uses CUDA 12.8.1, so it avoids this. A self-built CUDA 13.2 image would not.",
+    "evidence": "documented",
+    "target": "llamacpp",
+    "relevance": "high",
+    "location": "https://unsloth.ai/docs/models/qwen3.6 (Qwen3.6 Inference Tutorials hint)"
+   },
+   {
+    "topic": "Qwen3.6 MTP in llama.cpp",
+    "claim": "Unsloth publishes *-MTP-GGUF repos (unsloth/Qwen3.6-27B-MTP-GGUF, unsloth/Qwen3.6-35B-A3B-MTP-GGUF) and runs them with '--spec-type draft-mtp --spec-draft-n-max 2'. It does not recommend more than 2 draft tokens: acceptance drops from 83% to 50% at 4. Claimed speedup is about 1.4x for dense and 1.15-1.2x for MoE. Hardware for the 140 / 220 tok/s figures is not stated.",
+    "evidence": "vendor-reported",
+    "target": "llamacpp",
+    "relevance": "medium",
+    "location": "https://unsloth.ai/docs/models/qwen3.6 (Llama.cpp MTP Guide, MTP Benchmarks)"
+   },
+   {
+    "topic": "Gemma 4 sampling and thinking",
+    "claim": "temperature 1.0, top_p 0.95, top_k 64. Max context 262,144 for 12B, 26B-A4B and 31B, and 128K for E2B/E4B. Thinking is enabled by putting <|think|> at the start of the system prompt. In llama-server use --chat-template-kwargs '{\"enable_thinking\":false|true}'; llama-cli 'might not work reliably' for disabling it. With thinking off, larger models may still emit an empty thought block. In multi-turn chats, keep only the final answer in history and do not feed thought blocks back.",
+    "evidence": "documented",
+    "target": "models",
+    "relevance": "high",
+    "location": "https://unsloth.ai/docs/models/gemma-4"
+   },
+   {
+    "topic": "Gemma 4 QAT GGUF quality",
+    "claim": "Unsloth says naive QAT-to-Q4_0 conversion is not lossless: llama.cpp uses F16 scales against BF16 QAT scales, and naive conversion is 24.77% byte-exact versus 99.96% for Unsloth's. Table for 26B: Unsloth UD-Q4_K_XL 14.25 GB, mean KLD 0.09788, 99.9% KLD 2.7087, top-1 85.63%. Q4_0: 14.44 GB, mean KLD 0.36094, 99.9% KLD 4.5420, top-1 70.20%. 31B: Unsloth 17.29 GB / KLD 0.01403 / top-1 96.67% against Q4_0 17.65 GB / 0.09349 / 87.91%. Unsloth ships only one QAT file per model (UD-Q4_K_XL) because 'precisions higher than the uploaded UD-Q4_K_XL version degrade accuracy'.",
+    "evidence": "vendor-reported",
+    "target": "models",
+    "relevance": "high",
+    "location": "https://unsloth.ai/docs/models/gemma-4/qat (QAT Analysis table)"
+   },
+   {
+    "topic": "Gemma 4 QAT memory",
+    "claim": "The QAT requirements table assumes about 8K context: 26B-A4B 15 GB, 31B 18 GB, 12B 7 GB. 'llama.cpp's default 256K context for 26B A4B adds ~5 GB of KV cache.' HF file size of unsloth/gemma-4-26B-A4B-it-qat-GGUF UD-Q4_K_XL is 13.27 GiB, plus mmproj-F16 1.11 GiB and an MTP head 0.23 GiB.",
+    "evidence": "documented",
+    "target": "models",
+    "relevance": "high",
+    "location": "https://unsloth.ai/docs/models/gemma-4/qat ; HF API tree"
+   },
+   {
+    "topic": "Qwen3-Coder-Next sampling and quant floor",
+    "claim": "Non-reasoning only, with no think blocks, so enable_thinking is not needed. Sampling: temperature 1.0, top_p 0.95, top_k 40, min_p 0.01 ('llama.cpp's default is 0.05'), repeat penalty off. Context 262,144, or 32,768 to save memory. 'We recommend using at least 3-bit'. Third-party Aider Polyglot results shown in the doc put UD-IQ3_XXS close to BF16, and the doc advises at least Q4_K_M. Feb 4: a llama.cpp key_gdiff fix requires re-downloading the GGUFs and updating llama.cpp. Feb 19: llama.cpp tool-call parsing fixes. On vLLM it uses --tool-call-parser qwen3_coder --enable-auto-tool-choice with the FP8-Dynamic repo.",
+    "evidence": "documented",
+    "target": "models",
+    "relevance": "high",
+    "location": "https://unsloth.ai/docs/models/qwen3-coder-next"
+   },
+   {
+    "topic": "GLM-4.7-Flash sampling and fixes",
+    "claim": "Z.ai parameters relayed by Unsloth: general use temp 1.0, top_p 0.95; tool calling (Terminal Bench, SWE-bench) temp 0.7, top_p 1.0. Repeat penalty off or 1.0, and --min-p 0.01 on llama.cpp. Max context 202,752. Jan 21: llama.cpp had the wrong scoring_func (softmax instead of sigmoid), which caused looping, and the GGUFs were re-uploaded. Jan 22: the CUDA FlashAttention fix was merged. 'We don't recommend running this GGUF with Ollama due to potential chat template compatibility issues.' vLLM flags: --tool-call-parser glm47 --reasoning-parser glm45 --enable-auto-tool-choice. The page has no thinking-toggle instructions.",
+    "evidence": "documented",
+    "target": "models",
+    "relevance": "high",
+    "location": "https://unsloth.ai/docs/models/tutorials/glm-4.7-flash"
+   },
+   {
+    "topic": "GLM-4.7-Flash file sizes",
+    "claim": "Unsloth's recommended UD-Q4_K_XL is 16.32 GiB, smaller than the baseline pick Q4_K_M at 17.05 GiB. UD-Q3_K_XL is 12.84 GiB and IQ4_XS 15.15 GiB. The page notes sizes cluster because some dimensions are not divisible by 128.",
+    "evidence": "documented",
+    "target": "models",
+    "relevance": "medium",
+    "location": "HF API tree unsloth/GLM-4.7-Flash-GGUF ; https://unsloth.ai/docs/models/tutorials/glm-4.7-flash"
+   },
+   {
+    "topic": "Nemotron 3.5 Lightning",
+    "claim": "NVIDIA settings relayed by Unsloth: thinking mode temperature 0.6, top_p 0.95; instruct mode temperature 0.2. llama.cpp example adds --min-p 0.01. Up to 1M context. The page says 4-bit 'runs on 20GB RAM', but the HF file UD-Q4_K_XL is 23.75 GiB (UD-Q3_K_XL 19.78 GiB, MXFP4_MOE 21.62 GiB). There are no thinking-toggle or tool-parser instructions. The model 'ships with MTP and dedicated DFlash and DSpark draft models'.",
+    "evidence": "documented",
+    "target": "models",
+    "relevance": "medium",
+    "location": "https://unsloth.ai/docs/models/nemotron-3.5 ; HF API tree unsloth/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-GGUF"
+   },
+   {
+    "topic": "gpt-oss settings and template fixes",
+    "claim": "OpenAI settings: temperature 1.0, top_p 1.0, top_k 0 (or try 100). Minimum context 16,384, maximum 131,072. reasoning_effort low, medium or high. Unsloth found jinja-template mismatches against Harmony: tool-call args double-escaped by tojson, extra newlines, tool-call thoughts tagged 'final' instead of 'analysis', and <|start|>assistant<|channel|>final not used. It says its GGUF templates are fixed and some fixes went upstream (openai/gpt-oss-20b discussion 94). All gpt-oss quants are close to F16 in size because most weights stay MXFP4/F16. The llama.cpp example is '--jinja -ngl 99 --ctx-size 16384 --temp 1.0 --top-p 1.0 --top-k 0'. Page content dates from 2025.",
+    "evidence": "documented",
+    "target": "models",
+    "relevance": "medium",
+    "location": "https://unsloth.ai/docs/models/gpt-oss-how-to-run-and-fine-tune"
+   },
+   {
+    "topic": "DeepSeek-R1-0528-Qwen3-8B",
+    "claim": "Same settings as R1: temperature 0.6, top_p 0.95, with --min_p 0.01 in the llama.cpp examples. Run with 'llama-cli -hf unsloth/DeepSeek-R1-0528-Qwen3-8B-GGUF:Q4_K_XL --jinja' or 'ollama run hf.co/unsloth/DeepSeek-R1-0528-Qwen3-8B-GGUF:Q4_K_XL'. For llama.cpp, skip adding BOS because the template adds it. The 'huge improvements to tool calling and chat template fixes' banner refers to the 671B R1-0528 uploads. The page makes no tool-calling claim for the 8B distill.",
+    "evidence": "documented",
+    "target": "models",
+    "relevance": "low",
+    "location": "https://unsloth.ai/docs/models/tutorials/deepseek-r1-0528-how-to-run-locally"
+   },
+   {
+    "topic": "MoE offload patterns",
+    "claim": "Unsloth guides never use --n-cpu-moe. They use '--fit on' ('introduced 15th Dec 2025', PR #16653: 'auto offloads as much of the model as possible to the GPU, then...') and -ot regexes. Progression: -ot \".ffn_.*_exps.=CPU\" (all experts to CPU, least VRAM), then \".ffn_(up|down)_exps.=CPU\", then \".ffn_(up)_exps.=CPU\", then per-layer \"\\.(6|7|8|9|[0-9][0-9]|[0-9][0-9][0-9])\\.ffn_(gate|up|down)_exps.=CPU\" (experts from layer 6 onwards). The Gemma QAT page notes '--fit currently ignores CPU repacked weights'.",
+    "evidence": "documented",
+    "target": "llamacpp",
+    "relevance": "high",
+    "location": "https://unsloth.ai/docs/models/tutorials/glm-4.7 ; https://unsloth.ai/docs/models/gpt-oss-how-to-run-and-fine-tune ; https://unsloth.ai/docs/models/gemma-4/qat"
+   },
+   {
+    "topic": "Quant floor for agentic use",
+    "claim": "'1-bit should not be used for agentic use-cases': Divergence-300 @32 falls from about 25% at UD-Q2_K_XL to under 8-10% at UD-IQ2_S and below, and 'tool calling and non thinking modes break down'. Below UD-Q2_K_XL the advice is presence_penalty 1.5 and keeping thinking on.",
+    "evidence": "vendor-reported",
+    "target": "models",
+    "relevance": "high",
+    "location": "https://unsloth.ai/docs/basics/dynamic-3.0-ggufs (1-bit should not be used for agentic use-cases)"
+   },
+   {
+    "topic": "Qwen3.5-family quant lessons",
+    "claim": "Unsloth retired MXFP4 tensors from its Q2_K_XL, Q3_K_XL and Q4_K_XL quants (except pure MXFP4_MOE). Reason given: MXFP4 is worse than Q4_K on attn_gate, attn_q, ssm_beta and ssm_alpha. Quantizing ssm_out and attn_* hurts hybrid models. Unsloth also fixed a Qwen3.5 tool-calling chat-template issue that 'affects all quant uploaders'.",
+    "evidence": "vendor-reported",
+    "target": "models",
+    "relevance": "medium",
+    "location": "https://unsloth.ai/docs/models/qwen3.5/gguf-benchmarks"
+   },
+   {
+    "topic": "Template fixes shipped in Unsloth Qwen uploads",
+    "claim": "Unsloth Qwen3.6 and Qwen3.8 GGUFs add 'developer role' support for Codex and OpenCode and 'improved parsing nested objects to make tool calling succeed more'. These differ from the ggml-org GGUFs the baseline uses for Qwen3.6-35B-A3B.",
+    "evidence": "documented",
+    "target": "models",
+    "relevance": "medium",
+    "location": "https://unsloth.ai/docs/models/qwen3.6 ; https://unsloth.ai/docs/models/qwen3.8"
+   },
+   {
+    "topic": "NVFP4 on vLLM",
+    "claim": "Unsloth NVFP4 Qwen3.6 quants are W4A4 and need CUTLASS, FlashInfer-TRTLLM or CuTe-DSL. Marlin is about 2.5x slower for W4A4, so 'do NOT select any MoE backend - leave vLLM to select it'. Install pins: vllm>=0.25.0, flashinfer-python>=0.6.13, nvidia-cutlass-dsl>=4.5.2. Gemma 4 NVFP4 VRAM: 12B 11 GB, 26B-A4B 26 GB, 31B 32 GB, so on 16 GB only the 12B fits. MTP in vLLM: --speculative-config '{\"method\":\"mtp\",\"num_speculative_tokens\":2}'.",
+    "evidence": "documented",
+    "target": "vllm",
+    "relevance": "medium",
+    "location": "https://unsloth.ai/docs/models/qwen3.6 (NVFP4, Marlin vs Flashinfer) ; https://unsloth.ai/docs/models/gemma-4 (NVFP4 Guide)"
+   },
+   {
+    "topic": "OpenCode integration",
+    "claim": "Unsloth's OpenCode guide uses Unsloth Studio as an OpenAI-compatible custom provider (base URL http://localhost:8888/v1/, sk-unsloth- key), or 'unsloth start opencode'. When serving through Unsloth Studio, '--disable-tools' is required, otherwise 'Unsloth Studio runs its own server-side tools, which swallows the agent's tool calls'. This does not apply to plain llama-server or vLLM.",
+    "evidence": "documented",
+    "target": "opencode",
+    "relevance": "low",
+    "location": "https://unsloth.ai/docs/integrations/opencode"
+   },
+   {
+    "topic": "Context error symptom",
+    "claim": "When a coding agent exceeds n_ctx, llama-server returns HTTP 400 'exceed_context_size_error' with n_prompt_tokens and n_ctx (example: 16582 > 16384). The fix is a larger --ctx-size.",
+    "evidence": "documented",
+    "target": "opencode",
+    "relevance": "medium",
+    "location": "https://unsloth.ai/docs/models/qwen3-coder-next (OpenAI Codex & Claude Code)"
+   }
+  ],
+  "measurements": [
+   {
+    "model": "Qwen3.6-27B NVFP4 (nvidia W4A16)",
+    "gpu": "1x B200 (datacenter, not RTX 5080)",
+    "runtime": "vLLM, marlin (auto)",
+    "quant": "NVFP4 W4A16",
+    "gen_tok_s": "decode 115.6; throughput 2,403 out tok/s",
+    "settings": "vendor table, up to 128 concurrency",
+    "measured_or_estimated": "measured"
+   },
+   {
+    "model": "Qwen3.6-27B NVFP4 (unsloth W4A4)",
+    "gpu": "1x B200",
+    "runtime": "vLLM, cute-DSL (auto)",
+    "quant": "NVFP4 W4A4",
+    "gen_tok_s": "decode 125.9; throughput 6,863",
+    "settings": "same table",
+    "measured_or_estimated": "measured"
+   },
+   {
+    "model": "Qwen3.6-27B NVFP4 (unsloth W4A4)",
+    "gpu": "1x B200",
+    "runtime": "vLLM, marlin forced",
+    "quant": "NVFP4 W4A4",
+    "gen_tok_s": "decode 105.6; throughput 2,127",
+    "settings": "shows forced Marlin is slower",
+    "measured_or_estimated": "measured"
+   },
+   {
+    "model": "Qwen3.6-35B-A3B NVFP4 (unsloth W4A4)",
+    "gpu": "1x B200",
+    "runtime": "vLLM, cute-DSL (auto)",
+    "quant": "NVFP4 W4A4",
+    "gen_tok_s": "decode 295.2; throughput 15,636",
+    "settings": "same table",
+    "measured_or_estimated": "measured"
+   },
+   {
+    "model": "Qwen3.6-35B-A3B NVFP4 (nvidia)",
+    "gpu": "1x B200",
+    "runtime": "vLLM, marlin (auto)",
+    "quant": "NVFP4 W4A4 per table",
+    "gen_tok_s": "decode 240.8; throughput 8,721",
+    "settings": "same table",
+    "measured_or_estimated": "measured"
+   },
+   {
+    "model": "Qwen3.8-27B BF16 vs NVFP4",
+    "gpu": "not stated (page says 'Run Qwen3.8-27B NVFP4 1.5x faster on 24GB VRAM'; likely datacenter)",
+    "runtime": "vLLM",
+    "quant": "BF16 / Unsloth NVFP4",
+    "gen_tok_s": "batch 1: BF16 89.8, NVFP4 133.7 (1.49x); batch 64: BF16 3048.5 total / 47.6 per user, NVFP4 4407.2 / 68.9",
+    "settings": "vendor table",
+    "measured_or_estimated": "measured"
+   },
+   {
+    "model": "Qwen3.6-27B MTP",
+    "gpu": "not stated",
+    "runtime": "llama.cpp, --spec-type draft-mtp --spec-draft-n-max 2",
+    "quant": "UD-Q2_K_XL",
+    "gen_tok_s": "140",
+    "settings": "vendor claim; 'some of the throughput numbers are noisy'",
+    "measured_or_estimated": "measured"
+   },
+   {
+    "model": "Qwen3.6-35B-A3B MTP",
+    "gpu": "not stated",
+    "runtime": "llama.cpp MTP",
+    "quant": "not stated",
+    "gen_tok_s": "220",
+    "settings": "vendor claim; MoE MTP speedup 1.15-1.25x, dense 1.4-2x",
+    "measured_or_estimated": "measured"
+   },
+   {
+    "model": "Gemma 4 26B-A4B QAT",
+    "gpu": "n/a (quality metric)",
+    "runtime": "llama.cpp KLD vs BF16 QAT",
+    "quant": "Unsloth UD-Q4_K_XL 14.25 GB",
+    "vram": "13.27 GiB file (HF API)",
+    "settings": "mean KLD 0.09788, 99.9% KLD 2.7087, top-1 85.63%",
+    "measured_or_estimated": "measured"
+   },
+   {
+    "model": "Gemma 4 26B-A4B QAT",
+    "gpu": "n/a (quality metric)",
+    "runtime": "llama.cpp KLD vs BF16 QAT",
+    "quant": "naive Q4_0 14.44 GB (same size as google/gemma-4-26B-A4B-it-qat-q4_0-gguf, 13.45 GiB)",
+    "settings": "mean KLD 0.36094, 99.9% KLD 4.5420, top-1 70.20%",
+    "measured_or_estimated": "measured"
+   },
+   {
+    "model": "Gemma 4 31B QAT",
+    "gpu": "n/a",
+    "runtime": "KLD",
+    "quant": "Unsloth UD-Q4_K_XL 17.29 GB vs Q4_0 17.65 GB",
+    "settings": "mean KLD 0.01403 vs 0.09349; top-1 96.67% vs 87.91%",
+    "measured_or_estimated": "measured"
+   },
+   {
+    "model": "Qwen3.8-27B NVFP4",
+    "gpu": "n/a",
+    "runtime": "KLD/top-1 vs BF16",
+    "quant": "Unsloth NVFP4",
+    "settings": "code KLD 0.02600 top-1 96.68%; chat KLD 0.05818 top-1 92.15%",
+    "measured_or_estimated": "measured"
+   },
+   {
+    "model": "Qwen3.6-27B MLX quants",
+    "gpu": "Apple (MLX), not relevant to CUDA",
+    "runtime": "mlx",
+    "quant": "4-bit 26.2 GB / 3-bit 24.1 GB",
+    "settings": "mean KLD 0.0227 / 0.0734",
+    "measured_or_estimated": "measured"
+   }
+  ],
+  "conflicts": [
+   {
+    "baseline_claim": "Gemma 4 26B-A4B pick: llama.cpp Google QAT Q4_0 (google/gemma-4-26B-A4B-it-qat-q4_0-gguf), 13.45 GiB, all on GPU.",
+    "source_claim": "Unsloth says naive QAT-to-Q4_0 conversion loses accuracy: 26B Q4_0 at 14.44 GB has mean KLD 0.36094 and top-1 70.20%. Unsloth UD-Q4_K_XL at 14.25 GB has KLD 0.09788 and top-1 85.63%. HF file sizes are 13.27 GiB for Unsloth and 13.45 GiB for Google.",
+    "assessment": "Likely the same file: 14.44 GB equals 13.45 GiB, and Google's file has Q6_K token_embd, matching Unsloth's remark that 'Q6_K wasn't needed for embeddings'. The page does not name Google's repo, though. This is vendor-reported self-comparison, but the claimed gap is large (top-1 +15 points) and the Unsloth file is smaller. Recommend an on-machine llama-perplexity --kl-divergence A/B, or a short OpenCode task comparison, before fixing the pick. Until then, list unsloth/gemma-4-26B-A4B-it-qat-GGUF:UD-Q4_K_XL as the alternative."
+   },
+   {
+    "baseline_claim": "Nemotron 3.5 Lightning pick: ggml-org Q4_0 17.60 GiB, --n-cpu-moe 16, about 5 GiB in RAM.",
+    "source_claim": "Unsloth page: '4-bit versions of the model require ~20GB RAM' and its guide uses UD-Q4_K_XL. The HF file is 23.75 GiB (UD-Q3_K_XL 19.78 GiB).",
+    "assessment": "Not a conflict with the pick, but the Unsloth requirement understates its own file. Keep ggml-org Q4_0 on this laptop. Unsloth UD-Q4_K_XL would push about 11 GiB of experts to RAM."
+   },
+   {
+    "baseline_claim": "GLM-4.7-Flash pick: llama.cpp unsloth Q4_K_M 17.05 GiB, --n-cpu-moe 20.",
+    "source_claim": "Unsloth recommends UD-Q4_K_XL, 16.32 GiB on HF, which is smaller than Q4_K_M.",
+    "assessment": "Minor. UD-Q4_K_XL is 0.7 GiB smaller and is the publisher's recommended file, so consider switching and re-deriving the --n-cpu-moe value. Quality difference not measured on this machine."
+   },
+   {
+    "baseline_claim": "DeepSeek-R1-0528-Qwen3-8B: chat only, no tool calling.",
+    "source_claim": "The R1-0528 page banner says 'Huge improvements to tool calling and chat template fixes'.",
+    "assessment": "No real conflict. The banner sits on the 671B R1-0528 uploads, and the page makes no tool-calling claim for the 8B distill. Keep the baseline."
+   }
+  ],
+  "agreements": [
+   "The baseline Qwen3.8-27B pick (unsloth UD-Q3_K_XL 12.24 GiB) is still current: Unsloth says the 3-bit UD3 quants were not replaced in the Nov 11 Dynamic V3.1 update, and the repo file is still 12.24 GiB.",
+   "Qwen3.8 has a reasoning_effort kwarg (xhigh default, medium, low, none), matching the baseline 'toggle + reasoning_effort'.",
+   "enable_thinking:false via --chat-template-kwargs is the documented way to turn thinking off on llama-server for Qwen3.6, Qwen3.8 and Gemma 4, matching the baseline default-off approach.",
+   "The CUDA 13.2 gibberish warning on the Qwen3.6 page agrees with baseline issue #28581 (nvcc 13.2 builds) and supports using the CUDA 12.8.1 llama.cpp image.",
+   "vLLM parsers in the Unsloth guides match the baseline: qwen3_coder for Qwen3-Coder-Next; glm47 tool and glm45 reasoning for GLM-4.7-Flash.",
+   "--fit on places weights and experts automatically, as the baseline notes for b12418.",
+   "Qwen3-Coder-Next is non-thinking. A 3-bit minimum and at least Q4_K_M advice are consistent with the baseline UD-IQ4_XS (35.79 GiB, confirmed on HF).",
+   "gpt-oss reasoning levels are low, medium and high, and the model always reasons, as in the baseline.",
+   "The Ollama caution for GLM-4.7-Flash agrees with the baseline's llama.cpp-first approach."
+  ],
+  "kb_notes": [
+   {
+    "target_doc": "llamacpp/models.md",
+    "note": "Qwen3.8-27B (unsloth/Qwen3.8-27B-GGUF): Unsloth moved the 2- to 6-bit files to Dynamic V3.1 on 2026-11-11 but kept the 3-bit UD3 files, so UD-Q3_K_XL (12.24 GiB) is unchanged. Recommended sampling with thinking on: temp 1.0, top_p 0.95, top_k 20, min_p 0, presence_penalty 0. With thinking off: temp 0.7, top_p 0.8, top_k 20, presence_penalty 1.5. reasoning_effort defaults to xhigh; set '{\"reasoning_effort\":\"medium\"}' (or low) in --chat-template-kwargs for agent use. Source: https://unsloth.ai/docs/models/qwen3.8"
+   },
+   {
+    "target_doc": "llamacpp/models.md",
+    "note": "Qwen3.6-35B-A3B: Unsloth recommends temp 0.6 (thinking, precise coding) or 1.0 (thinking, general), top_p 0.95, top_k 20, min_p 0. Non-thinking: temp 0.7, top_p 0.8, top_k 20, presence_penalty 1.5. Thinking is toggled with --chat-template-kwargs '{\"enable_thinking\":false}'. A separate preserve_thinking kwarg keeps earlier reasoning in the prompt; the 35B-A3B example says it is enabled by default. Set '{\"enable_thinking\":false,\"preserve_thinking\":false}' explicitly when testing prefix-cache behaviour (see llama.cpp #30357). Unsloth's own GGUFs add developer-role support and nested-object tool-call parsing fixes; UD-Q4_K_XL is 20.82 GiB, UD-IQ4_XS 16.51 GiB. Source: https://unsloth.ai/docs/models/qwen3.6"
+   },
+   {
+    "target_doc": "llamacpp/models.md",
+    "note": "Gemma 4 26B-A4B: Unsloth reports that naive QAT-to-Q4_0 GGUF conversion gives mean KLD 0.361 / top-1 70.2% at 14.44 GB, the same size as google/gemma-4-26B-A4B-it-qat-q4_0-gguf (13.45 GiB). Its unsloth/gemma-4-26B-A4B-it-qat-GGUF:UD-Q4_K_XL (13.27 GiB) reports KLD 0.098 / top-1 85.6%. These numbers are vendor-reported; A/B both files on this laptop before choosing. Sampling: temp 1.0, top_p 0.95, top_k 64. Thinking: enable_thinking via --chat-template-kwargs on llama-server (llama-cli is unreliable). Do not feed thought blocks back into history. Source: https://unsloth.ai/docs/models/gemma-4/qat and https://unsloth.ai/docs/models/gemma-4"
+   },
+   {
+    "target_doc": "llamacpp/models.md",
+    "note": "Qwen3-Coder-Next: sampling temp 1.0, top_p 0.95, top_k 40, min_p 0.01 (llama.cpp default 0.05), repeat penalty off. Non-thinking only. GGUFs were re-uploaded on 2026-02-04 after a llama.cpp key_gdiff fix (looping), and tool-call parsing was fixed in llama.cpp around 2026-02-19, so use a newer build and the current files. Source: https://unsloth.ai/docs/models/qwen3-coder-next"
+   },
+   {
+    "target_doc": "llamacpp/models.md",
+    "note": "GLM-4.7-Flash: Z.ai sampling is temp 1.0 / top_p 0.95 (general) and temp 0.7 / top_p 1.0 (tool calling, SWE-bench, Terminal Bench), with --min-p 0.01 and repeat penalty off. Max context 202,752. The GGUFs were re-uploaded on 2026-01-21 for the scoring_func sigmoid fix, so files from before that loop. Unsloth's UD-Q4_K_XL (16.32 GiB) is smaller than Q4_K_M (17.05 GiB). Source: https://unsloth.ai/docs/models/tutorials/glm-4.7-flash"
+   },
+   {
+    "target_doc": "llamacpp/models.md",
+    "note": "Nemotron 3.5 Lightning: NVIDIA sampling relayed by Unsloth is temp 0.6, top_p 0.95 (thinking) and temp 0.2 (instruct), with min_p 0.01 on llama.cpp. Unsloth's UD-Q4_K_XL is 23.75 GiB despite the page's '~20GB' claim, so the ggml-org Q4_0 (17.60 GiB) stays the better fit for 16 GB VRAM. Source: https://unsloth.ai/docs/models/nemotron-3.5"
+   },
+   {
+    "target_doc": "llamacpp/models.md",
+    "note": "gpt-oss-20b: sampling temp 1.0, top_p 1.0, top_k 0 (or 100). Context: minimum 16,384, maximum 131,072. Unsloth fixed jinja template differences from OpenAI Harmony: double-escaped tool args, extra newlines, and tool-call reasoning in 'analysis' rather than 'final'. If tool calls misbehave with a GGUF, compare its embedded template with the current openai/gpt-oss-20b template. Source: https://unsloth.ai/docs/models/gpt-oss-how-to-run-and-fine-tune"
+   },
+   {
+    "target_doc": "llamacpp/README.md",
+    "note": "Do not build llama.cpp with CUDA toolkit 13.2. Unsloth's Qwen3.6 guide warns: 'Do NOT use CUDA 13.2 as you may get gibberish outputs', which matches llama.cpp #28581. The ghcr.io server-cuda image (CUDA 12.8.1) is not affected; any custom image must use a toolkit other than 13.2. Source: https://unsloth.ai/docs/models/qwen3.6"
+   },
+   {
+    "target_doc": "llamacpp/README.md",
+    "note": "Unsloth's MoE offload examples use -ot regexes rather than --n-cpu-moe. -ot \".ffn_.*_exps.=CPU\" puts all experts on CPU (least VRAM); \".ffn_(up|down)_exps.=CPU\" and \".ffn_(up)_exps.=CPU\" keep more on the GPU; \"\\.(6|7|8|9|[0-9][0-9]|[0-9][0-9][0-9])\\.ffn_(gate|up|down)_exps.=CPU\" offloads experts from layer 6 onward. --fit on does this automatically but 'currently ignores CPU repacked weights'. Prefer --n-cpu-moe N for simple tuning and -ot for per-projection control. Source: https://unsloth.ai/docs/models/tutorials/glm-4.7"
+   },
+   {
+    "target_doc": "llamacpp/README.md",
+    "note": "MTP speculative decoding for Qwen3.6 uses the separate unsloth/*-MTP-GGUF repos with '--spec-type draft-mtp --spec-draft-n-max 2'. Unsloth reports about 1.4x for dense and 1.15-1.2x for MoE, and acceptance falls from 83% to 50% at 4 draft tokens. These flags have not yet been checked against the b12407 image. Source: https://unsloth.ai/docs/models/qwen3.6"
+   },
+   {
+    "target_doc": "docs/model-selection.md",
+    "note": "Unsloth Dynamic (UD) GGUFs are post-training quants that pick a quant type per layer and use an imatrix calibrated on agentic coding, chat and multilingual data, with no QAT. Dynamic V3.1 (Nov 2026) currently covers only Qwen3.8-27B, DeepSeek-V4.1-Flash and Qwen3.8-Flash-Next; older model pages still use Dynamic 2.0. Unsloth's own guidance is that 1-bit quants break tool calling and that UD-Q2_K_XL is the minimum for agent use. For this project, treat UD-Q3_K_XL or higher as the practical floor. Source: https://unsloth.ai/docs/basics/dynamic-3.0-ggufs"
+   },
+   {
+    "target_doc": "vllm/models.md",
+    "note": "Unsloth NVFP4 checkpoints for Qwen3.6 are W4A4 and must not run on Marlin, which Unsloth measured as about 2.5x slower for W4A4. Leave the MoE and GEMM backend unset so vLLM picks CUTLASS, FlashInfer or CuTe-DSL. Note the baseline's FlashInfer JIT host-RAM issue (#46268) on first start. Gemma 4 NVFP4 needs 26 GB VRAM for 26B-A4B (does not fit) and 11 GB for 12B. Source: https://unsloth.ai/docs/models/qwen3.6 and https://unsloth.ai/docs/models/gemma-4"
+   },
+   {
+    "target_doc": "docs/opencode.md",
+    "note": "If OpenCode is ever pointed at Unsloth Studio instead of llama-server or vLLM, start it with 'unsloth run ... --disable-tools'. Otherwise Studio executes its own server-side tools and swallows OpenCode's tool calls. A llama-server HTTP 400 'exceed_context_size_error' means --ctx-size is below the agent's prompt; OpenCode needs 64k or more. Source: https://unsloth.ai/docs/integrations/opencode and https://unsloth.ai/docs/models/qwen3-coder-next"
+   },
+   {
+    "target_doc": "docs/sources.md",
+    "note": "Unsloth docs (https://unsloth.ai/docs, Markdown at <page>.md, index at /docs/llms.txt): official run guides from the publisher of the unsloth/* GGUFs. Reliable for file names, sampling parameters relayed from model vendors, and template-fix history. Quality claims are self-benchmarks, and speed numbers are B200 or unstated hardware, never an RTX 5080 Laptop. Pages carry no last-updated date, so date facts from in-page update notes and HF repo lastModified."
+   }
+  ],
+  "new_candidates": [
+   {
+    "name": "Gemma 4 26B-A4B QAT, Unsloth UD-Q4_K_XL",
+    "hf_repo": "unsloth/gemma-4-26B-A4B-it-qat-GGUF",
+    "why": "13.27 GiB, smaller than Google's Q4_0 (13.45 GiB), with vendor-reported KLD 0.098 against 0.361. Same runtime and fit as baseline pick #3, so it is a direct A/B candidate."
+   },
+   {
+    "name": "Qwen3.6-35B-A3B MTP GGUF",
+    "hf_repo": "unsloth/Qwen3.6-35B-A3B-MTP-GGUF",
+    "why": "Includes MTP tensors for --spec-type draft-mtp. Claimed 1.15-1.25x decode on MoE, which could offset the expert-offload slowdown on baseline pick #1. Not verified on this laptop or this llama.cpp build."
+   }
+  ],
+  "gaps": [
+   "No numbers on any page were measured on an RTX 5080, laptop or desktop. All speed data is B200 or unstated hardware.",
+   "Unsloth pages give no per-page last-updated date. Dates are inferred from in-page update notes and HF repo lastModified.",
+   "Gemma QAT page does not name which 'Q4_0' file it compared. The match with Google's official GGUF is inferred from identical size (14.44 GB = 13.45 GiB) and the Q6_K embedding remark.",
+   "The Nemotron 3.5 Lightning and GLM-4.7-Flash pages give no thinking on/off syntax or llama.cpp tool-parser notes. Nemotron gives no top_k or min_p for instruct mode.",
+   "Not checked whether the b12407 llama.cpp image supports '--spec-type draft-mtp' or the Unsloth MTP GGUF layout.",
+   "No Unsloth guide uses --n-cpu-moe, so no expert-layer counts for 16 GB VRAM are given. Baseline values (21, 37, 16, 20) still need on-machine tuning.",
+   "The MTP page (https://unsloth.ai/docs/models/mtp) and the Qwen3.8-Flash-Next page were not read in detail."
+  ]
+ },
+ "check": {
+  "verdicts": [
+   {
+    "item": "Publisher, type and as-of date (Unsloth AI, official-doc, GitBook pages with no per-page date; dated by in-page notes and HF lastModified)",
+    "verdict": "confirmed",
+    "evidence": "Raw fetches of unsloth.ai/docs/<page>.md. qwen3.8.md:9 says 'Nov 11 Update: Qwen3.8-27B GGUFs now use Unsloth Dynamic V3.1'. qwen3.6.md:10 says 'July 10'. HF API lastModified: unsloth/Qwen3.8-27B-GGUF 2026-11-12T02:15:52Z, unsloth/gemma-4-26B-A4B-it-qat-GGUF 2026-07-17, GLM-4.7-Flash-GGUF 2026-02-12, Nemotron-3.5-Lightning GGUF 2026-08-13."
+   },
+   {
+    "item": "Qwen3.8-27B: the 3-bit UD3 files were not replaced in the V3.1 update, so UD-Q3_K_XL (12.24 GiB) is 'unchanged in the repo'",
+    "verdict": "refuted",
+    "evidence": "The doc does say this (qwen3.8.md:33 and :79). The HF repo shows otherwise. Commit 4af51b3542 on 2026-11-12T02:15:52Z is titled 'New UD3.1 UD-Q3_K_XL'. paths-info shows Qwen3.8-27B-UD-Q3_K_XL.gguf with LFS oid 8c2a45ff85e7 at commits 4ca720788d, 43f522df59 and ce331efc48, and oid 7b20f0679da6 at 4af51b3542. The size is 13146393504 bytes (12.24 GiB) both before and after.",
+    "correction": "The UD-Q3_K_XL file was replaced with a UD3.1 build on 2026-11-12, one day after the doc note. The size stays 12.24 GiB, so it still fits the baseline. The doc statement is stale for Q3_K_XL. The KB should record the new LFS oid (7b20f067...) and say that any copy downloaded before 2026-11-12 is the old UD3 file. Remove the agreement 'repo file is still 12.24 GiB, unchanged' as worded."
+   },
+   {
+    "item": "Gemma 4 QAT table: 26B Unsloth 14.25 GB / mean KLD 0.09788 / 99.9% KLD 2.7087 / top-1 85.63%, against Q4_0 14.44 GB / 0.36094 / 4.5420 / 70.20%; 31B 17.29 vs 17.65 GB, KLD 0.01403 vs 0.09349, top-1 96.67 vs 87.91; byte-exactness 24.77% vs 99.96%",
+    "verdict": "confirmed",
+    "evidence": "gemma-4/qat.md:87 table, with values verbatim. Line 85 gives 'Naive conversion gets 24.77% byte exactness to BF16 QAT, whilst we found we can push it to 99.96%'. Line 43 has 'precisions higher than the uploaded UD-Q4_K_XL version degrade accuracy'. These are vendor-measured quality metrics; hardware is not applicable."
+   },
+   {
+    "item": "Conflict: the naive Q4_0 in Unsloth's table is Google's gemma-4-26B-A4B-it-qat-q4_0-gguf file (13.45 GiB); Unsloth UD-Q4_K_XL is 13.27 GiB",
+    "verdict": "confirmed",
+    "evidence": "The HF tree lists google/gemma-4-26B-A4B-it-qat-q4_0-gguf/gemma-4-26B_q4_0-it.gguf at exactly 14439363584 bytes, which is 14.44 GB, matching the table's Q4_0 row, or 13.448 GiB. unsloth gemma-4-26B-A4B-it-qat-UD-Q4_K_XL.gguf is 13.27 GiB, which is 14.25 GB. The page does not name Google's repo (qat.md:76 says 'naively converting the QAT Q4_0 checkpoint'), so the identification is still an inference. The exact byte match makes it strong. Recommending an A/B test is reasonable."
+   },
+   {
+    "item": "CUDA 13.2 warning on the Qwen3.6 page, and agreement with baseline #28581 and the CUDA 12.8.1 image",
+    "verdict": "confirmed",
+    "evidence": "qwen3.6.md:133 reads 'Do NOT use CUDA 13.2 as you may get gibberish outputs. Use below CUDA 13.2 or CUDA 13.3.' Baseline current-knowledge.md:38 confirms that server-cuda-b12407 is CUDA 12.8.1. Baseline #28581 covers IQ3_S garbage with nvcc 13.2, so the Unsloth warning is broader than that issue but consistent with it."
+   },
+   {
+    "item": "NVFP4 vLLM table on 1x B200 at 128 concurrency (27B cute-DSL 125.9 decode / 6,863 throughput; 35B-A3B cute-DSL 295.2 / 15,636; nvidia 27B W4A16 marlin 115.6 / 2,403; 35B nvidia marlin 240.8 / 8,721; unsloth 27B marlin 105.6 / 2,127) and Marlin about 2.5x slower for W4A4",
+    "verdict": "confirmed",
+    "evidence": "qwen3.6.md:504 says 'All benchmarks use 1x B200 128 concurrency'. The table at lines 554-564 has the values verbatim, and line 550 has the 2.5x degradation statement. The review left out some rows (unsloth 35B marlin 215.8 / 8,619; cutlass rows); this is not an error."
+   },
+   {
+    "item": "Qwen3.8-27B BF16 vs NVFP4 table (batch 1: 89.8 vs 133.7, 1.49x; batch 64: 3048.5 / 47.6 vs 4407.2 / 68.9) with hardware 'not stated'",
+    "verdict": "confirmed",
+    "evidence": "The values are verbatim at qwen3.8.md:359. qwen3.8.md:365 in the same NVFP4 section says 'All benchmarks use 1x B200 128 concurrency' (text copied from the Qwen3.6 page, since it mentions 35B).",
+    "correction": "Hardware is stated as 1x B200, apparently through a boilerplate sentence, so record it as B200 (datacenter) rather than 'not stated'. Code KLD 0.02600 / top-1 96.68% also confirmed (line 372)."
+   },
+   {
+    "item": "Qwen3.6 MTP: --spec-type draft-mtp --spec-draft-n-max 2; acceptance 83% to 50% at 4 draft tokens; 1.4x dense, 1.15-1.2x MoE; 140 tok/s (27B UD-Q2_K_XL) and 220 tok/s (35B-A3B) on unstated hardware",
+    "verdict": "confirmed",
+    "evidence": "qwen3.6.md:363 and following lines show the flags. Lines 900-909 have the speedups, the 'noisy' caveat, '140 tokens / s generation with UD-Q2_K_XL' and '220 tokens / s', and the 83%-to-50% acceptance drop. No GPU is named in that section."
+   },
+   {
+    "item": "preserve_thinking 'default is enabled' for 35B-A3B",
+    "verdict": "confirmed",
+    "evidence": "In the qwen3.6.md thinking section: 'As an example for Qwen3.6-35B-A3B to enable preserve thinking (default is enabled):' followed by --chat-template-kwargs '{\"preserve_thinking\":true}'. The wording is ambiguous: it may refer to the example, not the template default. The review's advice to set it explicitly is prudent."
+   },
+   {
+    "item": "Nemotron 3.5 Lightning: page says about 20GB RAM for 4-bit, but UD-Q4_K_XL is 23.75 GiB; temp 0.6 thinking / 0.2 instruct",
+    "verdict": "confirmed",
+    "evidence": "nemotron-3.5.md:5 and :44 say '~20GB RAM' for 4-bit; lines 29 and 36 have temperature 0.6 and 0.2. HF tree: UD-Q4_K_XL 23.75 GiB, UD-Q3_K_XL 19.78, MXFP4_MOE 21.62. Keeping the baseline ggml-org Q4_0 is reasonable."
+   },
+   {
+    "item": "GLM-4.7-Flash: UD-Q4_K_XL 16.32 GiB is smaller than Q4_K_M 17.05 GiB; Jan 21 sigmoid fix; temp 0.7 / top_p 1.0 for tool calling; min-p 0.01; context 202,752; Ollama caution",
+    "verdict": "confirmed",
+    "evidence": "HF tree: UD-Q4_K_XL 16.32, Q4_K_M 17.05, UD-Q3_K_XL 12.84, IQ4_XS 15.15 GiB. glm-4.7-flash.md:12 has the scoring_func sigmoid note, :17/:40 '--temp 0.7 --top-p 1.0', :41 min-p 0.01, :45 the Ollama warning, :50 '202,752'."
+   },
+   {
+    "item": "Dynamic V3.1 scope (Qwen3.8-27B, DeepSeek-V4.1-Flash-1017, Qwen3.8-Flash-Next), no QAT/QAD, and 1-bit unfit for agentic use (Divergence-300 about 25% falling to under 8-10%)",
+    "verdict": "confirmed",
+    "evidence": "dynamic-3.0-ggufs.md:5 (V3.1 scope), :38 ('do NOT use QAT or QAD'), :56-58 ('sharp drop off from UD-Q2_K_XL to UD-IQ2_S ... from around 25% accuracy to under 8-10%'), :61 (presence_penalty 1.5)."
+   },
+   {
+    "item": "Qwen3-Coder-Next: min_p 0.01 (llama.cpp default 0.05), at least 3-bit, Feb 4 key_gdiff re-upload, exceed_context_size_error example 16582 > 16384",
+    "verdict": "confirmed",
+    "evidence": "qwen3-coder-next.md:34, :41, :16 and :651, all verbatim."
+   },
+   {
+    "item": "Credibility rating 'medium'",
+    "verdict": "confirmed",
+    "evidence": "The docs are first-party for unsloth/* file names and commands, while quality numbers are self-benchmarks and speed numbers come from a B200 or unstated hardware. The stale Q3_K_XL statement found above is another example of why doc claims need checking against the HF repo. Medium is fair."
+   }
+  ],
+  "credibility_fair": true,
+  "credibility_note": "Medium is fair. The docs are authoritative for unsloth/* file names, flags and template-fix history, but their quality numbers are self-benchmarks and their speed numbers come from a B200 or unstated hardware, never an RTX 5080 Laptop. The docs can also lag the HF repo: the Qwen3.8 page says the 3-bit UD3 files were not updated, yet UD-Q3_K_XL was replaced on 2026-11-12. Check file-state claims against the HF API, not the doc text.",
+  "overall": "holds-with-corrections",
+  "summary": "I re-read the source raw (unsloth.ai/docs/<page>.md, saved in $SCRATCH/src/unsloth-docs-check/) and checked the HF API trees, commits and paths-info. The review is accurate, with one material correction and one minor one.\n\nMaterial: the review says the Qwen3.8-27B UD-Q3_K_XL file is \"unchanged in the repo\", which is wrong. The Unsloth doc does say the 3-bit UD3 quants were not updated. But HF commit 4af51b3542 (2026-11-12T02:15:52Z, \"New UD3.1 UD-Q3_K_XL\") replaced the file: its LFS oid changed from 8c2a45ff85e7 to 7b20f0679da6 at the same 13146393504 bytes (12.24 GiB). The baseline pick still fits, but the KB should record that the file is now UD3.1 and that copies downloaded before 2026-11-12 are the old build.\n\nMinor: the Qwen3.8 BF16-vs-NVFP4 speed table is labelled \"1x B200 128 concurrency\" on the page (qwen3.8.md:365), so it is not \"hardware not stated\".\n\nAll other spot-checked numbers match verbatim:\n- Gemma 4 QAT KLD table.\n- The Google Q4_0 file is exactly 14439363584 bytes, which matches the table's 14.44 GB \"naive Q4_0\" row, so that conflict is real and the A/B recommendation stands.\n- CUDA 13.2 warning.\n- NVFP4 B200 table and the Marlin 2.5x note.\n- MTP flags and the 83%-to-50% acceptance drop.\n- Nemotron ~20GB claim against the 23.75 GiB file.\n- GLM-4.7-Flash sizes and fixes.\n- Dynamic V3.1 scope and the 1-bit floor.\n- Qwen3-Coder-Next min_p and the context error.\n\nThe medium credibility rating is fair."
+ }
+}

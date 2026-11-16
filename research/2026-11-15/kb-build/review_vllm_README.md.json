@@ -1,0 +1,50 @@
+{
+ "file": "$HOME/projects/llm/vllm/README.md",
+ "checked_claims": 46,
+ "fixes": [
+  {
+   "what": "Next version row: 'v0.34.0rc4 (2026-11-14) is a pre-release' changed to 'v0.34.0rc4 (tagged 2026-11-14) is a release-candidate tag with no GitHub release yet'",
+   "why": "gh api releases lists no v0.34 release object, prerelease or otherwise. The tag exists (commit date 2026-11-14), and its cache.py does change gpu_memory_utilization to default None (1.0 with extensible KV, 0.92 otherwise).",
+   "source": "https://github.com/vllm-project/vllm/blob/v0.34.0rc4/vllm/config/cache.py"
+  },
+  {
+   "what": "API key bullet now also says that endpoints such as /invocations are not covered by VLLM_API_KEY",
+   "why": "The cli_args.py docstring at v0.33.0 (lines 339-341) says the key only covers /v1, /v2 and /inference, and that /invocations exposes the same inference without it. This makes the 'not a security boundary' point concrete.",
+   "source": "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/entrypoints/common/cli_args.py"
+  },
+  {
+   "what": "Ornith worked example: BF16 context changed from 'about 214k' to 'about 212k after subtracting about 0.05 GiB of fixed GDN state', and FP8 from 'about 428k' to 'about 425k'",
+   "why": "verify_Ornith-1.5-9B.json subtracts the roughly 49 MiB fixed GDN state from the pool and gets about 212,600 (BF16) and 425,000 (FP8) tokens. The conclusion (131072 fits; FP8 capped at 262144) does not change.",
+   "source": "scratchpad/ver/verify_Ornith-1.5-9B.json"
+  },
+  {
+   "what": "ModelFit calculator sentence now says these are estimates for the desktop RTX 5080 at 960 GB/s, that ModelFit has no laptop page, and links ModelFit. ModelFit was also added to Sources.",
+   "why": "Rule 7 requires a hardware label and an estimate label on third-party numbers. The modelfit-rtx5080 and modelfit-gpu review checks confirm the page covers the desktop card only and gives estimates.",
+   "source": "https://modelfit.io/gpu/rtx-5080/"
+  },
+  {
+   "what": "Artificial Analysis label 'measured at BF16' changed to 'measured by Artificial Analysis through the Alibaba API at BF16, not on this hardware'",
+   "why": "verify_Qwen3.8-27B.json describes it as an independent AA run through the Alibaba API at BF16. The new label says who measured, on what, and that it was not this laptop.",
+   "source": "https://artificialanalysis.ai/models/qwen3-8-27b"
+  },
+  {
+   "what": "'Unsloth measured Marlin about 2.5x slower' changed to 'Unsloth reports ... (vendor-reported, measured on 1x B200 at 128 concurrency)'",
+   "why": "The unsloth-docs review check classes these as Unsloth self-benchmarks. The live page qwen3.6.md:504 and :550 confirms both the 2.5x figure and the B200 setup.",
+   "source": "https://unsloth.ai/docs/models/qwen3.6"
+  },
+  {
+   "what": "Added a model-card link to the claim that Nemotron 3.5 Lightning needs vLLM 0.27.1",
+   "why": "The claim had only the private runbook behind it. The live card (README lines 114 and 280) names vllm/vllm-openai:v0.27.1.",
+   "source": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16"
+  }
+ ],
+ "remaining_concerns": [
+  "The table row 'Dense or small MoE checkpoint at or below about 13 GiB' is a rule of thumb taken from the 14.65 GiB budget minus the 1.2 GiB reserve. It has no separate source. It is consistent with the budget section but is not labelled as an estimate.",
+  "The Gemma 4 Triton claim (models/config.py) holds only when Gemma's head dimensions differ, because FA4 is not available on sm_120. I read this from Gemma4Config.verify_and_update_config. It has not been observed in a log.",
+  "The claim that NGC images have no 'vllm serve' entrypoint is inferred from the runbook command (nvcr.io/nvidia/vllm:26.05-py3 followed by 'vllm serve ...'). I did not read the NGC image config.",
+  "--limit-mm-per-prompt for Gemma 4 lists image and audio only. Gemma 4 12B also takes video (facts_Gemma_4_12B_IT.json). This does not matter when --language-model-only is used, which the doc recommends.",
+  "Nothing has been run on this laptop. Every memory and context figure is still an estimate, as the doc says."
+ ],
+ "verdict": "ready",
+ "used_playwright": false
+}

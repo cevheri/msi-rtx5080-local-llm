@@ -1,0 +1,189 @@
+# Source catalog
+
+Last verified: 2026-11-16.
+
+This catalog lists the sources behind this knowledge base, what each one can and cannot prove, and how credible it is for this laptop (RTX 5080 Laptop GPU, 16 GB, 896 GB/s, 140 W).
+Primary sources (release pages, source code at a pinned tag, official docs, registry APIs, model cards) carry versions, flags and file sizes; independent evaluators carry quality scores; community posts and calculators are orientation only.
+Only gpt-oss-20b has been measured on this laptop so far (2026-11-16, [research/2026-11-16/](../research/2026-11-16/README.md)); every other speed figure here is a third-party measurement on other hardware or an estimate.
+The 19 sources the user supplied were each reviewed and then independently re-checked on 2026-11-15; all 19 held, 17 of them with corrections that are applied below.
+
+## Evidence classes
+
+Every number in this knowledge base should carry one of these labels, either explicitly or through its link.
+
+| Class | Meaning | Example | How to label it |
+|---|---|---|---|
+| Measured on this machine | Run on this laptop with the runtime, build, model file, power limit and date recorded | None yet | "(measured on this laptop, 140 W, llama.cpp b12407, 2026-11-xx)" |
+| First-hand agent harness | The user's own LibreDB Studio tool-loop harness, run on an Apple M5 Max under Ollama: pass/fail over repeated runs plus whole-run durations ([agent-harness-evidence.md](agent-harness-evidence.md)) | qwen3-coder:30b 30/30 with an 11 s median run | "(measured on the M5 Max, libredb-studio)" |
+| Documented | Stated by a primary source: release page, source code at a tag, official docs, registry API, model card config | vLLM v0.33.0 default `--gpu-memory-utilization` 0.92 | Inline link to the primary source |
+| Source-backed estimate | Arithmetic from documented inputs (config.json, real file sizes, spec bandwidth) | KV cache bytes per token, context budget | "(estimate)" |
+| Community measurement | A real run by a third party on other hardware | gpt-oss-20b on a desktop RTX 5080 under Ollama | "(measured on a desktop RTX 5080, Ollama 0.32.1)" |
+| Calculator estimate | Output of a third-party formula, nothing run | canirun.ai, ModelFit, Periscale, Twoody | "(calculator estimate, desktop card)" |
+| Vendor-reported | A model publisher or quant publisher scoring its own product | SWE-bench numbers on a model card, Unsloth KLD tables | "(vendor-reported)" |
+| Opinion | Advice or rules of thumb without data | Blog buying guides, forum tips | Use only to suggest what to test |
+
+Two hardware rules apply to every third-party number.
+The desktop RTX 5080 (960 GB/s, 360 W) is a different card from this laptop GPU, whose [NVIDIA spec page](https://www.nvidia.com/en-us/geforce/laptops/50-series/) lists 896 GB/s; desktop numbers are upper bounds here, never laptop numbers.
+A laptop result is only comparable if it records the active power limit, which on this machine is configurable (80 W default, 140 W set, 175 W max).
+
+Credibility in this catalog means credibility for the use named in the table, not overall reputation: a high-credibility registry can still be useless for speed.
+
+## Primary sources used
+
+These are the sources that settle versions, flags, defaults and file sizes.
+Topic documents link the exact page or file next to each claim; this list is the map.
+
+### vLLM
+
+- [vLLM v0.33.0 release](https://github.com/vllm-project/vllm/releases/tag/v0.33.0rc3): the pinned stable version; the GitHub release named v0.33.0 was published 2026-11-02 on tag `v0.33.0rc3`, and the [v0.33.0 tag](https://github.com/vllm-project/vllm/tree/v0.33.0) points to the same commit 4ba787e with a tagger date of 2026-11-01.
+- [vllm/vllm-openai tags on Docker Hub](https://hub.docker.com/r/vllm/vllm-openai/tags): image tags, digests and compressed sizes, including the smaller `-zstd` variant.
+- [vLLM docs at tag v0.33.0](https://github.com/vllm-project/vllm/tree/v0.33.0/docs): prefer these over `/en/latest/`, which is built from main and already describes post-v0.33.0 behaviour.
+- Source files at the tag, for defaults and parser names: [protocol.py](https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/entrypoints/openai/chat_completion/protocol.py), [envs.py](https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/envs.py), [tool_parsers/__init__.py](https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/tool_parsers/__init__.py), [arg_utils.py](https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/engine/arg_utils.py).
+- [Using Docker](https://docs.vllm.ai/en/latest/deployment/docker/) and [Benchmark Suites](https://docs.vllm.ai/en/latest/benchmarking/): reviewed below as user-provided sources.
+- [vLLM Recipes](https://recipes.vllm.ai): per-model serve settings from the project; check the minimum version against the pinned image.
+- [vLLM issue tracker](https://github.com/vllm-project/vllm/issues): issue states for sm_120 problems such as [#66264](https://github.com/vllm-project/vllm/issues/66264) and [#46268](https://github.com/vllm-project/vllm/issues/46268) are tracked in [vllm/README.md](../vllm/README.md).
+
+### llama.cpp
+
+- [llama.cpp releases](https://github.com/ggml-org/llama.cpp/releases) (the pinned image is `server-cuda-b12407`, because no image exists yet for build [b12418](https://github.com/ggml-org/llama.cpp/releases/tag/b12418), published 2026-11-15, at which the flags and source were read; newer `b` builds appear several times a day, and a separate [v1.0.0 release](https://github.com/ggml-org/llama.cpp/releases/tag/v1.0.0) was published 2026-11-13) and the [ghcr.io container package](https://github.com/ggml-org/llama.cpp/pkgs/container/llama.cpp) for image tags.
+- [Docker build workflow](https://github.com/ggml-org/llama.cpp/blob/b12418/.github/workflows/docker.yml) and [cuda.Dockerfile](https://github.com/ggml-org/llama.cpp/blob/b12418/.devops/cuda.Dockerfile): which CUDA version each image tag is built on.
+- [Server README at b12418](https://github.com/ggml-org/llama.cpp/blob/b12418/tools/server/README.md) and [arg.cpp at b12418](https://github.com/ggml-org/llama.cpp/blob/b12418/common/arg.cpp): flag names and defaults; arg.cpp is what settles parsing questions such as `-e` meaning `--escape`.
+- [MoE cache doc](https://github.com/ggml-org/llama.cpp/blob/b12418/docs/moe-cache.md) and [fit-params README](https://github.com/ggml-org/llama.cpp/blob/b12418/tools/fit-params/README.md): expert offload and automatic placement.
+- [Discussion #15396](https://github.com/ggml-org/llama.cpp/discussions/15396) (ggml-org gpt-oss guide; gpt-oss-20b 204.9 tok/s tg128, measured on a desktop RTX 5080, llama.cpp build 6210, CUDA 12.8) and [discussion #15013](https://github.com/ggml-org/llama.cpp/discussions/15013) (CUDA llama-bench scoreboard on Llama 2 7B Q4_0): community measurements on desktop cards, hosted by the project.
+- [Issue #27330](https://github.com/ggml-org/llama.cpp/issues/27330) (CUDA-graph hang on RTX 50 Laptop) and the other open issues are tracked in [llamacpp/README.md](../llamacpp/README.md).
+
+### Ollama
+
+- [Ollama v0.40.16 release](https://github.com/ollama/ollama/releases/tag/v0.40.16), [OpenAI compatibility doc](https://github.com/ollama/ollama/blob/v0.40.16/docs/api/openai-compatibility.mdx), [FAQ](https://github.com/ollama/ollama/blob/v0.40.16/docs/faq.mdx) and [envconfig/config.go](https://github.com/ollama/ollama/blob/v0.40.16/envconfig/config.go): defaults and environment variables.
+- [Ollama OpenCode integration doc](https://docs.ollama.com/integrations/opencode): the 64k minimum context for OpenCode.
+- [Ollama library](https://ollama.com/search?c=local) and the registry manifests behind it: reviewed below.
+
+### NVIDIA, CUDA and the host
+
+- [GeForce RTX 50 Series Laptops spec page](https://www.nvidia.com/en-us/geforce/laptops/50-series/): 16 GB GDDR7, 896 GB/s, 1334 AI TOPS, 7680 CUDA cores.
+- [NVIDIA Container Toolkit install guide](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html), [supported platforms](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/supported-platforms.html), [CDI support](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/cdi-support.html) and [troubleshooting](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/troubleshooting.html) (GPU loss after `systemctl daemon-reload` with `--gpus`).
+- [CUDA minor version compatibility](https://docs.nvidia.com/deploy/cuda-compatibility/minor-version-compatibility.html): which CUDA images driver 595 (CUDA 13.2) can run.
+- [Driver 595.99.02 README, dynamic power management](https://download.nvidia.com/XFree86/Linux-x86_64/595.99.02/README/dynamicpowermanagement.html): RTD3 and why a running CUDA process keeps the dGPU awake.
+- [NGC vLLM container catalog](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/vllm): NVIDIA's own vLLM builds; they lag upstream vLLM releases.
+- [Intel Core Ultra 9 290HX Plus spec](https://www.intel.com/content/www/us/en/products/sku/245960/intel-core-ultra-9-processor-290hx-plus-36m-cache-up-to-5-50-ghz/specifications.html): DDR5-6400, two channels, so 102.4 GB/s peak (estimate).
+
+### Docker
+
+- [Compose GPU support](https://docs.docker.com/compose/how-tos/gpu-support/) and the [Compose services reference](https://docs.docker.com/reference/compose-file/services/): `gpus`, CDI `devices`, `mem_limit` and `memswap_limit`.
+- [Resource constraints](https://github.com/docker/docs/blob/main/content/manuals/engine/containers/resource_constraints.md): `--memory` and `--memory-swap` semantics.
+- [Packet filtering and firewalls](https://docs.docker.com/engine/network/packet-filtering-firewalls/): published ports bypass ufw, so this knowledge base publishes on 127.0.0.1 only.
+- [dockerd reference](https://docs.docker.com/reference/cli/dockerd/): cgroup driver and default cgroup parent, which is why the user's `heavy` wrapper does not cap containers.
+- Host setup details live in [host-setup.md](host-setup.md).
+
+### OpenCode
+
+- [OpenCode v2.3.0 release](https://github.com/anomalyco/opencode/releases/tag/v2.3.0) and the [config JSON schema](https://opencode.ai/config.json): the schema is the validation oracle for every config in [opencode.md](opencode.md).
+- [OpenCode docs: models](https://opencode.ai/docs/models.md) and [providers](https://opencode.ai/docs/providers/).
+- Source at the tag where the docs are silent, for example [local.ts](https://github.com/anomalyco/opencode/blob/v2.3.0/packages/core/src/plugin/provider/local.ts) (built-in vLLM discovery sets tools to false).
+- [OpenCode issue tracker](https://github.com/anomalyco/opencode/issues): open issues such as [#55378](https://github.com/anomalyco/opencode/issues/55378) are tracked in [opencode.md](opencode.md).
+
+### Model cards, vendor posts and quant publishers
+
+- Hugging Face model cards and raw `config.json` files are primary for architecture, context length, license, parser hints and sampling; their benchmark tables are vendor-reported.
+- The [Hugging Face API](https://huggingface.co/api/models/ggml-org/Qwen3.6-35B-A3B-GGUF?blobs=true) (`?blobs=true` or `/tree/main`) is primary for exact file sizes; every size in [models.md for llama.cpp](../llamacpp/models.md) and [models.md for vLLM](../vllm/models.md) comes from it.
+- The [Nemotron 3.5 Lightning card](https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16) is the most useful single vendor source because NVIDIA scores Qwen3.6-35B-A3B, Gemma 4 26B-A4B, gpt-oss-20b and its own model under one harness; it is still vendor-reported.
+- Vendor launch posts such as [Gemma 4](https://blog.google/innovation-and-ai/technology/developers-tools/gemma-4/) and [Qwen3-Coder-Next](https://qwen.ai/blog?id=qwen3-coder-next) give dates and intent, not independent quality.
+- [Unsloth docs](https://unsloth.ai/docs): reviewed below; authoritative for unsloth/* file names and relayed sampling settings.
+
+### Independent evaluations
+
+- [Artificial Analysis](https://artificialanalysis.ai/): the main independent quality source; reviewed below.
+- [SWE-bench](https://www.swebench.com), [Terminal-Bench](https://www.tbench.ai/leaderboard), [BFCL](https://gorilla.cs.berkeley.edu/leaderboard.html), [Aider polyglot](https://raw.githubusercontent.com/Aider-AI/aider/main/aider/website/_data/polyglot_leaderboard.yml) and [LiveCodeBench](https://livecodebench.github.io/performances_generation.json): credible, but as of 2026-11-15 none of them ranks the newest small models (SWE-bench has no results newer than 2026-02-26, BFCL was last updated 2026-04-12, Aider data stops in 2025-10, LiveCodeBench public data stops in 2025-04, and the Terminal-Bench 4.1 board lists no model of 32B or less), as checked on 2026-11-15.
+- Papers: [Kaplan et al. 2020](https://arxiv.org/abs/2001.08361), [Hoffmann et al. 2022 (Chinchilla)](https://arxiv.org/abs/2203.15556), [Dettmers and Zettlemoyer 2022](https://arxiv.org/abs/2212.09720) and [Kumar et al. 2024](https://arxiv.org/abs/2411.04330); reviewed below.
+
+### The user's earlier runbook
+
+The user's private DGX Spark runbook (GB10, 273 GB/s unified memory) is a first-hand measurement source from a different machine.
+It is not in this repository and is not linked.
+Its numbers are "measured on a different machine" and its lessons (thinking default off, wrong tool parser fails silently, check the model card's minimum runtime version) are applied in the runtime documents.
+
+### The user's LibreDB Studio agent harness
+
+The user's LibreDB Studio project holds a second first-hand source: an agent harness that drives a model through six tool-calling surfaces (Investigate, Optimize, Assess, Operate, Analyze, Plan) against an embedded SQLite sample ([docs/llms/methodology.md](https://github.com/libredb/libredb-studio/blob/c419b8bf1b156cff7a05bacf5cce5b3c0eb4b666/docs/llms/methodology.md)).
+It ran on an Apple M5 Max with 64 GB of unified memory under Ollama 0.32.13 and 0.33.0, through the OpenAI-compatible endpoint ([docs/llms/methodology.md](https://github.com/libredb/libredb-studio/blob/c419b8bf1b156cff7a05bacf5cce5b3c0eb4b666/docs/llms/methodology.md)).
+A model is listed as supported only when each of the six surfaces passed five consecutive times, so a listed model has 30 passes out of 30 runs ([docs/llms/README.md](https://github.com/libredb/libredb-studio/blob/c419b8bf1b156cff7a05bacf5cce5b3c0eb4b666/docs/llms/README.md)).
+The prompts are short SQLite tasks, each turn is capped at 90 s (150 s for nine models), and the published figures are whole-run durations (median and slowest passing run), not tok/s.
+Label its numbers "(measured on the M5 Max, libredb-studio)".
+The transfer basis is memory bandwidth: the M5 Max has 614 GB/s ([Apple MacBook Pro specs](https://www.apple.com/macbook-pro/specs/)) against 896 GB/s here, so a model that fits fully in VRAM should run faster on this laptop, and a model that spills to DDR5 should run slower.
+Pass/fail transfers as tool-reliability evidence; the durations do not.
+It does not test coding quality, code edits or 64k-scale contexts, and its loop has guards (report reminders, empty-turn retries) that OpenCode lacks; the per-model analysis is in [agent-harness-evidence.md](agent-harness-evidence.md).
+The libredb project is read-only from this knowledge base.
+
+## User-provided sources reviewed on 2026-11-15
+
+Each source got a review and then an independent check that re-fetched the raw source.
+"Holds" means every load-bearing number matched; "Holds with corrections" means the review stands after the listed fixes, which are already applied in this knowledge base.
+Credibility is for the stated use.
+
+| Source | Type | Publisher | As of | Credibility | Independent check | Use it for | Do not use it for |
+|---|---|---|---|---|---|---|---|
+| [Artificial Analysis](https://artificialanalysis.ai/) | Independent evaluation | Artificial Analysis | Read 2026-11-15, Intelligence Index v5.0.1 | High for quality | Holds with corrections: agreement with NVIDIA's table is within 1.8 points, not 1.5; tau3-Banking is still run as a standalone eval | Same-methodology quality scores (TB2.1, tau2, tau3-Banking, Intelligence Index), new candidates | Local speed or price (cloud APIs), local quant quality, OpenCode success (harnesses are Terminus 2, mini-swe-agent, Stirrup) |
+| [TechFuelHQ RTX 5080 throughput dataset](https://huggingface.co/datasets/iBlessi/rtx-5080-llm-throughput) | Community measurement | iBlessi on Hugging Face, mirroring TechFuelHQ | Captures 2026-08-12 and 2026-08-26, v1.1.0 | Medium | Holds with corrections: the gpt-oss gap to llama.cpp is mainly model conversion (companion [llama.cpp vs Ollama page](https://techfuelhq.com/self-hosted/ollama-vs-llamacpp-rtx-5080-2026/) measured gpt-oss-20b at 222-238 tok/s on llama.cpp b10507 vs 195.8 tok/s on Ollama, same desktop RTX 5080); offload spread depends on load-time memory state too | Desktop upper bounds under Ollama 0.32.1; benchmarking method (nonce prefill, native counters, digest pins) | Laptop numbers; vLLM or current llama.cpp speeds |
+| [Hugging Face filtered model listing](https://huggingface.co/models?num_parameters=min:3B,max:32B&apps=vllm,llama.cpp&base_model_relation=base&sort=trending) | Registry | Hugging Face and uploaders | Live 2026-11-15 | Medium | Holds with corrections: Xing4.0 also has an iq2_M-slim GGUF of 10.99 GiB and its card claims OpenCode format alignment | Discovery, dates, licenses, file sizes | Proof of stock runtime support (the apps tag is not), quality (card scores are vendor-reported); the filter hides quants and models above 32B |
+| [vLLM benchmarking docs](https://docs.vllm.ai/en/latest/benchmarking/) | Official doc | vLLM project | Page 2026-08-11, checked against v0.33.0 source | High for CLI usage | Holds with corrections: v0.33.0 tag dated 2026-11-01; running `vllm bench` via `--entrypoint vllm` in the image is plausible but untested; example outputs are illustrative | `vllm bench serve` flags, defaults and metric definitions ([vllm/benchmarking.md](../vllm/benchmarking.md)) | Performance data: example numbers come from unspecified hardware |
+| [vLLM Docker docs](https://docs.vllm.ai/en/latest/deployment/docker/) | Official doc | vLLM project | Page 2026-08-11, built from main | High | Holds with corrections: the page's CUDA 13.5 staging-build section (a Rubin prerelease image) requires an R620 or newer driver; `VLLM_FORCE_AOT_LOAD`, `kv_cache_memory_bytes` and the usage-stats variables exist at v0.33.0 | Run command, `--ipc=host`, cache volumes, non-root mode, Recipes | Behaviour of the pinned image where latest docs moved on (for example `gpu_memory_utilization` default); Compose, CDI for Docker, ports or memory caps |
+| [Ollama local models](https://ollama.com/search?c=local) | Registry | Ollama | Live 2026-11-15 | High for packaging | Holds with corrections: the fits-in-16-GB list also includes lfm2.5:24b and gemma4:12b-it-qat; size identity with Google's QAT file is to 0.01 GiB | Tag names, digests, sizes, quant type, minimum Ollama version | Performance; context defaults (the column is the model maximum); tool-calling quality (badges describe the template) |
+| [CanIRun.ai RTX 5080 Laptop](https://canirun.ai/device/rtx-5080-laptop) | Calculator estimate | CanIRun.ai (public source, no license declared) | Live 2026-11-15 | Low | Holds with corrections: repo is public source, not open source; the 16 GB system RAM default comes from the visitor's browser | Rough per-quant size check; it does use the correct laptop spec (16 GB, 896 GB/s) | Speed (roofline x 0.7, MoE 1.5-2x too high) or fit (no expert offload) |
+| [MindStudio 16/24 GB guide](https://www.mindstudio.ai/blog/best-gpu-for-running-local-llms-24gb) | Blog | MindStudio (vendor blog) | 2026-11-12 | Low | Holds with corrections: baseline files are 17.05-19.13 GiB, about 18.3-20.5 GB, at or above its 15-18 GB range | The generic weights-plus-KV sizing rule | Any RTX 5080 Laptop fact; the 24 GB RTX 5080 story (unconfirmed by its own admission) |
+| [ModelFit GPU index](https://modelfit.io/gpu/) | Calculator estimate | ModelFit (single developer, affiliate-funded) | Pages 2026-11-14 | Medium | Holds with corrections: dataset has 126 hardware keys but no discrete laptop GPUs; 167.6 tok/s (4K-context estimate) vs 205 tok/s (tg128 measurement) is not like for like | Published formula and error stats; desktop RTX 5070 Ti (896 GB/s) as a bandwidth proxy | Measurements; context limits for gpt-oss or Gemma 4 (generic KV class); expert offload |
+| [Tech Centurion GPU rankings](https://www.techcenturion.com/local-llm-gpu-rankings) | Blog | Tech Centurion | 2026-11-14 | Medium (low for the laptop row) | Holds with corrections: the composite also uses an unspecified 27B dense test; the Gemma 4 26B-A4B fit explanation is the reviewer's inference | VRAM tiers; the republished llama-bench table (195 tg / 9,305 pp on Llama 2 7B Q4_0, measured on a desktop RTX 5080, llama.cpp build not stated) as a cross-machine anchor | Laptop throughput (94 of 108 laptop scores are estimates) |
+| [ModelFit RTX 5080](https://modelfit.io/gpu/rtx-5080/) | Calculator estimate | ModelFit | 2026-11-14 | Low | Holds | Config-derived KV cross-check for hybrid Qwen models; an example of why generic verdicts mislead | Speed or fit for our picks (desktop card, Ollama Q4_K_M, no expert offload, inconsistent usable VRAM) |
+| [u/grumd: 18 models on RTX 5080](https://www.reddit.com/r/LocalLLaMA/comments/1s9mkm1/benchmarked_18_models_that_i_can_run_on_my_rtx/) | Community measurement | Reddit r/LocalLLaMA | 2026-04-01, comments to 2026-09-19 | Medium | Holds with corrections: some June-July results came from a 5080 + 3080 dual-GPU rig; 122B Q4 prefill is 1000-1500 tok/s | llama.cpp tuning tips (`-ub` for offloaded MoE, q8_0 KV, `-np 1`), support for the expert-offload approach | Laptop speeds (desktop OC card, mostly recalled ranges); fine ranking (1-3 task run-to-run noise) |
+| [u/nickl: LLM SQL Benchmark](https://www.reddit.com/r/LocalLLaMA/comments/1s7r9wu/i_tested_as_many_of_the_small_local_and/) | Community measurement | Reddit r/LocalLLaMA, [open harness](https://github.com/nlothian/llm-sql-benchmark) | 2026-03-30, data to 2026-06-10 | Medium | Holds (local small-model runs used a 300 s timeout, not the 120 s default) | A short tool-calling smoke test to point at our endpoints; weak evidence for thinking off in tool loops | Ranking current picks (most postdate it); provider-independent scores (OpenRouter providers unpinned) |
+| [Twoody RTX 5080 calculator](https://www.twoody.com/local-llm-calculator/rtx-5080) | Calculator estimate | Twoody (Osmove SASU, vendor) | Page 2026-11-01, data 2026-10-16.1 | Medium | Holds with corrections: the #15013 anchor row was submitted by a different user; the static page assumes 32 GB RAM, 64 GB figures come from the results endpoint | Open KV and memory formula, per-token KV sizes (CC BY 4.0 data.json) | Measurements; laptop speeds (desktop only, extrapolated from one anchor) |
+| [Periscale RTX 5080 Laptop](https://periscale.ai/gpus/rtx-5080-laptop) | Calculator estimate | Periscale | Data 2026-10-30 | Low | Holds with corrections: its "GB" figures appear to be GiB; the "128K largest context" value is inconsistent | An example of why generic fit calculators mislead | Model selection, performance (no bandwidth, laptop and desktop pages identical) |
+| [BenchLM open-weight leaderboard](https://benchlm.ai/?source=Open+Weight) | Aggregator | BenchLM (affiliate revenue) | Data 2026-11-13, BenchAlign v5.8 | Medium | Holds with corrections: cite Ternary Bonsai sizes from the HF API (5.95 GB and 7.21 GB), not BenchLM's catalog text | Provenance labels per benchmark row; discovery of candidates | Ordering close models (Estimated rows, 20-30 point ranges, mostly vendor-reported inputs); local speed |
+| [Kaplan et al., Scaling Laws](https://arxiv.org/abs/2001.08361) | Paper | OpenAI and Johns Hopkins (arXiv) | 2020-01-23 | High for what it measured | Holds with corrections: Kumar et al. 2411.04330 was last updated 2024-11-30; Chinchilla's MoE remark is about gains shrinking with model size | Qualitative scaling; with [2212.09720](https://arxiv.org/abs/2212.09720), the "largest model that fits at about 4 bits" rule | Picking a quantized 2026 MoE coding model directly |
+| [Unsloth docs](https://unsloth.ai/docs) | Official doc (quant publisher) | Unsloth AI | Read 2026-11-15, no page dates | Medium | Holds with corrections: the docs lag the repo; Qwen3.8-27B UD-Q3_K_XL was replaced with a UD3.1 build on 2026-11-12 (same size) although the page says 3-bit files were not updated | unsloth/* file names, relayed sampling settings, template-fix history, `-ot` offload patterns | Independent quality (KLD tables are self-benchmarks); speed (B200 or unstated hardware); file state (check the HF API) |
+| [OpenRouter models](https://openrouter.ai/models) | Registry | OpenRouter, Inc. | Live 2026-11-15 | High for hosted availability | Holds with corrections: qwen/qwen3.8-27b has model-level context 1,024,000 while most endpoints serve 262,144; throughput is a drifting rolling p50 and prices change | Trying a model in OpenCode before downloading it; per-endpoint quantization and tool support; privacy settings ([opencode.md](opencode.md)) | Local speed or quality (datacenter BF16/FP8/FP4); which models OpenCode users prefer |
+
+## Sources to treat with caution
+
+- **Generic fit calculators** (canirun.ai, ModelFit, Periscale, Twoody): they assume dense placement in VRAM, generic Q4_K_M sizes and fp16 KV, and none models llama.cpp `--n-cpu-moe`, so they mark several working picks as "will not run".
+  Size models from the real file size in the [Hugging Face API](https://huggingface.co/api/models/ggml-org/Qwen3.6-35B-A3B-GGUF?blobs=true) and the model's config instead.
+- **Desktop RTX 5080 numbers** of any kind: 960 GB/s and 360 W against 896 GB/s and 140 W here.
+  Label them and treat them as upper bounds.
+- **Vendor score tables**: vendors disagree sharply about each other's models; for example Gemma 4 26B-A4B gets SWE-bench Verified 17.4 in [Qwen's table](https://huggingface.co/Qwen/Qwen3.6-35B-A3B) and 57.40 in [NVIDIA's](https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16) (both vendor-reported).
+  Prefer same-harness tables and Artificial Analysis.
+- **Self-benchmarks by quant publishers** (Unsloth KLD and top-1, Prism ML for Ternary Bonsai): vendor-reported; settle them with an A/B on this laptop.
+- **`/en/latest/` docs for pinned software**: vLLM's latest docs are built from main and already contradict v0.33.0 defaults; read the docs at the release tag.
+- **Docs versus repository state**: Unsloth's page text lagged its own repo by a day; check file claims against the HF API commit history.
+- **Leaderboards that stopped updating** (SWE-bench, BFCL, Aider, LiveCodeBench): accurate for what they list, silent on the current small models.
+- **Aggregated scores** (BenchLM, Tech Centurion composite): modelled blends with undisclosed or wide uncertainty; never use rank position to separate close models.
+- **OpenRouter-hosted community scores**: the same model scored 10/25 or 20/25 depending on the provider in the [LLM SQL Benchmark](https://github.com/nlothian/llm-sql-benchmark).
+- **Unverified model publishers**: Ornith-1.5-9B comes from an unverified organization and has no [Artificial Analysis page](https://artificialanalysis.ai/models/ornith-1-5-9b) (404 on 2026-11-15); the Artificial Analysis review found no page for Laguna XS 2.1 or KAT-Coder-V2.5-Dev either (not independently re-checked), so their quality figures are vendor-reported only; see [model-selection.md](model-selection.md).
+- **Summarizers and AI overviews**: the reviews read raw pages (HTML, RSC payloads, registry manifests, PDFs converted with `pdftotext`); a summary of a page is not a source.
+
+## Adding a new source
+
+1. Fetch the raw source into a fresh, empty scratch directory with `curl` (or the site's API) and parse it with `python3 -I`; do not rely on a summarizer.
+   If Playwright is used, note that its MCP server writes snapshots to `.playwright-mcp/` in the working directory, so run it from a scratch directory.
+2. Write a review: URL, type, publisher, as-of date (from the page, the JSON-LD or the repo history), credibility with a reason, what it measured and on which hardware, conflicts with this knowledge base, and notes for the target documents.
+3. Have a second agent or person re-fetch the raw source independently and check every load-bearing number, the credibility rating and each conflict; record "Holds", "Holds with corrections" or "Does not hold" with the corrections.
+4. Apply the corrections, add a row to the table above, and put the claim in the owning document with its evidence label and an inline link.
+5. Never promote a third-party number to "measured on this machine"; that label needs a run on this laptop with build, model file hash, power limit and date recorded, as described in [llamacpp/benchmarking.md](../llamacpp/benchmarking.md) and [vllm/benchmarking.md](../vllm/benchmarking.md).
+
+## Sources
+
+- [vLLM v0.33.0 release](https://github.com/vllm-project/vllm/releases/tag/v0.33.0rc3) and [docs at the tag](https://github.com/vllm-project/vllm/tree/v0.33.0/docs)
+- [llama.cpp releases](https://github.com/ggml-org/llama.cpp/releases) and [server README at b12418](https://github.com/ggml-org/llama.cpp/blob/b12418/tools/server/README.md)
+- [Ollama v0.40.16 release](https://github.com/ollama/ollama/releases/tag/v0.40.16)
+- [NVIDIA GeForce RTX 50 Series Laptops](https://www.nvidia.com/en-us/geforce/laptops/50-series/)
+- [NVIDIA Container Toolkit docs](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)
+- [Docker packet filtering and firewalls](https://docs.docker.com/engine/network/packet-filtering-firewalls/)
+- [OpenCode v2.3.0 release](https://github.com/anomalyco/opencode/releases/tag/v2.3.0) and [config schema](https://opencode.ai/config.json)
+- [Artificial Analysis](https://artificialanalysis.ai/)
+- [Nemotron 3.5 Lightning model card](https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16)
+- The 19 user-provided sources linked in the table above
+- The user's LibreDB Studio agent harness, analysed in [agent-harness-evidence.md](agent-harness-evidence.md), and [Apple MacBook Pro specs](https://www.apple.com/macbook-pro/specs/) for the M5 Max bandwidth
+
+## Maintenance
+
+Re-verify before relying on this catalog: the pinned versions (vLLM, llama.cpp build and image tag, Ollama, Container Toolkit, OpenCode), whether the stale leaderboards have resumed, and the as-of dates of the live sources (Artificial Analysis index version, Ollama and OpenRouter catalogs, calculator data dates).
+Re-run the independent check for any source whose page date has moved since 2026-11-15 before citing a new number from it.
+When the first measurement on this laptop exists, add it as the first "Measured on this machine" example in the evidence class table.

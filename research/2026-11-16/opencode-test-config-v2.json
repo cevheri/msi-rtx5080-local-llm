@@ -1,0 +1,405 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "llamacpp-docker/gpt-oss-20b",
+  "plugins": [
+    "-opencode.provider.vllm"
+  ],
+  "mcp": {
+    "libredb": {
+      "enabled": false
+    }
+  },
+  "permission": {
+    "read": "allow",
+    "edit": "allow",
+    "glob": "allow",
+    "grep": "allow",
+    "list": "allow",
+    "bash": "deny",
+    "task": "deny",
+    "external_directory": "deny",
+    "webfetch": "deny",
+    "websearch": "deny",
+    "skill": "deny",
+    "question": "deny"
+  },
+  "providers": {
+    "llamacpp-docker": {
+      "name": "llama.cpp (Docker)",
+      "package": "@opencode/ai/providers/openai-compatible",
+      "settings": {
+        "baseURL": "http://127.0.0.1:8080/v1",
+        "headerTimeout": 600000
+      },
+      "compatibility": {
+        "reasoningField": "reasoning_content"
+      },
+      "models": {
+        "gpt-oss-20b": {
+          "modelID": "local",
+          "name": "gpt-oss-20b MXFP4 (llama.cpp)",
+          "capabilities": {
+            "tools": true,
+            "input": [
+              "text"
+            ],
+            "output": [
+              "text"
+            ],
+            "reasoning": {
+              "supported": true,
+              "effort": [
+                "low",
+                "medium",
+                "high"
+              ]
+            }
+          },
+          "limit": {
+            "context": 131072,
+            "output": 16384
+          }
+        },
+        "qwen3.8-27b": {
+          "modelID": "local",
+          "name": "Qwen3.8-27B UD-Q3_K_XL (llama.cpp)",
+          "capabilities": {
+            "tools": true,
+            "input": [
+              "text"
+            ],
+            "output": [
+              "text"
+            ],
+            "reasoning": {
+              "supported": true
+            }
+          },
+          "limit": {
+            "context": 65536,
+            "output": 16384
+          }
+        },
+        "qwen3.6-35b-a3b": {
+          "modelID": "local",
+          "name": "Qwen3.6-35B-A3B Q4_K_M (llama.cpp)",
+          "capabilities": {
+            "tools": true,
+            "input": [
+              "text"
+            ],
+            "output": [
+              "text"
+            ],
+            "reasoning": {
+              "supported": true
+            }
+          },
+          "limit": {
+            "context": 131072,
+            "output": 16384
+          }
+        },
+        "deepseek-r1-0528-qwen3-8b": {
+          "modelID": "local",
+          "name": "DeepSeek-R1-0528-Qwen3-8B Q8_0 (llama.cpp, chat only)",
+          "capabilities": {
+            "tools": false,
+            "input": [
+              "text"
+            ],
+            "output": [
+              "text"
+            ],
+            "reasoning": {
+              "supported": true
+            }
+          },
+          "limit": {
+            "context": 65536,
+            "output": 32768
+          }
+        },
+        "gemma-4-26b-a4b": {
+          "modelID": "local",
+          "name": "Gemma 4 26B-A4B QAT Q4_0 (llama.cpp)",
+          "capabilities": {
+            "tools": true,
+            "input": [
+              "text"
+            ],
+            "output": [
+              "text"
+            ],
+            "reasoning": {
+              "supported": true
+            }
+          },
+          "limit": {
+            "context": 131072,
+            "output": 16384
+          },
+          "variants": [
+            {
+              "id": "thinking",
+              "body": {
+                "chat_template_kwargs": {
+                  "enable_thinking": true
+                }
+              }
+            },
+            {
+              "id": "none",
+              "body": {
+                "chat_template_kwargs": {
+                  "enable_thinking": false
+                }
+              }
+            }
+          ]
+        },
+        "groot-19b-a3b": {
+          "modelID": "local",
+          "name": "Groot-19B-A3B-261023 Q4_K_M (llama.cpp)",
+          "capabilities": {
+            "tools": true,
+            "input": [
+              "text"
+            ],
+            "output": [
+              "text"
+            ],
+            "reasoning": {
+              "supported": true
+            }
+          },
+          "limit": {
+            "context": 131072,
+            "output": 16384
+          },
+          "variants": [
+            {
+              "id": "thinking",
+              "body": {
+                "chat_template_kwargs": {
+                  "enable_thinking": true
+                }
+              }
+            },
+            {
+              "id": "none",
+              "body": {
+                "chat_template_kwargs": {
+                  "enable_thinking": false
+                }
+              }
+            }
+          ]
+        },
+        "k2-horizon-7b": {
+          "modelID": "local",
+          "name": "K2 Horizon 7B Q8_0 (llama.cpp)",
+          "capabilities": {
+            "tools": true,
+            "input": [
+              "text"
+            ],
+            "output": [
+              "text"
+            ],
+            "reasoning": {
+              "supported": true
+            }
+          },
+          "limit": {
+            "context": 81920,
+            "output": 32768
+          }
+        },
+        "k2-horizon-mova-36b": {
+          "modelID": "local",
+          "name": "K2 Horizon MoVA 36B A4B Q4_K_M (llama.cpp)",
+          "capabilities": {
+            "tools": true,
+            "input": [
+              "text"
+            ],
+            "output": [
+              "text"
+            ],
+            "reasoning": {
+              "supported": true
+            }
+          },
+          "limit": {
+            "context": 65536,
+            "output": 16384
+          }
+        },
+        "nemotron-3.5-bolt": {
+          "modelID": "local",
+          "name": "Nemotron 3.5 Bolt 74B-A9B 24GB GGUF (llama.cpp)",
+          "capabilities": {
+            "tools": true,
+            "input": [
+              "text"
+            ],
+            "output": [
+              "text"
+            ],
+            "reasoning": {
+              "supported": true
+            }
+          },
+          "limit": {
+            "context": 131072,
+            "output": 16384
+          },
+          "variants": [
+            {
+              "id": "thinking",
+              "body": {
+                "chat_template_kwargs": {
+                  "enable_thinking": true
+                }
+              }
+            },
+            {
+              "id": "medium",
+              "body": {
+                "chat_template_kwargs": {
+                  "enable_thinking": true,
+                  "medium_effort": true
+                }
+              }
+            },
+            {
+              "id": "none",
+              "body": {
+                "chat_template_kwargs": {
+                  "enable_thinking": false
+                }
+              }
+            }
+          ]
+        },
+        "nemotron-3.5-lightning": {
+          "modelID": "local",
+          "name": "Nemotron 3.5 Lightning 30B-A3B Q4_0 (llama.cpp)",
+          "capabilities": {
+            "tools": true,
+            "input": [
+              "text"
+            ],
+            "output": [
+              "text"
+            ],
+            "reasoning": {
+              "supported": true
+            }
+          },
+          "limit": {
+            "context": 131072,
+            "output": 16384
+          },
+          "variants": [
+            {
+              "id": "thinking",
+              "body": {
+                "chat_template_kwargs": {
+                  "enable_thinking": true
+                }
+              }
+            },
+            {
+              "id": "none",
+              "body": {
+                "chat_template_kwargs": {
+                  "enable_thinking": false
+                }
+              }
+            }
+          ]
+        },
+        "qwen3-coder-next": {
+          "modelID": "local",
+          "name": "Qwen3-Coder-Next UD-IQ4_XS (llama.cpp)",
+          "capabilities": {
+            "tools": true,
+            "input": [
+              "text"
+            ],
+            "output": [
+              "text"
+            ],
+            "reasoning": {
+              "supported": false
+            }
+          },
+          "limit": {
+            "context": 131072,
+            "output": 16384
+          }
+        },
+        "deepseek-r1-0528-qwen3-8b-tools": {
+          "modelID": "local",
+          "name": "DeepSeek-R1-0528-Qwen3-8B Q8_0 (llama.cpp, tools test)",
+          "capabilities": {
+            "tools": true,
+            "input": [
+              "text"
+            ],
+            "output": [
+              "text"
+            ],
+            "reasoning": {
+              "supported": true
+            }
+          },
+          "limit": {
+            "context": 65536,
+            "output": 32768
+          }
+        }
+      }
+    },
+    "vllm-docker": {
+      "name": "vLLM (Docker)",
+      "package": "@opencode/ai/providers/openai-compatible",
+      "settings": {
+        "baseURL": "http://127.0.0.1:8000/v1",
+        "headerTimeout": 600000
+      },
+      "compatibility": {
+        "reasoningField": "reasoning"
+      },
+      "models": {
+        "gpt-oss-20b": {
+          "modelID": "gpt-oss-20b",
+          "name": "gpt-oss-20b (vLLM)",
+          "capabilities": {
+            "tools": true,
+            "input": [
+              "text"
+            ],
+            "output": [
+              "text"
+            ],
+            "reasoning": {
+              "supported": true,
+              "effort": [
+                "low",
+                "medium",
+                "high"
+              ]
+            }
+          },
+          "limit": {
+            "context": 65536,
+            "output": 16384
+          }
+        }
+      }
+    }
+  }
+}

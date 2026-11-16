@@ -1,0 +1,357 @@
+{
+ "name": "Qwen3.6-35B-A3B",
+ "hf_repo": "Qwen/Qwen3.6-35B-A3B",
+ "within_last_12_months": true,
+ "official_org": {
+  "value": "Qwen (Alibaba). The HF repo is under the Qwen org (author=Qwen in the HF API). The vendor GitHub README (QwenLM, repo now named Qwen3.8) has a 2026-04-16 news entry for Qwen3.6-35B-A3B linking to huggingface.co/collections/Qwen/qwen36 and to the blog qwen.ai/blog?id=qwen3.6-35b-a3b. Note: https://huggingface.co/api/organizations/Qwen/overview returns isVerified=false (plan=team, 469 models), so the HF badge does not establish ownership. The vendor GitHub link does.",
+  "source_url": "https://raw.githubusercontent.com/QwenLM/Qwen3.6/main/README.md",
+  "support": "direct-statement"
+ },
+ "release_date": {
+  "value": "HF createdAt 2026-04-15T05:59:19Z (lastModified 2026-11-07). Vendor news entry dated 2026-04-16. vLLM recipe date_added 2026-04-16. Inside the 2025-11-15..2026-11-15 window.",
+  "source_url": "https://huggingface.co/api/models/Qwen/Qwen3.6-35B-A3B",
+  "support": "direct-statement"
+ },
+ "license": {
+  "value": "Apache-2.0. The card front matter has 'license: apache-2.0' and links /blob/main/LICENSE. The API tag is license:apache-2.0. There are no use restrictions beyond Apache-2.0 terms (attribution, NOTICE, no trademark grant). The repo is not gated. The FP8, nvidia NVFP4, RedHatAI, unsloth and ggml-org derivatives carry the same tag. The Intel AutoRound repo has no license tag.",
+  "source_url": "https://huggingface.co/Qwen/Qwen3.6-35B-A3B/raw/main/README.md",
+  "support": "direct-statement"
+ },
+ "params": {
+  "value": "The card says 35B total and 3B activated (8 routed + 1 shared expert out of 256). The HF API safetensors total is 35,951,822,704 BF16 params (66.97 GiB of safetensors). That total includes the vision tower (0.83 GiB at BF16) and one MTP layer that has its own 256 experts. Reading safetensors headers of the nvidia NVFP4 build splits the weights into routed experts 16.875 GiB, other LM 1.306 GiB, embed+lm_head 1.214 GiB, vision 0.832 GiB and MTP 1.573 GiB. From config arithmetic, the language model without MTP or vision is about 34.66B.",
+  "source_url": "https://huggingface.co/api/models/Qwen/Qwen3.6-35B-A3B?blobs=true",
+  "support": "direct-statement"
+ },
+ "architecture": {
+  "value": "Qwen3_5MoeForConditionalGeneration (model_type qwen3_5_moe). It has 40 layers in the pattern 10 x (3 Gated DeltaNet linear-attention + 1 gated full attention) (layer_types, full_attention_interval=4), so there are 10 full-attention layers. Full attention uses 16 Q heads, 2 KV heads and head_dim 256, with partial RoPE (64 dims, rope_theta 1e7, interleaved mRoPE). Gated DeltaNet uses 16 QK heads and 32 V heads at dim 128, conv kernel 4, and a float32 SSM state. MoE: 256 experts, 8 routed + 1 shared, moe_intermediate_size 512, hidden 2048, vocab 248320, untied embeddings. There is 1 MTP layer. The vision encoder is ViT depth 27, hidden 1152, patch 16.",
+  "source_url": "https://huggingface.co/Qwen/Qwen3.6-35B-A3B/raw/main/config.json",
+  "support": "direct-statement"
+ },
+ "context_length": {
+  "value": "262,144 native (max_position_embeddings 262144). The card says it extends to 1,010,000 with static YaRN factor 4.0 via --hf-overrides plus VLLM_ALLOW_LONG_MAX_MODEL_LEN=1. The card advises keeping at least 128K context to preserve thinking quality, and warns that static YaRN can hurt short texts.",
+  "source_url": "https://huggingface.co/Qwen/Qwen3.6-35B-A3B/raw/main/README.md",
+  "support": "direct-statement"
+ },
+ "modalities": {
+  "value": "Input is text, image and video; output is text ('Causal Language Model with Vision Encoder', pipeline_tag image-text-to-text). Text-only paths: vLLM --language-model-only (card and recipe text_only feature); llama.cpp by not loading the mmproj (--no-mmproj; mmproj is a separate 0.57-0.84 GiB GGUF). No text-only checkpoint is published by Qwen. The Ollama tags all show Text, Image input.",
+  "source_url": "https://huggingface.co/Qwen/Qwen3.6-35B-A3B/raw/main/README.md",
+  "support": "direct-statement"
+ },
+ "thinking": {
+  "mode": "toggle",
+  "how_to_toggle": "Thinking is on by default: the template opens '<think>\\n'. When enable_thinking is false, the template emits an empty '<think>\\n\\n</think>\\n\\n' (chat_template.jinja lines 153-156).\nvLLM v0.33.0: per request, send extra_body {\"chat_template_kwargs\": {\"enable_thinking\": false}} (card). Server-wide, use --default-chat-template-kwargs '{\"enable_thinking\": false}' (present in the v0.33.0 Rust frontend cli.rs). Reasoning arrives in the 'reasoning' field with --reasoning-parser qwen3.\nllama.cpp: per request, send \"chat_template_kwargs\": {\"enable_thinking\": false} (server README line 1455). Server-wide, use --reasoning off or --chat-template-kwargs '{\"enable_thinking\":false}'. --reasoning-budget N caps thinking tokens.\nOllama: native API \"think\": false. In the OpenAI-compatible API, reasoning_effort / reasoning.effort control thinking (use /api/show to see supported values).\nQwen3.6 also adds preserve_thinking (chat_template_kwargs {\"preserve_thinking\": true}) to keep historical reasoning. The card recommends it for agents. llama.cpp has --reasoning-preserve (default enabled) for templates that support it.\nSampling per the card: thinking/coding temp 0.6, top_p 0.95, top_k 20; non-thinking temp 0.7, top_p 0.8, top_k 20, presence_penalty 1.5.",
+  "source_url": "https://huggingface.co/Qwen/Qwen3.6-35B-A3B/raw/main/chat_template.jinja",
+  "support": "direct-statement"
+ },
+ "tool_calling": {
+  "supported": "yes",
+  "format": "Qwen3-Coder XML: <tool_call>\\n<function=NAME>\\n<parameter=ARG>\\nvalue\\n</parameter>\\n</function>\\n</tool_call>. Tools are rendered into the system prompt inside a <tools>...</tools> list.",
+  "evidence": "chat_template.jinja line 45 renders the tools list when tools is iterable ('# Tools ... <tools>'). Line 53 gives the XML call format instructions. Lines 107-129 render assistant tool_calls. The card says 'Qwen3.6 excels in tool calling capabilities' and gives --enable-auto-tool-choice --tool-call-parser qwen3_coder for vLLM. vLLM v0.33.0 vllm/tool_parsers/__init__.py maps qwen3_coder to qwen3_engine_tool_parser.Qwen3EngineToolParser, and vllm/reasoning/__init__.py registers qwen3 (Qwen3ParserReasoningAdapter). In llama.cpp v1.0.0, common/chat.cpp lines 1432-1439 pick the specialized Qwen3-Coder parser ('also used by ... Qwen3.5') when the template contains <tool_call>, <function= and <parameter=. The Qwen3.6 template matches and does not contain the excluded no-newline pattern. Vendor note: SkillsBench was 'Evaluated via OpenCode'. Open bugs: vLLM #65774 (qwen3_coder repeated parameter breaks streamed args), #58105 (Qwen streaming loses tool calls), #47194 and #50188 (MTP + prefix caching corrupts tool calls), #43713 (qwen3_xml invalid JSON); llama.cpp #30118 (Qwen3.6 sometimes omits the opening <tool_call>, so the call leaks into content).",
+  "source_url": "https://huggingface.co/Qwen/Qwen3.6-35B-A3B/raw/main/chat_template.jinja",
+  "support": "direct-statement"
+ },
+ "checkpoints": [
+  {
+   "repo": "Qwen/Qwen3.6-35B-A3B",
+   "format": "safetensors BF16 (incl. vision + MTP)",
+   "size_gb": 71.9,
+   "official": true,
+   "publisher": "Qwen",
+   "source_url": "https://huggingface.co/api/models/Qwen/Qwen3.6-35B-A3B?blobs=true"
+  },
+  {
+   "repo": "Qwen/Qwen3.6-35B-A3B-FP8",
+   "format": "safetensors FP8 E4M3 (block)",
+   "size_gb": 37.46,
+   "official": true,
+   "publisher": "Qwen",
+   "source_url": "https://huggingface.co/api/models/Qwen/Qwen3.6-35B-A3B-FP8?blobs=true"
+  },
+  {
+   "repo": "nvidia/Qwen3.6-35B-A3B-NVFP4",
+   "format": "safetensors ModelOpt NVFP4 (modelopt_fp4; 21.80 GiB, of which LM without vision/MTP is 19.40 GiB)",
+   "size_gb": 23.42,
+   "official": false,
+   "publisher": "NVIDIA",
+   "source_url": "https://huggingface.co/api/models/nvidia/Qwen3.6-35B-A3B-NVFP4?blobs=true"
+  },
+  {
+   "repo": "RedHatAI/Qwen3.6-35B-A3B-NVFP4",
+   "format": "safetensors compressed-tensors NVFP4",
+   "size_gb": 25.04,
+   "official": false,
+   "publisher": "Red Hat AI",
+   "source_url": "https://huggingface.co/api/models/RedHatAI/Qwen3.6-35B-A3B-NVFP4?blobs=true"
+  },
+  {
+   "repo": "RedHatAI/Qwen3.6-35B-A3B-FP8",
+   "format": "safetensors FP8",
+   "size_gb": 37.46,
+   "official": false,
+   "publisher": "Red Hat AI",
+   "source_url": "https://huggingface.co/api/models/RedHatAI/Qwen3.6-35B-A3B-FP8?blobs=true"
+  },
+  {
+   "repo": "unsloth/Qwen3.6-35B-A3B-NVFP4-Fast",
+   "format": "safetensors NVFP4",
+   "size_gb": 23.65,
+   "official": false,
+   "publisher": "unsloth",
+   "source_url": "https://huggingface.co/api/models/unsloth/Qwen3.6-35B-A3B-NVFP4-Fast?blobs=true"
+  },
+  {
+   "repo": "unsloth/Qwen3.6-35B-A3B-NVFP4",
+   "format": "safetensors NVFP4 mixed with FP8",
+   "size_gb": 26.49,
+   "official": false,
+   "publisher": "unsloth",
+   "source_url": "https://huggingface.co/api/models/unsloth/Qwen3.6-35B-A3B-NVFP4?blobs=true"
+  },
+  {
+   "repo": "Intel/Qwen3.6-35B-A3B-int4-mixed-AutoRound",
+   "format": "safetensors AutoRound int4 mixed (20.0 GiB; LM without vision/MTP is 18.75 GiB)",
+   "size_gb": 21.49,
+   "official": false,
+   "publisher": "Intel",
+   "source_url": "https://huggingface.co/api/models/Intel/Qwen3.6-35B-A3B-int4-mixed-AutoRound?blobs=true"
+  },
+  {
+   "repo": "QuantTrio/Qwen3.6-35B-A3B-AWQ",
+   "format": "safetensors AWQ 4-bit",
+   "size_gb": 25.46,
+   "official": false,
+   "publisher": "QuantTrio",
+   "source_url": "https://huggingface.co/api/models/QuantTrio/Qwen3.6-35B-A3B-AWQ?blobs=true"
+  },
+  {
+   "repo": "cyankiwi/Qwen3.6-35B-A3B-AWQ-4bit",
+   "format": "safetensors AWQ 4-bit",
+   "size_gb": 24.97,
+   "official": false,
+   "publisher": "cyankiwi",
+   "source_url": "https://huggingface.co/api/models/cyankiwi/Qwen3.6-35B-A3B-AWQ-4bit?blobs=true"
+  },
+  {
+   "repo": "ggml-org/Qwen3.6-35B-A3B-GGUF",
+   "format": "GGUF Q4_K_M (all experts Q4_K, attention/output Q8_0; 19.13 GiB). Same repo: Q8_0 36.90 GB, BF16 69.38 GB, mmproj Q8_0 0.61 GB, MTP draft Q4_0 1.06 / Q8_0 1.99 GB, DFlash draft Q8_0 0.42 GB",
+   "size_gb": 20.54,
+   "official": false,
+   "publisher": "ggml-org",
+   "source_url": "https://huggingface.co/api/models/ggml-org/Qwen3.6-35B-A3B-GGUF?blobs=true"
+  },
+  {
+   "repo": "ggml-org/Qwen3.6-35B-A3B-MTP-GGUF",
+   "format": "GGUF Q8_0 with embedded MTP",
+   "size_gb": 37.8,
+   "official": false,
+   "publisher": "ggml-org",
+   "source_url": "https://huggingface.co/api/models/ggml-org/Qwen3.6-35B-A3B-MTP-GGUF?blobs=true"
+  },
+  {
+   "repo": "unsloth/Qwen3.6-35B-A3B-GGUF",
+   "format": "GGUF UD-Q4_K_XL 22.36 GB; UD-Q4_K_M 22.13; MXFP4_MOE 21.71; UD-Q4_K_S 20.89; UD-IQ4_XS 17.73 (16.50 GiB: experts 14.12 + other 2.38); UD-Q3_K_XL 16.85; UD-IQ3_XXS 13.21; UD-Q2_K_XL 12.29; UD-IQ2_M 11.52",
+   "size_gb": 17.73,
+   "official": false,
+   "publisher": "unsloth",
+   "source_url": "https://huggingface.co/api/models/unsloth/Qwen3.6-35B-A3B-GGUF?blobs=true"
+  },
+  {
+   "repo": "unsloth/Qwen3.6-35B-A3B-MTP-GGUF",
+   "format": "GGUF with MTP head (UD-Q4_K_XL 22.85 GB, UD-IQ4_XS 18.21, UD-Q3_K_XL 17.23)",
+   "size_gb": 22.85,
+   "official": false,
+   "publisher": "unsloth",
+   "source_url": "https://huggingface.co/api/models/unsloth/Qwen3.6-35B-A3B-MTP-GGUF?blobs=true"
+  },
+  {
+   "repo": "bartowski/Qwen_Qwen3.6-35B-A3B-GGUF",
+   "format": "GGUF Q4_K_M 22.29 GB; Q4_K_S 21.49; Q4_0 20.84; IQ4_XS 19.70; Q3_K_M 17.12; IQ3_XXS 15.76; Q2_K_L 14.00",
+   "size_gb": 22.29,
+   "official": false,
+   "publisher": "bartowski",
+   "source_url": "https://huggingface.co/api/models/bartowski/Qwen_Qwen3.6-35B-A3B-GGUF?blobs=true"
+  },
+  {
+   "repo": "lmstudio-community/Qwen3.6-35B-A3B-GGUF",
+   "format": "GGUF Q4_K_M",
+   "size_gb": 21.17,
+   "official": false,
+   "publisher": "lmstudio-community",
+   "source_url": "https://huggingface.co/api/models/lmstudio-community/Qwen3.6-35B-A3B-GGUF?blobs=true"
+  }
+ ],
+ "vllm": {
+  "fits": "no",
+  "arch_supported": "Yes. v0.33.0 registry.py lines 617-620 map Qwen3_5MoeForConditionalGeneration to qwen3_5. Also registered: Qwen3_5MoeForCausalLM (line 205) and Qwen3_5MoeMTP (line 740).",
+  "min_version": "Recipe min_vllm_version 0.17.0; the card recommends vllm>=0.19.0; the nvidia NVFP4 variant needs >=0.28.0 (recipe, docker_image vllm/vllm-openai:v0.28.0).",
+  "best_checkpoint": "nvidia/Qwen3.6-35B-A3B-NVFP4 (smallest vLLM-native checkpoint with a Blackwell recipe; LM-only weights 19.40 GiB). Intel AutoRound int4 (18.75 GiB LM-only) is also over budget.",
+  "weights_gib": 19.4,
+  "kv_bytes_per_token_bf16": 20480,
+  "kv_math": "Budget 16303 MiB x 0.92 = 14999 MiB = 14.65 GiB.\nWeights with --language-model-only and no MTP (inferred: MTP weights are not used without spec decode), from nvidia NVFP4 safetensors headers: routed experts 16.875 + other LM 1.306 + embed/lm_head 1.214 = 19.40 GiB. With vision it is 20.23 GiB; the full file is 21.80 GiB.\nWithout offload: 14.65 - 19.40 - 1.2 = -5.95 GiB, so it does not fit.\nKV per token: 2 x 10 full-attention layers x 2 KV heads x 256 x 2 B = 20,480 B (20 KiB) at BF16, 10,240 B at FP8. The 30 Gated DeltaNet layers hold a fixed per-sequence state of about 30 x 32 x 128 x 128 x 4 B = 60 MiB plus conv state.\nWith --cpu-offload-gb 10 --cpu-offload-params experts: GPU weights 9.40 GiB, so KV pool = 14.65 - 9.40 - 1.2 = 4.05 GiB. That gives 4.05 GiB / 20480 B = 212k tokens at BF16 and 425k at FP8, capped at 262,144.\nWith --cpu-offload-gb 8: pool 2.05 GiB, about 107k tokens at BF16 and 215k at FP8.\nThe arithmetic works only on paper (see known_issues).",
+  "est_max_context_tokens": 0,
+  "quant_on_sm120": "NVFP4: the recipe's rtx_5090 profile (verified on 32 GB) uses --quantization modelopt_fp4 --moe-backend marlin --attention-backend flashinfer --attention-config '{\"use_trtllm_attention\":true}' --kv-cache-dtype fp8 --block-size 128, with VLLM_HAS_FLASHINFER_CUBIN=1, gpu util 0.85 and max-model-len 65536. Alternatives are flashinfer_b12x (#49476: OOM in profile_run on 16 GB sm_120 with this exact model) and flashinfer_cutlass (#66423: segfault with --reasoning-parser on one host, not reproduced by others). The Qwen FP8 block checkpoint (37.5 GB) is far too large.",
+  "tool_call_parser": "qwen3_coder (confirmed in v0.33.0 vllm/tool_parsers/__init__.py -> Qwen3EngineToolParser)",
+  "reasoning_parser": "qwen3 (confirmed in v0.33.0 vllm/reasoning/__init__.py -> Qwen3ParserReasoningAdapter)",
+  "serve_command": "SPECULATIVE, not recommended on this machine:\ndocker run --gpus all --ipc=host -p 8000:8000 -e MAX_JOBS=2 -e VLLM_HAS_FLASHINFER_CUBIN=1 -v ~/.cache/huggingface:/root/.cache/huggingface vllm/vllm-openai:v0.33.0 nvidia/Qwen3.6-35B-A3B-NVFP4 --language-model-only --quantization modelopt_fp4 --moe-backend marlin --cpu-offload-gb 10 --cpu-offload-params experts --kv-cache-dtype fp8 --max-model-len 131072 --max-num-seqs 2 --gpu-memory-utilization 0.92 --enable-auto-tool-choice --tool-call-parser qwen3_coder --reasoning-parser qwen3\nCard reference (8 GPUs): vllm serve Qwen/Qwen3.6-35B-A3B --tensor-parallel-size 8 --max-model-len 262144 --reasoning-parser qwen3 --enable-auto-tool-choice --tool-call-parser qwen3_coder [--language-model-only]",
+  "known_issues": "1. UVA expert offload is broken for repacked quantized experts in v0.33.0. #66264 (open, 2026-11-07, filed against v0.33.0, sm_120): with --moe-backend marlin and --cpu-offload-params experts, replace_parameter rebinds .data to a device tensor and the re-offload is skipped. Every repacked expert tensor leaks back to the GPU, causing OOM in marlin_utils_fp4.permute_scales.\n2. #58178: pin_memory() power-of-two rounding wastes about 35% host RAM; MXFP4 un-offload.\n3. #54593: without --cpu-offload-params, offload evicts the hottest dense weights first.\n4. #49476 (open): flashinfer_b12x MoE workspace OOM in profile_run on 16 GB sm_120 with exactly nvidia/Qwen3.6-35B-A3B-NVFP4. --gpu-memory-utilization cannot mitigate it.\n5. #66423: segfault with any --reasoning-parser on SM120 + NVFP4 + flashinfer_cutlass (not reproduced by others).\n6. #54623: Qwen3.5-family fp8 KV ignores calibrated scales.\n7. #47194 / #50188: MTP + prefix caching corrupts tool calls.\n8. #44740: MTP CUDA graph memory estimate negative.\n9. #65774: qwen3_coder streamed repeated parameter.\nThe recipe has no 16 GB profile; even the 32 GB RTX 5090 is capped at 64K.",
+  "sources": [
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/models/registry.py",
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/tool_parsers/__init__.py",
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/reasoning/__init__.py",
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/config/offload.py",
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/engine/arg_utils.py",
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/rust/src/cmd/src/cli.rs",
+   "https://raw.githubusercontent.com/vllm-project/recipes/main/models/Qwen/Qwen3.6-35B-A3B.yaml",
+   "https://github.com/vllm-project/vllm/issues/66264",
+   "https://github.com/vllm-project/vllm/issues/49476",
+   "https://github.com/vllm-project/vllm/issues/66423",
+   "https://github.com/vllm-project/vllm/issues/58178",
+   "https://github.com/vllm-project/vllm/issues/54593",
+   "https://github.com/vllm-project/vllm/issues/65774",
+   "https://github.com/vllm-project/vllm/issues/47194"
+  ]
+ },
+ "llamacpp": {
+  "arch_supported": "Yes. GGUF general.architecture = qwen35moe. LLM_ARCH_QWEN35MOE 'qwen35moe' is in src/llama-arch.cpp at release v1.0.0 (2026-11-13, marked latest non-prerelease on GitHub) and at b12418. Note: GitHub now marks b-numbered builds as prerelease and v1.0.0 as 'latest'.",
+  "gguf_repo": "ggml-org/Qwen3.6-35B-A3B-GGUF",
+  "quant": "Q4_K_M (all expert tensors Q4_K; attention, SSM and output at Q8_0). Alternatives: unsloth UD-IQ4_XS (16.50 GiB, imatrix) to keep more experts on GPU, or unsloth UD-Q2_K_XL (11.45 GiB) to fit fully on GPU at a quality cost.",
+  "file_gib": 19.12,
+  "est_vram_gib": 14.5,
+  "est_ram_gib": 9,
+  "est_context_tokens": 131072,
+  "offload_plan": "From the parsed GGUF header (source-backed): experts 16.875 GiB = 0.422 GiB per layer x 40; non-expert 2.247 GiB, including token_embd Q4_K of about 0.27 GiB, which llama.cpp keeps on the CPU (inferred). That leaves about 1.98 GiB of non-expert weights on the GPU.\nVRAM usable: 15.92 GiB - 0.11 idle - 1.0 (default --fit-target 1024 MiB) = about 14.8 GiB.\nAt -c 131072 with f16 KV: 131072 x 20480 B = 2.50 GiB. Recurrent state is about 0.06 GiB per slot. Compute buffers are about 1.0-1.5 GiB (large 248k vocab, -ub 2048). Fixed total is about 6.0 GiB, leaving about 8.8 GiB for experts, which holds 20 layers (8.44 GiB). So use --n-cpu-moe 20; GPU total is about 14.5 GiB.\nAt -c 262144 with -ctk/-ctv q8_0: KV = 262144 x 20480 x 8.5/16 = 2.66 GiB, so --n-cpu-moe 20-21 also works.\nSystem RAM: 20 x 0.422 = 8.4 GiB of experts, plus 0.27 GiB embeddings, plus the prompt cache (--cache-ram default 8192 MiB) and context checkpoints (default 32 per slot). That is well under the 40 GiB budget.\nFully on GPU: UD-Q2_K_XL 11.45 GiB + q8_0 KV at 128K 1.33 GiB + about 1.5 GiB = about 14.3 GiB, which fits.\n--fit on (the default) adjusts unset arguments automatically. --moe-cache-mib N adds a GPU LRU cache for the CPU-resident experts.",
+  "server_command": "Needs NVIDIA Container Toolkit first:\ndocker run --gpus all -p 8080:8080 -v ~/models:/models ghcr.io/ggml-org/llama.cpp:server-cuda13 -m /models/Qwen3.6-35B-A3B-Q4_K_M.gguf --alias qwen3.6-35b-a3b -c 131072 -ngl 99 --n-cpu-moe 20 -fa on -b 2048 -ub 2048 -np 1 --jinja --temp 0.6 --top-p 0.95 --top-k 20 --min-p 0 --host 0.0.0.0 --port 8080\nOptions:\n- add -ctk q8_0 -ctv q8_0 with -c 262144 for full native context\n- add -e GGML_CUDA_DISABLE_GRAPHS=1 if the laptop GPU hangs with Xid 8 (#27330)\n- server-wide no-think: --reasoning off\n- MTP drafting: --spec-type draft-mtp with ggml-org MTP GGUF, but see the open bugs #23577 and #30394",
+  "tool_calling_note": "Works through --jinja (on by default). common/chat.cpp at v1.0.0 (lines 1432-1439) routes this template to the specialized Qwen3-Coder XML parser, which explicitly covers Qwen3.5-family templates. Known issue #30118 (open): the model sometimes omits the opening <tool_call>; on newer builds such calls leak into message.content with finish_reason stop (9 of 100 in the reporter's test on b11382). Also #30357: non-canonical whitespace invalidates the prefix cache, causing a full re-prefill on hybrid models.",
+  "sources": [
+   "https://huggingface.co/ggml-org/Qwen3.6-35B-A3B-GGUF/resolve/main/Qwen3.6-35B-A3B-Q4_K_M.gguf (header read via HTTP range)",
+   "https://huggingface.co/api/models/ggml-org/Qwen3.6-35B-A3B-GGUF?blobs=true",
+   "https://raw.githubusercontent.com/ggml-org/llama.cpp/v1.0.0/src/llama-arch.cpp",
+   "https://raw.githubusercontent.com/ggml-org/llama.cpp/v1.0.0/common/chat.cpp",
+   "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12418/tools/server/README.md",
+   "https://github.com/ggml-org/llama.cpp/issues/30118",
+   "https://github.com/ggml-org/llama.cpp/issues/27330",
+   "https://github.com/ggml-org/llama.cpp/issues/25859",
+   "https://github.com/ggml-org/llama.cpp/issues/30357"
+  ]
+ },
+ "ollama": {
+  "tag": "qwen3.6:35b-a3b (same digest 86b2d171ce90 as qwen3.6:latest and qwen3.6:35b). Other tags: qwen3.6:35b-a3b-q4_K_M 24GB, qwen3.6:35b-a3b-coding 23-24GB, qwen3.6:35b-a3b-coding-mtp-q4_K_M 23GB, qwen3.6:35b-a3b-mtp-q4_K_M 23GB, qwen3.6:35b-a3b-coding-bf16 70GB. The -nvfp4/-mxfp8 tags are MLX-only.",
+  "size_gb": 23,
+  "context": "256K context window listed for every tag. Ollama defaults to 4k on GPUs under 24 GiB (lead), so set OLLAMA_CONTEXT_LENGTH=65536 or higher, or PARAMETER num_ctx. The Ollama OpenCode doc requires 64k or more.",
+  "capabilities": "Badges: vision, tools, thinking. Input: Text, Image. 7.7M downloads; updated 2 weeks before 2026-11-15.",
+  "source_url": "https://ollama.com/library/qwen3.6/tags"
+ },
+ "benchmarks": [
+  {
+   "name": "SWE-bench Verified",
+   "score": "73.4",
+   "setting": "Qwen internal agent scaffold (bash + file-edit), temp 1.0, top_p 0.95, 200K ctx",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/Qwen/Qwen3.6-35B-A3B/raw/main/README.md"
+  },
+  {
+   "name": "SWE-bench Pro",
+   "score": "49.5",
+   "setting": "Qwen internal scaffold; Qwen 'corrected some problematic tasks' in the public set",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/Qwen/Qwen3.6-35B-A3B/raw/main/README.md"
+  },
+  {
+   "name": "SWE-bench Multilingual",
+   "score": "67.2",
+   "setting": "Qwen internal scaffold",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/Qwen/Qwen3.6-35B-A3B/raw/main/README.md"
+  },
+  {
+   "name": "Terminal-Bench 2.0",
+   "score": "51.5",
+   "setting": "Harbor/Terminus-2, 3h timeout, 32 CPU/48 GB, temp 1.0, 80K max tokens, 256K ctx, avg of 5 runs",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/Qwen/Qwen3.6-35B-A3B/raw/main/README.md"
+  },
+  {
+   "name": "SkillsBench Avg5",
+   "score": "28.7",
+   "setting": "Evaluated via OpenCode, 78 self-contained tasks, avg of 5 runs",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/Qwen/Qwen3.6-35B-A3B/raw/main/README.md"
+  },
+  {
+   "name": "TAU3-Bench",
+   "score": "67.2",
+   "setting": "official user model gpt-5.2 low effort, BM25 retrieval",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/Qwen/Qwen3.6-35B-A3B/raw/main/README.md"
+  },
+  {
+   "name": "MCPMark",
+   "score": "37.0",
+   "setting": "GitHub MCP v0.30.3",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/Qwen/Qwen3.6-35B-A3B/raw/main/README.md"
+  },
+  {
+   "name": "Tool Decathlon",
+   "score": "26.9",
+   "setting": "vendor",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/Qwen/Qwen3.6-35B-A3B/raw/main/README.md"
+  },
+  {
+   "name": "LiveCodeBench v6",
+   "score": "80.4",
+   "setting": "vendor, thinking",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/Qwen/Qwen3.6-35B-A3B/raw/main/README.md"
+  },
+  {
+   "name": "SWE-bench Verified",
+   "score": "70.12",
+   "setting": "Measured by NVIDIA under one harness (NeMo Gym / NeMo Evaluator) on the Nemotron 3.5 Lightning card; same table: Gemma4 26B-A4B 57.40, gpt-oss-20b 52.44, Lightning 51.56",
+   "self_reported": false,
+   "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/raw/main/README.md"
+  },
+  {
+   "name": "Terminal-Bench 2.1",
+   "score": "44.38",
+   "setting": "NVIDIA same-harness (third-party vendor)",
+   "self_reported": false,
+   "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/raw/main/README.md"
+  },
+  {
+   "name": "SWE-bench Multilingual",
+   "score": "63.40",
+   "setting": "NVIDIA same-harness",
+   "self_reported": false,
+   "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/raw/main/README.md"
+  },
+  {
+   "name": "Artificial Analysis Intelligence Index v5.0.1",
+   "score": "N/A (not scored); API output speed 121 tok/s, TTFT 19.19 s on hosted providers",
+   "setting": "AA model page; hosted APIs, not local",
+   "self_reported": false,
+   "source_url": "https://artificialanalysis.ai/models/qwen3-6-35b-a3b"
+  }
+ ],
+ "speed_notes": "No measured tokens/s were found for this exact laptop (RTX 5080 Laptop 16 GB + Core Ultra 9 290HX).\n\nDecode estimate for Q4_K_M with --n-cpu-moe 20 (inferred). Per token, the GPU reads about 1.98 GiB of non-expert weights (including the 0.5 GiB Q8_0 lm_head) plus 20 layers x 8/256 x 0.422 GiB = 0.26 GiB. That is 2.41 GB at 896 GB/s, about 2.7 ms. The CPU reads 20 x 13.5 MiB = 0.28 GB at about 80 GB/s, about 3.5 ms. The bound is about 6.2 ms per token, roughly 160 tok/s at most. Expect about 40-90 tok/s in practice; this is unverified and CPU MoE compute and sync overhead dominate.\n\nA fully-on-GPU UD-Q2_K_XL would be bounded at about 300 tok/s from bandwidth alone (inferred).\n\nPrefill: with experts in RAM, llama.cpp uploads expert weights over PCIe for each large ubatch. In llama.cpp #25859 an RTX 3060 on PCIe 4.0 with -ncmoe 26 measured about 1143 tok/s pp2048 for this model at Q4_K_M (1880 tok/s with a prototype patch). PCIe 5.0 x16, fewer offloaded layers and -ub 2048 should do better here (inferred).\n\nHybrid attention keeps KV at 20 KiB/token, so long contexts are cheap. The vendor recipe's MTP speculative decoding is available in llama.cpp (--spec-type draft-mtp) but has open correctness and timeout bugs (#23577, #30394, #25618).\n\nLaptop caveat: #27330 reports CUDA-graph hangs (Xid 8) on an RTX 5090 Laptop (GB203M, sm_120) with the same Qwen3.5-family architecture; GGML_CUDA_DISABLE_GRAPHS=1 avoids them at some speed cost.",
+ "opencode_fit": {
+  "verdict": "good",
+  "recommended_runtime": "llama.cpp server (ghcr.io/ggml-org/llama.cpp:server-cuda13) with expert offload; Ollama qwen3.6:35b-a3b as the simpler alternative; vLLM not recommended on 16 GB",
+  "recommended_checkpoint": "ggml-org/Qwen3.6-35B-A3B-GGUF Q4_K_M (19.12 GiB) with --n-cpu-moe 20; unsloth UD-IQ4_XS (16.5 GiB) to keep more experts on GPU",
+  "recommended_context": "131072 with f16 KV (or 262144 with q8_0 KV); the card advises at least 128K for thinking",
+  "caveats": "1. Strongest vendor agentic coding numbers of any model that runs here: SWE-V 73.4, TB2.0 51.5. NVIDIA's independent same-harness run gives 70.12 / TB2.1 44.38, still above Gemma 4 26B-A4B and gpt-oss-20b. Qwen even evaluated SkillsBench via OpenCode.\n2. Does not fit in VRAM: about half the experts live in system RAM, so decode speed depends on CPU/DDR5 and prefill on PCIe.\n3. vLLM on 16 GB is blocked in v0.33.0: no checkpoint is under 19.4 GiB, the UVA expert-offload bug #66264 affects marlin-repacked NVFP4, and the b12x OOM #49476 hits 16 GB sm_120.\n4. Tool-call reliability: llama.cpp #30118 (missing <tool_call> opener leaks calls into content); vLLM qwen3_coder streaming bugs #65774 and #58105.\n5. Thinks by default and thinking is verbose. For OpenCode, keep thinking on with preserve_thinking, or disable it per request via chat_template_kwargs.\n6. OpenCode v2.3.0 starts discovered models with tools disabled; enable tool capability explicitly in the provider config.\n7. Laptop CUDA-graph hang risk (#27330).\n8. Ollama needs the context raised from its 4k default and its 23 GB tag includes vision."
+ },
+ "gaps": [
+  "No measured tokens/s or max context on an RTX 5080 Laptop (or any 16 GB RTX 50 card) with --n-cpu-moe for this model; the speed figures are bandwidth arithmetic only.",
+  "llama.cpp compute-buffer size and context-checkpoint host memory for qwen35moe at -ub 2048 were estimated (1.0-1.5 GiB VRAM), not measured; that token_embd stays on the CPU is inferred.",
+  "Whether vLLM v0.33.0 skips loading MTP weights when spec decoding is off is inferred, not confirmed in the source.",
+  "Whether UVA expert offload works in v0.33.0 with a non-marlin NVFP4 MoE backend (flashinfer_cutlass) or with the Intel AutoRound int4 checkpoint was not established; #66264 covers marlin repack.",
+  "The Qwen blog (qwen.ai/blog?id=qwen3.6-35b-a3b) is JS-rendered and was not read; the announcement date comes from the vendor GitHub README news line (2026-04-16).",
+  "The HF org API reports isVerified=false for Qwen; ownership rests on the vendor GitHub README linking the HF collection.",
+  "Artificial Analysis shows Intelligence Index N/A for this model; no AA Terminal-Bench 4.0 or coding-index value was extracted.",
+  "No current official SWE-bench, Terminal-Bench, BFCL or Aider leaderboard entry exists for this model (per the discovery sweep, not re-verified here). Third-party same-harness numbers were not verified here: the KAT card's 64.40 SWE-V and the Ornith card's 73.4/49.5/52.5 (a TB value that conflicts with Qwen's 51.5).",
+  "Ollama: did not verify whether v0.40.16 does MoE-aware expert offload for qwen35moe or what VRAM/RAM split it chooses on 16 GB; Ollama tag sizes were read from the tags page, not the registry manifest.",
+  "llama.cpp Docker image tags (server-cuda13) and their contents were not re-verified in this lane (taken from the lead)."
+ ]
+}

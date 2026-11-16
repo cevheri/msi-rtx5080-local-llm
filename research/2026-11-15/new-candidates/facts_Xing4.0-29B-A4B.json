@@ -1,0 +1,126 @@
+{
+ "verdicts": [
+  {
+   "claim": "Vendor ownership: XingChen-AGI is a TeleAI/China Telecom org rather than a re-upload (LICENSE copyright line, card cites TeleChat3 report, wangc0427 and ShuangyongSong in both Tele-AI and XingChen-AGI, wangc0427 uploaded both avatars, GitHub org created 2026-08-27, neither verified, TeleChat3 README does not link to Xing)",
+   "verdict": "confirmed",
+   "correction": "All parts check out live. The card also says outright that Xing is the series 'formerly TeleChat' and is 'developed by China Telecom Artificial Intelligence Technology Co., Ltd.' (README line 54). Both org avatars are under uploads/64368160eef1f55654ab21dc, which is wangc0427's _id. HF org isVerified false with 14 members; GitHub is_verified false, created 2026-08-27T12:19:55Z. The only 'xing' hit in the Tele-AI/TeleChat3 README is the author name 'Zhaohu Xing', so the README does not link to Xing. Support: source-backed.",
+   "evidence_url": "https://huggingface.co/api/users/wangc0427/overview"
+  },
+  {
+   "claim": "Release dates: HF createdAt 2026-09-16T06:44:40Z, lastModified 2026-11-10T11:45:38Z, GitHub news says open-sourced 2026-09-17, llama.cpp and SGLang mainline merged 2026-11-05",
+   "verdict": "confirmed",
+   "correction": "Exact match. llama.cpp PR #31589 merged 2026-11-05T16:47:27Z (45b6604). SGLang PR #39793 merged 2026-11-05T02:23:57Z. The GitHub repo was created 2026-09-17T01:56:40Z.",
+   "evidence_url": "https://huggingface.co/api/models/XingChen-AGI/Xing4.0-29B-A4B?blobs=true"
+  },
+  {
+   "claim": "License: Apache-2.0 with a China Telecom copyright line, plus a non-binding disclaimer in the GitHub README",
+   "verdict": "confirmed",
+   "correction": "LICENSE line 1 reads 'Copyright (c) 2026 China Telecom AI Technology Co., Ltd.' and is followed by the standard Apache 2.0 text. The disclaimer is at GitHub README line 265.",
+   "evidence_url": "https://huggingface.co/XingChen-AGI/Xing4.0-29B-A4B/raw/main/LICENSE"
+  },
+  {
+   "claim": "Params: 29B total / 4B active (card); safetensors 31,215,031,088 including the MTP block; 64 routed + 1 shared, top-4",
+   "verdict": "confirmed",
+   "correction": "The safetensors total of 31,215,031,088 (BF16 31,215,028,592 plus F32 2,496) is exact, and so is 58.14 GiB. That the 2.2B gap is the MTP block is inferred, not stated. One MTP MoE layer accounts for only about 0.75B, so untied embeddings (0.94B) probably make up the rest of the difference to the card's 29B.",
+   "evidence_url": "https://huggingface.co/api/models/XingChen-AGI/Xing4.0-29B-A4B?blobs=true"
+  },
+  {
+   "claim": "Architecture per config.json (40 layers, first 2 dense, MLA 32 heads, q_lora 768, kv_lora 512, rope 64, nope 128, v 128, hc_mult 4, 20 Sinkhorn iterations, 1 MTP layer, hidden 3584, vocab 131072, untied, sigmoid noaux_tc, routed scaling 2.0)",
+   "verdict": "confirmed",
+   "correction": "Every value matches the raw config.json. The official GGUF header gives block_count 41 (the MTP layer included), key_length 576, head_count_kv 1 and hyper_connection.* keys, and these key names exist in llama.cpp b12407 llama-arch.cpp lines 357-362.",
+   "evidence_url": "https://huggingface.co/XingChen-AGI/Xing4.0-29B-A4B/raw/main/config.json"
+  },
+  {
+   "claim": "Context: max_position_embeddings 262144 via YaRN factor 64 over 4096; GGUF context_length 262144; 512K claimed but no config published",
+   "verdict": "confirmed",
+   "correction": "Confirmed in config.json and in the parsed header of the official iq2_M-slim GGUF (xing4_0.context_length = 262144).",
+   "evidence_url": "https://huggingface.co/XingChen-AGI/Xing4.0-29B-A4B/raw/main/config.json"
+  },
+  {
+   "claim": "Thinking toggle via enable_thinking, ON by default; generation prompt '<_bot><think>\\n' or '<_bot></think>'",
+   "verdict": "confirmed",
+   "correction": "chat_template.jinja line 109 matches. Earlier assistant turns (before the last user message) are rendered with '</think>' only, so reasoning is dropped from history. In HF discussion #5, Prophet000 (isOrgMember true) confirms that non-thinking mode is weaker.",
+   "evidence_url": "https://huggingface.co/XingChen-AGI/Xing4.0-29B-A4B/raw/main/chat_template.jinja"
+  },
+  {
+   "claim": "Tool calling format: <tool_call>{name}<param_key>..</param_key><param_value>..</param_value></tool_call>; tools as JSON in <tools>; results via <_observation><tool_response>; <tool_call>/<tool_response> special, <param_key>/<param_value> not",
+   "verdict": "confirmed",
+   "correction": "Template lines 30-45 and 80-103 match, and the tokenizer_config special tokens (ids 11-14) match. <_observation> is not among the added special tokens either. Added risk (inferred): line 86-87 calls tc.arguments.items(), so the template breaks when a client sends arguments as a JSON string, which is the OpenAI default, unless the runtime turns them into an object first. That needs checking in the llama.cpp smoke test.",
+   "evidence_url": "https://huggingface.co/XingChen-AGI/Xing4.0-29B-A4B/raw/main/tokenizer_config.json"
+  },
+  {
+   "claim": "HF discussion #15: the responder's diagnosis, and that temperature 0 for tool turns is 'community advice, not vendor guidance'",
+   "verdict": "refuted",
+   "correction": "The responder, xiongji ('bear'), has isOrgMember true and belongs only to the XingChen-AGI org, so this is vendor-staff guidance. It is still informal and conflicts with the card's 0.8 for coding/agent work. The numbers are confirmed: 4446 vs 9937 tokens, max_tokens 2048 truncated 5/5 and 8192 succeeded 5/5, and at temperature 1.0 the model sometimes drops the <tool_call> wrapper or emits bare JSON. The original user's reply (2026-11-05) says it still fails with 65536 output tokens on the Pi harness. The thread is still open.",
+   "evidence_url": "https://huggingface.co/XingChen-AGI/Xing4.0-29B-A4B/discussions/15"
+  },
+  {
+   "claim": "Checkpoint sizes (BF16 58.14, FP8 30.89, W8A8 32.74 GiB; official GGUF list; bartowski Q4_K_M 18.68 at b12174; mradermacher i1-Q4_K_M 17.65; Venastine Q4_K_M 17.65)",
+   "verdict": "confirmed",
+   "correction": "All sizes match the HF API to two decimals. The bartowski README states release b12174 and an imatrix calibrated on tool-calling and reasoning conversations.",
+   "evidence_url": "https://huggingface.co/api/models/XingChen-AGI/Xing4.0-29B-A4B-GGUF?blobs=true"
+  },
+  {
+   "claim": "Only the Venastine GGUFs predate the mainline merge; the official GGUFs are mainline builds",
+   "verdict": "refuted",
+   "correction": "The official GGUF files also predate the 2026-11-05 merge. Commit history shows weight uploads on 2026-09-17, 2026-09-20 and 2026-10-16, and iq2_M-slim on 2026-10-23. Every commit after 11-05 changes only the README or LICENSE. The vendor claims they load in stock b12174+, and their header key names match b12407, so header-level compatibility is source-backed, but a full load is unverified. 'iq2_M-slim' is a vendor-specific name, not a standard llama.cpp type.",
+   "evidence_url": "https://huggingface.co/api/models/XingChen-AGI/Xing4.0-29B-A4B-GGUF/commits/main"
+  },
+  {
+   "claim": "vLLM: not in v0.33.0 registry; out-of-tree plugin v0.1.0 vendored from commit 2e09247 (2026-08-06, 4266 behind v0.33.0); mHC requires bfloat16; vendor image quay.io/...:v0.29.1rc1-xing4_0",
+   "verdict": "confirmed",
+   "correction": "Correction: the v0.33.0 registry has TeleChat2ForCausalLM, TeleChat3ForCausalLM (mapped to llama) and TeleChatForCausalLM only in a removed-models map (removed in 0.25.0). There is no Xing entry. The plugin's only tag is v0.1.0, and compare gives ahead_by 4266. The plugin README says mHC (hc_mult > 1) requires bfloat16 and does not support pipeline parallelism.",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/models/registry.py"
+  },
+  {
+   "claim": "llama.cpp: xing4_0 at llama-arch.cpp line 93 at b12407; b12173 already contains the merge; no dedicated chat parser",
+   "verdict": "confirmed",
+   "correction": "Line 93 is confirmed. Compare 45b6604...b12407 gives ahead 251, and 45b6604...b12173 gives ahead 17, behind 0. common/parsers at b12407 has no xing file. Whether the generic auto-parser handles the param_key/param_value format is still inferred.",
+   "evidence_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/src/llama-arch.cpp"
+  },
+  {
+   "claim": "Ollama: no library tag; v0.40.16 pins llama.cpp b12177",
+   "verdict": "confirmed",
+   "correction": "library/xing4 and library/xing4.0 both return 404, and LLAMA_CPP_VERSION at v0.40.16 is b12177.",
+   "evidence_url": "https://raw.githubusercontent.com/ollama/ollama/v0.40.16/LLAMA_CPP_VERSION"
+  },
+  {
+   "claim": "Xing benchmark numbers (SWE-V 75.00, TB2.1 57.50, SWE-Multi 66.00, Tau3 64.63, Claw-Eval 76.55, DeepresearchBII 60.80) as stated on the card",
+   "verdict": "confirmed",
+   "correction": "They match card lines 97-107 and are vendor self-reports. Label correction: only DeepresearchBII uses the OpenCode harness. Claw-Eval uses the official claw-eval harness (README lines 171-173).",
+   "evidence_url": "https://huggingface.co/XingChen-AGI/Xing4.0-29B-A4B/raw/main/README.md"
+  },
+  {
+   "claim": "Vendor comparator figures for Qwen3.6-35B-A3B: SWE-bench Verified 76.00 and Terminal-Bench 2.1 51.50",
+   "verdict": "refuted",
+   "correction": "Qwen's own card (lastModified 2026-11-07) gives Qwen3.6-35B-A3B SWE-bench Verified 73.4, not 76.0, and 51.5 is Qwen's Terminal-Bench 2.0 score (Terminus-2, temp 1.0, 5 runs), which Xing relabels as TB 2.1. NVIDIA's same-harness table gives 70.12 and TB2.1 44.38. SWE-Multi 67.2, Tau3 67.2 and AIME26 92.7 do match Qwen's card. Xing's Gemma4-26B-A4B figures also disagree with Qwen's card: SWE-V 53.0 vs 17.4, SWE-Multi 51.0 vs 17.3, TB 30.0 vs 34.2. So the head-to-head table mixes benchmark versions and sources.",
+   "evidence_url": "https://huggingface.co/Qwen/Qwen3.6-35B-A3B/raw/main/README.md"
+  },
+  {
+   "claim": "llama.cpp PR perplexity (bf16 8.8403, q8_0 8.8616, iq4_nl 9.1281) and H800 tg128 159 tok/s",
+   "verdict": "confirmed",
+   "correction": "These are in the PR #31589 body (author shuxiaoqiong). The 159.29 tg128 figure is for iq4_nl; q8_0 runs at 136.06.",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/pull/31589"
+  },
+  {
+   "claim": "No independent leaderboards (Artificial Analysis 404, not on OpenRouter)",
+   "verdict": "confirmed",
+   "correction": "The AA URL returns HTTP 404, and the OpenRouter /api/v1/models list has no id containing 'xing'.",
+   "evidence_url": "https://artificialanalysis.ai/models/xing4-0-29b-a4b"
+  },
+  {
+   "claim": "Sampling: card temp 0.8/1.0, top_p 0.95, rep 1.05; same in generation_config.json and GGUF general.sampling.*",
+   "verdict": "confirmed",
+   "correction": "generation_config.json gives temp 1.0, top_p 0.95, rep 1.05, and the GGUF header gives sampling.temp 1.0, top_p 0.95, penalty_repeat 1.05. The 0.8 coding value appears only on the card.",
+   "evidence_url": "https://huggingface.co/XingChen-AGI/Xing4.0-29B-A4B/raw/main/generation_config.json"
+  },
+  {
+   "claim": "KV math: MLA 46,080 B/token BF16 (40 layers), q8_0 24,480 B/token; vLLM pool negative",
+   "verdict": "confirmed",
+   "correction": "Source-backed arithmetic: (512+64) x 2 x 40 = 46,080, and 576 x 34/32 x 40 = 24,480. 14.65 - 30.89 - 1.2 = -17.44 GiB. With the MTP layer loaded (41 layers) it becomes 47,232 B/token f16.",
+   "evidence_url": "https://huggingface.co/XingChen-AGI/Xing4.0-29B-A4B/raw/main/config.json"
+  }
+ ],
+ "overall": "holds-with-corrections",
+ "summary": "I found nothing invented. Vendor identity (TeleAI/China Telecom, unverified orgs), dates, config, context, license, the thinking toggle, the tool format, every checkpoint size and the llama.cpp and vLLM status all match live primary sources. Three corrections. (1) The vendor's head-to-head table is unreliable. Qwen's own card gives Qwen3.6-35B-A3B SWE-bench Verified 73.4, not 76.0. The 51.5 is Qwen's Terminal-Bench 2.0 score, relabeled as 2.1. The Gemma4-26B figures also disagree with Qwen's card. All Xing scores are self-reported, and no independent benchmark exists. (2) In HF discussion #15, the person advising temperature 0 and max_tokens of at least 8192 is a XingChen-AGI org member (xiongji), so this is informal vendor-staff advice, not community advice. The original user still reports failures at 65k output, and the thread is open. (3) The official GGUF weights, including iq2_M-slim (uploaded 2026-10-23), also predate the 2026-11-05 llama.cpp merge, not just the Venastine ones. Their header keys match b12407 names, but a full load is unverified. Added risk (inferred): the template calls tc.arguments.items(), so string-encoded tool arguments may break rendering. Include this in the OpenCode smoke test. Work files are in $SCRATCH/xingchk/."
+}

@@ -1,0 +1,95 @@
+time=2026-11-16T04:47:35.644Z level=INFO source=routes.go:2536 msg="Listening on [::]:11434 (version 0.40.16)"
+time=2026-11-16T04:47:38.962Z level=INFO source=types.go:32 msg="inference compute" id=0 filter_id=0 library=CUDA compute=12.0 name=CUDA0 description="NVIDIA GeForce RTX 5080 Laptop GPU" libdirs=ollama,cuda_v13 driver=13.2 pci_id=0000:02:00.0 type=discrete total="15.5 GiB" available="15.2 GiB"
+time=2026-11-16T04:47:39.890Z level=INFO source=llama_server.go:467 msg="starting llama-server" cmd="/usr/lib/ollama/llama-server --model /root/.ollama/models/blobs/sha256-2bada8a7450677000f678be90653b85d364de7db25eb5ea54136ada5f3933730 --port 44385 --host 127.0.0.1 --no-webui --offline -c 32768 -np 1 --log-verbosity 4 --no-log-prefix --no-log-timestamps --no-jinja --chat-template chatml --cache-type-k f16 --cache-type-v f16 --flash-attn on -b 1024 -ub 1024 --context-shift --keep 4"
+time=2026-11-16T04:47:39.891Z level=INFO source=sched.go:658 msg="gpu memory" id=0 library=CUDA available="14.7 GiB" free="15.2 GiB" minimum="457.0 MiB" overhead="0 B"
+time=2026-11-16T04:47:39.891Z level=INFO source=llama_server.go:1098 msg="loading model via llama-server" model=/root/.ollama/models/blobs/sha256-2bada8a7450677000f678be90653b85d364de7db25eb5ea54136ada5f3933730
+load_backend: loaded CPU backend from /usr/lib/ollama/libggml-cpu-alderlake.so
+load_backend: loaded CUDA backend from /usr/lib/ollama/cuda_v13/libggml-cuda.so
+cmn  common_param: system_info: n_threads = 4 (n_threads_batch = 4) / 24 | CPU : SSE3 = 1 | SSSE3 = 1 | AVX = 1 | AVX_VNNI = 1 | AVX2 = 1 | F16C = 1 | FMA = 1 | BMI2 = 1 | LLAMAFILE = 1 | REPACK = 1 | CUDA : ARCHS = 750,800,860,870,890,900,1000,1030,1100,1200,1210 | USE_GRAPHS = 1 | FA_QUANTS = q4_0-q4_0,q8_0-q8_0,f16-f16,bf16-bf16 | BLACKWELL_NATIVE_FP4 = 1 | 
+common_memory_breakdown_print: | memory breakdown [MiB]          | total    free    self   model   context   compute    unaccounted |
+common_memory_breakdown_print: |   - CUDA0 (RTX 5080 Laptop GPU) | 15841 = 15528 + (6302 =  4168 +    1792 +     342) +       -5988 |
+common_memory_breakdown_print: |   - Host                        |                   412 =   292 +       0 +     120                |
+load_tensors: offloaded 29/29 layers to GPU
+load_tensors:   CPU_Mapped model buffer size =   292.36 MiB
+load_tensors:        CUDA0 model buffer size =  4168.09 MiB
+llama_context: n_ctx_seq             = 32768
+llama_context:  CUDA_Host  output buffer size =     0.58 MiB
+llama_kv_cache:      CUDA0 KV buffer size =  1792.00 MiB
+llama_kv_cache: size = 1792.00 MiB ( 32768 cells,  28 layers,  1/1 seqs), K (f16):  896.00 MiB, V (f16):  896.00 MiB
+sched_reserve:      CUDA0 compute buffer size =   342.03 MiB
+sched_reserve:  CUDA_Host compute buffer size =   120.04 MiB
+time=2026-11-16T04:47:53.958Z level=INFO source=sched.go:775 msg="loaded runners" count=1
+slot print_timing: id  0 | task 0 | prompt eval time =   15037.52 ms /   154 tokens (   97.65 ms per token,    10.24 tokens per second)
+slot print_timing: id  0 | task 0 |        eval time =     815.00 ms /    20 tokens (   42.89 ms per token,    23.31 tokens per second)
+slot print_timing: id  0 | task 0 |       total time =   15852.52 ms /   174 tokens
+slot print_timing: id  0 | task 0 |    graphs reused =         19
+slot print_timing: id  0 | task 0 |   graph reallocs =          0    /     0        (same size) / (changed size)
+slot print_timing: id  0 | task 21 | prompt eval time =       9.74 ms /    16 tokens (    0.61 ms per token,  1642.20 tokens per second)
+slot print_timing: id  0 | task 21 |        eval time =       6.92 ms /     2 tokens (    6.92 ms per token,   144.49 tokens per second)
+slot print_timing: id  0 | task 21 |       total time =      16.66 ms /    18 tokens
+slot print_timing: id  0 | task 21 |    graphs reused =         19
+slot print_timing: id  0 | task 21 |   graph reallocs =          0    /     0        (same size) / (changed size)
+slot print_timing: id  0 | task 24 | prompt eval time =      28.91 ms /   137 tokens (    0.21 ms per token,  4738.68 tokens per second)
+slot print_timing: id  0 | task 24 |        eval time =     148.54 ms /    20 tokens (    7.82 ms per token,   127.91 tokens per second)
+slot print_timing: id  0 | task 24 |       total time =     177.45 ms /   157 tokens
+slot print_timing: id  0 | task 24 |    graphs reused =         37
+slot print_timing: id  0 | task 24 |   graph reallocs =          0    /     0        (same size) / (changed size)
+slot print_timing: id  0 | task 45 | n_gen =    366, tg = 121.56 t/s, tg_3s = 121.89 t/s
+slot print_timing: id  0 | task 45 | n_gen =    727, tg = 120.78 t/s, tg_3s = 120.01 t/s
+slot print_timing: id  0 | task 45 | prompt eval time =      17.77 ms /    39 tokens (    0.46 ms per token,  2194.83 tokens per second)
+slot print_timing: id  0 | task 45 |        eval time =    8902.75 ms /  1069 tokens (    8.34 ms per token,   119.96 tokens per second)
+slot print_timing: id  0 | task 45 |       total time =    8920.52 ms /  1108 tokens
+slot print_timing: id  0 | task 45 |    graphs reused =       1100
+slot print_timing: id  0 | task 45 |   graph reallocs =          0    /     0        (same size) / (changed size)
+slot print_timing: id  0 | task 1115 | n_gen =    363, tg = 120.55 t/s, tg_3s = 120.88 t/s
+slot print_timing: id  0 | task 1115 | n_gen =    720, tg = 119.75 t/s, tg_3s = 118.94 t/s
+slot print_timing: id  0 | task 1115 | prompt eval time =      14.38 ms /    31 tokens (    0.46 ms per token,  2156.52 tokens per second)
+slot print_timing: id  0 | task 1115 |        eval time =    8172.73 ms /   976 tokens (    8.38 ms per token,   119.30 tokens per second)
+slot print_timing: id  0 | task 1115 |       total time =    8187.10 ms /  1007 tokens
+slot print_timing: id  0 | task 1115 |    graphs reused =       2070
+slot print_timing: id  0 | task 1115 |   graph reallocs =          0    /     0        (same size) / (changed size)
+slot print_timing: id  0 | task 2092 | n_gen =    362, tg = 120.07 t/s, tg_3s = 120.40 t/s
+slot print_timing: id  0 | task 2092 | n_gen =    719, tg = 119.39 t/s, tg_3s = 118.72 t/s
+slot print_timing: id  0 | task 2092 | prompt eval time =      13.18 ms /    31 tokens (    0.43 ms per token,  2351.69 tokens per second)
+slot print_timing: id  0 | task 2092 |        eval time =    7732.53 ms /   921 tokens (    8.40 ms per token,   118.98 tokens per second)
+slot print_timing: id  0 | task 2092 |       total time =    7745.72 ms /   952 tokens
+slot print_timing: id  0 | task 2092 |    graphs reused =       2986
+slot print_timing: id  0 | task 2092 |   graph reallocs =          0    /     0        (same size) / (changed size)
+slot print_timing: id  0 | task 3014 | prompt eval time =    1602.03 ms /  8080 tokens (    0.20 ms per token,  5043.62 tokens per second)
+slot print_timing: id  0 | task 3014 |        eval time =    4697.74 ms /    39 tokens (  123.62 ms per token,     8.09 tokens per second)
+slot print_timing: id  0 | task 3014 |       total time =    6299.77 ms /  8119 tokens
+slot print_timing: id  0 | task 3014 |    graphs reused =       3023
+slot print_timing: id  0 | task 3014 |   graph reallocs =          0    /     0        (same size) / (changed size)
+slot print_timing: id  0 | task 3061 | prompt eval time =      11.61 ms /     1 tokens (   11.61 ms per token,    86.13 tokens per second)
+slot print_timing: id  0 | task 3061 |        eval time =     403.38 ms /    48 tokens (    8.58 ms per token,   116.52 tokens per second)
+slot print_timing: id  0 | task 3061 |       total time =     414.99 ms /    49 tokens
+slot print_timing: id  0 | task 3061 |    graphs reused =       3071
+slot print_timing: id  0 | task 3061 |   graph reallocs =          0    /     0        (same size) / (changed size)
+slot print_timing: id  0 | task 3110 | prompt processing, n_tokens =  13312, progress = 0.88, t =   3.22 s / 4133.47 tokens per second
+slot print_timing: id  0 | task 3110 | prompt processing, n_tokens =  14336, progress = 0.93, t =   3.53 s / 4059.06 tokens per second
+slot print_timing: id  0 | task 3110 | prompt processing, n_tokens =  15360, progress = 0.97, t =   3.86 s / 3980.91 tokens per second
+slot print_timing: id  0 | task 3110 | prompt eval time =    4466.55 ms / 16145 tokens (    0.28 ms per token,  3614.65 tokens per second)
+slot print_timing: id  0 | task 3110 |        eval time =     386.49 ms /    38 tokens (   10.45 ms per token,    95.73 tokens per second)
+slot print_timing: id  0 | task 3110 |       total time =    4853.04 ms / 16183 tokens
+slot print_timing: id  0 | task 3110 |    graphs reused =       3107
+slot print_timing: id  0 | task 3110 |   graph reallocs =          0    /     0        (same size) / (changed size)
+slot print_timing: id  0 | task 3164 | prompt eval time =       9.98 ms /     1 tokens (    9.98 ms per token,   100.17 tokens per second)
+slot print_timing: id  0 | task 3164 |        eval time =     634.57 ms /    64 tokens (   10.07 ms per token,    99.28 tokens per second)
+slot print_timing: id  0 | task 3164 |       total time =     644.55 ms /    65 tokens
+slot print_timing: id  0 | task 3164 |    graphs reused =       3171
+slot print_timing: id  0 | task 3164 |   graph reallocs =          0    /     0        (same size) / (changed size)
+slot print_timing: id  0 | task 3229 | prompt eval time =     603.07 ms /  3533 tokens (    0.17 ms per token,  5858.40 tokens per second)
+slot print_timing: id  0 | task 3229 |        eval time =     774.93 ms /    81 tokens (    9.69 ms per token,   103.24 tokens per second)
+slot print_timing: id  0 | task 3229 |       total time =    1377.99 ms /  3614 tokens
+slot print_timing: id  0 | task 3229 |    graphs reused =       3249
+slot print_timing: id  0 | task 3229 |   graph reallocs =          0    /     0        (same size) / (changed size)
+slot print_timing: id  0 | task 3314 | prompt eval time =      27.55 ms /   119 tokens (    0.23 ms per token,  4320.20 tokens per second)
+slot print_timing: id  0 | task 3314 |        eval time =    1466.98 ms /   164 tokens (    9.00 ms per token,   111.11 tokens per second)
+slot print_timing: id  0 | task 3314 |       total time =    1494.53 ms /   283 tokens
+slot print_timing: id  0 | task 3314 |    graphs reused =       3411
+slot print_timing: id  0 | task 3314 |   graph reallocs =          0    /     0        (same size) / (changed size)
+slot print_timing: id  0 | task 3479 | prompt eval time =      23.78 ms /    90 tokens (    0.26 ms per token,  3784.69 tokens per second)
+slot print_timing: id  0 | task 3479 |        eval time =     524.73 ms /    59 tokens (    9.05 ms per token,   110.53 tokens per second)
+slot print_timing: id  0 | task 3479 |       total time =     548.51 ms /   149 tokens
+slot print_timing: id  0 | task 3479 |    graphs reused =       3468
+slot print_timing: id  0 | task 3479 |   graph reallocs =          0    /     0        (same size) / (changed size)

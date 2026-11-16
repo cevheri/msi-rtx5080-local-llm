@@ -1,0 +1,847 @@
+{
+ "summary": "I swept the registries on 2026-11-15 using the raw Hugging Face API and models-json listings plus the Ollama search HTML (htmx pages 1 to 6 of c=tools). Most of the newest strong models are 27B to 40B, or MoE with 2B to 9B active parameters. At 4-bit their weights are about 15 to 25 GB, so few of them fit fully in 16 GB VRAM under vLLM. Most will need llama.cpp or Ollama with MoE experts kept in system RAM.\n\nOn the user's own HF listing (https://huggingface.co/models?num_parameters=min:3B,max:32B&apps=vllm&base_model_relation=base&sort=trending) the top trending model is Qwen/Qwen3.8-27B (6.55M downloads, 20,076 likes, created 2026-08-05). openai/gpt-oss-20b, Qwen3-Coder-30B-A3B, nvidia Nemotron-3.5-Lightning-30B-A3B, GLM-4.7-Flash, gemma-4-31B/26B-A4B and Qwen3.6-27B also appear on its pages 1 to 3 or in the downloads sort. Uncensored, abliterated and merge derivatives dominate the trending API lists and were excluded.\n\nOn Ollama (https://ollama.com/search?c=local and c=tools) the relevant newest entries with the tools and thinking tags are qwen3.8 (27b, 18 GB q4_K_M, 256K), nemotron-3.5-lightning (30b, 19 to 25 GB, 1M), nemotron-3.5-bolt (e4b 7.2 to 7.9 GB), gemma4 (e2b to 31b, 29.2M pulls), qwen3.6, qwen3.5, gpt-oss (20b 14 GB), glm-4.7-flash, laguna-xs-2.1, north-mini-code-1.0, flint, mimo-v2.6, muse-glimmer and lfm2.5.\n\nBest single-GPU vLLM candidates by size: gemma-4-12B-it QAT w4a16 (10.26 GB, https://huggingface.co/google/gemma-4-12B-it-qat-w4a16-ct), gpt-oss-20b MXFP4 (13.76 GB, https://huggingface.co/openai/gpt-oss-20b), the 9B class (Qwen3.5-9B, MiMo-V2.6-Distill-Qwen-9B) and Nemotron-3.5-Bolt-E4B.\n\nThe strongest agentic coders need RAM offload on this machine:\n- Qwen3.8-27B (self-reported Terminal-Bench 2.1 73.0, SWE-bench Pro 61.7, https://huggingface.co/Qwen/Qwen3.8-27B).\n- Qwen3.6-35B-A3B (SWE-bench Verified 73.4, Terminal-Bench 2.0 51.5).\n- Nemotron-3.5-Lightning-30B-A3B NVFP4 (21.56 GB).\n- Muse-Glimmer-30B (SWE-bench Verified 76.0).\n- Flint 40B-A2B (SWE-bench Verified 74.2).\n\nDeepSeek has no open-weight checkpoint near this machine's size in the window. DeepSeek-V4-Flash is 290.9B and V4.1-Flash 763.2B, and its HF org only published eagle3/dflash/dspark draft heads for other models (2026-06-28). The best DeepSeek-branded local option is the older Ollama deepseek-r1 distill set (updated 2025-07-02). OpenAI has published no new gpt-oss weights since 2025-08 apart from gpt-oss-safeguard. The latest vllm/vllm-openai tags on Docker Hub are cu135-nightly and nightly (2026-11-15). The Nemotron-3.5-Bolt-E4B card pins vllm/vllm-openai:v0.31.0.\n\nFit estimates below are inferred from weight sizes and are not measured.",
+ "models": [
+  {
+   "name": "Qwen3.8-27B",
+   "vendor": "Qwen (Alibaba)",
+   "family": "Qwen",
+   "hf_repo": "Qwen/Qwen3.8-27B",
+   "release_date": "2026-08-05",
+   "total_params_b": 27.8,
+   "active_params_b": 27.8,
+   "architecture": "dense, multimodal (image-text-to-text)",
+   "context_length": "262,144 native, YaRN to ~1M",
+   "license": "apache-2.0",
+   "modalities": "text, image (video in vLLM)",
+   "thinking": "toggle",
+   "tool_calling": "unknown",
+   "official_quantized": [
+    "Qwen/Qwen3.8-27B-FP8 30.87 GB",
+    "nvidia/Qwen3.8-27B-NVFP4 21.92 GB (NVIDIA, 2026-09-04)",
+    "Ollama qwen3.8:27b q4_K_M 18 GB, nvfp4 18 GB, q8_0 30 GB"
+   ],
+   "vllm": "Card links the recipe https://recipes.vllm.ai/Qwen/Qwen3.8-27B. Parser names were not in the card text I grepped (the Qwen3.6 sibling uses --reasoning-parser qwen3 --tool-call-parser qwen3_coder).",
+   "fit_16gb": "Does not fit fully in vLLM (smallest official quant is 21.9 GB NVFP4). Ollama/llama.cpp q4_K_M is 18 GB, so partial CPU offload of a dense model, which will be slow (inferred).",
+   "coding_agent_evidence": "Self-reported, Claude Code harness: Terminal-Bench 2.1 73.0, SWE-bench Pro 61.7, DeepSWE 1.1 42.2 (https://huggingface.co/Qwen/Qwen3.8-27B). No SWE-bench Verified row.",
+   "llamacpp_ollama": "Ollama qwen3.8 updated 2026-11-08, 6.61M pulls, tags vision/tools/thinking, 256K context",
+   "notes": "Top of the user's HF listing (6.55M downloads, 20,076 likes). Thinking is on by default, disabled via chat_template_kwargs enable_thinking=false. preserve_thinking is on by default.",
+   "confidence": "high",
+   "sources": [
+    "https://huggingface.co/Qwen/Qwen3.8-27B",
+    "https://huggingface.co/api/models/Qwen/Qwen3.8-27B",
+    "https://huggingface.co/api/models/nvidia/Qwen3.8-27B-NVFP4",
+    "https://ollama.com/library/qwen3.8/tags"
+   ]
+  },
+  {
+   "name": "Qwen3.6-35B-A3B",
+   "vendor": "Qwen (Alibaba)",
+   "family": "Qwen",
+   "hf_repo": "Qwen/Qwen3.6-35B-A3B",
+   "release_date": "2026-04-15",
+   "total_params_b": 36,
+   "active_params_b": 3,
+   "architecture": "MoE, 8 routed + 1 shared experts active, multimodal",
+   "context_length": "262,144 native, extensible to 1,010,000",
+   "license": "apache-2.0",
+   "modalities": "text, image",
+   "thinking": "toggle",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "Qwen/Qwen3.6-35B-A3B-FP8 37.46 GB",
+    "Ollama qwen3.6:35b-a3b q4_K_M 24 GB, nvfp4 23 GB, coding variants 23-24 GB"
+   ],
+   "vllm": "vllm>=0.19.0 recommended; vllm serve Qwen/Qwen3.6-35B-A3B --max-model-len 262144 --reasoning-parser qwen3 --enable-auto-tool-choice --tool-call-parser qwen3_coder (card, TP8 example)",
+   "fit_16gb": "Needs llama.cpp/Ollama with experts in RAM: q4_K_M ~24 GB total (inferred). The card advises keeping at least 128K context.",
+   "coding_agent_evidence": "Self-reported: SWE-bench Verified 73.4, Terminal-Bench 2.0 51.5 (https://huggingface.co/Qwen/Qwen3.6-35B-A3B)",
+   "llamacpp_ollama": "Ollama qwen3.6 updated 2026-10-30, 7.67M pulls",
+   "notes": "3.94M HF downloads. Thinking is on by default.",
+   "confidence": "high",
+   "sources": [
+    "https://huggingface.co/Qwen/Qwen3.6-35B-A3B",
+    "https://ollama.com/library/qwen3.6/tags"
+   ]
+  },
+  {
+   "name": "Qwen3.6-27B",
+   "vendor": "Qwen (Alibaba)",
+   "family": "Qwen",
+   "hf_repo": "Qwen/Qwen3.6-27B",
+   "release_date": "2026-04-21",
+   "total_params_b": 27.8,
+   "active_params_b": 27.8,
+   "architecture": "dense, multimodal",
+   "context_length": "262,144",
+   "license": "apache-2.0",
+   "modalities": "text, image",
+   "thinking": "toggle",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "Qwen/Qwen3.6-27B-FP8",
+    "Ollama qwen3.6:27b q4_K_M 17 GB, nvfp4 19 GB"
+   ],
+   "vllm": "vllm>=0.19.0; --reasoning-parser qwen3 --enable-auto-tool-choice --tool-call-parser qwen3_coder",
+   "fit_16gb": "Does not fit in vLLM. Ollama q4_K_M 17 GB needs slight offload (inferred).",
+   "coding_agent_evidence": "Self-reported SWE-bench Verified 77.2, Terminal-Bench 2.0 59.3 (https://huggingface.co/Qwen/Qwen3.6-27B)",
+   "llamacpp_ollama": "Ollama qwen3.6:27b",
+   "notes": "Superseded by Qwen3.8-27B but still on the user's listing (2.42M downloads).",
+   "confidence": "medium",
+   "sources": [
+    "https://huggingface.co/Qwen/Qwen3.6-27B",
+    "https://ollama.com/library/qwen3.6/tags"
+   ]
+  },
+  {
+   "name": "Qwen3.5-9B",
+   "vendor": "Qwen (Alibaba)",
+   "family": "Qwen",
+   "hf_repo": "Qwen/Qwen3.5-9B",
+   "release_date": "2026-02-27",
+   "total_params_b": 9.7,
+   "active_params_b": 9.7,
+   "architecture": "dense, multimodal",
+   "context_length": "256K (Ollama tag)",
+   "license": "apache-2.0",
+   "modalities": "text, image",
+   "thinking": "unknown",
+   "tool_calling": "unknown",
+   "official_quantized": [
+    "Ollama qwen3.5:9b q4_K_M 6.6 GB, nvfp4 7.2 GB, q8_0 10 GB, bf16 19 GB"
+   ],
+   "vllm": "unknown (not checked)",
+   "fit_16gb": "vLLM likely fits only with a quant (BF16 is ~19 GB); Ollama q4/q8 fits fully (inferred)",
+   "coding_agent_evidence": "not checked",
+   "llamacpp_ollama": "Ollama qwen3.5 26.1M pulls, tags vision/tools/thinking",
+   "notes": "6.03M HF downloads. It is the base of many trending finetunes.",
+   "confidence": "medium",
+   "sources": [
+    "https://huggingface.co/api/models/Qwen/Qwen3.5-9B",
+    "https://ollama.com/library/qwen3.5/tags"
+   ]
+  },
+  {
+   "name": "Gemma 4 26B A4B IT",
+   "vendor": "Google",
+   "family": "Gemma",
+   "hf_repo": "google/gemma-4-26B-A4B-it",
+   "release_date": "2026-03-11",
+   "total_params_b": 25.8,
+   "active_params_b": 4,
+   "architecture": "MoE, hybrid sliding/global attention",
+   "context_length": "256K",
+   "license": "apache-2.0",
+   "modalities": "text, image",
+   "thinking": "toggle",
+   "tool_calling": "unknown",
+   "official_quantized": [
+    "google/gemma-4-26B-A4B-it-qat-q4_0-gguf: 14.44 GB model + 1.19 GB mmproj",
+    "Ollama gemma4:26b-a4b-it-qat 16 GB, q4_K_M 18 GB, nvfp4 16 GB"
+   ],
+   "vllm": "not checked in this lane",
+   "fit_16gb": "Borderline: QAT q4_0 GGUF 14.44 GB leaves little KV room. llama.cpp with some experts in RAM is safer (inferred).",
+   "coding_agent_evidence": "Model card LiveCodeBench v6 table 80.0/77.1/72.0/... across the Gemma 4 sizes (column mapping not verified). The Qwen3.6-35B card reports Gemma4-26B-A4B SWE-bench Verified 17.4 (competitor-reported).",
+   "llamacpp_ollama": "Ollama gemma4 updated 2026-10-12, 29.2M pulls, tags vision/tools/thinking/audio",
+   "notes": "5.14M HF downloads. Thinking is set via enable_thinking=True in the chat template.",
+   "confidence": "medium",
+   "sources": [
+    "https://huggingface.co/google/gemma-4-26B-A4B-it",
+    "https://huggingface.co/api/models/google/gemma-4-26B-A4B-it-qat-q4_0-gguf?blobs=true",
+    "https://ollama.com/library/gemma4/tags"
+   ]
+  },
+  {
+   "name": "Gemma 4 12B IT",
+   "vendor": "Google",
+   "family": "Gemma",
+   "hf_repo": "google/gemma-4-12B-it",
+   "release_date": "2026-05-23",
+   "total_params_b": 12,
+   "active_params_b": 12,
+   "architecture": "dense, multimodal",
+   "context_length": "256K",
+   "license": "apache-2.0",
+   "modalities": "text, image, audio",
+   "thinking": "toggle",
+   "tool_calling": "unknown",
+   "official_quantized": [
+    "google/gemma-4-12B-it-qat-w4a16-ct 10.26 GB (compressed-tensors, vLLM-style)",
+    "google/gemma-4-12B-it-qat-q4_0-gguf",
+    "Ollama gemma4:12b-it-qat 7.2 GB, q4_K_M 8.0 GB, q8_0 13 GB, nvfp4 7.7 GB"
+   ],
+   "vllm": "not checked; the w4a16-ct checkpoint format targets vLLM (inferred)",
+   "fit_16gb": "vLLM fits: w4a16 ~10.3 GB weights, leaving ~4 GB for KV at 0.90 utilisation (inferred)",
+   "coding_agent_evidence": "not checked",
+   "llamacpp_ollama": "Ollama gemma4:12b",
+   "notes": "1.65M HF downloads. This is the cleanest fully-in-VRAM vLLM option among the major vendors.",
+   "confidence": "medium",
+   "sources": [
+    "https://huggingface.co/google/gemma-4-12B-it",
+    "https://huggingface.co/api/models/google/gemma-4-12B-it-qat-w4a16-ct?blobs=true",
+    "https://ollama.com/library/gemma4/tags"
+   ]
+  },
+  {
+   "name": "Gemma 4 31B IT",
+   "vendor": "Google",
+   "family": "Gemma",
+   "hf_repo": "google/gemma-4-31B-it",
+   "release_date": "2026-03-11",
+   "total_params_b": 31.3,
+   "active_params_b": 31.3,
+   "architecture": "dense, multimodal",
+   "context_length": "256K",
+   "license": "apache-2.0",
+   "modalities": "text, image",
+   "thinking": "toggle",
+   "tool_calling": "unknown",
+   "official_quantized": [
+    "google/gemma-4-31B-it-qat-w4a16-ct 23.27 GB",
+    "google/gemma-4-31B-it-qat-q4_0-gguf",
+    "Ollama gemma4:31b-it-qat 19 GB, q4_K_M 20 GB"
+   ],
+   "vllm": "not checked",
+   "fit_16gb": "Does not fit in VRAM. Dense with offload would be slow (inferred).",
+   "coding_agent_evidence": "Competitor-reported: SWE-bench Verified 52.0 (Qwen3.6-35B card), 66.6 (Muse-Glimmer card)",
+   "llamacpp_ollama": "Ollama gemma4:31b",
+   "notes": "6.44M downloads, #23 trending image-text-to-text",
+   "confidence": "medium",
+   "sources": [
+    "https://huggingface.co/google/gemma-4-31B-it",
+    "https://ollama.com/library/gemma4/tags"
+   ]
+  },
+  {
+   "name": "NVIDIA Nemotron 3.5 Lightning 30B-A3B",
+   "vendor": "NVIDIA",
+   "family": "Nemotron",
+   "hf_repo": "nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16",
+   "release_date": "2026-08-01",
+   "total_params_b": 31.6,
+   "active_params_b": 3,
+   "architecture": "MoE with MTP layers (hybrid, per Nemotron 3 line)",
+   "context_length": "up to 1M",
+   "license": "other (NVIDIA)",
+   "modalities": "text",
+   "thinking": "unknown",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "nvidia/...-NVFP4 21.56 GB",
+    "Ollama nemotron-3.5-lightning:30b-a3b-nvfp4 19 GB, q4_K_M 25 GB, q8_0 35 GB"
+   ],
+   "vllm": "vllm serve --reasoning-parser nemotron_v3 --tool-call-parser qwen3_coder (NVFP4 card)",
+   "fit_16gb": "Needs llama.cpp/Ollama with experts in RAM: ~19-25 GB total (inferred)",
+   "coding_agent_evidence": "Self-reported harness SWE-bench Verified 51.56/52.80, Terminal-Bench 2.1 24.58/23.46 (https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4)",
+   "llamacpp_ollama": "Ollama nemotron-3.5-lightning updated 2026-10-16, 898K pulls, tools/thinking",
+   "notes": "963K BF16 downloads plus 912K NVFP4 downloads",
+   "confidence": "high",
+   "sources": [
+    "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4",
+    "https://ollama.com/library/nemotron-3.5-lightning/tags"
+   ]
+  },
+  {
+   "name": "NVIDIA Nemotron 3.5 Bolt E4B",
+   "vendor": "NVIDIA",
+   "family": "Nemotron",
+   "hf_repo": "nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-BF16",
+   "release_date": "2026-10-05",
+   "total_params_b": 8,
+   "architecture": "compact VLM (uses gemma4 parsers in vLLM)",
+   "context_length": "input up to 64K, output up to 64K (BF16 card); Ollama q4/q8 tags show 128K",
+   "license": "other (NVIDIA)",
+   "modalities": "text, image, audio (Ollama tags)",
+   "thinking": "toggle",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-4GB GGUF Q4_K_M 6.18 GB",
+    "Ollama nemotron-3.5-bolt:e4b 7.2-7.9 GB"
+   ],
+   "vllm": "vllm/vllm-openai:v0.31.0; --tool-call-parser gemma4 --reasoning-parser gemma4; enable_thinking true/false",
+   "fit_16gb": "Fits easily in vLLM or Ollama (inferred)",
+   "coding_agent_evidence": "not checked",
+   "llamacpp_ollama": "Ollama nemotron-3.5-bolt updated 2026-10-23",
+   "notes": "The BF16 card says it is meant for customization and post-training; the 4GB variant is for deployment. 148K downloads on the 4GB repo.",
+   "confidence": "medium",
+   "sources": [
+    "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-BF16",
+    "https://huggingface.co/api/models/nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-4GB?blobs=true",
+    "https://ollama.com/library/nemotron-3.5-bolt/tags"
+   ]
+  },
+  {
+   "name": "NVIDIA Nemotron 3.5 Bolt 74B-A9B 24GB",
+   "vendor": "NVIDIA",
+   "family": "Nemotron",
+   "hf_repo": "nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB",
+   "release_date": "2026-10-07",
+   "total_params_b": 74.9,
+   "active_params_b": 9,
+   "architecture": "pruned MoE (expert top-K 9) targeting under 24 GB footprint",
+   "context_length": "256K",
+   "license": "other (NVIDIA)",
+   "modalities": "text, image",
+   "thinking": "unknown",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "24GB checkpoint 24.08 GB",
+    "nvidia/...-24GB-GGUF (sizes not checked)",
+    "Ollama nemotron-3.5-bolt:74b-a9b 25 GB"
+   ],
+   "vllm": "vllm serve ... --max-model-len 262144 --tool-call-parser qwen3_coder --reasoning-parser-plugin ultra_v3_reasoning_parser.py --reasoning-parser ultra_v3",
+   "fit_16gb": "Needs llama.cpp/Ollama with experts in RAM: ~25 GB (inferred)",
+   "coding_agent_evidence": "Card Terminal-Bench 2.1 table values 44.38/37.22/23.46/50.98 (column mapping not verified)",
+   "llamacpp_ollama": "Ollama nemotron-3.5-bolt:74b-a9b",
+   "notes": "Its GGUF repo has 237K downloads",
+   "confidence": "medium",
+   "sources": [
+    "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB",
+    "https://ollama.com/library/nemotron-3.5-bolt/tags"
+   ]
+  },
+  {
+   "name": "Nemotron-Cascade-2-30B-A3B",
+   "vendor": "NVIDIA",
+   "family": "Nemotron",
+   "hf_repo": "nvidia/Nemotron-Cascade-2-30B-A3B",
+   "release_date": "2026-03-18",
+   "total_params_b": 31.6,
+   "active_params_b": 3,
+   "architecture": "MoE",
+   "context_length": "up to 1M",
+   "license": "other (NVIDIA)",
+   "modalities": "text",
+   "thinking": "toggle",
+   "tool_calling": "unknown",
+   "official_quantized": [
+    "Ollama nemotron-cascade-2:30b-a3b nvfp4 18 GB, q4_K_M 24 GB"
+   ],
+   "vllm": "vLLM >= 0.17.1 required (card)",
+   "fit_16gb": "Needs expert offload, ~18-24 GB (inferred)",
+   "coding_agent_evidence": "Card lists LiveCodeBench v6 and Terminal Bench 2.0 (values not extracted)",
+   "llamacpp_ollama": "Ollama nemotron-cascade-2 updated 2026-10-19",
+   "notes": "ChatML template with think/instruct modes",
+   "confidence": "low",
+   "sources": [
+    "https://huggingface.co/nvidia/Nemotron-Cascade-2-30B-A3B",
+    "https://ollama.com/library/nemotron-cascade-2/tags"
+   ]
+  },
+  {
+   "name": "gpt-oss-20b",
+   "vendor": "OpenAI",
+   "family": "gpt-oss",
+   "hf_repo": "openai/gpt-oss-20b",
+   "release_date": "2025-08-04 (older than window)",
+   "total_params_b": 20.9,
+   "architecture": "MoE, MXFP4",
+   "context_length": "128K (Ollama)",
+   "license": "apache-2.0",
+   "modalities": "text",
+   "thinking": "always",
+   "tool_calling": "unknown",
+   "official_quantized": [
+    "native MXFP4: original/model.safetensors 13.76 GB",
+    "Ollama gpt-oss:20b 14 GB"
+   ],
+   "vllm": "Card: vllm==0.10.1+gptoss then vllm serve openai/gpt-oss-20b (old instructions)",
+   "fit_16gb": "vLLM fits tightly: ~13.8 GB weights leaves little KV room (inferred)",
+   "coding_agent_evidence": "Competitor-reported SWE-bench Verified 34.0 (GLM-4.7-Flash card)",
+   "llamacpp_ollama": "Ollama gpt-oss updated 2026-10-09, 15.5M pulls, tools/thinking",
+   "notes": "No newer gpt-oss weights on HF besides gpt-oss-safeguard (2025-09-18). Reasoning effort is low/medium/high.",
+   "confidence": "high",
+   "sources": [
+    "https://huggingface.co/openai/gpt-oss-20b",
+    "https://huggingface.co/api/models/openai/gpt-oss-20b?blobs=true",
+    "https://ollama.com/library/gpt-oss/tags"
+   ]
+  },
+  {
+   "name": "gpt-oss-120b",
+   "vendor": "OpenAI",
+   "family": "gpt-oss",
+   "hf_repo": "openai/gpt-oss-120b",
+   "release_date": "2025-08-04 (older)",
+   "total_params_b": 116.8,
+   "active_params_b": 5.1,
+   "architecture": "MoE MXFP4",
+   "context_length": "128K",
+   "license": "apache-2.0",
+   "thinking": "always",
+   "tool_calling": "unknown",
+   "official_quantized": [
+    "Ollama gpt-oss:120b 65 GB"
+   ],
+   "fit_16gb": "Needs Ollama/llama.cpp with experts in RAM, ~65 GB total. That exceeds the ~40 GB of free RAM, so impractical (inferred).",
+   "llamacpp_ollama": "Ollama gpt-oss:120b",
+   "notes": "#47 trending text-generation",
+   "confidence": "medium",
+   "sources": [
+    "https://huggingface.co/openai/gpt-oss-120b",
+    "https://ollama.com/library/gpt-oss/tags"
+   ]
+  },
+  {
+   "name": "GLM-4.7-Flash",
+   "vendor": "Z.ai",
+   "family": "GLM",
+   "hf_repo": "zai-org/GLM-4.7-Flash",
+   "release_date": "2026-01-19",
+   "total_params_b": 31.2,
+   "architecture": "MoE",
+   "context_length": "198K (Ollama)",
+   "license": "mit",
+   "modalities": "text",
+   "thinking": "unknown",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "Ollama glm-4.7-flash q4_K_M 19 GB, q8_0 32 GB"
+   ],
+   "vllm": "vllm serve zai-org/GLM-4.7-Flash --tool-call-parser glm47 --reasoning-parser glm45. At release the card required a vLLM nightly.",
+   "fit_16gb": "Needs expert offload, ~19 GB (inferred)",
+   "coding_agent_evidence": "Self-reported SWE-bench Verified 59.2 (https://huggingface.co/zai-org/GLM-4.7-Flash)",
+   "llamacpp_ollama": "Ollama glm-4.7-flash 2.18M pulls",
+   "notes": "On the user's vLLM listing; 1.11M downloads",
+   "confidence": "high",
+   "sources": [
+    "https://huggingface.co/zai-org/GLM-4.7-Flash",
+    "https://ollama.com/library/glm-4.7-flash/tags"
+   ]
+  },
+  {
+   "name": "Devstral Small 2 24B Instruct 2512",
+   "vendor": "Mistral AI",
+   "family": "Devstral",
+   "hf_repo": "mistralai/Devstral-Small-2-24B-Instruct-2512",
+   "release_date": "2025-11-28",
+   "total_params_b": 24,
+   "architecture": "dense",
+   "context_length": "256K (card), 384K (Ollama tag)",
+   "license": "apache-2.0",
+   "modalities": "text, image",
+   "thinking": "no",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "Ollama devstral-small-2:24b q4_K_M 15 GB, q8_0 26 GB"
+   ],
+   "vllm": "Card recommends vLLM / vllm/vllm-openai:latest (parser not extracted)",
+   "fit_16gb": "Ollama q4_K_M 15 GB is borderline with little KV room (inferred)",
+   "coding_agent_evidence": "Card has a SWE-bench Verified/Terminal Bench 2 table (own row not extracted)",
+   "llamacpp_ollama": "Ollama devstral-small-2 2.81M pulls, vision/tools (no thinking tag)",
+   "notes": "A non-thinking coding agent model",
+   "confidence": "medium",
+   "sources": [
+    "https://huggingface.co/mistralai/Devstral-Small-2-24B-Instruct-2512",
+    "https://ollama.com/library/devstral-small-2/tags"
+   ]
+  },
+  {
+   "name": "Muse Glimmer 30B",
+   "vendor": "Meta (meta-models org)",
+   "family": "Muse",
+   "hf_repo": "meta-models/Muse-Glimmer-30B",
+   "release_date": "2026-08-09",
+   "total_params_b": 29.8,
+   "architecture": "dense (no expert fields in config.json), multimodal",
+   "context_length": "131,072+",
+   "license": "apache-2.0",
+   "modalities": "text, image",
+   "thinking": "unknown",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "meta-models/Muse-Glimmer-30B-GGUF",
+    "Ollama muse-glimmer:30b q4_K_M 18 GB, nvfp4 17 GB"
+   ],
+   "fit_16gb": "Does not fit in VRAM; dense with offload (inferred)",
+   "coding_agent_evidence": "Self-reported SWE-bench Verified 76.0, SWE-bench Pro 51.2, TerminalBench 2.1 51.7 (https://huggingface.co/meta-models/Muse-Glimmer-30B)",
+   "llamacpp_ollama": "Ollama muse-glimmer 393K pulls",
+   "notes": "I did not verify that meta-models is Meta's official org",
+   "confidence": "low",
+   "sources": [
+    "https://huggingface.co/meta-models/Muse-Glimmer-30B",
+    "https://ollama.com/library/muse-glimmer/tags"
+   ]
+  },
+  {
+   "name": "Flint",
+   "vendor": "Recursive (RecursiveSI)",
+   "family": "Flint",
+   "hf_repo": "RecursiveSI/flint",
+   "release_date": "2026-10-21",
+   "total_params_b": 39.8,
+   "active_params_b": 2,
+   "architecture": "MoE (Ollama tag 40b-a2b)",
+   "context_length": "262,144",
+   "license": "apache-2.0",
+   "modalities": "text",
+   "thinking": "always",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "Ollama flint:40b-a2b nvfp4/qat-int4 23 GB, q4_1 26 GB"
+   ],
+   "fit_16gb": "Needs expert offload, ~23 GB (inferred)",
+   "coding_agent_evidence": "Self-reported Terminal-Bench 2.1 54.9, SWE-bench Verified 74.2 (https://huggingface.co/RecursiveSI/flint)",
+   "llamacpp_ollama": "Ollama flint updated 2026-10-22",
+   "notes": "1,404 likes. Thinking is classed 'always' only because the card says to preserve reasoning_content; the toggle was not verified.",
+   "confidence": "low",
+   "sources": [
+    "https://huggingface.co/RecursiveSI/flint",
+    "https://ollama.com/library/flint/tags"
+   ]
+  },
+  {
+   "name": "Laguna XS 2.1",
+   "vendor": "poolside",
+   "family": "Laguna",
+   "hf_repo": "poolside/Laguna-XS-2.1",
+   "release_date": "2026-06-20",
+   "total_params_b": 33.4,
+   "active_params_b": 3,
+   "architecture": "MoE",
+   "context_length": "256K (Ollama)",
+   "license": "openmdw-1.1",
+   "thinking": "unknown",
+   "tool_calling": "unknown",
+   "official_quantized": [
+    "Ollama laguna-xs-2.1 q4_K_M/nvfp4 20 GB"
+   ],
+   "fit_16gb": "Needs expert offload, ~20 GB (inferred)",
+   "llamacpp_ollama": "Ollama tags tools/thinking, 156K pulls",
+   "notes": "Card not read",
+   "confidence": "low",
+   "sources": [
+    "https://huggingface.co/api/models?search=laguna",
+    "https://ollama.com/library/laguna-xs-2.1/tags"
+   ]
+  },
+  {
+   "name": "North Mini Code 1.0",
+   "vendor": "Cohere",
+   "family": "North",
+   "hf_repo": "CohereLabs/North-Mini-Code-1.0",
+   "release_date": "2026-06-05",
+   "total_params_b": 30.5,
+   "architecture": "MoE (per Ollama description)",
+   "context_length": "488K (Ollama)",
+   "license": "apache-2.0",
+   "thinking": "unknown",
+   "tool_calling": "unknown",
+   "official_quantized": [
+    "Ollama north-mini-code-1.0 q4_K_M 19 GB"
+   ],
+   "fit_16gb": "Needs expert offload, ~19 GB (inferred)",
+   "llamacpp_ollama": "Ollama tools/thinking tags, 91K pulls",
+   "notes": "Card not read",
+   "confidence": "low",
+   "sources": [
+    "https://ollama.com/library/north-mini-code-1.0/tags"
+   ]
+  },
+  {
+   "name": "MiMo-V2.6-Distill-Qwen-9B",
+   "vendor": "Xiaomi",
+   "family": "MiMo",
+   "hf_repo": "XiaomiMiMo/MiMo-V2.6-Distill-Qwen-9B",
+   "release_date": "2026-09-21",
+   "total_params_b": 9.4,
+   "architecture": "dense (Qwen-based distill)",
+   "context_length": "256K (Ollama)",
+   "license": "mit",
+   "modalities": "text, image",
+   "thinking": "unknown",
+   "tool_calling": "unknown",
+   "official_quantized": [
+    "ggml-org/MiMo-V2.6-Distill-Qwen-9B-GGUF",
+    "Ollama mimo-v2.6:9b q4_K_M 6.6 GB, nvfp4 8.7 GB, q8_0 10 GB"
+   ],
+   "fit_16gb": "Fits fully with Ollama; vLLM BF16 18.8 GB does not fit without quant (inferred)",
+   "llamacpp_ollama": "Ollama mimo-v2.6 updated 2026-11-03, tags vision/tools/thinking",
+   "notes": "#2 on Ollama c=local",
+   "confidence": "low",
+   "sources": [
+    "https://ollama.com/library/mimo-v2.6/tags",
+    "https://huggingface.co/api/models/XiaomiMiMo/MiMo-V2.6-Distill-Qwen-9B?blobs=true"
+   ]
+  },
+  {
+   "name": "LFM2.5-24B-A2B",
+   "vendor": "Liquid AI",
+   "family": "LFM",
+   "hf_repo": "LiquidAI/LFM2.5-24B-A2B",
+   "release_date": "2026-10-12",
+   "total_params_b": 24,
+   "active_params_b": 2,
+   "architecture": "hybrid MoE",
+   "context_length": "131,072",
+   "license": "other (LFM license)",
+   "modalities": "text",
+   "thinking": "always",
+   "tool_calling": "unknown",
+   "official_quantized": [
+    "LiquidAI/LFM2.5-24B-A2B-FP8",
+    "Ollama lfm2.5:24b-a2b q4_0 14 GB, q4_K_M 15 GB"
+   ],
+   "vllm": "Supported per card; see https://docs.liquid.ai/lfm/inference/vllm",
+   "fit_16gb": "Ollama q4_0 14 GB is borderline in VRAM (inferred)",
+   "coding_agent_evidence": "Card has a 'SWE-Bench Verified (OpenCode)' row (value not extracted)",
+   "llamacpp_ollama": "Ollama lfm2.5 345K pulls",
+   "notes": "The card says it 'always thinks before it answers'",
+   "confidence": "medium",
+   "sources": [
+    "https://huggingface.co/LiquidAI/LFM2.5-24B-A2B",
+    "https://ollama.com/library/lfm2.5/tags"
+   ]
+  },
+  {
+   "name": "Qwen3-Coder-30B-A3B-Instruct",
+   "vendor": "Qwen (Alibaba)",
+   "family": "Qwen",
+   "hf_repo": "Qwen/Qwen3-Coder-30B-A3B-Instruct",
+   "release_date": "2025-07-31 (older)",
+   "total_params_b": 30.5,
+   "active_params_b": 3,
+   "architecture": "MoE",
+   "context_length": "256K (Ollama)",
+   "license": "apache-2.0",
+   "modalities": "text",
+   "thinking": "no",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "Qwen/Qwen3-Coder-30B-A3B-Instruct-FP8",
+    "Ollama qwen3-coder:30b q4_K_M 19 GB"
+   ],
+   "fit_16gb": "Needs expert offload, ~19 GB (inferred)",
+   "llamacpp_ollama": "Ollama qwen3-coder 11.0M pulls, tools only",
+   "notes": "Older non-thinking coder, still on the user's listing (1.83M downloads)",
+   "confidence": "medium",
+   "sources": [
+    "https://huggingface.co/api/models/Qwen/Qwen3-Coder-30B-A3B-Instruct",
+    "https://ollama.com/library/qwen3-coder/tags"
+   ]
+  },
+  {
+   "name": "Ornith 1.5 (9B / 35B-A3B)",
+   "vendor": "ornith-ai",
+   "family": "Ornith",
+   "hf_repo": "ornith-ai/Ornith-1.5-35B-A3B-NVFP4",
+   "release_date": "2026-08-18",
+   "total_params_b": 35,
+   "active_params_b": 3,
+   "architecture": "MoE (35B-A3B), dense 9B",
+   "context_length": "256K (Ollama)",
+   "license": "mit",
+   "thinking": "unknown",
+   "tool_calling": "unknown",
+   "official_quantized": [
+    "ornith-ai/Ornith-1.5-9B-GGUF",
+    "ornith-ai/Ornith-1.5-35B-A3B-GGUF",
+    "ornith-ai NVFP4 9B 6.7 GB, 35B-A3B 19.5 GB",
+    "Ollama ornith-1.5:9b 6.6 GB, 35b 23 GB"
+   ],
+   "fit_16gb": "9B fits; 35B-A3B needs offload (inferred)",
+   "llamacpp_ollama": "Ollama ornith-1.5 478K pulls, vision/tools/thinking",
+   "notes": "Very high GGUF downloads (5.84M for 9B). The vendor's provenance and base model were not verified.",
+   "confidence": "low",
+   "sources": [
+    "https://huggingface.co/api/models?search=Ornith-1.5",
+    "https://ollama.com/library/ornith-1.5/tags"
+   ]
+  }
+ ],
+ "facts": [
+  {
+   "topic": "HF user listing",
+   "claim": "Top of the user's filtered listing (3B-32B, apps=vllm, base_model_relation=base, trending) is Qwen/Qwen3.8-27B with 6,547,772 downloads and 20,076 likes. Page 1 also includes openai/gpt-oss-20b, Qwen3-Coder-30B-A3B-Instruct and google/gemma-4-31B. Pages p=1/p=2 add GLM-4.7-Flash, Nemotron-3.5-Lightning-30B-A3B, gemma-4-26B-A4B and Qwen3.6-27B.",
+   "source_url": "https://huggingface.co/models-json?num_parameters=min:3B,max:32B&apps=vllm&base_model_relation=base&sort=trending",
+   "source_date": "2026-11-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "HF downloads sort",
+   "claim": "By downloads on the same filter: Qwen3-VL-8B-Instruct 6.94M, Qwen3.8-27B 6.55M, gpt-oss-20b 5.59M, Qwen3.6-27B 2.42M, Qwen3-Coder-30B-A3B 1.83M, Qwen3.5-27B 1.67M, Nemotron-3-Nano-30B-A3B 1.37M, GLM-4.7-Flash 1.11M, Nemotron-3.5-Lightning-30B-A3B 963K",
+   "source_url": "https://huggingface.co/models-json?num_parameters=min:3B,max:32B&apps=vllm&base_model_relation=base&sort=downloads",
+   "source_date": "2026-11-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "HF trending noise",
+   "claim": "The trending text-generation and image-text-to-text API lists are dominated by uncensored, abliterated and merge derivatives (heretic, abliterated, GSQ-RCO GGUFs). Vendor models in the top 100 multimodal list: Qwen3.8-27B #1, gemma-4-31B-it #23, Nemotron-3.5-Bolt-74B-A9B-24GB #40, Qwen3.5-9B #41, Qwen3.6-35B-A3B #46, gemma-4-26B-A4B-it #56",
+   "source_url": "https://huggingface.co/api/models?sort=trendingScore&direction=-1&limit=100&pipeline_tag=image-text-to-text",
+   "source_date": "2026-11-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "Qwen3.8-27B",
+   "claim": "Thinking is on by default and can be disabled per request with chat_template_kwargs enable_thinking=false. preserve_thinking is on by default. Native context is 262,144, extensible to ~1M with YaRN.",
+   "source_url": "https://huggingface.co/Qwen/Qwen3.8-27B",
+   "source_date": "lastModified 2026-11-07",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "Qwen3.8-27B",
+   "claim": "Self-reported Terminal Bench 2.1 73.0, SWE-bench Pro 61.7, DeepSWE 1.1 42.2 (Claude Code harness, 256K ctx)",
+   "source_url": "https://huggingface.co/Qwen/Qwen3.8-27B",
+   "source_date": "2026-11-07",
+   "support": "direct-statement",
+   "notes": "Values from raw README table, first column = Qwen3.8-27B per header"
+  },
+  {
+   "topic": "Qwen3.8-27B quants",
+   "claim": "Official quants: Qwen/Qwen3.8-27B-FP8 30.87 GB; nvidia/Qwen3.8-27B-NVFP4 21.92 GB. Neither fits 16 GB VRAM.",
+   "source_url": "https://huggingface.co/api/models/nvidia/Qwen3.8-27B-NVFP4?blobs=true",
+   "source_date": "2026-09-04",
+   "support": "source-backed"
+  },
+  {
+   "topic": "Qwen3.6 vLLM",
+   "claim": "vllm>=0.19.0 recommended; tool calling via --enable-auto-tool-choice --tool-call-parser qwen3_coder with --reasoning-parser qwen3",
+   "source_url": "https://huggingface.co/Qwen/Qwen3.6-35B-A3B",
+   "source_date": "2026-11-07",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "Qwen3.6-35B-A3B",
+   "claim": "Self-reported SWE-bench Verified 73.4 and Terminal-Bench 2.0 51.5; Qwen3.6-27B card reports SWE-bench Verified 77.2 and Terminal-Bench 2.0 59.3",
+   "source_url": "https://huggingface.co/Qwen/Qwen3.6-27B",
+   "source_date": "2026-11-07",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "Nemotron 3.5 Lightning",
+   "claim": "vLLM serve uses --reasoning-parser nemotron_v3 --tool-call-parser qwen3_coder. Context up to 1M. Self-reported SWE-bench Verified 51.56/52.80, Terminal-Bench 2.1 24.58/23.46",
+   "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4",
+   "source_date": "2026-09-10",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "Nemotron 3.5 Bolt E4B",
+   "claim": "Card pins vllm/vllm-openai:v0.31.0 with --tool-call-parser gemma4 --reasoning-parser gemma4. Context: input up to 64K, output up to 64K. enable_thinking toggle.",
+   "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-BF16",
+   "source_date": "2026-10-23",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "Nemotron 3.5 Bolt 74B",
+   "claim": "74B-A9B-24GB checkpoint is 24.08 GB, 256K context, vLLM uses --tool-call-parser qwen3_coder and a plugin reasoning parser ultra_v3",
+   "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB",
+   "source_date": "2026-11-07",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "Gemma 4",
+   "claim": "Gemma 4 sizes E2B, E4B, 12B, 26B A4B, 31B; 128K context on small models and 256K on 12B/26B/31B; configurable thinking via enable_thinking",
+   "source_url": "https://huggingface.co/google/gemma-4-12B-it",
+   "source_date": "2026-10-30",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "Gemma 4 quants",
+   "claim": "google/gemma-4-12B-it-qat-w4a16-ct is 10.26 GB; gemma-4-26B-A4B-it-qat-q4_0-gguf is 14.44 GB plus 1.19 GB mmproj; gemma-4-31B-it-qat-w4a16-ct is 23.27 GB",
+   "source_url": "https://huggingface.co/api/models/google/gemma-4-26B-A4B-it-qat-q4_0-gguf?blobs=true",
+   "source_date": "2026-05-01 to 2026-06-05",
+   "support": "source-backed"
+  },
+  {
+   "topic": "gpt-oss",
+   "claim": "No new gpt-oss weights after 2025-08-04 except gpt-oss-safeguard-20b/120b (2025-09-18). The gpt-oss-20b MXFP4 original weights are 13.76 GB. Ollama gpt-oss:20b is 14 GB with 128K context.",
+   "source_url": "https://huggingface.co/api/models?search=gpt-oss&author=openai",
+   "source_date": "2026-11-15",
+   "support": "source-backed"
+  },
+  {
+   "topic": "DeepSeek",
+   "claim": "deepseek-ai has published no full LLM in the 3B-120B range since 2025-11-15. Its only new repos are eagle3/dflash/dspark speculative draft heads (2026-06-28). DeepSeek-V4-Flash is 290.9B and V4.1-Flash is 763.2B.",
+   "source_url": "https://huggingface.co/api/models?author=deepseek-ai&sort=createdAt&direction=-1&limit=100",
+   "source_date": "2026-11-15",
+   "support": "source-backed"
+  },
+  {
+   "topic": "DeepSeek on Ollama",
+   "claim": "Ollama deepseek-r1 (1.5b-671b distills, tools/thinking) was last updated July 2, 2025, so it is older than the window",
+   "source_url": "https://ollama.com/search?c=tools&page=4",
+   "source_date": "2025-07-02",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "GLM-4.7-Flash",
+   "claim": "vllm serve zai-org/GLM-4.7-Flash --tool-call-parser glm47 --reasoning-parser glm45; self-reported SWE-bench Verified 59.2 (vs GPT-OSS-20B 34.0 in same table)",
+   "source_url": "https://huggingface.co/zai-org/GLM-4.7-Flash",
+   "source_date": "2026-01-29",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "Ollama c=local",
+   "claim": "Ollama c=local first page (2026-11-15) lists ripple-preview 65b, mimo-v2.6 9b, lfm3 1.7b, flint 40b, qwen3.8 27b (6.61M pulls), nemotron-3.5-lightning 30b (898K), bonsai-2, ornith-1.5, ornith, muse-glimmer 30b, among others",
+   "source_url": "https://ollama.com/search?c=local",
+   "source_date": "2026-11-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "Ollama popularity",
+   "claim": "Pull counts: gemma4 29.2M, qwen3.5 26.1M, gpt-oss 15.5M, qwen3-coder 11.0M, qwen3.6 7.67M, qwen3.8 6.61M, nemotron-3-super 3.07M, devstral-small-2 2.81M, glm-4.7-flash 2.18M, nemotron-3-nano 1.01M",
+   "source_url": "https://ollama.com/search?c=tools&page=3",
+   "source_date": "2026-11-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "Ollama sizes",
+   "claim": "q4_K_M tag sizes: qwen3.8:27b 18 GB, qwen3.6:35b-a3b 24 GB, qwen3.6:27b 17 GB, gemma4:26b-a4b-it-qat 16 GB, gemma4:12b-it-qat 7.2 GB, nemotron-3.5-lightning q4_K_M 25 GB / nvfp4 19 GB, glm-4.7-flash 19 GB, devstral-small-2 15 GB, lfm2.5:24b 15 GB, qwen3-coder:30b 19 GB",
+   "source_url": "https://ollama.com/library/qwen3.6/tags",
+   "source_date": "2026-11-15",
+   "support": "direct-statement",
+   "notes": "Each model's own /tags page"
+  },
+  {
+   "topic": "Ollama context",
+   "claim": "Ollama tag context windows: qwen3.8/qwen3.6/qwen3.5 256K, gemma4 12b+ 256K, nemotron-3.5-lightning GGUF tags 1M, gpt-oss 128K, glm-4.7-flash 198K, devstral-small-2 384K, north-mini-code-1.0 488K",
+   "source_url": "https://ollama.com/library/nemotron-3.5-lightning/tags",
+   "source_date": "2026-11-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "vLLM image",
+   "claim": "The latest vllm/vllm-openai Docker Hub tags updated 2026-11-15 include nightly and cu135-nightly (commit 9bc16ae6)",
+   "source_url": "https://hub.docker.com/v2/repositories/vllm/vllm-openai/tags?page_size=8&ordering=last_updated",
+   "source_date": "2026-11-15",
+   "support": "direct-statement",
+   "notes": "Stable release tag not listed in the first 8; other lane should check releases"
+  },
+  {
+   "topic": "Flint",
+   "claim": "RecursiveSI/flint is a 39.8B MoE (Ollama 40b-a2b) with self-reported 54.9% Terminal-Bench 2.1 and 74.2% SWE-bench Verified, 262,144 context, OpenAI-compatible tool calls",
+   "source_url": "https://huggingface.co/RecursiveSI/flint",
+   "source_date": "2026-10-21",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "Muse Glimmer",
+   "claim": "meta-models/Muse-Glimmer-30B: 30B with perception encoder, 131,072+ context, self-reported SWE-Bench Verified 76.0, TerminalBench 2.1 51.7; same table gives Qwen3.6-27B 77.2/60.7 and Gemma4-31B 66.6/43.4",
+   "source_url": "https://huggingface.co/meta-models/Muse-Glimmer-30B",
+   "source_date": "2026-08-09",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "LFM2.5-24B-A2B",
+   "claim": "Always-thinking reasoning model, 24B total / 2B active, 131,072 context, FP8 checkpoint published",
+   "source_url": "https://huggingface.co/LiquidAI/LFM2.5-24B-A2B",
+   "source_date": "2026-11-03",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "Fit summary",
+   "claim": "Only these vendor checkpoints are at or under ~14 GB of weights and so can run fully in 16 GB VRAM under vLLM: gemma-4-12B-it QAT w4a16 (10.26 GB), gpt-oss-20b (13.76 GB), Nemotron-3.5-Bolt-E4B, and quantized 9B models. The top coding models (Qwen3.8-27B, Qwen3.6-35B-A3B, Nemotron-3.5-Lightning, GLM-4.7-Flash) are 18-25 GB at 4-bit.",
+   "source_url": "https://ollama.com/library/qwen3.8/tags",
+   "support": "inferred",
+   "notes": "Arithmetic on listed file sizes; KV-cache room not modelled"
+  }
+ ],
+ "gaps": [
+  "The Ollama search pagination needs the HX-Request header. o=popular redirects to /search, so a separate popularity-sorted listing was not available and the default ordering was used.",
+  "I did not open the vLLM recipes (recipes.vllm.ai) or docs.vllm.ai, so the parser names come from model cards only. Qwen3.8-27B's tool-call parser is not stated in its README.",
+  "I did not extract tool-calling and thinking details for Gemma 4 (vLLM parser names), Qwen3.5-9B, Laguna-XS-2.1, North-Mini-Code-1.0, Ornith-1.5 or MiMo-V2.6. Their Ollama tags show tools/thinking, but I did not confirm this on the cards.",
+  "I did not verify that meta-models (Muse Glimmer) and ornith-ai are official vendor orgs.",
+  "gpt-oss-20b on-disk size: the HF repo lists both the HF-format shards (~13.76 GB) and original/model.safetensors (13.76 GB); the actual download is one copy.",
+  "I did not compute KV-cache headroom from config.json, so every fit_16gb estimate is inferred from weight sizes only.",
+  "I found no stable vllm/vllm-openai release tag in the Docker Hub first page (nightlies only). The GitHub releases API was not queried.",
+  "Community GGUF quants (unsloth, bartowski, ISTA-DASLab) at IQ3 that might fit Qwen3.8-27B fully in 16 GB were seen but not evaluated."
+ ]
+}

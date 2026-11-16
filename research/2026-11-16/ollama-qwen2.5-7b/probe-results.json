@@ -1,0 +1,197 @@
+{
+ "label": "ollama-qwen2.5-7b",
+ "base": "http://127.0.0.1:11434/v1",
+ "model": "qwen2.5:7b",
+ "started": "2026-11-16T07:48:11+0300",
+ "models": [
+  "qwen2.5:7b",
+  "ministral-3:8b",
+  "ornith:9b",
+  "gemma4:12b",
+  "qwen3.5:9b"
+ ],
+ "ok_test": {
+  "content": "OK",
+  "reasoning_chars": 0,
+  "finish": "stop",
+  "usage": {
+   "prompt_tokens": 34,
+   "prompt_tokens_details": {
+    "cached_tokens": 18
+   },
+   "completion_tokens": 2,
+   "total_tokens": 36
+  },
+  "seconds": 0.02
+ },
+ "tool_test": {
+  "finish": "tool_calls",
+  "calls": [
+   {
+    "name": "get_weather",
+    "arguments": "{\"city\":\"Paris\"}"
+   }
+  ],
+  "content": "",
+  "seconds": 0.18
+ },
+ "decode_runs": [
+  {
+   "ttft_s": 0.024,
+   "total_s": 8.926,
+   "usage": {
+    "prompt_tokens": 57,
+    "prompt_tokens_details": {
+     "cached_tokens": 18
+    },
+    "completion_tokens": 1069,
+    "total_tokens": 1126
+   },
+   "stream_pieces": 1068,
+   "decode_tok_s": 120.1,
+   "server_timings": {
+    "prompt_n": 57,
+    "prompt_per_second": 3352.9411764705883,
+    "predicted_n": 1069,
+    "predicted_per_second": 120.08537407324197,
+    "cache_n": null
+   }
+  },
+  {
+   "ttft_s": 0.038,
+   "total_s": 8.21,
+   "usage": {
+    "prompt_tokens": 57,
+    "prompt_tokens_details": {
+     "cached_tokens": 26
+    },
+    "completion_tokens": 976,
+    "total_tokens": 1033
+   },
+   "stream_pieces": 975,
+   "decode_tok_s": 119.4,
+   "server_timings": {
+    "prompt_n": 57,
+    "prompt_per_second": 4071.4285714285716,
+    "predicted_n": 976,
+    "predicted_per_second": 119.43220753793442,
+    "cache_n": null
+   }
+  },
+  {
+   "ttft_s": 0.033,
+   "total_s": 7.766,
+   "usage": {
+    "prompt_tokens": 57,
+    "prompt_tokens_details": {
+     "cached_tokens": 26
+    },
+    "completion_tokens": 921,
+    "total_tokens": 978
+   },
+   "stream_pieces": 920,
+   "decode_tok_s": 119.1,
+   "server_timings": {
+    "prompt_n": 57,
+    "prompt_per_second": 4384.615384615385,
+    "predicted_n": 921,
+    "predicted_per_second": 119.11536471805483,
+    "cache_n": null
+   }
+  }
+ ],
+ "decode_tok_s_median": 119.4,
+ "long_prompt": [
+  {
+   "target_tokens": 8000,
+   "first": {
+    "ttft_s": 1.643,
+    "total_s": 6.341,
+    "usage": {
+     "prompt_tokens": 8104,
+     "prompt_tokens_details": {
+      "cached_tokens": 24
+     },
+     "completion_tokens": 39,
+     "total_tokens": 8143
+    },
+    "stream_pieces": 38,
+    "decode_tok_s": 8.1,
+    "server_timings": {
+     "prompt_n": 8104,
+     "prompt_per_second": 5058.676654182273,
+     "predicted_n": 39,
+     "predicted_per_second": 8.303172237598467,
+     "cache_n": null
+    }
+   },
+   "repeat_same_prompt": {
+    "ttft_s": 0.04,
+    "total_s": 0.444,
+    "usage": {
+     "prompt_tokens": 8104,
+     "prompt_tokens_details": {
+      "cached_tokens": 8103
+     },
+     "completion_tokens": 48,
+     "total_tokens": 8152
+    },
+    "stream_pieces": 47,
+    "decode_tok_s": 119.1,
+    "server_timings": {
+     "prompt_n": 8104,
+     "prompt_per_second": 736727.2727272727,
+     "predicted_n": 48,
+     "predicted_per_second": 119.10669975186104,
+     "cache_n": null
+    }
+   }
+  },
+  {
+   "target_tokens": 24000,
+   "first": {
+    "ttft_s": 4.537,
+    "total_s": 4.925,
+    "usage": {
+     "prompt_tokens": 24232,
+     "prompt_tokens_details": {
+      "cached_tokens": 8087
+     },
+     "completion_tokens": 38,
+     "total_tokens": 24270
+    },
+    "stream_pieces": 37,
+    "decode_tok_s": 98.5,
+    "server_timings": {
+     "prompt_n": 24232,
+     "prompt_per_second": 5425.884460367219,
+     "predicted_n": 38,
+     "predicted_per_second": 98.44559585492227,
+     "cache_n": null
+    }
+   },
+   "repeat_same_prompt": {
+    "ttft_s": 0.074,
+    "total_s": 0.71,
+    "usage": {
+     "prompt_tokens": 24232,
+     "prompt_tokens_details": {
+      "cached_tokens": 24231
+     },
+     "completion_tokens": 64,
+     "total_tokens": 24296
+    },
+    "stream_pieces": 64,
+    "decode_tok_s": 99.3,
+    "server_timings": {
+     "prompt_n": 24232,
+     "prompt_per_second": 2692444.4444444445,
+     "predicted_n": 64,
+     "predicted_per_second": 100.94637223974763,
+     "cache_n": null
+    }
+   }
+  }
+ ],
+ "finished": "2026-11-16T07:48:48+0300"
+}

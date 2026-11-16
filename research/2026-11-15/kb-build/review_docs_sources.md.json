@@ -1,0 +1,66 @@
+{
+ "file": "$HOME/projects/llm/docs/sources.md",
+ "checked_claims": 24,
+ "fixes": [
+  {
+   "what": "Line 37: the vLLM v0.33.0 release link now points to releases/tag/v0.33.0rc3, and the text says the release named v0.33.0 was published 2026-11-02 on tag v0.33.0rc3, while the v0.33.0 tag points to the same commit 4ba787e with a tagger date of 2026-11-01. The Sources section link was changed the same way.",
+   "why": "Live check: `gh api repos/vllm-project/vllm/releases/tags/v0.33.0` returns 404, and the releases list shows tag_name v0.33.0rc3, name v0.33.0, published 2026-11-02T10:10:05Z. The annotated tag v0.33.0 has tagger date 2026-11-01T09:21:10Z and object 4ba787e, the same commit as v0.33.0rc3. This settles the date question the vllm-benchmarking check left open.",
+   "source": "GitHub API, live 2026-11-15"
+  },
+  {
+   "what": "Line 47: 'latest build b12418' now reads 'pinned build b12418, published 2026-11-15', notes that newer b builds appear several times a day, and links the llama.cpp v1.0.0 release published 2026-11-13.",
+   "why": "Live releases list: b12419, b12420 and b12421 were published after b12418 on 2026-11-15, so 'latest' was already stale. releases/latest returns v1.0.0 (2026-11-13), which none of the inputs mention.",
+   "source": "GitHub API, live 2026-11-15"
+  },
+  {
+   "what": "Line 51: the 204.9 tok/s figure from #15396 now carries a full label: measured on a desktop RTX 5080, llama.cpp build 6210, CUDA 12.8.",
+   "why": "Rule 7 asks for hardware, runtime and measured labels on third-party numbers.",
+   "source": "disc/models-deepseek-openai.json, ver/verify_gpt-oss-120b.json"
+  },
+  {
+   "what": "Line 95: 'Terminal-Bench lists' now reads 'the Terminal-Bench 4.1 board lists', and the internal attribution 'per the leaderboard sweep of this research run' was replaced with 'as checked on 2026-11-15'.",
+   "why": "The sweep record names the 4.1 board. An internal research lane is not a citable source, and each leaderboard is already linked inline.",
+   "source": "disc/sweep-leaderboards.json"
+  },
+  {
+   "what": "Line 136: the Gemma 4 SWE-bench Verified 17.4 figure now links the Qwen3.6-35B-A3B model card, and both vendor figures are labeled vendor-reported.",
+   "why": "The number came from the Qwen card, not from a leaderboard sweep, and it had no link of its own.",
+   "source": "ver/facts_Gemma_4_26B-A4B_IT.json (confirmed: Qwen card 17.4, NVIDIA 57.40)"
+  },
+  {
+   "what": "Line 143: the 404 claim is now limited to Ornith-1.5-9B and links its Artificial Analysis URL. Laguna XS 2.1 and KAT-Coder-V2.5-Dev are now described as having no page according to the review, not independently re-checked.",
+   "why": "The Artificial Analysis check says 'Laguna and KAT-Coder were not re-checked'. I re-ran curl on the Ornith URL and got 404. I did not know the AA slugs for the other two models, so a 404 on a guessed slug would prove nothing.",
+   "source": "kb/reviews/artificialanalysis.json check; curl 2026-11-15"
+  },
+  {
+   "what": "Line 113 (TechFuelHQ row): the companion figures now name model, runtime and hardware: gpt-oss-20b at 222-238 tok/s on llama.cpp b10507 vs 195.8 tok/s on Ollama, same desktop RTX 5080.",
+   "why": "The bare numbers had no runtime build or model label.",
+   "source": "kb/reviews/hf-rtx5080-throughput.json check"
+  },
+  {
+   "what": "Line 121 (Tech Centurion row): the 195 tg / 9,305 pp figures are now labeled measured on a desktop RTX 5080, llama.cpp build not stated.",
+   "why": "Third-party number labeling. The source does not give the build.",
+   "source": "kb/reviews/techcenturion.json"
+  },
+  {
+   "what": "Line 116 (vLLM Docker row): the R620 warning now names its scope, the page's CUDA 13.5 staging-build section for a Rubin prerelease image, instead of CUDA 13.5 staging images in general.",
+   "why": "The vllm-docker check quotes the warning as belonging to the private Rubin staging build.",
+   "source": "kb/reviews/vllm-docker.json check"
+  },
+  {
+   "what": "Line 8: '17 of them with minor corrections' now reads '17 of them with corrections'.",
+   "why": "The Unsloth check has a refuted item: the docs say the UD-Q3_K_XL file was unchanged, but it was replaced. 'Minor' understated that. The count is correct: 17 are holds-with-corrections and 2 hold (modelfit-rtx5080, reddit-small-local).",
+   "source": "kb/reviews/*.json check.overall"
+  }
+ ],
+ "remaining_concerns": [
+  "Other documents that say vLLM v0.33.0 was released on 2026-11-02 on tag v0.33.0, or link releases/tag/v0.33.0, should be aligned. The GitHub release object is on tag v0.33.0rc3 (same commit 4ba787e). The URL releases/tag/v0.33.0 still returns HTTP 200 as a tag page, so those links are not broken.",
+  "llama.cpp v1.0.0 (published 2026-11-13, removes the deprecated public API) is not covered in any input. The lead may want llamacpp/README.md to say whether the b12418 / b12407 image pins are post-v1.0.0 and whether anything changed for the server.",
+  "Relative links to docs/model-selection.md, vllm/README.md, vllm/models.md and llamacpp/models.md point to planned documents that do not exist on disk yet. host-setup.md, opencode.md, llamacpp/README.md and both benchmarking.md files exist.",
+  "The Artificial Analysis 404 for Laguna XS 2.1 and KAT-Coder-V2.5-Dev is unverified. I did not know their AA slugs, and a guessed slug returned 404, which proves nothing.",
+  "GitHub returned 429 on curl for the Ollama faq.mdx and the vLLM envs.py links, so those two were not re-fetched. Both are backed by the input records.",
+  "I checked these and found no problem: NVIDIA laptop page (896, 1334 AI TOPS, 7680 CUDA cores all present in the raw HTML), Intel ark SKU 245960, review verdict counts, AA 1.8 points, Kumar 2024-11-30, Ternary Bonsai 5.95 / 7.21 GB, Xing iq2_M-slim 10.99 GiB, MindStudio 17.05-19.13 GiB, OpenRouter 1,024,000 context, grumd 1000-1500 prefill, Twoody @Hedede and 32 GB static page, SQL benchmark 300 s timeout, leaderboard dates, local.ts tools false, the dockerd cgroup parent, and that OpenCode v2.3.0 (2026-11-13) and Ollama v0.40.16 (2026-11-09) releases exist. No en or em dashes, no emoji, no commands with ports, restart policies or memory caps (none needed). The Last verified line, Sources section and Maintenance section are present."
+ ],
+ "verdict": "ready-with-concerns",
+ "used_playwright": false
+}

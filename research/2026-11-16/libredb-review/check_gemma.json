@@ -1,0 +1,114 @@
+{
+ "overall": "holds-with-corrections",
+ "summary": "I re-checked the record against the libredb pages, measured-profiles.json, the live Ollama registry manifests and tags page, the HF configs, apple.com and the KB. Most of it holds. These are confirmed: every Ollama manifest byte count and params blob, 614 GB/s for the only 64 GB M5 Max, all the KV and fit arithmetic, the KB status lines and the gemini no-op. One claim is refuted: the \"e4b assess re-read 4/5 against a 140 s median\" note belongs to granite4.2:8b (measured-profiles.json line 343), not gemma4:e4b (line 1286). Corrections needed: (1) The source documents disagree on the 26b \"15 runs lost to an empty completion\". measured-profiles.json counts 15 runs and 6 losses, and only one later loss was confirmed as empty, while gemma4.md says fifteen losses. (2) Two places compare a whole-run median with the per-call turn limit: the e4b assess 94 s against 90 s, and the 31b optimize 378 s against 179,999 ms. (3) The MLX inference is weaker than the record states. The MLX tags are dated \"2 months ago\", after the August runs. The 16 GB and 19 GB Mac sizes also match the QAT tags, which are 5 months old. The 12b's 7.6 GB matches the GGUF model plus projector without the draft. (4) Minor wording points: the KB never says the 26b QAT Ollama tag fits at 64k q8_0. The Mac decode ceiling for the 26b should be about 256 tok/s, not 230-250. For the 31b, the cells re-read were the five non-optimize cells (four agent cells plus plan), not five agent cells.",
+ "verdicts": [
+  {
+   "item": "mac_setup_notes: hardware, 614 GB/s, Ollama 0.32.13/0.33.0 on /v1, engine sensitivity, dates, sampling, params blob, per-model settings, thermal",
+   "verdict": "confirmed",
+   "evidence": "methodology.md:10 (22-23 August 2026), :47 and :50 (M5 Max 64 GB, Ollama 0.32.13 and 0.33.0), :57-62 (12b 5/5 to 1/5, same digest), :83-89 (26b 1/5 in the sweep, 5/5 at 36 s rested). setup.md says /v1 and not /api/chat. apple.com/macbook-pro/specs (fetched 2026-11-16): 'M5 Max with 40-core GPU 48GB, 64GB, or 128GB' and '614GB/s'; the 32-core part is 36 GB only at 460 GB/s. measured-profiles.json measuredAgainst.defaults.sampling = temperature 0, topP 1. Params blob 2365fbb6d97b = {draft_num_predict:3, temperature:1, top_k:64, top_p:0.95}. Docker Hub tags 0.33.0, 0.32.13 and 0.40.16 all return HTTP 200. Per-model settings match the profiles (12b: 150000, suppressAgentReasoning, suppressPlanReasoning; 26b: ceiling 10, retryEmptyTurn; 31b: 150000, suppressPlanReasoning; e4b: defaults)."
+  },
+  {
+   "item": "mac_setup_notes: Mac disk sizes match MLX variants, so the Mac may have run MLX",
+   "verdict": "uncertain",
+   "evidence": "Tags page: e4b-mlx and 12b-mlx are listed '2 months ago' and 26b-nvfp4 '1 month ago', which is after the 22-23 August runs. gemma4:26b-a4b-it-qat (16 GB) and 31b-it-qat (19 GB) are '5 months ago' and match the Mac's 16 GB and 19 GB just as well. For the 12b, today's GGUF model plus projector without the draft is 7,381,383,680 + 175,115,616 B = 7.56 GB, which is the Mac's 7.6 GB.",
+   "correction": "State the MLX reading as one of several possibilities. Pre-republish GGUF builds or the QAT tags fit the recorded sizes too, and the MLX tags may not have existed in August. The gap stays the same: the runner and digest are unknown."
+  },
+  {
+   "item": "mac_setup_notes: docs do not record OLLAMA_CONTEXT_LENGTH/num_ctx",
+   "verdict": "confirmed",
+   "evidence": "Nothing about context appears in the gemma pages. Context is not wholly absent from the docs, though: qwen/qwen3.6.md:68-69 says six models 'cannot be loaded without a context bound' and were run at OLLAMA_CONTEXT_LENGTH=32768, and methodology.md:61 says the 12b cell was also run 'with the context bound removed'.",
+   "correction": "Add that the docs do treat context bounds per model. Gemma is not among the bounded models, so it most likely ran at Ollama's unbounded default on the Mac (inferred)."
+  },
+  {
+   "item": "gemma4:12b mac_result",
+   "verdict": "confirmed",
+   "evidence": "gemma4.md table: 7.6 GB, 4/24/21/14/11/2 s, median 11 s, slowest 1:03. measured-profiles.json gemma4:12b: 2/6 and 15/30 at arrival, analyze 102 to 11 s, assess 118 to 21 s, assess 4/5 with a 162 s timeout then 5/5. Minor point: per methodology.md:60-62, the 1/5 on 0.33.0 held in three configurations (with settings, without them, and unbounded), not only at the defaults."
+  },
+  {
+   "item": "gemma4:12b ollama_tag_facts",
+   "verdict": "confirmed",
+   "evidence": "registry.ollama.ai/v2/library/gemma4/manifests/12b: model 7,381,383,680 B (imatrix-20260927-12b/model-q4_K_M.gguf), projector 175,115,616 B, draft 465,109,152 B, runner llamacpp, format gguf. Tags page: 12b 312246b09fab, 7.7GB-8.0GB, 256K, '1 month ago'. 12b-it-qat 7.2 GB has model 6,975,877,728 B. 12b-it-q8_0 13 GB."
+  },
+  {
+   "item": "gemma4:12b fit_detail (all-in-vram)",
+   "verdict": "confirmed",
+   "evidence": "HF config: 48 layers (8 full, 40 sliding), num_global_key_value_heads 1, global_head_dim 512, KV heads 8 x 256, sliding window 1024. 8 x 1 x 512 x 2 x 2 B = 16 KiB/token, so 1.0 GiB at 64k. Sliding 40 x 8 x 256 x 4 x 1024 = 0.3125 GiB. Weights 6.874 + 0.163 + 0.433 = 7.47 GiB. That gives 9.7-10.2 GiB at 64k (estimate)."
+  },
+  {
+   "item": "gemma4:12b kb_status",
+   "verdict": "confirmed",
+   "evidence": "docs/model-selection.md:286 (honorable mention, 3 points, AA TB2.1 27.3, parser bugs). vllm/models.md:418 'Gemma 4 12B IT QAT W4A16', and :497 lists #54256, #66430 and #50889. docs/opencode.md:41 says it was replaced by Groot."
+  },
+  {
+   "item": "gemma4:12b speed_here_vs_mac and best_runtime",
+   "verdict": "confirmed",
+   "evidence": "896/614 = 1.46x. The record already treats it as a ceiling, not a whole-run multiplier. docs/opencode.md:171 says Ollama /v1 maps reasoning_effort none to think false, and libredb's quiet switch sends reasoningEffort 'none' (model-adapter.ts:97 and :133)."
+  },
+  {
+   "item": "gemma4:e4b mac_result: measured-profiles.json notes a later assess re-read of 4/5 against a 140 s median",
+   "verdict": "refuted",
+   "evidence": "The gemma4:e4b entry (measured-profiles.json:1285-1286) contains no re-read note. The '4/5, one run lost to the clock against a 140-second median' text is at line 343, in the granite4.2:8b entry (id at line 342). Everything else checks out: 30/30 at the defaults, first attempt, 12/49/94/40/29/9 s, slowest 2:32, 9.5 GB.",
+   "correction": "Remove the thin-assess re-read claim from e4b mac_result and from the last item of gaps. The e4b has no recorded 4/5."
+  },
+  {
+   "item": "gemma4:e4b ollama_tag_facts and fit_detail",
+   "verdict": "confirmed",
+   "evidence": "Manifests e4b and latest: model 5,493,439,296 B (gemma4-validation-20260929:e4b-imatrix-attention-q6-q8-draft2), projector 991,552,256 B, draft 98,653,280 B. Tags page: 009acb0d7fe1, 6.6GB-9.5GB, 128K. e4b-it-qat is 6.1 GB with model 5,154,939,136 B. HF config: 42 layers, 18 KV-shared, 4 full layers among layers 0-23, 2 KV heads, global_head_dim 512, so 16 KiB/token. Sliding window 512, about 20 MiB. Weights total 6.13 GiB."
+  },
+  {
+   "item": "gemma4:e4b kb_status",
+   "verdict": "confirmed",
+   "evidence": "docs/model-selection.md:305 lists Gemma 4 E4B under 'Weak or missing agentic scores'. vllm/models.md:30 and :635-638 make it the smoke-test model, with vendor tau2 42.2%. The context-growth caveat source is docs/opencode.md:201."
+  },
+  {
+   "item": "gemma4:e4b speed: 94 s assess median at a 90 s per-turn limit leaves little margin",
+   "verdict": "uncertain",
+   "evidence": "gemma4.md says the seconds are 'the median of the runs that passed', which is whole runs. The 90 s limit applies to one model call (the 31b rationale in measured-profiles.json says 'The ceiling bounds ONE call rather than the run'). A 94 s run made of several turns can be far inside a 90 s per-turn limit.",
+   "correction": "Drop the run-versus-turn comparison. The thin margin is not shown by these numbers."
+  },
+  {
+   "item": "gemma4:26b mac_result: assess lost 15 measured runs to an EMPTY completion after about 11 calls",
+   "verdict": "uncertain",
+   "evidence": "The sources conflict. gemma4.md says 'Fifteen measured losses on one cell to a turn that came back empty.' measured-profiles.json gemma4:26b says 'fifteen runs across three configurations: 4/5 ..., 3/5 ..., 2/5', which is 6 losses in 15 runs. The EMPTY completion was identified only in the one loss of a later 4/5 re-read ('at eleven calls'). Also confirmed: median 36 s, slowest 1:32, 16 GB, ceiling 10, retryEmptyTurn, thermal behaviour.",
+   "correction": "Say: 'about 15 assess runs across several configurations lost up to half their runs; the one loss whose stopping turn was read was an empty completion at 11 calls; an empty-turn retry closed the cell'. Note that gemma4.md and the profile JSON disagree. Apply the same wording to reason and kb_implications."
+  },
+  {
+   "item": "gemma4:26b ollama_tag_facts and fit_detail",
+   "verdict": "confirmed",
+   "evidence": "Manifests 26b and 26b-a4b (same config cd16db7156ed): model 17,074,419,072 B (c4-targeted-20260929-26b/model-q4_K_M.gguf), projector 1,194,828,128 B, draft 461,766,752 B. 26b-a4b-it-qat: model 14,439,361,440 B and projector 1,194,827,744 B, 16 GB. Tags page: 16GB-19GB, 26b-nvfp4 16 GB, 26b-mlx 18 GB. HF config: 5 full layers with 2 global KV heads x 512, so 20,480 B/token, matching llamacpp/models.md:226. Sliding 0.195 GiB. Ollama QAT: 14.56 + about 0.75 + 0.4 + 0.5-1.0 = about 16.2-16.7 GiB (estimate), so slightly over 15.47."
+  },
+  {
+   "item": "gemma4:26b kb_status and the KB implication that the KB says gemma4:26b-a4b-it-qat fits with 64k q8_0 KV",
+   "verdict": "uncertain",
+   "evidence": "Confirmed: rank 5 (README.md:52, model-selection.md:49 and :123-136), llama.cpp QAT 13.45 GiB recipe (llamacpp/models.md:201-231), and the '15.81 GiB usable' at llamacpp/models.md:226. However, model-selection.md:136 and opencode.md:211 only say the default does not fit and to use the QAT tag. The 64k q8_0 condition belongs to the llama.cpp recipe, not to an Ollama fit claim.",
+   "correction": "Rephrase: 'the KB names gemma4:26b-a4b-it-qat as the Ollama tag to use without checking its fit with the 1.11 GiB projector'."
+  },
+  {
+   "item": "gemma4:26b speed_here_vs_mac",
+   "verdict": "uncertain",
+   "evidence": "614/2.4 GB = about 256 tok/s, not the stated 230-250. 896/2.4 = 373. For the offloaded Ollama default, about 25-30% of active reads from DDR5 at 70-80 GB/s plus the GPU part gives a ceiling near 75-90 tok/s by my own arithmetic. That is the same order as 60-80. All of these figures are estimates.",
+   "correction": "Mac ceiling about 256 tok/s; the offloaded ceiling is roughly 60-90 tok/s (estimate)."
+  },
+  {
+   "item": "gemma4:31b mac_result",
+   "verdict": "confirmed",
+   "evidence": "gemma4.md: 19 GB, 26 s / 6:18 / 3:34 / 1:33 / 2:12 / 3 s, median 1:47, slowest 6:38, 'in a tenth of the time'. Plan 0/5 at the defaults. Minor point: the cells re-read under the shipped pair were the five non-optimize cells (the four agent surfaces plus plan, per the profile 'five locked at the compiled 90-second turn ceiling'), not 'the five agent cells'."
+  },
+  {
+   "item": "gemma4:31b tag facts, fit and KB exclusion",
+   "verdict": "confirmed",
+   "evidence": "Manifest 31b: model 18,670,033,120 B (dhiltgen/gemma4:31b-it-mtp-q4_K_M-llamacpp), projector 1,200,726,368 B, draft 514,687,072 B. 31b-it-qat: model 17,650,999,456 B, 19 GB. HF config: 10 full layers with 4 global KV heads x 512, so 80 KiB/token and 5.0 GiB at 64k (2.66 GiB q8_0). Sliding 50 x 16 x 256 x 4 x 1024 = 0.78 GiB. docs/model-selection.md:307 excludes it."
+  },
+  {
+   "item": "gemma4:31b reason: optimize median 378 s would likely blow the 179,999 ms per-turn maximum",
+   "verdict": "uncertain",
+   "evidence": "schema.ts:131 caps turnTimeoutMs at 179,999. But 378 s is a whole-run median, and the profile itself says 'The ceiling bounds ONE call rather than the run' (it passed at 150 s per turn on the Mac). The decode arithmetic (Mac about 30 ms/token, here about 8-10 tok/s) is fine as an estimate.",
+   "correction": "Say: 'at about 3x slower decode, individual optimize turns that needed up to 150 s on the Mac would likely exceed the 180 s per-turn cap here (estimate)'. Do not compare the run median with the per-turn cap. The skip-here verdict stands."
+  },
+  {
+   "item": "gemini-3.5-flash-lite",
+   "verdict": "confirmed",
+   "evidence": "gemini/gemini-3.5.md: 6/11/16/10/6/6 s, median 10 s, slowest 21 s, empty-turn retry for its single loss. model-adapter.ts:124-125 says the quiet switch's openai object 'reaches nothing' for gemini. Not in the local KB."
+  }
+ ]
+}

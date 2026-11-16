@@ -1,0 +1,140 @@
+{
+ "overall": "holds-with-corrections",
+ "summary": "I could not refute any runtime claim that the recommendation depends on. On this machine, llama.cpp b12407 with the official JetBrains GGUF Q6_K at 131072 context, all layers on the GPU and -np 1 needs about 12.7 GiB of VRAM, and should serve OpenCode with tool calls (inferred, not run). Sizes from the HF API: Q6_K is 10,879,834,400 B (10.13 GiB). KV from config.json: 7 full-attention layers x 4 KV heads x head_dim 128 gives 14,336 B per token, so 1.75 GiB at 128k. The 21 sliding-window layers add 42 MiB per sequence. The vLLM fallback also holds. In v0.33.0, MellumForCausalLM goes through the Transformers backend (registry.py:759). requirements/common.txt allows transformers >=5.16.1,<5.21.0, so the image probably has 5.20.2 (inferred). The hybrid KV cache manager is on by default, so the sliding-window grouping math holds. hermes and qwen3 are both registered. The engine-based qwen3 reasoning adapter turns tool parsing off (skip_tool_parsing), so the hermes parser still receives the tool calls. With cyankiwi AWQ-INT4 (7.15 GiB) the KV pool is 6.297 GiB, which covers 128k. Corrections: (1) Recomputed KV token counts: AWQ 471,657 BF16 / 943,314 FP8 (record: 468,579 / 940,230); voves FP8 126,616 / 253,233 (record: 123,298); NVFP4 507,163 BF16. (2) llama.cpp #30733 (the revert) was closed WITHOUT merging on 2026-10-28; #30861 (merged 2026-10-21) superseded #30584's approach. The record's statement that #30584 was reverted by #30733 is wrong. (3) cyankiwi AWQ is asymmetric INT4 with zero points (symmetric:false, group 32). v0.33.0's CompressedTensorsWNA16MoEMethod supports zero points with Marlin, but nobody has run it on sm_120. (4) vLLM PR #61983 is titled '[CI] Bump Transformers version to 5.20.2'. Its body does include the Mellum num_mtp_layers alias fix. Remaining unknowns: no end-to-end OpenCode tool-call test, no RTX 50 speed measurement, and the exact transformers version inside the image is still unread. The quality caveat stands: by its own vendor table it trails Qwen3.5-9B on agentic benchmarks. Files: $SCRATCH/mel/",
+ "verdicts": [
+  {
+   "claim": "Official repo exists, Apache-2.0, not gated; createdAt 2026-09-20, lastModified 2026-10-07; 12,149,923,072 BF16 params; blog post by Bulat Salimzianov",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/JetBrains/Mellum2.1-12B-A2.5B-Thinking?blobs=true ; https://blog.jetbrains.com/ai/feed/"
+  },
+  {
+   "claim": "config.json: MellumForCausalLM, 28 layers, hidden 2304, 64 experts top-8, moe_intermediate 896, 32Q/4KV, head_dim 128, 21 sliding (window 1024) + 7 full layers (3,7,...,27) with YaRN factor 16 over 8192, max_position_embeddings 131072, vocab 98304, untied",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/JetBrains/Mellum2.1-12B-A2.5B-Thinking/raw/main/config.json"
+  },
+  {
+   "claim": "Weight sizes: BF16 22.63 GiB (24,300,538,808 B); MTP 25,157,305,968 B (head 0.857 GB); AWQ-INT4 7.15 GiB; voves FP8 11.76 GiB; NVFP4 6.68 GiB",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/cyankiwi/Mellum2.1-12B-A2.5B-Thinking-AWQ-INT4?blobs=true"
+  },
+  {
+   "claim": "Official GGUF sizes: Q8_0 12,925,417,760 B (12.04 GiB), Q6_K 10,879,834,400 B (10.13 GiB), Q4_K_M 8,071,295,264 B (7.52 GiB), MXFP4_MOE 7,029,537,056 B (6.55 GiB), mtp head 1,766,609,280 B (1.65 GiB); GGUF metadata architecture 'mellum', context 131072, chat template embedded (4849 chars, has tool_call and enable_thinking)",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/JetBrains/Mellum2.1-12B-A2.5B-Thinking-GGUF?blobs=true&expand[]=gguf"
+  },
+  {
+   "claim": "bartowski GGUF sizes not checked",
+   "verdict": "confirmed",
+   "correction": "Now checked: bartowski Q4_K_M is 8,819,358,432 B (8.21 GiB), Q6_K 10.67 GiB, Q8_0 12.04 GiB, IQ4_XS 6.49 GiB. bartowski's K-quants are larger than the official ones of the same name.",
+   "evidence_url": "https://huggingface.co/api/models/bartowski/Mellum2.1-12B-A2.5B-Thinking-GGUF?blobs=true"
+  },
+  {
+   "claim": "KV arithmetic: 14,336 B/token BF16 (7,168 FP8) on 7 full layers; sliding layers 42 MiB per sequence; 128k BF16 KV = 1.75 GiB",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/JetBrains/Mellum2.1-12B-A2.5B-Thinking/raw/main/config.json"
+  },
+  {
+   "claim": "vLLM KV pools: AWQ 6.30 GiB -> 468,579 BF16 / 940,230 FP8 tokens; voves FP8 1.69 GiB -> 123,298 BF16 / 249,668 FP8; NVFP4 6.77 GiB -> 503,781 BF16; BF16 official does not fit",
+   "verdict": "confirmed",
+   "correction": "Pools are right; the token counts are about 0.7-2.7% low. With 1 GiB = 2^30 B: AWQ 6.297 GiB -> 471,657 BF16 / 943,314 FP8; voves 1.691 GiB -> 126,616 BF16 / 253,233 FP8; NVFP4 6.771 GiB -> 507,163 BF16. Conclusions are unchanged: AWQ and NVFP4 reach 131,072 with BF16 KV, voves FP8 needs FP8 KV to reach 128k (64k fits with BF16 KV), BF16 is short by 9.18 GiB.",
+   "evidence_url": "https://huggingface.co/api/models/voves/Mellum2.1-12B-A2.5B-Thinking-FP8?blobs=true"
+  },
+  {
+   "claim": "The sliding-window KV saving applies in vLLM (hybrid KV cache manager)",
+   "verdict": "confirmed",
+   "correction": "Source-backed. The Transformers backend passes per_layer_sliding_window for sliding_attention layers (base.py:691-693). VllmConfig enables HMA by default and disables it only for non-GPU platforms, chunked local attention or a non-HMA KV connector (config/vllm.py:2223-2294). If HMA were off, all 28 layers would cost 57,344 B/token and the AWQ pool would hold only about 117.9k tokens, so do not pass --disable-hybrid-kv-cache-manager or a KV connector.",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/config/vllm.py"
+  },
+  {
+   "claim": "vLLM v0.33.0 registry.py:759 maps MellumForCausalLM to TransformersMoEForCausalLM; native mellum.py removed by PR #59679 (merged 2026-10-02); MXFP4 rejected at base.py:164-170",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/models/registry.py"
+  },
+  {
+   "claim": "transformers models/mellum exists since v5.16.1; v0.33.0 allows transformers >=5.16.1,<5.21.0; image transformers version unread",
+   "verdict": "confirmed",
+   "correction": "common.txt line 11 is 'transformers >= 5.16.1, < 5.21.0'. The newest release in that range is 5.20.2 (2026-10-19), before the v0.33.0 tag on 2026-11-02, so the image very likely has 5.20.2 (inferred). models/mellum is present at v5.15.0 too, not only from v5.16.1. modeling_mellum.py at v5.20.2 dispatches attention through ALL_ATTENTION_FUNCTIONS and uses @use_experts_implementation, which is what the Transformers MoE backend needs.",
+   "evidence_url": "https://raw.githubusercontent.com/huggingface/transformers/v5.20.2/src/transformers/models/mellum/modeling_mellum.py"
+  },
+  {
+   "claim": "PR #61983 handles Mellum's MTP config alias",
+   "verdict": "confirmed",
+   "correction": "The PR's title is '[CI] Bump Transformers version to 5.20.2' (merged 2026-10-19). Its body says that Mellum's 5.20 config aliases num_nextn_predict_layers to num_mtp_layers and that the Transformers backend now treats None as 0.",
+   "evidence_url": "https://github.com/vllm-project/vllm/pull/61983"
+  },
+  {
+   "claim": "Parsers: --tool-call-parser hermes and --reasoning-parser qwen3 are registered in v0.33.0 and work together",
+   "verdict": "confirmed",
+   "correction": "Registration is confirmed (tool_parsers/__init__.py:85 'hermes' -> Hermes2ProToolParser; reasoning/__init__.py:168 'qwen3' -> Qwen3ParserReasoningAdapter). qwen3 is now an engine parser (vllm/parser/qwen3.py) whose grammar expects Qwen3-Coder XML tool calls. As a reasoning adapter it sets skip_tool_parsing, so hermes still parses the JSON <tool_call>, and <tool_call> ends reasoning implicitly. <tool_call>/<think> are non-special added tokens (ids 23-24, 29-32), so skip_special_tokens does not strip them. The combination has not been run end to end.",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/parser/qwen3.py"
+  },
+  {
+   "claim": "cyankiwi AWQ-INT4 is the best vLLM checkpoint; W4A16 compressed-tensors MoE goes to Marlin MoE on sm_120",
+   "verdict": "uncertain",
+   "correction": "The checkpoint is asymmetric INT4 (symmetric:false, zero points, group 32, pack-quantized). Attention and experts are quantized; the router gates and lm_head are left in BF16. v0.33.0 CompressedTensorsWNA16MoEMethod handles zero points (WNA16_ZP_SUPPORTED_TYPES_MAP, Marlin w1_zp/w2_zp), and the per-expert tensor names match the official checkpoint. Running it through TransformersMoE on sm_120 has not been tested. The cyankiwi card shows only the base-model vLLM command.",
+   "evidence_url": "https://huggingface.co/cyankiwi/Mellum2.1-12B-A2.5B-Thinking-AWQ-INT4/raw/main/config.json"
+  },
+  {
+   "claim": "llama.cpp b12407: LLM_ARCH_MELLUM at llama-arch.cpp:174; src/models/mellum.cpp handles SWA pattern 4 with plain RoPE on SWA layers and the MTP block; arch added in #23966",
+   "verdict": "confirmed",
+   "correction": "#23966 was opened 2026-06-01 and merged 2026-06-02. MELLUM is tagged TAG_MOE_AMAX_SCALE (llama-arch.cpp:1511), and the per-expert pool_1d amax scaling is in llama-graph.cpp:1724-1745 and 2585-2599.",
+   "evidence_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/src/models/mellum.cpp"
+  },
+  {
+   "claim": "#30584 caused an 8x CUDA slowdown (#30704 still open); it was reverted by #30733 and replaced by #30861 (merged 2026-10-21); #31081 denies -sm tensor; #31855 open",
+   "verdict": "refuted",
+   "correction": "#30733 (the revert) was closed WITHOUT merging on 2026-10-28 ('Closing as #30861 appears to have fixed it'). #30861 replaced the global amax rescaling. The other parts hold: #30704 is open, #30861 was merged 2026-10-21, #31081 was merged 2026-10-24, #31855 is open. b12407 contains the #30861 code path, so the 8x CPU fallback should no longer occur (inferred, not measured).",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/pull/30733"
+  },
+  {
+   "claim": "llama.cpp tool-call and reasoning extraction for the Mellum template works with --jinja (inferred)",
+   "verdict": "uncertain",
+   "correction": "Stronger than a guess. Apart from a normalize_content macro and the reasoning_content handling, the Mellum template is line-for-line Qwen-Qwen3-0.6B.jinja, which the b12407 autoparser tests exercise (tests/test-chat.cpp ~8478-8573). The GGUF embeds this template. Not run end to end with OpenCode.",
+   "evidence_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/models/templates/Qwen-Qwen3-0.6B.jinja"
+  },
+  {
+   "claim": "-hf JetBrains/...-GGUF:Q6_K selects the root Q6_K file; MTP draft is not fetched unless requested",
+   "verdict": "confirmed",
+   "correction": "Source-backed for b12407 common/download.cpp. find_best_model returns the first file matching (^|[-./])Q6_K[.-]. The root file sorts before mtp/... in ASCII order (if the mtp/ combined file were picked it would still load). The mtp- sidecar is downloaded only with --spec-type draft-mtp (arg.cpp:382).",
+   "evidence_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/common/download.cpp"
+  },
+  {
+   "claim": "llama.cpp VRAM at 128k: Q6_K about 12.7 GiB (f16 KV) / 11.9 (q8_0); Q4_K_M 10.1 / 9.3; Q8_0 14.65 / 13.8 (Q8_0 + f16 KV too tight)",
+   "verdict": "confirmed",
+   "correction": "Source-backed arithmetic: 10.13 + 1.75 + about 0.07 SWA (21 x 2 x 512 x 2 B x (1024+512)) + 0.8 compute = 12.75 GiB, plus about 0.3-0.5 GiB CUDA context against 15.92 GiB total. Q8_0 with f16 KV comes to about 15.1 GiB with context: it may load, but there is little headroom. Context checkpoints for SWA are kept in host RAM.",
+   "evidence_url": "https://huggingface.co/api/models/JetBrains/Mellum2.1-12B-A2.5B-Thinking-GGUF?blobs=true"
+  },
+  {
+   "claim": "Vendor serve command uses --reasoning-parser qwen3 --enable-auto-tool-choice --tool-call-parser hermes, --max-model-len 131072; sampling 0.6/0.95/20; agentic evals at temp 1.0 with 114K context; generation_config has no sampling values",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/JetBrains/Mellum2.1-12B-A2.5B-Thinking/raw/main/README.md"
+  },
+  {
+   "claim": "MTP repo needs vLLM >= 0.33 and transformers >= 5.20; llama.cpp MTP needs b11747+; MTP gave 1.00-1.10x on M2 Max (#30612)",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/JetBrains/Mellum2.1-12B-A2.5B-Thinking-MTP/raw/main/README.md"
+  },
+  {
+   "claim": "Self-reported benchmarks: SWE-V 47.0, TB2.1 17.4, SWE-Pro 28.0, LCB v6 82.0, BFCL v4 62.3, ToolHop 49.1, WorkBench 44.6 vs Qwen3.5-9B 50.0/21.7/38.0/75.4/58.5/52.0/39.7",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/JetBrains/Mellum2.1-12B-A2.5B-Thinking/raw/main/README.md"
+  },
+  {
+   "claim": "Ollama: no library model (404); decadence/mellum2.1 tags 8.1GB and 11GB with tools/thinking badges; v0.40.16 pins llama.cpp b12177 (includes Mellum)",
+   "verdict": "confirmed",
+   "correction": "b12177 was published 2026-11-06, after #30861 (2026-10-21), so it also contains the CUDA fix (inferred). Loading and tool calls are still inferred, not tested.",
+   "evidence_url": "https://raw.githubusercontent.com/ollama/ollama/v0.40.16/LLAMA_CPP_VERSION"
+  },
+  {
+   "claim": "Decode speed ceilings: about 2.21B active params read per token; Q4_K_M about 1.47 GB/token -> 610 tok/s ceiling at 896 GB/s; 150-300 tok/s realistic",
+   "verdict": "uncertain",
+   "correction": "Arithmetic checks out from config: experts 8x3x2304x896x28 = 1.387B, attention 594M, lm_head 226M. The Q4_K_M file averages 0.664 B/param. The 150-300 tok/s range is inferred; there is no RTX 50 measurement.",
+   "evidence_url": "https://huggingface.co/JetBrains/Mellum2.1-12B-A2.5B-Thinking/raw/main/config.json"
+  },
+  {
+   "claim": "OpenCode fit: usable; llama.cpp official GGUF Q6_K at 131072 context, all on GPU, is the recommended configuration; vLLM cyankiwi AWQ-INT4 second",
+   "verdict": "uncertain",
+   "correction": "Not refuted. On memory it clearly meets the 64k requirement and reaches 128k. Tool calling is source-backed through the Qwen3-compatible template and parsers, but untested with OpenCode. Keep -np 1, -e GGML_CUDA_DISABLE_GRAPHS=1 before the image name, and reasoningField reasoning_content for llama.cpp ('reasoning' for vLLM). Do not disable the vLLM hybrid KV cache manager. Quality by the vendor's own table is below Qwen3.5-9B on agentic tasks."
+  }
+ ]
+}

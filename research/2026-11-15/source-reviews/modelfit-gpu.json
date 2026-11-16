@@ -1,0 +1,449 @@
+{
+ "review": {
+  "key": "modelfit-gpu",
+  "url": "https://modelfit.io/gpu/",
+  "title": "ModelFit: Best GPUs for Local LLMs (2026), NVIDIA GPU index, plus RTX 5080 page, About/methodology and open performance dataset",
+  "publisher": "ModelFit (modelfit.io), single independent developer (Peter Dekker per /about/), affiliate-funded (Amazon Associate, cloud-GPU commissions, paid sponsor slot)",
+  "as_of": "RTX 5080 page and can-i-run pages \"Last updated: November 14, 2026\" (JSON-LD dateModified 2026-11-14, datePublished 2026-03-07); index page has no visible date; fetched 2026-11-15",
+  "source_type": "calculator-estimate",
+  "accessible": true,
+  "access_notes": "Raw curl with generic UA (HTTP 200) of /gpu/, /gpu/rtx-5080/, /about/, /data/, /api/dataset/performance/ (JSON, 725,735 bytes, CC BY 4.0), /can-i-run/gpt-oss-20b-on-rtx-5080/, /can-i-run/qwen3.8-27b-q4-on-rtx-5080/, /can-i-run/gemma4-26b-a4b-q4-on-rtx-5080/, and sitemap.xml. /gpu/rtx-5080-laptop/ and other laptop URL guesses return 404; the sitemap has no laptop GPU page. Files saved under $SCRATCH/src/modelfit-gpu/ and parsed with python3 -I. No WebFetch used; all quoted numbers are from raw HTML or JSON.",
+  "credibility": "medium",
+  "credibility_reason": "The methodology is transparent and published, every speed is labelled an estimate with an error band, and the dataset is open. But it models Ollama/llama.cpp generic Q4_K_M files only, has no laptop GPU entries, uses a size-class fp16 KV estimate that ignores sliding-window/MoE attention details, and contradicts itself on the RTX 5080 page (usable VRAM 14.4 vs 15.5 GB; gpt-oss-20b context about 2k on the page vs 24,554 in the dataset). Offload figures carry no error estimate. Affiliate-funded. Fine for rough sizing, not as a measurement.",
+  "summary": "ModelFit is a fit-and-speed calculator for Ollama/llama.cpp users. It covers 25 NVIDIA cards (8-96 GB, 272-1,792 GB/s) plus AMD cards and Apple devices. The only RTX 5080 entry is the desktop card (16 GB, 960 GB/s); there is no RTX 5080 Laptop entry. The desktop RTX 5070 Ti (16 GB, 896 GB/s) has the same VRAM and bandwidth as this laptop GPU, so it is the closest proxy in the data. Fit rule: usable VRAM is 90% of 16 GB = 14.4 GB, with a 1.6 GB runtime reserve. Weights are about 0.6 GB per billion parameters at Q4, or real Q4 build sizes from its catalog. KV cache is fp16, estimated with a size-class GQA formula (8 KV heads x 128 head dim), or the exact per-token cost for hybrid Qwen3.5/3.6. Decode formula: time per token = (weight bytes x MoE factor + alpha x fp16 KV bytes) / (eta x bandwidth) + fixed overhead. The fit was trained on 4,831 measured runs and has a 10.7% leave-one-hardware-out median error. All tok/s figures are estimates at 4K context with Q4_K_M. For our purposes it is pessimistic on context (no q8_0 KV in the fit, no sliding window, safetensors-size weights for gpt-oss). It also has no model for MoE expert offload: --n-cpu-moe setups like Qwen3.6-35B-A3B are only \"rough estimate, offload not measured\".",
+  "methodology": "Decode (from /api/dataset/performance/ methodology.decode, verbatim): \"time per token = (streamed weight bytes x MoE factor + alpha x fp16 KV-cache bytes at the context) / (eta x memory bandwidth) + fixed per-token overhead; eta and the overhead depend on the backend and on the hardware tier, generation, architecture and memory type.\" Prefill: \"(2 x active parameters + attention FLOPs) / (etaC x FP16 TFLOPS) + fixed overhead\". Fitted on \"4831 measured runs from llama.cpp discussions and issues, community MLX benchmarks, published vendor posts and modelfit bench submissions\". Accuracy: \"leave-one-hardware-out median absolute error 10.7% (p90 37.6%, median bias -0.5%) over 3126 runs on 104 hardware types\"; CUDA groups: all 8.1%, 5-10B 7.0%, 10-20B 12.6%, 20-40B 7.2%, MoE 14.2%. Prompt-processing figures are not covered by the error. Fit (RTX 5080 page): \"a Q4 model needs about 0.6 GB of VRAM per billion parameters ... ModelFit budgets 90% of this card's 16GB (14.4GB) for weights, context, and KV-cache\". A size counts as fitting only if the lightest Q4 build of that size in its catalog loads within 14.4 GB. Fig. 2 splits 16 GB as weights + KV + headroom + \"Runtime reserve 1.6 GB\". KV: \"fp16 cache, the llama.cpp/Ollama default. Standard GQA models use a size-class estimate (8 KV heads x 128 head dim class); hybrid linear-attention models (Qwen3.5/3.6, Qwen3-Next) use the exact per-token cost ... A q8_0 KV cache roughly halves either figure.\" Published context for speeds is 4096 tokens (publishedContextTokens). Dataset cells include only fitting models (72 cells for rtx-5080). Recommendations target the Ollama command line.",
+  "findings": [
+   {
+    "topic": "Laptop coverage",
+    "claim": "ModelFit lists no RTX 5080 Laptop GPU (and no laptop GPUs at all). Its GPU set in the dataset is 30 desktop/workstation entries; /gpu/rtx-5080-laptop/ returns 404. The 'RTX 5080' page is the desktop card at 960 GB/s.",
+    "evidence": "documented",
+    "location": "/api/dataset/performance/ hardware keys; sitemap.xml; /gpu/rtx-5080/",
+    "target": "hardware",
+    "relevance": "high"
+   },
+   {
+    "topic": "Best bandwidth proxy",
+    "claim": "The desktop RTX 5070 Ti (16 GB GDDR7, 896 GB/s) matches the laptop RTX 5080's VRAM and bandwidth; ModelFit estimates it at 124.8 tok/s for Qwen3 8B Q4_K_M vs 132.2 for the desktop 5080 (both estimates).",
+    "evidence": "computed",
+    "location": "/api/dataset/performance/ hardware.rtx-5070-ti and rtx-5080",
+    "target": "hardware",
+    "relevance": "high"
+   },
+   {
+    "topic": "Fit budget",
+    "claim": "Usable VRAM = 90% of total = 14.4 GB on a 16 GB card, with a 1.6 GB runtime reserve; the same page's FAQ says 'About 15.5GB is usable', so it is not self-consistent.",
+    "evidence": "documented",
+    "location": "/gpu/rtx-5080/ Quick answer, Fig. 2, FAQ",
+    "target": "general",
+    "relevance": "high"
+   },
+   {
+    "topic": "Baseline budget comparison",
+    "claim": "ModelFit's 14.4 GB (decimal GB, 13.41 GiB) is about 1.2 GiB tighter than the baseline vLLM budget (14.65 GiB at util 0.92, minus 1.2 GiB reserve, leaving the KV pool after weights). The baseline uses observed 16303 MiB and runtime-specific settings; ModelFit is a runtime-agnostic rule of thumb.",
+    "evidence": "computed",
+    "target": "general",
+    "relevance": "high"
+   },
+   {
+    "topic": "Weights rule",
+    "claim": "Q4 weights assumed at about 0.6 GB per billion parameters (about 4.8 bits/param), overridden by real catalog Q4 file sizes where available. Not applicable to MXFP4/NVFP4/UD quants used in the baseline.",
+    "evidence": "documented",
+    "location": "/gpu/rtx-5080/ sizing rule",
+    "target": "models",
+    "relevance": "medium"
+   },
+   {
+    "topic": "KV estimate",
+    "claim": "KV is fp16 with a size-class formula (8 KV heads x 128 head dim) for standard GQA models; only Qwen3.5/3.6/Qwen3-Next hybrids use their exact config. Sliding-window models (Gemma 4, gpt-oss) are therefore likely overestimated, and q8_0 is only described as 'roughly halves'.",
+    "evidence": "documented",
+    "location": "/gpu/rtx-5080/ Fig. 2 note",
+    "target": "general",
+    "relevance": "high"
+   },
+   {
+    "topic": "Speed formula",
+    "claim": "Decode time per token = (weight bytes x MoE factor + alpha x fp16 KV bytes)/(eta x bandwidth) + overhead, with eta fitted per backend and hardware class on 4,831 measured runs; median out-of-sample error 10.7% overall, 8.1% CUDA, 14.2% CUDA MoE.",
+    "evidence": "documented",
+    "location": "/api/dataset/performance/ methodology",
+    "target": "benchmarking",
+    "relevance": "high"
+   },
+   {
+    "topic": "Implied efficiency",
+    "claim": "The 132.2 tok/s Qwen3 8B Q4_K_M estimate at 960 GB/s implies about 665 GB/s streamed, about 69% of peak bandwidth (assuming a 5.03 GB Q4_K_M file). This is my arithmetic, not a published eta.",
+    "evidence": "computed",
+    "target": "benchmarking",
+    "relevance": "medium"
+   },
+   {
+    "topic": "gpt-oss-20b fit conflict",
+    "claim": "The can-i-run page gives gpt-oss-20b MXFP4 weights as 13.8 GB, which matches the safetensors size (12.82 GiB), not the 11.28 GiB GGUF. It says 'about 2k tokens fit with an fp16 KV cache', while the open dataset gives maxContext 24554 for the same card. Both conflict with the baseline (128k on llama.cpp).",
+    "evidence": "documented",
+    "location": "/can-i-run/gpt-oss-20b-on-rtx-5080/; dataset rtx-5080 cell gpt-oss-20b",
+    "target": "models",
+    "relevance": "high"
+   },
+   {
+    "topic": "gpt-oss-20b speed",
+    "claim": "Estimated 167.6 tok/s decode on the desktop RTX 5080 (typical error 15%); the RTX 5070 Ti / 896 GB/s proxy gives 158.9 tok/s.",
+    "evidence": "computed",
+    "location": "dataset rtx-5080 and rtx-5070-ti cells",
+    "target": "models",
+    "relevance": "medium"
+   },
+   {
+    "topic": "MoE offload not modelled",
+    "claim": "Models above 14.4 GB (Qwen3.8 27B Q4_K_M 16.5 GB, Gemma 4 26B-A4B Q4_K_M 16 GB, 35B MoE) are only given 'rough estimate, offload not measured' speeds (10, 125 and 69 tok/s respectively) with no error band. The dataset excludes non-fitting cells entirely. It does not model llama.cpp --n-cpu-moe or the baseline's Q3/QAT Q4_0 builds that fit fully on the GPU.",
+    "evidence": "documented",
+    "location": "/gpu/rtx-5080/ Table 1; /can-i-run/qwen3.8-27b-q4-on-rtx-5080/; /can-i-run/gemma4-26b-a4b-q4-on-rtx-5080/",
+    "target": "llamacpp",
+    "relevance": "high"
+   },
+   {
+    "topic": "Gemma 4 12B",
+    "claim": "Top pick for RTX 5080: Gemma 4 12B Q4 about 8 GB weights, est. 95.5 tok/s, KV fp16 at 16k about 3.0 GB and at 64k about 12.0 GB (exceeds budget), dataset maxContext 101975. These conflict with each other, and with the baseline (vLLM QAT W4A16 9.56 GiB, 128k with FP8 KV).",
+    "evidence": "computed",
+    "location": "/gpu/rtx-5080/ Fig. 2; dataset",
+    "target": "models",
+    "relevance": "medium"
+   },
+   {
+    "topic": "Measured user report",
+    "claim": "The only measured RTX 5080 config report shown is Qwen3.5 4B Instruct Q4_K_M on Ollama, 163.8 tok/s, 1 run, desktop card, context not given.",
+    "evidence": "measured",
+    "location": "/gpu/rtx-5080/ Config reports",
+    "target": "ollama",
+    "relevance": "low"
+   },
+   {
+    "topic": "Agentic speed floor",
+    "claim": "ModelFit treats about 30 tok/s as the decode floor for agentic coding loops to feel responsive (an opinion threshold).",
+    "evidence": "opinion",
+    "location": "/can-i-run/qwen3.8-27b-q4-on-rtx-5080/",
+    "target": "opencode",
+    "relevance": "low"
+   },
+   {
+    "topic": "Freshness",
+    "claim": "The catalog includes Nov 2026 models (Qwen3.8 27B, Gemma 4, Ornith 1.5, Nemotron 3.5 Bolt); RTX 5080 pages dated 2026-11-14. The index page shows no date.",
+    "evidence": "documented",
+    "target": "general",
+    "relevance": "medium"
+   },
+   {
+    "topic": "Multi-GPU note",
+    "claim": "Says layer split keeps throughput near single-card speed, while llama.cpp row split on identical cards can beat one card but stays below 2x. Not relevant to a single-GPU laptop.",
+    "evidence": "opinion",
+    "location": "/gpu/ pooling section",
+    "target": "llamacpp",
+    "relevance": "low"
+   }
+  ],
+  "measurements": [
+   {
+    "model": "Qwen3 8B",
+    "gpu": "RTX 5080 desktop (960 GB/s)",
+    "quant": "Q4_K_M",
+    "runtime": "generic llama.cpp/Ollama model",
+    "context": "4K (32k: 79.5)",
+    "gen_tok_s": "132.2",
+    "settings": "ModelFit physics model, typical error 5%",
+    "measured_or_estimated": "estimated"
+   },
+   {
+    "model": "Qwen3 8B",
+    "gpu": "RTX 5070 Ti desktop (896 GB/s, laptop-5080 bandwidth proxy)",
+    "quant": "Q4_K_M",
+    "runtime": "generic",
+    "context": "4K (32k: 74.7)",
+    "gen_tok_s": "124.8",
+    "settings": "ModelFit estimate",
+    "measured_or_estimated": "estimated"
+   },
+   {
+    "model": "gpt-oss-20b",
+    "gpu": "RTX 5080 desktop",
+    "quant": "MXFP4 (13.8 GB per ModelFit)",
+    "runtime": "generic",
+    "context": "4K; maxContext 24554 (dataset) vs about 2k (page)",
+    "gen_tok_s": "167.6",
+    "vram": "13.8 GB weights of 14.4 usable",
+    "settings": "typical error 15%",
+    "measured_or_estimated": "estimated"
+   },
+   {
+    "model": "gpt-oss-20b",
+    "gpu": "RTX 5070 Ti desktop (896 GB/s proxy)",
+    "quant": "MXFP4",
+    "runtime": "generic",
+    "context": "4K",
+    "gen_tok_s": "158.9",
+    "settings": "typical error 15%",
+    "measured_or_estimated": "estimated"
+   },
+   {
+    "model": "Gemma 4 12B",
+    "gpu": "RTX 5080 desktop",
+    "quant": "Q4",
+    "runtime": "generic",
+    "context": "4K (32k: 78.8); maxContext 101975",
+    "gen_tok_s": "95.5",
+    "vram": "~8 GB weights; fp16 KV 3.0 GB at 16k, 12.0 GB at 64k",
+    "settings": "typical error 15%",
+    "measured_or_estimated": "estimated"
+   },
+   {
+    "model": "Gemma 4 12B",
+    "gpu": "RTX 5080 desktop",
+    "quant": "Q8",
+    "runtime": "generic",
+    "context": "4K; maxContext 21283",
+    "gen_tok_s": "60.7",
+    "measured_or_estimated": "estimated"
+   },
+   {
+    "model": "Qwen3.5 9B / Ornith 9B",
+    "gpu": "RTX 5080 desktop",
+    "quant": "Q4",
+    "runtime": "generic",
+    "context": "4K (32k: 121.3); maxContext 262144",
+    "gen_tok_s": "140.3",
+    "settings": "typical error 5%",
+    "measured_or_estimated": "estimated"
+   },
+   {
+    "model": "Qwen3.5 9B",
+    "gpu": "RTX 5080 desktop",
+    "quant": "Q8",
+    "runtime": "generic",
+    "context": "4K; maxContext 148696",
+    "gen_tok_s": "90.8",
+    "vram": "~10.7 GB",
+    "measured_or_estimated": "estimated"
+   },
+   {
+    "model": "DeepSeek-R1-Distill-Qwen-7B",
+    "gpu": "RTX 5080 desktop",
+    "quant": "Q4",
+    "runtime": "generic",
+    "context": "4K",
+    "gen_tok_s": "151.9",
+    "measured_or_estimated": "estimated"
+   },
+   {
+    "model": "14B dense (generic)",
+    "gpu": "RTX 5080 desktop",
+    "quant": "Q4_K_M",
+    "runtime": "generic",
+    "context": "4K",
+    "gen_tok_s": "83 (83.4)",
+    "settings": "typical error 15%",
+    "measured_or_estimated": "estimated"
+   },
+   {
+    "model": "7B dense (generic)",
+    "gpu": "RTX 5080 desktop",
+    "quant": "Q4_K_M",
+    "runtime": "generic",
+    "context": "4K",
+    "gen_tok_s": "150",
+    "measured_or_estimated": "estimated"
+   },
+   {
+    "model": "20B MoE 3.6B active (generic)",
+    "gpu": "RTX 5080 desktop",
+    "quant": "Q4_K_M",
+    "runtime": "generic",
+    "context": "4K",
+    "gen_tok_s": "171",
+    "measured_or_estimated": "estimated"
+   },
+   {
+    "model": "35B MoE 3B active (generic), CPU offload",
+    "gpu": "RTX 5080 desktop",
+    "quant": "Q4_K_M",
+    "runtime": "generic",
+    "context": "4K",
+    "gen_tok_s": "69",
+    "settings": "rough estimate, offload not measured, no error band",
+    "measured_or_estimated": "estimated"
+   },
+   {
+    "model": "Qwen3.8 27B, partial offload",
+    "gpu": "RTX 5080 desktop",
+    "quant": "Q4_K_M (16.5 GB)",
+    "runtime": "generic",
+    "context": "none fits",
+    "gen_tok_s": "10",
+    "settings": "rough estimate, offload not measured",
+    "measured_or_estimated": "estimated"
+   },
+   {
+    "model": "Gemma 4 26B-A4B, partial offload",
+    "gpu": "RTX 5080 desktop",
+    "quant": "Q4_K_M (16 GB)",
+    "runtime": "generic",
+    "context": "none fits",
+    "gen_tok_s": "125",
+    "settings": "rough estimate, offload not measured",
+    "measured_or_estimated": "estimated"
+   },
+   {
+    "model": "32B dense, CPU offload",
+    "gpu": "RTX 5080 desktop",
+    "quant": "Q4_K_M",
+    "runtime": "generic",
+    "gen_tok_s": "8",
+    "settings": "rough estimate",
+    "measured_or_estimated": "estimated"
+   },
+   {
+    "model": "Qwen3.5 4B Instruct",
+    "gpu": "RTX 5080 desktop (user-submitted)",
+    "quant": "Q4_K_M",
+    "runtime": "Ollama",
+    "context": "not given",
+    "gen_tok_s": "163.8",
+    "settings": "1 run, ModelFit speed-test submission, reviewed but not independently verified",
+    "measured_or_estimated": "measured"
+   }
+  ],
+  "conflicts": [
+   {
+    "baseline_claim": "gpt-oss-20b runs on llama.cpp with ggml-org MXFP4 GGUF at 11.28 GiB and 128k context all on GPU.",
+    "source_claim": "gpt-oss-20b MXFP4 weights 13.8 GB; 'about 2k tokens fit with an fp16 KV cache' (page) or maxContext 24554 (dataset) within 14.4 GB.",
+    "assessment": "ModelFit uses the safetensors size (12.82 GiB = 13.8 GB) and a size-class fp16 KV that ignores gpt-oss's alternating 128-token sliding-window layers. It also contradicts itself. Keep the baseline, and confirm by measurement on the machine."
+   },
+   {
+    "baseline_claim": "vLLM budget: 0.92 x 16303 MiB = 14.65 GiB, minus weights, minus 1.2 GiB reserve = KV pool.",
+    "source_claim": "Usable = 90% of 16 GB = 14.4 GB (13.41 GiB) for weights + KV, with a 1.6 GB runtime reserve; the FAQ also says about 15.5 GB usable.",
+    "assessment": "Different rules, and ModelFit is about 1.2 GiB more conservative and runtime-agnostic. Its GB vs GiB mixing and internal inconsistency make it unsuitable as the KB budget method. Keep the baseline method."
+   },
+   {
+    "baseline_claim": "Gemma 4 26B-A4B fits all on GPU with Google QAT Q4_0 (13.45 GiB) and 64k q8_0 KV; Qwen3.8-27B fits all on GPU as UD-Q3_K_XL (12.24 GiB) with 64k q8_0 KV.",
+    "source_claim": "Gemma 4 26B-A4B (Q4_K_M 16 GB) and Qwen3.8 27B (Q4_K_M 16.5 GB) do not fit; partial offload, no usable context.",
+    "assessment": "Not a real conflict: ModelFit only evaluates Q4_K_M with fp16 KV. The baseline picks smaller quants and q8_0 KV. Use this to tell readers that generic calculators will mark the baseline picks as 'does not fit'."
+   },
+   {
+    "baseline_claim": "Gemma 4 12B via vLLM QAT W4A16 (9.56 GiB) with 128k FP8 KV.",
+    "source_claim": "Gemma 4 12B Q4 about 8 GB weights; 64k fp16 KV about 12 GB, exceeding the budget; dataset maxContext 101975.",
+    "assessment": "ModelFit's size-class KV ignores Gemma's sliding-window layers, and its page and dataset disagree. Different quant and runtime. The baseline stands, pending on-machine measurement."
+   },
+   {
+    "baseline_claim": "Desktop RTX 5080 llama.cpp gpt-oss-20b about 205 tok/s tg128 (measured, ggml-org guide).",
+    "source_claim": "Desktop RTX 5080 gpt-oss-20b est. 167.6 tok/s at 4K context, typical error 15%.",
+    "assessment": "The estimate sits about 18% below the measured figure, outside its stated typical error. This suggests ModelFit is conservative for MXFP4 MoE on Blackwell. Prefer the measured number."
+   }
+  ],
+  "agreements": [
+   "Bandwidth-bound decode and the MoE active-parameter scaling match the baseline's reasoning: MoE models decode far faster than dense models of the same total size.",
+   "Desktop RTX 5080 is listed at 960 GB/s, which matches the baseline's desktop spec and confirms that its numbers are not laptop numbers.",
+   "Dense 27B-32B at Q4_K_M with fp16 KV does not fit in 16 GB without offload, consistent with the baseline choosing Q3 / QAT Q4_0 or MoE offload.",
+   "q8_0 KV cache roughly halves KV memory, consistent with the baseline using q8_0 KV for 64k contexts.",
+   "The hybrid Qwen3.5/3.6 KV cost is small (only full-attention layers cache KV), consistent with the baseline's large context estimates for Qwen3.6-35B-A3B."
+  ],
+  "kb_notes": [
+   {
+    "target_doc": "docs/community-benchmarks.md",
+    "note": "ModelFit (https://modelfit.io/gpu/, dataset https://modelfit.io/api/dataset/performance/, CC BY 4.0, pages dated 2026-11-14) publishes only estimates. Its decode model is (weight bytes x MoE factor + alpha x fp16 KV bytes)/(eta x bandwidth) + overhead, fitted on 4,831 measured runs, with a 10.7% median out-of-sample error (8.1% on CUDA, 14.2% on CUDA MoE). Never cite its tok/s figures as measurements."
+   },
+   {
+    "target_doc": "docs/community-benchmarks.md",
+    "note": "ModelFit has no RTX 5080 Laptop entry. Its 'RTX 5080' is the 960 GB/s desktop card. The closest bandwidth proxy is the desktop RTX 5070 Ti (16 GB, 896 GB/s): estimated 124.8 tok/s Qwen3 8B Q4_K_M and 158.9 tok/s gpt-oss-20b at 4K context, against 132.2 and 167.6 for the desktop 5080 (https://modelfit.io/api/dataset/performance/)."
+   },
+   {
+    "target_doc": "docs/model-selection.md",
+    "note": "Generic fit calculators such as ModelFit (https://modelfit.io/gpu/rtx-5080/) assume Q4_K_M weights, fp16 KV and a 14.4 GB usable budget. That is why they mark Qwen3.8-27B, Gemma 4 26B-A4B and Qwen3.6-35B-A3B as 'partial offload, no usable context' on a 16 GB card. Our picks rely on UD-Q3_K_XL, QAT Q4_0, q8_0 KV and llama.cpp --n-cpu-moe, which these calculators do not model."
+   },
+   {
+    "target_doc": "docs/model-selection.md",
+    "note": "ModelFit's gpt-oss-20b page (https://modelfit.io/can-i-run/gpt-oss-20b-on-rtx-5080/) gives 13.8 GB of weights and 'about 2k tokens' of fp16 context. Its own dataset says 24,554 tokens. Both come from safetensors-size weights and a size-class KV estimate that ignores gpt-oss sliding-window layers. Do not use either figure. Rely on the GGUF file size (11.28 GiB) and on-machine measurement."
+   },
+   {
+    "target_doc": "vllm/README.md",
+    "note": "Our VRAM budget method (0.92 x 16303 MiB = 14.65 GiB, minus weights, minus 1.2 GiB reserve = KV pool) is runtime-specific. ModelFit's rule of 90% of 16 GB = 14.4 GB with a 1.6 GB reserve (https://modelfit.io/gpu/rtx-5080/) is about 1.2 GiB more conservative and mixes GB with GiB, so treat it only as a sanity check."
+   },
+   {
+    "target_doc": "llamacpp/benchmarking.md",
+    "note": "ModelFit labels all offload speeds 'rough estimate, offload not measured' with no error band, for example 69 tok/s for a 35B-A3B MoE on the desktop RTX 5080 (https://modelfit.io/gpu/rtx-5080/). Our --n-cpu-moe runs on the laptop are new data, not a check against a known reference."
+   },
+   {
+    "target_doc": "docs/sources.md",
+    "note": "modelfit.io: calculator-estimate source, medium credibility. It is transparent (open CC BY 4.0 dataset, published formula and error), but it has no laptop GPUs, assumes Ollama/Q4_K_M/fp16 KV only, contains internal inconsistencies, and is affiliate-funded. Checked 2026-11-15."
+   }
+  ],
+  "gaps": [
+   "The fitted eta, alpha and overhead parameters per backend and hardware tier are not published, only the formula shape.",
+   "There is no laptop GPU modelling, so power-limited clocks (140 W here) and their effect on effective bandwidth are not captured.",
+   "There is no vLLM-specific modelling (gpu-memory-utilization, CUDA graphs, FP8 KV, NVFP4) and no MXFP4/NVFP4 weight-size handling beyond catalog sizes.",
+   "The ledger of 4,831 measured runs is not exposed per run in the dataset, so I could not check which RTX 5080 or 5070 Ti measurements it was fitted on.",
+   "The 'nearMeasured' flag per cell is not defined on the pages I read."
+  ]
+ },
+ "check": {
+  "verdicts": [
+   {
+    "item": "Publisher, type, as-of date",
+    "verdict": "confirmed",
+    "evidence": "/about/: 'Peter Dekker is an independent software developer, and the founder and hardware editor behind ModelFit'; 'As an Amazon Associate, ModelFit earns from qualifying purchases. We may also earn a commission on cloud-GPU sign-ups'. /gpu/rtx-5080/ and /can-i-run/gpt-oss-20b-on-rtx-5080/: 'Last updated : November 14, 2026'; JSON-LD 'datePublished\":\"2026-03-07\",\"dateModified\":\"2026-11-1...'. /gpu/ index text has no 'Last updated'. Type calculator-estimate is right: pages say 'ModelFit engine estimates, not measurements'."
+   },
+   {
+    "item": "No RTX 5080 Laptop entry; 5080 page is the 960 GB/s desktop card",
+    "verdict": "confirmed",
+    "evidence": "/gpu/rtx-5080-laptop/ returned HTTP 404. sitemap.xml lists 30 /gpu/ pages, none laptop (only 'laptop' hit is /blog/cloud-to-laptop-ai-lag/). /gpu/rtx-5080/: 'Bandwidth 960 GB/s'.",
+    "correction": "Minor: the dataset has 126 hardware keys, not 30. 30 are single non-Apple devices (25 NVIDIA incl. Tesla P100/T4, 4 Radeon, ryzen-ai-max-395), plus 6 multi-GPU combos and 90 Apple chip configs (which include MacBook chips). 'No laptop GPUs at all' holds for discrete laptop GPUs only."
+   },
+   {
+    "item": "RTX 5070 Ti proxy: 16 GB, 896 GB/s; Qwen3 8B Q4 124.8 vs 132.2 tok/s; gpt-oss-20b 158.9 vs 167.6",
+    "verdict": "confirmed",
+    "evidence": "/gpu/ index row 'RTX 5070 Ti 16 GB GDDR7 est. 125 tok/s typical error 5% 896 GB/s Blackwell'. Dataset cells rtx-5070-ti: [\"qwen3-8b-q4\",1,124.8,74.7,...,40960,5,1], [\"gpt-oss-20b\",1,158.9,null,...,24554,15,1]; rtx-5080: [\"qwen3-8b-q4\",1,132.2,79.5,...], [\"gpt-oss-20b\",1,167.6,null,0.16,1.53,24554,15,1]. All estimates at publishedContextTokens 4096."
+   },
+   {
+    "item": "Fit budget 14.4 GB (90%), 1.6 GB runtime reserve, FAQ says 15.5 GB usable",
+    "verdict": "confirmed",
+    "evidence": "'ModelFit budgets 90% of this card's 16GB (14.4GB) for weights, context, and KV-cache'; Fig. 2 'Runtime reserve 1.6 GB'; FAQ 'About 15.5GB is usable for models.' Dataset budgetGb 14.4. The self-inconsistency is real."
+   },
+   {
+    "item": "Methodology: decode formula, 4,831 runs, 10.7% LOHO median error, CUDA 8.1%, CUDA MoE 14.2%",
+    "verdict": "confirmed",
+    "evidence": "Dataset methodology verbatim: fittedOn '4831 measured runs from llama.cpp discussions and issues, community MLX benchmarks, published vendor posts and modelfit bench submissions'; accuracy 'leave-one-hardware-out median absolute error 10.7% (p90 37.6%, median bias -0.5%) over 3126 runs on 104 hardware types'; typicalErrorByGroup CUDA 0.081, CUDA|MoE 0.142, CUDA|10-20B 0.126, CUDA|20-40B 0.072."
+   },
+   {
+    "item": "KV estimate: fp16, size-class 8 KV heads x 128 head dim; exact only for Qwen3.5/3.6/Qwen3-Next hybrids",
+    "verdict": "confirmed",
+    "evidence": "/gpu/rtx-5080/: 'KV-cache figures assume an fp16 cache, the llama.cpp/Ollama default. Standard GQA models use a size-class estimate (8 KV heads x 128 head dim class); hybrid linear-attention models (Qwen3.5/3.6, Qwen3-Next) use the exact per-token cost'. The inference that sliding-window models are overestimated is the reviewer's reasoning, plausible but not stated by ModelFit."
+   },
+   {
+    "item": "gpt-oss-20b: 13.8 GB weights, 'about 2k tokens' on page vs maxContext 24554 in dataset",
+    "verdict": "confirmed",
+    "evidence": "can-i-run page: 'Model weights 13.8 GB MXFP4', 'Decode speed est. 168 tok/s typical error 15%', '8k tokens of context already bring the total to 15.8 GB, over 14.4 GB usable: about 2k tokens fit with an fp16 KV cache. A q8_0 KV cache roughly doubles that.' Dataset cell maxContext 24554. Conflict with baseline (11.28 GiB GGUF, 128k on llama.cpp) is real in numbers; the explanation (safetensors size, size-class KV) is consistent with 13.8 GB = 12.85 GiB and with the baseline's 12.82 GiB safetensors figure."
+   },
+   {
+    "item": "Offload rows: Qwen3.8 27B Q4_K_M 16.5 GB est. 10 tok/s; Gemma 4 26B-A4B Q4_K_M 16 GB est. 125 tok/s; 35B MoE 69 tok/s; 32B 8 tok/s; no error band",
+    "verdict": "confirmed",
+    "evidence": "can-i-run pages: 'Model weights 16.5 GB Q4_K_M Decode speed est. 10 tok/s rough estimate, offload not measured' and 'Model weights 16 GB Q4_K_M Decode speed est. 125 tok/s rough estimate, offload not measured'. /gpu/rtx-5080/: '32B est. 8 tok/s rough estimate, offload not measured', '35B MoE (3B active) est. 69 tok/s rough estimate, offload not measured', 'Offload rows are rough estimates: no measured run covers offload, so they carry no typical error.' The ~30 tok/s agentic floor is quoted on the 27B page.",
+    "correction": "Location detail: on /gpu/rtx-5080/ these two models are labelled 'tight' in the compatibility list; the 16.5 GB / 16 GB / 10 / 125 figures come from the can-i-run pages, not Table 1."
+   },
+   {
+    "item": "Gemma 4 12B: ~8 GB weights, fp16 KV 3.0 GB at 16k and 12.0 GB at 64k, est. 95.5 tok/s, maxContext 101975",
+    "verdict": "confirmed",
+    "evidence": "/gpu/rtx-5080/ Fig. 2: 'Gemma 4 12B loads ~ 8 GB of weights; at 16k context the KV cache adds ~ 3.0 GB ... and at 64k it adds ~ 12.0 GB ( exceeds the budget ...)'. Dataset [\"gemma4-12b-q4\",1,95.5,78.8,0.23,1.93,101975,15,0]. 8 + 12 GB > 14.4 at 64k vs maxContext 101975 is a genuine internal inconsistency."
+   },
+   {
+    "item": "Measured user report: Qwen3.5 4B Instruct Q4_K_M Ollama 163.8 tok/s, 1 run",
+    "verdict": "confirmed",
+    "evidence": "/gpu/rtx-5080/ Config reports: 'Speed test Qwen3.5 4B Instruct 163.8 Q4_K_M Ollama - 1 run'. Desktop card assumed from page context; hardware details of the submitter are not shown."
+   },
+   {
+    "item": "Conflict: desktop 5080 gpt-oss-20b est. 167.6 vs baseline measured ~205 tok/s tg128",
+    "verdict": "uncertain",
+    "evidence": "Baseline line 81 cites 'about 205 tok/s tg128 (ggml-org guide)'; I did not re-verify the ggml-org figure. ModelFit's 167.6 is at 4K context while tg128 is near-zero context, so part of the ~18% gap is a settings mismatch, not purely model error.",
+    "correction": "Qualify: the comparison is not like-for-like (4K context estimate vs tg128 measurement); say 'suggests ModelFit is conservative' rather than 'outside its stated typical error'."
+   }
+  ],
+  "credibility_fair": true,
+  "credibility_note": "Medium is fair. The formula, error statistics and CC BY 4.0 dataset are published, and every speed is clearly labelled an estimate. Against that: it has no discrete laptop GPUs, assumes Q4_K_M with fp16 KV, the RTX 5080 page contradicts itself (14.4 vs 15.5 GB usable; gpt-oss ~2k context vs dataset 24554; Gemma 4 12B 64k KV over budget vs maxContext 101975), offload rows have no error band, and the site is affiliate-funded.",
+  "overall": "holds-with-corrections",
+  "summary": "I re-fetched /gpu/, /gpu/rtx-5080/, /about/, sitemap.xml, /api/dataset/performance/ and three can-i-run pages with curl (generic UA) into $SCRATCH/src/modelfit-gpu-check/ and parsed them with python3 -I. Every load-bearing number in the review matches the raw source verbatim: 14.4 GB budget, 1.6 GB reserve, the 15.5 GB FAQ, the 4,831 runs and 10.7%/8.1%/14.2% errors, 132.2/124.8 and 167.6/158.9 tok/s, 13.8 GB gpt-oss weights with ~2k vs 24554 context, the 16.5 GB/10 tok/s and 16 GB/125 tok/s offload rows, the Gemma 4 12B KV figures, and the 163.8 tok/s Ollama report. /gpu/rtx-5080-laptop/ returns 404. The conflicts with the baseline are real numeric disagreements, and the review's explanations (Q4_K_M plus fp16 size-class KV, safetensors-size weights) fit the evidence. Three small corrections. (1) The dataset has 126 hardware keys: 30 single non-Apple devices, 6 multi-GPU and 90 Apple configs. 'No laptop GPUs' is true only for discrete laptop GPUs. (2) The 27B and 26B offload figures come from the can-i-run pages; /gpu/rtx-5080/ only marks those models 'tight'. (3) The 167.6 vs ~205 tok/s comparison sets a 4K-context estimate against a tg128 measurement, so the gap should be worded with that caveat."
+ }
+}

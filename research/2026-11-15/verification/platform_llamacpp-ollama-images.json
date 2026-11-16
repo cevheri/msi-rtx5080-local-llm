@@ -1,0 +1,171 @@
+{
+ "summary": "All checks were read-only against primary sources on 2026-11-15: llama.cpp at tag b12418, the GHCR registry API, NVIDIA docs, Ollama at tag v0.40.16, and the ggml-org gpt-oss guide.\n\n1. llama.cpp images. server-cuda (alias cuda12) is built on CUDA 12.8.1 and server-cuda13 on CUDA 13.5.0 (.github/workflows/docker.yml lines 93-96, .devops/cuda.Dockerfile ARG CUDA_VERSION=12.8.1). The image configs on GHCR confirm this: CUDA_VERSION=12.8.1 and 13.5.0, both built 2026-11-15 from build b12407. The newest pinned tags are server-cuda-b12407 and server-cuda13-b12407; no b12418 image tag exists yet. ggml-cuda/CMakeLists.txt adds 120a-real (Blackwell SASS) whenever the CUDA toolkit is 12.8 or newer, so both images contain native sm_120 code.\n   - NVIDIA's minor-version compatibility table says CUDA 13.x runs on driver 580 or newer, so a CUDA 13.5 runtime on driver 595.99 (CUDA 13.2) is allowed in principle. NVIDIA lists three caveats: cudaErrorCallRequiresNewerDriver for newer features, no JIT of newer PTX, and the need for an explicit -arch.\n   - The bigger risk is at container start. The server-cuda13 image sets NVIDIA_REQUIRE_CUDA=\"cuda>=13.5 OR brand=(unknown|grid|tesla|nvidia|quadro|quadrortx|nvidiartx|vapps|vpc|vcs|vws|cloudgaming),driver>=595,<596 ...\". GeForce is not in that brand list. Per the NVIDIA Container Toolkit docs, the container does not start when the constraint fails. So server-cuda13 is likely refused on this GeForce laptop unless NVIDIA_DISABLE_REQUIRE=true is set (inferred, not tested).\n   - server-cuda (CUDA 12.8.1, cuda>=12.8) runs on driver 595 through ordinary backward compatibility. It is the safer image here. It is also the build NVIDIA's RTX 5080 benchmark was run on (the log shows CUDA 12.8).\n\n2. llama-server flags at b12418 (common/arg.cpp, tools/server/README.md). Names, defaults and env vars are in 'resolved'. Notable findings:\n   - --no-mmap and --mlock no longer exist and are not aliased. An unknown flag throws 'error: invalid argument: ...', so the old gpt-oss guide commands that use --no-mmap now fail. Use -lm/--load-mode (auto|none|mmap|mlock|mmap+mlock|dio) instead.\n   - --fit is on by default. It moves MoE expert tensors to the CPU automatically and shrinks the context only when -c is 0 or not set.\n   - With -np left at auto, the server uses 4 slots with a unified KV cache.\n   - -hf downloads into an HF-hub-layout cache. The search order is LLAMA_CACHE, then HF_HUB_CACHE, then HF_HOME/hub, then ~/.cache/huggingface/hub. The image runs as root, so the cache is /root/.cache/huggingface/hub and can be shared with the vLLM HF volume.\n   - -hf also downloads an mmproj automatically; --no-mmproj saves VRAM for text-only coding.\n   - llama.cpp returns reasoning in reasoning_content, not 'reasoning'.\n\n3. OpenCode #58019 is fixed on the llama.cpp side. PR #26939 (merged 2026-08-20, commit dc64a1620) turned the hard error 'Pattern must start with ^ and end with $' into a warning. The pattern is then accepted as 'any string'. b12418 contains the fix (compare: ahead by 1885 commits, behind by 0), and so does b10620. b9879 does not. The OpenCode issue is still open and its own fix PR #58053 is not merged, but neither is needed with current llama.cpp.\n\n4. Ollama v0.40.16 (Docker Hub 0.40.16 = latest).\n   - Docker with GPU: docker run -d --gpus=all -v ollama:/root/.ollama -p 11434:11434 ollama/ollama, after the NVIDIA Container Toolkit is installed and 'nvidia-ctk runtime configure' has been run.\n   - OLLAMA_CONTEXT_LENGTH does apply to /v1 requests. The OpenAI translator never sets num_ctx, and the default options take NumCtx from envconfig.ContextLength(). The automatic 4k/32k/256k sizing is used only when the variable is 0.\n   - Defaults: OLLAMA_FLASH_ATTENTION is automatic where supported (1 forces it on, 0 turns it off). OLLAMA_KV_CACHE_TYPE defaults to f16 (q8_0 and q4_0 also available, needs flash attention, applies to every model). OLLAMA_NUM_PARALLEL defaults to 1 and OLLAMA_KEEP_ALIVE to 5m.\n   - tool_choice is listed as unsupported on /v1/chat/completions, and the translator has no code for it, so it is silently ignored.\n   - 'ollama launch opencode' needs the ollama CLI on the host. It loads the model, reads the real context length and writes limit.context and output = min(8192, ctx/4) into an inline OpenCode config. It does not overwrite ~/.config/opencode/opencode.json.\n\n5. Performance numbers. The only RTX 5080 figure in the official ggml-org gpt-oss guide (discussion #15396, last updated 2026-09-29) is gpt-oss-20b MXFP4 fully on the GPU: tg128 204.85 tok/s, pp2048 7476 tok/s. The device string reads 'NVIDIA GeForce RTX 5080' without 'Laptop GPU', so it is the desktop card (CUDA 12.8, build 6210 from August 2025). The guide has no tokens/s for --n-cpu-moe on a 16 GB GPU. It only gives the command for gpt-oss-120b (--n-cpu-moe 32) and a figure of 'about 30 t/s at zero context on a 5090 with --n-cpu-moe 21'. docs/moe-cache.md gives no numbers; it points to scripts/moe-cache-tune.py, which is not in the server image.\n\nThe validated commands are in 'snippets'. Every flag in them exists at b12418, and the HF repos and files were checked through the HF API.",
+ "resolved": [
+  {
+   "question": "Which CUDA version is ghcr.io/ggml-org/llama.cpp:server-cuda built with today?",
+   "answer": "CUDA 12.8.1. docker.yml matrix: tag 'cuda cuda12', cuda_version 12.8.1 (amd64+arm64). The live image config says CUDA_VERSION=12.8.1 and NVIDIA_REQUIRE_CUDA=cuda>=12.8. It was built 2026-11-15T05:51Z with image version label b12407 and is about 2.62 GB compressed (amd64).",
+   "support": "direct-statement",
+   "source_url": "https://github.com/ggml-org/llama.cpp/blob/b12418/.github/workflows/docker.yml (lines 93-94); ghcr.io/v2/ggml-org/llama.cpp manifests/server-cuda config blob"
+  },
+  {
+   "question": "Which CUDA version is server-cuda13 built with today?",
+   "answer": "CUDA 13.5.0. docker.yml: tag cuda13, cuda_version 13.5.0. The live image config says CUDA_VERSION=13.5.0, cuBLAS 13.10.0.20, NCCL 2.32.3+cuda13.4, built 2026-11-15T06:40Z, version label b12407. The newest pinned tags that resolve are server-cuda-b12407, server-cuda12-b12407 and server-cuda13-b12407. server-cuda-b12418 returns 404 (no image yet).",
+   "support": "direct-statement",
+   "source_url": "https://github.com/ggml-org/llama.cpp/blob/b12418/.github/workflows/docker.yml (lines 95-96); ghcr.io manifests server-cuda13"
+  },
+  {
+   "question": "Is sm_120 in the CUDA arch list of the image build?",
+   "answer": "Yes. cuda.Dockerfile builds with CUDA_DOCKER_ARCH=default, so CMAKE_CUDA_ARCHITECTURES is not set. ggml-cuda/CMakeLists.txt then adds 75-virtual, 80-virtual, 86-real, 89-real and 90-virtual; it adds 120a-real when the toolkit is 12.8 or newer, and 103-real plus 121a-real when it is 12.9 or newer. Both images (12.8.1 and 13.5.0) therefore ship native sm_120a SASS, and no PTX JIT is needed on this GPU.",
+   "support": "source-backed",
+   "source_url": "https://github.com/ggml-org/llama.cpp/blob/b12418/ggml/src/ggml-cuda/CMakeLists.txt (lines 41-69); https://github.com/ggml-org/llama.cpp/blob/b12418/.devops/cuda.Dockerfile (lines 31-48)"
+  },
+  {
+   "question": "Does a CUDA 13.5 container run on driver 595.99 (CUDA 13.2)? Which llama.cpp image is safer?",
+   "answer": "At the CUDA API level it is allowed. NVIDIA's minor-version table says CUDA 13.x needs driver 580 or newer, with caveats: features that need a newer driver can fail with cudaErrorCallRequiresNewerDriver, and newer PTX cannot be JIT-compiled (the image carries 120a SASS, so PTX does not matter here). At container start, however, the 13.5 image sets NVIDIA_REQUIRE_CUDA='cuda>=13.5' ORed only with brand clauses for unknown, grid, tesla, nvidia, quadro, quadrortx, nvidiartx, vapps, vpc, vcs, vws and cloudgaming (with driver>=595,<596). GeForce is not in that list. NVIDIA's toolkit doc says space-separated constraints are ORed and the container does not start when the driver is too old. A GeForce RTX 5080 Laptop on a CUDA 13.2 driver is therefore likely refused unless NVIDIA_DISABLE_REQUIRE=true is set. Recommendation: use server-cuda (CUDA 12.8.1), which runs through plain backward compatibility. NVIDIA's own RTX 5080 benchmark used CUDA 12.8 as well.",
+   "support": "inferred",
+   "source_url": "https://docs.nvidia.com/deploy/cuda-compatibility/minor-version-compatibility.html (updated 2026-11-11); https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/docker-specialized.html"
+  },
+  {
+   "question": "llama-server -ngl and --fit at b12418",
+   "answer": "-ngl, --gpu-layers, --n-gpu-layers N|auto|all: default auto (env LLAMA_ARG_N_GPU_LAYERS). -fit, --fit [on|off]: default on (env LLAMA_ARG_FIT). --fit adjusts only arguments you did not set. -fitt/--fit-target sets the free-memory margin (default 1024 MiB) and -fitc/--fit-ctx the minimum context (default 4096). Per the fit-params README it moves blk.N.ffn_*_exps tensors to the CPU to make the model fit. It shrinks n_ctx only when -c is 0 or unset (common/fit.cpp line 219).",
+   "support": "direct-statement",
+   "source_url": "https://github.com/ggml-org/llama.cpp/blob/b12418/tools/server/README.md (lines 85, 89-91); https://github.com/ggml-org/llama.cpp/blob/b12418/tools/fit-params/README.md"
+  },
+  {
+   "question": "-fa, --jinja, --reasoning-format, --reasoning-budget",
+   "answer": "-fa, --flash-attn on|off|auto: default auto. --jinja/--no-jinja: default enabled. --reasoning-format none|deepseek|deepseek-legacy: default auto; deepseek puts thoughts in message.reasoning_content (llama.cpp uses reasoning_content, not 'reasoning'). --reasoning-budget N: -1 means unrestricted (default), 0 ends thinking immediately. Related: -rea/--reasoning on|off|auto (default auto), --reasoning-effort (default 'default'), --reasoning-preserve (default enabled).",
+   "support": "direct-statement",
+   "source_url": "https://github.com/ggml-org/llama.cpp/blob/b12418/tools/server/README.md (lines 56, 238-244, 1575)"
+  },
+  {
+   "question": "MoE offload flags",
+   "answer": "-cmoe, --cpu-moe keeps all MoE expert weights on the CPU (env LLAMA_ARG_CPU_MOE). -ncmoe, --n-cpu-moe N keeps the experts of the first N layers on the CPU (env LLAMA_ARG_N_CPU_MOE). --moe-cache-mib N sets a GPU cache for host-resident experts, used for decode and speculative steps (default 0, disabled). --moe-cache-cpu-share F (default 0.00) lets the CPU compute a share of the cache misses. Host experts are pinned only with -lm none, mlock or dio, not with the default mmap.",
+   "support": "direct-statement",
+   "source_url": "https://github.com/ggml-org/llama.cpp/blob/b12418/tools/server/README.md (lines 80-83); https://github.com/ggml-org/llama.cpp/blob/b12418/docs/moe-cache.md"
+  },
+  {
+   "question": "-ctk/-ctv, -c, -np",
+   "answer": "-ctk/--cache-type-k and -ctv/--cache-type-v: default f16. Allowed values are f32, f16, bf16, f8_e4m3, q8_0, q4_0, q4_1, iq4_nl, q5_0 and q5_1. -c/--ctx-size: default 0, meaning the model's own value (fit may lower it). -np/--parallel: default -1 (auto). In auto mode the server uses n_parallel=4 with kv_unified=true (tools/server/server.cpp lines 129-134). Use -np 1 for one OpenCode user. --kv-unified-per-slot N is new.",
+   "support": "direct-statement",
+   "source_url": "https://github.com/ggml-org/llama.cpp/blob/b12418/tools/server/README.md (lines 50, 71-72, 166, 170, 178)"
+  },
+  {
+   "question": "Are --no-mmap and --mlock rejected or aliased?",
+   "answer": "Rejected. Neither string is defined anywhere in common/arg.cpp at b12418, and the parser throws 'error: invalid argument: <arg>' for an unknown option (arg.cpp line 843). The replacement is -lm/--load-mode auto|none|mmap|mlock|mmap+mlock|dio (default auto = mmap; env LLAMA_ARG_LOAD_MODE). The old --no-mmap maps to -lm none and --mlock to -lm mlock (or mmap+mlock). The gpt-oss guide still shows --no-mmap in its Mac 16 GB example, so that command now fails.",
+   "support": "source-backed",
+   "source_url": "https://github.com/ggml-org/llama.cpp/blob/b12418/common/arg.cpp (lines 662-680 region: '-lm', '--load-mode'; line 843)"
+  },
+  {
+   "question": "--api-key, -hf, and the cache dir in the container",
+   "answer": "--api-key KEY accepts a comma-separated list (env LLAMA_API_KEY); --api-key-file is also available. /health is public. -hf, -hfr, --hf-repo user/model[:quant]: the quant defaults to Q4_K_M, then Q8_0, then the first non-sidecar GGUF. mmproj is auto-downloaded unless --no-mmproj is set; mtp/eagle3/dflash sidecars are excluded from the main pick. The cache directory search order is LLAMA_CACHE, HF_HUB_CACHE, HUGGINGFACE_HUB_CACHE, HF_HOME/hub, XDG_CACHE_HOME/huggingface/hub, then $HOME/.cache/huggingface/hub (HF hub layout). The CUDA image has no USER directive, so it runs as root and the cache is /root/.cache/huggingface/hub. The image sets LLAMA_ARG_HOST=0.0.0.0 and LLAMA_ARG_PORT=8080 (the binary default port is 9931), entrypoint /app/llama-server, and a HEALTHCHECK on /health.",
+   "support": "source-backed",
+   "source_url": "https://github.com/ggml-org/llama.cpp/blob/b12418/common/hf-cache.cpp (lines 33-51); https://github.com/ggml-org/llama.cpp/blob/b12418/common/download.cpp (lines 681-800); https://github.com/ggml-org/llama.cpp/blob/b12418/.devops/cuda.Dockerfile (server stage)"
+  },
+  {
+   "question": "Does the latest llama.cpp accept OpenCode's subagent schema pattern '^ses' (#58019)?",
+   "answer": "Yes. PR #26939 'common : gracefully fallback on unsupported regex patterns in JSON schema' was merged 2026-08-20 (commit dc64a1620). The fix answers issue #26930, which was closed the same day. At b12418, _visit_pattern() treats a pattern that is not anchored at both ends as an unsupported_pattern: it logs 'WARNING: JSON schema conversion was incomplete' and accepts any string, with no HTTP 400. b12418 contains the fix (compare: ahead_by 1885, behind_by 0) and b10620 already does. The b9879 build named in the issue predates it. OpenCode #58019 is still open (last activity 2026-11-02) and its PR #58053 is unmerged; neither matters with current llama.cpp. Docker Model Runner or other bundles that embed older llama.cpp still hit the error.",
+   "support": "source-backed",
+   "source_url": "https://github.com/ggml-org/llama.cpp/blob/b12418/common/json-schema-to-grammar.cpp (lines 414-432, 1044-1050); https://github.com/ggml-org/llama.cpp/pull/26939; https://github.com/anomalyco/opencode/issues/58019"
+  },
+  {
+   "question": "Ollama docker run with GPU",
+   "answer": "After installing the NVIDIA Container Toolkit and running 'sudo nvidia-ctk runtime configure --runtime=docker && sudo systemctl restart docker': docker run -d --gpus=all -v ollama:/root/.ollama -p 11434:11434 --name ollama ollama/ollama. Docker Hub tag 0.40.16 equals latest (digest sha256:910d0d8107b5, 2026-11-09). 0.40.17-rc0 is a pre-release. The GPU doc lists the RTX 5080 under compute capability 12.0 and requires driver 550 or newer.",
+   "support": "direct-statement",
+   "source_url": "https://github.com/ollama/ollama/blob/v0.40.16/docs/docker.mdx (docs.ollama.com/docker); https://github.com/ollama/ollama/blob/v0.40.16/docs/gpu.mdx"
+  },
+  {
+   "question": "Does OLLAMA_CONTEXT_LENGTH apply to /v1 requests?",
+   "answer": "Yes. The OpenAI translator (openai/openai.go) sets only stop, num_predict, temperature, seed, penalties and top_p, never num_ctx. api.DefaultOptions sets NumCtx from envconfig.ContextLength() (api/types.go line 1239). routes.go uses the automatic VRAM-based size (4k below 24 GiB) only when neither the request nor the Modelfile sets num_ctx AND OLLAMA_CONTEXT_LENGTH is 0. The other per-model route is a Modelfile with 'PARAMETER num_ctx' (the doc's 'Setting the local context size' section). Note the docs disagree: faq.mdx still says the default is 4096, while context-length.mdx gives the 4k/32k/256k VRAM tiers.",
+   "support": "source-backed",
+   "source_url": "https://github.com/ollama/ollama/blob/v0.40.16/server/routes.go (lines 202-212); https://github.com/ollama/ollama/blob/v0.40.16/api/types.go (line 1239); https://github.com/ollama/ollama/blob/v0.40.16/docs/api/openai-compatibility.mdx (lines 448-457)"
+  },
+  {
+   "question": "Ollama defaults for FLASH_ATTENTION, KV_CACHE_TYPE, NUM_PARALLEL, KEEP_ALIVE",
+   "answer": "OLLAMA_FLASH_ATTENTION is a BoolWithDefault: flash attention is used automatically when backend and device support it; 1 forces it on, 0 turns it off. OLLAMA_KV_CACHE_TYPE defaults to f16 (q8_0 and q4_0 available); it needs flash attention and is global to all models. OLLAMA_NUM_PARALLEL defaults to 1, and memory scales with NUM_PARALLEL x CONTEXT_LENGTH. OLLAMA_KEEP_ALIVE defaults to 5m; a negative value means forever, and the per-request keep_alive on /api overrides it. OLLAMA_MAX_LOADED_MODELS defaults to 0 (auto) and OLLAMA_MAX_QUEUE to 512.",
+   "support": "direct-statement",
+   "source_url": "https://github.com/ollama/ollama/blob/v0.40.16/envconfig/config.go (lines 126-145, 216-230, 277, 318-338); https://github.com/ollama/ollama/blob/v0.40.16/docs/faq.mdx (lines 335, 344-364)"
+  },
+  {
+   "question": "Ollama /v1 tool_choice support",
+   "answer": "Not supported. The /v1/chat/completions request-field list marks `tool_choice` as unchecked ([ ]), while tools, reasoning_effort and reasoning are supported. openai/openai.go has no tool_choice handling, so the field is silently ignored.",
+   "support": "direct-statement",
+   "source_url": "https://github.com/ollama/ollama/blob/v0.40.16/docs/api/openai-compatibility.mdx (lines 213-248)"
+  },
+  {
+   "question": "The 'ollama launch opencode' doc",
+   "answer": "docs.ollama.com/integrations/opencode says 'OpenCode requires a context length of 64k or higher'. 'ollama launch opencode' starts OpenCode with an inline config for the chosen model and does not overwrite ~/.config/opencode/opencode.json; '--config' configures without starting. The manual setup uses the V1 shape with provider.ollama, npm @ai-sdk/openai-compatible and baseURL http://localhost:11434/v1. Source (cmd/launch/opencode.go): it reads the loaded model's real context length and writes limit.context, limit.input, and limit.output = min(8192, ctx/4). It needs the ollama CLI on the host, which is not installed; with the server in Docker, the CLI would have to point OLLAMA_HOST at the container (untested).",
+   "support": "direct-statement",
+   "source_url": "https://github.com/ollama/ollama/blob/v0.40.16/docs/integrations/opencode.mdx; https://github.com/ollama/ollama/blob/v0.40.16/cmd/launch/opencode.go (lines 189-267)"
+  },
+  {
+   "question": "Official RTX 5080 numbers in the ggml-org gpt-oss guide: desktop or laptop?",
+   "answer": "Desktop. The log line reads 'Device 0: NVIDIA GeForce RTX 5080, compute capability 12.0, VMM: yes, CUDA 12.8'; laptop parts report 'Laptop GPU'. gpt-oss-20b MXFP4 (11.27 GiB) fully on the GPU, build a094f381 (6210), -fa 1 -b 4096 -ub 2048: pp2048 7476.55, pp8192 7047.73, pp16384 6465.65, pp32768 5531.03, tg128 204.85 tok/s. The guide was last updated 2026-09-29, but these rows date from August 2025 builds. The laptop GPU's bandwidth is 896 GB/s against 960 GB/s for the desktop card (NVIDIA spec, not checked in this lane), so expect somewhat lower decode.",
+   "support": "direct-statement",
+   "source_url": "https://github.com/ggml-org/llama.cpp/discussions/15396"
+  },
+  {
+   "question": "Official tokens/s for MoE expert offload (--n-cpu-moe) on 16 GB GPUs",
+   "answer": "None published. The guide gives commands only: gpt-oss-120b with '--ctx-size 32768 --jinja -ub 4096 -b 4096 --n-cpu-moe 32' for 16 GB, and gpt-oss-20b with --n-cpu-moe 12/16/22 for smaller GPUs. Its only offload throughput is in the Tips: 'about 30 t/s at zero context on a 5090 with --n-cpu-moe 21' (120b, 32 GB). Its memory table: gpt-oss-20b totals 14.9/15.5/17.9 GB at 8k/32k/131k context; gpt-oss-120b's 61 GB of model data does not fit this machine's roughly 40 GiB free RAM. docs/moe-cache.md has no numbers and only points to scripts/moe-cache-tune.py, which is not shipped in the server image.",
+   "support": "direct-statement",
+   "source_url": "https://github.com/ggml-org/llama.cpp/discussions/15396; https://github.com/ggml-org/llama.cpp/blob/b12418/docs/moe-cache.md"
+  },
+  {
+   "question": "Starting --n-cpu-moe estimate for Qwen3.6-35B-A3B Q4_K_M on this GPU at 64k context",
+   "answer": "From the config: 40 layers, 256 experts, hidden 2048, moe_intermediate 512, full_attention_interval 4 (10 full-attention layers), 2 KV heads, head_dim 256. The GGUF Q4_K_M is 19.13 GiB. Expert parameters are 256x3x2048x512x40 = 32.2B of 34.66B, about 17.8 GiB, or about 0.444 GiB per layer at the file's average bit rate. Non-expert weights are about 1.36 GiB. KV at f16: 2x10x2x256x2 B = 20 KiB/token, so 1.25 GiB at 65536 (0.66 GiB with q8_0). Compute buffers are about 1 GiB. Free VRAM is about 15.8 GiB minus the 1 GiB fit margin, leaving 14.8 GiB, so about 11.2 GiB of experts fit on the GPU (about 25 layers) and --n-cpu-moe is about 15-16. That puts about 7 GiB in RAM. Use --no-mmproj, or the mmproj adds 0.6-0.8 GiB. Letting --fit choose is equivalent.",
+   "support": "inferred",
+   "source_url": "https://huggingface.co/Qwen/Qwen3.6-35B-A3B/raw/main/config.json; https://huggingface.co/api/models/ggml-org/Qwen3.6-35B-A3B-GGUF?blobs=true"
+  }
+ ],
+ "gaps": [
+  "Not tested on the machine: whether nvidia-container-cli really refuses server-cuda13 on this GeForce RTX 5080 Laptop with driver 595.99 (NVIDIA_REQUIRE_CUDA cuda>=13.5 with no GeForce brand clause). The conclusion comes from the image env plus NVIDIA's constraint semantics. It also depends on the NVML brand string and on whether the toolkit runs in legacy or CDI mode, and the toolkit is not installed yet.",
+  "No official tokens/s exists for --n-cpu-moe or --moe-cache-mib offload on a 16 GB GPU, or on any RTX 5080 Laptop. Offload throughput on this machine has to be measured.",
+  "The RTX 5080 numbers in the gpt-oss guide come from a desktop card, CUDA 12.8 and build 6210 (August 2025). No laptop or 140 W numbers were found.",
+  "Whether OpenCode v2.3.0 reads llama.cpp's 'reasoning_content' field or Ollama's 'reasoning' field was not checked in this lane.",
+  "With -np auto (4 slots, unified KV), I did not confirm from source that one request can use the whole -c; the commands use -np 1 to avoid the question.",
+  "The 64k-context fit of gpt-oss-20b on 16 GB is inferred from the guide's memory table (about 16.3 GB at 64k with -ub 4096 compute buffers). If it does not fit, --fit offloads some experts. Not measured.",
+  "The Ollama container's OLLAMA_HOST default (0.0.0.0 in the image) and how 'ollama launch opencode' works against a Docker-hosted server were not checked.",
+  "The CUDA 12.x image on a CUDA 13 driver relies on ordinary backward compatibility. I did not open the CUDA 13.2 release notes for any GeForce-specific limits."
+ ],
+ "snippets": [
+  {
+   "purpose": "llama.cpp server, gpt-oss-20b fully on the GPU, 64k context, HF cache shared with vLLM. Every flag exists at b12418. CUDA 12.8.1 image pinned to the newest published build (b12407). Requires the NVIDIA Container Toolkit, which is not installed yet.",
+   "content": "docker run -d --name llama-gptoss20b --gpus all -p 8080:8080 -v ~/.cache/huggingface:/root/.cache/huggingface ghcr.io/ggml-org/llama.cpp:server-cuda-b12407 -hf ggml-org/gpt-oss-20b-GGUF:MXFP4 -c 65536 -np 1 -fa on --jinja --alias gpt-oss-20b --api-key local-dev-key",
+   "source_url": "https://github.com/ggml-org/llama.cpp/blob/b12418/tools/server/README.md; https://github.com/ggml-org/llama.cpp/discussions/15396; https://huggingface.co/api/models/ggml-org/gpt-oss-20b-GGUF?blobs=true (gpt-oss-20b-MXFP4.gguf 12,109,566,624 bytes)"
+  },
+  {
+   "purpose": "llama.cpp server, MoE expert offload: Qwen3.6-35B-A3B Q4_K_M (19.13 GiB) on 16 GB VRAM with the experts of the first 16 layers in RAM, q8_0 KV, text only. The -ncmoe value is an inferred starting point. Alternatively drop -ncmoe and let --fit (default on) place the experts.",
+   "content": "docker run -d --name llama-qwen36 --gpus all -p 8080:8080 -v ~/.cache/huggingface:/root/.cache/huggingface ghcr.io/ggml-org/llama.cpp:server-cuda-b12407 -hf ggml-org/Qwen3.6-35B-A3B-GGUF:Q4_K_M --no-mmproj -c 65536 -np 1 -fa on -ctk q8_0 -ctv q8_0 -ncmoe 16 -t 16 --jinja --alias qwen3.6-35b-a3b --api-key local-dev-key",
+   "source_url": "https://github.com/ggml-org/llama.cpp/blob/b12418/tools/server/README.md; https://huggingface.co/api/models/ggml-org/Qwen3.6-35B-A3B-GGUF?blobs=true"
+  },
+  {
+   "purpose": "Optional llama.cpp MoE cache: keep hot experts in VRAM when experts live on the host. Pinned host memory needs -lm none, mlock or dio, not the default mmap. Size the cache to the VRAM left over.",
+   "content": "... -cmoe --moe-cache-mib 6000 -lm none ...   (tuning tool: python3 scripts/moe-cache-tune.py -- llama-server ...; this script is in the repo, not in the server image)",
+   "source_url": "https://github.com/ggml-org/llama.cpp/blob/b12418/docs/moe-cache.md"
+  },
+  {
+   "purpose": "Replacements for removed llama.cpp flags (--no-mmap and --mlock now fail with 'error: invalid argument')",
+   "content": "--no-mmap  ->  -lm none\n--mlock    ->  -lm mlock   (or -lm mmap+mlock)",
+   "source_url": "https://github.com/ggml-org/llama.cpp/blob/b12418/common/arg.cpp"
+  },
+  {
+   "purpose": "Fallback only if the CUDA 13.5 image is required: bypass the NVIDIA_REQUIRE_CUDA start check (CUDA 13 minor-version compatibility then applies; driver 580 or newer needed). Not recommended over server-cuda.",
+   "content": "docker run -d --gpus all -e NVIDIA_DISABLE_REQUIRE=true -p 8080:8080 -v ~/.cache/huggingface:/root/.cache/huggingface ghcr.io/ggml-org/llama.cpp:server-cuda13-b12407 -hf ggml-org/gpt-oss-20b-GGUF:MXFP4 -c 65536 -np 1",
+   "source_url": "https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/docker-specialized.html; https://docs.nvidia.com/deploy/cuda-compatibility/minor-version-compatibility.html"
+  },
+  {
+   "purpose": "Ollama v0.40.16 in Docker with GPU, 64k default context applied to /v1 too, flash attention forced on, q8_0 KV, one slot, 30 min keep-alive",
+   "content": "docker run -d --name ollama --gpus=all -v ollama:/root/.ollama -p 11434:11434 -e OLLAMA_CONTEXT_LENGTH=65536 -e OLLAMA_FLASH_ATTENTION=1 -e OLLAMA_KV_CACHE_TYPE=q8_0 -e OLLAMA_NUM_PARALLEL=1 -e OLLAMA_KEEP_ALIVE=30m ollama/ollama:0.40.16\ndocker exec -it ollama ollama pull gpt-oss:20b\ndocker exec -it ollama ollama ps   # check the CONTEXT and PROCESSOR columns",
+   "source_url": "https://github.com/ollama/ollama/blob/v0.40.16/docs/docker.mdx; https://github.com/ollama/ollama/blob/v0.40.16/docs/faq.mdx; https://github.com/ollama/ollama/blob/v0.40.16/docs/context-length.mdx"
+  },
+  {
+   "purpose": "Ollama per-model context alternative (Modelfile), from the OpenAI-compat doc",
+   "content": "FROM <some model>\nPARAMETER num_ctx <context size>\n# then: ollama create mymodel ; call /v1/chat/completions with model \"mymodel\"",
+   "source_url": "https://github.com/ollama/ollama/blob/v0.40.16/docs/api/openai-compatibility.mdx"
+  },
+  {
+   "purpose": "Source excerpt that resolves OpenCode #58019 on current llama.cpp (unanchored pattern becomes a warning instead of an HTTP 400)",
+   "content": "if (pattern.length() < 2 || pattern.front() != '^' || pattern.back() != '$') {\n    throw unsupported_pattern(\"not anchored with '^' and '$'\");\n}\n... catch (const unsupported_pattern & err) {\n    _warnings.push_back(\"pattern \" + pattern + \" is not supported (\" + err.what() + \"), accepting any string\");",
+   "source_url": "https://github.com/ggml-org/llama.cpp/blob/b12418/common/json-schema-to-grammar.cpp"
+  }
+ ]
+}

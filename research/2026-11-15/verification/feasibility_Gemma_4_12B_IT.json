@@ -1,0 +1,94 @@
+{
+ "verdicts": [
+  {
+   "claim": "Checkpoint sizes: google/gemma-4-12B-it BF16 23.92 GB; qat-w4a16-ct 10.26 GB; qat-q4_0-gguf 6.98 GB + mmproj 0.18 GB; ggml-org Q4_0 7.22 / Q8_0 12.67 / BF16 23.83; RedHatAI NVFP4 10.26 GB",
+   "verdict": "confirmed",
+   "correction": "Exact HF API bytes (2026-11-15): BF16 model.safetensors 23,919,549,408; qat-w4a16-ct model.safetensors 10,264,229,896 (9.559 GiB); gemma-4-12b-it-qat-q4_0.gguf 6,975,879,296 (6.497 GiB) + mmproj 175,115,616; ggml-org Q4_0 7,219,673,216, Q8_0 12,669,641,920, BF16 23,832,061,120, mtp Q4_0 253,708,960, mtp Q8_0 465,109,152 (lastModified 2026-11-12); RedHatAI NVFP4 10,264,269,928.",
+   "evidence_url": "https://huggingface.co/api/models/google/gemma-4-12B-it-qat-w4a16-ct?blobs=true"
+  },
+  {
+   "claim": "W4A16 checkpoint stores a separate 2.01 GB BF16 lm_head copy despite tied embeddings; vLLM ties lm_head to embed_tokens so resident weights are about 8.25 GB",
+   "verdict": "confirmed",
+   "correction": "Safetensors header read by HTTP range: lm_head.weight BF16 [262144,3840] 2,013,265,920 B and model.language_model.embed_tokens.weight same size; dtype totals I32 5,449,973,760 + BF16 4,814,078,048. config tie_word_embeddings true; lm_head in quant ignore list. vLLM v0.33.0 gemma4.py:1453-1454 replaces lm_head with embed_tokens via tie_weights and gemma4_unified.py:248 maps 'lm_head.' to language_model.lm_head, so the duplicate loads into the shared parameter (source-backed, not measured).",
+   "evidence_url": "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/model_executor/models/gemma4.py#L1447-L1454"
+  },
+  {
+   "claim": "Architecture: 48 layers, 40 sliding (window 1024, 8 KV heads x 256) + 8 full (1 KV head x 512, attention_k_eq_v), max_position_embeddings 262144, no MoE, no KV sharing",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/google/gemma-4-12B-it/raw/main/config.json"
+  },
+  {
+   "claim": "KV bytes per token (global) 16,384 BF16 / 8,192 FP8; vLLM caches separate K and V despite K=V",
+   "verdict": "confirmed",
+   "correction": "2 x 8 x 1 x 512 x 2 = 16,384 B. Sliding per token of window: 2 x 40 x 8 x 256 x 2 = 327,680 B. Also confirmed for llama.cpp: src/models/gemma4.cpp:279-290 at b12418 sets Vcur = Kcur when wv is absent but then normalizes K with attn_k_norm weights and V with a weightless rms_norm, so K and V differ and V is cached separately: no halving in llama.cpp either (resolves a listed gap).",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/blob/b12418/src/models/gemma4.cpp#L269-L293"
+  },
+  {
+   "claim": "vLLM sliding-window reservation is (window-1 + max_num_batched_tokens 2048) = 3071 tokens = 0.937 GiB BF16, giving about 193,300 tokens max BF16 context (est_max_context_tokens 193000)",
+   "verdict": "refuted",
+   "correction": "v0.33.0 sizes sliding groups with max_in_flight_tokens = max_concurrent_batches x max_num_batched_tokens (vllm/config/vllm.py:588-609). Async scheduling is on by default (vllm.py:1685-1719), giving 2 x 2048 = 4096 in-flight tokens (default max_num_batched_tokens 2048 for an under-70 GiB GPU on the API server, arg_utils.py:2997-3002). Sliding reservation = cdiv(1023+4096,16)+1 = 321 blocks = 5136 tokens x 327,680 B = 1.567 GiB BF16 / 0.784 GiB FP8 (kv_cache_interface.py:918-955). This is the open regression #49878. Corrected study-method numbers: pool 14.647 - 9.559 - 1.2 = 3.888 GiB. BF16 max = (3.888-1.567) GiB / 16384 = about 152,100 tokens. FP8 = (3.888-0.784)/8192 = about 406,900, capped at 262,144. Tied-lm_head variant (7.685 GiB resident): pool 5.762 GiB, BF16 262,144 needs 4.0+1.567 = 5.567 GiB, so it still fits but with only about 0.2 GiB headroom.",
+   "evidence_url": "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/v1/kv_cache_interface.py#L918-L955"
+  },
+  {
+   "claim": "--max-model-len 131072 with BF16 KV fits with about 0.95 GiB spare; 262144 with --kv-cache-dtype fp8 fits",
+   "verdict": "confirmed",
+   "correction": "Both still fit, but the BF16 131072 margin is smaller: it needs 2.0 + 1.567 = 3.567 GiB of a 3.888 GiB pool, leaving about 0.32 GiB, not 0.95. FP8 262144 needs 2.0 + 0.784 = 2.78 GiB. Each extra concurrent sequence costs another 1.57 GiB BF16 / 0.78 GiB FP8 of sliding cache, so with --max-num-seqs 2 a second long request may wait at BF16 131072.",
+   "evidence_url": "https://github.com/vllm-project/vllm/issues/49878"
+  },
+  {
+   "claim": "vLLM v0.33.0 registers Gemma4UnifiedForConditionalGeneration (registry.py 428-430), Gemma4MTPModel at 723, tool parser gemma4 at tool_parsers/__init__.py 253, reasoning parser gemma4 at reasoning/__init__.py 55; examples/tool_chat_template_gemma4.jinja exists",
+   "verdict": "confirmed",
+   "correction": "All lines match at tag v0.33.0. The example template returns HTTP 200 at the tag in the source repo; its path inside the image is still not verified.",
+   "evidence_url": "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/model_executor/models/registry.py#L428-L430"
+  },
+  {
+   "claim": "W4A16 (int4 sym group 32) goes to MarlinLinearKernel on sm_120 because CutlassW4A8 and Machete need capability 90",
+   "verdict": "confirmed",
+   "correction": "_POSSIBLE_KERNELS CUDA order CutlassW4A8, Machete, Marlin, Conch, Exllama (kernels/linear/__init__.py:539-545); machete.py:33 requires is_device_capability(90); MARLIN_SUPPORTED_GROUP_SIZES = [-1,32,64,128]. The old marlin size_k bug (#44796) affected only v0.22.x, and a maintainer confirmed it loads via Marlin on main (closed 2026-07-07).",
+   "evidence_url": "https://github.com/vllm-project/vllm/issues/44796"
+  },
+  {
+   "claim": "Attention on sm_120 is forced to TRITON_ATTN because FA4 supports only 9.x/10.x/11.x",
+   "verdict": "confirmed",
+   "correction": "config.py:301-367 (Gemma4Config) and flash_attn_interface.py:72-84 at v0.33.0. Missing from the record: open #53658 (TRITON_ATTN illegal memory access when a CUDA-graph capture size exceeds max-model-len; it first hit gemma-4-12B-it on an RTX 5090). It does not trigger with max-model-len 131072 and default capture sizes. Also #48076 is a regression at batch of 12 or more, which does not matter for single-stream OpenCode.",
+   "evidence_url": "https://github.com/vllm-project/vllm/issues/53658"
+  },
+  {
+   "claim": "Cited open vLLM issues (#54256, #66430, #50889, #53363, #51284, #56263, #49717, #67454, #57231, #57232, #40677, #48076, #50577, #48848) exist and are open",
+   "verdict": "confirmed",
+   "correction": "All 14 are open as of 2026-11-15, with titles matching. Add #49878 (KV size up about 40% since v0.26, still worse on v0.33.0 per a 2026-11-04 comment) and #53658.",
+   "evidence_url": "https://github.com/vllm-project/vllm/issues/49878"
+  },
+  {
+   "claim": "llama.cpp b12418 supports gemma4 (llama-arch.cpp), detects Gemma 4 tool template via '<|tool_call>call:' and uses PEG_GEMMA4; --reasoning on|off|auto and --reasoning-budget exist; --jinja default on",
+   "verdict": "confirmed",
+   "correction": "llama-arch.cpp:65-66; common/chat.cpp:1399-1402 and 1022; server README lines 238-242. CUDA FA has a D=512 MMA kernel (fattn.cu:382-384), so -fa on covers the global layers. Note: GitHub 'latest' release is v1.0.0 (2026-11-13); bNNNN builds are tagged pre-release and b12420 already exists. Missing open issue: #29655 'Unstable Tool Calling for Gemma 4 Models during Multi-line Streaming and Partial Parsing' (the PEG gemma4 mapper emits partial edit/write args). It is directly relevant to OpenCode edit tools, and was reported on Vulkan with a 26B model.",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/issues/29655"
+  },
+  {
+   "claim": "llama.cpp VRAM: QAT Q4_0 at -c 131072 f16 KV about 10 GiB; 262144 f16 about 12 GiB; q8_0 KV 262144 about 9.8 GiB",
+   "verdict": "confirmed",
+   "correction": "Recomputed: weights 6.497 GiB + global KV 131072 x 16384 B = 2.0 GiB + SWA (1024+512) x 327,680 B = 0.47 GiB + about 1 GiB compute = about 9.97 GiB; 262144 f16 = about 11.97 GiB; 262144 q8_0 = 6.5 + 2.0 + 0.24 + 1 = about 9.7 GiB. Inferred, not measured. K=V gives no saving (see the K/V claim).",
+   "evidence_url": "https://huggingface.co/api/models/google/gemma-4-12B-it-qat-q4_0-gguf?blobs=true"
+  },
+  {
+   "claim": "Thinking defaults off in the HF chat template (line 186)",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/google/gemma-4-12B-it/raw/main/chat_template.jinja"
+  },
+  {
+   "claim": "Ollama tags gemma4:12b, 12b-it-qat, 12b-it-q8_0, 12b-it-bf16, mlx/nvfp4/mxfp8 variants; 256K context",
+   "verdict": "confirmed",
+   "correction": "The tag list matches the tags page. Per-tag sizes were seen only as page numbers (7.4-8.0 GB) and not mapped to tags one by one.",
+   "evidence_url": "https://ollama.com/library/gemma4/tags"
+  },
+  {
+   "claim": "Verdict: usable for OpenCode with working tool calls and at least 64k context on this machine",
+   "verdict": "confirmed",
+   "correction": "It fits either way: vLLM W4A16 at 131072 BF16 (0.32 GiB margin) or 262144 FP8, and llama.cpp QAT Q4_0 at 131072 to 262144. Tool calling works but is fragile: there are 10+ open gemma4 parser bugs in vLLM and #29655 in llama.cpp, and nothing has been measured on this GPU. Best realistic setup: vLLM v0.33.0 with google/gemma-4-12B-it-qat-w4a16-ct, --kv-cache-dtype fp8, --max-model-len 131072 (or 262144), --max-num-seqs 1, both gemma4 parsers. That leaves about 1 GiB of headroom at 131072, which absorbs the #49878 sizing drift. llama.cpp server-cuda13 with the QAT Q4_0 GGUF and --jinja is the fallback.",
+   "evidence_url": "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/config/vllm.py#L588-L609"
+  }
+ ],
+ "overall": "holds-with-corrections",
+ "summary": "The record mostly holds. I re-read every file size, the config, the vLLM v0.33.0 registry, parsers, Marlin path and TRITON_ATTN forcing, plus llama.cpp b12418 arch, chat detection and FA D=512 support, and all of it matches.\n\nOne load-bearing correction: v0.33.0 enables async scheduling by default, so sliding-window KV is reserved for 2 x 2048 in-flight tokens (5136 tokens = 1.567 GiB BF16, 0.784 GiB FP8), not 3071 tokens (open issue #49878). With the study method, BF16 max context drops from about 193K to about 152K. 131072 BF16 still fits, but with about 0.32 GiB spare instead of 0.95. FP8 still reaches the 262,144 cap.\n\nThe safetensors header confirms the duplicate 2.01 GB lm_head, and vLLM ties it. Gap resolved: llama.cpp also stores V separately for K=V layers (V gets a different norm), so there is no halving.\n\nIssues the record missed: vLLM #53658 (TRITON_ATTN illegal access when a capture size exceeds max-model-len, first hit on gemma-4-12B with a 5090) and llama.cpp #29655 (unstable Gemma 4 multi-line streamed tool calls, which matters for OpenCode edit tools). Also, llama.cpp's GitHub 'latest' is v1.0.0 (2026-11-13); bNNNN builds are pre-releases.\n\nRemaining gaps: no measured tok/s or VRAM on an RTX 5080 Laptop, and the in-image template path and Ollama per-tag sizes are unverified. Recommended: W4A16 + FP8 KV at 131072 with max-num-seqs 1."
+}

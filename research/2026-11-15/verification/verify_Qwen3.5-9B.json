@@ -1,0 +1,299 @@
+{
+ "name": "Qwen3.5-9B",
+ "hf_repo": "Qwen/Qwen3.5-9B",
+ "within_last_12_months": true,
+ "official_org": {
+  "value": "Qwen (Alibaba Qwen team). The HF org 'Qwen' has 469 models, 116k followers and a team plan. The organizations API returns isVerified=false, so there is no verified badge. The card links to the vendor's own blog (https://qwen.ai/blog?id=qwen3.5) and to chat.qwen.ai, and the vLLM recipe lists provider 'Qwen' with model_id Qwen/Qwen3.5-9B.",
+  "source_url": "https://huggingface.co/api/organizations/Qwen/overview",
+  "support": "source-backed"
+ },
+ "release_date": {
+  "value": "HF createdAt 2026-02-27T12:58:26Z, lastModified 2026-03-02. The card's citation says 'Qwen3.5: Towards Native Multimodal Agents', February 2026, and links to https://qwen.ai/blog?id=qwen3.5. This is inside the 2025-11-15..2026-11-15 window.",
+  "source_url": "https://huggingface.co/api/models/Qwen/Qwen3.5-9B",
+  "support": "direct-statement"
+ },
+ "license": {
+  "value": "apache-2.0 (card front matter 'license: apache-2.0', with LICENSE file in the repo). Standard Apache 2.0 terms apply: keep the license and NOTICE, mark changes, and the patent grant ends if you sue. No extra use-restriction policy is attached.",
+  "source_url": "https://huggingface.co/Qwen/Qwen3.5-9B/raw/main/README.md",
+  "support": "direct-statement"
+ },
+ "params": {
+  "value": "Dense, so total and active are the same. The card says 9B. The HF API safetensors total is 9,653,104,368 (BF16 9,653,100,528 + F32 3,840). From the safetensors headers: vision tower 0.849 GiB (about 0.456B params) and MTP head 0.453 GiB (about 0.243B), leaving about 8.95B for the language model including untied embed and lm_head (1.895 GiB each).",
+  "source_url": "https://huggingface.co/api/models/Qwen/Qwen3.5-9B?blobs=true",
+  "support": "source-backed"
+ },
+ "architecture": {
+  "value": "Qwen3_5ForConditionalGeneration (model_type qwen3_5). Hybrid of 32 layers: layer_types repeats 3x linear_attention (Gated DeltaNet) + 1x full_attention (gated attention), with full_attention_interval 4, giving 8 full-attention layers. Full attention uses 16 Q heads, 4 KV heads, head_dim 256 and partial rotary 0.25. GDN uses 16 QK heads and 32 V heads with head dim 128, conv kernel 4, and mamba_ssm_dtype float32. Other values: hidden 4096, FFN 12288, vocab 248320, untied embeddings, 1 MTP layer, and a 27-layer ViT vision tower (hidden 1152).",
+  "source_url": "https://huggingface.co/Qwen/Qwen3.5-9B/raw/main/config.json",
+  "support": "direct-statement"
+ },
+ "context_length": {
+  "value": "262,144 native (max_position_embeddings 262144). Up to 1,010,000 with static YaRN factor 4.0 through --hf-overrides plus VLLM_ALLOW_LONG_MAX_MODEL_LEN=1. The card advises keeping at least 128K to preserve thinking.",
+  "source_url": "https://huggingface.co/Qwen/Qwen3.5-9B/raw/main/README.md",
+  "support": "direct-statement"
+ },
+ "modalities": {
+  "value": "Text, image and video in; text out (pipeline image-text-to-text). There is no text-only checkpoint, but vLLM's --language-model-only skips the vision encoder (card 'Text-Only' command; flag confirmed in v0.33.0 arg_utils.py line 1497). llama.cpp text-only means simply not loading the mmproj.",
+  "source_url": "https://huggingface.co/Qwen/Qwen3.5-9B/raw/main/README.md",
+  "support": "direct-statement"
+ },
+ "thinking": {
+  "mode": "toggle",
+  "support": "direct-statement",
+  "source_url": "https://huggingface.co/Qwen/Qwen3.5-9B/raw/main/README.md",
+  "how_to_toggle": "Thinking is on by default. The template opens '<think>\\n' and emits '<think>\\n\\n</think>\\n\\n' when enable_thinking is false (chat_template.jinja lines 149-152). The /think and /nothink soft switches are NOT supported (card line 955). vLLM: per request extra_body {\"chat_template_kwargs\": {\"enable_thinking\": false}}; server-wide --default-chat-template-kwargs '{\"enable_thinking\": false}' (recipe troubleshooting); reasoning goes to the 'reasoning' field with --reasoning-parser qwen3. llama.cpp: per request \"chat_template_kwargs\": {\"enable_thinking\": false}, server-wide --chat-template-kwargs '{\"enable_thinking\":false}' or --reasoning-budget 0 (tools/server/README.md at b12418). Ollama: tag carries the 'thinking' badge; per request \"think\": false in /api/chat, or --think=false / /set nothink in the CLI. The OpenAI-compatible endpoint equivalent was not verified."
+ },
+ "tool_calling": {
+  "supported": "yes",
+  "support": "direct-statement",
+  "source_url": "https://huggingface.co/Qwen/Qwen3.5-9B/raw/main/chat_template.jinja",
+  "format": "Qwen3-Coder XML: <tool_call><function=NAME><parameter=ARG>value</parameter></function></tool_call>",
+  "evidence": "The template renders the tools list ('# Tools ... <tools>' loop, lines 45-53) and replays assistant tool_calls in XML (lines 105-127). The card says 'Qwen3.5 excels in tool calling' and gives vLLM/SGLang commands with --tool-call-parser qwen3_coder. Vendor BFCL-V4 is 66.1 and TAU2 79.1. In vLLM v0.33.0, tool_parsers/__init__.py maps qwen3_coder (and the alias qwen3_xml) to Qwen3EngineToolParser. llama.cpp b12418 common/chat.cpp line 1420 auto-detects this template as Qwen3-Coder XML ('also used by ... Qwen3.5')."
+ },
+ "checkpoints": [
+  {
+   "repo": "Qwen/Qwen3.5-9B",
+   "format": "BF16 safetensors (with vision + MTP)",
+   "size_gb": 19.31,
+   "official": true,
+   "publisher": "Qwen",
+   "source_url": "https://huggingface.co/api/models/Qwen/Qwen3.5-9B?blobs=true"
+  },
+  {
+   "repo": "RedHatAI/Qwen3.5-9B-NVFP4",
+   "format": "compressed-tensors nvfp4-pack-quantized W4A4 (GPTQ, block 128); vision, lm_head, embed and MTP kept BF16; created 2026-11-05",
+   "size_gb": 9.36,
+   "official": false,
+   "publisher": "RedHatAI",
+   "source_url": "https://huggingface.co/api/models/RedHatAI/Qwen3.5-9B-NVFP4?blobs=true"
+  },
+  {
+   "repo": "AxionML/Qwen3.5-9B-NVFP4",
+   "format": "ModelOpt NVFP4",
+   "size_gb": 9.36,
+   "official": false,
+   "publisher": "AxionML",
+   "source_url": "https://huggingface.co/api/models/AxionML/Qwen3.5-9B-NVFP4?blobs=true"
+  },
+  {
+   "repo": "RedHatAI/Qwen3.5-9B-FP8-dynamic",
+   "format": "compressed-tensors FP8 W8A8 dynamic (GDN projections, embed, lm_head, vision and MTP left BF16); listed as the fp8 variant in the vLLM recipe",
+   "size_gb": 14.01,
+   "official": false,
+   "publisher": "RedHatAI",
+   "source_url": "https://huggingface.co/api/models/RedHatAI/Qwen3.5-9B-FP8-dynamic?blobs=true"
+  },
+  {
+   "repo": "RedHatAI/Qwen3.5-9B-quantized.w4a16",
+   "format": "compressed-tensors W4A16",
+   "size_gb": 11.44,
+   "official": false,
+   "publisher": "RedHatAI",
+   "source_url": "https://huggingface.co/api/models/RedHatAI/Qwen3.5-9B-quantized.w4a16?blobs=true"
+  },
+  {
+   "repo": "cyankiwi/Qwen3.5-9B-AWQ-4bit",
+   "format": "compressed-tensors AWQ 4-bit",
+   "size_gb": 9.07,
+   "official": false,
+   "publisher": "cyankiwi",
+   "source_url": "https://huggingface.co/api/models/cyankiwi/Qwen3.5-9B-AWQ-4bit?blobs=true"
+  },
+  {
+   "repo": "Intel/Qwen3.5-9B-int4-AutoRound",
+   "format": "auto-round int4",
+   "size_gb": 8.97,
+   "official": false,
+   "publisher": "Intel",
+   "source_url": "https://huggingface.co/api/models/Intel/Qwen3.5-9B-int4-AutoRound?blobs=true"
+  },
+  {
+   "repo": "unsloth/Qwen3.5-9B-GGUF",
+   "format": "GGUF Q8_0 9.53 GB / Q6_K 7.46 / UD-Q6_K_XL 8.76 / Q5_K_M 6.58 / Q4_K_M 5.68 / UD-Q8_K_XL 12.97 / BF16 17.92; mmproj-BF16 0.92",
+   "size_gb": 9.53,
+   "official": false,
+   "publisher": "unsloth",
+   "source_url": "https://huggingface.co/api/models/unsloth/Qwen3.5-9B-GGUF/tree/main"
+  },
+  {
+   "repo": "unsloth/Qwen3.5-9B-MTP-GGUF",
+   "format": "GGUF with MTP head: Q8_0 9.79 GB, Q6_K 7.68, Q4_K_M 5.87",
+   "size_gb": 9.79,
+   "official": false,
+   "publisher": "unsloth",
+   "source_url": "https://huggingface.co/api/models/unsloth/Qwen3.5-9B-MTP-GGUF/tree/main"
+  },
+  {
+   "repo": "bartowski/Qwen_Qwen3.5-9B-GGUF",
+   "format": "GGUF Q8_0 9.80 GB / Q6_K_L 8.45 / Q6_K 7.96 / Q4_K_M 6.17",
+   "size_gb": 9.8,
+   "official": false,
+   "publisher": "bartowski",
+   "source_url": "https://huggingface.co/api/models/bartowski/Qwen_Qwen3.5-9B-GGUF/tree/main"
+  },
+  {
+   "repo": "lmstudio-community/Qwen3.5-9B-GGUF",
+   "format": "GGUF Q8_0 9.53 GB / Q6_K 7.36 / Q4_K_M 5.63",
+   "size_gb": 9.53,
+   "official": false,
+   "publisher": "lmstudio-community",
+   "source_url": "https://huggingface.co/api/models/lmstudio-community/Qwen3.5-9B-GGUF/tree/main"
+  },
+  {
+   "repo": "ollama qwen3.5:9b-q8_0",
+   "format": "Ollama GGUF q8_0",
+   "size_gb": 10,
+   "official": false,
+   "publisher": "Ollama",
+   "source_url": "https://ollama.com/library/qwen3.5/tags"
+  }
+ ],
+ "vllm": {
+  "fits": "yes",
+  "arch_supported": "Yes. Qwen3_5ForConditionalGeneration -> qwen3_5 (registry.py line 617 at v0.33.0); Qwen3_5ForCausalLM line 204; Qwen3_5MTP line 739.",
+  "min_version": "0.17.0 (recipe min_vllm_version). The card (written at release) asked for nightly.",
+  "best_checkpoint": "RedHatAI/Qwen3.5-9B-NVFP4 with --language-model-only",
+  "tool_call_parser": "qwen3_coder (v0.33.0 vllm/tool_parsers/__init__.py line 206 -> qwen3_engine_tool_parser.Qwen3EngineToolParser; qwen3_xml is an alias)",
+  "reasoning_parser": "qwen3 (v0.33.0 vllm/reasoning/__init__.py line 168 -> qwen3_engine_reasoning_parser.Qwen3ParserReasoningAdapter)",
+  "quant_on_sm120": "NVFP4: the v0.33.0 _POSSIBLE_NVFP4_KERNELS CUDA order is FlashInferCuteDsl (gated to the sm_100 family, so skipped), then FlashInferCutlass (gate has_device_capability(100), which is true on 12.0, so it is likely picked and JIT-compiles FlashInfer; this is the reported ~52 GiB host-RAM first-start issue), then FlashInferB12x, then the native CUTLASS NvFp4 (csrc/quantization/fp4/nvfp4_scaled_mm_sm120_kernels.cu). Inferred: pass --linear-backend cutlass, or MAX_JOBS=2, to avoid the JIT RAM spike. FP8 (FP8-dynamic or online --quantization fp8): FlashInferFP8 first, then CUTLASS scaled_mm_sm120_fp8.cu. The b12x backend is optional (pip extra 'vllm[b12x]', docs/features/quantization/b12x.md) and probably not in the stock image (unverified).",
+  "weights_gib": 7.42,
+  "kv_bytes_per_token_bf16": 32768,
+  "kv_math": "Budget 16303 MiB x 0.92 = 14999 MiB = 14.65 GiB; minus 1.2 GiB reserve = 13.45 GiB for weights + KV. Weight splits come from the safetensors headers. KV per token = 2 x 8 full-attn layers x 4 KV heads x 256 x 2 B = 32,768 B (32 KiB) BF16, 16 KiB FP8. GDN state per sequence = 24 layers x 32 heads x 128 x 128 x 4 B (fp32) = 48 MiB, plus conv ~1.2 MB, so ~49 MiB (fixed). (a) RedHatAI NVFP4 language-only: 8.718 - 0.849 vision - 0.453 MTP = 7.42 GiB; pool 6.03 GiB -> 197k tokens BF16 KV, 395k FP8 KV, capped at 262,144. With the vision tower: 8.27 GiB -> pool 5.18 GiB -> 170k BF16. (b) Online --quantization fp8 on Qwen/Qwen3.5-9B language-only (inferred: linear layers 12.889 GiB halved to 6.44, plus embed 1.895 and lm_head 1.895 in BF16) = 10.23 GiB; pool 3.22 GiB -> 105k BF16, 211k FP8. (c) RedHatAI FP8-dynamic language-only: 13.045 - 1.302 = 11.74 GiB; pool 1.71 GiB -> 56k BF16, 112k FP8. Tight, and below the card's 128K advice. (d) BF16 language-only 16.68 GiB: does not fit.",
+  "est_max_context_tokens": 197000,
+  "serve_command": "docker run --rm --gpus all --ipc=host -p 8000:8000 -e MAX_JOBS=2 -v ~/.cache/huggingface:/root/.cache/huggingface vllm/vllm-openai:v0.33.0 RedHatAI/Qwen3.5-9B-NVFP4 --served-model-name qwen3.5-9b --language-model-only --linear-backend cutlass --max-model-len 131072 --gpu-memory-utilization 0.92 --reasoning-parser qwen3 --enable-auto-tool-choice --tool-call-parser qwen3_coder  (Optional: --kv-cache-dtype fp8 --max-model-len 262144; --speculative-config '{\"method\":\"mtp\",\"num_speculative_tokens\":1}' loads the 0.45 GiB MTP head, taking it from KV)",
+  "known_issues": "Open vLLM issues (searched 2026-11-15): #65774 qwen3_coder breaks streamed tool-call arguments when a parameter repeats (2026-11-05); #42021 Qwen3.5 with reasoning parser returns a non-standard tool-call format when enable_thinking=true; #39056 tool calls lost when the XML tool_call is emitted inside <think>; #53284 '--reasoning-parser qwen3' returns the whole answer as reasoning when the prompt closes the think block without the enable_thinking kwarg; #65564 Qwen3.5-9B forced named tool_choice ~11x slower (A100); #54623 Qwen3.5 never loads checkpoint KV scales, so fp8 KV runs at scale 1.0; #38643 FLA linear-attention format mismatch causing gibberish; #39273 ngram spec decode corrupts output on GDN models; #37035 illegal address with qwen3_next_mtp and 5 speculative tokens; #66070 vision RoPE precision. Nothing sm_120-specific was found for the 9B. The NVFP4 FlashInfer JIT RAM spike (PR #66864) applies.",
+  "sources": [
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/models/registry.py",
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/tool_parsers/__init__.py",
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/reasoning/__init__.py",
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/kernels/linear/__init__.py",
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/kernels/linear/nvfp4/flashinfer.py",
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/engine/arg_utils.py",
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/docs/features/quantization/b12x.md",
+   "https://github.com/vllm-project/recipes/blob/main/models/Qwen/Qwen3.5-9B.yaml",
+   "https://huggingface.co/RedHatAI/Qwen3.5-9B-NVFP4",
+   "https://huggingface.co/Qwen/Qwen3.5-9B/raw/main/config.json",
+   "https://github.com/vllm-project/vllm/issues/65774",
+   "https://github.com/vllm-project/vllm/issues/42021",
+   "https://github.com/vllm-project/vllm/issues/53284",
+   "https://github.com/vllm-project/vllm/issues/54623"
+  ]
+ },
+ "llamacpp": {
+  "arch_supported": "Yes. LLM_ARCH_QWEN35 'qwen35' in src/llama-arch.cpp at tag b12418; GGUFs have been published since 2026-02-28.",
+  "gguf_repo": "unsloth/Qwen3.5-9B-GGUF",
+  "quant": "Q8_0 (9.53 GB = 8.88 GiB); Q6_K (7.46 GB) if full 262k context in F16 KV is wanted",
+  "file_gib": 8.88,
+  "est_vram_gib": 13.9,
+  "est_ram_gib": 1,
+  "est_context_tokens": 131072,
+  "offload_plan": "Fully on GPU (-ngl 99). Dense model, so no --n-cpu-moe. VRAM about 15.8 GiB usable (16303 MiB minus 112 idle). Q8_0 8.88 GiB + F16 KV 131,072 x 32 KiB = 4.0 GiB + recurrent state ~0.05 GiB + compute buffers ~1.0 GiB = ~13.9 GiB. For 262,144 context use -ctk q8_0 -ctv q8_0 (~17 KiB/token = 4.25 GiB): ~14.2 GiB. Q8_0 with F16 KV at 262k would be ~17.9 GiB and does not fit. Skip the mmproj (0.92 GB) with --no-mmproj.",
+  "server_command": "docker run --rm --gpus all -p 8080:8080 -v ~/.cache/llama.cpp:/root/.cache/llama.cpp ghcr.io/ggml-org/llama.cpp:server-cuda13 -hf unsloth/Qwen3.5-9B-GGUF:Q8_0 --no-mmproj --alias qwen3.5-9b --host 0.0.0.0 --port 8080 -ngl 99 -c 131072 -fa on --jinja --temp 0.6 --top-p 0.95 --top-k 20 --min-p 0 --presence-penalty 0.0",
+  "tool_calling_note": "--jinja is on by default. common/chat.cpp line 1420 at b12418 detects the <tool_call>/<function=>/<parameter=> template as Qwen3-Coder XML and names Qwen3.5 explicitly, so OpenAI tools work with the embedded template. Reasoning goes to reasoning_content (--reasoning-format auto). Thinking toggles per request via chat_template_kwargs, or server-wide via --chat-template-kwargs / --reasoning-budget 0. Not tested end to end with OpenCode.",
+  "sources": [
+   "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12418/src/llama-arch.cpp",
+   "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12418/common/chat.cpp",
+   "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12418/tools/server/README.md",
+   "https://huggingface.co/api/models/unsloth/Qwen3.5-9B-GGUF/tree/main"
+  ]
+ },
+ "ollama": {
+  "tag": "qwen3.5:9b-q8_0 (alternative: qwen3.5:9b = latest, q4_K_M)",
+  "size_gb": 10,
+  "context": "256K window per tag. Ollama defaults to 4k on GPUs under 24 GiB, so set OLLAMA_CONTEXT_LENGTH=131072 or num_ctx.",
+  "capabilities": "Badges: vision, tools, thinking. Other tags: qwen3.5:9b / 9b-q4_K_M 6.6GB, 9b-q8_0 10GB, 9b-bf16 19GB, 9b-mtp-q4_K_M 9.0GB, 9b-mtp-q8_0 13GB, plus MLX-only 9b-nvfp4 7.2GB, 9b-mxfp8 11GB and 9b-mlx 8.9GB. The library page lists 'ollama launch opencode --model qwen3.5'.",
+  "source_url": "https://ollama.com/library/qwen3.5/tags"
+ },
+ "benchmarks": [
+  {
+   "name": "BFCL-V4",
+   "score": "66.1",
+   "setting": "Qwen card, thinking mode",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/Qwen/Qwen3.5-9B"
+  },
+  {
+   "name": "TAU2-Bench",
+   "score": "79.1",
+   "setting": "Qwen card",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/Qwen/Qwen3.5-9B"
+  },
+  {
+   "name": "LiveCodeBench v6",
+   "score": "65.6",
+   "setting": "Qwen card (gpt-oss-20b 74.6 in the same table)",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/Qwen/Qwen3.5-9B"
+  },
+  {
+   "name": "SWE-bench Verified",
+   "score": "53.2",
+   "setting": "Ornith-1.5 card comparison table, OpenHands harness, temp 1.0, 256k context (another vendor's harness)",
+   "self_reported": false,
+   "source_url": "https://huggingface.co/ornith-ai/Ornith-1.5-9B"
+  },
+  {
+   "name": "SWE-bench Verified",
+   "score": "60.0",
+   "setting": "Xiaomi MiMo-V2.6-Distill card, avg@3, harness not stated. Conflicts with Ornith's 53.2",
+   "self_reported": false,
+   "source_url": "https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Distill-Qwen-9B"
+  },
+  {
+   "name": "SWE-bench Pro",
+   "score": "31.3 (Ornith, OpenHands) / 32.0 (MiMo, avg@3)",
+   "setting": "other vendors' tables",
+   "self_reported": false,
+   "source_url": "https://huggingface.co/ornith-ai/Ornith-1.5-9B"
+  },
+  {
+   "name": "Terminal-Bench 2.1",
+   "score": "21.3 (Ornith, Terminus-2) / 18.9 (Ornith, Claude Code harness) / 27.0 (MiMo, avg@1)",
+   "setting": "other vendors' tables; conflicting",
+   "self_reported": false,
+   "source_url": "https://huggingface.co/ornith-ai/Ornith-1.5-9B"
+  },
+  {
+   "name": "Toolathlon-Verified",
+   "score": "29.6 (Ornith) / 25.9 (MiMo)",
+   "setting": "other vendors' tables",
+   "self_reported": false,
+   "source_url": "https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Distill-Qwen-9B"
+  },
+  {
+   "name": "NVFP4 recovery (RedHatAI)",
+   "score": "MMLU-Pro 81.2 vs 82.9 BF16 (98.1%); GSM8K 95.7 vs 95.9; NVFP4 reasons longer (6,455 vs 5,029 mean tokens on MMLU-Pro)",
+   "setting": "Inspect evals, vLLM nightly, B200",
+   "self_reported": false,
+   "source_url": "https://huggingface.co/RedHatAI/Qwen3.5-9B-NVFP4"
+  },
+  {
+   "name": "FP8-dynamic recovery (RedHatAI)",
+   "score": "MMLU-Pro 82.4 vs 82.5; IFEval prompt-strict 88.9 vs 90.3",
+   "setting": "lm-eval, vllm 0.18.1",
+   "self_reported": false,
+   "source_url": "https://huggingface.co/RedHatAI/Qwen3.5-9B-FP8-dynamic"
+  }
+ ],
+ "speed_notes": "Inferred from bandwidth, at 896 GB/s. NVFP4 language-only reads about 5.52 GiB per decoded token (LM layers 3.63 GiB + BF16 lm_head 1.90 GiB; the embedding lookup is negligible), which caps decode at about 150 tok/s; expect roughly 90-110 tok/s. GGUF Q8_0 reads about 8.5 GB per token, which caps it at about 105 tok/s; expect 65-80 tok/s. The untied 248k-vocab lm_head kept in BF16 is about a third of the NVFP4 per-token read. MTP speculative decoding (vLLM --speculative-config mtp, or the unsloth MTP GGUF) can add more. No measured RTX 5080 numbers were found, only calculator estimates (willitrunai ~122 tok/s at Q4_K_M, llmrun ~98 tok/s) and one localmaxxing listing of an RTX 5070 Ti at Q4_K_S of 124 tok/s (https://benchmarklist.com/benchmarks/localmaxxing/). These are leads, not evidence. Prefill on a laptop 5080 at 140 W should be fast, but thinking mode adds thousands of tokens per turn: RedHatAI measured ~5-6.5k mean output tokens on MMLU-Pro.",
+ "opencode_fit": {
+  "verdict": "usable",
+  "recommended_runtime": "vLLM v0.33.0 Docker (RedHatAI NVFP4, --language-model-only), alternative llama.cpp server-cuda13 with unsloth Q8_0",
+  "recommended_checkpoint": "RedHatAI/Qwen3.5-9B-NVFP4 (vLLM) / unsloth/Qwen3.5-9B-GGUF Q8_0 (llama.cpp) / qwen3.5:9b-q8_0 (Ollama)",
+  "recommended_context": "131072 (BF16 KV in vLLM, or F16 KV with Q8_0 in llama.cpp); up to 262144 with FP8 / q8_0 KV",
+  "caveats": "It fits fully in VRAM with large context thanks to the 8-of-32 full-attention layout (32 KiB/token), and tool calling is native Qwen3-Coder XML in all three runtimes. It is a 9B model, though: independent coding-agent scores are modest (SWE-bench Verified 53-60, Terminal-Bench 2.1 19-27, from other vendors' harnesses), well below Qwen3.6-35B-A3B or 9B agentic fine-tunes such as Ornith-1.5-9B. Thinking is on by default and verbose; use the coding sampling preset (temp 0.6, top_p 0.95, top_k 20, presence 0) or disable thinking per request. OpenCode v2.3.0 discovers vLLM models with tools disabled, so tools must be enabled explicitly; also mind OpenCode issue #60202 and vLLM qwen3_coder streaming issue #65774. There is no Qwen-official quant: NVFP4/FP8 come from RedHatAI. FP8-dynamic (11.7 GiB language-only) leaves only ~56k BF16 context. NVFP4 may trigger the FlashInfer JIT RAM spike on first start unless --linear-backend cutlass or MAX_JOBS=2 is used."
+ },
+ "gaps": [
+  "No measured tokens/s on an RTX 5080 Laptop or any RTX 50 card for this model; all speed figures are bandwidth arithmetic or calculator estimates.",
+  "Which NVFP4 linear kernel v0.33.0 actually selects on sm_120, and whether CutlassNvFp4 passes cutlass_scaled_mm_supports_fp4(120), was read from source but not run; --linear-backend cutlass is an inferred workaround.",
+  "Online --quantization fp8 memory (10.23 GiB) is inferred; whether loading peaks above the budget before quantization was not checked.",
+  "Weight split for cyankiwi AWQ, RedHatAI w4a16 and Intel AutoRound was not read (HF rate limiting); only totals are given.",
+  "Artificial Analysis lists Qwen3.5-9B but shows Intelligence Index N/A; no independent official leaderboard (SWE-bench, Terminal-Bench) entry was found. The SWE/TB numbers come from Ornith and Xiaomi tables and conflict (SWE-V 53.2 vs 60.0; TB2.1 21.3 vs 27.0).",
+  "Qwen publishes no SWE-bench or Terminal-Bench numbers for the 9B; vendor coding-agent evidence is limited to BFCL-V4, TAU2 and LiveCodeBench.",
+  "HF org 'Qwen' shows isVerified=false in the API; vendor ownership rests on the card links and wide recognition, not a verified badge.",
+  "Ollama's OpenAI-compatible way to disable thinking per request was not verified; neither was whether the vllm/vllm-openai:v0.33.0 image includes the optional b12x package.",
+  "No end-to-end OpenCode test with any runtime; tool-call reliability under OpenCode is unverified.",
+  "GitHub issue search was cut short by API rate limiting (queries for '5090' and 'Qwen3.5-9B' did not run)."
+ ]
+}

@@ -1,0 +1,126 @@
+{
+ "overall": "holds-with-corrections",
+ "summary": "I could not refute any identity fact. The repo is NVIDIA's own (author nvidia, \"Model Developer: NVIDIA Corporation\"), not a re-upload. The release date, 74B/9B size, 262144 context, OpenMDW-1.1 license, the thinking toggle and Qwen3-Coder XML tool calling all hold. I checked them in raw config.json, chat_template.jinja (byte-identical to the GGUF tokenizer.chat_template, 12514 chars), the HF API, the OpenMDW text and llama.cpp/vLLM source at their tags. Every benchmark number matches its cited source, but all quality numbers are NVIDIA self-reports and Artificial Analysis has not evaluated the model. Corrections, in order of weight: (1) The Unsloth IQ2_XXS file is not the NVIDIA file. Sizes match within 64 B but the hashes differ (sha256 30c4eac4cdd6 vs 91d63363e782), so it is not byte-identical. Ollama's model blob is byte-identical to NVIDIA's. (2) The cited BenchLM model page says #131 of 215. The #46 rank and the 27.25-55.95 range come from benchlm.ai/best/open-source. (3) The benchmark list leaves out rows where Bolt loses in the same table. AA-Omniscience accuracy: 16.90 vs Gemma4 22.17. Non-hallucination: 61.27 vs Lightning 68.81 and Qwen3.6 65.85. (4) NVIDIA's own figures conflict. For MCP-Atlas, NVIDIA measured Qwen3.6 at 51.2 while Qwen's reported score is 62.8 (card footnote). For Lightning on TB2.1, the Bolt card says 23.46 but the Lightning card says 24.58. The card also gives the compression training as both 120B and 80B tokens. (5) In llama.cpp b12407, setting enable_thinking via --chat-template-kwargs still works but logs a deprecation warning (arg.cpp:3577-3578); prefer --reasoning off. (6) The chat template description is incomplete. It also keeps inline <think> from content, has truncate_history_thinking (default True), and medium_effort appends '{reasoning effort: efficient}' to the last user turn. (7) The community BFCL numbers use a simplified argument checker and the author says not to compare them with the official leaderboard. (8) In the speed table, the comparison models ran as UD-Q4_K_M with MTP or DFlash, on llama.cpp on Windows on RTX Spark. Two minor points: the BF16 repo's LICENSE file is 0 bytes, so the license comes only from the card metadata. I did not find the claim that Unsloth supports up to 128K: their HF card says 256K, so it may come from Unsloth's docs site. Working files are in $SCRATCH/bolt/fc/.",
+ "verdicts": [
+  {
+   "claim": "Official vendor ownership: HF author 'nvidia', card 'Model Developer: NVIDIA Corporation'; family repos -24GB-GGUF, -24GB, -BF16, -24GB-LiLiCorr, -24GB-LiLiCorr-GGUF exist",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB-GGUF?blobs=true",
+   "correction": "All five repos return HTTP 200 with author nvidia, and the parent nvidia/NVIDIA-Nemotron-3.5-Super-VL-120B-A12B-BF16 exists. Not a re-upload. Classification: direct-statement (README.md line 72)."
+  },
+  {
+   "claim": "Release 2026-10-15 (card and blog); GGUF createdAt 2026-10-07T19:15:58Z, lastModified 2026-10-15T18:10:28Z; BF16 createdAt 2026-10-09",
+   "verdict": "confirmed",
+   "evidence_url": "https://research.nvidia.com/labs/nemotron/Nemotron-3.5-Bolt-24GB/",
+   "correction": "The blog says 'Published: October 15, 2026'. Card README line 156 says 'Hugging Face 10/15/2026'. HF API: BF16 createdAt 2026-10-09T12:45:14Z. The -24GB safetensors repo was last modified 2026-11-07, so it changed after release."
+  },
+  {
+   "claim": "License OpenMDW-1.1: permissive, commercial use allowed, keep notices, terminates on patent/copyright suit, no restrictions on outputs, user clears third-party rights, not gated",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/OpenMDW/OpenMDW/main/1.1/LICENSE.OpenMDW-1.1",
+   "correction": "The license text (lines 12-40) matches every point. HF shows tag license:other with cardData license_name openmdw-1.1 and gated false. One small issue: the BF16 repo's LICENSE file is 0 bytes, so that repo's license comes only from the card metadata."
+  },
+  {
+   "claim": "74B total / 9B active; GGUF metadata total 74,042,720,848; compressed from Super VL 120B-A12B via Star Elastic; top-k 9",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB-GGUF/raw/main/README.md",
+   "correction": "Card lines 58, 171, 176, 183-185: top-K is 9, down from 22 in the parent. HF API gguf.total is 74042720848. BF16 safetensors total is 74,885,081,096 including vision. The card contradicts itself on training data: line 187 says '120B tokens overall' while line 565 says '80B tokens'."
+  },
+  {
+   "claim": "Architecture: NemotronH_Omni_Reasoning_V3 / NemotronHPuzzleForCausalLM; 88 blocks = 40 Mamba + 40 MoE + 8 attention at 7,16,25,36,47,58,69,78; hidden 4096, 32 q heads, 2 KV heads, head_dim 128, no sliding window; Mamba 128x64 state 128; 240-496 experts, width 1536-2560, 9 active, 1 shared 5376, latent 1024, relu2, sigmoid; vocab 131072",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-BF16/raw/main/config.json",
+   "correction": "Every value matches the parsed raw config.json: block_configs n_routed_experts range 240-496, moe_intermediate_size range 1536-2560, num_experts_per_tok 9 on all 40 MoE blocks, sliding_window null. mamba_ssm_cache_dtype is float32 in config, but the card says the 24GB budget assumes 16-bit SSM state. I did not independently check the quant breakdown (IQ2_XXS / NVFP4 / Q8_0); the blog does state 2.0625 bpw IQ2_XXS for the experts."
+  },
+  {
+   "claim": "Context 262144 (max_position_embeddings, GGUF context_length; card 'Up to 256K'); recovery trained at 128K; 28GB recipe 65,536 q8_0 KV; Unsloth says up to 128K",
+   "verdict": "uncertain",
+   "evidence_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-BF16/raw/main/config.json",
+   "correction": "Confirmed: 262144 in config and GGUF metadata, 48B tokens of recovery at 128K, and the architecture search targeting under 24 GB at 128K. Not found: the Unsloth 128K claim. Unsloth's HF card (line 85) says 'Up to 256K'. Inconsistency in the NVIDIA card: the 28GB recipe row says 65,536, but the quick-start command for that recipe uses --ctx-size 98304. Anything above 128K is beyond the trained recovery length (inferred)."
+  },
+  {
+   "claim": "Modalities text/image/video in, text out; vision in separate mmproj GGUF 1.61 GiB (1,733,692,736 B)",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB-GGUF?blobs=true",
+   "correction": "The mmproj size matches. llama.cpp b12407 arg.cpp:2565 has --no-mmproj."
+  },
+  {
+   "claim": "Thinking toggle: template default enable_thinking=True; off via chat_template_kwargs; medium via medium_effort; llama.cpp --chat-template-kwargs or --reasoning off; history reasoning re-inserted only from reasoning_content and truncated before last user turn",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-BF16/raw/main/chat_template.jinja",
+   "correction": "Template lines 59-61 and 235-240 confirm the defaults. Four precision fixes. (a) History reasoning also comes from inline <think> in content (lines 150-154), not only from reasoning_content. (b) truncate_history_thinking is a third kwarg, default True. (c) medium_effort appends '{reasoning effort: efficient}' to the last user message (line 212-213). (d) In llama.cpp b12407, passing enable_thinking through --chat-template-kwargs still applies but logs 'deprecated. Use --reasoning on / --reasoning off instead' (common/arg.cpp:3577-3578), so the record's server command should use --reasoning off."
+  },
+  {
+   "claim": "Tool calling: Qwen3-Coder XML <tool_call><function=..><parameter=..>; tools in <tools>; results in <tool_response> inside a user turn; GGUF template identical; llama.cpp chat.cpp:1420-1427 routes to Qwen3-Coder handler; vLLM card uses qwen3_coder",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/common/chat.cpp",
+   "correction": "Template lines 97, 136, 182-190 and 222-224 confirm the format. The HF API gguf.chat_template is identical to the repo jinja (12514 chars). chat.cpp:1420-1427 at b12407 is the Qwen3-Coder detection, and this template uses the newline form, so it is not excluded. The -24GB README lines 120 and 289 use --tool-call-parser qwen3_coder. llama.cpp issue #30118 (Qwen3.6 tool calls leaking into content) is still open."
+  },
+  {
+   "claim": "Community BFCL simple 94.3% / multiple 92.0%, HumanEval+ 0.890, MBPP+ 0.743, DGX Spark decode 40.1 tok/s on the NVIDIA 24GB file",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/anik-jha/Nemotron-3.5-Bolt-74B-A9B-16GB-GGUF/raw/main/README.md",
+   "correction": "The numbers match README lines 36-40. Caveat from the same card (lines 113-116): 'correct' uses a simplified version of BFCL's argument checker, so these scores must not be compared with the official leaderboard. Runs used greedy decoding with reasoning off. Self-published by a single community author, not independently replicated."
+  },
+  {
+   "claim": "Checkpoint sizes: NVIDIA GGUF 22,018,326,528 B + mmproj 1,733,692,736; LiLiCorr 998,242,560; -24GB 24,083,745,496 B (22.43 GiB); BF16 139.5 GiB (149.8 GB); REAP50 12.46 GiB, REAP25 8.44 GiB",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-BF16?blobs=true",
+   "correction": "Summed from blobs: -24GB is 24,083,745,496 B and BF16 is 149,774,331,136 B (139.49 GiB). The anik-jha REAP25 file is named '12GB-REAP25' (9,058,820,224 B) and keeps only 65% of HumanEval+ and 77% of MBPP+; the 93-94% retention figure applies to REAP50 only."
+  },
+  {
+   "claim": "Unsloth IQ2_XXS 20.51 GiB is 'same as NVIDIA'",
+   "verdict": "refuted",
+   "evidence_url": "https://huggingface.co/api/models/unsloth/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-GGUF/tree/main?recursive=true",
+   "correction": "Same size class but a different file. Unsloth NVIDIA-Nemotron-3.5-Bolt-74B-A9B-IQ2_XXS.gguf is 22,018,326,464 B with lfs sha256 30c4eac4cdd6. The NVIDIA GGUF is 22,018,326,528 B with sha256 91d63363e782. Unsloth also ships a separate UD-IQ2_XXS (ca066649ee67). The Unsloth dflash-...-NVFP4.gguf drafter (080e1ea41c95) is byte-identical to NVIDIA's LiLiCorr GGUF."
+  },
+  {
+   "claim": "Ollama nemotron-3.5-bolt:74b-a9b model blob identical to NVIDIA GGUF (91d63363e782) plus projector 1.61 GiB and draft 0.93 GiB",
+   "verdict": "confirmed",
+   "evidence_url": "https://registry.ollama.ai/v2/library/nemotron-3.5-bolt/manifests/74b-a9b",
+   "correction": "Manifest layers: model sha256:91d63363e782 (22018326528), projector 0ee891eadc7b (matches the NVIDIA mmproj), draft 080e1ea41c95 (matches the NVIDIA LiLiCorr GGUF). I did not verify the renderer, parser or the 0.40.5 version requirement."
+  },
+  {
+   "claim": "vLLM v0.33.0 registry: line 553 NemotronH_Omni_Reasoning_V3 -> nano_nemotron_vl; line 187 NemotronHPuzzleForCausalLM -> nemotron_h; v0.33.0 is 843 commits ahead of nightly 77154ca",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/models/registry.py",
+   "correction": "The line numbers match exactly. gh compare returns status ahead, ahead_by 843, behind_by 0. docs/features/quantization/b12x.md exists at v0.33.0 (HTTP 200). The card itself installs b12x with 'pip install b12x' (-24GB README line 93), not vllm[b12x]."
+  },
+  {
+   "claim": "llama.cpp: nemotron_h_moe arch (llama-arch.cpp line 105), ffn_latent_down/up (584-585); PR #30520 merged 2026-10-15; PR #30960 merged 2026-10-22; draft-dflash and draft-lilicorr spec types exist",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/pull/30520",
+   "correction": "PR #30520 'Add Nemotron Super 3.5 VL and Nemotron Bolt 74B A9B support' was merged 2026-10-15T13:34:57Z. PR #30960 was merged 2026-10-22T07:06:48Z. At b12407, common/speculative.cpp:77-80 lists draft-dflash, draft-dflash2 and draft-lilicorr. I did not verify that b11669 is the first build containing it."
+  },
+  {
+   "claim": "Card benchmarks: TB2.1 50.98 (Qwen3.6 44.38, Gemma4 37.22, Lightning 23.46); MCP-Atlas 52.20 (Qwen3.6 51.20 NVIDIA-measured); PinchBench 87.82 (Qwen3.6 88.07); Tau3 Banking 17.01 (Qwen3.6 10.52); SciCode 41.02 / GPQA-D 86.43 / HLE 25.30 / AA-LCR 64.06 / GDPVal-AA-V2 28.47",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB-GGUF/raw/main/README.md",
+   "correction": "All numbers match the table at README lines 130-146, and all are vendor self-reports. Conflicts to flag. (a) NVIDIA's own Qwen3.6 MCP-Atlas figure (51.2 on 500 public tasks) is 11.6 points below Qwen's reported 62.8 (footnote line 146). (b) The Lightning TB2.1 figure here (23.46) disagrees with the Lightning card's 24.58 recorded in the KB. (c) The record leaves out the rows where Bolt loses: AA-Omniscience accuracy 16.90 vs Gemma4 22.17, and AA-Omniscience non-hallucination 61.27 vs Lightning 68.81 and Qwen3.6 65.85. Also omitted: BrowseComp 66.75 and WebArena (vision) 50.86. (d) The card gives no SWE-bench Verified figure."
+  },
+  {
+   "claim": "Blog speed table: AA-AgentPerf Local replay 600.80 s (Qwen3.6 453.97, Gemma4 480.68, Qwen3.8-27B 1043.28); AIPerf SPEED-Bench-Coding TPS 83.99 (96.63, 100.56, 28.26); llama.cpp RTX Spark with LiLiCorr",
+   "verdict": "confirmed",
+   "evidence_url": "https://research.nvidia.com/labs/nemotron/Nemotron-3.5-Bolt-24GB/",
+   "correction": "The numbers match verbatim. Missing setting details: the comparison models ran as UD-Q4_K_M with MTP (Qwen3.6 and Gemma4) or DFlash (Qwen3.8-27B), and the blog says 'All measurements were done with llama.cpp on Windows'. Vendor self-report."
+  },
+  {
+   "claim": "BenchLM overall 41.6 Estimated, #46 open, range 27.25-55.95, all 8 inputs NVIDIA-reported",
+   "verdict": "uncertain",
+   "evidence_url": "https://benchlm.ai/models/nemotron-3-5-bolt-74b-a9b",
+   "correction": "The cited model page (data as of 2026-11-13) shows 41.6/100, 'ranks #131 of 215', Estimated, 8 source-displayable rows, and 'NVIDIA-reported runs'. The #46 rank and the 27.25-55.95 range are not on that page; they come from the https://benchlm.ai/best/open-source table (per kb/reviews/benchlm.json). Cite that URL for the rank and range."
+  },
+  {
+   "claim": "Artificial Analysis Intelligence Index N/A (listed, no public API, not evaluated)",
+   "verdict": "confirmed",
+   "evidence_url": "https://artificialanalysis.ai/models/nemotron-3-5-bolt-74b-a9b",
+   "correction": "The page shows 'Released October 2026', 'Intelligence N/A' and 'No publicly available API'. No independent score exists."
+  },
+  {
+   "claim": "Sampling temperature 1.0, top_p 0.95 (card, generation_config.json)",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-BF16/raw/main/generation_config.json",
+   "correction": "generation_config.json: do_sample true, temperature 1.0, top_p 0.95, eos [2, 11]."
+  }
+ ]
+}

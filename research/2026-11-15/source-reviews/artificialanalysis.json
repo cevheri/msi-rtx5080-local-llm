@@ -1,0 +1,320 @@
+{
+ "review": {
+  "key": "artificialanalysis",
+  "url": "https://artificialanalysis.ai/",
+  "source_type": "independent-eval",
+  "accessible": true,
+  "access_notes": "All pages returned HTTP 200 to curl -A \"Mozilla/5.0\" on 2026-11-15. Numbers were read from the Next.js RSC payload (self.__next_f.push strings, JSON-decoded, then the \"initialModels\" arrays parsed with python3 -I), not from a summarizer. Pages read: /, /leaderboards/models (290 models, 185 open weights), /models/open-source/{small,medium,tiny}, /methodology/intelligence-benchmarking, /agents/coding-agents and 36 model pages under /models/<slug>. Saved under $SCRATCH/src/artificialanalysis/ (own_table.txt is the extracted table; all_models.json and own.json hold the records). Five pages return 404: ornith-1-5-9b, ornith-1-5, deepseek-r1-0528-qwen3-8b (the working slug is deepseek-r1-qwen3-8b), laguna-xs-2-1 and kat-coder-v2-5-dev. AA does not seem to list Ornith, Laguna or KAT-Coder-V2.5-Dev. The /data/*.txt manifest is binary and was not parsed. The \"Coding Index\" and \"Agentic Index\" that were asked for no longer exist on the site.",
+  "publisher": "Artificial Analysis (independent benchmarking company)",
+  "as_of": "Snapshot fetched 2026-11-15. Intelligence Index v5.0.1 (\"November 2026 to current\"). Newest model in the small open-weight view: Nanbeige4.3-33B, released 2026-10-25.",
+  "title": "Artificial Analysis: open-weights leaderboards, model pages, Intelligence Index v5.0.1 methodology",
+  "credibility": "high",
+  "credibility_reason": "AA runs every evaluation itself under one documented methodology, with harness, repeat count, step limits, temperature and version history all published. The scores also agree with NVIDIA's separate same-harness table to within about 1.5 points on TB2.1. Three caveats matter here. AA serves models through first-party or median provider APIs at full precision, not through local quants. Its agent harnesses are Terminus 2, mini-swe-agent and Stirrup, not OpenCode. And the benchmark suite changes often: TB-Hard and tau2 were superseded in v4.1, TB2.1 in v4.3, and newer models simply have no score on the old metrics.",
+  "summary": "AA is the best independent source of quality scores for our picks, and its legacy TB2.1 numbers match the NVIDIA table in the baseline. The site has moved to Intelligence Index v5.0.1, which is built from hard agentic evals (Terminal-Bench 4.0, FrontierCode-AA 2.0, AA-Briefcase and others). On that scale small models score very low: Qwen3.8 27B xhigh gets 20.1. Most of our picks have no v5 index score at all, so the per-eval legacy columns (TB2.1, tau2, tau3-Banking) are still the comparison to use. Qwen3.8 27B leads the small class on almost every agentic eval, which supports our pick #2. Two new models outrank parts of our list. Nanbeige4.3-33B (dense Llama architecture, Apache-2.0, released 2026-10-25) has Intelligence Index 20.4, ahead of Qwen3.8 27B xhigh at 20.1, and Progress Index 306 against 303. K2 Horizon MoVA 36B A4B (MoE, Apache-2.0, 2026-09-03) scores TB2.1 56.6 against 44.9 for Qwen3.6-35B-A3B, and tau3-Banking 32.0 against 9.3. Neither has been checked for fit, for runtime support or for real behaviour in OpenCode.",
+  "findings": [
+   {
+    "topic": "Index version",
+    "claim": "The current headline metric is Intelligence Index v5.0.1 (\"November 2026 to current\"), made of 9 evals in 4 categories at 25% each. Knowledge Work: AA-Briefcase v1.1 15%, AutomationBench-AA 5%, GDP.pdf 5%. Coding: FrontierCode-AA 2.0 15%, Terminal-Bench 4.0 10%. Science: Terminal-Bench-Science 0.1 15%, CritPt v2 Hard 10%. General: AA-Omniscience v1.1 15%, HLE-Diamond 10%. v5.0 (October 2026) removed GDPval-AA, SciCode, AA-LCR and HLE from the index.",
+    "evidence": "documented",
+    "target": "benchmarking",
+    "relevance": "high",
+    "location": "https://artificialanalysis.ai/methodology/intelligence-benchmarking (Version History)"
+   },
+   {
+    "topic": "No Coding or Agentic Index",
+    "claim": "The site no longer publishes a separate Coding Index or Agentic Index for models. The string 'Coding Index' appears 0 times on the home page, the leaderboard and the model pages. What exists instead is per-eval columns plus a separate 'Coding Agent Index v2.1' (FrontierCode-AA 2.0, Terminal-Bench 4.1, SWE-Atlas-QnA-AA). That index scores agent products such as CLI agents, not bare open-weight models, and no OpenCode or local-model entries were found on it.",
+    "evidence": "documented",
+    "target": "benchmarking",
+    "relevance": "medium",
+    "location": "https://artificialanalysis.ai/agents/coding-agents"
+   },
+   {
+    "topic": "Legacy metrics",
+    "claim": "Terminal-Bench Hard and tau2-Bench Telecom were superseded in v4.1. Terminal-Bench 2.1 was replaced by TB 4.0 in v4.3 (September 2026), and tau3-Banking was dropped from the index in v4.3. Models released after that date often have no TB2.1 or tau2 score: Qwen3.8 27B has tau2 null, and Nanbeige4.3-33B has TB2.1 null. Scores on different metrics cannot be compared with each other.",
+    "evidence": "documented",
+    "target": "benchmarking",
+    "relevance": "high",
+    "location": "methodology page, Terminal-Bench 2.1 / Terminal-Bench Hard / tau2 sections"
+   },
+   {
+    "topic": "Harness",
+    "claim": "How each benchmark is run. TB2.1: Terminus 2 harness in an E2B sandbox, 89 tasks, pass@1 averaged over 3 repeats, at most 250 episodes, 2 h timeout per task. TB 4.0: mini-swe-agent with its defaults (native bash tool, no context compaction), 66 tasks, 3 repeats, at most 500 steps. TB-Hard: 44 tasks, Terminus 2, at most 100 episodes, 1M input tokens per repeat. tau2 Telecom: 114 tasks, 3 repeats, user simulator Qwen3 235B A22B 2507 non-reasoning, at most 100 steps. FrontierCode-AA 2.0: 132 tasks, 3 attempts, Stirrup harness. None of these is OpenCode.",
+    "evidence": "documented",
+    "target": "benchmarking",
+    "relevance": "high",
+    "location": "methodology page"
+   },
+   {
+    "topic": "Sampling settings",
+    "claim": "Temperature is 0 for non-reasoning models and 0.6 for reasoning models, unless the lab recommends otherwise. Max output is 16,384 tokens for non-reasoning models and the creator's maximum for reasoning models. Each reasoning-effort setting is listed as a separate model. Qwen3.8 27B and Qwen3.6 are served by the first-party API (Alibaba). Nanbeige, K2 Horizon, Muse Glimmer and Nemotron Lightning use the 'median' provider. All of these are full-precision endpoints, not Q4 GGUF.",
+    "evidence": "documented",
+    "target": "benchmarking",
+    "relevance": "high",
+    "location": "methodology 'General Testing Parameters'; model JSON field performanceDataSource"
+   },
+   {
+    "topic": "Qwen3.8 27B scores (pick #2)",
+    "claim": "TB2.1 for the four effort settings is xhigh 79.8, medium 65.2, low 67.4 and non-reasoning 49.1. TB 4.0 is 5.6 / 5.1 / 2.5 / 0. tau3-Banking is 48.0 / 47.4 / 32.2 / 20.0. FrontierCode-AA 2.0 is 14.9 / 11.5 / 12.4 / 3.7. Intelligence Index is 20.1 / 17.5 / 15.7 / 10.0, and GDPval-AA is 1426 for xhigh. These are the best agentic scores of any model of 40B or less on AA. Released 2026-08-14, 27B dense, 256k context.",
+    "evidence": "measured",
+    "target": "models",
+    "relevance": "high",
+    "location": "https://artificialanalysis.ai/models/qwen3-8-27b (raw JSON: terminalBench21 0.797752808988764, terminalBench40 0.0555555555555556, tauBanking 0.480412371134021, intelligenceIndex 20.1068756031705)"
+   },
+   {
+    "topic": "Qwen3.6-35B-A3B scores (pick #1)",
+    "claim": "Reasoning: TB2.1 44.9, TB-Hard 34.8, tau2 95.3, tau3-Banking 9.3, GDPval 898.9. Non-reasoning: TB2.1 41.6, TB-Hard 25.8, tau2 85.1, tau3 5.4. No v5 Intelligence Index. Progress Index is 261 (reasoning) and 246 (non-reasoning).",
+    "evidence": "measured",
+    "target": "models",
+    "relevance": "high",
+    "location": "https://artificialanalysis.ai/models/qwen3-6-35b-a3b"
+   },
+   {
+    "topic": "Other picks' scores",
+    "claim": "Gemma 4 26B A4B: reasoning TB2.1 39.0 / tau2 43.6 / TB-Hard 13.6; non-reasoning TB-Hard 25.0 / tau2 40.4. gpt-oss-20b: high TB2.1 13.9 / tau2 60.2 / TB-Hard 10.6; low tau2 50.3 / TB-Hard 4.5 (AA has no medium variant). Qwen3-Coder-Next: TB2.1 38.2 / tau2 79.5 / TB-Hard 18.2 / TB4.0 0. Nemotron 3.5 Lightning: TB2.1 24.3 / tau3 8.9 / II 5.5. Gemma 4 12B reasoning: TB2.1 27.3 / tau2 36.3. GLM-4.7-Flash reasoning: tau2 98.8 / TB-Hard 22.0 / no TB2.1. DeepSeek R1 0528 Qwen3 8B: tau2 0 / TB-Hard 1.5.",
+    "evidence": "measured",
+    "target": "models",
+    "relevance": "high",
+    "location": "model pages gemma-4-26b-a4b, gpt-oss-20b, qwen3-coder-next, nemotron-3-5-lightning, gemma-4-12b, glm-4-7-flash, deepseek-r1-qwen3-8b"
+   },
+   {
+    "topic": "New candidate: Nanbeige4.3-33B",
+    "claim": "Highest in the AA small open-weight class: Intelligence Index 20.4 against 20.1 for Qwen3.8 27B xhigh, and Progress Index 306 against 303. Other scores: TB 4.0 29.8% (Qwen3.8 xhigh 5.6), FrontierCode 2.0 10.7, AutomationBench 53.1. It has no TB2.1, tau2 or tau3 score. Released 2026-10-25, Apache-2.0, 524k context, reasoning model. Its HF config is LlamaForCausalLM with 33.1B safetensors parameters, so both runtimes should support the architecture natively. Community GGUFs exist (bartowski, AtomicChat) and the org publishes INT4 and FP8 builds. As a 33B dense model it will not fit fully in 16 GB at Q4; this needs fit verification.",
+    "evidence": "measured",
+    "target": "models",
+    "relevance": "high",
+    "location": "https://artificialanalysis.ai/models/nanbeige4-3-33b; https://huggingface.co/api/models/Nanbeige/Nanbeige4.3-33B"
+   },
+   {
+    "topic": "New candidate: K2 Horizon MoVA 36B A4B",
+    "claim": "An MoE from IFM with 4B active parameters, Apache-2.0, released 2026-09-03, 524k context, reasoning. Scores: TB2.1 56.6, tau3-Banking 32.0, AutomationBench 26.1, GDPval 1197.6, Progress Index 281. That beats Qwen3.6-35B-A3B (TB2.1 44.9, tau3 9.3, Progress 261) and Gemma 4 26B A4B (TB2.1 39.0). The architecture is custom (K2HorizonForCausalLM, custom_code, 37.4B safetensors parameters). An official IFM/K2-Horizon-MoVA-36B-A4B-GGUF exists. Support in llama.cpp b12418 and vLLM v0.33.0 is unverified.",
+    "evidence": "measured",
+    "target": "models",
+    "relevance": "high",
+    "location": "https://artificialanalysis.ai/models/k2-horizon-mova-36b-a4b; https://huggingface.co/api/models/IFM/K2-Horizon-MoVA-36B-A4B"
+   },
+   {
+    "topic": "New candidate: K2 Horizon 7B",
+    "claim": "A 7B dense model (9.0B safetensors parameters), Apache-2.0, released 2026-09-03. Scores: TB2.1 44.2, tau3-Banking 27.6, GDPval 1023.8, Progress Index 263. That is on par with Qwen3.6-35B-A3B on TB2.1, and it would fit fully in VRAM at Q8. Same custom architecture as MoVA, so runtime support is unverified.",
+    "evidence": "measured",
+    "target": "models",
+    "relevance": "medium",
+    "location": "https://artificialanalysis.ai/models/k2-horizon-7b"
+   },
+   {
+    "topic": "Muse Glimmer and North Mini Code",
+    "claim": "AA lists both as open weights. Muse Glimmer (High) points to https://huggingface.co/meta-models/Muse-Glimmer-30B; it is 30B, Apache-2.0, released 2026-08-10, with TB2.1 51.7, tau3 23.5, II 6.3 and Progress Index 267. North Mini Code is 30B A3B with TB2.1 35.6 and TB-Hard 31.1. Both are excluded or unverified in the baseline. AA scoring a model does not make its HF org trustworthy; the 'meta-models' org needs its own check.",
+    "evidence": "measured",
+    "target": "models",
+    "relevance": "medium",
+    "location": "https://artificialanalysis.ai/models/muse-glimmer; /models/north-mini-code"
+   },
+   {
+    "topic": "Excluded models: AA confirms the exclusions",
+    "claim": "Gemma 4 31B reasoning scores TB2.1 43.4 / TB-Hard 36.4 / tau2 59.9, below Qwen3.8 27B. gpt-oss-120b high scores TB2.1 26.2 / tau2 65.8. Mistral Small 4 reasoning scores TB2.1 21.0. Devstral Small 2 scores TB2.1 29.6. Qwen3-Coder-30B-A3B scores TB-Hard 15.2 / tau2 34.5. Granite 4.2 30B scores TB2.1 26.6. None of these outranks the current picks.",
+    "evidence": "measured",
+    "target": "models",
+    "relevance": "medium",
+    "location": "corresponding /models/<slug> pages"
+   },
+   {
+    "topic": "Superseded Qwen 27B models",
+    "claim": "Qwen3.6 27B reasoning scores TB2.1 60.7 / tau3 16.7 / tau2 94.2, and Qwen3.5 27B reasoning scores TB-Hard 32.6 / tau2 93.9. Qwen3.8 27B (79.8 / 48.0) is clearly ahead of both, which supports the baseline call that Qwen3.8 supersedes them.",
+    "evidence": "measured",
+    "target": "models",
+    "relevance": "medium",
+    "location": "/models/qwen3-6-27b, /models/qwen3-5-27b"
+   },
+   {
+    "topic": "Out-of-reach leaders",
+    "claim": "Qwen3.8-Flash-Next (180B A6B, Qwen Community License) scores TB2.1 86.1 / II 28.6. GLM-5.3-Flash (320B A18B) scores TB2.1 84.3 / II 27.8. MiMo-V2.6-Flash (309B) has II 26.7. Ling 3.1 Flash (560B) has II 29.6. All are far beyond 61 GiB RAM plus 16 GB VRAM. Medium-class options under 125B are Ling-3.0-flash-VL (124B A5.5B, TB2.1 64.4) and Nemotron 3.5 Super VL (120B A12B, II 13.6). Even at Q4 those need about 65 GiB or more, which does not fit the machine.",
+    "evidence": "measured",
+    "target": "models",
+    "relevance": "low",
+    "location": "/models/qwen3-8-flash-next, /models/glm-5-3-flash, /models/open-source/medium"
+   },
+   {
+    "topic": "Progress Index v1",
+    "claim": "A new cross-version capability estimate based on item response theory, designed to compare models that were tested on different benchmark sets. Small open-weight top 12: Nanbeige4.3-33B 306, Qwen3.8 27B xhigh 303, medium 290, low 283, K2 Horizon MoVA 281, Muse Glimmer 267, K2 Horizon 7B 263, Qwen3.8 27B non-reasoning 262, Qwen3.6 35B A3B 261, G9v3-39A5B 257, Gemma 4 31B 254, Qwen3.6 35B A3B non-reasoning 246. Medium top includes Qwen3 Coder Next at 227.",
+    "evidence": "computed",
+    "target": "models",
+    "relevance": "high",
+    "location": "https://artificialanalysis.ai/models/open-source/small and /medium (chart data)"
+   },
+   {
+    "topic": "Reasoning token cost",
+    "claim": "Average output tokens per Intelligence Index task: Qwen3.8 27B xhigh 109.8k, medium 86.4k, low 80.2k, non-reasoning 44.9k; Nanbeige4.3-33B 158.5k; Nemotron 3.5 Lightning 65.0k; Muse Glimmer 26.1k. On local hardware this decides wall time. At an assumed 30 tok/s decode, 110k tokens is about 61 minutes per task (arithmetic only, nothing was measured locally).",
+    "evidence": "computed",
+    "target": "models",
+    "relevance": "high",
+    "location": "model JSON field intelligenceIndexOutputTokensPerTask"
+   },
+   {
+    "topic": "Cross-check with the NVIDIA table",
+    "claim": "AA TB2.1 against NVIDIA's numbers in the Nemotron 3.5 Lightning card (baseline): Qwen3.6-35B-A3B 44.9 vs 44.38, Gemma 4 26B-A4B 39.0 vs 37.22, gpt-oss-20b high 13.9 vs 15.17, Nemotron Lightning 24.3 vs 24.58. Two independent harness runs agree within about 1.8 points.",
+    "evidence": "computed",
+    "target": "benchmarking",
+    "relevance": "high",
+    "location": "model pages vs baseline current-knowledge.md"
+   },
+   {
+    "topic": "Speed numbers are not local numbers",
+    "claim": "Every speed, TTFT and price figure on AA is measured against cloud API providers. None of it applies to the RTX 5080 Laptop or to quantized local inference, so do not use it for throughput expectations.",
+    "evidence": "documented",
+    "target": "benchmarking",
+    "relevance": "medium",
+    "location": "leaderboard fields outputSpeed / timeToFirstToken; 'Independent test run by Artificial Analysis on dedicated hardware' JSON-LD"
+   }
+  ],
+  "measurements": [],
+  "conflicts": [
+   {
+    "baseline_claim": "The baseline evidence cites AA TB2.1 and tau2 as the main AA metrics and lists no AA Intelligence Index for most picks.",
+    "source_claim": "TB2.1 and tau2 are legacy metrics. The live index is v5.0.1, and new models are scored on TB 4.0, FrontierCode 2.0 and tau3-Banking/AutomationBench instead, so they have no TB2.1 or tau2.",
+    "assessment": "Not a factual conflict: every baseline number checked matches the raw JSON. But comparisons with models released after September 2026 must use TB 4.0, the Progress Index or Intelligence Index v5, and docs/model-selection.md should say which metric version each number comes from."
+   },
+   {
+    "baseline_claim": "The model picks contain no models newer than Qwen3.8-27B (2026-08-14) other than Ornith-1.5 (2026-08-18). Muse Glimmer 30B is excluded and North Mini Code is unverified.",
+    "source_claim": "Nanbeige4.3-33B (2026-10-25) tops the AA small open-weight class (II 20.4, Progress 306). K2 Horizon MoVA 36B A4B (2026-09-03) and K2 Horizon 7B score above Qwen3.6-35B-A3B on TB2.1 and tau3-Banking. Muse Glimmer has TB2.1 51.7.",
+    "assessment": "These are new candidates the baseline missed. Each one needs fit, runtime-support and quant checks before it can be a pick: Nanbeige is 33B dense, so offload is needed on 16 GB; K2 Horizon uses a custom architecture."
+   },
+   {
+    "baseline_claim": "Baseline pick #7 is Ornith-1.5-9B and the honorable mentions include KAT-Coder-V2.5-Dev and Laguna XS 2.1.",
+    "source_claim": "AA has no pages for Ornith-1.5 (both slugs return 404), Laguna XS 2.1 or KAT-Coder-V2.5-Dev.",
+    "assessment": "AA provides no independent scores for these, so their quality rests on vendor claims only. docs/model-selection.md should mark them as not independently evaluated."
+   }
+  ],
+  "agreements": [
+   "Qwen3.8-27B TB2.1 79.8 (xhigh) / 65.2 (medium) / 67.4 (low) / 49.1 (non-reasoning) and TB 4.0 5.6 match the baseline exactly (raw terminalBench21 0.797752808988764).",
+   "Qwen3-Coder-Next tau2 79.5 and TB2.1 38.2 match the baseline.",
+   "Gemma 4 12B TB2.1 27.3 (reasoning) matches the baseline.",
+   "DeepSeek-R1-0528-Qwen3-8B tau2 0 matches the baseline (chat only, no tool calling).",
+   "Thinking improves agentic quality: Qwen3.8 27B TB2.1 goes from 49.1 with thinking off to 67.4 at low effort, which matches the baseline lesson.",
+   "AA's TB2.1 scores and the NVIDIA same-harness table in the baseline agree within 1.8 points for the four shared models.",
+   "AA confirms the exclusions: Gemma 4 31B, gpt-oss-120b, Mistral Small 4, Devstral Small 2, Qwen3-Coder-30B-A3B, Granite 4.2 30B and Qwen3.5/3.6 27B all score below Qwen3.8 27B."
+  ],
+  "kb_notes": [
+   {
+    "target_doc": "docs/model-selection.md",
+    "note": "Artificial Analysis Intelligence Index v5.0.1 (November 2026) is built from hard agentic evals, so small models score low on it. Qwen3.8 27B scores 20.1 at xhigh, 17.5 at medium, 15.7 at low and 10.0 with thinking off. Most of our other picks have no v5 score, so compare them on the per-eval columns instead (https://artificialanalysis.ai/methodology/intelligence-benchmarking)."
+   },
+   {
+    "target_doc": "docs/model-selection.md",
+    "note": "Independent agentic scores from Artificial Analysis (Terminal-Bench 2.1, pass@1 over 3 repeats, Terminus 2 harness). Qwen3.8 27B: 79.8 xhigh, 67.4 low, 49.1 with thinking off. Qwen3.6-35B-A3B: 44.9 reasoning, 41.6 non-reasoning. Gemma 4 26B A4B: 39.0. Qwen3-Coder-Next: 38.2. Gemma 4 12B: 27.3. Nemotron 3.5 Lightning: 24.3. gpt-oss-20b high: 13.9. All were run at full precision through cloud APIs, not through local quants (https://artificialanalysis.ai/models/qwen3-8-27b and sibling pages)."
+   },
+   {
+    "target_doc": "docs/model-selection.md",
+    "note": "Candidates to evaluate next, from the Artificial Analysis small open-weight view as of 2026-11-15. Nanbeige4.3-33B (Apache-2.0, dense LlamaForCausalLM, released 2026-10-25) has Intelligence Index 20.4 and Progress Index 306, both just above Qwen3.8 27B xhigh (20.1 / 303). K2 Horizon MoVA 36B A4B (Apache-2.0, custom K2HorizonForCausalLM, official GGUF) has TB2.1 56.6 and tau3-Banking 32.0, against 44.9 and 9.3 for Qwen3.6-35B-A3B. Neither has been checked yet for fit on 16 GB, for runtime support or for behaviour in OpenCode (https://artificialanalysis.ai/models/open-source/small)."
+   },
+   {
+    "target_doc": "docs/model-selection.md",
+    "note": "Ornith-1.5, Laguna XS 2.1 and KAT-Coder-V2.5-Dev have no Artificial Analysis page (404 on 2026-11-15). Their quality figures are vendor-reported only."
+   },
+   {
+    "target_doc": "docs/community-benchmarks.md",
+    "note": "Artificial Analysis harnesses differ from OpenCode. TB2.1 used Terminus 2 with at most 250 episodes. TB 4.0 uses mini-swe-agent with no context compaction and at most 500 steps. tau2 Telecom uses a Qwen3 235B user simulator. Temperature is 0.6 for reasoning models and 0 for non-reasoning models. Treat these scores as relative rankings, not as predictions of OpenCode success (https://artificialanalysis.ai/methodology/intelligence-benchmarking)."
+   },
+   {
+    "target_doc": "docs/community-benchmarks.md",
+    "note": "Metric versions on Artificial Analysis are not interchangeable. TB-Hard and tau2 were dropped in index v4.1. TB2.1 was replaced by TB 4.0 in v4.3 (September 2026). tau3-Banking was replaced by AutomationBench-AA in v4.3. Models released after September 2026 often have only the newer metrics. The Progress Index v1 (based on item response theory) is AA's way to compare across benchmark versions."
+   },
+   {
+    "target_doc": "docs/community-benchmarks.md",
+    "note": "Reasoning effort costs tokens. Artificial Analysis reports average output tokens per Intelligence Index task of 109.8k for Qwen3.8 27B xhigh, 80.2k at low, 44.9k with thinking off, and 158.5k for Nanbeige4.3-33B. At local decode speeds this costs roughly an hour per long agentic task (arithmetic, not measured), so measure low effort and thinking off first."
+   },
+   {
+    "target_doc": "docs/sources.md",
+    "note": "https://artificialanalysis.ai/ is an independent evaluator with high credibility for quality scores. Its speed and price data comes from cloud APIs and does not apply to local hardware. Read the numbers from the raw page JSON (the initialModels arrays in the RSC payload), not from a summarizer. Model page slugs look like /models/qwen3-8-27b. Last read 2026-11-15 at Intelligence Index v5.0.1."
+   },
+   {
+    "target_doc": "llamacpp/models.md",
+    "note": "Nanbeige4.3-33B (HF Nanbeige/Nanbeige4.3-33B, LlamaForCausalLM, 33.1B parameters, Apache-2.0) uses a standard Llama architecture, so llama.cpp should load it without new code. Community GGUFs exist (for example bartowski/Nanbeige_Nanbeige4.3-33B-GGUF), but a 33B dense model at Q4 does not fit fully in 16 GB VRAM. Verify quant size and partial-offload speed before adopting it (score source: https://artificialanalysis.ai/models/nanbeige4-3-33b)."
+   }
+  ],
+  "new_candidates": [
+   {
+    "name": "Nanbeige4.3-33B",
+    "hf_repo": "Nanbeige/Nanbeige4.3-33B",
+    "why": "Top of the AA small open-weight class (II 20.4, Progress 306), just above Qwen3.8 27B xhigh. Apache-2.0, standard Llama architecture, released 2026-10-25. It is 33B dense, so it needs IQ3 or partial offload on 16 GB, and it uses many reasoning tokens (158k output tokens per task)."
+   },
+   {
+    "name": "K2 Horizon MoVA 36B A4B",
+    "hf_repo": "IFM/K2-Horizon-MoVA-36B-A4B",
+    "why": "TB2.1 56.6 and tau3-Banking 32.0 beat Qwen3.6-35B-A3B (44.9 / 9.3). It is an MoE with 4B active parameters, so it suits --n-cpu-moe, and an official GGUF exists. The architecture is custom, so support in llama.cpp and vLLM needs checking."
+   },
+   {
+    "name": "K2 Horizon 7B",
+    "hf_repo": "IFM/K2-Horizon-7B",
+    "why": "A 7B dense model with TB2.1 44.2 and tau3 27.6, comparable to Qwen3.6-35B-A3B, and it fits fully in VRAM. Same custom architecture caveat as MoVA."
+   }
+  ],
+  "gaps": [
+   "AA has no page for Ornith-1.5-9B, Laguna XS 2.1 or KAT-Coder-V2.5-Dev, so these picks lack independent scores.",
+   "AA has no gpt-oss-20b medium variant; only high and low were evaluated.",
+   "Most baseline picks have no Intelligence Index v5 score and no TB 4.0 run, so they cannot be compared with Nanbeige4.3-33B on a common metric except the Progress Index. Only the top 12 per size class were extracted for that index.",
+   "All AA scores come from full-precision API endpoints. The effect of Q3/Q4 GGUF or NVFP4 quantization on these scores is unknown.",
+   "The Coding Agent Index v2.1 scores agent products, not bare models. No OpenCode-with-local-model data was found.",
+   "Fit, runtime support (llama.cpp b12418, vLLM v0.33.0) and tool-call parser support for Nanbeige4.3-33B and K2 Horizon were not verified."
+  ],
+  "methodology": "Read the baseline first. Fetched AA pages with curl -sL -A \"Mozilla/5.0\" into $SCRATCH/src/artificialanalysis/. Parsed the Next.js RSC payload by JSON-decoding the self.__next_f.push strings, then used raw_decode on the \"initialModels\" arrays and chart \"data\" arrays (scripts in $SCRATCH/aa_scripts/, run with python3 -I). Turned the methodology page into text to get harness, settings and version history. Checked HF repo metadata for the new candidates through the public HF API (no downloads). All benchmark values are AA's own measurements from cloud APIs. The only computed values are the Progress Index (AA's IRT model) and my token-to-time arithmetic."
+ },
+ "check": {
+  "verdicts": [
+   {
+    "item": "Publisher, type and as-of date",
+    "verdict": "confirmed",
+    "evidence": "Methodology page heading reads 'Artificial Analysis Intelligence Index v5.0.1'. The raw HTML version history says 'Version 5.0.1 | November 2026 to current' and 'Version 5.0 | October 2026 to November 2026'. The page lists 9 evals in four categories at 25% each. Calling it an independent-eval source fits."
+   },
+   {
+    "item": "v5.0 removed GDPval-AA, SciCode, AA-LCR and HLE; v4.3 replaced TB2.1 with TB 4.0 and tau3-Banking with AutomationBench-AA (September 2026)",
+    "verdict": "confirmed",
+    "evidence": "v5.0 entry: 'Removed GDPval-AA ... SciCode ... AA-LCR ... Humanity's Last Exam'. v4.3 entry (September 2026): 'Replaced tau3-Banking with AutomationBench-AA (5%)' and 'Replaced Terminal-Bench 2.1 with Terminal-Bench 4.0 (66 tasks, mini-swe-agent harness)'. v4.1 entry: 'Replaced Terminal-Bench Hard with Terminal-Bench 2.1'.",
+    "correction": "The tau3-Banking status line also says 'We still run it on new model releases and report it as a standalone evaluation.' A missing tau3 score on a new model is therefore not guaranteed by AA policy. Nanbeige does have tauBanking null, though."
+   },
+   {
+    "item": "Harness and sampling settings (TB2.1 Terminus 2 / 89 tasks / 3 repeats / 250 episodes / 2 h; TB 4.0 up to 500 steps; temperature 0 or 0.6; 16,384 max output for non-reasoning)",
+    "verdict": "confirmed",
+    "evidence": "Verbatim: 'full Terminal-Bench 2.1 dataset (89 tasks) using the Terminus 2 agent harness in an E2B sandbox ... pass@1 scoring averaged over 3 repeats', 'Maximum episodes ... limited to 250', 'two hours (7,200 seconds)', 'mini-swe-agent harness with its native bash tool ... up to 500 steps', 'Temperature: 0 for non-reasoning models, 0.6 for reasoning models', 'Non-reasoning models: 16,384 tokens'."
+   },
+   {
+    "item": "Qwen3.8 27B scores (pick #2)",
+    "verdict": "confirmed",
+    "evidence": "Raw /models/qwen3-8-27b: xhigh terminalBench21 0.797752808988764, terminalBench40 0.0555555555555556, tauBanking 0.480412371134021, frontierCode20 0.149142929292929, intelligenceIndex 20.1068756031705, gdpval 1426.15. medium 0.6517 / 0.0505 / 0.4742 / II 17.48. low 0.6742 / 0.0253 / 0.3216 / II 15.69. non-reasoning 0.4906 / 0 / 0.2 / II 10.03. Output tokens per task: 109802 / 86407 / 80176 / 44867. Release date 2026-08-14, 256000 context. performanceDataSource is firstParty Alibaba."
+   },
+   {
+    "item": "Qwen3.6-35B-A3B, Gemma 4 26B A4B and gpt-oss-20b scores",
+    "verdict": "confirmed",
+    "evidence": "qwen3-6-35b-a3b: TB2.1 0.4494, TB-Hard 0.3485, tau2 0.9532, tauBanking 0.0928, gdpval 898.86. Non-reasoning: 0.4157 / 0.2576 / 0.8509 / 0.0536. gemma-4-26b-a4b: TB2.1 0.3895, tau2 0.4357, TB-Hard 0.1364. gpt-oss-20b high: TB2.1 0.1386, tau2 0.6023, TB-Hard 0.1061. gpt-oss-20b low: tau2 0.5029, TB-Hard 0.0455. All are model-of-record values from the live page JSON."
+   },
+   {
+    "item": "New candidate Nanbeige4.3-33B (II 20.4, Progress 306, TB 4.0 29.8, FrontierCode 2.0 10.7, AutomationBench 53.1, LlamaForCausalLM 33.1B, Apache-2.0)",
+    "verdict": "confirmed",
+    "evidence": "AA JSON: intelligenceIndex 20.4071119588083, terminalBench40 0.297979797979798, frontierCode20 0.10717702020202, automationBenchPartialScore 0.5311, TB2.1, tau2 and tauBanking all null, releaseDate 2026-10-25, context 524288. The small-class chart gives Nanbeige value 305.985 (displayValue 306). The page text says Nanbeige4.3-33B and Qwen3.8 27B (xhigh) score highest on Progress Index v1 among 4B-40B open models. HF API: ['LlamaForCausalLM'], safetensors total 33118977024, license apache-2.0 (HF createdAt 2026-10-24)."
+   },
+   {
+    "item": "New candidate K2 Horizon MoVA 36B A4B (TB2.1 56.6, tau3 32.0, AutomationBench 26.1, GDPval 1197.6, Progress 281, custom arch) and K2 Horizon 7B (TB2.1 44.2, tau3 27.6)",
+    "verdict": "confirmed",
+    "evidence": "MoVA: terminalBench21 0.565543071161049, tauBanking 0.319587628865979, automationBench 0.2610, gdpval 1197.58, active 4B, Apache 2.0, 2026-09-03. Chart value 280.70 (displayed 281). HF API: ['K2HorizonForCausalLM'], 37444792020 params, tags include custom_code. 7B: terminalBench21 0.441947565543071, tauBanking 0.276288659793814, gdpval 1023.84."
+   },
+   {
+    "item": "Ornith-1.5 has no AA page",
+    "verdict": "confirmed",
+    "evidence": "curl -A Mozilla/5.0 https://artificialanalysis.ai/models/ornith-1-5-9b returned HTTP 404 on 2026-11-15. Laguna and KAT-Coder were not re-checked."
+   },
+   {
+    "item": "AA vs NVIDIA TB2.1 cross-check",
+    "verdict": "confirmed",
+    "evidence": "Baseline current-knowledge.md line 80 gives NVIDIA values of 44.38 / 37.22 / 15.17 / 24.58. AA gives 44.9 / 39.0 / 13.9 / 24.3. The largest gap is 1.78 points (Gemma), so the finding's 'within about 1.8 points' is correct.",
+    "correction": "credibility_reason says 'within about 1.5 points', which does not match the review's own finding and agreements (1.8). Use 1.8."
+   },
+   {
+    "item": "Conflicts with baseline (legacy metric versions; new candidates missed; Ornith/Laguna/KAT not independently scored)",
+    "verdict": "confirmed",
+    "evidence": "All baseline AA numbers on line 80 match the raw JSON, so the first point is a labelling issue and not a factual conflict, as the review says. Baseline lines 73-79 list no Nanbeige or K2 Horizon, and Muse Glimmer 30B appears among the exclusions, so the 'new candidates missed' conflict is real. Ornith returning 404 supports the third conflict."
+   }
+  ],
+  "credibility_fair": true,
+  "credibility_note": "A high rating fits for quality scores. AA runs every eval itself under a documented, versioned methodology, and its numbers match NVIDIA's separate table to within 1.8 points. The review rightly limits that rating to full-precision cloud-API runs on non-OpenCode harnesses, and rightly excludes speed and price data from local relevance. Two small fixes are needed: change '1.5 points' to '1.8' in credibility_reason, and soften the claim that new models lack tau3, because AA says it still runs tau3-Banking as a standalone eval.",
+  "overall": "holds-with-corrections",
+  "summary": "I re-fetched the live pages on 2026-11-15 with curl -A Mozilla/5.0 into $SCRATCH/src/aa-check/ and parsed the RSC payload with python3 -I (scripts are in $SCRATCH/aa_check_scripts/). Every load-bearing number I checked matches the raw JSON exactly. That covers Qwen3.8 27B at all four efforts, Qwen3.6-35B-A3B, Gemma 4 26B A4B, gpt-oss-20b, Nanbeige4.3-33B, K2 Horizon MoVA and K2 Horizon 7B. The methodology facts also match: v5.0.1 'November 2026 to current', the v5.0 and v4.3 changes, the TB2.1 and TB 4.0 harness limits, and the temperature and max-token settings. The Progress Index values (306 and 281) and the HF architectures (LlamaForCausalLM 33.1B, K2HorizonForCausalLM 37.4B custom_code) check out, and Ornith returns 404. The review's conflicts with the baseline are real. Two minor corrections: the credibility_reason should say 1.8 points, not 1.5, to match its own cross-check. And tau3-Banking is still run as a standalone eval on new releases, so a missing tau3 score is not guaranteed by AA policy."
+ }
+}

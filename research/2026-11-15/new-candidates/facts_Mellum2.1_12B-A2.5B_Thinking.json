@@ -1,0 +1,108 @@
+{
+ "overall": "holds-with-corrections",
+ "summary": "I could not refute any identity or capability fact, so the record holds with small corrections. Ownership is real, not a re-upload. The HF author is JetBrains, the org lists Base, Mellum2, Mellum2.1, GGUF and MTP repos, and the official JetBrains AI blog post (by Bulat Salimzianov, RSS pubDate Thu, 08 Oct 2026) announces it. The MTP repo's five shards have the same LFS sha256 as the main repo's shards. Those hashes differ from Mellum2 Thinking's, so the weights are new. Config, card, tokenizer and chat template were read raw, and every architecture, context, license and token-ID claim matches. The parameter count checks out: total 12,149,923,072, which arithmetic reproduces only with all-sparse MLPs. The KV arithmetic is right: 14,336 B/token in BF16 and 42 MiB of SWA state per sequence. The template has a real enable_thinking=false empty think block and Hermes-style tool_call/tool_response. vLLM v0.33.0 registry line 759, the hermes and qwen3 parsers, the MXFP4 rejection, the transformers pin, llama.cpp LLM_ARCH_MELLUM at b12407/b12418/b12177, the Ollama b12177 pin and the issue #30704 speed numbers were all confirmed at source. Every benchmark number matches the card, and the card itself says all values are self-reported by JetBrains. Corrections: (1) JetBrains' re-evaluated Qwen3.5-9B numbers conflict with Qwen's own card. BFCL-V4 is 66.1 on Qwen's card against 58.5 from JetBrains, so Mellum's 62.3 lead over Qwen3.5-9B on BFCL holds only on JetBrains' re-run. LCB v6 is 65.6 vs 75.4, GPQA-D 81.7 vs 77.8, MMLU-Redux 91.1 vs 89.5 and IFEval 91.5 vs 92.4. (2) The MTP speedup is 1.4-1.8x with about 90% acceptance on the MTP card, and the blog says 'about 1.6 times' for a single request without naming vLLM. (3) Both the card and the blog still say GGUF/MTP are 'coming soon', which is stale text. No independent quality benchmark exists: Artificial Analysis returns 404. Evidence files: $SCRATCH/mellum/",
+ "verdicts": [
+  {
+   "claim": "Official JetBrains release, not a re-upload; HF author JetBrains; announced on JetBrains AI blog by Bulat Salimzianov; sibling GGUF (2026-10-07) and MTP (2026-10-30) repos are official",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models?author=JetBrains&sort=createdAt&direction=-1 ; https://blog.jetbrains.com/ai/feed/ ; https://blog.jetbrains.com/ai/2026/10/mellum2-1-gets-to-work-a-fast-open-model-for-coding-agents/",
+   "correction": "Direct statement. The JetBrains org listing shows the GGUF repo created 2026-10-07T18:43:52Z and MTP created 2026-10-30T17:20:32Z. The RSS dc:creator is Bulat Salimzianov. The 5 MTP-repo shards have the same LFS sha256 as the main repo (f5ccf801..., 266beea6..., da9a04fb..., 32f27ab7..., d8bbb9b8...), which confirms 'byte-identical' plus model-mtp.safetensors. The Mellum2 Thinking shard hashes differ, so the weights are new and not a re-upload. Card base_model is JetBrains/Mellum2-12B-A2.5B-Base."
+  },
+  {
+   "claim": "Dates: HF createdAt 2026-09-20T10:52:55Z, lastModified 2026-10-07T23:08:12Z, announcement 2026-10-08; Mellum2 open-sourced June 2026 (HF 2026-05-26)",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/JetBrains/Mellum2.1-12B-A2.5B-Thinking ; https://blog.jetbrains.com/ai/feed/",
+   "correction": "All exact. The Mellum2-12B-A2.5B-Base and Thinking repos were created 2026-05-26. The blog says Mellum2 was 'open-sourced in June'. The Mellum2 Technical Report arXiv 2605.31268 was published 2026-05-29. Within the last 12 months: yes."
+  },
+  {
+   "claim": "License Apache-2.0, not gated; community license tags (liodon-ai 'other', others apache-2.0)",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/JetBrains/Mellum2.1-12B-A2.5B-Thinking/raw/main/README.md",
+   "correction": "Card YAML license apache-2.0, body says 'Released under the Apache 2.0 license.', API gated:false. The license tags were rechecked via the HF API: liodon-ai other; voves, cyankiwi, FP8Enjoyer and the GGUF repo apache-2.0."
+  },
+  {
+   "claim": "Parameters 12,149,923,072 BF16; card 12B total / 2.5B active; computed active about 2.4B",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/JetBrains/Mellum2.1-12B-A2.5B-Thinking?blobs=true",
+   "correction": "Source-backed. Total safetensors size is 24,300,538,808 B (22.63 GiB). Recomputed: experts 64x3x2304x896x28 = 11.10B, attention 0.595B, embedding plus lm_head 0.453B, total about 12.15B. That reproduces the total only if every MLP is sparse, consistent with mlp_layer_types (intermediate_size 7168 is unused). Active per token: 1.387B + 0.595B + 0.226B lm_head = 2.21B, or 2.43B with the embedding row counted. The card's 2.5B is a vendor round-up."
+  },
+  {
+   "claim": "Architecture: MellumForCausalLM, 28 layers, hidden 2304, 64 experts top-8, moe_intermediate 896, GQA 32/4, head_dim 128, 3:4 SWA window 1024, 7 full layers with YaRN factor 16 over 8192, vocab 98304, untied, same as Mellum2, text-only",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/JetBrains/Mellum2.1-12B-A2.5B-Thinking/raw/main/config.json",
+   "correction": "Raw config matches: full_attention layers at indices 3,7,...,27 (7), YaRN theta 5e5 factor 16 orig 8192, sliding default RoPE theta 5e5, tie_word_embeddings false, norm_topk_prob true. The Mellum2-12B-A2.5B-Thinking config has identical shape fields. The record says q/k norm and softmax gating, but no config key shows them, so those two details are unverified, not refuted."
+  },
+  {
+   "claim": "Context 131,072 (max_position_embeddings, tokenizer model_max_length, card); agentic evals at 114K",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/JetBrains/Mellum2.1-12B-A2.5B-Thinking/raw/main/tokenizer_config.json",
+   "correction": "All three sources say 131072. Card note: 'a 114K-token context, and up to 16K tokens per turn'."
+  },
+  {
+   "claim": "Thinking toggle: on by default, model opens <think> itself; enable_thinking=false appends empty think block; reasoning_content kept only after last real user turn",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/JetBrains/Mellum2.1-12B-A2.5B-Thinking/raw/main/chat_template.jinja",
+   "correction": "Template read raw. The generation prompt is '<|im_start|>assistant\\n', plus '<think>\\n\\n</think>\\n\\n' only when enable_thinking is false. Reasoning is re-emitted only when loop.index0 > ns.last_query_index. Card: 'Mellum2.1 is a thinking model'. The vLLM qwen3 reasoning parser is registered at v0.33.0 (vllm/reasoning/__init__.py). That it handles a model-opened <think> was not verified in parser source. Non-thinking quality is undocumented, as the record says."
+  },
+  {
+   "claim": "Tool calling: Hermes/Qwen style <tools>, <tool_call>{name,arguments}</tool_call>, <tool_response> in a user turn; tokens 23-24 and 29-32; card uses --tool-call-parser hermes; hermes registered in vLLM v0.33.0",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/JetBrains/Mellum2.1-12B-A2.5B-Thinking/raw/main/chat_template.jinja ; https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/tool_parsers/__init__.py",
+   "correction": "tokenizer_config added tokens: 23 <think>, 24 </think>, 29 <tool_call>, 30 </tool_call>, 31 <tool_response>, 32 </tool_response>, all special:false. Template wraps consecutive tool messages into one '<|im_start|>user' turn. hermes is registered at line 85, and hermes_tool_parser uses <tool_call>(.*?)</tool_call>. No independent OpenCode tool test exists."
+  },
+  {
+   "claim": "Checkpoint sizes: BF16 22.63 GiB; MTP 25.16 GB; GGUF Q8_0 12.04, Q6_K 10.13, Q4_K_M 7.52, MXFP4_MOE 6.55, mtp head 1.65 GiB; KLD values; cyankiwi 7.15, voves 11.76, FP8Enjoyer 6.68 GiB",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/JetBrains/Mellum2.1-12B-A2.5B-Thinking-GGUF?blobs=true",
+   "correction": "All sizes match the HF API byte for byte. The KLD values (0.008/0.020/0.075/0.115) and 'Q4_K_M recommended' match the GGUF card. The GGUF card says combined MTP files need llama.cpp b11747 (19 October 2026) or newer. bartowski/Mellum2.1-12B-A2.5B-Thinking-GGUF exists (created 2026-10-08)."
+  },
+  {
+   "claim": "vLLM: registry.py:759 maps MellumForCausalLM to TransformersMoEForCausalLM; no native mellum.py; MXFP4 rejected by Transformers backend; per_layer_sliding_window from layer_types; transformers >=5.16.1,<5.21.0",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/models/registry.py",
+   "correction": "Line 759 is exact. models/mellum.py returns 404 at v0.33.0. The MXFP4 NotImplementedError is at base.py about lines 164-170, and per_layer_sliding_window at about 691-692. requirements/common.txt: 'transformers >= 5.16.1, < 5.21.0'. PR #59679 and #61983 were not re-read."
+  },
+  {
+   "claim": "llama.cpp LLM_ARCH_MELLUM at src/llama-arch.cpp:174 at b12407 and b12418; src/models/mellum.cpp exists; Ollama v0.40.16 pins b12177 which includes the arch",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/src/llama-arch.cpp ; https://raw.githubusercontent.com/ollama/ollama/v0.40.16/LLAMA_CPP_VERSION",
+   "correction": "Line 174 at both tags. mellum.cpp returns HTTP 200 at b12407. LLAMA_CPP_VERSION at v0.40.16 is b12177, which has LLM_ARCH_MELLUM at line 173. Whether Ollama loads the model is still inferred. ollama.com/library/mellum2.1 returns 404. decadence/mellum2.1 shows 6 downloads and q4_k_m 8.1GB / q6_k 11GB tags at 128K, with tools and thinking badges."
+  },
+  {
+   "claim": "Benchmarks: SWE-V 47.0, TB2.1 17.4, SWE-Pro 28.0, LCB v6 82.0, BFCL v4 62.3, ToolHop 49.1, WorkBench 44.6, IFEval 90.6, GPQA-D 64.6, MMLU-Redux 87.8, AIME 25/26 83.3; Qwen3.5-9B comparison values",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/JetBrains/Mellum2.1-12B-A2.5B-Thinking/raw/main/README.md",
+   "correction": "Every number matches the card table and the model-index, all with verified:false. The card says 'All values are self-reported by JetBrains' and that every model was run by JetBrains in thinking mode. Conflict with the independent vendor source: Qwen's own Qwen3.5-9B card (https://huggingface.co/Qwen/Qwen3.5-9B/raw/main/README.md) reports BFCL-V4 66.1, against JetBrains' re-run of 58.5. Mellum2.1's 62.3 therefore trails Qwen's self-reported number, and the 'Mellum beats Qwen3.5-9B on BFCL' reading rests only on JetBrains' re-run. Other Qwen-card vs JetBrains re-run gaps: LCB v6 65.6 vs 75.4, GPQA-D 81.7 vs 77.8, MMLU-Redux 91.1 vs 89.5, IFEval 91.5 vs 92.4. The Qwen card has no SWE-bench or Terminal-Bench number for 9B. The record omits HumanEval+ 91.5, MBPP+ 79.4, GSM-Plus 88.3, MixEval-Hard 46.4, XSTest 88.8 and HarmBench 8.5."
+  },
+  {
+   "claim": "Independent speed: llama-bench tg128 44.7 / pp4096 1165 on RTX 3050 6 GB, MXFP4_MOE, -ncmoe 13, q8_0 KV, b11580; issue #30704 still open",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/issues/30704",
+   "correction": "The issue body (created 2026-10-17, state open) has b11580: pp512 756, pp4096 1165, tg128 44.7, against b11682 at 158/171/5.5. Hardware is RTX 3050 6 GB, CC 8.6, with 16 GB RAM."
+  },
+  {
+   "claim": "No independent quality benchmark; Artificial Analysis page 404",
+   "verdict": "confirmed",
+   "evidence_url": "https://artificialanalysis.ai/models/mellum2-1-12b-a2-5b-thinking",
+   "correction": "Three AA slug guesses returned 404, and 'Mellum' does not appear on the AA /models page. The absence is likely but not proven, because the slug is guessed."
+  },
+  {
+   "claim": "MTP gives about 1.6x in vLLM (vendor claim); MTP needs vLLM >= 0.33 and transformers >= 5.20",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/JetBrains/Mellum2.1-12B-A2.5B-Thinking-MTP/raw/main/README.md",
+   "correction": "The blog says 'For a single request, MTP makes it about 1.6 times faster' without naming an engine. The MTP card says 1.4-1.8x with about 90% of drafted tokens accepted, and that vLLM up to 0.32 refuses the checkpoint. The GGUF card cites llama.cpp PR #30612 on M2 Max: 1.00-1.10x, and 2 or more drafted tokens were slower."
+  },
+  {
+   "claim": "Sampling: temperature 0.6, top_p 0.95, top_k 20, max_tokens 81,920; agentic evals at temperature 1.0; generation_config.json has no sampling values",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/JetBrains/Mellum2.1-12B-A2.5B-Thinking/raw/main/generation_config.json",
+   "correction": "generation_config.json holds only bos 0, eos 28 and transformers_version 5.8.1. Both the card and the GGUF card give 0.6/0.95/20 and max_tokens 81920."
+  },
+  {
+   "claim": "Card and blog accurately describe availability of GGUF and MTP",
+   "verdict": "uncertain",
+   "evidence_url": "https://blog.jetbrains.com/ai/2026/10/mellum2-1-gets-to-work-a-fast-open-model-for-coding-agents/",
+   "correction": "Both the main model card and the blog still say GGUF builds and the MTP head are 'coming soon', but both repos exist (2026-10-07 and 2026-10-30). This is stale vendor text, not a fabrication."
+  }
+ ]
+}

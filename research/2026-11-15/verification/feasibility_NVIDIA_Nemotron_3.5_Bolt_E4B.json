@@ -1,0 +1,90 @@
+{
+ "verdicts": [
+  {
+   "claim": "Weight sizes: BF16 main 15,882,494,698 B + frozen-shared-kv 110,118,048 B; official -4GB Q4_K_M 6,180,446,208 B; RedHatAI NVFP4 11,553,469,908 B (10.76 GiB); ggml-org Q8_0 8,031,245,312 B (7.48 GiB); unsloth UD-Q4_K_XL 5.06 GB, mmproj sizes as listed",
+   "verdict": "confirmed",
+   "correction": "Exact match with the HF API ?blobs=true on 2026-11-15. Note that the '-4GB' repo name does not describe file size: the GGUF is 6.18 GB (5.76 GiB).",
+   "evidence_url": "https://huggingface.co/api/models/nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-4GB?blobs=true"
+  },
+  {
+   "claim": "Component breakdown from the safetensors header: decoder 7.35 GiB, PLE 5.25 GiB, embed_tokens 1.25 GiB, audio 0.56 GiB, vision 0.28 GiB",
+   "verdict": "confirmed",
+   "correction": "From an HTTP range read of the BF16 header: decoder 7.350, ple 5.250, embed_tokens 1.250, audio 0.575, vision 0.315, per_layer_model_projection 0.051 GiB. Language-only total is 13.90 GiB. RedHatAI NVFP4: decoder 2.068 GiB (FP4 U8 1.84 + FP8 scales 0.23), plus BF16 embed 1.25, PLE 5.25, an explicit lm_head 1.25 (config has tie_word_embeddings true) and towers 0.89. Language-only total is 9.87 GiB.",
+   "evidence_url": "https://huggingface.co/RedHatAI/NVIDIA-Nemotron-3.5-Bolt-E4B-NVFP4/resolve/main/model.safetensors"
+  },
+  {
+   "claim": "Config: 42 layers, 2 KV heads, head_dim 256 sliding / global_head_dim 512 full, sliding_window 512, full layers 5,11,17,23,29,35,41, num_kv_shared_layers 18, max_position_embeddings 65536, attention_k_eq_v false, dense",
+   "verdict": "confirmed",
+   "correction": "num_global_key_value_heads is null, so full layers use 2 KV heads.",
+   "evidence_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-BF16/raw/main/config.json"
+  },
+  {
+   "claim": "KV bytes per token (BF16) = 2 x 4 owning full layers x 2 x 512 x 2 = 16,384 B; 8 KiB in FP8; sliding layers capped at the window",
+   "verdict": "confirmed",
+   "correction": "Recomputed: 24 KV-owning layers (42-18), of which 4 are full (5,11,17,23). vLLM v0.33.0 gemma4.py lines 96-123 and 403-409 drop K/V for layers >= 24 and share KV. llama.cpp b12418 src/llama-model.cpp around line 3425 sets the reuse callback for LLM_ARCH_GEMMA4 (hparams.has_kv / kv_source). Both runtimes therefore apply the sharing.",
+   "evidence_url": "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/model_executor/models/gemma4.py"
+  },
+  {
+   "claim": "vLLM cannot fit the official BF16 checkpoint at gpu-memory-utilization 0.92",
+   "verdict": "confirmed",
+   "correction": "With the towers skipped, language-only weights are 13.90 GiB, plus 1.2 GiB reserve = 15.10 GiB, against a 14.65 GiB budget. Even at 0.97 (15.44 GiB) the pool is about 0.34 GiB, roughly 22k BF16-KV tokens. That is below 64k.",
+   "evidence_url": "https://huggingface.co/api/models/nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-BF16?blobs=true"
+  },
+  {
+   "claim": "vLLM RedHatAI NVFP4: KV pool 2.69 GiB, BF16 context about 174,800 tokens, capped at 65,536; fits",
+   "verdict": "confirmed",
+   "correction": "The arithmetic is conservative. In v0.33.0, interfaces.py _mark_tower_model (lines 347-367) skips tower modules when --limit-mm-per-prompt is zero for all their modalities, and gemma4_mm.py lines 1101-1137 wrap the vision and audio towers in it. With the command's limits, weights are 9.87 GiB, or about 8.6 GiB if the tied lm_head copy is not loaded. The pool is then 14.65 - 9.87 - 1.2 = 3.58 GiB (about 234k BF16 tokens). This closes the record's own gap. The context ceiling is still the 65,536 config cap. Unverified: open issue #49878 reports Gemma4 KV-cache memory 40% higher than expected from v0.26 onwards, but even +40% fits easily.",
+   "evidence_url": "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/model_executor/models/interfaces.py"
+  },
+  {
+   "claim": "vLLM v0.33.0 registers Gemma4ForConditionalGeneration (registry.py:427) and the gemma4 tool parser (tool_parsers/__init__.py:253) and reasoning parser (reasoning/__init__.py:55)",
+   "verdict": "confirmed",
+   "correction": "",
+   "evidence_url": "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/model_executor/models/registry.py"
+  },
+  {
+   "claim": "NVFP4 kernel path on sm_120: CuteDsl skipped (family 100); FlashInferCutlass accepts has_device_capability(100) so it is tried first; then B12x, CUTLASS, Marlin ...",
+   "verdict": "uncertain",
+   "correction": "The source order and capability gates are confirmed (nvfp4/flashinfer.py lines 121, 204, 405; linear/__init__.py lines 592-609). No one has observed it working for this checkpoint on sm_120. Open issue #50577 (stale since 2026-11-02) reports a Gemma-4 NVFP4 checkpoint failing with 'assert a.shape[1] == b.shape[1]' in flashinfer_scaled_fp4_mm on an RTX 5060 Ti (sm_120). That was v0.24 and a modelopt checkpoint, while a different Gemma-4-E4B NVFP4 worked on the same GPU. Treat the vLLM NVFP4 path as unproven on this GPU.",
+   "evidence_url": "https://github.com/vllm-project/vllm/issues/50577"
+  },
+  {
+   "claim": "vLLM NVFP4 decode ceiling about 250 tok/s (bandwidth arithmetic)",
+   "verdict": "uncertain",
+   "correction": "Not addressed in the record: Gemma 4 mixes head_dim 256 and 512, which disables FlashAttention, and vLLM falls back to TRITON_ATTN. Open #38887 measured about 9 tok/s for Gemma 4 E4B on an RTX 4090 with v0.19. Open #40677 says FLASHINFER fails on SM120 and auto-selection falls back to TRITON_ATTN. Current v0.33.0 speed on sm_120 is unmeasured, so the 250 tok/s figure is a bandwidth bound only.",
+   "evidence_url": "https://github.com/vllm-project/vllm/issues/38887"
+  },
+  {
+   "claim": "llama.cpp b12418 supports gemma4 and detects the Gemma4 tool format from '<|tool_call>call:'; the template contains that string",
+   "verdict": "confirmed",
+   "correction": "Template line 300 emits '<|tool_call>call:'. b12418 is a GitHub prerelease published 2026-11-15T15:53Z. The Gemma4 'tool call during unclosed thought' fix (PR #32232, merged 2026-11-14, sha 1c2adc75, fixes #32231 'Gemma4 fails to call tool after a thought session') is in b12418 (b12418 is 30 commits ahead of it). The card's b11459 predates the fix, so do not use the card's pinned tag with thinking on. Open #29655 reports unstable Gemma 4 streaming tool calls with multi-line arguments.",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/pull/32232"
+  },
+  {
+   "claim": "Server command uses image ghcr.io/ggml-org/llama.cpp:server-cuda13-b12418",
+   "verdict": "refuted",
+   "correction": "The ghcr manifest for server-cuda13-b12418 returns HTTP 404 (also server-cuda-b12418, b12410-b12417). Paginating the full ghcr tag list (13,543 tags) shows the newest numbered CUDA 13 image is server-cuda13-b12407 (release 2026-11-15T10:04Z). b12407 also contains the #32232 fix (19 commits ahead). server-cuda13-b11459 and the floating server-cuda13 tag return 200. Use server-cuda13-b12407.",
+   "evidence_url": "https://ghcr.io/v2/ggml-org/llama.cpp/manifests/server-cuda13-b12418"
+  },
+  {
+   "claim": "llama.cpp Q8_0 at 64K needs about 6-7 GiB VRAM with PLE in host RAM; KV 1.0 GiB F16",
+   "verdict": "confirmed",
+   "correction": "KV is source-backed (KV reuse is applied for GEMMA4). llama-model.cpp line 1796 sets dev_input to the CPU buffer list, and per_layer_tok_embd gets a prefetch path (line 1993), which is consistent with PLE in host RAM. Even with PLE on GPU, the full 7.48 GiB file plus 1 GiB KV plus 1 GiB compute is about 9.5 GiB, well under 16 GiB. Fits with large margin.",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/blob/b12418/src/llama-model.cpp"
+  },
+  {
+   "claim": "Thinking default: template uses enable_thinking | default(false)",
+   "verdict": "confirmed",
+   "correction": "chat_template.jinja line 206 confirms. Line 260 keeps reasoning on tool-call turns only with preserve_thinking.",
+   "evidence_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-BF16/raw/main/chat_template.jinja"
+  },
+  {
+   "claim": "Verdict: serves OpenCode with working tool calls and >= 64k context on this machine (opencode_fit 'weak')",
+   "verdict": "uncertain",
+   "correction": "Memory fits easily in every runtime. The context is exactly 65,536 (hard config cap), which meets the 64k minimum with no headroom. Tool calling is plausible but not end-to-end tested on any runtime. Best realistic configuration: llama.cpp ghcr.io/ggml-org/llama.cpp:server-cuda13-b12407 with ggml-org Q8_0 (or the official Q4_K_M), -c 65536 -ngl 999 -fa on --jinja and explicit enable_thinking. Second choice is Ollama :e4b-q4_K_M with num_ctx 65536. vLLM NVFP4 is third: unproven sm_120 FP4 kernel, likely Triton attention fallback, and an accuracy drop on GPQA. 'Weak' is a fair rating for a 4B-effective model with no coding benchmarks.",
+   "evidence_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-BF16/raw/main/config.json"
+  }
+ ],
+ "overall": "holds-with-corrections",
+ "summary": "The record mostly holds. Weight sizes, config values, the KV arithmetic (16 KiB/token BF16, with both vLLM v0.33.0 and llama.cpp b12418 applying the 18-layer KV sharing), parser registration and the NVFP4 kernel gate order all re-verified exactly. Context is capped at 65,536 everywhere: it meets 64k with no headroom.\n\nCorrections:\n1. The llama.cpp image tag server-cuda13-b12418 does not exist on ghcr (404). The newest numbered CUDA 13 image is server-cuda13-b12407, and it already contains the Gemma4 tool-call-after-thought fix (PR #32232, merged 2026-11-14). The card's b11459 predates that fix.\n2. vLLM v0.33.0 does skip the vision and audio towers when --limit-mm-per-prompt is zero (interfaces.py _mark_tower_model). The NVFP4 KV pool is therefore about 3.58 GiB, not 2.69. BF16 (13.90 GiB language-only) still does not fit.\n3. The vLLM NVFP4 path on sm_120 is unproven. Open #50577 reports a Gemma-4 NVFP4 shape-mismatch assert in flashinfer_scaled_fp4_mm on an RTX 5060 Ti. Gemma 4's head_dim 512 forces a TRITON_ATTN fallback (#38887, #40677), so the 250 tok/s vLLM ceiling is optimistic.\n\nBest realistic configuration: llama.cpp server-cuda13-b12407, Q8_0 or the official Q4_K_M, -c 65536, --jinja, explicit enable_thinking. Tool calls through OpenCode remain untested end to end."
+}

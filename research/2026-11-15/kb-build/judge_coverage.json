@@ -1,0 +1,75 @@
+{
+ "ranking": [
+  {
+   "rank": 1,
+   "name": "Qwen3.8-27B",
+   "runtime": "llama.cpp ghcr.io/ggml-org/llama.cpp:server-cuda-b12407, unsloth/Qwen3.8-27B-GGUF UD-Q3_K_XL (12.24 GiB), all on GPU, -c 65536 -ctk/-ctv q8_0 -np 1 (up to about 88k); vLLM does not fit (smallest INT4/AWQ 17.29-18.12 GiB)",
+   "checkpoint": "unsloth/Qwen3.8-27B-GGUF UD-Q3_K_XL",
+   "reason": "Strongest independent agentic evidence of anything that runs here: Artificial Analysis TB2.1 79.8 xhigh / 67.4 low / 49.1 non-reasoning, tau3-Banking 48.0, Progress Index 303 (AA review, confirmed by its check). Apache-2.0, Qwen (verified vendor), HF 2026-08-05. Thinking toggle plus reasoning_effort gives both a thinking and a non-thinking mode. Caveats: 3-bit quant (quality loss unmeasured), 64k ceiling, long reasoning (109.8k output tokens per AA task at xhigh, so use low/medium), llama.cpp #30357 re-prefill and #30118 tool-call leak apply to Qwen3.5+ hybrids."
+  },
+  {
+   "rank": 2,
+   "name": "Qwen3.6-35B-A3B",
+   "runtime": "llama.cpp server-cuda-b12407, ggml-org/Qwen3.6-35B-A3B-GGUF Q4_K_M (19.12 GiB) with --n-cpu-moe 20-21 (about 9 GiB experts in RAM), 131072 f16 KV",
+   "checkpoint": "ggml-org/Qwen3.6-35B-A3B-GGUF Q4_K_M",
+   "reason": "Two independent harnesses agree: NVIDIA same-harness SWE-bench Verified 70.12 / TB2.1 44.38 and AA TB2.1 44.9, tau2 95.3 (tau3 only 9.3). Apache-2.0, 128k context (the card advises 128k for thinking), thinking toggle, and the only pick with a measured anchor on the user's own DGX Spark (NVFP4, 42.7 tok/s). Ranked above K2 MoVA for maturity and 2x context, not for raw score. Caveat: #30118 tool call leaking into content."
+  },
+  {
+   "rank": 3,
+   "name": "K2 Horizon MoVA 36B A4B",
+   "runtime": "llama.cpp server-cuda-b12407 (arch k2-horizon at llama-arch.cpp L178), bartowski/K2-Horizon-MoVA-36B-A4B-GGUF Q4_K_M (21.14 GiB), -c 65536 -ctk/-ctv q8_0 -np 1 with --n-cpu-moe 46 (challenge correction: 44 gives about 14.95 GiB plus 0.3-0.5 GiB CUDA context, too tight); about 13.5-14.9 GiB experts in RAM. vLLM does not fit (smallest GPTQ 20.25 GiB).",
+   "checkpoint": "bartowski/K2-Horizon-MoVA-36B-A4B-GGUF Q4_K_M",
+   "reason": "Best independent small-MoE agentic scores after Qwen3.8: AA TB2.1 56.6 and tau3-Banking 32.0 vs Qwen3.6 44.9 / 9.3, Progress Index 281. Apache-2.0, released 2026-09-03; IFM is not HF-verified but has independent backing (AA scores, in-tree vLLM model PR #55063, mainline llama.cpp arch and parser). Below #2 because reasoning is always on at high effort and temperature 1.0 (slow turns), KV is heavy (192 KiB/token f16) so 64k (max about 85k) is the ceiling, VRAM margin is thin, and llama.cpp support is about 6 weeks old. Needs a tool-call smoke test first."
+  },
+  {
+   "rank": 4,
+   "name": "NVIDIA Nemotron 3.5 Bolt 74B-A9B (24GB GGUF)",
+   "runtime": "llama.cpp server-cuda-b12407 (nemotron_h_moe), nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB-GGUF (20.51 GiB, IQ2_XXS QAT experts) with --n-cpu-moe 50, 131072 f16 KV (about 13.4 GiB source-backed plus estimated compute/CUDA context), no mmproj; fall back to 65536 if startup OOMs. vLLM does not fit (22.43 GiB).",
+   "checkpoint": "nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB-GGUF",
+   "reason": "Best Nemotron for this machine and the newest pick (public 2026-10-15). NVIDIA's same-harness table gives TB2.1 50.98 vs Qwen3.6 44.38 and Gemma 4 26B 37.22; that table's Qwen3.6 row matches AA within 0.5 points, but the Bolt numbers themselves are vendor-only with no independent run and no SWE-bench Verified. OpenMDW-1.1, verified vendor, thinking toggle, KV only 8 KiB/token so 128k is cheap. Caveats: the machine is below NVIDIA's stated 32 GB+ hardware floor, about 8 GiB experts in RAM, NVIDIA's own agent replay is 32% slower than Qwen3.6. Fallback if VRAM fails: NVIDIA Nemotron 3.5 Lightning 30B-A3B (AA TB2.1 24.3)."
+  },
+  {
+   "rank": 5,
+   "name": "Gemma 4 26B-A4B IT",
+   "runtime": "llama.cpp server-cuda-b12407, google/gemma-4-26B-A4B-it-qat-q4_0-gguf (13.45 GiB), all on GPU, 65536 q8_0 KV -fa on -np 1 (131072+ with --n-cpu-moe 6); vLLM does not fit",
+   "checkpoint": "google/gemma-4-26B-A4B-it-qat-q4_0-gguf",
+   "reason": "Best Gemma: two independent harnesses agree (NVIDIA SWE-V 57.40 / TB2.1 37.22, AA TB2.1 39.0, tau2 43.6). Official Google QAT build fully in VRAM, Apache-2.0, thinking toggle with default off, so it is the strongest verified-vendor option that is fast and non-thinking by default. Caveats: #29655 multi-line streaming tool args; challenge corrected the VRAM headroom to about 79k-129k q8_0."
+  },
+  {
+   "rank": 6,
+   "name": "K2 Horizon 7B",
+   "runtime": "llama.cpp server-cuda-b12407, bartowski/K2-Horizon-7B-GGUF Q8_0 (8.92 GiB), all on GPU, 65536 q8_0 KV (Q5_K_M for about 96k). vLLM alternative: cyankiwi/K2-Horizon-7B-AWQ-INT4 (7.56 GiB) with FP8 KV, about 85.7k pool, keep --chat-template-content-format string; pre-FTPO weights (inferred).",
+   "checkpoint": "bartowski/K2-Horizon-7B-GGUF Q8_0",
+   "reason": "Independent AA TB2.1 44.2 and tau3-Banking 27.6 at 7B dense, fully in VRAM, Apache-2.0, 2026-09-03. Challenge correction applied: it matches Qwen3.6 only on TB2.1; Qwen3.6 leads on SciCode, LCR and HLE, while K2 7B leads on tau3. Second IFM entry, so it ranks below the Gemma family pick; always-on thinking with 32k output guidance (set OpenCode limit.output about 16k), IFM org unverified, vLLM path weak (vllm#62743)."
+  },
+  {
+   "rank": 7,
+   "name": "Qwen3-Coder-Next (80B-A3B, non-thinking agentic coder)",
+   "runtime": "llama.cpp server-cuda-b12407, unsloth/Qwen3-Coder-Next-GGUF UD-IQ4_XS (35.79 GiB) with --n-cpu-moe 37 (about 26 GiB in RAM of about 40 GiB free), 131072 q8_0 KV; vLLM does not fit",
+   "checkpoint": "unsloth/Qwen3-Coder-Next-GGUF UD-IQ4_XS",
+   "reason": "The best pure non-thinking tool caller, so turns are short: AA TB2.1 38.2, tau2 79.5 (independent); vendor SWE-V 70.6-71.3. Apache-2.0, verified vendor, native Qwen3-Coder XML tools. Ranked here because it is a third Qwen entry, it is RAM-heavy (decode limited by DDR5), its TB 4.0 score is 0, and it scored 16/25 on the community SQL tool benchmark."
+  },
+  {
+   "rank": 8,
+   "name": "gpt-oss-20b",
+   "runtime": "vLLM vllm/vllm-openai:v0.33.0, openai/gpt-oss-20b (MXFP4 native, 12.82 GiB), --gpu-memory-utilization 0.95 --kv-cache-dtype fp8 --attention-backend TRITON_ATTN, max-model-len 65536, tool parser openai, reasoning parser openai_gptoss, Python frontend (#66989). llama.cpp alternative: ggml-org/gpt-oss-20b-GGUF MXFP4 at 131072.",
+   "checkpoint": "openai/gpt-oss-20b",
+   "reason": "Required gpt-oss family member (120b needs 49-52 GiB RAM, weak). This is the list's main vLLM configuration, already validated in the baseline's two-provider OpenCode config. Apache-2.0, OpenAI. Independent quality is modest: AA TB2.1 13.9 (NVIDIA 15.17), tau2 60.2. Always-thinking with low/medium/high effort. The oldest pick (2025-08)."
+  },
+  {
+   "rank": 9,
+   "name": "Gemma 4 12B IT (Unified, encoder-free)",
+   "runtime": "vLLM vllm/vllm-openai:v0.33.0, google/gemma-4-12B-it-qat-w4a16-ct (official QAT W4A16, Marlin), 131072 BF16 KV (262144 with FP8 KV), tool/reasoning parser gemma4, max-num-seqs 1-2",
+   "checkpoint": "google/gemma-4-12B-it-qat-w4a16-ct",
+   "reason": "Second vLLM entry, fully in VRAM with 128k, official Google QAT, Apache-2.0, thinking toggle default off. Independent AA TB2.1 27.3 / tau2 36.3, above the other credible small vLLM options (Mellum2.1 vendor TB2.1 17.4; Ornith and Groot rest on unverified orgs and self-reported scores). Good fast sub-agent or a fallback when VRAM is needed elsewhere."
+  },
+  {
+   "rank": 10,
+   "name": "DeepSeek-R1-0528-Qwen3-8B",
+   "runtime": "llama.cpp server-cuda-b12407, unsloth/DeepSeek-R1-0528-Qwen3-8B-GGUF Q8_0 (8.11 GiB), all on GPU, 65536 q8_0 KV (Ollama deepseek-r1:8b for chat only)",
+   "checkpoint": "unsloth/DeepSeek-R1-0528-Qwen3-8B-GGUF Q8_0",
+   "reason": "Included only to cover the DeepSeek family: it runs, but its own record says 'unsuitable' for OpenCode agent use. There is no dependable tool calling (official template drops tools, vLLM has no tool parser, AA tau2 0%), and it always thinks. MIT. Use it only for chat or reasoning, not as an agent. The only other DeepSeek option, V4-Flash, does not fit this machine."
+  }
+ ],
+ "notes": "Basis: $SCRATCH/kb/current-knowledge.md, compact-old.json (22 records), reviews/artificialanalysis.json (with its check), plus the 9 new records in the task. I did not browse, because no decisive fact was missing. Nothing has been run on this machine. Every runtime, VRAM and context figure is source-backed arithmetic or inferred, and each pick needs a /v1 health check plus a tool-call smoke test in OpenCode before use.\n\nBalance:\n- Families: Qwen 1, 2, 7; IFM 3, 6; Nemotron 4; Gemma 5, 9; gpt-oss 8; DeepSeek 10.\n- Runtimes: llama.cpp is primary for 8 picks; vLLM v0.33.0 is primary for 8 and 9 and an alternative for 6.\n- Thinking: always on for 3, 6, 8, 10; none for 7; toggle for 1, 2, 4, 5, 9, with 5 and 9 defaulting to off.\n- Licenses: Apache-2.0, OpenMDW-1.1, MIT.\n\nPlacements that rest on vendor claims only: #4 Nemotron Bolt (NVIDIA table, though its Qwen3.6 row matches AA within 0.5) and the SWE-V figures for #7. AA independent scores back #1, 2, 3, 5, 6, 8, 9. The two vLLM picks rank low because nothing stronger fits vLLM's 14.65 GiB budget. Every top-quality model needs llama.cpp expert offload or a sub-4-bit GGUF.\n\nApplied corrections:\n- K2 MoVA: --n-cpu-moe 46, not 44, for VRAM margin.\n- K2 7B: the 'matches Qwen3.6' claim holds for TB2.1 only.\n- Bolt: Mamba state is 162 MiB, and the machine is below NVIDIA's hardware floor.\n- Gemma 26B: corrected headroom.\n- gpt-oss vLLM: needs FP8 KV with TRITON_ATTN.\n\nNot ranked, with reasons:\n- Nanbeige4.3-33B (AA II 20.4, the top small-class score): treat it as a trial only. It runs only as IQ2_M/IQ3_XXS with q4_0 KV, at about 15.5-15.7 of 15.92 GiB. The b12407 SPM path mis-tokenizes chat prompts even with the bartowski key (refuted mitigation). It needs --override-kv tokenizer.ggml.add_space_prefix=bool:false or PR #31986, and it spends 158.5k output tokens per AA task. Re-judge once #31986 ships and a smoke test passes.\n- Groot-19B-A3B-261023: it fits well (vLLM NVFP4 128k, llama.cpp Q4_K_M 128k), but the publisher is anonymous, the repo has no LICENSE file, and all scores are self-reported with copied baselines. It loses to its base on SWE-V, and the community reports altered path text. The vLLM path also hits NVFP4 GDN #54331.\n- Xing4.0-29B-A4B: all scores are self-reported, and its comparators are mislabeled (TB2.0 relabeled as 2.1, wrong Qwen SWE-V). Tool parsing is untested, and there is a public report of write/edit tool-call failures. The GGUFs predate the mainline merge.\n- LFM2.5-24B-A2B: scores are vendor-only (SWE-V 51 vs Qwen3.6 66.2 in its own table), the license bars entities with USD 10M+ revenue, and #30490 loses tool calls silently. A correction notes that vLLM does fit via 12.92 GiB NVFP4A16.\n- Ternary Bonsai 2 27B: the only independent test shows a regression against Qwen3.8-27B (12/47 vs 19/47). Every agentic score is Prism's own, and 196608 q8_0 is not safe.\n- Mellum2.1 12B-A2.5B Thinking: credible JetBrains Apache-2.0 release that fits vLLM at 128k, but its own table puts it below Qwen3.5-9B (TB2.1 17.4).\n- Others: Nemotron 3.5 Lightning is the fallback for #4. Ornith-1.5-9B, KAT-Coder-V2.5-Dev, Laguna XS 2.1 and MiMo 9B are self-reported or from unverified orgs. Granite 4.2 8B, Ministral 3, Bolt E4B, Nano 4B and Gemma E4B are weak. Devstral Small 2 reaches only about 32k context. Qwen3-Coder-30B-A3B is older and weaker. gpt-oss-120b has a RAM shortfall.\n\nPreconditions for all picks: install the NVIDIA Container Toolkit with CDI first, pass -e GGML_CUDA_DISABLE_GRAPHS=1 before the llama.cpp image name, use -np 1, publish ports on 127.0.0.1 only, and give containers an explicit --memory."
+}

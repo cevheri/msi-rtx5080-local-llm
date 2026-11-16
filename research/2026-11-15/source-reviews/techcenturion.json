@@ -1,0 +1,386 @@
+{
+ "review": {
+  "key": "techcenturion",
+  "url": "https://www.techcenturion.com/local-llm-gpu-rankings",
+  "title": "Best GPU for Local LLMs 2026: AI GPU Rankings & Tier List",
+  "publisher": "Tech Centurion (author Kashish Kumawat, founder and chief editor)",
+  "as_of": "2026-11-14 (article:published_time and dateModified 2026-11-14T10:00:00+05:30; text says \"As of November 2026\")",
+  "source_type": "blog",
+  "accessible": true,
+  "access_notes": "Raw HTML fetched with curl -A \"Mozilla/5.0\" (HTTP 200, 198,771 bytes), saved to $SCRATCH/src/techcenturion/page.html, text extracted with python3 -I to text.txt in the same directory. All quoted numbers come from that raw text, not a summarizer. The tables do not mark which individual rows are measured versus estimated.",
+  "credibility": "medium",
+  "credibility_reason": "A single-author hardware blog with a proprietary composite score (AI Centurion Mark, RTX 4090 = 100). The score starts from public llama.cpp scoreboard results (CUDA/Vulkan/ROCm/SYCL/Metal), then adds undisclosed subjective weights for \"real-world performance with bigger models, software support and user experience\" and a memory bonus or penalty. The formula is not published. The page states that 94 of 108 laptop scores are estimates scaled from the closest measured desktop card, and it does not say whether the RTX 5080 Laptop row is one of the 14 measured ones. The raw Llama 2 7B Q4_0 tg/pp table is traceable to llama.cpp scoreboards and is the most usable data on the page. It claims no sponsored placements. Useful for orientation and tiering by VRAM. Not usable as a source of laptop throughput.",
+  "summary": "The page ranks 424 GPUs and machines with a composite \"AI Centurion Mark\" (RTX 4090 = 100.0) and assigns tiers S to F by how many of 19 chosen open models (text and image) run \"comfortably\". For text models, comfortable means at least 10 tok/s generation and 50 tok/s prompt processing with a long context in VRAM. The desktop RTX 5080 is #8 of 115 desktop cards at 65.2, Tier C (16 GB class, 8 to 10 of 19 models). It sits just below the RTX 3090 (65.9, Tier B). The RTX 5080 Laptop is #3 of 108 laptop GPUs at 52.0, Tier C, behind the RTX 5090 Laptop (71.3) and the RTX PRO 5000 Blackwell Laptop (61.9). The laptop score is most likely an estimate, since 94 of 108 laptop scores are. The one concrete RTX 5080 throughput figure is for the desktop card: 195 tok/s generation and 9,305 tok/s prompt processing on llama.cpp's Llama 2 7B Q4_0 test, using the fastest backend. There is no laptop tok/s figure and no vLLM data. The memory-needed table (Q4, model-specific contexts) agrees with the baseline's 16 GB fit decisions, with one point to check for Gemma 4 26B-A4B.",
+  "findings": [
+   {
+    "topic": "RTX 5080 desktop rank",
+    "claim": "Desktop GeForce RTX 5080: rank #8 of 115 desktop cards, 16 GB, Tier C, AI Centurion Mark 65.2 (RTX 4090 = 100.0, RTX 5090 = 164.7, RTX 3090 = 65.9, RTX 5070 Ti = 58.2, RTX 4080 SUPER = 55.3).",
+    "evidence": "computed",
+    "location": "Desktop table, text.txt line ~1340-1370",
+    "target": "hardware",
+    "relevance": "medium"
+   },
+   {
+    "topic": "RTX 5080 Laptop rank",
+    "claim": "GeForce RTX 5080 Laptop: rank #3 of 108 laptop GPUs, 16 GB, Tier C, AI Centurion Mark 52.0; RTX 5090 Laptop 71.3 (24 GB, Tier B), RTX PRO 5000 Blackwell Laptop 61.9, RTX PRO 4000 Blackwell Laptop 42.8, RTX 4090 Laptop 37.2.",
+    "evidence": "computed",
+    "location": "Laptop section, text.txt line 1903-1922",
+    "target": "hardware",
+    "relevance": "high"
+   },
+   {
+    "topic": "Laptop scores are estimates",
+    "claim": "Quote: 'Most laptop scores are estimates (94 of 108), because very few people post llama.cpp results from laptops... the same chip runs slower in a thin laptop with a low power limit.' Rows are not marked, so the 5080 Laptop 52.0 cannot be confirmed as measured.",
+    "evidence": "documented",
+    "location": "text.txt line 1905",
+    "target": "hardware",
+    "relevance": "high"
+   },
+   {
+    "topic": "Metric definition",
+    "claim": "AI Centurion Mark starts from llama.cpp token-generation and prompt-processing scoreboard results plus published image timings. It then adds undisclosed weights for bigger-model behaviour, software maturity, user experience, and a VRAM-fit bonus or penalty. GPUs without a llama.cpp result are estimated from the closest measured card of the same family using bandwidth and compute.",
+    "evidence": "documented",
+    "location": "Intro (line 6), 'AI Centurion Mark and Its Significance', 'Things to Note' (lines 3622-3631)",
+    "target": "benchmarking",
+    "relevance": "medium"
+   },
+   {
+    "topic": "Desktop RTX 5080 llama.cpp throughput",
+    "claim": "llama.cpp Llama 2 7B Q4_0, fastest backend: desktop RTX 5080 generation 195 tok/s, prompt processing 9,305 tok/s (RTX 4090 187 / 14,526; RTX 5090 304 / 15,249; RTX 3090 175 / 5,617; DGX Spark 61 / 3,717). Build, date and flags are not given.",
+    "evidence": "measured",
+    "location": "'Why Memory Bandwidth Sets Your Tokens per Second' table, text.txt line 3540-3600",
+    "target": "llamacpp",
+    "relevance": "high"
+   },
+   {
+    "topic": "Tier comfort threshold",
+    "claim": "A text model counts as 'comfortable' when it fits in VRAM with room for a long chat and gives at least 10 tok/s generation and at least 50 tok/s prompt processing.",
+    "evidence": "documented",
+    "location": "Tier list intro, line 11",
+    "target": "benchmarking",
+    "relevance": "low"
+   },
+   {
+    "topic": "Tier C content",
+    "claim": "Tier C (16 GB, 8 to 10 of 19 models) covers models up to gpt-oss-20b, FLUX.2 [klein] 9B and Qwen-Image 2.1. 27B to 35B models need Tier B (24 to 32 GB) when the whole model is in VRAM.",
+    "evidence": "opinion",
+    "location": "line 19-20, 1317",
+    "target": "models",
+    "relevance": "medium"
+   },
+   {
+    "topic": "Memory needed table",
+    "claim": "Weights + KV + buffers: Qwen3.5 9B Q4 32K about 7.3 GB; DeepSeek-R1-0528-Qwen3-8B Q4 16K about 8 GB; gpt-oss-20b MXFP4 32K about 13.4 GB; Gemma 4 26B-A4B Q4 32K about 18.2 GB; Qwen3.8 27B Q4 32K about 19.3 GB; Gemma 4 31B Q4 32K about 21.6 GB; Qwen3.6 35B-A3B Q4 32K about 23.4 GB; gpt-oss-120b MXFP4 32K about 66 GB.",
+    "evidence": "computed",
+    "location": "'The 19 Models Behind the Tiers' table, lines 24-84",
+    "target": "models",
+    "relevance": "medium"
+   },
+   {
+    "topic": "KV per token",
+    "claim": "Qwen3.8 27B uses about 64 KB KV per token (32K adds about 2.1 GB); Qwen3 32B about 256 KB per token. Q4 files are about 0.6 GB per billion params; Gemma 4 31B Q4 file 18.3 GB; Qwen3.5 9B Q4 file 5.7 GB.",
+    "evidence": "computed",
+    "location": "lines 3522-3527",
+    "target": "models",
+    "relevance": "medium"
+   },
+   {
+    "topic": "Bandwidth rule",
+    "claim": "Decode is bandwidth-bound: ceiling = bandwidth / active weight bytes; real results land at 70 to 90% of that ceiling.",
+    "evidence": "opinion",
+    "location": "line 3537-3538",
+    "target": "benchmarking",
+    "relevance": "medium"
+   },
+   {
+    "topic": "MoE CPU offload",
+    "claim": "llama.cpp can keep MoE experts on the CPU, which 'works surprisingly well for gpt-oss and Qwen MoE models'. The ranking itself scores only full-VRAM fit and ignores offload.",
+    "evidence": "opinion",
+    "location": "line 3535",
+    "target": "llamacpp",
+    "relevance": "medium"
+   },
+   {
+    "topic": "Desktop vs laptop naming",
+    "claim": "The RTX 4090 Laptop has 16 GB and 576 GB/s against the desktop card's 1,008 GB/s and scores 37.2 against 100. The page uses this as its example that laptop and desktop chips with the same name differ.",
+    "evidence": "documented",
+    "location": "line 1904",
+    "target": "hardware",
+    "relevance": "low"
+   },
+   {
+    "topic": "NVIDIA software support",
+    "claim": "NVIDIA: llama.cpp, Ollama, LM Studio, vLLM and ComfyUI support CUDA first; RTX 40/50 get FP8 and NVFP4.",
+    "evidence": "opinion",
+    "location": "line 3609",
+    "target": "general",
+    "relevance": "low"
+   },
+   {
+    "topic": "Version drift caveat",
+    "claim": "Quote: 'llama.cpp gets faster with almost every release, so a result from early 2025 can trail a current build by a lot.' The scoreboard numbers carry no dates.",
+    "evidence": "documented",
+    "location": "line 3630",
+    "target": "benchmarking",
+    "relevance": "medium"
+   }
+  ],
+  "measurements": [
+   {
+    "model": "Llama 2 7B",
+    "quant": "Q4_0",
+    "gpu": "RTX 5080 desktop (16 GB, 960 GB/s)",
+    "runtime": "llama.cpp, fastest backend (CUDA presumed), build unspecified",
+    "gen_tok_s": "195",
+    "prompt_tok_s": "9305",
+    "settings": "standard llama-bench test as cited from llama.cpp scoreboards; tg/pp lengths not stated",
+    "measured_or_estimated": "measured",
+    "context": "Third-party scoreboard number republished by Tech Centurion; not the laptop GPU"
+   },
+   {
+    "model": "Llama 2 7B",
+    "quant": "Q4_0",
+    "gpu": "RTX 4090 desktop",
+    "runtime": "llama.cpp fastest backend",
+    "gen_tok_s": "187",
+    "prompt_tok_s": "14526",
+    "measured_or_estimated": "measured",
+    "context": "Comparison row"
+   },
+   {
+    "model": "Llama 2 7B",
+    "quant": "Q4_0",
+    "gpu": "RTX 5090 desktop",
+    "runtime": "llama.cpp fastest backend",
+    "gen_tok_s": "304",
+    "prompt_tok_s": "15249",
+    "measured_or_estimated": "measured",
+    "context": "Comparison row"
+   },
+   {
+    "model": "Llama 2 7B",
+    "quant": "Q4_0",
+    "gpu": "RTX 3090 desktop",
+    "runtime": "llama.cpp fastest backend",
+    "gen_tok_s": "175",
+    "prompt_tok_s": "5617",
+    "measured_or_estimated": "measured",
+    "context": "Comparison row"
+   },
+   {
+    "model": "Llama 2 7B",
+    "quant": "Q4_0",
+    "gpu": "RTX 5060 Ti 16GB desktop",
+    "runtime": "llama.cpp fastest backend",
+    "gen_tok_s": "96",
+    "prompt_tok_s": "4135",
+    "measured_or_estimated": "measured",
+    "context": "Comparison row"
+   },
+   {
+    "model": "Llama 2 7B",
+    "quant": "Q4_0",
+    "gpu": "NVIDIA DGX Spark (GB10, 128 GB)",
+    "runtime": "llama.cpp fastest backend",
+    "gen_tok_s": "61",
+    "prompt_tok_s": "3717",
+    "measured_or_estimated": "measured",
+    "context": "Comparison row; relevant because the user owns a DGX Spark"
+   },
+   {
+    "model": "(composite score, no model)",
+    "gpu": "RTX 5080 Laptop",
+    "runtime": "AI Centurion Mark composite",
+    "settings": "Score 52.0, Tier C, rank #3 of 108 laptop GPUs; most laptop scores scaled from desktop results",
+    "measured_or_estimated": "estimated",
+    "context": "Not a tok/s figure"
+   },
+   {
+    "model": "(composite score, no model)",
+    "gpu": "RTX 5080 desktop",
+    "runtime": "AI Centurion Mark composite",
+    "settings": "Score 65.2, Tier C, rank #8 of 115 desktop cards",
+    "measured_or_estimated": "estimated",
+    "context": "Composite of measured inputs plus subjective weights"
+   },
+   {
+    "model": "gpt-oss-20b",
+    "quant": "MXFP4",
+    "gpu": "any",
+    "context": "32K",
+    "vram": "about 13.4 GB",
+    "measured_or_estimated": "estimated",
+    "settings": "weights + KV + app buffers, per the page's table"
+   },
+   {
+    "model": "Gemma 4 26B-A4B",
+    "quant": "Q4",
+    "gpu": "any",
+    "context": "32K",
+    "vram": "about 18.2 GB",
+    "measured_or_estimated": "estimated"
+   },
+   {
+    "model": "Qwen3.8 27B",
+    "quant": "Q4",
+    "gpu": "any",
+    "context": "32K",
+    "vram": "about 19.3 GB",
+    "measured_or_estimated": "estimated"
+   },
+   {
+    "model": "Qwen3.6 35B-A3B",
+    "quant": "Q4",
+    "gpu": "any",
+    "context": "32K",
+    "vram": "about 23.4 GB",
+    "measured_or_estimated": "estimated"
+   },
+   {
+    "model": "DeepSeek-R1-0528-Qwen3-8B",
+    "quant": "Q4",
+    "gpu": "any",
+    "context": "16K",
+    "vram": "about 8 GB",
+    "measured_or_estimated": "estimated"
+   }
+  ],
+  "conflicts": [
+   {
+    "baseline_claim": "Gemma 4 26B-A4B runs all on GPU with the Google QAT Q4_0 GGUF (13.45 GiB) at 64k q8_0 KV.",
+    "source_claim": "Gemma 4 26B-A4B at Q4 with 32K context needs about 18.2 GB, which puts it above 16 GB cards (Tier B).",
+    "assessment": "Most likely a quant mismatch: the page assumes a generic Q4 (probably Q4_K_M) with f16 KV, while the baseline uses the smaller QAT Q4_0 file and q8_0 KV. The baseline holds, but the 64k all-on-GPU fit is an estimate and should be the first thing measured on the laptop."
+   },
+   {
+    "baseline_claim": "Qwen3.6-35B-A3B Q4_K_M is the #1 pick on this 16 GB laptop, with --n-cpu-moe 21 and about 9 GiB of experts in RAM.",
+    "source_claim": "Qwen3.6 35B-A3B needs about 23.4 GB at Q4/32K, so 16 GB cards are Tier C and do not count it as comfortable.",
+    "assessment": "No real conflict. The page's tiers count only models that fit fully in VRAM and leave out MoE expert offload, which the page itself says works well. The baseline's offload plan stands; record that the tier assumes no offload."
+   },
+   {
+    "baseline_claim": "Desktop RTX 5080 llama.cpp gpt-oss-20b about 205 tok/s tg128 (ggml-org guide).",
+    "source_claim": "Desktop RTX 5080 Llama 2 7B Q4_0 generation 195 tok/s, prompt processing 9,305 tok/s.",
+    "assessment": "Consistent. Both are desktop numbers for different models (gpt-oss-20b has about 3.6B active parameters). Neither is a laptop number. A bandwidth-scaled laptop expectation (896/960 x 195, about 182 tok/s) is arithmetic only and is further limited by the 140 W power limit."
+   }
+  ],
+  "agreements": [
+   "Desktop RTX 5080 and laptop RTX 5080 are different chips with different results; the page warns that a laptop chip runs slower with a low power limit, matching the baseline rule to keep desktop numbers apart.",
+   "Bandwidth figure 960 to 1,008 GB/s for RTX 5080 / 4090 / 7900 XTX matches the baseline's 960 GB/s for the desktop RTX 5080.",
+   "gpt-oss-20b at MXFP4 with 32K fits within 16 GB (about 13.4 GB), matching the baseline's 11.28 GiB GGUF pick.",
+   "Qwen3.8 27B at plain Q4 with 32K (about 19.3 GB) does not fit 16 GB, consistent with the baseline choosing UD-Q3_K_XL (12.24 GiB) for all-on-GPU.",
+   "Gemma 4 31B (about 21.6 GB at Q4/32K) does not fit 16 GB, consistent with the baseline excluding it.",
+   "MoE expert CPU offload in llama.cpp is the way to run larger MoE models on 16 GB, consistent with the baseline's --n-cpu-moe picks.",
+   "llama.cpp results go stale quickly across builds, consistent with the baseline practice of pinning the build (b12418 / b12407)."
+  ],
+  "kb_notes": [
+   {
+    "target_doc": "docs/community-benchmarks.md",
+    "note": "Tech Centurion's GPU ranking (2026-11-14, https://www.techcenturion.com/local-llm-gpu-rankings) puts the RTX 5080 Laptop at #3 of 108 laptop GPUs with a composite 'AI Centurion Mark' of 52.0, Tier C. The page says 94 of 108 laptop scores are estimates scaled from desktop results, so treat this as orientation, not a measurement of our GPU."
+   },
+   {
+    "target_doc": "docs/community-benchmarks.md",
+    "note": "The same page republishes llama.cpp scoreboard results for Llama 2 7B Q4_0 with each GPU's fastest backend. Desktop RTX 5080: 195 tok/s generation, 9,305 tok/s prompt processing. Desktop RTX 4090: 187 / 14,526. DGX Spark: 61 / 3,717. The page gives no build or date. These are desktop numbers and do not stand in for the 140 W laptop GPU (https://www.techcenturion.com/local-llm-gpu-rankings)."
+   },
+   {
+    "target_doc": "llamacpp/benchmarking.md",
+    "note": "Run llama-bench on Llama 2 7B Q4_0 (pp512/tg128) once as a cross-machine anchor. The llama.cpp CUDA scoreboard, as republished by Tech Centurion, lists the desktop RTX 5080 at 195 tok/s tg and 9,305 tok/s pp, so our laptop number shows the laptop-versus-desktop gap directly (https://www.techcenturion.com/local-llm-gpu-rankings)."
+   },
+   {
+    "target_doc": "docs/model-selection.md",
+    "note": "Generic 'tier by VRAM' rankings, such as Tech Centurion's Tier C for 16 GB cards (https://www.techcenturion.com/local-llm-gpu-rankings), count only models that fit fully in VRAM at Q4 with 16K to 32K context. They do not count llama.cpp MoE expert offload, which is how this machine runs Qwen3.6-35B-A3B, Nemotron 3.5 Lightning and Qwen3-Coder-Next with 61 GiB of system RAM."
+   },
+   {
+    "target_doc": "docs/model-selection.md",
+    "note": "Tech Centurion estimates the memory needed (weights + KV + buffers) at Q4/32K as follows: Gemma 4 26B-A4B about 18.2 GB, Qwen3.8 27B about 19.3 GB, Gemma 4 31B about 21.6 GB, Qwen3.6 35B-A3B about 23.4 GB, and gpt-oss-20b MXFP4 about 13.4 GB. Our all-on-GPU picks depend on smaller files (QAT Q4_0, UD-Q3_K_XL) and q8_0 KV, so verify each fit with a real load before relying on it (https://www.techcenturion.com/local-llm-gpu-rankings)."
+   },
+   {
+    "target_doc": "docs/sources.md",
+    "note": "techcenturion.com/local-llm-gpu-rankings: blog by Kashish Kumawat, published 2026-11-14. It uses a proprietary composite score whose formula is not published, built on llama.cpp scoreboard inputs. Most laptop rows are estimates. Credibility: medium. Use it for VRAM tiers and the republished desktop llama-bench table, not for laptop throughput."
+   }
+  ],
+  "gaps": [
+   "The page does not say whether the RTX 5080 Laptop score (52.0) is one of the 14 measured laptop entries or one of the 94 estimates.",
+   "No tok/s figure at all for the RTX 5080 Laptop.",
+   "The AI Centurion Mark formula and weights are not published, so the scores cannot be reproduced.",
+   "The Llama 2 7B table gives no llama.cpp build, date, backend per row or tg/pp lengths; the upstream scoreboard entry was not cross-checked in this review.",
+   "No vLLM data and no coding or agent workloads; nothing about OpenCode-relevant long-context prefill.",
+   "The KV-per-token claim for Qwen3.8 27B (about 64 KB/token) was not checked against the model's config.json."
+  ],
+  "methodology": "curl -sL -A \"Mozilla/5.0\" fetch of the article. Tags were stripped with a python3 -I regex script, and the 5080 rows, tier definitions, memory table, Llama 2 7B table and methodology notes were grepped from the extracted text. Publication date came from the article:published_time meta tag and the JSON-LD datePublished/dateModified fields. Findings were compared against kb/current-knowledge.md.",
+  "new_candidates": []
+ },
+ "check": {
+  "verdicts": [
+   {
+    "item": "Publisher, type, as-of date",
+    "verdict": "confirmed",
+    "evidence": "Raw curl re-fetch (HTTP 200, 198,771 bytes, same size as the original review). Meta article:published_time, JSON-LD datePublished and dateModified are all 2026-11-14T10:00:00+05:30. Byline 'Kashish Kumawat November 14, 2026'; author bio says 'Founder & Chief Editor of Tech Centurion'. Text: 'As of November 2026'. 'blog' is a fair type."
+   },
+   {
+    "item": "RTX 5080 desktop rank #8 of 115, 16 GB, Tier C, 65.2; RTX 3090 65.9 Tier B; 5070 Ti 58.2; 4080 SUPER 55.3; 4090 100.0; 5090 164.7",
+    "verdict": "confirmed",
+    "evidence": "Desktop table rows '#8 | GeForce RTX 5080 | 16 GB | C | 65.2', '#7 | GeForce RTX 3090 | 24 GB | B | 65.9', '#9 | RTX 5070 Ti | 16 GB | C | 58.2', '4080 SUPER | 16 GB | C | 55.3'. Text: 'all 115 desktop cards'. The page explains the 3090-over-5080 order by memory: '16 GB stops at gpt-oss-20b'."
+   },
+   {
+    "item": "RTX 5080 Laptop #3 of 108, 16 GB, Tier C, 52.0; 5090 Laptop 71.3; PRO 5000 Blackwell Laptop 61.9; PRO 4000 Blackwell Laptop 42.8; 4090 Laptop 37.2",
+    "verdict": "confirmed",
+    "evidence": "Laptop table '#3 | GeForce RTX 5080 Laptop | 16 GB | C | 52.0', '#1 ... 71.3', '#2 RTX PRO 5000 Blackwell Laptop 24 GB B 61.9', '#4 RTX PRO 4000 Blackwell Laptop 16 GB C 42.8'. Text: 'RTX 4090 Laptop GPU has 16 GB ... (576 vs 1,008 GB/s). It scores 37.2'."
+   },
+   {
+    "item": "94 of 108 laptop scores are estimates; the 5080 Laptop row is not marked",
+    "verdict": "confirmed",
+    "evidence": "Verbatim: 'Most laptop scores are estimates (94 of 108), because very few people post llama.cpp results from laptops ... the same chip runs slower in a thin laptop with a low power limit.' The table has no per-row measured/estimated flag. 'Things to Note' also says the estimated scores include 'most laptop GPUs'."
+   },
+   {
+    "item": "Llama 2 7B Q4_0 fastest-backend table: desktop RTX 5080 195 / 9,305; 4090 187 / 14,526; 5090 304 / 15,249; 3090 175 / 5,617; 5060 Ti 16GB 96 / 4,135; DGX Spark 61 / 3,717",
+    "verdict": "confirmed",
+    "evidence": "Raw table under 'Here's what llama.cpp measured on the standard Llama 2 7B (Q4_0) test, using each GPU's fastest backend': all six pairs match exactly. No build, date, per-row backend or pp/tg lengths are given. Labelling the rows 'measured' (third-party scoreboard, republished) is fair. The original review did not check the upstream scoreboard entries, and neither did this check."
+   },
+   {
+    "item": "Comfort threshold and Tier C content",
+    "verdict": "confirmed",
+    "evidence": "'Text models: at least 10 tokens per second while writing ... and 50 tokens per second while reading your prompt', and the model has to fit 'with room for a long chat'. 'Tier C (8 to 10 models): gpt-oss-20b, FLUX.2 [klein] 9B and Qwen-Image 2.1. That's the 16 GB class: RTX 5080, ...'"
+   },
+   {
+    "item": "Memory-needed table (Q4 / MXFP4, given contexts)",
+    "verdict": "confirmed",
+    "evidence": "Raw rows: Qwen3.5 9B Q4 32K 'About 7.3 GB'; DeepSeek-R1-0528-Qwen3-8B Q4 16K 'About 8 GB'; gpt-oss-20b MXFP4 32K 'About 13.4 GB'; Gemma 4 26B-A4B Q4 32K 'About 18.2 GB'; Qwen3.8 27B 'About 19.3 GB'; Gemma 4 31B 'About 21.6 GB'; Qwen3.6 35B-A3B 'About 23.4 GB'; gpt-oss-120b 'About 66 GB'. The table says it uses 'the quantization most people download', so it does not name a specific quant. The figures are the author's estimates, not measurements."
+   },
+   {
+    "item": "KV per token and file-size rule",
+    "verdict": "confirmed",
+    "evidence": "'Qwen3.8 27B uses about 64 KB per token, so a 32K context adds about 2.1 GB ... Qwen3 32B needs about 256 KB per token'; 'about 0.6 GB per billion parameters'; 'Gemma 4 31B at Q4: 30.7 billion parameters, an 18.3 GB file'; 'Qwen3.5 9B at Q4: ... 5.7 GB file'. These were not checked against config.json, as the review's gaps already say."
+   },
+   {
+    "item": "MoE CPU offload remark and bandwidth rule",
+    "verdict": "confirmed",
+    "evidence": "'llama.cpp can park the MoE experts on the CPU, and that works surprisingly well for gpt-oss and Qwen MoE models.' '448 / 5.7 = 79 tokens per second, and real results land at 70 to 90% of that.' Calling both 'opinion' is fair."
+   },
+   {
+    "item": "Metric definition of AI Centurion Mark",
+    "verdict": "confirmed",
+    "evidence": "The score 'starts from measured llama.cpp and image-generation results', then adds 'real-world performance with bigger models, software support and user experience', plus a memory bonus or penalty. No formula is published. One input the review missed: 'our score also looks at a 27B dense model'.",
+    "correction": "Add that the composite also uses an unspecified 27B dense-model test. The page gives this as the reason the RTX 3090 (936 GB/s) holds up against the 4080 SUPER (736 GB/s)."
+   },
+   {
+    "item": "Conflict: Gemma 4 26B-A4B 18.2 GB vs baseline QAT Q4_0 13.45 GiB all on GPU at 64k q8_0 KV",
+    "verdict": "uncertain",
+    "evidence": "Both sides are quoted correctly (baseline current-knowledge.md line 69). The page names only 'Q4' and 'the quantization most people download', so the review's guess that it means Q4_K_M with f16 KV is plausible but not stated on the page. 13.45 GiB is about 14.4 GB before any KV cache, which leaves little room in 16,303 MiB. The review's advice to measure this fit first is the right call.",
+    "correction": "Call the quant/KV explanation an inference, not something the source says."
+   },
+   {
+    "item": "Conflict: Qwen3.6 35B-A3B 23.4 GB vs baseline #1 pick with --n-cpu-moe",
+    "verdict": "confirmed",
+    "evidence": "The tiers count only models that fit fully in VRAM, while the same page praises MoE expert offload. So this is a difference in method, not a real conflict."
+   },
+   {
+    "item": "Conflict: desktop 195 tok/s Llama 2 7B vs baseline desktop gpt-oss-20b about 205 tok/s",
+    "verdict": "confirmed",
+    "evidence": "Baseline line 81: 'Desktop RTX 5080 llama.cpp gpt-oss-20b about 205 tok/s tg128 (ggml-org guide)'. Different models, both desktop numbers, so they are consistent. The 896/960 laptop scaling in the review is correctly called arithmetic only."
+   }
+  ],
+  "credibility_fair": true,
+  "credibility_note": "'Medium' is fair. It is a single-author blog with a composite score whose formula is not published. Most laptop rows are estimates, and the page says so itself. The republished llama.cpp table matches the raw page exactly. The page claims no sponsored placements. For the laptop GPU specifically, 'low' would also be defensible, since nothing on the page measures it.",
+  "overall": "holds-with-corrections",
+  "summary": "I re-fetched the page raw (curl, HTTP 200, 198,771 bytes) into $SCRATCH/src/techcenturion-check/. Every load-bearing number in the review matches the raw text exactly: the publisher, the 2026-11-14 date, the desktop 5080 at #8/65.2/Tier C, the 5080 Laptop at #3/52.0/Tier C, the '94 of 108' estimates statement, the Llama 2 7B Q4_0 table (5080 desktop 195 / 9,305), the memory-needed table and the KV-per-token claims. Two small corrections. First, the review misses that the composite score also uses an unspecified 27B dense-model test. Second, the Gemma 4 26B-A4B conflict explanation (generic Q4_K_M with f16 KV) is the reviewer's inference, because the page names only 'Q4 ... the quantization most people download'. The baseline's 64k all-on-GPU fit for that model still needs measuring. The other two conflicts are judged correctly. The credibility rating of medium is fair."
+ }
+}

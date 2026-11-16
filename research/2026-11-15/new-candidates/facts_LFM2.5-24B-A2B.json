@@ -1,0 +1,147 @@
+{
+ "overall": "holds-with-corrections",
+ "summary": "I could not refute any identity or capability fact. Every value I checked against a raw primary source matched, with these exceptions.\n\nWhat matched:\n- Ownership: HF author LiquidAI; LICENSE says Licensor = Liquid AI, Inc.\n- Dates and parameter count.\n- config.json: 10 full-attention layers at indices 2,6,...,38; 8 KV heads; 131072 max positions; vocab 128000.\n- License: Section 5, USD 10M threshold.\n- Chat template: generation prompt always ends in an unconditional <think>; only preserve_thinking is read, no enable_thinking; pythonic <|tool_call_start|> calls; raises on JSON-string arguments.\n- All 13 card benchmark values and their settings.\n- vLLM and llama.cpp source line references, PR #32164 (in b12407), and all checkpoint sizes.\n- Ollama manifest and params.\n\nCorrections:\n1. BF16 safetensors are 44.65 GiB. The record's 44.67 GiB is the size of the GGUF BF16 file.\n2. The vLLM gap is resolved. v0.33.0 vllm/renderers/chat_utils/chat_message.py:699-764 (_postprocess_messages) converts JSON-string tool arguments to dicts and coerces malformed JSON to {} with a warning; tests/renderers/chat_utils/test_tool_call.py:44-50 covers it. So the template raise cannot fire under vLLM.\n3. The qwen3 reasoning parser for the 24B is inferred, not vendor-stated. The vLLM recipe LiquidAI/LFM2.5.md was last changed 2026-06-25, before the 24B existed. Its reasoning-parser row and the docs.liquid.ai vLLM page name only 8B-A1B and 1.2B-Thinking, and neither mentions the 24B.\n4. The tau3 result in PR #32164 is effectively vendor data: the author's GitHub profile lists company \"Liquid AI\".\n5. Conflicting independent numbers. Liquid's own OpenCode-harness SWE-bench Verified table disagrees with NVIDIA's table in the Nemotron 3.5 Lightning card:\n\n| Model | Liquid table | NVIDIA table |\n|---|---|---|\n| Gemma-4-26B-A4B | 25.80 | 57.40 |\n| Qwen3.6-35B-A3B | 66.20 | 70.12 |\n| Nemotron Lightning | 53.40 | 51.56 |\n\n   So vendor-table comparisons depend on the harness. The Gemma gap of more than 30 points is a red flag for the competitor runs in Liquid's table.\n6. Two BenchLM details. The \"#58 open-weight\" rank does not appear in the page HTML. The score is labelled \"(Estimated)\" (34.43).\n7. Artificial Analysis has no LFM2.5-24B-A2B page. Its lfm2-24b-a2b page exists, but it is for the older model.\n\nNotes:\n- Issue #30490 was on HIP/ROCm (RX 7900 XTX). The reporter closed it himself, with no comments and no linked commit.\n- The GGUF README still says \"the Q4_0 build ... is the QAD checkpoint\". A separate plain Q4_0 (different sha256) was added on 2026-11-06.\n- LiquidAI has released an LFM3 family since 2026-10-24, only 2B-class sizes so far. llama.cpp b12407 already has lfm3 support.\n- Not verified: --reasoning-budget 0 behaviour in the sampler.",
+ "verdicts": [
+  {
+   "claim": "Official Liquid AI repo, not a re-upload; Licensor = Liquid AI, Inc.; distinct from LFM2-24B-A2B (HF 2026-02-24)",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/LiquidAI/LFM2.5-24B-A2B ; https://huggingface.co/LiquidAI/LFM2.5-24B-A2B/raw/main/LICENSE (line 9) ; https://huggingface.co/api/models/LiquidAI/LFM2-24B-A2B (createdAt 2026-02-24T13:50:32Z)"
+  },
+  {
+   "claim": "Dates: HF createdAt 2026-10-12T05:35:46Z, GGUF 2026-10-09, FP8 2026-10-12, lastModified 2026-11-03; blog datePublished 2026-10-13; BenchLM release Oct 13 2026",
+   "verdict": "confirmed",
+   "correction": "Exact values match. The GGUF repo was created 2026-10-09T18:03Z, but its first commit is 2026-10-13. The plain Q4_0.gguf was added 2026-11-06, and the GGUF repo lastModified is 2026-11-06. The blog dateModified is 2026-10-27.",
+   "evidence_url": "https://huggingface.co/api/models/LiquidAI/LFM2.5-24B-A2B-GGUF/commits/main ; https://www.liquid.ai/blog/lfm2-5-24b-a2b (JSON-LD datePublished 2026-10-13)"
+  },
+  {
+   "claim": "License LFM Open License v1.0, commercial use only below USD 10M annual revenue, non-profit exemption for non-commercial/research",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/LiquidAI/LFM2.5-24B-A2B/raw/main/LICENSE (lines 1, 33, 51-57)"
+  },
+  {
+   "claim": "24.0B total (23,971,585,280 BF16 + 2,432 F32), 2.45B active",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/LiquidAI/LFM2.5-24B-A2B?blobs=true ; https://huggingface.co/LiquidAI/LFM2.5-24B-A2B/raw/main/README.md"
+  },
+  {
+   "claim": "Architecture: lfm2_moe, 40 layers (30 conv + 10 full_attention at 2,6,...,38), hidden 2048, 32 heads, 8 KV heads, head_dim 64, 64 experts top-4, moe_intermediate 1536, 2 dense layers (11776), expert bias, vocab 128000, tied, rope_theta 1e7; KV 20,480 B/token BF16",
+   "verdict": "confirmed",
+   "correction": "config.json has no head_dim key. The value 64 comes from vLLM lfm2_moe.py:205 (hidden_size // total_num_heads). The arithmetic 2 x 10 x 8 x 64 x 2 = 20,480 B is correct.",
+   "evidence_url": "https://huggingface.co/LiquidAI/LFM2.5-24B-A2B/raw/main/config.json ; https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/models/lfm2_moe.py"
+  },
+  {
+   "claim": "Context 131,072 (max_position_embeddings), card 32K->131K, 300B tokens long-context mid-training; Ollama 128K",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/LiquidAI/LFM2.5-24B-A2B/raw/main/README.md ; https://ollama.com/library/lfm2.5/tags"
+  },
+  {
+   "claim": "Text-only, no vision tower",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/LiquidAI/LFM2.5-24B-A2B/raw/main/README.md"
+  },
+  {
+   "claim": "Thinking always on: template unconditionally appends '<|im_start|>assistant\\n<think>', reads no enable_thinking, only preserve_thinking (default false)",
+   "verdict": "confirmed",
+   "correction": "I read the template myself and confirmed this. Past reasoning is kept only for assistant turns after the last user message, unless preserve_thinking is set. The template contains a transformers {% generation %} block, which llama.cpp b12407 ignores (common/jinja/parser.cpp:219).",
+   "evidence_url": "https://huggingface.co/LiquidAI/LFM2.5-24B-A2B/raw/main/chat_template.jinja"
+  },
+  {
+   "claim": "vLLM reasoning parser qwen3 per vendor recipe/docs for this model",
+   "verdict": "uncertain",
+   "correction": "The qwen3 parser exists in v0.33.0 (vllm/reasoning/__init__.py:168). However, neither the vLLM recipe (last commit 2026-06-25, before this model existed) nor docs.liquid.ai/deployment/gpu-inference/vllm.md mentions the 24B. Their reasoning-parser row names only 8B-A1B and 1.2B-Thinking. Applying it to the 24B is inferred, not a direct statement.",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/recipes/main/LiquidAI/LFM2.5.md ; https://docs.liquid.ai/deployment/gpu-inference/vllm.md"
+  },
+  {
+   "claim": "llama.cpp b12407 per-request thinking_budget_tokens / reasoning_budget_tokens at server-common.cpp:1588; 0 forces immediate </think>",
+   "verdict": "uncertain",
+   "correction": "The body keys and the line number are confirmed (server-common.cpp:1586-1599). They apply only when thinking_end_tags is non-empty, which lfm2.cpp sets to </think>. That budget 0 forces an immediate </think> was not verified in the sampler code.",
+   "evidence_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/tools/server/server-common.cpp"
+  },
+  {
+   "claim": "Tool calling: pythonic list in <|tool_call_start|>/<|tool_call_end|>, tools injected as 'List of tools: [...]', results in tool role, template raises on JSON-string arguments",
+   "verdict": "confirmed",
+   "correction": "The raise fires only for a non-empty string that is not \"{}\" or \"null\".",
+   "evidence_url": "https://huggingface.co/LiquidAI/LFM2.5-24B-A2B/raw/main/chat_template.jinja"
+  },
+  {
+   "claim": "vLLM v0.33.0 lfm2 tool parser registered; Lfm2MoeForCausalLM at registry.py:153, IsHybrid",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/tool_parsers/__init__.py (line 121) ; https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/models/registry.py (line 153) ; lfm2_moe.py:500-505"
+  },
+  {
+   "claim": "Gap: vLLM v0.33.0 conversion of JSON-string tool arguments to mappings not confirmed in source",
+   "verdict": "refuted",
+   "correction": "This is confirmed in source. vllm/renderers/chat_utils/chat_message.py:699 _postprocess_messages calls json.loads on string arguments (line 740) and coerces malformed or non-object JSON to {} with a warning (lines 749, 764). It is called from the chat parse paths at lines 806 and 845. The tests (tests/renderers/chat_utils/test_tool_call.py:44-50, 118) assert that '{\"a\": 1}' becomes {\"a\": 1}. Remove this gap.",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/renderers/chat_utils/chat_message.py"
+  },
+  {
+   "claim": "llama.cpp b12407: LLM_ARCH_LFM2MOE at llama-arch.cpp:140; LFM2.5 parser selected at chat.cpp:1362; func_args_not_string at chat.cpp:1211/1540; allow_undeclared=true",
+   "verdict": "confirmed",
+   "correction": "The LFM2.5 detection is at chat.cpp:1362-1366 ('List of tools: [' present, no <|tool_list_start|>). func_args_not_string is defined at line 1211 and called at line 1541, gated on supports_object_arguments (caps.cpp:329). It runs before the specialized dispatch. That this template's caps detection sets supports_object_arguments is inferred.",
+   "evidence_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/common/chat.cpp ; https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/common/parsers/lfm2.cpp"
+  },
+  {
+   "claim": "PR #32164 merged 2026-11-14 and included in b12407; tau3 telecom 0.877 vs 0.746, not self-reported",
+   "verdict": "confirmed",
+   "correction": "PR #32164 was merged 2026-11-14T22:34:19Z, merge commit 0cc522e. b12407 is 14 commits ahead of it, so the PR is included. The numbers match. The author tdakhran's GitHub profile lists company 'Liquid AI', so classify the tau3 result as vendor-affiliated (self_reported effectively true).",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/pull/32164 ; https://api.github.com/users/tdakhran"
+  },
+  {
+   "claim": "llama.cpp #30490 closed 2026-10-26 as completed, no linked fix; XML tool calls leak into content (QAD-Q4_0 and unsloth UD-Q4_K_XL)",
+   "verdict": "confirmed",
+   "correction": "The reporter closed the issue himself, with no comments and no referencing commit. The report was on HIP/ROCm (RX 7900 XTX, WSL2) with f16 KV, not CUDA. The QAD sha256 in the report matches the current LiquidAI QAD-Q4_0 file.",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/issues/30490"
+  },
+  {
+   "claim": "Checkpoint sizes: BF16 44.67, FP8 23.05, GGUF QAD-Q4_0/Q4_0 12.65, Q4_K_M 13.53, Q5_K_M 15.86, Q6_K 18.34, Q8_0 23.74; ggml-org Q4_K_M 13.53; unsloth 13.86/10.20/16.69; bartowski 12.46/14.30; sapidlabs 13.73; cyankiwi 14.12 GiB",
+   "verdict": "confirmed",
+   "correction": "The BF16 safetensors sum to 44.65 GiB. The record's 44.67 is the GGUF BF16/F16 file. All other sizes match the HF API. The GGUF README still calls 'the Q4_0 build' the QAD checkpoint, but there are two distinct files (Q4_0 sha dfb9bc7f, QAD-Q4_0 sha d1c03f73).",
+   "evidence_url": "https://huggingface.co/api/models/LiquidAI/LFM2.5-24B-A2B?blobs=true ; https://huggingface.co/api/models/LiquidAI/LFM2.5-24B-A2B-GGUF?blobs=true"
+  },
+  {
+   "claim": "Ollama lfm2.5:24b = q4_K_M digest 00a755688d0f, model blob 14,526,258,464 B, requires 0.40.4, params temp 0.1 top_k 50 repeat_penalty 1.05, no template layer, tools+thinking badges",
+   "verdict": "confirmed",
+   "evidence_url": "https://registry.ollama.ai/v2/library/lfm2.5/manifests/24b ; https://ollama.com/library/lfm2.5/tags"
+  },
+  {
+   "claim": "Card benchmark values (SWE-Bench Verified OpenCode 51.00 vs 66.20/25.80/53.40; BFCLv4 65.01; ToolSandbox 80.71; LiveClaw 48.09; AutomationBench 27.69; WebArena Verified 26.75; SciCode 32.71; GPQA 74.42; HLE 7.40; IFBench 74.69; MATH-500 96.04) and settings",
+   "verdict": "confirmed",
+   "correction": "All values match the card and are vendor self-reports run on vLLM. They conflict with NVIDIA's same-harness table in the Nemotron 3.5 Lightning card (SWE-bench Verified: Gemma-4-26B-A4B 57.40 vs Liquid's 25.80; Qwen3.6-35B-A3B 70.12 vs 66.20; Nemotron 51.56 vs 53.40). Competitor numbers depend heavily on the harness. Liquid's agent benches also use top_p 0.95 and turn caps (AutomationBench 50, WebArena 40).",
+   "evidence_url": "https://huggingface.co/LiquidAI/LFM2.5-24B-A2B/raw/main/README.md"
+  },
+  {
+   "claim": "BenchLM 34.4/100, #158 of 215 overall, #58 open-weight, all 13 rows LiquidAI-reported, data as of 2026-11-13",
+   "verdict": "uncertain",
+   "correction": "Confirmed on the page: 34.4 (34.43), #158 of 215, 'LiquidAI ran all 13', data as of 2026-11-13, released Oct 13 2026. The score is labelled '(Estimated)'. The '#58 open-weight' rank does not appear in the server-rendered HTML.",
+   "evidence_url": "https://benchlm.ai/models/lfm2-5-24b-a2b"
+  },
+  {
+   "claim": "Artificial Analysis has no model page (404)",
+   "verdict": "confirmed",
+   "correction": "Both the lfm2-5-24b-a2b and lfm2-5-24b-a2b-reasoning slugs return 404. AA has a page for the older lfm2-24b-a2b (HTTP 200), which does not list the 2.5 24B.",
+   "evidence_url": "https://artificialanalysis.ai/models/lfm2-5-24b-a2b"
+  },
+  {
+   "claim": "Sampling temp 0.1, top_k 50, repetition_penalty 1.05 in card, generation_config, Ollama params and GGUF general.sampling metadata",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/LiquidAI/LFM2.5-24B-A2B/raw/main/generation_config.json ; https://huggingface.co/LiquidAI/LFM2.5-24B-A2B-GGUF/raw/main/README.md"
+  },
+  {
+   "claim": "Post-training included agentic RL inside OpenCode, Hermes Agent, OpenClaw, Pi; vendor speed 184 tok/s M5 Max, 114 tok/s Ryzen AI Max+ 395 (llama.cpp Q4_K_M, 4K ctx)",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/LiquidAI/LFM2.5-24B-A2B/raw/main/README.md"
+  },
+  {
+   "claim": "FP8 checkpoint: block-wise FP8 weights, dynamic FP8 activations",
+   "verdict": "confirmed",
+   "correction": "config.json compressed-tensors: weights block 128x128, input activations dynamic group_size 128. lm_head, embed_tokens, router gates and conv weights are not quantized.",
+   "evidence_url": "https://huggingface.co/LiquidAI/LFM2.5-24B-A2B-FP8/raw/main/config.json"
+  },
+  {
+   "claim": "Memory arithmetic: vLLM no fit at 0.92 (NVFP4 13.73 -> -0.29 GiB); llama.cpp QAD-Q4_0 12.65 + 1.33 q8_0 KV @131072 + 0.75 = ~14.7 GiB",
+   "verdict": "confirmed",
+   "correction": "Source-backed arithmetic reproduces: 14.65 - 13.73 - 1.2 = -0.28 GiB. At util 0.97: 15.44 - 13.73 - 1.2 = 0.51 GiB, about 26.7k tokens BF16. 131072 x 20480 B = 2.50 GiB f16, about 1.33 GiB q8_0. The compute buffer is unmeasured.",
+   "evidence_url": "https://huggingface.co/LiquidAI/LFM2.5-24B-A2B/raw/main/config.json"
+  }
+ ]
+}

@@ -1,0 +1,194 @@
+{
+ "review": {
+  "key": "mindstudio-24gb",
+  "url": "https://www.mindstudio.ai/blog/best-gpu-for-running-local-llms-24gb",
+  "title": "Best GPU for Local LLMs: Fitting 30B Models in 16GB or 24GB VRAM",
+  "publisher": "MindStudio blog (byline \"Edited by Luis Chavez-Mattos, Director of Product\"; page carries ads for the vendor's own product, Remy)",
+  "as_of": "2026-11-12 (JSON-LD datePublished and dateModified 2026-11-12T00:00:00.000Z). The FAQ still asks \"Is a used RTX 3090 still a good choice for local AI in 2024-2025?\", which suggests older recycled text.",
+  "source_type": "blog",
+  "accessible": true,
+  "access_notes": "Raw fetch with curl -sL -A \"Mozilla/5.0\" returned HTTP 200 and 95,625 bytes. The article text was extracted with python3 -I into $SCRATCH/src/mindstudio-24gb/text.txt. All quotes below come from the raw HTML, not from a summarizer. The article body has no outbound links except the vendor's own ads (goremy.ai) and the editor's LinkedIn page, so it cites no sources.",
+  "credibility": "low",
+  "credibility_reason": "This is a vendor marketing blog with no measurements, no named models, no runtime and no citations. Its numbers are rules of thumb or spec-sheet and launch-price figures. The RTX 5080 24 GB cancellation is hearsay, and the article itself says \"None of this has been confirmed by Nvidia\". It never considers MoE expert offload to system RAM, which is the main method the baseline uses on this 16 GB laptop.",
+  "summary": "This is a generic buyer's guide for running 30B-class models on 16 GB or 24 GB GPUs. Only two claims transfer to this laptop. First, a 30B model at 4-bit is \"around 15 to 18GB\" before context. Second, plan memory as quantized weight size plus a buffer for the KV cache. Both are consistent with the baseline's verified file sizes. The article's conclusion is that 30B models are a \"tight fit\" on 16 GB and need 20-24 GB. That assumes a dense model must sit entirely in VRAM, and it does not hold for this setup. The baseline runs 30-35B MoE models (3B active) on llama.cpp with --n-cpu-moe and keeps part of the experts in the 61 GiB of system RAM. The rest of the article does not apply here: GPU purchase options (RTX 3090, dual 5060 Ti, RTX Pro 4000, AMD R9700, Intel Arc Pro B70), prices, and rumours. There are no throughput numbers. The article contains nothing about the RTX 5080 Laptop GPU.",
+  "findings": [
+   {
+    "topic": "30B 4-bit size",
+    "claim": "Quote: \"A 30B-parameter model at 4-bit quantization lands around 15 to 18GB depending on the exact quantization format and architecture.\" This is a rule of thumb with no model or file named.",
+    "evidence": "opinion",
+    "location": "section 'How much VRAM do you actually need to run a 30B model?'",
+    "target": "models",
+    "relevance": "medium"
+   },
+   {
+    "topic": "VRAM budgeting rule",
+    "claim": "Quote: \"figure out the model's quantized size, then add a buffer for context\". The KV cache grows with prompt and session length.",
+    "evidence": "opinion",
+    "location": "same section",
+    "target": "general",
+    "relevance": "medium"
+   },
+   {
+    "topic": "Full-fit assumption",
+    "claim": "Quote: \"A model has to fit entirely inside the graphics card's memory to run at usable speed\". The article gives no discussion of MoE expert offload or partial offload.",
+    "evidence": "opinion",
+    "location": "intro 'Why does VRAM matter more than anything else'",
+    "target": "general",
+    "relevance": "high"
+   },
+   {
+    "topic": "16 GB verdict for 30B",
+    "claim": "The article says 16 GB leaves \"little to no room for context\" for 30B 4-bit models. Its FAQ says: \"Plan for at least 20 to 24GB.\"",
+    "evidence": "opinion",
+    "location": "TL;DR and FAQ",
+    "target": "hardware",
+    "relevance": "high"
+   },
+   {
+    "topic": "Small models",
+    "claim": "Quote: \"Smaller models (7B to 13B class) are far more forgiving and run fine on 12 to 16GB cards.\"",
+    "evidence": "opinion",
+    "location": "30B VRAM section",
+    "target": "models",
+    "relevance": "low"
+   },
+   {
+    "topic": "Bandwidth",
+    "claim": "The RTX 3090 is cited at \"about 936GB/s of memory bandwidth\" (spec figure). There is no reasoning that links bandwidth to tokens per second.",
+    "evidence": "documented",
+    "location": "GPU options section",
+    "target": "hardware",
+    "relevance": "low"
+   },
+   {
+    "topic": "Multi-GPU",
+    "claim": "Two RTX 5060 Ti 16 GB cards give 32 GB pooled, at \"around $429 each\" and \"about 180W per card\". The article says splitting adds overhead but gives no number.",
+    "evidence": "vendor-reported",
+    "location": "GPU options section",
+    "target": "hardware",
+    "relevance": "low"
+   },
+   {
+    "topic": "RTX 5080 24 GB rumour",
+    "claim": "The article reports a 24 GB RTX 5080 variant as cancelled because 3 GB memory chips cost \"roughly three times\" as much as 2 GB chips. It adds that this is unconfirmed by Nvidia. Nvidia's mainstream cards top out at 16 GB.",
+    "evidence": "unknown",
+    "location": "'Why is there no affordable 24GB Nvidia card'",
+    "target": "hardware",
+    "relevance": "low"
+   },
+   {
+    "topic": "Ecosystem",
+    "claim": "CUDA is presented as the lowest-friction stack. ROCm and Intel need more troubleshooting. The AMD R9700 32 GB is listed at about $1,300 and the Intel Arc Pro B70 32 GB at about $949.",
+    "evidence": "opinion",
+    "location": "AMD/Intel section",
+    "target": "general",
+    "relevance": "low"
+   }
+  ],
+  "measurements": [],
+  "conflicts": [
+   {
+    "baseline_claim": "llama.cpp runs Qwen3.6-35B-A3B Q4_K_M (19.13 GiB) with --n-cpu-moe 21 and about 9 GiB of experts in RAM, with 128k context, on the 16 GB laptop. Qwen3-Coder-Next UD-IQ4_XS (35.79 GiB) runs with about 26 GiB in RAM.",
+    "source_claim": "\"A model has to fit entirely inside the graphics card's memory to run at usable speed\". The article treats 16 GB as a tight fit for 30B models.",
+    "assessment": "The source is incomplete rather than contradictory. Its claim holds for dense models and for vLLM, which per the baseline has no working MoE offload (#66264). It does not hold for llama.cpp MoE expert offload, where only about 3B parameters are active per token. The baseline should take precedence. Throughput on this machine has not been measured yet, so 'usable speed' with offload is still to be confirmed by benchmarks."
+   },
+   {
+    "baseline_claim": "Context targets of 64k-128k for OpenCode on 16 GB.",
+    "source_claim": "16 GB \"leave[s] little to no room for context\" with a 30B 4-bit model.",
+    "assessment": "This is true only if the full model stays in VRAM. With expert offload, the freed VRAM goes to the KV cache. The baseline's per-model budgets are computed from config.json and are more specific than the source."
+   }
+  ],
+  "agreements": [
+   "30B-class 4-bit weights of about 15-18 GB match baseline file sizes: Nemotron 3.5 Lightning 30B-A3B Q4_0 is 17.60 GiB and GLM-4.7-Flash Q4_K_M is 17.05 GiB. Both exceed 16 GB of VRAM, so they need offload on this laptop.",
+   "Plan VRAM as weights plus the KV cache and a reserve. This matches the baseline's vLLM budget method (14.65 GiB minus weights minus 1.2 GiB reserve equals the KV pool).",
+   "The RTX 5080 class is capped at 16 GB. This matches the observed 16303 MiB on the laptop GPU.",
+   "CUDA/NVIDIA is the lowest-friction stack for vLLM and llama.cpp. This is consistent with the project's choice."
+  ],
+  "kb_notes": [
+   {
+    "target_doc": "docs/model-selection.md",
+    "note": "Generic guides such as MindStudio's (https://www.mindstudio.ai/blog/best-gpu-for-running-local-llms-24gb, 2026-11-12) estimate a 30B model at 4-bit at 15-18 GB of weights before context and call 16 GB a tight fit. That rule assumes a dense model held fully in VRAM. On this laptop, 30-35B MoE models with about 3B active parameters run in llama.cpp with --n-cpu-moe, so part of the experts sit in system RAM. VRAM is then spent on attention weights and the KV cache rather than on the whole model."
+   },
+   {
+    "target_doc": "docs/model-selection.md",
+    "note": "Sizing rule: quantized file size plus the KV cache for the target context plus a runtime reserve must fit in VRAM. For vLLM, which has no usable MoE CPU offload on this build, a 30B 4-bit model (about 15-18 GB per https://www.mindstudio.ai/blog/best-gpu-for-running-local-llms-24gb, and 17-19 GiB in the files the baseline verified) does not fit in the 14.65 GiB budget at --gpu-memory-utilization 0.92. vLLM on this laptop is therefore limited to smaller or more aggressively quantized models."
+   },
+   {
+    "target_doc": "docs/sources.md",
+    "note": "MindStudio blog, 'Best GPU for Local LLMs: Fitting 30B Models in 16GB or 24GB VRAM' (https://www.mindstudio.ai/blog/best-gpu-for-running-local-llms-24gb), dated 2026-11-12. Vendor marketing post with no measurements, no citations and no named models. Credibility: low. Used only for the generic 15-18 GB size range of 30B 4-bit models. Its 24 GB RTX 5080 cancellation story is unconfirmed hearsay."
+   }
+  ],
+  "gaps": [
+   "No tokens-per-second figures, no runtime (vLLM, llama.cpp or Ollama), no named models and no quantization formats beyond a generic '4-bit'.",
+   "No discussion of MoE versus dense models, CPU/RAM expert offload, KV cache quantization or context-length arithmetic.",
+   "No laptop GPU coverage. RTX 5080 figures, where present, are about the desktop product line and memory capacity only."
+  ],
+  "methodology": "curl -sL -A \"Mozilla/5.0\" of the article. The date was read from JSON-LD datePublished/dateModified and the time element. The article was stripped to text with python3 -I in a fresh directory, and the article's outbound links were checked for citations (none). Claims were compared with $SCRATCH/kb/current-knowledge.md, the model table and the vLLM section.",
+  "new_candidates": []
+ },
+ "check": {
+  "verdicts": [
+   {
+    "item": "Publisher, type, as-of date",
+    "verdict": "confirmed",
+    "evidence": "Raw curl -sL -A Mozilla/5.0: HTTP 200, 95625 bytes. JSON-LD \"datePublished\":\"2026-11-12T00:00:00.000Z\" and \"dateModified\":\"2026-11-12T00:00:00.000Z\". Byline text: \"Edited by Luis Chavez-Mattos, Director of Product\". JSON-LD author is the MindStudio organization. FAQ line 140: \"Is a used RTX 3090 still a good choice for local AI in 2024-2025?\". Blog type is correct.",
+    "correction": "Outbound links are not limited to goremy.ai and LinkedIn: there is also a MindStudio YouTube channel link. There are still no cited sources, so the conclusion stands."
+   },
+   {
+    "item": "30B 4-bit is about 15 to 18 GB before context",
+    "verdict": "confirmed",
+    "evidence": "Line 89 verbatim: \"A 30B-parameter model at 4-bit quantization lands around 15 to 18GB depending on the exact quantization format and architecture.\" The intro repeats it as \"somewhere around 15 to 18GB on its own, before you add room for context\". No model or file is named, so this is a rule of thumb (estimate)."
+   },
+   {
+    "item": "Sizing rule: quantized size plus a context buffer",
+    "verdict": "confirmed",
+    "evidence": "Line 89: \"The rule of thumb is simple: figure out the model's quantized size, then add a buffer for context.\" The same passage names the key-value cache."
+   },
+   {
+    "item": "Full-fit assumption, no MoE or offload discussion",
+    "verdict": "confirmed",
+    "evidence": "Line 48: \"A model has to fit entirely inside the graphics card's memory to run at usable speed\". A grep for MoE, mixture, offload and laptop in the article text found no matches in the body. The only 'laptop' hits are in related-post teasers (Surface Laptop Ultra)."
+   },
+   {
+    "item": "16 GB verdict: little to no room for context; plan for 20 to 24 GB",
+    "verdict": "confirmed",
+    "evidence": "Line 51: \"16GB cards leave little to no room for context.\" Line 139: \"Plan for at least 20 to 24GB... a 16GB card is a tight fit.\""
+   },
+   {
+    "item": "Small models and RTX 3090 bandwidth",
+    "verdict": "confirmed",
+    "evidence": "Line 91: \"Smaller models (7B to 13B class) are far more forgiving and run fine on 12 to 16GB cards.\" Lines 56/95/141: \"about 936GB/s of bandwidth\" (spec figure, not measured)."
+   },
+   {
+    "item": "Dual RTX 5060 Ti, AMD and Intel prices",
+    "verdict": "confirmed",
+    "evidence": "Line 98: \"launched around $429 each and draw about 180W per card\". Overhead is described but not quantified. Line 104: \"launched at around $1,300\" (32GB). Line 106: \"suggested starting price around $949\" (32GB)."
+   },
+   {
+    "item": "RTX 5080 24 GB cancellation rumour",
+    "verdict": "confirmed",
+    "evidence": "Line 135: 3GB chips \"said to cost roughly three times as much as the 2GB chips\". The same line says: \"None of this has been confirmed by Nvidia either way.\" Line 134: mainstream gaming cards \"top out at 16GB ... (like the RTX 5080)\". This refers to the desktop product line. The laptop GPU is not mentioned."
+   },
+   {
+    "item": "No measurements in the article",
+    "verdict": "confirmed",
+    "evidence": "The extracted text contains no tok/s, runtime, named model or benchmark settings. An empty measurements array is correct."
+   },
+   {
+    "item": "Agreement: 15-18 GB matches baseline file sizes",
+    "verdict": "confirmed",
+    "evidence": "Baseline current-knowledge.md lines 72 and 75: Nemotron 3.5 Lightning Q4_0 17.60 GiB and GLM-4.7-Flash Q4_K_M 17.05 GiB.",
+    "correction": "The two figures use different units. 17.60 GiB is about 18.9 GB and 17.05 GiB is about 18.3 GB, both slightly above the source's 15-18 GB. Qwen3.6-35B-A3B Q4_K_M (19.13 GiB, about 20.5 GB) is above it too. The kb_note should say these files are 'at or slightly above' the range, and give units, rather than claim an exact match."
+   },
+   {
+    "item": "Conflicts with the baseline (full-fit vs --n-cpu-moe offload; context on 16 GB)",
+    "verdict": "confirmed",
+    "evidence": "Baseline line 67: Qwen3.6-35B-A3B with --n-cpu-moe 21, about 9 GiB of experts in RAM, 128k context. Line 30: vLLM MoE CPU offload is undone (#66264). Line 24: 14.65 GiB budget. The reviewer correctly frames the source as incomplete rather than contradictory, and correctly notes that throughput with offload is still unmeasured."
+   }
+  ],
+  "credibility_fair": true,
+  "credibility_note": "A 'low' rating is fair. This is a vendor blog with a product editor's byline, no citations, no measurements and no named models. The cancellation claim is self-declared as unconfirmed, and the FAQ contains text recycled from 2024-2025. It is usable only for the generic 4-bit 30B size range and the weights-plus-KV sizing rule.",
+  "overall": "holds-with-corrections",
+  "summary": "I re-fetched the page raw (HTTP 200, 95625 bytes, saved under $SCRATCH/src/mindstudio-24gb-check/) and confirmed every quoted claim word for word, including the date 2026-11-12, the byline, the source type and the absence of measurements. The conflicts the reviewer raised are real, and they are correctly framed as gaps in the source rather than contradictions. Two minor corrections. First, the outbound links also include a MindStudio YouTube link, though still no citations. Second, the baseline files cited as 'matching' 15-18 GB are given in GiB: 17.05-19.13 GiB is about 18.3-20.5 GB, which sits at or slightly above the source's range. The kb_note should state units and say 'at or above'."
+ }
+}

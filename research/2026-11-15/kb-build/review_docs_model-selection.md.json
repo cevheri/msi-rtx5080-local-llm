@@ -1,0 +1,80 @@
+{
+ "file": "$HOME/projects/llm/docs/model-selection.md",
+ "checked_claims": 31,
+ "fixes": [
+  {
+   "what": "In the 'Changes versus the earlier ranking' table, the Bolt row compared Bolt's TB2.1 50.98 with Lightning's 24.58. It now reads 50.98 vs 23.46, both from the NVIDIA table in the Bolt card.",
+   "why": "24.58 comes from a different table, the one in the Lightning card. The Bolt card (README line 133, fetched live) gives Lightning 23.46 next to Bolt's 50.98, so the old row mixed two tables. The per-model note already said 23.46.",
+   "source": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB-GGUF/raw/main/README.md"
+  },
+  {
+   "what": "The Lightning honorable-mention row now names the table behind each TB2.1 figure: 24.58 in the Lightning card's table, 23.46 in the Bolt card's table.",
+   "why": "The two NVIDIA tables give different numbers for the same model, and the row did not say which one it used.",
+   "source": "kb/current-knowledge.md; Bolt card line 133"
+  },
+  {
+   "what": "Changed 'matches AA within 0.5 points' to 'about half a point (44.38 vs 44.9)'.",
+   "why": "The real gap is 0.52 points, so 'within 0.5' was slightly wrong.",
+   "source": "https://artificialanalysis.ai/models/qwen3-6-35b-a3b"
+  },
+  {
+   "what": "Added a link to the AA Bolt page for 'TB 4.0 0, AutomationBench 15.5' and noted that Bolt has no Intelligence Index.",
+   "why": "No input record supported these numbers, and the Bolt newcand record said AA had not evaluated the model. I checked the live AA page payload: the record for slug nemotron-3-5-bolt-74b-a9b has terminalBench40 0, automationBenchPartialScore 0.1546 and intelligenceIndex null.",
+   "source": "https://artificialanalysis.ai/models/nemotron-3-5-bolt-74b-a9b"
+  },
+  {
+   "what": "llama.cpp #30490 (LFM2.5 tool calls lost as XML text) now has a link and says the issue was closed on 2026-10-26 as completed, with no linked fix or comment. This applies in three places.",
+   "why": "The document described the issue as still open. The GitHub API shows state closed, state_reason completed, with no fixing commit.",
+   "source": "https://github.com/ggml-org/llama.cpp/issues/30490"
+  },
+  {
+   "what": "The DGX Spark anchor (42.7 tok/s) now carries a full label: user's DGX Spark, GB10 at 273 GB/s, vLLM, RedHatAI NVFP4, about 280-token completions, private runbook with no public link. The sentence was also split in two.",
+   "why": "Rule 7 requires a hardware, runtime and measured label on every third-party number. I confirmed the figures against the runbook's 'Measured performance' table. No IPs or hostnames were copied.",
+   "source": "dgx-spark-llm.md lines 240-247"
+  },
+  {
+   "what": "The gpt-oss-20b 205 tok/s figure is now labelled 'llama-bench build 6210, MXFP4' and the card is noted as having 960 GB/s.",
+   "why": "I checked the live discussion: the RTX 5080 table shows tg128 204.85 at build a094f381 (6210).",
+   "source": "https://github.com/ggml-org/llama.cpp/discussions/15396"
+  },
+  {
+   "what": "Added the provenance for #27623: the q8_0 KV penalty comes from a comment, and the cliff in the issue title was retracted.",
+   "why": "The issue title describes a 25x collapse at long context, which a reader would otherwise take as the confirmed penalty. The ranking's audit note asks for this caveat.",
+   "source": "https://github.com/ggml-org/llama.cpp/issues/27623"
+  },
+  {
+   "what": "Added inline links for issue numbers that had none: OpenCode #55378, vLLM #62743, #66989, #65770, #58825 and #59738. Also added AA links for Gemma 4 26B, Qwen3-Coder-Next and gpt-oss-20b (TB2.1 13.9 now says high effort), and a link to the v0.30.0 vLLM registry for the K2 7B minimum version.",
+   "why": "Rule 7 requires sources. I confirmed every issue as open with gh api. AA Gemma tau3 0.1196 and Coder-Next TB4.0 0 were checked live. K2Horizon appears in the registry at v0.30.0 and not at v0.29.0.",
+   "source": "gh api; live AA pages; vLLM registry.py at v0.29.0 and v0.30.0"
+  },
+  {
+   "what": "Completed the sampling lines. Qwen3.8 gets its non-thinking values (temperature 0.7, top_p 0.8, top_k 20, presence 1.5). Groot gets its general-thinking values (temperature 1.0, top_p 0.95, top_k 20, presence 1.5) and the missing top_k and presence for non-thinking.",
+   "why": "These values are in the raw model cards, which I re-fetched, and in the authoritative ranking. The OpenCode #none variant needs the non-thinking values.",
+   "source": "Qwen3.8-27B README lines 252-253; Groot README lines 86-88"
+  },
+  {
+   "what": "For K2 MoVA, the strict-template caveat now says what 'malformed' means: a `required` name that is missing from `properties`. The vendor Ollama tag and the Bolt Ollama manifest now have links.",
+   "why": "The precision comes from the K2 newcand record. Both URLs returned HTTP 200.",
+   "source": "kb/newcand/k2-horizon-7b.json; ollama.com/ifm/k2-horizon/tags; registry.ollama.ai nemotron-3.5-bolt manifest"
+  },
+  {
+   "what": "Split three prose lines that each held two sentences: the Gemma thinking line, the Gemma caveats line and the DeepSeek tools line.",
+   "why": "Writing rule 2: one sentence per physical line.",
+   "source": "writing rules"
+  },
+  {
+   "what": "Extended the Sources section (AA pages, vLLM and OpenCode issues, #30490, PR #31802) and the Maintenance issue list.",
+   "why": "Rule 11 asks for deduplicated sources that cover the links added in the body.",
+   "source": "writing rules"
+  }
+ ],
+ "remaining_concerns": [
+  "The relative links ../llamacpp/models.md and ../vllm/models.md point to planned documents that do not exist on disk yet: llamacpp/ and vllm/ currently hold only README.md and benchmarking.md. The links will work once those writers finish.",
+  "Release dates follow the authoritative ranking, which uses announcement or AA dates (Gemma 2026-04-02, Qwen3-Coder-Next 2026-02-03, gpt-oss 2025-08-05). The HF createdAt dates are a few days earlier, and the document does not mention them.",
+  "Some secondary figures came from the input records and the ranking and were not re-fetched live: KAT-Coder in-house scores, the Laguna and Xing details, the LFM table values, the InsiderLLM 12/47 vs 19/47 result, the Mellum figures and the GLM-4.7-Flash sizes.",
+  "The 'NVIDIA same-harness' TB2.1 numbers for Qwen3.6 and Gemma come from the Lightning card table (44.38 and 37.22), and the Bolt card repeats them. Lightning itself differs between the two tables (24.58 vs 23.46), which suggests the tables are separate runs. The document now names the table each time.",
+  "The document contains no docker commands, only flags and links to the recipe documents. Port, restart-policy and memory-cap compliance is therefore enforced in llamacpp/models.md and vllm/models.md, not here."
+ ],
+ "verdict": "ready-with-concerns",
+ "used_playwright": false
+}

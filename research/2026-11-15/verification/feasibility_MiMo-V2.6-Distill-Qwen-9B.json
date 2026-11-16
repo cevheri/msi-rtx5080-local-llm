@@ -1,0 +1,88 @@
+{
+ "verdicts": [
+  {
+   "claim": "Checkpoint weight sizes: official BF16 4 shards 18,819,720,848 B (17.53 GiB); cyankiwi AWQ 8,991,501,696 B (8.37 GiB); ggml-org Q8_0 9,527,498,048 B (8.87 GiB) + mmproj Q8_0 624,229,728 B; bartowski Q8_0 9.55 GB, Q6_K_L 8.11 GB, Q4_K_M 5.84 GB, bf16 17.92 GB, mmproj bf16 0.92 GB, ~956k downloads",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/cyankiwi/MiMo-V2.6-Distill-Qwen-9B-AWQ-BF16-INT4?blobs=true"
+  },
+  {
+   "claim": "Architecture: Qwen3_5ForConditionalGeneration, 32 layers, 8 full_attention (every 4th), 4 KV heads, head_dim 256, GDN 16 key / 32 value heads dim 128, conv kernel 4, mamba_ssm_dtype float32, max_position_embeddings 262144, vision depth 27 width 1152, mtp_num_hidden_layers 1",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Distill-Qwen-9B/raw/main/config.json"
+  },
+  {
+   "claim": "vLLM KV math: 32,768 B/token BF16, 16,384 B/token FP8; GDN state about 49 MiB/seq; AWQ with vision pool 14.65-8.37-1.2 = 5.08 GiB -> 166k BF16 tokens, FP8 capped at 262,144; --language-model-only about 5.93 GiB -> 194k BF16",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Distill-Qwen-9B/raw/main/config.json",
+   "correction": "Arithmetic reproduces (5.08 GiB / 32768 B = 166,460 tokens). Caveat: vLLM pins one uniform page size across attention and GDN groups for hybrids (open #37121, RFC #55196), so FP8 KV gives about 2x only at long single-request context and little at short context; and the Qwen3.5 family never loads checkpoint KV scales (open #54623), so FP8 KV runs uncalibrated at scale 1.0. Prefer BF16 KV at --max-model-len 131072, which already fits with margin."
+  },
+  {
+   "claim": "vLLM v0.33.0 registers Qwen3_5ForConditionalGeneration (registry.py:617) and Qwen3_5ForCausalLM (line 204)",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/model_executor/models/registry.py"
+  },
+  {
+   "claim": "vLLM v0.33.0 has 'mimo' tool parser (tool_parsers/__init__.py:153 -> MiMoToolParser) and 'mimo' reasoning parser (reasoning/__init__.py:119 -> MiMoParserReasoningAdapter); Rust MiMo parser wraps Qwen3-Coder grammar with trim_parameter_newlines=false and a compact Mimo structural tag",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/vllm-project/vllm/blob/v0.33.0/rust/src/parser/src/tool/mimo.rs",
+   "correction": "The mimo.rs unit tests parse newline-separated XML, so the parser accepts both compact and newline forms; the stated reason that qwen3_coder 'expects newlines' is not shown in source. Using mimo is still the correct choice. Whether the parser handles a JSON body inside <function=...> (no <parameter> tags) is not tested in source."
+  },
+  {
+   "claim": "Flash recipe uses --tool-call-parser mimo --enable-auto-tool-choice --reasoning-parser mimo, min_vllm_version 0.31.0, and notes MOPD fixes the RL release's tool-call repetition",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/vllm-project/vllm/blob/v0.33.0/recipes/models/XiaomiMiMo/MiMo-V2.6-Flash-RL.yaml"
+  },
+  {
+   "claim": "Marlin W4A16 kernel availability on sm_120 is only inferred",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/vllm-project/vllm/blob/v0.33.0/CMakeLists.txt",
+   "correction": "Upgrade to source-backed: CMakeLists.txt:658 at v0.33.0 builds MARLIN_ARCHS '8.0+PTX;12.0f' (line 660 '12.0a;12.1a' for older CUDA), and the image's TORCH_CUDA_ARCH_LIST includes 12.0. cyankiwi config is pack-quantized int4 group 32 asymmetric, GDN linear_attn and vision ignored (kept BF16)."
+  },
+  {
+   "claim": "No open vLLM issue names this model; related #39273 (ngram on hybrid GDN) open",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/vllm-project/vllm/issues/39273",
+   "correction": "#61927 (MiMo-V2 FP8 KV crash on SM12x, still failing on v0.33.0) concerns the MiMo-V2 Flash DiffKV attention, not the qwen3_5 arch, so it does not apply here. #38643 (Qwen3.5 FLA gibberish) is open but stale and unreproduced by others on RTX 50 GPUs."
+  },
+  {
+   "claim": "Chat template: compact <tool_call><function=NAME><parameter=ARG>value</parameter></function></tool_call>; generation prompt ends '<|im_start|>assistant\\n'; enable_thinking=false appends '<think></think>'; past reasoning re-rendered only from reasoning_content",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/XiaomiMiMo/MiMo-V2.6-Distill-Qwen-9B/raw/main/chat_template.jinja",
+   "correction": "Also: when arguments arrive as a string (OpenAI format) the upstream template renders them raw (JSON) instead of as <parameter> tags, unless the server first converts them to a dict."
+  },
+  {
+   "claim": "ggml-org GGUF embeds a patched template that emits tool arguments as JSON and pre-fills '<think>\\n'; interim fix per README",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/ggml-org/MiMo-V2.6-Distill-Qwen-9B-GGUF?expand[]=gguf",
+   "correction": "The patch header says JSON arguments match 'observed native output'. That conflicts with the vLLM mimo parser, which expects <parameter> XML. Which format the model really emits is contested, and the vLLM tool path needs an end-to-end test with OpenCode."
+  },
+  {
+   "claim": "llama.cpp: qwen35 arch at llama-arch.cpp:45 in b12418; #29319 closed 2026-09-23 as fixed by PR #29257 (merged 2026-09-22, in b11102); Qwen3-Coder exclusion for compact tags at common/chat.cpp ~1420-1428",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/blob/b12418/common/chat.cpp"
+  },
+  {
+   "claim": "llama.cpp Q8_0 fully on GPU with q8_0 KV at 262,144 tokens is about 13.9 GiB (KV 16 KiB/token -> 4.0 GiB)",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/ggml-org/MiMo-V2.6-Distill-Qwen-9B-GGUF?blobs=true",
+   "correction": "q8_0 stores 34 B per 32 values, so KV is 17,408 B/token -> 4.25 GiB at 262k; the total is about 8.87 + 4.25 + 1.0 + 0.05 = 14.2 GiB, which still fits in about 15.8 GiB free. Docker command: -hf downloads to /root/.cache/llama.cpp inside the --rm container, not to the mounted /models, so mount that cache path or use -m /models/<file>. FA with q8_0 KV at head_dim 256 on CUDA is not verified."
+  },
+  {
+   "claim": "Ollama mimo-v2.6:9b = latest (4af06b564ed4), 6.6-8.7 GB, 256K, tools/thinking/vision, 93.3K downloads, q4_K_M 6.6 GB, gguf-bf16 19 GB, MLX nvfp4 8.7 / mxfp8 11 / mlx-bf16 19 GB",
+   "verdict": "confirmed",
+   "evidence_url": "https://ollama.com/library/mimo-v2.6/tags"
+  },
+  {
+   "claim": "Speed upper bound about 110 tok/s for AWQ (8.0 GB read per token), about 94 tok/s for Q8_0",
+   "verdict": "uncertain",
+   "correction": "The input embedding (248320 x 4096 BF16, about 2.03 GB) is a lookup and is not read in full per token, so the AWQ text path reads about 6.0 GB/token (bound about 149 tok/s) and Q8_0 about 8.4 GB (bound about 107 tok/s). These are inferred bounds, not measurements."
+  },
+  {
+   "claim": "Verdict: good OpenCode fit; vLLM v0.33.0 with cyankiwi AWQ, --language-model-only, mimo parsers, 131072 context fits; llama.cpp Q8_0 fits 262k",
+   "verdict": "uncertain",
+   "correction": "Memory feasibility for >=64k holds on both runtimes. Working tool calls are not proven: the native argument format (XML vs JSON) is contested between the vLLM parser and the ggml-org patch, and no end-to-end test exists. Best realistic config: vLLM v0.33.0, cyankiwi AWQ, --language-model-only, BF16 KV, --max-model-len 131072, --max-num-seqs 2-4, --tool-call-parser mimo --reasoning-parser mimo; fallback llama.cpp server-cuda13 b12418 with ggml-org Q8_0, -c 131072 to 262144, -ctk/-ctv q8_0."
+  }
+ ],
+ "overall": "holds-with-corrections",
+ "summary": "I could not refute the record's runtime claims, and it holds with corrections. I checked all of this live on 2026-11-15: weight sizes from the HF API, config.json, vLLM v0.33.0 source (registry, both mimo parsers, the Rust MiMo parser, the recipe, CMakeLists), llama.cpp b12418 source and issues #29319/#29257, the GGUF templates through the HF gguf metadata API, and the Ollama tags page. Memory feasibility is solid. On vLLM, the cyankiwi AWQ checkpoint (8.37 GiB) leaves a 5.08 GiB KV pool, or about 5.93 GiB with --language-model-only, which gives 166k to 194k tokens with BF16 KV. In llama.cpp, Q8_0 with q8_0 KV at 262k needs about 14.2 GiB: KV is 17,408 B/token, not 16 KiB. Corrections: (1) Marlin on sm_120 is source-backed, since CMakeLists.txt:658 builds 12.0f. (2) FP8 KV gives about 2x only at long context on vLLM hybrids because of page pinning (#37121, #55196), and it runs uncalibrated because Qwen3.5 does not load KV scales (#54623). Prefer BF16 KV at 131072. (3) The ggml-org patched template says the model's native tool-call arguments are JSON, but the vLLM mimo parser expects <parameter> XML, so whether tool calls work in vLLM is contested and needs an end-to-end test with OpenCode. (4) The llama.cpp docker command does not persist its -hf cache. (5) The speed bounds are slightly too low because the embedding is not read in full per token. Gaps: no end-to-end tool-call test on either runtime, no measured tok/s, and no check that FA works with q8_0 KV at head_dim 256 on CUDA."
+}

@@ -1,0 +1,2 @@
+ | task 0 | prompt eval time =     795.28 ms /  4000 tokens (    0.20 ms per token,  5029.69 tokens per second)
+ | task 0 |        eval time =   58334.22 ms /  3673 tokens (   15.89 ms per token,    62.95 tokens per second)

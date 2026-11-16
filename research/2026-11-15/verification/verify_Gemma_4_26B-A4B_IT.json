@@ -1,0 +1,374 @@
+{
+ "name": "Gemma 4 26B-A4B IT",
+ "hf_repo": "google/gemma-4-26B-A4B-it",
+ "within_last_12_months": true,
+ "official_org": {
+  "value": "Google (Google DeepMind). HF org 'google' has isVerified=true, enterprise plan, 1136 models (https://huggingface.co/api/organizations/google/overview). The card links Google's launch blog and ai.google.dev license, and the GGUF metadata names organization Google with repo_url https://huggingface.co/google/gemma-4-26B-A4B-it. Google blog 'Gemma 4: Our most capable open models to date' (datePublished 2026-04-02) announces the 26B MoE.",
+  "source_url": "https://huggingface.co/api/organizations/google/overview",
+  "support": "direct-statement"
+ },
+ "release_date": {
+  "value": "HF createdAt 2026-03-11T21:25:57Z. The repo was created privately before launch, last modified 2026-07-20. Public announcement in the Google blog was 2026-04-02T16:00Z, and Artificial Analysis also lists releaseDate 2026-04-02. Both dates fall inside 2025-11-15..2026-11-15. Chat template revision 'Published: 2026-07-09' (fixes for tool-calling loops, turn closures and thinking ordering).",
+  "source_url": "https://huggingface.co/api/models/google/gemma-4-26B-A4B-it ; https://blog.google/innovation-and-ai/technology/developers-tools/gemma-4/",
+  "support": "direct-statement"
+ },
+ "license": {
+  "value": "apache-2.0 (HF tag license:apache-2.0; card: 'License: Apache 2.0'). license_link https://ai.google.dev/gemma/docs/gemma_4_license redirects to /gemma/apache_2. That is plain Apache 2.0, with no Gemma Terms of Use or prohibited-use policy, unlike Gemma 3. The blog says 'under an Apache 2.0 license'. The QAT GGUF, ggml-org, unsloth, RedHatAI and nvidia derivative repos are also tagged apache-2.0.",
+  "source_url": "https://huggingface.co/google/gemma-4-26B-A4B-it/raw/main/README.md",
+  "support": "direct-statement"
+ },
+ "params": {
+  "value": "Card: 25.2B total, 3.8B active, 128 experts with 8 active plus 1 shared, vision encoder about 550M. HF API safetensors total 25,805,936,206 BF16 params (includes the vision tower), 51.61 GB. The Google QAT GGUF metadata gives 25,233,142,046 params for text only.",
+  "source_url": "https://huggingface.co/api/models/google/gemma-4-26B-A4B-it",
+  "support": "direct-statement"
+ },
+ "architecture": {
+  "value": "Gemma4ForConditionalGeneration (model_type gemma4, text gemma4_text). 30 decoder layers with a MoE block (num_experts 128, top_k_experts 8, moe_intermediate_size 704, plus a dense FFN with intermediate_size 2112), hidden 2816, 16 query heads. Hybrid attention: layer_types has 25 sliding_attention layers (window 1024, 8 KV heads, head_dim 256) and 5 full_attention layers (indices 5, 11, 17, 23, 29; num_global_key_value_heads 2, global_head_dim 512, attention_k_eq_v true, p-RoPE with partial_rotary_factor 0.25, theta 1e6). Vocab 262144, tied embeddings, final_logit_softcapping 30. The vision tower is 27 layers at hidden 1152. vLLM loads the K weights into both the K and V slots on k_eq_v layers (gemma4.py lines 90-118 and 536 at v0.33.0). llama.cpp uses Vcur = Kcur when v_proj is absent (src/models/gemma4.cpp line 281). Both therefore still store separate K and V cache.",
+  "source_url": "https://huggingface.co/google/gemma-4-26B-A4B-it/raw/main/config.json",
+  "support": "direct-statement"
+ },
+ "context_length": {
+  "value": "262144 native (max_position_embeddings 262144; card says 256K; GGUF gemma4.context_length 262144). No extended (YaRN) context is documented. The vLLM recipe YAML says context_length 131072, which is stale against config.json.",
+  "source_url": "https://huggingface.co/google/gemma-4-26B-A4B-it/raw/main/config.json",
+  "support": "direct-statement"
+ },
+ "modalities": {
+  "value": "Input text and image (card: 'Supported Modalities: Text, Image'; no audio on 26B). Output text. Text-only paths: vLLM --language-model-only skips the vision encoder (recipe feature text_only). In llama.cpp, simply do not load the mmproj GGUF (it is a separate 1.19 GB file). No text-only checkpoint is published by Google.",
+  "source_url": "https://huggingface.co/google/gemma-4-26B-A4B-it/raw/main/README.md",
+  "support": "direct-statement"
+ },
+ "thinking": {
+  "mode": "toggle",
+  "how_to_toggle": "Model level: a <|think|> token at the start of the system turn enables thinking. When thinking is off, the model still emits an empty '<|channel>thought\\n<channel|>' block (card section 'Thinking Mode Configuration').\nHF chat_template.jinja sets 'enable_thinking | default(false)', so thinking is OFF by default and the template prefills the empty thought channel when it is off.\nvLLM v0.33.0: --reasoning-parser gemma4. Per request: extra_body={\"chat_template_kwargs\": {\"enable_thinking\": true}} (recipe line 521). Reasoning is returned in the 'reasoning' field.\nllama.cpp (b12418 / v1.0.0): per request \"chat_template_kwargs\": {\"enable_thinking\": true}, or reasoning_effort \"none\" to disable. Server-wide: --reasoning on|off|auto or --chat-template-kwargs '{\"enable_thinking\":true}'. --reasoning-budget N caps thinking.\nOllama v0.40.16: the API field \"think\": true|false. On the OpenAI-compatible endpoint, reasoning_effort ('none' gives false) or reasoning.effort; the output goes to message.thinking. The model config uses renderer/parser 'gemma4'.\nMulti-turn: thoughts must be dropped from history except on tool-call turns, where they are preserved. The template handles this through preserve_thinking.",
+  "source_url": "https://huggingface.co/google/gemma-4-26B-A4B-it/raw/main/chat_template.jinja",
+  "support": "direct-statement"
+ },
+ "tool_calling": {
+  "supported": "yes",
+  "format": "Native Gemma 4 tool protocol with special tokens: tools are rendered into the system turn as '<|tool>' + format_function_declaration(tool) + '<tool|>'. Calls are emitted as '<|tool_call>call:name{...}', and responses come back as tool_response turns. String values use the <|\"|> quote token.",
+  "evidence": "chat_template.jinja lines 207-213 loop over 'tools' and render each declaration, so the tool list is rendered. The card lists 'Function Calling: Native support for structured tool use'.\nvLLM v0.33.0 registers tool parser 'gemma4' -> Gemma4EngineToolParser (vllm/tool_parsers/__init__.py) and reasoning parser 'gemma4' -> Gemma4ParserReasoningAdapter.\nllama.cpp common/chat.cpp at b12418 detects the Gemma4 template by the string '<|tool_call>call:' and uses the PEG gemma4 parser. Google's QAT GGUF embeds the same 2026-07-09 canonical template, which contains that string, so --jinja tool calling works with the embedded template.\nOllama gemma4 tags carry renderer and parser 'gemma4' and the 'tools' badge.\nOpen vLLM issues: #66430 (2026-11-08, tool chat template with enable_thinking=false lacks an empty thought channel after a tool response); #54256 (parser drops tool calls when leaving the reasoning channel); #50889 (non-streaming finish_reason=tool_calls with an empty array under concurrent load); #51284 (literal quotes kept in plain-JSON args); #57231 (synthetic <|channel> leaks into content when no reasoning parser is set); #39392 (<pad> tokens under concurrency); #39072 (PI coding agent 'edit' validation failure).",
+  "source_url": "https://huggingface.co/google/gemma-4-26B-A4B-it/raw/main/chat_template.jinja",
+  "support": "direct-statement"
+ },
+ "checkpoints": [
+  {
+   "repo": "google/gemma-4-26B-A4B-it",
+   "format": "safetensors BF16 (includes vision)",
+   "size_gb": 51.61,
+   "official": true,
+   "publisher": "Google",
+   "source_url": "https://huggingface.co/api/models/google/gemma-4-26B-A4B-it?blobs=true"
+  },
+  {
+   "repo": "google/gemma-4-26B-A4B-it-qat-q4_0-gguf",
+   "format": "GGUF Q4_0 QAT (gemma-4-26B_q4_0-it.gguf 14.44 GB; expert and attention tensors Q4_0, token_embd Q6_K) + gemma-4-26B-it-mmproj.gguf 1.19 GB",
+   "size_gb": 14.44,
+   "official": true,
+   "publisher": "Google",
+   "source_url": "https://huggingface.co/api/models/google/gemma-4-26B-A4B-it-qat-q4_0-gguf?blobs=true"
+  },
+  {
+   "repo": "google/gemma-4-26B-A4B-it-qat-q4_0-unquantized",
+   "format": "safetensors BF16 QAT weights (for re-quantizing)",
+   "size_gb": 51.61,
+   "official": true,
+   "publisher": "Google",
+   "source_url": "https://huggingface.co/api/models/google/gemma-4-26B-A4B-it-qat-q4_0-unquantized?blobs=true"
+  },
+  {
+   "repo": "google/gemma-4-26B-A4B-it-assistant",
+   "format": "safetensors MTP drafter",
+   "size_gb": 0.84,
+   "official": true,
+   "publisher": "Google",
+   "source_url": "https://huggingface.co/api/models/google/gemma-4-26B-A4B-it-assistant?blobs=true"
+  },
+  {
+   "repo": "ggml-org/gemma-4-26B-A4B-it-GGUF",
+   "format": "GGUF Q4_0 14.62 / Q8_0 26.86 / BF16 50.51; mmproj BF16 1.19, Q8_0 0.81; mtp Q4_0 0.25; dflash drafter (updated 2026-11-12)",
+   "size_gb": 14.62,
+   "official": false,
+   "publisher": "ggml-org",
+   "source_url": "https://huggingface.co/api/models/ggml-org/gemma-4-26B-A4B-it-GGUF?blobs=true"
+  },
+  {
+   "repo": "unsloth/gemma-4-26B-A4B-it-qat-GGUF",
+   "format": "GGUF UD-Q4_K_XL from QAT weights + mmproj + MTP",
+   "size_gb": 14.25,
+   "official": false,
+   "publisher": "unsloth",
+   "source_url": "https://huggingface.co/api/models/unsloth/gemma-4-26B-A4B-it-qat-GGUF?blobs=true"
+  },
+  {
+   "repo": "unsloth/gemma-4-26B-A4B-it-GGUF",
+   "format": "GGUF UD-IQ2_XXS 9.92 ... UD-IQ3_XXS 11.42, UD-Q3_K_XL 12.91, UD-IQ4_XS 13.60, UD-IQ4_NL 13.61, UD-Q4_K_S 16.49, UD-Q4_K_M 16.95, MXFP4_MOE 16.55, UD-Q4_K_XL 17.01, Q8_0 26.86",
+   "size_gb": 13.6,
+   "official": false,
+   "publisher": "unsloth",
+   "source_url": "https://huggingface.co/api/models/unsloth/gemma-4-26B-A4B-it-GGUF?blobs=true"
+  },
+  {
+   "repo": "bartowski/google_gemma-4-26B-A4B-it-GGUF",
+   "format": "GGUF IQ3_M 13.28, IQ4_XS 14.21, Q4_0 14.76, IQ4_NL 14.70, Q4_K_S 15.84, Q4_K_M 17.04, Q8_0 26.86",
+   "size_gb": 14.21,
+   "official": false,
+   "publisher": "bartowski",
+   "source_url": "https://huggingface.co/api/models/bartowski/google_gemma-4-26B-A4B-it-GGUF?blobs=true"
+  },
+  {
+   "repo": "lmstudio-community/gemma-4-26B-A4B-it-QAT-GGUF",
+   "format": "GGUF QAT Q4_0 (same size as Google's) + mmproj 1.19",
+   "size_gb": 14.44,
+   "official": false,
+   "publisher": "lmstudio-community",
+   "source_url": "https://huggingface.co/api/models/lmstudio-community/gemma-4-26B-A4B-it-QAT-GGUF?blobs=true"
+  },
+  {
+   "repo": "lmstudio-community/gemma-4-26B-A4B-it-GGUF",
+   "format": "GGUF Q4_K_M 16.80 / Q6_K 22.64 / Q8_0 26.86",
+   "size_gb": 16.8,
+   "official": false,
+   "publisher": "lmstudio-community",
+   "source_url": "https://huggingface.co/api/models/lmstudio-community/gemma-4-26B-A4B-it-GGUF?blobs=true"
+  },
+  {
+   "repo": "Intel/gemma-4-26B-A4B-it-int4-AutoRound",
+   "format": "safetensors INT4 sym, group 128, auto_round:auto_gptq packing; vision BF16 1.067 GiB, text 13.24 GiB",
+   "size_gb": 15.37,
+   "official": false,
+   "publisher": "Intel",
+   "source_url": "https://huggingface.co/api/models/Intel/gemma-4-26B-A4B-it-int4-AutoRound?blobs=true"
+  },
+  {
+   "repo": "Intel/gemma-4-26B-A4B-it-int4-mixed-AutoRound",
+   "format": "safetensors INT4 mixed AutoRound",
+   "size_gb": 16.2,
+   "official": false,
+   "publisher": "Intel",
+   "source_url": "https://huggingface.co/api/models/Intel/gemma-4-26B-A4B-it-int4-mixed-AutoRound?blobs=true"
+  },
+  {
+   "repo": "RedHatAI/gemma-4-26B-A4B-it-NVFP4",
+   "format": "safetensors NVFP4 compressed-tensors (vision 1.067 GiB, text 14.22 GiB)",
+   "size_gb": 16.42,
+   "official": false,
+   "publisher": "RedHatAI",
+   "source_url": "https://huggingface.co/api/models/RedHatAI/gemma-4-26B-A4B-it-NVFP4?blobs=true"
+  },
+  {
+   "repo": "RedHatAI/gemma-4-26B-A4B-it-FP8-dynamic",
+   "format": "safetensors FP8 dynamic",
+   "size_gb": 28.64,
+   "official": false,
+   "publisher": "RedHatAI",
+   "source_url": "https://huggingface.co/api/models/RedHatAI/gemma-4-26B-A4B-it-FP8-dynamic?blobs=true"
+  },
+  {
+   "repo": "nvidia/Gemma-4-26B-A4B-NVFP4",
+   "format": "safetensors NVFP4 (ModelOpt)",
+   "size_gb": 18.79,
+   "official": false,
+   "publisher": "NVIDIA",
+   "source_url": "https://huggingface.co/api/models/nvidia/Gemma-4-26B-A4B-NVFP4?blobs=true"
+  },
+  {
+   "repo": "unsloth/gemma-4-26B-A4B-it-NVFP4",
+   "format": "safetensors NVFP4",
+   "size_gb": 16.91,
+   "official": false,
+   "publisher": "unsloth",
+   "source_url": "https://huggingface.co/api/models/unsloth/gemma-4-26B-A4B-it-NVFP4?blobs=true"
+  },
+  {
+   "repo": "cyankiwi/gemma-4-26B-A4B-it-qat-AWQ-INT4",
+   "format": "safetensors compressed-tensors pack-quantized INT4 group 32 (from QAT weights)",
+   "size_gb": 17.19,
+   "official": false,
+   "publisher": "cyankiwi",
+   "source_url": "https://huggingface.co/api/models/cyankiwi/gemma-4-26B-A4B-it-qat-AWQ-INT4?blobs=true"
+  }
+ ],
+ "vllm": {
+  "arch_supported": "Yes. vllm/model_executor/models/registry.py at tag v0.33.0 line 427 maps Gemma4ForConditionalGeneration -> gemma4_mm (also Gemma4ForCausalLM, Gemma4MTPModel, Gemma4DSparkModel). The tree also contains vllm/tool_parsers/gemma4_engine_tool_parser.py, vllm/reasoning/gemma4_engine_reasoning_parser.py and examples/tool_chat_template_gemma4.jinja.",
+  "min_version": "Recipe min_vllm_version 0.25.0 for 26B-A4B (date_updated 2026-09-27). Discovery reports general Gemma 4 support from v0.19.0 (not re-verified).",
+  "tool_call_parser": "gemma4 (Gemma4EngineToolParser, registered in vllm/tool_parsers/__init__.py at v0.33.0) with --enable-auto-tool-choice --chat-template examples/tool_chat_template_gemma4.jinja",
+  "reasoning_parser": "gemma4 (Gemma4ParserReasoningAdapter, vllm/reasoning/__init__.py at v0.33.0)",
+  "best_checkpoint": "Intel/gemma-4-26B-A4B-it-int4-AutoRound with --language-model-only (13.24 GiB of text weights). It is the only 4-bit build whose text part is under the 14.65 GiB budget, and it still leaves no useful KV pool at 0.92. RedHatAI NVFP4 text part is 14.22 GiB, NVIDIA NVFP4 18.79 GB, unsloth NVFP4 16.91 GB, cyankiwi AWQ 17.19 GB.",
+  "weights_gib": 13.24,
+  "kv_bytes_per_token_bf16": 20480,
+  "kv_math": "Per-component bytes come from safetensors header range reads.\nBudget: 16303 MiB x 0.92 = 14999 MiB = 14.65 GiB.\n\nFull-attention KV: 2 x 5 full layers x 2 KV heads x 512 head_dim x 2 B = 20480 B/token (BF16), or 10240 B/token (FP8). vLLM stores K and V separately even with k_eq_v.\nSliding-window layers: 2 x 25 x 8 x 256 x 2 B = 204800 B/token, capped at window 1024, so about 200 MiB per sequence in BF16 and 100 MiB in FP8.\n\nIntel int4 AutoRound, text-only: 14.307 - 1.067 vision = 13.24 GiB. Pool = 14.65 - 13.24 - 1.2 = 0.21 GiB (215 MiB). BF16 gives (215 - 200) MiB / 20 KiB = about 0.75k tokens. FP8 gives (215 - 100) MiB / 10 KiB = about 11.8k tokens. Unusable for OpenCode (needs 64k or more).\nWith vision included the pool goes negative (14.31 GiB of weights).\nSpeculative stretch: --gpu-memory-utilization 0.97 (15814 MiB, 15.44 GiB) gives a pool of about 1.0 GiB, so FP8 reaches about 94k tokens. This leaves only about 490 MiB of the card unallocated and depends on the 1.2 GiB reserve being right.\nRedHatAI NVFP4 text-only: 15.29 - 1.067 = 14.22 GiB, so the pool is 14.65 - 14.22 - 1.2 = -0.77 GiB: does not fit.\nNVIDIA NVFP4 (17.50 GiB) and the cyankiwi AWQ (16.01 GiB) do not fit.\nThe recipe's online --quantization int8_per_channel_weight_only (about 47% savings on 48 GiB) is about 25 GiB: does not fit.",
+  "est_max_context_tokens": 11800,
+  "fits": "no",
+  "quant_on_sm120": "Intel AutoRound int4 maps to vLLM's 'inc' method (inc.py overrides quant_method auto-round to inc). For MoE, INCWNA16MoEScheme uses AutoGPTQMoEMethod (Marlin MoE) when bits/sym are supported and check_moe_marlin_supports_layer passes, otherwise MoeWNA16. Whether Marlin accepts moe_intermediate_size 704 with group_size 128 (704/128 = 5.5) was not verified, so the fallback path is plausible. NVFP4 on sm_120 uses the b12x/FlashInfer path with the reported 52 GiB first-start JIT RAM spike (lead, not re-verified here). Open sm_120 issue #50577: a Gemma-4-12B NVFP4 shape mismatch in flashinfer_scaled_fp4_mm on an RTX 5060 Ti.",
+  "serve_command": "Not recommended on this GPU. A speculative stretch only:\ndocker run --rm --gpus all --ipc=host -p 8000:8000 -v ~/.cache/huggingface:/root/.cache/huggingface vllm/vllm-openai:v0.33.0 --model Intel/gemma-4-26B-A4B-it-int4-AutoRound --language-model-only --gpu-memory-utilization 0.97 --kv-cache-dtype fp8 --max-model-len 65536 --max-num-seqs 1 --max-num-batched-tokens 2048 --enable-prefix-caching --enable-auto-tool-choice --tool-call-parser gemma4 --reasoning-parser gemma4 --chat-template examples/tool_chat_template_gemma4.jinja\nRecipe reference (80 GB GPU): vllm serve google/gemma-4-26B-A4B-it --max-model-len 16384 --gpu-memory-utilization 0.90 --enable-auto-tool-choice --reasoning-parser gemma4 --tool-call-parser gemma4 --chat-template examples/tool_chat_template_gemma4.jinja",
+  "known_issues": "Open vLLM issues found 2026-11-15: #66430 (tool template, enable_thinking=false, after tool response); #67454 (unfinished thought in answer field); #54256 (tool calls dropped after reasoning channel); #50889 (empty tool_calls under load); #51284 (quote chars in args); #57231 (<|channel> leak without reasoning parser); #39392 (<pad> under concurrency); #49878 (about 40% KV-cache size increase for Gemma4 from v0.25.1 to v0.26); #48848 and #62340 (MTP spec-decode crashes); #50577 (NVFP4 on sm_120 RTX 5060 Ti). The recipe's RTX 5090 entry is for 32 GB, and its vram_minimum_gb 16 for NVFP4 is not credible for a 16 GB card. The recipe notes that 26B-A4B gets no W4A16 QAT because 'its small expert dimensions (704) cause excessive quality loss with 4-bit quantization'.",
+  "sources": [
+   "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/model_executor/models/registry.py",
+   "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/tool_parsers/__init__.py",
+   "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/reasoning/__init__.py",
+   "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/model_executor/models/gemma4.py",
+   "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/model_executor/layers/quantization/inc/schemes/inc_wna16_moe.py",
+   "https://github.com/vllm-project/recipes/blob/main/models/Google/gemma-4-26B-A4B-it.yaml",
+   "https://github.com/vllm-project/recipes/blob/main/Google/Gemma4.md",
+   "https://huggingface.co/api/models/Intel/gemma-4-26B-A4B-it-int4-AutoRound?blobs=true",
+   "https://huggingface.co/api/models/RedHatAI/gemma-4-26B-A4B-it-NVFP4?blobs=true",
+   "https://github.com/vllm-project/vllm/issues/66430",
+   "https://github.com/vllm-project/vllm/issues/54256",
+   "https://github.com/vllm-project/vllm/issues/49878"
+  ]
+ },
+ "llamacpp": {
+  "gguf_repo": "google/gemma-4-26B-A4B-it-qat-q4_0-gguf (identical bytes in lmstudio-community/gemma-4-26B-A4B-it-QAT-GGUF and Ollama gemma4:26b-a4b-it-qat). Alternative: unsloth/gemma-4-26B-A4B-it-qat-GGUF UD-Q4_K_XL 14.25 GB.",
+  "quant": "Q4_0 QAT (file_type 2). Experts, attention and dense FFN are Q4_0; token_embd is Q6_K; norms are F32.",
+  "file_gib": 13.45,
+  "arch_supported": "Yes. LLM_ARCH_GEMMA4 is in src/llama-arch.cpp at b12418, with src/models/gemma4.cpp, tools/mtmd/models/gemma4v.cpp and common/parsers/gemma4.cpp. Supported since April 2026 (ggml-org GGUF created 2026-04-01). Latest builds: b12419 (2026-11-15, prerelease) and the stable release v1.0.0 (2026-11-13). The CUDA flash-attention kernel has a case for head dim 512 (ggml-cuda/fattn.cu line 382), which the global layers need.",
+  "est_vram_gib": 15.3,
+  "est_ram_gib": 1,
+  "est_context_tokens": 65536,
+  "offload_plan": "From the GGUF header (range read): experts 11.964 GiB (0.399 GiB per layer), other text tensors 0.905 GiB, token_embd Q6_K 0.564 GiB. Total 13.43 GiB; the file is 14,439,363,584 B (13.45 GiB).\n\nKV cache: full-attention layers take 20480 B/token in F16 and about 10880 B/token in q8_0. The SWA cache holds window + ubatch, about 1536 cells x 204800 B = 300 MiB in F16 or 160 MiB in q8_0.\n\nPlan A, fully on GPU, text-only (no mmproj): 15.81 GiB usable (16303 MiB minus 112 MiB idle) - 13.45 weights - about 0.4 CUDA context - 0.5 to 1.0 compute buffer leaves 1.2 to 1.7 GiB for KV.\n- q8_0 KV: (1.2 to 1.7 GiB - 0.16) / 10880 B gives about 104k to 152k tokens.\n- F16 KV: about 48k to 74k tokens.\n- So -c 65536 with -ctk/-ctv q8_0 fits fully on GPU with margin. -c 131072 is borderline (inferred).\n\nPlan B, 128k to 256k: --n-cpu-moe 6 keeps 6 x 0.399 = 2.4 GiB of experts in RAM (well under the 40 GiB budget) and frees enough VRAM for 262144 tokens in q8_0 (2.66 GiB global + 0.16 GiB SWA).\n\nLoading the mmproj (1.19 GB) for images costs about 1.1 GiB of VRAM and would force Plan B. Default --fit on (fit-target 1024 MiB) may otherwise auto-shrink the context.",
+  "server_command": "docker run --rm --gpus all -p 8080:8080 -v ~/models:/models ghcr.io/ggml-org/llama.cpp:server-cuda13 -m /models/gemma-4-26B_q4_0-it.gguf --host 0.0.0.0 --port 8080 --alias gemma-4-26b-a4b -ngl 99 -c 65536 -np 1 -fa on -ctk q8_0 -ctv q8_0 --jinja --temp 1.0 --top-p 0.95 --top-k 64\nFor 128k to 256k context, add --n-cpu-moe 6 and set -c 131072 or 262144.\nThinking per request: \"chat_template_kwargs\": {\"enable_thinking\": true}. It is off by default in the template.",
+  "tool_calling_note": "Works through --jinja (default on) with the GGUF's embedded template. Google's QAT GGUF embeds the 2026-07-09 canonical template, which contains '<|tool_call>call:', so common/chat.cpp selects the specialized Gemma4 PEG parser (COMMON_CHAT_FORMAT_PEG_GEMMA4). No open llama.cpp issue matching 'gemma4 tool' was found on 2026-11-15. Reasoning is returned in reasoning_content.",
+  "sources": [
+   "https://huggingface.co/api/models/google/gemma-4-26B-A4B-it-qat-q4_0-gguf?blobs=true",
+   "https://huggingface.co/google/gemma-4-26B-A4B-it-qat-q4_0-gguf/resolve/main/gemma-4-26B_q4_0-it.gguf (header range read)",
+   "https://github.com/ggml-org/llama.cpp/blob/b12418/src/llama-arch.cpp",
+   "https://github.com/ggml-org/llama.cpp/blob/b12418/src/models/gemma4.cpp",
+   "https://github.com/ggml-org/llama.cpp/blob/b12418/common/chat.cpp",
+   "https://github.com/ggml-org/llama.cpp/blob/b12418/ggml/src/ggml-cuda/fattn.cu",
+   "https://github.com/ggml-org/llama.cpp/blob/b12418/tools/server/README.md",
+   "https://github.com/ggml-org/llama.cpp/releases/tag/v1.0.0"
+  ]
+ },
+ "ollama": {
+  "tag": "gemma4:26b-a4b-it-qat (manifest: model 14.439 GB Q4_0 + projector 1.195 GB; params temp 1, top_k 64, top_p 0.95; config renderer/parser gemma4, requires Ollama 0.30.5). The default gemma4:26b (= 26b-a4b) is Q4_K_M at 17.074 GB + 0.462 GB MTP draft + 1.195 GB projector, listed as '16GB - 19GB', and does not fit fully in 16 GB VRAM. Other tags: 26b-a4b-it-q4_K_M 18GB, 26b-a4b-it-mtp-q4_K_M 19GB, q8_0 28GB, bf16 52GB, plus MLX tags (Apple only).",
+  "size_gb": 15.63,
+  "context": "256K context window listed on every 26b tag. Ollama defaults to 4k on GPUs under 24 GiB, so set num_ctx / OLLAMA_CONTEXT_LENGTH to 65536 or more. OLLAMA_FLASH_ATTENTION=1 plus OLLAMA_KV_CACHE_TYPE=q8_0 is needed to fit. The projector loads too, so expect partial CPU offload at 64k.",
+  "capabilities": "Family badges on the library page: vision, tools, thinking, audio, cloud (audio applies to e2b/e4b/12b only). Tags show 'Text, Image input'. The library page offers 'ollama launch opencode --model gemma4'. Thinking toggle: API 'think': true/false; OpenAI-compatible reasoning_effort ('none' = off).",
+  "source_url": "https://ollama.com/library/gemma4/tags ; https://registry.ollama.ai/v2/library/gemma4/manifests/26b-a4b-it-qat"
+ },
+ "benchmarks": [
+  {
+   "name": "Tau2 (average over 3)",
+   "score": "68.2%",
+   "setting": "Google card, instruction-tuned, thinking",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/google/gemma-4-26B-A4B-it/raw/main/README.md"
+  },
+  {
+   "name": "LiveCodeBench v6",
+   "score": "77.1%",
+   "setting": "Google card",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/google/gemma-4-26B-A4B-it/raw/main/README.md"
+  },
+  {
+   "name": "Codeforces ELO",
+   "score": "1718",
+   "setting": "Google card",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/google/gemma-4-26B-A4B-it/raw/main/README.md"
+  },
+  {
+   "name": "MRCR v2 8-needle 128k",
+   "score": "44.1%",
+   "setting": "Google card, long-context",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/google/gemma-4-26B-A4B-it/raw/main/README.md"
+  },
+  {
+   "name": "SWE-bench Verified",
+   "score": "57.40",
+   "setting": "NVIDIA consistent harness (NeMo Evaluator), Nemotron 3.5 Lightning card; same table: Qwen3.6-35B-A3B 70.12, gpt-oss-20b 52.44",
+   "self_reported": false,
+   "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/raw/main/README.md"
+  },
+  {
+   "name": "Terminal-Bench 2.1",
+   "score": "37.22",
+   "setting": "NVIDIA consistent harness; Qwen3.6-35B-A3B 44.38, gpt-oss-20b 15.17",
+   "self_reported": false,
+   "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/raw/main/README.md"
+  },
+  {
+   "name": "SWE-bench Multilingual",
+   "score": "43.40",
+   "setting": "NVIDIA consistent harness",
+   "self_reported": false,
+   "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/raw/main/README.md"
+  },
+  {
+   "name": "SWE-bench Verified",
+   "score": "17.4",
+   "setting": "Qwen3.6-35B-A3B card, Qwen internal agent scaffold (bash + file-edit tools), temp 1.0, 200K ctx; competitor-run (Qwen3.6-35B-A3B 73.4 in same table)",
+   "self_reported": false,
+   "source_url": "https://huggingface.co/Qwen/Qwen3.6-35B-A3B/raw/main/README.md"
+  },
+  {
+   "name": "SWE-bench Pro",
+   "score": "13.8",
+   "setting": "Qwen3.6 card, Qwen internal scaffold on Qwen-refined Pro set",
+   "self_reported": false,
+   "source_url": "https://huggingface.co/Qwen/Qwen3.6-35B-A3B/raw/main/README.md"
+  },
+  {
+   "name": "Terminal-Bench 2.0",
+   "score": "34.2",
+   "setting": "Qwen3.6 card, Harbor/Terminus-2, avg of 5 runs, 256K ctx",
+   "self_reported": false,
+   "source_url": "https://huggingface.co/Qwen/Qwen3.6-35B-A3B/raw/main/README.md"
+  },
+  {
+   "name": "TAU3-Bench",
+   "score": "59.0",
+   "setting": "Qwen3.6 card, official user model gpt-5.2",
+   "self_reported": false,
+   "source_url": "https://huggingface.co/Qwen/Qwen3.6-35B-A3B/raw/main/README.md"
+  },
+  {
+   "name": "SWE-bench Verified",
+   "score": "35.80",
+   "setting": "Kwaipilot KAT-Coder-V2.5-Dev card, in-house vLLM/SGLang deploy, agent claude_code@2.1.195, 256k ctx, single run; notes context overflow and hallucinated MultiEdit calls degrade Gemma4-26B",
+   "self_reported": false,
+   "source_url": "https://huggingface.co/Kwaipilot/KAT-Coder-V2.5-Dev/raw/main/README.md"
+  },
+  {
+   "name": "Terminal-Bench 2.1",
+   "score": "20.94 (Terminus-2 27.27 / Claude Code 14.60)",
+   "setting": "KAT card in-house pipeline",
+   "self_reported": false,
+   "source_url": "https://huggingface.co/Kwaipilot/KAT-Coder-V2.5-Dev/raw/main/README.md"
+  },
+  {
+   "name": "SWE-bench Pro",
+   "score": "9.58",
+   "setting": "KAT card in-house, claude_code harness",
+   "self_reported": false,
+   "source_url": "https://huggingface.co/Kwaipilot/KAT-Coder-V2.5-Dev/raw/main/README.md"
+  },
+  {
+   "name": "Artificial Analysis Intelligence Index v5.0.1",
+   "score": "null (not scored); API output speed 71 tok/s, TTFA 25.88 s",
+   "setting": "Artificial Analysis model page, provider APIs",
+   "self_reported": false,
+   "source_url": "https://artificialanalysis.ai/models/gemma-4-26b-a4b"
+  }
+ ],
+ "speed_notes": "No measured RTX 50-series or RTX 5080 Laptop numbers for this model were found: searches of the llama.cpp and vLLM issue trackers for '5080' or '5090' with gemma 26B returned nothing, so all figures below are inferred bandwidth arithmetic.\n\nPer-token reads from the GGUF tensor sizes:\n- 8 of 128 experts: 11.964 GiB x 8/128 = 0.748 GiB\n- Non-expert text tensors: 0.905 GiB\n- Tied output head (Q6_K): 0.564 GiB\n- Total: about 2.22 GiB (2.38 GB) per token, plus KV reads.\n\nGPU ceiling at 896 GB/s is about 375 tok/s. Real decode is typically 40 to 60% of that, so roughly 150 to 220 tok/s on a 140 W laptop part (inferred).\n\nWith --n-cpu-moe 6, about 0.16 GB per token comes from DDR5 at about 80 GB/s (about 2 ms) on top of about 2.4 ms on the GPU. That gives a ceiling of about 225 tok/s, realistically about 100 to 150 tok/s (inferred).\n\nPrefill on long OpenCode prompts (30k+ tokens of system prompt and tools) dominates time to first token. Only 5 of 30 layers are global, so long-context prefill is cheaper than for a dense 256K model.\n\nFor comparison, Artificial Analysis measures 71 tok/s median over cloud API providers. That figure is not local.",
+ "opencode_fit": {
+  "verdict": "good",
+  "recommended_runtime": "llama.cpp server (ghcr.io/ggml-org/llama.cpp:server-cuda13, build b12418+ or v1.0.0) with --jinja; Ollama gemma4:26b-a4b-it-qat as second choice; not vLLM on 16 GB",
+  "recommended_checkpoint": "google/gemma-4-26B-A4B-it-qat-q4_0-gguf (gemma-4-26B_q4_0-it.gguf, 14.44 GB), text-only (no mmproj)",
+  "recommended_context": "65536 fully on GPU with -ctk/-ctv q8_0 -fa on -np 1; 131072-262144 with --n-cpu-moe 6 (about 2.4 GiB of experts in RAM)",
+  "caveats": "1) Agentic coding evidence conflicts. NVIDIA's harness gives SWE-bench Verified 57.4 and Terminal-Bench 2.1 37.2 (above gpt-oss-20b, below Qwen3.6-35B-A3B). Qwen's own scaffold gives 17.4 and KAT's Claude Code harness gives 35.8; KAT blames context overflow and hallucinated MultiEdit calls. Google publishes no SWE-bench, Terminal-Bench or BFCL numbers, only Tau2 68.2. Expect sensitivity to the tool set, and test with OpenCode's edit tools.\n2) Thinking is off by default in the template. Enable it per request with chat_template_kwargs.enable_thinking. Keep the latest template (2026-07-09); several vLLM parser bugs around the thought channel and tool calls are still open (#66430, #54256, #50889).\n3) The 64k fully-on-GPU figure is inferred arithmetic, not measured. A desktop compositor on the dGPU or loading the mmproj reduces it.\n4) OpenCode v2.3.0 must have tools enabled for the custom provider (capabilities.tools). Open issue #60202 about tool_choice applies.\n5) Ollama's default 4k context and its default gemma4:26b tag (Q4_K_M, 17 GB) are both wrong for this card. Use the qat tag and set num_ctx.\n6) Sampling: temp 1.0, top_p 0.95, top_k 64."
+ },
+ "gaps": [
+  "No measured tokens/s or VRAM usage for this model on any RTX 50-series GPU; all speed and context numbers are bandwidth and size arithmetic.",
+  "llama.cpp compute-buffer size for Gemma 4 (262k vocab) at -c 65536 was not measured; the 0.5-1.0 GiB assumption drives the 64k vs 128k fully-on-GPU boundary.",
+  "Whether vLLM v0.33.0 Marlin MoE accepts Intel AutoRound int4 with group_size 128 on moe_intermediate_size 704 (not divisible) was not verified; the kernel path for that checkpoint on sm_120 is therefore unknown.",
+  "Discovery's claim that Gemma 4 support first landed in vLLM v0.19.0 was not re-verified (the recipe gives min 0.25.0 for 26B-A4B).",
+  "No QAT-vs-BF16 quality numbers for the 26B-A4B Q4_0 QAT GGUF are published on Google's QAT card.",
+  "Google publishes no SWE-bench, Terminal-Bench, BFCL or Aider numbers for Gemma 4; official SWE-bench and BFCL leaderboards do not list it. Artificial Analysis shows Intelligence Index null for it.",
+  "Ollama runtime behaviour (whether it keeps the projector on GPU and how it splits layers at num_ctx 65536 on 16 GB) was not established.",
+  "The default reasoning on/off behaviour of Ollama's built-in gemma4 renderer (versus the HF template default false) was not confirmed."
+ ]
+}

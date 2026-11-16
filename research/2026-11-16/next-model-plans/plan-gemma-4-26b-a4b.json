@@ -1,0 +1,152 @@
+{
+ "key": "gemma-4-26b-a4b",
+ "repo": "google/gemma-4-26B-A4B-it-qat-q4_0-gguf",
+ "file": "gemma-4-26B_q4_0-it.gguf",
+ "size_bytes": 14439363584,
+ "header_ok": true,
+ "header_facts": "arch gemma4, GGUF v3, 658 tensors, header 15.8 MB (fetched 32 MiB to $SCRATCH/headers/gemma-4-26b-a4b/head.gguf). 30 blocks, all MoE (no dense-only blocks): 128 experts, 8 used, expert FFN 704 (fused ffn_gate_up_exps), plus a dense FFN 2112 in every block. Attention: sliding_window 1024, pattern 5 SWA : 1 global, global layers 5,11,17,23,29. SWA layers: 8 KV heads, head 256 (K and V). Global layers: 2 KV heads, head 512, no attn_v tensor (V = K, gemma4.cpp:279-281), but the cache still stores V. 16 Q heads, n_embd 2816, native context 262144, rope base 1e6 global / 1e4 SWA, final logit softcap 30. Vocab 262144. Types: Q4_0 12.83 GiB, Q6_K 0.56 GiB (token_embd), F32 0.04. Experts 11.964 GiB = 0.3988 GiB (408.4 MiB) per block. Other block tensors 0.905 GiB (926.7 MiB). token_embd 0.564 GiB (577.5 MiB) Q6_K. There is NO output.weight: gemma4.cpp:58-61 creates output from token_embd with TENSOR_DUPLICATED, and llama-model-loader.cpp:1261 maps it to the OUTPUT layer, so with -ngl all a second 577.5 MiB copy sits on the GPU while the input copy stays on the host. Non-expert GPU weights are therefore 1.469 GiB (926.7 + 577.5 MiB), not the 0.905 the script prints. GGUF sampling metadata: temp 1.0, top_p 0.95, top_k 64. The embedded chat template is the 2026-07-09 Google canonical template (18,681 chars).",
+ "kv_math": "The gguf_plan.py KV line (15.938 GiB) is wrong for this model because it treats all 30 layers as 8 heads x 1024. By hand: the global KV is 5 layers x 2 heads x (512 K + 512 V) = 10,240 elements per token, so 20,480 B/token in f16 and 10,880 B in q8_0. SWA cache at b12407 (llama-kv-cache-iswa.cpp:73): size_swa = PAD(min(n_ctx, n_swa*1 + n_ubatch), 256) = PAD(min(ctx, 1024+512), 256) = 1536 cells. SWA bytes = 25 layers x 1536 x 8 heads x (256+256) = 157.3M elements, so 300.0 MiB f16 and 159.4 MiB q8_0, fixed for any ctx >= 1536 without --swa-full. Totals at 131072 f16: global 20,480 x 131072 = 2,560 MiB, plus 300 MiB SWA, 2,860 MiB in all. At 131072 q8_0: 1,360 + 159.4 = 1,519 MiB, plus the FA f16 temporaries. On CUDA, head size 512 has no vector FA kernel (fattn.cu: FATTN_VEC_CASES_ALL_D covers 64/128/256 only; case 512 requires the MMA path), so quantized global K/V are converted to f16 in the CUDA pool, one layer at a time: 2 heads x 512 x 2 B x 2 (K,V) = 4,096 B per context token. That is 256 MiB at 64k and 512 MiB at 128k, and it applies on every decode step too. Hence q8_0 at 128k is 2,031 MiB against 2,860 for f16. At 65536 q8_0: 680 + 159.4 + 256 = 1,095 MiB. No recurrent state. Host-side context checkpoints for SWA (server-context.cpp:4427, PARTIAL_ONLY saves only the SWA cache) are up to 300 MiB each in f16 (159 in q8_0), with a default of 32 per slot.",
+ "recommended": {
+  "context": 131072,
+  "kv_type": "f16",
+  "n_cpu_moe": 9,
+  "moe_cache_mib": 1408,
+  "load_mode": "none",
+  "threads": 8,
+  "vram_breakdown": "Experts of blocks 9-29: 21 x 408.4 = 8,575.8 MiB. Other block weights 926.7. Tied output copy of token_embd (Q6_K) 577.5. MoE cache 1,408. Global KV f16 2,560. SWA KV f16 300.0. CUDA context and compute 850 (the 0.8 GiB basis plus about 27 MiB for the larger logits buffer: 262144 x 512 x 4 B = 512 MiB, against 485 MiB for the 248k vocab; no FA conversion pool with f16 KV). llama.cpp total 15,198 MiB, plus 112 MiB desktop, gives a nvidia-smi peak of 15,310 MiB. All-GPU check: --n-cpu-moe 0 at 64k q8_0 needs 12,251 + 926.7 + 577.5 + 680 + 159.4 + 256 + 850 + 112 = 15,813 MiB, only 28 MiB under the 15,841 CUDA ceiling. Fully on the GPU with 500 MiB free works only up to about 32k (q8_0), below the OpenCode 64k floor.",
+  "predicted_peak_mib": 15310,
+  "predicted_free_mib": 531,
+  "memory_cap": "20g",
+  "predicted_container_ram_gib": 11.5,
+  "server_args": [
+   "-m",
+   "MODEL_PATH",
+   "--alias",
+   "local",
+   "-ngl",
+   "all",
+   "--n-cpu-moe",
+   "9",
+   "--moe-cache-mib",
+   "1408",
+   "-lm",
+   "none",
+   "-t",
+   "8",
+   "-fa",
+   "on",
+   "-c",
+   "131072",
+   "-ctk",
+   "f16",
+   "-ctv",
+   "f16",
+   "-np",
+   "1",
+   "--jinja",
+   "-ctxcp",
+   "16",
+   "--reasoning",
+   "off",
+   "--temp",
+   "1.0",
+   "--top-p",
+   "0.95",
+   "--top-k",
+   "64"
+  ]
+ },
+ "alternative": "Same launch with --n-cpu-moe 12 --moe-cache-mib 2624, which moves 3 more blocks (1,225 MiB) into the cache, as in the Qwen3.6 21 to 25 test. Predicted nvidia-smi peak 15,301 MiB (free 540), pinned experts 4.79 GiB. Expect equal or slightly faster decode and a little slower prefill.",
+ "thinking": "Toggle. The template (2026-07-09, embedded) sets enable_thinking | default(false), so it is off by default; --reasoning off makes that explicit (arg.cpp:3749 sets default_template_kwargs enable_thinking=false). Per request, send chat_template_kwargs {\"enable_thinking\": true}, which adds <|think|> to the system turn; the Gemma 4 PEG parser (common/parsers/gemma4.cpp:304-307) extracts <|channel>thought ... <channel|> into reasoning_content. Do not use reasoning_effort \"none\" to switch it off on Gemma 4: #30759 (open) reports that it does not reliably propagate. Use enable_thinking false.",
+ "per_request_thinking_on": "{\"chat_template_kwargs\": {\"enable_thinking\": true}}",
+ "tool_calling": "Native Gemma 4 tool tokens. At b12407, common/chat.cpp:1400 selects common_chat_params_init_gemma4 when the template contains the literal '<|tool_call>call:' (present once in this GGUF's template), giving the format peg-gemma4 (chat.cpp:1022), parsed by common/parsers/gemma4.cpp, which also lets a tool call start before the thought channel closes. Results come back as OpenAI tool_calls. Keep the embedded 2026-07-09 template. Open risks: #29655 (multi-line streaming arguments) and #32362 (opened 2026-11-15 on b12426: streaming leaks raw <|channel>thought and <|tool_call> tokens into content on editor-style calls, Unsloth 26B QAT file). Test OpenCode write and edit on a multi-line change.",
+ "sampling": "temperature 1.0, top_p 0.95, top_k 64, from the model card (google/gemma-4-26B-A4B-it README lines 366-368) and the GGUF general.sampling.* metadata. The card gives no min_p or penalties, so llama.cpp defaults apply. The same values apply with thinking on or off.",
+ "opencode_entry": "{\"gemma-4-26b-a4b\": {\"modelID\": \"local\", \"name\": \"Gemma 4 26B-A4B QAT Q4_0 (llama.cpp)\", \"capabilities\": {\"tools\": true, \"input\": [\"text\"], \"output\": [\"text\"], \"reasoning\": {\"supported\": true}}, \"limit\": {\"context\": 131072, \"output\": 16384}, \"variants\": [{\"id\": \"thinking\", \"body\": {\"chat_template_kwargs\": {\"enable_thinking\": true}}}, {\"id\": \"none\", \"body\": {\"chat_template_kwargs\": {\"enable_thinking\": false}}}]}}",
+ "probe_long_tokens": "8000,30000,100000",
+ "expected_speed": "About 120-170 tok/s decode at a short context, about 110-150 after 30k and about 90-120 after 100k, with prefill about 2,000-3,000 tok/s at 8k (all inferred). Reasoning: active reads per token are 8 experts x 3.19 MiB x 30 blocks = 766 MiB, plus 927 MiB of other weights and 577.5 MiB of the Q6_K output head, about 2.38 GB in all, which caps decode near 376 tok/s at 896 GB/s. At the 40-45% efficiency seen with gpt-oss-20b (166 tok/s) that gives about 150-170. Of the host experts, 9 x 128 = 1,152 (3.6 GiB) are covered 38% by the 1,408 MiB cache, against 30% for Qwen3.6, which had an 83% hit rate. So misses should cost under 1 ms per token over PCIe 5.0 from pinned memory. With f16 KV, the head-512 MMA reads about 20 KB per context token (5 layers), about 2 GB per token at 100k, or about 2.3 ms. q8_0 would add conversion traffic, about 5 GB at 100k. Prefill uploads 3.6 GiB of experts per 512-token ubatch (#25859), about 75 ms, which overlaps with compute.",
+ "issues": [
+  {
+   "id": "29655",
+   "state": "open (updated 2026-11-03)",
+   "note": "Gemma 4 tool calls unstable with multi-line streaming arguments; hits OpenCode write/edit."
+  },
+  {
+   "id": "32362",
+   "state": "open (created 2026-11-15, 0 comments)",
+   "note": "Gemma 4 26B-A4B QAT (Unsloth UD-Q4_K_XL) on b12426 leaks raw thought and tool-call tokens into streamed content during editor tool calls; not in the KB."
+  },
+  {
+   "id": "30759",
+   "state": "open",
+   "note": "Gemma 4 thinking control: reasoning_effort none does not disable thinking reliably; use enable_thinking."
+  },
+  {
+   "id": "30256",
+   "state": "open",
+   "note": "json_schema/response_format grammar allows a thought channel although enable_thinking is false."
+  },
+  {
+   "id": "27330",
+   "state": "open",
+   "note": "CUDA graphs hang on sm_120 laptops; keep GGML_CUDA_DISABLE_GRAPHS=1."
+  },
+  {
+   "id": "27623",
+   "state": "open",
+   "note": "q8_0 KV decode penalty from f16 conversion; worse here because head 512 has no vec FA kernel, so the conversion runs every decode step on all 5 global layers. Reason for f16 KV."
+  },
+  {
+   "id": "PR 31802",
+   "state": "open (updated 2026-11-15)",
+   "note": "Fused q8_0 KV dequant in MMA FA; not in b12407."
+  },
+  {
+   "id": "31974",
+   "state": "open",
+   "note": "CUDA VMM-pool OOM during prefill aborts the server; the predicted 531 MiB free is the guard."
+  },
+  {
+   "id": "25859",
+   "state": "open",
+   "note": "Serial expert H2D copies slow offloaded prefill; 9 blocks offloaded, pinned with -lm none."
+  }
+ ],
+ "kb_discrepancies": [
+  "The claim that it 'fits entirely on the GPU at 64k with q8_0' (models.md section 5 intro, At-a-glance row 5: n-cpu-moe 0, GPU 15.2-15.7 GiB, 16g) is wrong. The GGUF has no output.weight, so gemma4.cpp:58-61 duplicates token_embd as the output head and llama-model-loader.cpp:1261 places it in the output layer on the GPU: an extra 577.5 MiB that the estimate left out. The predicted nvidia-smi peak at 64k q8_0 all-GPU is 15,813 MiB, 28 MiB under the CUDA ceiling and about 470 MiB over the 15,341 target; a long prompt that grows the FA pool would likely abort (#31974). All-GPU with 500 MiB free reaches only about 32k.",
+  "The memory estimate uses '15.81 GiB usable' and '0.4 GiB CUDA context + 0.5-1.0 compute'. Measured on 2026-11-16, CUDA can use 15,841 MiB (15.47 GiB), and the overhead is about 0.8 GiB for a 248k-vocab model.",
+  "'q8_0 is required at 64k' is stale. With the offload plus MoE cache that Qwen3.6 validated, f16 fits at 128k (peak 15,310 MiB) and avoids the q8_0 to f16 conversion. That conversion costs more on this model because head size 512 has no vector FA kernel in ggml-cuda/fattn.cu at b12407, so every decode step converts all 5 global layers.",
+  "The 128k advice '--n-cpu-moe 6' predates -lm none and --moe-cache-mib. Per the Qwen3.6 finding, spare VRAM should go to the cache. The recommended 128k f16 split is --n-cpu-moe 9 with --moe-cache-mib 1408 and -lm none -t 8.",
+  "The memory cap of 16g and the RAM plan leave out SWA context checkpoints. At b12407 the server checkpoints SWA models (server-context.cpp:4427, n_swa > 0), each checkpoint holds the SWA cache (300 MiB f16 / 159 MiB q8_0), and the default is 32 per slot (common.h:661), up to 9.4 GiB f16. The recommended -ctxcp 16 and --memory 20g cover this.",
+  "Tool calling: the chat.cpp link points to b12418, while the image is b12407. Detection is verified at b12407 chat.cpp:1400 with the parser in common/parsers/gemma4.cpp. The open-issues list misses #32362 (2026-11-15, raw thought and tool tokens leak in streaming on the 26B QAT), #30759 (reasoning_effort none ineffective on Gemma 4) and #30256.",
+  "The recipe passes -e HF_TOKEN, but the repo is not gated (HF API gated=false, lastModified 2026-07-17). The SHA-256 of gemma-4-26B_q4_0-it.gguf is 3eca3b8f6d7baf218a7dd6bba5fb59a56ee25fe2d567b6f5f589b4f697eca51d.",
+  "Confirmed as correct: size 14,439,363,584 B, Q4_0 experts, attention and dense FFN with Q6_K token_embd, 0.399 GiB per block, global KV 20,480 B/token f16 and 10,880 B q8_0 (V is stored even though global layers have no attn_v), SWA cache about 0.16 GiB in q8_0 (1536 cells), f16 temporaries about 256 MiB at 64k, the 2026-07-09 template, thinking off by default, and the sampling values.",
+  "Tooling note: gguf_plan.py prints a 15.9 GiB KV figure (all layers as 8 heads x 1024) and 0.000 output, so its GPU table under-counts by the 577.5 MiB tied head and should not be used for this model."
+ ],
+ "risks": [
+  "The overhead of 850 MiB is extrapolated from Qwen (248k vocab, head 256). Gemma's head-512 MMA FA and 262k-vocab softcapped logits may need more; if the load log shows a compute buffer above about 0.95 GiB, lower --moe-cache-mib first.",
+  "First use of --moe-cache-mib on Gemma 4 and on an SWA model; the hit rate is unknown (run with -lv 4 once to log it).",
+  "server-context.cpp:2782 has a TODO saying SWA checkpoint ranges are computed incorrectly. Watch timings.cache_n for unexpected full re-prefills in OpenCode sessions.",
+  "Tool-call robustness (#29655, #32362) and empty turns deep in agent loops (seen in the LibreDB harness) matter more than speed for this model. Run the multi-line OpenCode edit test.",
+  "If the f16 margin proves tight, the fallback is q8_0 KV with --n-cpu-moe 8 --moe-cache-mib 1792 (predicted peak 15,274 MiB), at the cost of decode speed at long context from the conversion (#27623, PR #31802 open).",
+  "-lm none puts 3.59 GiB of experts and the 0.56 GiB token_embd in anonymous pinned memory, counted against --memory 20g with the 8 GiB prompt cache and up to 4.7 GiB of checkpoints (worst case about 18.9 GiB).",
+  "Do not pass --mmproj. The repo also holds a 1.19 GB mmproj; with -m it is not auto-loaded, and adding it would cost about 1.1 GiB of VRAM."
+ ],
+ "sources": [
+  "GGUF header: https://huggingface.co/google/gemma-4-26B-A4B-it-qat-q4_0-gguf/resolve/main/gemma-4-26B_q4_0-it.gguf (bytes 0-33554431), saved at $SCRATCH/headers/gemma-4-26b-a4b/head.gguf, template at $SCRATCH/headers/gemma-4-26b-a4b/template.jinja",
+  "HF API: https://huggingface.co/api/models/google/gemma-4-26B-A4B-it-qat-q4_0-gguf?blobs=true",
+  "Model card: https://huggingface.co/google/gemma-4-26B-A4B-it/raw/main/README.md (lines 165, 177, 366-368)",
+  "https://github.com/ggml-org/llama.cpp/blob/b12407/src/models/gemma4.cpp (lines 58-61, 279-281)",
+  "https://github.com/ggml-org/llama.cpp/blob/b12407/src/llama-model-loader.cpp (lines 1257-1263, 1311-1318)",
+  "https://github.com/ggml-org/llama.cpp/blob/b12407/src/llama-kv-cache-iswa.cpp (line 73)",
+  "https://github.com/ggml-org/llama.cpp/blob/b12407/ggml/src/ggml-cuda/fattn.cu (vec cases 64/128/256 only; case 512 MMA)",
+  "https://github.com/ggml-org/llama.cpp/blob/b12407/src/llama-context.cpp (lines 354, 850: worst-case outputs = n_batch)",
+  "https://github.com/ggml-org/llama.cpp/blob/b12407/common/chat.cpp (lines 1022, 1399-1402)",
+  "https://github.com/ggml-org/llama.cpp/blob/b12407/common/parsers/gemma4.cpp (lines 304-345)",
+  "https://github.com/ggml-org/llama.cpp/blob/b12407/common/arg.cpp (lines 1669, 1677, 1695, 2662, 2738-2770, 3749)",
+  "https://github.com/ggml-org/llama.cpp/blob/b12407/common/common.h (lines 661-664)",
+  "https://github.com/ggml-org/llama.cpp/blob/b12407/tools/server/server-context.cpp (lines 2776-2786, 4417-4430)",
+  "https://github.com/ggml-org/llama.cpp/blob/b12407/docs/moe-cache.md",
+  "gh api repos/ggml-org/llama.cpp/issues/{29655,32362,30759,30256,27330,27623,31802,31974,25859} read 2026-11-16",
+  "$HOME/projects/llm/llamacpp/models.md sections 2 and 5; $HOME/projects/llm/llamacpp/README.md; $HOME/projects/llm/docs/opencode.md"
+ ]
+}

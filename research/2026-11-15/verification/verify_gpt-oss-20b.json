@@ -1,0 +1,281 @@
+{
+ "name": "gpt-oss-20b",
+ "hf_repo": "openai/gpt-oss-20b",
+ "within_last_12_months": false,
+ "official_org": {
+  "value": "OpenAI. HF org 'openai' has isVerified=true (HF API /api/organizations/openai/overview). The card links the OpenAI blog (openai.com/index/introducing-gpt-oss/) and the arXiv model card 2508.10925 authored by OpenAI. No newer gpt-oss chat checkpoint exists in the org: the only later gpt-oss repos are gpt-oss-safeguard-20b/120b (2025-09-18, safety classifiers).",
+  "source_url": "https://huggingface.co/api/organizations/openai/overview",
+  "support": "direct-statement"
+ },
+ "release_date": {
+  "value": "2025-08-05. HF createdAt is 2025-08-04T22:33:29Z and lastModified is 2025-08-26. The arXiv model card is dated 'August 5, 2025' (openai.com returned 403 to a raw read). This is outside the 2025-11-15..2026-11-15 window. It is still the family's current release.",
+  "source_url": "https://huggingface.co/api/models/openai/gpt-oss-20b",
+  "support": "direct-statement"
+ },
+ "license": {
+  "value": "apache-2.0 (card YAML 'license: apache-2.0'; LICENSE file in repo). The repo also has a USAGE_POLICY file (200 bytes). The arXiv card says the models are released 'under the Apache 2.0 license and our gpt-oss usage policy'. No copyleft or field-of-use restriction appears in the license itself.",
+  "source_url": "https://huggingface.co/openai/gpt-oss-20b/raw/main/README.md",
+  "support": "direct-statement"
+ },
+ "params": {
+  "value": "21B total / 3.6B active (card). The HF API safetensors total is 20,914,757,184: 1,804,459,584 BF16 parameters (attention, router, embeddings, lm_head) plus the MXFP4 expert blocks counted as U8. The llama.cpp bench reports 20.91 B.",
+  "source_url": "https://huggingface.co/api/models/openai/gpt-oss-20b?blobs=true",
+  "support": "direct-statement"
+ },
+ "architecture": {
+  "value": "GptOssForCausalLM (model_type gpt_oss). MoE transformer with 24 layers, hidden 2880, 32 experts with 4 active per token (intermediate 2880, SwiGLU with swiglu_limit 7.0). GQA uses 64 query heads, 8 KV heads and head_dim 64, with learned attention sinks. layer_types alternates sliding_attention (window 128) and full_attention, giving 12 full and 12 sliding layers. RoPE theta 150000 with YaRN factor 32 over an original 4096. MoE weights are MXFP4 (quant_method mxfp4). Attention, router, embed_tokens and lm_head are left unquantized in BF16. Vocabulary is 201088 (o200k_harmony).",
+  "source_url": "https://huggingface.co/openai/gpt-oss-20b/raw/main/config.json",
+  "support": "direct-statement"
+ },
+ "context_length": {
+  "value": "131072 native (max_position_embeddings 131072 via YaRN from 4096; the arXiv card says the context of dense layers is extended to 131,072 with YaRN). No longer extension exists. Ollama lists 128K.",
+  "source_url": "https://huggingface.co/openai/gpt-oss-20b/raw/main/config.json",
+  "support": "direct-statement"
+ },
+ "modalities": {
+  "value": "Text in, text out only. The arXiv card calls them 'text-only models', and Ollama shows 'Text input'. No vision tower exists, so the whole checkpoint is the text path.",
+  "source_url": "https://arxiv.org/html/2508.10925v1",
+  "support": "direct-statement"
+ },
+ "thinking": {
+  "mode": "always",
+  "how_to_toggle": "Reasoning cannot be turned off. Only the level is adjustable: low, medium or high, with medium as the default. The template renders 'Reasoning: ' + reasoning_effort and defaults to medium (chat_template.jinja lines 203-206). The card says to set it in the system prompt, e.g. 'Reasoning: high'.\n\nvLLM v0.33.0: send the request field reasoning_effort set to low, medium or high. The Harmony path accepts only those three (REASONING_EFFORT dict in vllm/entrypoints/openai/parser/harmony_utils.py). Any other value, such as none, minimal, xhigh or max, raises VLLMValidationError (HTTP 400). Use the new --reasoning-effort-map flag (vllm/entrypoints/common/cli_args.py) to rewrite client values, e.g. '{\"none\":\"low\",\"minimal\":\"low\",\"xhigh\":\"high\",\"max\":\"high\"}'. Reasoning text is returned in the reasoning field. The recipe also notes include_reasoning: false to hide it.\n\nllama.cpp b12418: send the per-request field reasoning_effort, or set the server default with --reasoning-effort high or --chat-template-kwargs '{\"reasoning_effort\":\"high\"}' (llama.cpp gpt-oss guide). The server README says reasoning_effort 'none' disables thinking generically, but the gpt-oss template was not trained for that, so treat it as unsupported (inferred).\n\nOllama v0.40.16: the think field takes 'low', 'medium' or 'high'. /api/show reports values [low, medium, high] with default medium, and 'Unsupported names use the model default', so think:false does not turn reasoning off (inferred from the thinking.mdx doc at v0.40.16).",
+  "source_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/entrypoints/openai/parser/harmony_utils.py",
+  "support": "direct-statement"
+ },
+ "tool_calling": {
+  "supported": "yes",
+  "format": "Harmony: the tools are rendered as a TypeScript-like namespace 'functions' in the developer message. Calls go to the commentary channel as '<|start|>assistant<|channel|>commentary to=functions.NAME <|constrain|>json<|message|>{...}<|call|>'.",
+  "evidence": "The card's Highlights list 'native capabilities for function calling'. The chat template accepts 'tools', renders '# Tools' plus render_tool_namespace('functions', tools) in the developer message (chat_template.jinja lines 243-252), and adds 'Calls to these tools must go to the commentary channel: functions' to the system message.\n\nvLLM recipe: '--tool-call-parser openai --enable-auto-tool-choice'. It also states 'For function calling, only tool_choice=\"auto\" is supported'. Open issue vllm#44216 says tool_choice='required' is silently ignored.\n\nllama.cpp b12418 has a dedicated gpt-oss handler (common/parsers/gpt-oss.cpp). It builds a grammar from the tools, honours tool_choice none, auto and required, and makes the grammar non-lazy when required.",
+  "source_url": "https://huggingface.co/openai/gpt-oss-20b/raw/main/chat_template.jinja",
+  "support": "direct-statement"
+ },
+ "checkpoints": [
+  {
+   "repo": "openai/gpt-oss-20b",
+   "format": "safetensors, native MXFP4 MoE plus BF16 attention and embeddings: 3 shards totalling 13,761,316,904 bytes (12.82 GiB). The repo also holds original/model.safetensors (13.76 GB) and metal/model.bin (13.75 GB), which are not needed for vLLM.",
+   "official": true,
+   "publisher": "OpenAI",
+   "size_gb": 13.76,
+   "source_url": "https://huggingface.co/api/models/openai/gpt-oss-20b?blobs=true"
+  },
+  {
+   "repo": "ggml-org/gpt-oss-20b-GGUF",
+   "format": "GGUF gpt-oss-20b-MXFP4.gguf (llama.cpp bench reports 11.27 GiB). The repo also has eagle3-gpt-oss-20b-Q8_0.gguf (0.92 GB) and BF16 (1.72 GB) draft models. It was updated on 2026-11-12.",
+   "official": false,
+   "publisher": "ggml-org (llama.cpp maintainers; the gpt-oss guide recommends it)",
+   "size_gb": 12.11,
+   "source_url": "https://huggingface.co/api/models/ggml-org/gpt-oss-20b-GGUF?blobs=true"
+  },
+  {
+   "repo": "unsloth/gpt-oss-20b-GGUF",
+   "format": "GGUF F16 13.79, UD-Q8_K_XL 13.2, Q8_0 12.11, UD-Q6_K_XL 12.04, UD-Q4_K_XL 11.87, Q4_K_M 11.62, Q2_K 11.47 GB. Sizes barely change because the experts stay MXFP4-like.",
+   "official": false,
+   "publisher": "unsloth",
+   "size_gb": 12.11,
+   "source_url": "https://huggingface.co/api/models/unsloth/gpt-oss-20b-GGUF?blobs=true"
+  },
+  {
+   "repo": "bartowski/openai_gpt-oss-20b-GGUF",
+   "format": "GGUF MXFP4 12.11, Q8_0 12.11, Q6_K 12.04, Q4_K_M 11.67, IQ4_XS 11.56, bf16 13.79 GB",
+   "official": false,
+   "publisher": "bartowski",
+   "size_gb": 12.11,
+   "source_url": "https://huggingface.co/api/models/bartowski/openai_gpt-oss-20b-GGUF?blobs=true"
+  },
+  {
+   "repo": "lmstudio-community/gpt-oss-20b-GGUF",
+   "format": "GGUF gpt-oss-20b-MXFP4.gguf",
+   "official": false,
+   "publisher": "lmstudio-community",
+   "size_gb": 12.11,
+   "source_url": "https://huggingface.co/api/models/lmstudio-community/gpt-oss-20b-GGUF?blobs=true"
+  },
+  {
+   "repo": "RedHatAI/gpt-oss-20b",
+   "format": "safetensors MXFP4 (same 3 shards, 13.76 GB; mirror for RHAIIS)",
+   "official": false,
+   "publisher": "RedHatAI",
+   "size_gb": 13.76,
+   "source_url": "https://huggingface.co/api/models/RedHatAI/gpt-oss-20b?blobs=true"
+  },
+  {
+   "repo": "Intel/gpt-oss-20b-int4-AutoRound",
+   "format": "safetensors INT4 AutoRound (3 shards, 13.55 GB total)",
+   "official": false,
+   "publisher": "Intel",
+   "size_gb": 13.55,
+   "source_url": "https://huggingface.co/api/models/Intel/gpt-oss-20b-int4-AutoRound?blobs=true"
+  },
+  {
+   "repo": "unsloth/gpt-oss-20b-BF16",
+   "format": "safetensors BF16 (9 shards, 41.8 GB). It does not fit this machine's GPU.",
+   "official": false,
+   "publisher": "unsloth",
+   "size_gb": 41.83,
+   "source_url": "https://huggingface.co/api/models/unsloth/gpt-oss-20b-BF16?blobs=true"
+  }
+ ],
+ "vllm": {
+  "arch_supported": "Yes. 'GptOssForCausalLM': ('gpt_oss', 'GptOssForCausalLM') at line 128 of vllm/model_executor/models/registry.py at tag v0.33.0.",
+  "min_version": "v0.10.1 (released 2025-08-18; its release notes list 'New model families: GPT-OSS with comprehensive tool calling'). The card still shows the old 0.10.1+gptoss pre-release wheel. Use v0.33.0.",
+  "tool_call_parser": "openai (GptOssToolParser in gptoss_tool_parser, vllm/tool_parsers/__init__.py at v0.33.0). Use it with --enable-auto-tool-choice.",
+  "reasoning_parser": "openai_gptoss (GptOssReasoningParser in gptoss_reasoning_parser, vllm/reasoning/__init__.py at v0.33.0). In practice, chat completions for model_type gpt_oss go through the Harmony path (use_harmony = model_type == 'gpt_oss' in chat_completion/serving.py).",
+  "quant_on_sm120": "On sm_120 in v0.33.0 the MXFP4 MoE kernel is MARLIN (weight-only W4A16, BF16 activations), read from source.\n\nIn oracle/mxfp4.py, _get_priority_backends_for_gpt_oss() explicitly moves TRITON after BATCHED_MARLIN on capability family 120. The code comment says: 'Consumer Blackwell: the OAI Triton kernels run but their 99KB shared memory budget caps them at small tiles, so MARLIN prefills ~10% faster at equal decode throughput. Keep TRITON as an opt-in.'\n\nThe checkpoint declares no activation quant, so _filter_by_activation keeps only BF16-activation backends. Each earlier candidate is excluded on this GPU:\n- FLASHINFER_TRTLLM needs family 100.\n- FLASHINFER_CUTLASS_MXFP4_BF16 needs exactly 9.0.\n- The AITER backends are ROCm only.\n- Humming outranks Marlin only on cc 90.\n\nb12x is opt-in only via --moe-backend b12x.\n\nAttention: FlashAttention 2 is skipped because gpt-oss needs sinks, and flash_attn_supports_sinks() requires FA3 or FA4. The next choice is FLASHINFER, whose sink support on sm_120 uses the TRTLLM XQA decode kernel. That needs cubins downloaded from NVIDIA artifactory, and without them vLLM falls back to TRITON_ATTN (inferred from fa_utils.py, flashinfer.py and utils/flashinfer.py at v0.33.0). The log line \"Using 'MARLIN' Mxfp4 MoE backend.\" will confirm.",
+  "weights_gib": 12.82,
+  "kv_bytes_per_token_bf16": 24576,
+  "kv_math": "Weights are 3 safetensors shards totalling 13,761,316,904 B = 12.816 GiB.\n\nKV cost per token:\n- Full-attention layers: 2 x 12 x 8 KV heads x 64 x 2 B = 24,576 B/token in BF16, or 12,288 B/token in FP8.\n- Sliding layers: 12 x 128 window x 2 x 8 x 64 x 2 B = about 3 MiB per sequence (fixed).\n\nAt the default --gpu-memory-utilization 0.92: 16303 x 0.92 = 14999 MiB = 14.647 GiB. 14.647 - 12.816 - 1.2 reserve = 0.631 GiB KV pool, giving about 27.4k tokens in BF16 or 55.0k in FP8.\n\nAt 0.95 (15488 MiB, possible because only 112 MiB is used at idle with PRIME offload): 15.125 - 12.816 - 1.2 = 1.109 GiB, giving about 48.3k tokens in BF16 or 96.7k in FP8.\n\nThe cap is 131072, so full context is not reachable in BF16. Even at 0.95 with FP8 KV, single-request context is about 96k.",
+  "est_max_context_tokens": 48000,
+  "fits": "tight",
+  "serve_command": "docker run --rm --gpus all --ipc=host -p 8000:8000 -v $HOME/.cache/huggingface:/root/.cache/huggingface vllm/vllm-openai:v0.33.0 openai/gpt-oss-20b --served-model-name gpt-oss-20b --gpu-memory-utilization 0.95 --max-model-len 65536 --kv-cache-dtype fp8 --max-num-seqs 4 --enable-auto-tool-choice --tool-call-parser openai --reasoning-parser openai_gptoss --reasoning-effort-map '{\"none\":\"low\",\"minimal\":\"low\",\"xhigh\":\"high\",\"max\":\"high\"}'\n\nThis needs the NVIDIA Container Toolkit first. With BF16 KV, use --max-model-len 45056 instead. The recipe's own minimal form is: docker run --gpus all -p 8000:8000 --ipc=host vllm/vllm-openai --model openai/gpt-oss-20b. Without --max-model-len that would request 131072 and fail the KV check on 16 GB (inferred).",
+  "known_issues": "Recipe (vllm-project/recipes OpenAI/GPT-OSS.md, last changed 2026-05-10):\n- It still says 'We are actively working on ensuring this model can work on Ampere, Ada Lovelace, and RTX 5090', so sm_120 is not an officially validated target.\n- Its Blackwell env var VLLM_USE_FLASHINFER_MOE_MXFP4_MXFP8 applies only when compute_cap = 10.0. Do not set it on sm_120.\n- 'For function calling, only tool_choice=\"auto\" is supported.'\n- Known issue: openai_harmony vocab download error. The fix is to pre-download o200k_base.tiktoken and set TIKTOKEN_ENCODINGS_BASE (also matters offline).\n\nOpen vLLM issues (label gpt-oss: 14 open):\n- #65770 (2026-11-05, labels tool-calling and gpt-oss): a chat completion returns HTTP 500 on every later turn once a prior tool call name contains special-token text such as 'get_weather<|end|>'. vLLM itself can emit such names. The reporter says it is present in v0.32.0, v0.33.0 and main. Fix PRs #65771 and #66899 are open, and a maintainer questioned the approach. This is relevant to long OpenCode sessions.\n- #58825: a stray 'commentary to=assistant' header is returned as a tool call named 'assistant<|channel|>analysis'.\n- #44216: tool_choice='required' is ignored on /v1/chat/completions.\n- #53626: an unsupported tool_choice in the Responses API returns 501.\n- #46464: the openai_gptoss reasoning parser raises HarmonyError during streamed chat completions.\n- #66989: the Rust frontend (VLLM_USE_RUST_FRONTEND=1) cannot serve gpt-oss with parser flags. The Python frontend is fine.\n- #66284: about 1.4 s stalls from triton_kernels routing recompiles.\n- #30135: MXFP4 falls back to Marlin on SM120. Marlin is now the intentional default.\n- #37030: wrong first Harmony token with Marlin on SM121 (DGX Spark). This is not sm_120 but is the same kernel path.\n\nOther caveats:\n- FP8 KV combined with attention sinks on the FlashInfer-XQA or Triton path on sm_120 is not verified.\n- reasoning_effort values outside low, medium and high return 400 without --reasoning-effort-map.",
+  "sources": [
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/models/registry.py",
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/tool_parsers/__init__.py",
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/reasoning/__init__.py",
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/layers/fused_moe/oracle/mxfp4.py",
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/layers/fused_moe/experts/flashinfer_cutlass_moe.py",
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/layers/quantization/utils/humming/priority.py",
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/v1/attention/backends/fa_utils.py",
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/v1/attention/backends/flashinfer.py",
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/utils/flashinfer.py",
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/platforms/cuda.py",
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/entrypoints/openai/parser/harmony_utils.py",
+   "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/entrypoints/common/cli_args.py",
+   "https://github.com/vllm-project/recipes/blob/main/OpenAI/GPT-OSS.md",
+   "https://github.com/vllm-project/vllm/releases/tag/v0.10.1",
+   "https://github.com/vllm-project/vllm/issues/65770",
+   "https://github.com/vllm-project/vllm/issues/44216",
+   "https://github.com/vllm-project/vllm/issues/58825",
+   "https://github.com/vllm-project/vllm/issues/46464",
+   "https://github.com/vllm-project/vllm/issues/66989",
+   "https://github.com/vllm-project/vllm/issues/30135",
+   "https://github.com/vllm-project/vllm/issues/37030",
+   "https://huggingface.co/api/models/openai/gpt-oss-20b?blobs=true"
+  ]
+ },
+ "llamacpp": {
+  "arch_supported": "Yes. LLM_ARCH_OPENAI_MOE maps to 'gpt-oss' in src/llama-arch.cpp at release b12418 (published 2026-11-15). It has been supported since August 2025 (guide discussion #15396 created 2025-08-18).",
+  "gguf_repo": "ggml-org/gpt-oss-20b-GGUF",
+  "quant": "MXFP4 (gpt-oss-20b-MXFP4.gguf). The guide FAQ says 'Always use the original MXFP4 model'. The K-quants are no smaller: 11.5 to 12.1 GB.",
+  "file_gib": 11.28,
+  "est_vram_gib": 13.9,
+  "est_ram_gib": 1,
+  "est_context_tokens": 131072,
+  "offload_plan": "Fully on GPU, with no --n-cpu-moe needed. VRAM is the 11.28 GiB of weights plus the KV cache plus about 0.5 to 1 GiB of compute buffers at -ub 2048.\n\nThe KV cache has two parts:\n- Full-attention layers: 12 x 2 x 8 x 64 x 2 B = 24 KiB/token in F16. That is 3.0 GiB at 131072 tokens, or 1.59 GiB with q8_0 K and V.\n- SWA layers: only about window + ubatch tokens x 12 layers, under 0.1 GiB.\n\nTotals:\n- 128k context with q8_0 KV is about 13.9 GiB (comfortable).\n- 128k with F16 KV is about 15.1 GiB against 15.8 GiB free (tight).\n- 64k with F16 KV is about 13.6 GiB.\n\nThe guide's 16 GB V100 example limits to 32k only because it uses -ub 4096. The guide notes that -ub and -b raise compute buffers.",
+  "server_command": "docker run --rm --gpus all -p 8080:8080 -v $HOME/.cache/llama.cpp:/root/.cache/llama.cpp ghcr.io/ggml-org/llama.cpp:server-cuda -hf ggml-org/gpt-oss-20b-GGUF --host 0.0.0.0 --port 8080 --alias gpt-oss-20b -ngl 999 -c 131072 -fa on -ctk q8_0 -ctv q8_0 -ub 2048 -b 2048 --jinja --temp 1.0 --top-p 1.0 --reasoning-effort high\n\nThe :server-cuda image is CUDA 12.8.1. The :server-cuda13 image is CUDA 13.5, newer than the host's CUDA 13.2 driver API, so prefer :server-cuda.",
+  "tool_calling_note": "Works through --jinja, which is on by default. b12418 detects the gpt-oss template and uses the dedicated parser common/parsers/gpt-oss.cpp. It returns reasoning separately and builds a tool-call grammar with Harmony triggers. tool_choice 'required' becomes a non-lazy grammar, so it is enforced, unlike in vLLM. The guide links agent usage notes and says the recommended sampling is temp 1.0 and top-p 1.0.",
+  "sources": [
+   "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12418/src/llama-arch.cpp",
+   "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12418/common/chat.cpp",
+   "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12418/common/parsers/gpt-oss.cpp",
+   "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12418/tools/server/README.md",
+   "https://github.com/ggml-org/llama.cpp/discussions/15396",
+   "https://huggingface.co/api/models/ggml-org/gpt-oss-20b-GGUF?blobs=true"
+  ]
+ },
+ "ollama": {
+  "tag": "gpt-oss:20b (= gpt-oss:latest, digest f38aa0c53da5)",
+  "size_gb": 14,
+  "context": "128K window. Ollama's default context on GPUs under 24 GiB is 4k, so set OLLAMA_CONTEXT_LENGTH=65536 (or num_ctx) for OpenCode.",
+  "capabilities": "Library badges are tools and thinking (plus cloud tags). Input is text only, with no vision. The thinking levels from the Ollama docs are low, medium and high, with medium as the default.",
+  "source_url": "https://ollama.com/library/gpt-oss/tags"
+ },
+ "benchmarks": [
+  {
+   "name": "SWE-bench Verified",
+   "score": "60.7 (high), 53.2 (medium), 37.4 (low)",
+   "self_reported": true,
+   "setting": "OpenAI internal harness, a fixed subset of n=477 tasks, pass@1 averaged over 4 tries, with a Codex-CLI-like exec tool",
+   "source_url": "https://arxiv.org/html/2508.10925v1"
+  },
+  {
+   "name": "SWE-bench Verified",
+   "score": "52.44",
+   "self_reported": false,
+   "setting": "NVIDIA NeMo Evaluator, the same harness for all models (Nemotron 3.5 Lightning card). A third party, but a competing vendor.",
+   "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/raw/main/README.md"
+  },
+  {
+   "name": "SWE-bench Verified",
+   "score": "34.0",
+   "self_reported": false,
+   "setting": "Z.ai GLM-4.7-Flash card comparison table. The harness is not stated per model and the result conflicts with OpenAI and NVIDIA.",
+   "source_url": "https://huggingface.co/zai-org/GLM-4.7-Flash/raw/main/README.md"
+  },
+  {
+   "name": "SWE-bench Multilingual",
+   "score": "41.93",
+   "self_reported": false,
+   "setting": "NVIDIA NeMo Evaluator",
+   "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/raw/main/README.md"
+  },
+  {
+   "name": "Terminal-Bench 2.1",
+   "score": "15.17",
+   "self_reported": false,
+   "setting": "NVIDIA NeMo Evaluator, where Qwen3.6-35B-A3B scores 44.38 and Gemma 4 26B-A4B scores 37.22 in the same table",
+   "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/raw/main/README.md"
+  },
+  {
+   "name": "Tau-Bench Retail / Airline",
+   "score": "54.8 / 38.0 (high); 47.3 / 42.6 (medium); 35.0 / 32.0 (low)",
+   "self_reported": true,
+   "setting": "function calling with tools given in the developer message",
+   "source_url": "https://arxiv.org/html/2508.10925v1"
+  },
+  {
+   "name": "tau2-Bench",
+   "score": "47.7",
+   "self_reported": false,
+   "setting": "Z.ai GLM-4.7-Flash card table",
+   "source_url": "https://huggingface.co/zai-org/GLM-4.7-Flash/raw/main/README.md"
+  },
+  {
+   "name": "Aider Polyglot",
+   "score": "34.2 (high), 26.6 (medium), 16.6 (low)",
+   "self_reported": true,
+   "setting": "OpenAI model card, Table 3",
+   "source_url": "https://arxiv.org/html/2508.10925v1"
+  },
+  {
+   "name": "LiveCodeBench v6",
+   "score": "61.0",
+   "self_reported": false,
+   "setting": "Z.ai GLM-4.7-Flash card table",
+   "source_url": "https://huggingface.co/zai-org/GLM-4.7-Flash/raw/main/README.md"
+  },
+  {
+   "name": "Codeforces Elo",
+   "score": "2516 with tools / 2230 no tools (high)",
+   "self_reported": true,
+   "setting": "held-out Codeforces split",
+   "source_url": "https://arxiv.org/html/2508.10925v1"
+  },
+  {
+   "name": "PinchBench",
+   "score": "57.20",
+   "self_reported": false,
+   "setting": "NVIDIA NeMo Gym",
+   "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/raw/main/README.md"
+  }
+ ],
+ "speed_notes": "Measured: the llama.cpp gpt-oss guide's llama-bench on a desktop RTX 5080 16GB (cc 12.0, CUDA 12.8, build a094f381/6210) with ggml-org MXFP4 and -fa 1 gives tg128 204.85 t/s. Prompt processing at -ub 2048 is pp2048 7477 t/s and pp32768 5531 t/s. The same guide reports 282 t/s on an RTX 5090 (https://github.com/ggml-org/llama.cpp/discussions/15396).\n\nThe laptop RTX 5080 has 896 GB/s versus 960 GB/s on the desktop and a 140 W power limit, so expect roughly 180 to 195 t/s decode in llama.cpp (inferred by bandwidth scaling).\n\nBandwidth bound (source-backed arithmetic): per token the model reads about 1.29 GB of BF16 attention and router, about 1.16 GB of BF16 lm_head and about 1.27 GB of active MXFP4 experts (10.15 GB of experts x 4/32). That is about 3.7 GB per token, so the ceiling is about 240 t/s at 896 GB/s.\n\nvLLM on sm_120 uses Marlin W4A16. The source comment says it decodes at parity with Triton and prefills about 10% faster than it. No measured vLLM number on an RTX 50-series was found.\n\nEverything stays on the GPU, so system RAM bandwidth is not involved.",
+ "opencode_fit": {
+  "verdict": "good",
+  "recommended_runtime": "llama.cpp server (ghcr.io/ggml-org/llama.cpp:server-cuda), with vLLM v0.33.0 as a secondary option",
+  "recommended_checkpoint": "ggml-org/gpt-oss-20b-GGUF (MXFP4, 12.11 GB) for llama.cpp; openai/gpt-oss-20b (13.76 GB) for vLLM",
+  "recommended_context": "llama.cpp: 131072 with q8_0 KV (about 13.9 GiB VRAM), or 65536 with F16 KV. vLLM: 65536 only with --gpu-memory-utilization 0.95 and --kv-cache-dtype fp8 (pool about 96k); about 45k with BF16 KV.",
+  "caveats": "The release is from 2025-08-05, outside the 12-month window, but it is the only OpenAI open-weight chat model and still the family's current one.\n\nIt is the only candidate in this class whose official checkpoint runs fully in 16 GB under vLLM, and it is very fast (about 200 t/s decode measured on a desktop RTX 5080).\n\nAgentic coding strength is middling by independent measures: SWE-bench Verified 52.44 and Terminal-Bench 2.1 15.17 in NVIDIA's same-harness table, against OpenAI's self-reported 60.7 at high effort. Z.ai reports 34.0. Newer 30B-A3B-class models score well above it on Terminal-Bench.\n\nThinking is always on (low, medium or high) and cannot be disabled. vLLM returns 400 on reasoning_effort values other than low, medium and high unless you pass --reasoning-effort-map.\n\nvLLM tool calling supports tool_choice=auto only. Open issue #65770 makes every later turn of a conversation return 500 after a malformed tool name. Open issues #58825 and #46464 add other Harmony parsing failures, and the recipe still lists RTX 5090 (sm_120) as work in progress. On sm_120, vLLM uses Marlin MXFP4 and FlashInfer-XQA or Triton attention for sinks. The first start needs internet access for the tiktoken vocab (or TIKTOKEN_ENCODINGS_BASE) and for the FlashInfer cubins.\n\nllama.cpp enforces tool calls with grammar, including tool_choice=required, and fits the full 128k context.\n\nOpenCode v2.3.0 starts discovered vLLM models with tools disabled, so declare capabilities.tools explicitly. Keep reasoning content in the conversation per Harmony rules (llama.cpp maps reasoning_content to thinking). The NVIDIA Container Toolkit must be installed first."
+ },
+ "gaps": [
+  "The OpenAI announcement page (openai.com/index/introducing-gpt-oss/) returned HTTP 403 to a raw read, so the date comes from the arXiv card (August 5, 2025) and HF createdAt.",
+  "No measured vLLM v0.33.0 run on an RTX 5080 or any sm_120 GPU was found. The Marlin backend selection and the FlashInfer-XQA or Triton attention selection come from reading the source, not from a log.",
+  "Not verified whether --kv-cache-dtype fp8 works with attention sinks on the FlashInfer-XQA or TRITON_ATTN path on sm_120. The FP8 context figures assume it does.",
+  "The vLLM 1.2 GiB runtime reserve is the study's assumption. The 201k vocabulary's logits and sampler buffers could make the real KV pool smaller, so confirm the 'Available KV cache memory' log line.",
+  "No Artificial Analysis, BFCL, official Terminal-Bench leaderboard or SWE-bench Pro result for gpt-oss-20b was fetched or verified, because no raw-readable source was found in this pass.",
+  "Not confirmed: llama.cpp compute-buffer size at -ub 2048 for this model on a 16 GB laptop GPU, whether the :server-cuda13 (CUDA 13.5) image runs on the host's CUDA 13.2 driver, and the exact pinned image tag name for b12418.",
+  "Not checked: Ollama's OpenAI-compatible endpoint mapping of reasoning_effort to think levels for gpt-oss, and the effect of think:false on gpt-oss beyond the generic doc text.",
+  "The behaviour of llama.cpp's reasoning_effort 'none' with the gpt-oss template was not tested."
+ ]
+}

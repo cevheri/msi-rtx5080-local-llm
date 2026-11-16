@@ -1,0 +1,84 @@
+{
+ "overall": "holds-with-corrections",
+ "summary": "I could not refute any of the record's runtime claims. Every load-bearing number I re-measured matches: HF API sizes, config.json, KV arithmetic, the per-block expert split from a GGUF header range-read, the vLLM registry and the llama.cpp b12407 source.\n\n**vLLM: confirmed it does not fit.** The smallest checkpoint is FP8 at 30.89 GiB, against a 14.65 GiB budget, and Xing is not in the v0.33.0 registry.\n\n**llama.cpp: the recommended setup looks feasible.** Image server-cuda-b12407 with bartowski Q4_K_M (18.68 GiB), --n-cpu-moe 18 and 128k q8_0 K cache:\n- GPU weights: 18.676 - 0.465 (token_embd stays on host) - 0.90 (MTP block, not loaded) - 6.63 (experts of blocks 0..17 in RAM) = 10.68 GiB.\n- KV: 576 x 34/32 x 40 = 24,480 B/token, so 2.99 GiB at 128k.\n- Total about 14.7 GiB, or about 15.0 GiB once the f16 copy of K/V that the flash-attention kernel makes is added (my estimate, below).\n\n**Corrections:**\n1. Follow-up PRs #31683 and #31927 are already inside b12407 (247 and 181 commits behind it), not only in b12418.\n2. q8_0 K with flash attention at head size 576 is supported in the b12407 source, but it does not use the fast vector kernel. It goes to the MMA kernel, which converts K/V to f16 in temporary memory. My estimate is about 0.3 GiB extra at 128k, which leaves about 0.6 GiB of headroom on 15.92 GiB. Fallback: --n-cpu-moe 20 (9.94 GiB on GPU, about 14.2 GiB total) or 64k context.\n3. The speed estimate leaves out MLA cache reads: every decoded token reads the whole cache, 1.49 GiB at 64k and 2.99 GiB at 128k. The 128k bound drops from about 110 to about 80 tok/s, and real decode will be lower as the context fills.\n4. The official GGUFs were uploaded before the merge, but their headers already use the mainline layout, so they probably load.\n\n**Tool calling is still the weak point (contested).** The template's call format matches a pattern llama.cpp's generic auto-parser already handles for GLM and Spark2.5, but nobody has tested it with Xing. HF discussion #15 reports that write and edit calls fail on vLLM, and the original poster says they still fail with 65k max_tokens.\n\n**Verdict: usable only after a smoke test.** Run an OpenCode tool-call test, including a multi-argument write, before ranking the model.",
+ "verdicts": [
+  {
+   "claim": "Checkpoint sizes: BF16 58.14 GiB, FP8 30.89 GiB, W8A8 32.74 GiB; official GGUF iq2_M-slim 10.99, iq3_xxs 13.03, iq3_m 14.39, iq4_xs 17.02, iq4_nl 17.88, IQ4_NL 18.72, q5_0 19.01, q6_k 25.03, q8_0 31.82 GiB; bartowski Q4_K_M 18.68, IQ3_XXS 13.44, IQ2_M 11.67; mradermacher i1-Q4_K_M 17.65, i1-IQ4_XS 15.64, i1-Q3_K_M 13.99. Safetensors param count 31,215,031,088.",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/XingChen-AGI/Xing4.0-29B-A4B-GGUF?blobs=true",
+   "correction": "source-backed (HF API blob sizes summed). bartowski repo createdAt 2026-11-06, README says built with b12174. Also confirmed via https://huggingface.co/api/models/bartowski/XingChen-AGI_Xing4.0-29B-A4B-GGUF?blobs=true and the FP8/w8a8/mradermacher API endpoints."
+  },
+  {
+   "claim": "Architecture per config.json: 40 layers, first 2 dense (9216), MoE 1024 x 64 routed + 1 shared, top-4, MLA q_lora 768, kv_lora 512, rope 64, nope 128, v 128, hc_mult 4, 20 Sinkhorn iters, 1 MTP layer, max_position_embeddings 262144 (YaRN 64 x 4096), vocab 131072, untied.",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/XingChen-AGI/Xing4.0-29B-A4B/raw/main/config.json",
+   "correction": "direct-statement (raw config.json read). The GGUF header matches: block_count 41 (40 + nextn), head_count_kv 1, key_length 576, value_length 512, context_length 262144, hyper_connection.count 4."
+  },
+  {
+   "claim": "KV arithmetic: MLA (512+64) x 40 layers = 46,080 B/token BF16/f16, 23,040 FP8 (vLLM), 24,480 B/token q8_0 in llama.cpp; 64k q8_0 = 1.49 GiB, 128k = 2.99 GiB; f16 64k 2.81 GiB.",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/src/models/xing4-0.cpp",
+   "correction": "source-backed: 576 x 2 x 40 = 46,080; 576/32 x 34 x 40 = 24,480; 131072 x 24,480 = 2.99 GiB. xing4-0.cpp calls build_attn(inp_attn_k, ...): K-only cache. The KV cache covers the 40 trunk layers (n_layer), and the MTP layer adds one more only with --mtp."
+  },
+  {
+   "claim": "vLLM: does not fit on 16 GB; Xing4_0ForCausalLM not in the v0.33.0 registry (only TeleChat/TeleChat2/TeleChat3); support only through out-of-tree xing4-vllm-plugin pinned to commit 2e09247; mHC requires bfloat16.",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/models/registry.py",
+   "correction": "source-backed: registry grep shows only TeleChat2ForCausalLM, TeleChat3ForCausalLM and TeleChatForCausalLM. Plugin README (gh api repos/XingChen-AGI/xing4-vllm-plugin/readme) names commit 2e09247c2d7b and says mHC (hc_mult > 1) requires bfloat16. Budget 14.65 - 30.89 - 1.2 = -17.44 GiB. CPU offload is not a path (KB: #66264)."
+  },
+  {
+   "claim": "llama.cpp b12407 supports xing4_0 (src/llama-arch.cpp line 93), PR #31589 merged 2026-11-05T16:47:27Z as 45b6604, b12407 is 251 commits ahead; follow-ups #31683 and #31927 landed by b12418; MTP tensors skipped unless --mtp.",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/src/llama-arch.cpp",
+   "correction": "Minor: #31683 (merged 2026-11-05, 6023692b1) and #31927 (merged 2026-11-09, a8fad21e9) are both already in b12407 (gh compare: 247 and 181 commits ahead, 0 behind), not only in b12418. --mtp exists at common/arg.cpp:3086 at b12407, and xing4-0.cpp:91-92 sets TENSOR_SKIP on MTP tensors when load_mtp is false."
+  },
+  {
+   "claim": "Q4_K_M offload plan: 17.31 GiB would be on GPU; --n-cpu-moe 18 puts 6.63 GiB of experts in RAM and leaves 10.68 GiB on GPU; with 128k q8_0 KV (2.99) and about 1 GiB compute, about 14.7 GiB VRAM; --n-cpu-moe 14 gives 12.16 GiB GPU / 5.16 GiB RAM.",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/bartowski/XingChen-AGI_Xing4.0-29B-A4B-GGUF/resolve/main/XingChen-AGI_Xing4.0-29B-A4B-Q4_K_M.gguf",
+   "correction": "source-backed: parsed from a 12 MB header range-read. Total 18.676 GiB, token_embd Q8_0 0.465, MTP block 0.90, trunk experts 15.03 GiB. Experts per block: 0.482 (blocks 2-3), 0.453 (4-9), 0.369 (10-38), 0.644 (39). Blocks 0..17 = 6.63 GiB, 0..13 = 5.16 GiB, 0..19 = 7.37 GiB. The 14.7 GiB total leaves out the f16 temporary copy of K/V the MMA flash-attention kernel makes (about 0.15 + 0.13 GiB at 128k), so the real figure is about 15.0 of 15.92 GiB. Tight but probably fits. Safer: --n-cpu-moe 20 (9.94 GiB on GPU, about 14.2 GiB total, 7.84 GiB host RAM)."
+  },
+  {
+   "claim": "q8_0 K cache with flash attention for MLA head 576 on sm_120 is unverified.",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/ggml/src/ggml-cuda/fattn.cu",
+   "correction": "Narrowed by source reading. Q8_0 is in ggml_cuda_fattn_kv_type_supported, and case 576 accepts V=512 with gqa_opt (gqa ratio 32/1). Because 576 > 256 the vector kernel is never used, so sm_120 gets BEST_FATTN_KERNEL_MMA_F16, which converts the quantized K/V to f16 in temporary memory. It is a supported path, not a failure, but costs extra memory and time (see KB #27623). It is still unmeasured on this machine."
+  },
+  {
+   "claim": "Official XingChen GGUF iq2_M-slim works as an all-on-GPU alternative on mainline.",
+   "verdict": "uncertain",
+   "evidence_url": "https://huggingface.co/api/models/XingChen-AGI/Xing4.0-29B-A4B-GGUF/commits/main",
+   "correction": "The files were uploaded 2026-10-16 and 2026-10-23, before the 11-05 merge. The parsed header still uses the mainline layout and keys: attn_k_b/attn_v_b, hc_attn_*/hc_ffn_*, hyper_connection.*, and the same KV keys as bartowski's file. The vendor README says b12174+ loads them. Likely loads, but not run here. Budget 10.99 - 0.465 - 0.52 MTP = about 10.0 GiB, plus 2.99 + 1 + 0.3 = about 14.3 GiB at 128k."
+  },
+  {
+   "claim": "Tool calling in llama.cpp uses the generic auto-parser (TAG_WITH_TAGGED); there is no xing file in common/parsers at b12407; working is inferred and untested.",
+   "verdict": "uncertain",
+   "evidence_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/docs/autoparser.md",
+   "correction": "Confirmed that common/parsers at b12407 has no xing file. Xing's format <tool_call>name<param_key>k</param_key><param_value>v</param_value></tool_call> follows the same pattern as formats autoparser.md lists as handled: GLM-4.6/4.7 and Spark2.5 (<tool_call>name<arg_key>...<arg_value>...). That makes it plausible, but still inferred. The template calls _args.items(), so it needs object-form arguments."
+  },
+  {
+   "claim": "HF discussion #15: write and edit tool calls fail in agent harnesses on vLLM FP8; a responder attributed it to thinking plus max_tokens truncation inside param_value; the original user says it still fails at 65k output.",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/XingChen-AGI/Xing4.0-29B-A4B/discussions/15",
+   "correction": "contested: verified in the discussion API events (2026-10-29 report, xiongji reply the same day, OP reply 2026-11-05 that it still fails with 65536 max output). The thread is still open."
+  },
+  {
+   "claim": "Recommended configuration (llama.cpp b12407, bartowski Q4_K_M, --n-cpu-moe 18, -c 131072, -ctk q8_0) serves OpenCode with at least 64k context.",
+   "verdict": "uncertain",
+   "evidence_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/src/models/xing4-0.cpp",
+   "correction": "Memory: feasible on paper with about 0.6 GiB headroom. Most realistic config: the same command with --n-cpu-moe 20, or -c 65536 if startup reports OOM. Needs the NVIDIA Container Toolkit with CDI first. The 64k+ context target is met. Working tool calls are unproven: auto-parser untested, plus the #15 report. Gate the model on an OpenCode multi-argument write/edit smoke test with thinking both on and off."
+  },
+  {
+   "claim": "Speed: Q4_K_M with --n-cpu-moe 18 has a bound of about 110 tok/s (3.0 GB VRAM + 0.45 GB DDR5 per token), expect 40-70 tok/s.",
+   "verdict": "uncertain",
+   "evidence_url": "https://github.com/ggml-org/llama.cpp/pull/31589",
+   "correction": "inferred. The bound leaves out MLA cache reads, which grow with context: each decoded token reads the whole cache, 1.49 GiB at 64k and 2.99 GiB at 128k. At a full 128k context the bound is (3.0 + 3.2 GB)/896 GB/s = 6.9 ms, plus 5.6 ms from DDR5, about 80 tok/s. Expect throughput to fall as the session context grows. The PR reports H800 tg128 iq4_nl 159 tok/s."
+  },
+  {
+   "claim": "Ollama: no library tag; v0.40.16 pins llama.cpp b12177, which is after the merge.",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/ollama/ollama/v0.40.16/LLAMA_CPP_VERSION",
+   "correction": "LLAMA_CPP_VERSION = b12177, and the merge commit 45b6604 is 21 commits behind b12177. ollama.com/library/xing4 returns 404. Load, tool and think behaviour remain unknown."
+  }
+ ]
+}

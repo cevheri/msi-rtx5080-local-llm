@@ -1,0 +1,34 @@
+{
+ "file": "$HOME/projects/llm/vllm/models.md",
+ "checked_claims": 34,
+ "fixes": [
+  {
+   "what": "DeepSeek quantization row: the citation for '--quantization fp8 is deprecated for online use and rewritten with a warning' now points to vllm/model_executor/model_loader/weight_utils.py#L355-L361 at v0.33.0, where get_quant_config logs the deprecation and switches to fp8_per_tensor. The quantization/__init__.py link is kept because it lists fp8_per_tensor.",
+   "why": "The only file cited before, quantization/__init__.py, does not contain the deprecation. Its DEPRECATED_QUANTIZATION_METHODS lists only fbgemm_fp8 and fp_quant, so the claim lacked a source that supports it.",
+   "source": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/model_loader/weight_utils.py"
+  },
+  {
+   "what": "DeepSeek caveat: the old text was 'the R1-0528 family averages about 23K reasoning tokens per AIME question on the 671B model'. It now reads 'the card says the upgraded R1-0528 averages about 23K tokens per AIME question, against 12K for the previous version'.",
+   "why": "The card says 'tokens per question' (README line 58). It does not say reasoning tokens, so the old wording overstated what the source says.",
+   "source": "https://huggingface.co/deepseek-ai/DeepSeek-R1-0528-Qwen3-8B/raw/main/README.md"
+  },
+  {
+   "what": "Maintenance: the vague 'v0.34 changes the gpu_memory_utilization default' now says that the v0.34.0rc4 tag drops the fixed 0.92 default, and links cache.py at v0.34.0rc4.",
+   "why": "This fact is not in the inputs, so I checked it live. cache.py at v0.33.0 has default=0.92, and at v0.34.0rc4 it has default=None. It is a release-candidate tag, not a release.",
+   "source": "https://github.com/vllm-project/vllm/blob/v0.34.0rc4/vllm/config/cache.py"
+  },
+  {
+   "what": "gpt-oss budget note: the 'dGPU idles at about 112 MiB' sentence now links its source, docs/host-setup.md#current-host-state-observed.",
+   "why": "This is a load-bearing number with no link. It comes from the lead's observed host state in current-knowledge.md, which host-setup.md records.",
+   "source": "$HOME/projects/llm/docs/host-setup.md"
+  }
+ ],
+ "remaining_concerns": [
+  "Not verified live: the line ranges cited for gemma4.py (L1447-L1454) and kv_cache_interface.py (L918-L955). I read gemma4.py near those lines and the lm_head tie_weights code is at about 1452-1453, so the range is roughly right. I did not open kv_cache_interface.py.",
+  "vLLM #46268 could not be re-read because the GitHub API hit its rate limit. Its open state rests on the inputs (current-knowledge.md and the platform record). I re-read #66264, #61239, #54331, #62743, #66989, #65770 and #59738 live, and all are open.",
+  "The Nemotron Lightning community W4A16 at 16.60 GiB and the Intel Gemma 4 26B language-model-only figure of 13.24 GiB were not rechecked live. The file totals of those two repos were rechecked and match: Lightning NVFP4 20.08, Gemma 26B AutoRound 14.31.",
+  "Some list items hold more than one sentence. The task rules allow this ('list items stay on single lines'), so I left them as they are."
+ ],
+ "verdict": "ready",
+ "used_playwright": false
+}

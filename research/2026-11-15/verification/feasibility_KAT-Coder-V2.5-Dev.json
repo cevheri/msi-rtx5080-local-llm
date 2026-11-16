@@ -1,0 +1,82 @@
+{
+ "overall": "holds-with-corrections",
+ "summary": "I could not refute any load-bearing runtime claim. The recommended setup should give OpenCode working tool calls at 128k context on this machine: llama.cpp b12418 (server-cuda13) running bartowski Q4_K_M with --n-cpu-moe 18 and q8_0 KV. I re-read every weight size from the HF API and they match. I recomputed the KV math from config.json and it matches: 20,480 B/token BF16, 10 full-attention layers, about 61 MiB of GDN state, about 49k tokens BF16 and 98k FP8 on the REAP-50 vLLM build. The vLLM registry entries, both parser names, --language-model-only and the llama.cpp qwen35moe arch plus the Qwen3-Coder template detection all exist at the cited tags and lines. All 7 cited vLLM issues exist and are open, with the titles the record gives. Corrections: (1) I parsed the real GGUF header. Experts are 18.16 GiB and non-expert tensors 1.75 GiB, not 18.5 and 1.41. Layers 0-17 hold 8.17 GiB of experts, so the GPU total stays about 13.6-14.0 GiB and the plan still fits. (2) In b12418, setting enable_thinking through --chat-template-kwargs is deprecated: use --reasoning off/on, and --reasoning-preserve for preserve_thinking. (3) q8_0 KV is 8.5 bits per element: 128k needs about 1.33 GiB, not 1.25. (4) The vLLM REAP-50 command has no --enforce-eager fallback, although open issue #54331 (sm_120 hybrid-GDN NVFP4 crashes with CUDA graphs) applies. Treat vLLM as experimental here: it would also need checking whether a W4A16-only NVFP4 checkpoint takes the b12x path from #49476.",
+ "verdicts": [
+  {
+   "claim": "Weight sizes: BF16 base 69,325,581,696 B = 64.56 GiB; REAP-50 NVFP4A16 12.45 GiB; W4A16 19.49 GiB; bartowski Q4_K_M 19.92 GiB, IQ3_XXS 13.85 GiB, Q5_K_M 23.30 GiB; REAP-50 GGUF Q5_K_M 12.35 GiB",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/bartowski/Kwaipilot_KAT-Coder-V2.5-Dev-GGUF?blobs=true",
+   "correction": "All sizes match the HF API byte counts exactly (Q4_K_M 21,391,448,480 B; REAP NVFP4A16 13,369,366,640 B in 3 shards; W4A16 20,928,021,432 B)."
+  },
+  {
+   "claim": "Architecture: 40 layers, 10 full-attention + 30 linear_attention, 2 KV heads, head_dim 256, 256 experts top-8, moe_intermediate 512, max_position_embeddings 262144, mtp_num_hidden_layers 0; REAP-50 has 128 experts",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Kwaipilot/KAT-Coder-V2.5-Dev/raw/main/config.json",
+   "correction": "REAP-50 config.json has num_experts 128, the same Qwen3_5MoeForConditionalGeneration architecture and no vision_config. Its quantization_config is nvfp4-pack-quantized, weight-only, group 16, with the GDN linear_attn layers left unquantized."
+  },
+  {
+   "claim": "KV bytes/token 20,480 BF16 / 10,240 FP8; GDN state about 61 MiB/seq; REAP-50 vLLM pool 0.94 GiB gives about 49k BF16 / 98k FP8 context",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Ttimms/KAT-Coder-V2.5-Dev-REAP-50-NVFP4A16/raw/main/config.json",
+   "correction": "Arithmetic reproduced: 2x10x2x256x2 = 20,480 B. GDN per layer is 32x128x128x4 B = 2 MiB, plus conv 8192x3x2 B = 48 KiB. 14.65-12.45-1.2 = 1.00 GiB. vLLM's hybrid allocator pads attention pages to the GDN page size (about 2 MiB per layer, so about 1k-token blocks), which costs at most a few blocks. The 49k/98k figures stand as estimates (source-backed)."
+  },
+  {
+   "claim": "vLLM v0.33.0 registers Qwen3_5MoeForConditionalGeneration (registry.py line 618) and Qwen3_5MoeForCausalLM (205); --language-model-only exists (arg_utils.py 1497); qwen3_coder tool parser (tool_parsers/__init__.py 206) and qwen3 reasoning parser (reasoning/__init__.py 168)",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/models/registry.py"
+  },
+  {
+   "claim": "--language-model-only is mandatory for vLLM, and the card uses --tool-call-parser qwen3_coder --reasoning-parser qwen3",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Kwaipilot/KAT-Coder-V2.5-Dev/raw/main/README.md",
+   "correction": "README line 250 says the flag is required. Lines 237 and 269 use qwen3_coder. Lines 360-378 document preserve_thinking."
+  },
+  {
+   "claim": "FP8 KV cache works on sm_120 in the vLLM REAP command",
+   "verdict": "uncertain",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/v1/attention/backends/flash_attn.py",
+   "correction": "FlashAttention accepts a quantized KV dtype only when flash_attn_supports_kv_cache_dtype allows it (line 438), which in practice means FA3/FA4, not FA2 on sm_120. The CUDA platform priority list (cuda.py lines 163-165: FLASHINFER, FLASH_ATTN, TRITON_ATTN) should fall back to FlashInfer or Triton, which support FP8 KV. Not tested."
+  },
+  {
+   "claim": "vLLM REAP-50 NVFP4A16 path on sm_120 is workable (fits: tight)",
+   "verdict": "uncertain",
+   "evidence_url": "https://github.com/vllm-project/vllm/issues/54331",
+   "correction": "#54331 is open: on sm_120, hybrid-GDN NVFP4 dies under sustained load whenever CUDA graphs are on, and only enforce_eager survives. The recommended command should carry an --enforce-eager fallback, which costs decode speed. #49476 is also open (b12x SM120 MoE workspace OOM on 16 GB with NVFP4 Qwen3.6-35B-A3B); a W4A16-only checkpoint may avoid the b12x W4A4 path, but I did not trace this. No KAT-specific vLLM issue exists. Pruned-model quality is unverified."
+  },
+  {
+   "claim": "Cited open vLLM issues #65774, #57699, #42021, #39056, #51250, #49476, #54331",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/vllm-project/vllm/issues/65774",
+   "correction": "All 7 are open, and their titles match the descriptions in the record."
+  },
+  {
+   "claim": "llama.cpp b12418 supports qwen35moe (llama-arch.cpp line 46) and routes the template to the Qwen3-Coder parser (chat.cpp 1420-1427)",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12418/common/chat.cpp",
+   "correction": "The check also excludes templates that emit '<tool_call><function=' with no newline. The KAT template uses newlines (per the record), so it routes to the Qwen3-Coder parser."
+  },
+  {
+   "claim": "Q4_K_M expert offload plan: experts about 18.5 GiB (0.463 GiB/layer), non-expert about 1.41 GiB; --n-cpu-moe 18 gives about 13.7 GiB VRAM and 8.3 GiB RAM at 128k q8_0 KV",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/bartowski/Kwaipilot_KAT-Coder-V2.5-Dev-GGUF/resolve/main/Kwaipilot_KAT-Coder-V2.5-Dev-Q4_K_M.gguf",
+   "correction": "I parsed the GGUF tensor table with a 16 MB Range read. Experts total 18.16 GiB (0.42-0.49 GiB per layer, mixed Q4_K/Q6_K), non-expert 1.75 GiB (token_embd 0.27, output 0.39). Layers 0-17 expert total 8.17 GiB in RAM. GPU: 9.99 + 1.75 + KV q8_0 at 8.5 bits/elem 131072x10880 B = 1.33 + GDN 0.06 + compute about 0.8-1.0 (the 248k vocab logits alone are about 0.47 GiB at ubatch 512) = about 13.9-14.1 GiB. It still fits the 15.8 GiB usable, so the conclusion holds."
+  },
+  {
+   "claim": "llama.cpp thinking toggle via --chat-template-kwargs '{\"enable_thinking\":false}' server-wide or per-request chat_template_kwargs",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12418/common/arg.cpp",
+   "correction": "Per-request chat_template_kwargs is parsed (server-common.cpp line 1626). The server-wide enable_thinking route through --chat-template-kwargs is deprecated (arg.cpp lines 3576-3582); use --reasoning off|on|auto and --reasoning-preserve instead (line 3741)."
+  },
+  {
+   "claim": "Ollama only has the community tag frob/kat-coder-v2.5-dev (21 GB q4_K_M, 37 GB q8_0, 69 GB bf16, 256K context)",
+   "verdict": "confirmed",
+   "evidence_url": "https://ollama.com/frob/kat-coder-v2.5-dev/tags"
+  },
+  {
+   "claim": "Verdict: good for OpenCode via llama.cpp Q4_K_M with --n-cpu-moe 18 at 131072 context; vLLM only via pruned REAP-50 at about 64k FP8",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/bartowski/Kwaipilot_KAT-Coder-V2.5-Dev-GGUF?blobs=true",
+   "correction": "Feasible as stated (source-backed/inferred, not run). Best realistic configuration: llama.cpp server-cuda13 b12418, Q4_K_M, -ngl 99 --n-cpu-moe 18, -c 131072, -fa on -ctk q8_0 -ctv q8_0, --jinja, keep thinking on (--reasoning-preserve optional). For headroom, use --n-cpu-moe 20 (about 0.9 GiB more in RAM). The vLLM REAP-50 option should be treated as experimental: add --enforce-eager per #54331."
+  }
+ ]
+}

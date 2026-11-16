@@ -1,0 +1,46 @@
+{
+ "fixes": [
+  {
+   "file": "$HOME/projects/llm/docs/opencode.md",
+   "what": "The validated config used the old ranking, so I updated it. Default model changed from llamacpp-docker/qwen3.6-35b-a3b to llamacpp-docker/qwen3.8-27b. Added llama.cpp entries k2-horizon-mova-36b and k2-horizon-7b (modelID local, 65536/16384, no variants, values from llamacpp/models.md). Replaced the vLLM gemma-4-12b entry (now an honorable mention) with groot-19b-a3b, copied from vllm/models.md. Re-validated with python3 -I and jsonschema 4.19.2 Draft 2020-12 against scratchpad/opencode-schema.json: 0 errors. Negative tests (V1 npm key, string tools value) are rejected, and the Ollama and OpenRouter JSON blocks still validate with 0 errors. The document now says all of this. Also updated: the matching table, the thinking-variants table (Groot added; new K2 Horizon row), the summary line about server thinking defaults (Qwen3.8 runs at medium effort; K2 and gpt-oss always think), and the toggle-model wording. Labelled Lightning and GLM-4.7-Flash as honorable in the OpenRouter table."
+  },
+  {
+   "file": "$HOME/projects/llm/vllm/README.md",
+   "what": "The summary named Ornith-1.5-9B and Gemma 4 12B as the vLLM picks. It now names the ranked vLLM paths (gpt-oss-20b, Groot NVFP4, K2 Horizon 7B AWQ, DeepSeek chat only) plus Gemma 4 12B as the honorable mention. The 'larger model' list now matches the top picks (Qwen3.8, Qwen3.6, K2 MoVA, Gemma 26B, Coder-Next, Bolt). Added a line saying the Ornith worked example is kept only for the method. Replaced 'recommended Ornith and Gemma 12B builds' with Groot and Gemma 4 12B, and the #54331 row now says Groot instead of Ornith. Added Groot to the Qwen parser row and added a K2 Horizon 7B row (k2_horizon / k2_horizon, #62743), both from vllm/models.md."
+  },
+  {
+   "file": "$HOME/projects/llm/vllm/benchmarking.md",
+   "what": "The client table and examples used Ornith and Gemma 4 12B as served models. They now use gpt-oss-20b, groot-19b-a3b, k2-horizon-7b, and gemma-4-12b labelled honorable; the export and S6 examples use groot-19b-a3b. Fixed the 120000-rung list (Groot, Gemma 4 12B, Qwen3.5-9B, Mellum2.1) and the GDN hybrid example (Groot and Qwen3.5-9B instead of Ornith). The S4 note said 'Gemma 4 12B uses 2 and Ornith 4', which contradicted models.md, where every ranked recipe uses --max-num-seqs 1."
+  },
+  {
+   "file": "$HOME/projects/llm/llamacpp/README.md",
+   "what": "The run template called Qwen3.6-35B-A3B 'the top pick'. It now says rank 2, the 128k pick, chosen because it shows expert offload."
+  },
+  {
+   "file": "$HOME/projects/llm/docs/host-setup.md",
+   "what": "The memory-cap table contradicted llamacpp/models.md (8g for all-on-GPU; 14g for Qwen3.6 and 30g for Coder-Next). It now says 16g, 20g and 32g, with the --cache-ram reasoning from the runtime docs. Changed '30g offload container' to 32g. Recomputed the disk budget for the new top 10 (161.43 GiB of GGUFs plus 12.82 GiB of gpt-oss safetensors): from about 164 GiB to about 174 GiB."
+  },
+  {
+   "file": "$HOME/projects/llm/docs/community-benchmarks.md",
+   "what": "'pick 3' for the Gemma QAT A/B is now pick 5 (Gemma 4 26B-A4B). 'A/B pick 2 against pick 1' now names Qwen3.6-35B-A3B and Qwen3.8-27B. Labelled Gemma 4 12B, Nemotron Lightning and GLM-4.7-Flash as honorable mentions in the calculator table. The GLM estimate is now marked as made at --n-cpu-moe 18 while the recipe uses 20. The new-candidates intro now says the K2 models are ranks 3 and 4 and Nanbeige is an honorable mention."
+  },
+  {
+   "file": "$HOME/projects/llm/docs/model-selection.md",
+   "what": "The summary said vLLM is a secondary path 'only for gpt-oss-20b and Groot'. It now matches vllm/models.md and the ranking: mainly gpt-oss and Groot, with weaker options for K2 7B and DeepSeek. 'the two vLLM paths' became 'the vLLM paths', and DeepSeek was added to the vLLM recipes list. The Coder-Next note said 'if UD-IQ4_XS contains IQ3_S'; it now states the 20.6 GiB of IQ3_S tensors given in llamacpp/models.md. The Qwen3.8 GPU weights changed from 11.6 to 11.7 GiB to match llamacpp/models.md (12.24 - 0.51)."
+  },
+  {
+   "file": "$HOME/projects/llm/docs/sources.md",
+   "what": "It said the pinned llama.cpp build is b12418. It now says the pinned image is server-cuda-b12407 (no b12418 image exists yet) and that flags and source were read at b12418, matching llamacpp/README.md."
+  }
+ ],
+ "remaining": [
+  "Mechanical checks found nothing to fix, before or after my edits: no U+2013, U+2014 or emoji in any of the 11 files; every relative link and #anchor resolves; and the only multi-sentence prose lines my heuristic flags are numbered headings like '### 1. Qwen3.8-27B' (false positives). List items and table rows that hold several sentences were left on single lines, as rule 2 allows.",
+  "docs/opencode.md: the OpenRouter table has no rows for the new picks (K2 Horizon MoVA, K2 Horizon 7B, Nemotron 3.5 Bolt, Groot). Their OpenRouter availability is not in the inputs and was not verified live, so I added nothing.",
+  "docs/community-benchmarks.md: the calculator comparison table has no rows for K2 Horizon MoVA, K2 Horizon 7B, Bolt, Groot or DeepSeek, because no calculator data for them is in the inputs. The honorable-mention rows are labelled, not removed.",
+  "The Qwen3.8-27B decode ceiling differs slightly between documents: about 65 tok/s (model-selection), 65-70 (llamacpp/models), about 68 (llamacpp/benchmarking) and about 72 (community-benchmarks). These come from different weight-size bases (12.24 GiB file vs about 11.7 GiB on the GPU). I left them as they are, since all are labelled estimates.",
+  "Style difference I left alone: the vLLM run template and recipes use 'docker run -d --rm', while the llama.cpp docs say no --rm, to keep logs. Neither uses a restart policy, so it does not break rule 9. The lead may want one convention.",
+  "llamacpp/benchmarking.md describes #27623 as reported on an RTX 4080 SUPER, with the q8_0 penalty 'in dispute'. llamacpp/README.md stresses the RTX 2000 Ada commenter's penalty and says to assume it applies. These do not contradict each other (community-benchmarks.md documents both reports), so I left them.",
+  "The new OpenCode K2 Horizon entries on llama.cpp set reasoning supported true with no effort list. From the description in opencode.md, this should stop OpenCode from adding automatic low/medium/high variants, but that is read from source and was not tested against a live server.",
+  "I did not use the Playwright browser tools or any network access. All edits are confined to the 11 knowledge base files, plus a scratch config at $SCRATCH/xdoc/opencode-new.json and the checker script $SCRATCH/multisent.py."
+ ]
+}

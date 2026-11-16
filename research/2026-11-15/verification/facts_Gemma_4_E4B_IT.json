@@ -1,0 +1,77 @@
+{
+ "overall": "holds-with-corrections",
+ "summary": "I could not refute any identity or capability fact, and every Google benchmark value I checked matched the card. One correction: the record says the aggregator's tau2 20.8% and TerminalBench Hard 8.3% are not confirmed on Artificial Analysis itself. Both values do appear in the page data embedded in AA's own E4B page (tau2 0.2076, terminalbenchHard 0.0833, slug gemma-4-e4b). The page also has a second gemma-4-e4b entry with tau2 0.2602, and I could not tell from the raw JSON which of the two is the reasoning variant. AA's headline Intelligence Index is N/A, as the record says.\n\nWhat I confirmed from raw sources:\n- **Ownership:** the repo author is google (HF org isVerified=true, enterprise plan).\n- **Dates:** HF createdAt 2026-03-02T19:57:40Z and lastModified 2026-11-03. ai.google.dev releases lists 'March 31, 2026 Release of Gemma 4 in E2B, E4B, 31B and 26B A4B sizes'. The blog's datePublished is 2026-04-02 and it links gg-hf-gg/gemma-4-E4B-it.\n- **License:** apache-2.0 in the card YAML, and the license_link page is titled 'Apache License 2.0'.\n- **Size and specs:** 7,996,156,490 params in a single model.safetensors of 15,992,595,884 bytes. The card says '4.5B effective (8B with embeddings)', with a ~150M vision encoder and a ~300M audio encoder, and gives 128K context. Audio inputs are capped at 30 s and video at 60 s.\n- **Config:** 42 layers, full_attention at layers 5/11/17/23/29/35/41, sliding_window 512, head_dim 256, global_head_dim 512, KV heads 2, query heads 8, hidden 2560, intermediate 10240, vocab 262144, max_position_embeddings 131072, num_kv_shared_layers 18, PLE 256, softcap 30, tied embeddings.\n- **Template:** header 'Published: 2026-07-09 ... Fixed tool-calling loops'. enable_thinking defaults to false and injects '<|think|>' (line 194); tools render as '<|tool>' (line 209); calls as '<|tool_call>call:' (line 247); results use '<|tool_response>'; preserve_thinking is handled at line 239.\n- **Card notes:** E2B/E4B emit no empty thought block when thinking is off, and sampling is temperature 1.0, top_p 0.95, top_k 64.\n- **Benchmarks:** the card's E4B column gives MMLU Pro 69.4, LCB v6 52.0, Codeforces 940, GPQA 58.6, Tau2 42.2, BBEH 33.1 and MRCR v2 128k 25.4. All are vendor self-reported.\n\nI did not re-check the vLLM, llama.cpp and Ollama details, the checkpoint sizes, or the memory arithmetic; this pass covered identity and capability only.",
+ "verdicts": [
+  {
+   "claim": "Official Google repo (HF org google, isVerified=true), not a re-upload; card links launch blog, ai.google.dev, arXiv 2607.02770",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/organizations/google/overview"
+  },
+  {
+   "claim": "HF createdAt 2026-03-02T19:57:40Z, lastModified 2026-11-03; release March 31, 2026 per ai.google.dev releases; launch blog Apr 02, 2026; within 2025-11-15..2026-11-15",
+   "verdict": "confirmed",
+   "evidence_url": "https://ai.google.dev/gemma/docs/releases"
+  },
+  {
+   "claim": "Launch blog links per-model repos in the gg-hf-gg namespace",
+   "verdict": "confirmed",
+   "evidence_url": "https://blog.google/innovation-and-ai/technology/developers-tools/gemma-4/"
+  },
+  {
+   "claim": "License apache-2.0 (card YAML, license_link gemma_4_license is the Apache License 2.0 page; blog says 'commercially permissive Apache 2.0 license')",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/google/gemma-4-E4B-it/raw/main/README.md"
+  },
+  {
+   "claim": "4.5B effective / 8B with embeddings; ~150M vision, ~300M audio encoder; safetensors total 7,996,156,490 params in one 15.99 GB file; dense",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/google/gemma-4-E4B-it?blobs=true"
+  },
+  {
+   "claim": "Architecture: 42 layers, 7 full-attention layers (5,11,...,41), sliding window 512, head_dim 256, global_head_dim 512, 2 KV heads, 8 query heads, hidden 2560, intermediate 10240, vocab 262144, num_kv_shared_layers 18, PLE 256, partial_rotary 0.25, rope_theta 1e6, softcap 30, tied embeddings",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/google/gemma-4-E4B-it/raw/main/config.json"
+  },
+  {
+   "claim": "Context 128K (max_position_embeddings 131072)",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/google/gemma-4-E4B-it/raw/main/config.json"
+  },
+  {
+   "claim": "Modalities: text, image, audio (max 30 s), video as frames (max 60 s at 1 fps); text output",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/google/gemma-4-E4B-it/raw/main/README.md"
+  },
+  {
+   "claim": "Thinking: toggle via enable_thinking (default false) injecting <|think|>; output <|channel>thought...<channel|>; E4B emits no empty thought block when off; preserve_thinking keeps thoughts on tool-call turns",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/google/gemma-4-E4B-it/raw/main/chat_template.jinja"
+  },
+  {
+   "claim": "Tool calling: native <|tool>, <|tool_call>call:NAME{...}<tool_call|>, <|tool_response>; template header Published 2026-07-09 'Fixed tool-calling loops'; card 'Function Calling - Native support'",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/google/gemma-4-E4B-it/raw/main/chat_template.jinja"
+  },
+  {
+   "claim": "Card benchmarks for E4B: MMLU Pro 69.4, LiveCodeBench v6 52.0, Codeforces ELO 940, GPQA Diamond 58.6, Tau2 avg-of-3 42.2, BigBench Extra Hard 33.1, MRCR v2 8-needle 128k 25.4 (all self-reported)",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/google/gemma-4-E4B-it/raw/main/README.md"
+  },
+  {
+   "claim": "Artificial Analysis: Intelligence Index N/A for E4B; output speed 66 tok/s (DeepInfra)",
+   "verdict": "confirmed",
+   "evidence_url": "https://artificialanalysis.ai/models/gemma-4-e4b"
+  },
+  {
+   "claim": "Terminal-Bench Hard 8.3% / tau2 20.8% from the aggregator designforonline.com, 'not confirmed on AA itself'",
+   "verdict": "refuted",
+   "correction": "The values are on AA itself. AA's E4B page embeds tau2 0.2076 and terminalbenchHard 0.0833 next to slug gemma-4-e4b. It also shows a second gemma-4-e4b entry with tau2 0.2602, and the raw JSON does not make clear which entry is the reasoning variant. The aggregator says 'Artificial Analysis data refreshed Nov 11, 2026'. These are independent measurements that disagree with Google's self-reported Tau2 of 42.2%, most likely because the harness and setting differ.",
+   "evidence_url": "https://artificialanalysis.ai/models/gemma-4-e4b"
+  },
+  {
+   "claim": "'12 on the older AA v4.1 index' (search snippet)",
+   "verdict": "uncertain",
+   "correction": "Not verified; the record already flags it as unverified."
+  }
+ ]
+}

@@ -1,0 +1,276 @@
+{
+ "name": "NVIDIA Nemotron 3.5 Lightning 30B-A3B",
+ "hf_repo": "nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16",
+ "official_org": {
+  "value": "NVIDIA (HF org 'nvidia'; API author=nvidia). NVIDIA's own developer blog (2026-08-11) announces the model and links it. The card's 'Model Developer' is NVIDIA Corporation, and the in-tree vLLM recipe names NVIDIA as provider. The verified badge was not checked visually.",
+  "source_url": "https://developer.nvidia.com/blog/Nvidia-nemotron-3-5-lightning-delivers-fast-accurate-specialized-task-execution-for-long-running-agents/",
+  "support": "direct-statement"
+ },
+ "release_date": {
+  "value": "HF createdAt 2026-08-01T06:55:21Z (repo made before launch; lastModified 2026-08-24). Public release and NVIDIA blog both dated 2026-08-11 (the card says 'Release Date: August 11, 2026'). Inside the 2025-11-15..2026-11-15 window.",
+  "source_url": "https://huggingface.co/api/models/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16",
+  "support": "direct-statement"
+ },
+ "license": {
+  "value": "OpenMDW-1.1 (HF tag license:other, license_name openmdw-1.1, link https://openmdw.ai/license/1-1/). It is permissive: 'permission is hereby granted, free of charge, to deal in the Model Materials without restriction'. The card says 'ready for commercial use'. Obligations: if you distribute, keep the agreement and the notices. Patent/copyright retaliation: the grant terminates if you sue claiming the Model Materials infringe. No restrictions on outputs. There are no use-based restrictions and no MAU cap.",
+  "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/raw/main/LICENSE",
+  "support": "direct-statement"
+ },
+ "params": {
+  "value": "Card: 30B total, 3B active. HF API safetensors total 31,577,937,344 (BF16 32.9e9 parameter entries incl. MTP layer; F32 3072), 61.31 GiB of safetensors. From config: routed expert weights = 23 MoE layers x 128 experts x 2 matrices (relu2, non-gated) x 2688 x 1856 = 29.37B, plus 1.28B in the MTP MoE layer; non-expert about 0.9B. Active: 6 of 128 routed experts plus 1 shared expert per MoE layer.",
+  "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/raw/main/config.json",
+  "support": "source-backed"
+ },
+ "architecture": {
+  "value": "NemotronHForCausalLM (model_type nemotron_h): a hybrid of Mamba-2, MoE and attention. 52 layers per layers_block_type: 23 mamba, 23 moe, 6 attention (blocks 5, 12, 19, 26, 33, 42), plus 1 MTP layer (attention+moe). Attention: 32 Q heads, 2 KV heads, head_dim 128, sliding_window null, rope_theta 10000. Mamba: 64 heads x head_dim 64, ssm_state 128, n_groups 8, conv_kernel 4, ssm cache fp32. MoE: 128 routed experts, top-6, 1 shared expert (3712), moe_intermediate 1856, hidden 2688, vocab 131072. Pre-trained in NVFP4; the card describes it as 'Nemotron-3-Lightning + MTP'.",
+  "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/raw/main/config.json",
+  "support": "direct-statement"
+ },
+ "context_length": {
+  "value": "config.json max_position_embeddings 262144 (256K). The card claims 'up to 1M tokens' and validates 1M on GB200 and 8xH100 via VLLM_ALLOW_LONG_MAX_MODEL_LEN=1 --max-model-len 1048576. The ggml-org GGUF metadata context_length is 1048576, and Ollama lists 1M. The vLLM recipe default is 262144.",
+  "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/raw/main/README.md",
+  "support": "direct-statement"
+ },
+ "modalities": {
+  "value": "Text in, text out only. The card says 'Input Type(s): Text', 'Data Modality: Text', and Ollama shows 'Text input'. The model is already text-only, so there is no vision tower.",
+  "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/raw/main/README.md",
+  "support": "direct-statement"
+ },
+ "thinking": {
+  "mode": "toggle",
+  "how_to_toggle": "Thinking is on by default. The chat template sets enable_thinking default True and opens '<think>\\n'. Turning it off renders '<think></think>'. vLLM: per request, extra_body={'chat_template_kwargs': {'enable_thinking': false}}. The nemotron_v3 parser at v0.33.0 (vllm/parser/nemotron_v3.py) reads enable_thinking, and when enable_thinking=False or force_nonempty_content=True with empty content it swaps reasoning into content. Reasoning comes back in message.reasoning. llama.cpp: per request chat_template_kwargs {'enable_thinking': false} or reasoning_effort 'none'; server-wide --reasoning off or --chat-template-kwargs. Ollama: native API 'think': false. OpenAI-compatible endpoint: reasoning_effort 'none', which maps to false for boolean-only models (docs/api/openai-compatibility.mdx at v0.40.16). The Ollama model uses the built-in renderer/parser 'nemotron-3.5-nano'. The template keeps only the last turn's thinking (truncate_history_thinking default True).",
+  "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/raw/main/chat_template.jinja",
+  "support": "direct-statement"
+ },
+ "tool_calling": {
+  "supported": "yes",
+  "format": "Qwen3-Coder XML: <tool_call><function=NAME><parameter=ARG>value</parameter></function></tool_call>. Tool results are wrapped as <tool_response> inside a user turn.",
+  "evidence": "The chat template renders the tools list ('# Tools ... <tools><function><name>..<parameters>..') and instructs the model in the XML call format. The card's 'Tool Calling' section uses --enable-auto-tool-choice --tool-call-parser qwen3_coder --reasoning-parser nemotron_v3. For coding agents the card adds: 'add extra_body={chat_template_kwargs: {force_nonempty_content: True}}'. Post-training covered multi-step tool use and 614,773 'Synthetic OpenCode Agentic Tasks'. NVIDIA's blog names OpenCode among the target harnesses. llama.cpp b12418 common/chat.cpp detects '<tool_call>'+'<function='+'<parameter=' and uses the Qwen3-Coder handler ('also used by Nemotron Nano 3').",
+  "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/raw/main/README.md",
+  "support": "direct-statement"
+ },
+ "checkpoints": [
+  {
+   "repo": "nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16",
+   "format": "safetensors BF16",
+   "size_gb": 65.83,
+   "official": true,
+   "publisher": "NVIDIA",
+   "source_url": "https://huggingface.co/api/models/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16?blobs=true"
+  },
+  {
+   "repo": "nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4",
+   "format": "ModelOpt NVFP4 (W4A16 experts, FP8 mamba proj and KV), 20.08 GiB",
+   "size_gb": 21.56,
+   "official": true,
+   "publisher": "NVIDIA",
+   "source_url": "https://huggingface.co/api/models/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4?blobs=true"
+  },
+  {
+   "repo": "nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4-DSpark",
+   "format": "draft head for speculative decoding",
+   "size_gb": 1.35,
+   "official": true,
+   "publisher": "NVIDIA",
+   "source_url": "https://huggingface.co/api/models/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4-DSpark?blobs=true"
+  },
+  {
+   "repo": "nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4-DFlash",
+   "format": "draft head for speculative decoding",
+   "size_gb": 1.18,
+   "official": true,
+   "publisher": "NVIDIA",
+   "source_url": "https://huggingface.co/api/models/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4-DFlash?blobs=true"
+  },
+  {
+   "repo": "ggml-org/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-GGUF",
+   "format": "GGUF Q4_0 (17.60 GiB, MTP split out into a separate 1.16 GB mtp-*.gguf); also Q8_0 33.59 GB and BF16 63.18 GB. There is NO Q4_K_M file, although NVIDIA's card command uses :Q4_K_M.",
+   "size_gb": 18.9,
+   "official": true,
+   "publisher": "ggml-org (linked by NVIDIA card as 'Official GGUF weights')",
+   "source_url": "https://huggingface.co/api/models/ggml-org/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-GGUF?blobs=true"
+  },
+  {
+   "repo": "bartowski/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-GGUF",
+   "format": "GGUF Q4_K_M 25.48 GB; IQ4_XS 18.92 GB; Q4_0 19.06 GB; IQ2_XXS 18.84 GB. Low-bit files barely shrink because 2688 and 1856 are not divisible by 256, so expert tensors fall back to Q5_0/Q8_0/IQ4_NL. Files embed the MTP layer.",
+   "size_gb": 25.48,
+   "official": false,
+   "publisher": "bartowski",
+   "source_url": "https://huggingface.co/api/models/bartowski/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-GGUF?blobs=true"
+  },
+  {
+   "repo": "unsloth/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-GGUF",
+   "format": "GGUF UD-Q4_K_XL 25.51 GB, MXFP4_MOE 23.21 GB, UD-IQ3_XXS 19.76 GB, smallest UD-IQ1_M 19.43 GB",
+   "size_gb": 25.51,
+   "official": false,
+   "publisher": "unsloth",
+   "source_url": "https://huggingface.co/api/models/unsloth/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-GGUF?blobs=true"
+  },
+  {
+   "repo": "lmstudio-community/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-GGUF",
+   "format": "GGUF Q4_K_M 24.52 GB, Q6_K 33.51, Q8_0 33.59",
+   "size_gb": 24.52,
+   "official": false,
+   "publisher": "lmstudio-community",
+   "source_url": "https://huggingface.co/api/models/lmstudio-community/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-GGUF?blobs=true"
+  },
+  {
+   "repo": "RedHatAI/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-FP8",
+   "format": "safetensors FP8",
+   "size_gb": 32.29,
+   "official": false,
+   "publisher": "RedHatAI",
+   "source_url": "https://huggingface.co/api/models/RedHatAI/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-FP8?blobs=true"
+  },
+  {
+   "repo": "RedHatAI/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4",
+   "format": "safetensors NVFP4",
+   "size_gb": 21.56,
+   "official": false,
+   "publisher": "RedHatAI",
+   "source_url": "https://huggingface.co/api/models/RedHatAI/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4?blobs=true"
+  },
+  {
+   "repo": "useful-quants/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-W4A16",
+   "format": "safetensors W4A16 (smallest vLLM-format build found, 16.60 GiB)",
+   "size_gb": 17.83,
+   "official": false,
+   "publisher": "useful-quants (community)",
+   "source_url": "https://huggingface.co/api/models/useful-quants/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-W4A16?blobs=true"
+  }
+ ],
+ "vllm": {
+  "arch_supported": "Yes. NemotronHForCausalLM -> nemotron_h is in vllm/model_executor/models/registry.py at tag v0.33.0 (line 186), and NemotronHMTPModel is registered for MTP. The v0.33.0 tree also ships recipes/models/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16.yaml.",
+  "min_version": "0.27.1 (recipe min_vllm_version; recipe image v0.28.0; card pins vllm/vllm-openai:v0.27.1)",
+  "tool_call_parser": "qwen3_coder (registered in vllm/tool_parsers/__init__.py at v0.33.0)",
+  "reasoning_parser": "nemotron_v3 (registered in vllm/reasoning/__init__.py at v0.33.0 -> NemotronV3ParserReasoningAdapter wrapping vllm/parser/nemotron_v3.py)",
+  "best_checkpoint": "None fits on GPU. Least bad: nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4 (20.08 GiB) with expert CPU offload. The recipe states vram_minimum_gb 18 for NVFP4.",
+  "weights_gib": 20.08,
+  "kv_bytes_per_token_bf16": 6144,
+  "kv_math": "Budget 16303 MiB x 0.92 = 14.65 GiB. NVFP4: 14.65 - 20.08 - 1.2 = -6.63 GiB, does NOT fit. Community W4A16 16.60 GiB: -3.15 GiB, does not fit. FP8 30.08 GiB: no. KV/token = 2 x 6 full-attn layers x 2 KV heads x 128 x 2 B = 6144 B (6 KiB) BF16, 3072 B FP8. So 128K tokens = 0.75 GiB BF16 and 1M = 6 GiB. Mamba state per sequence about 23 x (64x64x128x4 B + 6144x3x2 B) = about 47 MiB, fixed. Speculative offload path: --cpu-offload-gb 8 --cpu-offload-params experts leaves 12.08 GiB on GPU. Pool = 14.65 - 12.08 - 1.2 = 1.37 GiB; minus about 0.2 GiB of mamba state for 4 seqs gives about 1.17 GiB. That is about 204K tokens BF16 or about 409K FP8, capped at 262144 (max_position_embeddings) unless VLLM_ALLOW_LONG_MAX_MODEL_LEN=1.",
+  "est_max_context_tokens": 0,
+  "fits": "no",
+  "quant_on_sm120": "The recipe runs NVFP4 as W4A16 through Marlin MoE (--moe-backend marlin), which runs on sm_120. NVIDIA's NVFP4 card hardware matrix lists the GeForce RTX 5090 as 'Hardware: yes' but marks the compute path '_confirm_' and says '_no recipe published_'. No laptop or 16 GB RTX 50 card is validated. Open issue #52225 reports recurring Xid 13 errors on SM120 with this exact NVFP4+marlin+hybrid Mamba combination under multi-hour load.",
+  "serve_command": "Not recommended on this machine. Untested sketch: docker run --gpus all --ipc=host -p 8000:8000 -v ~/.cache/huggingface:/root/.cache/huggingface vllm/vllm-openai:v0.33.0 --model nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4 --served-model-name nemotron-3.5-lightning --kv-cache-dtype fp8 --moe-backend marlin --cpu-offload-gb 8 --cpu-offload-params experts --max-model-len 131072 --max-num-seqs 4 --enable-prefix-caching --mamba-cache-mode align --reasoning-parser nemotron_v3 --tool-call-parser qwen3_coder --enable-auto-tool-choice --default-chat-template-kwargs '{\"force_nonempty_content\": true}'. The card's own H100 command is: vllm serve --model $MODEL_CKPT --max-num-seqs 128 --enable-prefix-caching --async-scheduling --mamba-backend flashinfer --mamba-ssm-cache-dtype float16 --enable-mamba-cache-stochastic-rounding --mamba-cache-philox-rounds 5 --reasoning-parser nemotron_v3 --tool-call-parser qwen3_coder --enable-auto-tool-choice",
+  "known_issues": "Open vLLM issues: #62078 (Nemotron-3.5 tool calls lose trailing/edge newlines under qwen3_coder format); #49412 (streaming vs non-streaming whitespace mismatch at tool-call boundaries, nemotron_v3/qwen3); #43728 (thinking vs enable_thinking kwarg mismatch -> content null); #39103 (--reasoning-config breaks nemotron_v3, content null); #52225 (Xid 13 on SM120 with Lightning NVFP4 marlin); #55406 (illegal memory access in cudagraph on SM110); #60008 (mamba align prefix caching costs 11-16% throughput); #59770 (NVFP4 decode 16% slower on GB10 since v0.29.0); #55894 (hybrid Mamba + MTP silently corrupts requests with some drafter backends). The BF16 recipe needs the fastokens package (VLLM_USE_FASTOKENS=1, #47859), which is not bundled. The card notes that reasoning tokens count toward max_tokens, so content comes back empty if the budget runs out.",
+  "sources": [
+   "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/model_executor/models/registry.py",
+   "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/tool_parsers/__init__.py",
+   "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/reasoning/__init__.py",
+   "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/parser/nemotron_v3.py",
+   "https://github.com/vllm-project/vllm/blob/v0.33.0/recipes/models/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16.yaml",
+   "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/config/offload.py",
+   "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4/raw/main/README.md",
+   "https://github.com/vllm-project/vllm/issues/52225",
+   "https://github.com/vllm-project/vllm/issues/62078"
+  ]
+ },
+ "llamacpp": {
+  "gguf_repo": "ggml-org/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-GGUF",
+  "quant": "Q4_0 (NVIDIA-Nemotron-3.5-Lightning-30B-A3B-Q4_0.gguf). Experts are Q4_0 at 15.39 GiB over 23 MoE layers, 0.669 GiB per layer. Attn, ssm, shared experts and embeddings are Q8_0 at 2.20 GiB. Parsed from the GGUF header via HTTP range read. It is the smallest sensible file: K-quants and IQ quants cannot go below about 4.5 bpw on the experts because of the 256-divisibility fallback. The MTP head is a separate file and can be skipped.",
+  "file_gib": 17.6,
+  "arch_supported": "Yes: LLM_ARCH_NEMOTRON_H_MOE ('nemotron_h_moe') and src/models/nemotron-h-moe.cpp at build b12418 (2026-11-15, prerelease). The latest stable is llama.cpp v1.0.0 (2026-11-13), which adds the host-memory MoE expert cache (--moe-cache-mib) and FP8 KV. The arch predates both (Nemotron 3 Nano). Tool calling: with --jinja (default) the template triggers common_chat_params_init_qwen3_coder (common/chat.cpp line 1420, 'also used by Nemotron Nano 3').",
+  "offload_plan": "VRAM 15.92 GiB - 0.11 idle - about 0.4 CUDA ctx - about 1.0 compute buffer = 14.4 GiB for weights+KV+state. At 128K context with f16 KV: KV 6144 B x 131072 = 0.75 GiB and recurrent state about 0.05 GiB, leaving 13.6 GiB for weights: 2.20 non-expert + 16 MoE layers x 0.669 = 10.70 GiB on GPU, so 7 MoE layers (4.68 GiB) go to system RAM. --n-cpu-moe counts blocks, not MoE layers. MoE blocks are 1,3,6,8,10,13,15,..., so --n-cpu-moe 16 moves 7 MoE layers. Estimated VRAM about 15.2 GiB. For 256K use -ctk q8_0 -ctv q8_0 (KV 0.80 GiB) with the same split. Alternatively leave --fit on (the default) and let it pick. RAM: about 4.7 GiB experts plus page cache, well under 40 GiB.",
+  "est_vram_gib": 15.2,
+  "est_ram_gib": 5.5,
+  "est_context_tokens": 131072,
+  "server_command": "docker run --gpus all -p 8080:8080 -v ~/models:/models ghcr.io/ggml-org/llama.cpp:server-cuda13 -m /models/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-Q4_0.gguf --host 0.0.0.0 --port 8080 --alias nemotron-3.5-lightning -c 131072 -np 1 -ngl 99 --n-cpu-moe 16 -fa on --jinja --temp 1.0 --top-p 0.95 --chat-template-kwargs '{\"force_nonempty_content\": true}'",
+  "tool_calling_note": "The template uses Qwen3-Coder XML. llama.cpp auto-detects it and routes it to the Qwen3-Coder handler, so tool_calls are parsed with --jinja. There is no Lightning-specific open llama.cpp issue. #20650 (500 'Failed to parse input' on tool calling) is open but generic. NVIDIA's card llama.cpp command references :Q4_K_M, which does not exist in the ggml-org repo, and it targets the RTX 5090 at -c 40960.",
+  "sources": [
+   "https://huggingface.co/ggml-org/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-GGUF/resolve/main/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-Q4_0.gguf (header only, range read)",
+   "https://huggingface.co/api/models/ggml-org/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-GGUF?blobs=true",
+   "https://github.com/ggml-org/llama.cpp/blob/b12418/src/llama-arch.cpp",
+   "https://github.com/ggml-org/llama.cpp/blob/b12418/common/chat.cpp",
+   "https://github.com/ggml-org/llama.cpp/blob/b12418/tools/server/README.md",
+   "https://github.com/ggml-org/llama.cpp/releases/tag/v1.0.0",
+   "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4/raw/main/README.md",
+   "https://github.com/ggml-org/llama.cpp/issues/26616"
+  ]
+ },
+ "ollama": {
+  "tag": "nemotron-3.5-lightning (:latest = :30b = :30b-a3b = :30b-a3b-q4_K_M, digest 5c19f6282f4f on linux/amd64). Other tags: :30b-a3b-q8_0 35 GB, :30b-a3b-bf16 66 GB, plus MLX-only tags :30b-a3b-nvfp4 / :30b-mlx / :30b-a3b-mlx (19 GB, 256K) and :30b-a3b-mxfp8 (34 GB). The '19GB - 25GB' range on the page is MLX vs GGUF; on Linux you get 25 GB.",
+  "size_gb": 25.43,
+  "context": "1M listed. Ollama defaults to 4K on GPUs under 24 GB, so set num_ctx / OLLAMA_CONTEXT_LENGTH to at least 65536.",
+  "capabilities": "Badges: tools, thinking (no vision; Text input). Config blob: renderer/parser 'nemotron-3.5-nano', requires Ollama 0.32.9, file_type Q4_K_M, model_type 32.9B. Params: temperature 1, top_p 0.95, draft_num_predict 2. 897.9K downloads. The page offers 'ollama launch opencode --model nemotron-3.5-lightning'.",
+  "source_url": "https://ollama.com/library/nemotron-3.5-lightning/tags"
+ },
+ "benchmarks": [
+  {
+   "name": "SWE-bench Verified",
+   "score": "51.56 (BF16); 52.80 (NVFP4)",
+   "setting": "NVIDIA NeMo Evaluator harness, NVIDIA-measured; same table: Qwen3.6-35B-A3B 70.12, Gemma 4 26B-A4B 57.40, gpt-oss-20b 52.44, Nemotron 3 Nano 34.08, Nemotron 3 Super 63.08",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/raw/main/README.md"
+  },
+  {
+   "name": "SWE-bench Multilingual",
+   "score": "39.33",
+   "setting": "NVIDIA harness",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/raw/main/README.md"
+  },
+  {
+   "name": "Terminal-Bench 2.1",
+   "score": "24.58 (BF16); 23.46 (NVFP4)",
+   "setting": "NVIDIA NeMo Evaluator; Qwen3.6-35B-A3B 44.38, Gemma 4 26B-A4B 37.22, gpt-oss-20b 15.17 in same table",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4/raw/main/README.md"
+  },
+  {
+   "name": "tau3-bench (Banking)",
+   "score": "9.28",
+   "setting": "NeMo Gym",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/raw/main/README.md"
+  },
+  {
+   "name": "PinchBench",
+   "score": "85.37",
+   "setting": "NeMo Gym",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/raw/main/README.md"
+  },
+  {
+   "name": "IFBench (loose)",
+   "score": "71.88",
+   "setting": "NeMo Gym",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/raw/main/README.md"
+  },
+  {
+   "name": "AA-LCR (long context)",
+   "score": "52.00",
+   "setting": "NVIDIA-run",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/raw/main/README.md"
+  },
+  {
+   "name": "Artificial Analysis Intelligence Index",
+   "score": "24 (Nemotron 3 Nano 15). The launch article also cites Terminal-Bench v2.1 24% and GDPval-AA v2 Elo 824. Aggregators list 12.9 as of 2026-10, likely a later index version. Not reconciled.",
+   "setting": "Artificial Analysis launch article, 2026-08-11, NVFP4 on a pre-release DeepInfra endpoint; index version not stated",
+   "self_reported": false,
+   "source_url": "https://artificialanalysis.ai/articles/nemotron-3-5-lightning-launch"
+  }
+ ],
+ "speed_notes": "Inferred bandwidth bound for the recommended llama.cpp split (ggml-org Q4_0, --n-cpu-moe 16, 7 of 23 MoE layers in RAM). Bytes read per token: non-expert Q8_0 (mamba 0.95 GB, shared experts 0.49 GB, attention 0.15 GB, output head 0.37 GB) is about 1.99 GB. Routed experts are 6/128 x 15.39 GiB, about 0.78 GB, of which 0.54 GB is on GPU and 0.24 GB in RAM. GPU time is 2.53 GB / 896 GB/s = 2.8 ms and CPU time is 0.24 GB / about 80 GB/s = 3.0 ms, so about 5.8 ms per token. The ceiling is about 170 tok/s decode; a realistic estimate is 60 to 110 tok/s. Fully on GPU (not possible here) the ceiling would be about 320 tok/s. KV is tiny and attention is only 6 layers, so decode speed should stay nearly flat as context grows; prefill on 23 Mamba layers is linear. Ollama :latest (25.4 GB q4_K_M with Q5_0/Q8_0 experts) needs more RAM offload and will be slower. Measured: Artificial Analysis reports about 670 tok/s on a datacenter DeepInfra endpoint, and the vLLM recipe reports 93.3 decode tok/s on DGX Spark (DSpark, concurrency 1). A web search found no measured RTX 5080 / 16 GB figure. A forum lead cites 70-80 tok/s on an RTX 5090 with some RAM offload, runtime unspecified and unverified.",
+ "opencode_fit": {
+  "verdict": "good",
+  "recommended_runtime": "llama.cpp server in Docker (ghcr.io/ggml-org/llama.cpp:server-cuda13 or v1.0.0 equivalent) with partial expert offload; Ollama as a simpler fallback; not vLLM on this GPU",
+  "recommended_checkpoint": "ggml-org/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-GGUF : NVIDIA-Nemotron-3.5-Lightning-30B-A3B-Q4_0.gguf (18.90 GB)",
+  "recommended_context": "131072 with f16 KV (about 0.75 GiB), or 262144 with q8_0 KV. KV costs only 6 KiB/token, so context is cheap; the 64K OpenCode minimum is easily met.",
+  "caveats": "1) It does not fit in VRAM in any format: the smallest GGUF is 17.6 GiB and NVFP4 is 20.08 GiB. 7 of 23 MoE layers must sit in system RAM, and vLLM is ruled out except via unvalidated UVA expert offload. 2) Agentic coding quality is mid-tier on NVIDIA's own same-harness table: SWE-bench Verified 51.56 and Terminal-Bench 2.1 24.58. That trails Qwen3.6-35B-A3B (70.12/44.38) and Gemma 4 26B-A4B (57.40/37.22) and is about level with gpt-oss-20b. The model's strengths are speed, tool-use reliability and IFBench. 3) NVIDIA advises force_nonempty_content=true for coding agents; set it server-wide (llama.cpp --chat-template-kwargs, vLLM --default-chat-template-kwargs). 4) OpenCode v2.3.0 discovered vLLM models start with tools disabled, so declare capabilities.tools explicitly. 5) Reasoning appears in 'reasoning' (vLLM) or 'reasoning_content' (llama.cpp); thinking is on by default and consumes max_tokens. 6) Do not use the NVIDIA card's ':Q4_K_M' tag with ggml-org: it does not exist, and community Q4_K_M files are about 25 GB because experts fall back to Q5_0/Q8_0. 7) Ollama defaults to a 4K context on this GPU; raise num_ctx."
+ },
+ "gaps": [
+  "No measured tokens/s or verified max context on an RTX 5080 Laptop (or any 16 GB card) for any runtime; all speed and VRAM figures are bandwidth and size arithmetic (inferred).",
+  "The compute buffer (about 1 GiB) and CUDA context (about 0.4 GiB) for llama.cpp are assumptions; the exact --n-cpu-moe value may need +/-2 adjustment, or use --fit on.",
+  "vLLM UVA expert offload (--cpu-offload-gb with --cpu-offload-params experts) with Marlin NVFP4 MoE on sm_120 is untested; per-token PCIe traffic behaviour and stability are speculative. NVIDIA marks the RTX 5090 NVFP4 path '_confirm_'.",
+  "Verified badge on the HF nvidia org page was not checked visually (ownership confirmed via API author and NVIDIA blog).",
+  "Artificial Analysis index: launch article says 24, aggregators say 12.9 (2026-10); the current live AA leaderboard value and index version were not read directly.",
+  "No independent SWE-bench / Terminal-Bench / BFCL / Aider leaderboard entry for Lightning was found; all agentic coding numbers are NVIDIA-measured.",
+  "Discovery lead 'SWE-bench Verified 63.08 / TB2.1 39.61' is Nemotron 3 Super's column in the Lightning table, not Lightning's; the 23.46 TB2.1 figure is the NVFP4 variant.",
+  "Did not verify whether llama.cpp loads the embedded MTP tensors of bartowski/unsloth files into VRAM (ggml-org splits MTP into a separate file, so the recommendation avoids the question).",
+  "OpenCode-specific end-to-end tool-calling behaviour with this model (e.g. issue #60202, tool_choice omitted) was not tested.",
+  "llama.cpp release naming changed: the latest stable is v1.0.0 (2026-11-13) and b12418/b12419 are marked prerelease; the image tag mapping for v1.0.0 was not checked."
+ ],
+ "within_last_12_months": true
+}

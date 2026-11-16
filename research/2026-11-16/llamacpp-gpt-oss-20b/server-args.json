@@ -1,0 +1,1 @@
+["-hf","ggml-org/gpt-oss-20b-GGUF:MXFP4","--alias","local","-ngl","all","-fa","on","-c","131072","-ctk","q8_0","-ctv","q8_0","-np","1","--jinja","--reasoning-effort","medium","--temp","1.0","--top-p","1.0"]

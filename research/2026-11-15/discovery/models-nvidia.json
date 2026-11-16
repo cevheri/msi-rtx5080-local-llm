@@ -1,0 +1,526 @@
+{
+ "summary": "NVIDIA's open Nemotron lineup changed a lot between 2025-11-15 and 2026-11-15. Releases in the window: Nemotron 3 Nano 30B-A3B (Dec 2025), Nemotron 3 Nano 4B (Mar 2026), Nemotron 3 Super 120B-A12B (Mar 2026), Nemotron 3 Ultra 550B-A55B (Jun 2026), Nemotron-Cascade-2-30B-A3B and Nemotron-Terminal 8B/14B/32B (Feb-Mar 2026), Nemotron 3.5 Lightning 30B-A3B (Aug 11 2026), Nemotron 3.5 Bolt E4B and Bolt 74B-A9B-24GB (Oct 2026), and Nemotron-Labs-Dory1.0-4B (Oct 16 2026). The org listing is at https://huggingface.co/api/models?author=nvidia&search=nemotron&sort=createdAt&direction=-1.\n\nThe best Nemotron for agentic coding is Nemotron 3.5 Lightning 30B-A3B. It is a hybrid Mamba-2/MoE/attention model with only 6 attention layers and 2 KV heads, so its KV cache is about 6 KiB per token in BF16. Thinking can be toggled and tool calling is supported. On NVIDIA's own harness it scores SWE-bench Verified 51.56 and Terminal-Bench 2.1 24.58, and it is licensed OpenMDW-1.1 (https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16). Its weights do not fit in 16 GB of VRAM, though: NVFP4 is 21.6 GB and ggml-org Q4_0 is 18.9 GB. So on this laptop it needs llama.cpp or Ollama with some experts kept in system RAM. vLLM on the GPU alone cannot hold it.\n\nWhat fits entirely in vLLM on 16 GB: Nemotron 3 Nano 4B (BF16 8 GB, FP8 5.3 GB), Dory1.0-4B (NVFP4 3.2 GB, BF16 8 GB, but it needs vLLM v0.33.0, still rc), the older Nemotron Nano 9B v2 (FP8 10.3 GB, NVFP4 7.9 GB, from Aug 2025) and Nemotron-Terminal-8B. Bolt E4B (a Gemma-4-E4B fine-tune) is 16 GB in BF16, so it fits only as GGUF (6.2 GB) through llama.cpp or Ollama.\n\nNVIDIA's vLLM recipes use these parsers:\n- Nemotron 3.5 models: `--tool-call-parser qwen3_coder --reasoning-parser nemotron_v3` (nemotron_v3 is built into vLLM v0.32.0).\n- Nemotron 3 Nano: `--reasoning-parser-plugin nano_v3_reasoning_parser.py --reasoning-parser nano_v3`, where the plugin file is downloaded from the model repo.\n- Bolt E4B: `--tool-call-parser gemma4 --reasoning-parser gemma4`.\n\nNVFP4 on this GPU (sm_120): the Lightning NVFP4 card lists GeForce RTX 5090 as 'Hardware: yes' but marks the recipe '_confirm_' with no recipe published, and the NVIDIA blog names only the 5090. Laptop RTX 50 and 16 GB cards are not mentioned anywhere. vLLM's b12x doc does say its kernels support NVFP4 on SM120/SM121 GPUs (https://github.com/vllm-project/vllm/blob/v0.32.0/docs/features/quantization/b12x.md).\n\nNemotron 3 Super (120B-A12B, NVFP4 80 GB) and Ultra (550B-A55B, NVFP4 352 GB) clearly do not fit. Bolt 74B-A9B-24GB (22 GB GGUF) is documented by NVIDIA only for 32 GB+ GPUs. Cascade-2's card says outright that it does not currently support OpenCode.",
+ "models": [
+  {
+   "name": "NVIDIA Nemotron 3.5 Lightning 30B-A3B",
+   "vendor": "NVIDIA",
+   "family": "Nemotron 3.5",
+   "hf_repo": "nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4 (BF16 reference: nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16)",
+   "release_date": "2026-08-11 (HF repo created 2026-08-01/04)",
+   "total_params_b": 30,
+   "active_params_b": 3,
+   "architecture": "Hybrid MoE: Mamba-2 + MoE + attention (52 layers, only 6 attention layers, 2 KV heads, head_dim 128; 128 routed experts, 6 active) + MTP layers",
+   "context_length": "Up to 1M (config max_position_embeddings 262144; card validates 1M on datacenter GPUs)",
+   "license": "OpenMDW-1.1 (permissive: free use incl. commercial, keep license/notices on redistribution, patent-litigation termination, no restrictions on outputs)",
+   "modalities": "text in / text out",
+   "thinking": "toggle",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "NVFP4 (nvidia/...-NVFP4) 21.58 GB repo total",
+    "ggml-org GGUF Q4_0 18.90 GB (+ optional MTP head Q4_0 1.16 GB)",
+    "ggml-org GGUF Q8_0 33.59 GB",
+    "ggml-org GGUF BF16 63.18 GB",
+    "BF16 safetensors 65.85 GB",
+    "Ollama nemotron-3.5-lightning:30b-a3b-q4_K_M 25 GB, :30b-a3b-q8_0 35 GB, :latest 19-25 GB (MLX/nvfp4 19 GB tags are Apple MLX only)",
+    "Speculative drafters: -NVFP4-DSpark, -NVFP4-DFlash"
+   ],
+   "vllm": "vllm/vllm-openai:v0.27.1 per card. Card DGX Spark recipe: vllm serve --model nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4 --moe-backend marlin --kv-cache-dtype fp8 --enable-prefix-caching --gpu-memory-utilization 0.85 --mamba-backend flashinfer --mamba-cache-mode align --reasoning-parser nemotron_v3 --tool-call-parser qwen3_coder --enable-auto-tool-choice (plus DSpark speculative config). Parsers: tool qwen3_coder, reasoning nemotron_v3 (built into vLLM v0.32.0 registry). RTX 5090 row of hardware matrix: '_confirm_', '_no recipe published_'.",
+   "llamacpp_ollama": "llama.cpp (card): llama-server -hf ggml-org/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-GGUF:Q4_K_M --temp 1.0 --top-p 0.95 -np 1 -c 40960 -ngl 99 -fa on --jinja (note: ggml-org repo only contains Q4_0/Q8_0/BF16, no Q4_K_M file). Ollama: ollama run nemotron-3.5-lightning (Ollama 0.32.9 per card; tools+thinking tags on ollama.com); Ollama auto-sets context to 4K under 24 GB VRAM, raise num_ctx manually.",
+   "fit_16gb": "vLLM: does not fit on GPU alone (NVFP4 weights 21.6 GB > 16 GB; would need --cpu-offload-gb, slow, untested). llama.cpp: Q4_0 18.9 GB needs about 4-6 GB of expert tensors kept in system RAM (--n-cpu-moe / -ot), feasible with 64 GB RAM. KV cache is tiny (6 layers x 2 KV heads x 128 x 2 bytes x2 = ~6 KiB/token BF16, ~0.8 GB per 128K tokens), so long context is cheap. Ollama: 25 GB q4_K_M will spill to CPU automatically.",
+   "coding_agent_evidence": "NVIDIA-measured (NeMo Evaluator, self-reported by vendor): SWE-bench Verified 51.56, SWE-bench Multilingual 39.33, Terminal-Bench 2.1 24.58, PinchBench 85.37, tau3-bench Banking 9.28, IFBench 71.88, AA-LCR 52.00; same table shows Qwen3.6-35B-A3B 70.12 SWE-V / 44.38 TB2.1 and gpt-oss-20b 52.44 / 15.17. https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16 . NVIDIA blog lists OpenCode among supported harnesses.",
+   "confidence": "high",
+   "sources": [
+    "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/raw/main/README.md",
+    "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4/raw/main/README.md",
+    "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/raw/main/config.json",
+    "https://huggingface.co/api/models/ggml-org/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-GGUF?blobs=true",
+    "https://ollama.com/library/nemotron-3.5-lightning/tags",
+    "https://developer.nvidia.com/blog/nvidia-nemotron-3-5-lightning-delivers-fast-accurate-specialized-task-execution-for-long-running-agents/"
+   ],
+   "notes": "Best Nemotron for OpenCode on this box, but only via llama.cpp/Ollama with partial CPU expert offload. Recommended sampling temp 1.0, top_p 0.95."
+  },
+  {
+   "name": "NVIDIA Nemotron 3 Nano 30B-A3B",
+   "vendor": "NVIDIA",
+   "family": "Nemotron 3",
+   "hf_repo": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-NVFP4 (also -FP8, -BF16)",
+   "release_date": "2025-12-15",
+   "total_params_b": 30,
+   "active_params_b": 3,
+   "architecture": "Hybrid Mamba-2/MoE/attention (same config shape as Lightning: 52 layers, 6 attention, 2 KV heads)",
+   "context_length": "256K default in recipe, up to 1M with VLLM_ALLOW_LONG_MAX_MODEL_LEN=1",
+   "license": "NVIDIA Nemotron Open Model License",
+   "modalities": "text",
+   "thinking": "toggle",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "NVFP4 19.36 GB",
+    "FP8 32.70 GB",
+    "BF16 63.17 GB",
+    "Ollama nemotron-3-nano:30b 18-24 GB"
+   ],
+   "vllm": "vllm>=0.12.0. Card: VLLM_USE_FLASHINFER_MOE_FP4=1 VLLM_FLASHINFER_MOE_BACKEND=throughput vllm serve nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-NVFP4 --max-model-len 262144 --trust-remote-code --enable-auto-tool-choice --tool-call-parser qwen3_coder --reasoning-parser-plugin nano_v3_reasoning_parser.py --reasoning-parser nano_v3 (plugin file from the HF repo). Supported hardware listed: H100-80GB, A100.",
+   "llamacpp_ollama": "Ollama nemotron-3-nano:30b (tools, thinking).",
+   "fit_16gb": "vLLM: does not fit (NVFP4 19.4 GB). llama.cpp/Ollama with experts partly in RAM: ~18-24 GB total.",
+   "coding_agent_evidence": "Vendor card: SWE-Bench (OpenHands) 38.8, Terminal Bench hard 8.5, TauBench V2 avg 49.0, BFCL v4 53.8, LiveCodeBench v6 68.3. Superseded by Lightning (34.08 SWE-V in Lightning table).",
+   "confidence": "high",
+   "sources": [
+    "https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16/raw/main/README.md",
+    "https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-NVFP4/raw/main/README.md",
+    "https://ollama.com/library/nemotron-3-nano/tags"
+   ],
+   "notes": "Superseded by Nemotron 3.5 Lightning on every agentic coding metric in NVIDIA's own table."
+  },
+  {
+   "name": "NVIDIA Nemotron 3 Nano 4B",
+   "vendor": "NVIDIA",
+   "family": "Nemotron 3",
+   "hf_repo": "nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16 (also -FP8, -GGUF)",
+   "release_date": "2026-03-16",
+   "total_params_b": 4,
+   "active_params_b": 4,
+   "architecture": "Dense hybrid Mamba-2/Transformer (42 layers, 4 attention layers, 8 KV heads); compressed from Nemotron Nano 9B v2 via Nemotron Elastic",
+   "context_length": "262K",
+   "license": "NVIDIA Nemotron Open Model License",
+   "modalities": "text",
+   "thinking": "toggle",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "FP8 5.28 GB",
+    "GGUF Q4_K_M 2.84 GB",
+    "BF16 7.96 GB",
+    "Ollama nemotron-3-nano:4b 2.8-2.9 GB, :4b-q8_0 4.2 GB, :4b-bf16 8.0 GB"
+   ],
+   "vllm": "vllm>=0.15.1. Card: vllm serve nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16 --max-model-len 262144 --trust-remote-code --mamba_ssm_cache_dtype float32 --enable-auto-tool-choice --tool-call-parser qwen3_coder --reasoning-parser-plugin nano_v3_reasoning_parser.py --reasoning-parser nano_v3 (FP8 variant adds --kv-cache-dtype fp8). Supported hardware lists GeForce RTX.",
+   "llamacpp_ollama": "Official GGUF Q4_K_M; Ollama nemotron-3-nano:4b (tools, thinking).",
+   "fit_16gb": "vLLM fits: BF16 ~8 GB or FP8 ~5.3 GB; KV ~16 KiB/token BF16 (4 attn layers x 8 KV heads x 128), so full 256K context needs ~4 GB.",
+   "coding_agent_evidence": "Vendor card: BFCL v3 61.1, Tau2 Airline/Retail/Telecom 33.3/39.8/33 (reasoning on), LiveCodeBench 51.8. No SWE-bench/Terminal-Bench reported. Weak for a coding agent.",
+   "confidence": "high",
+   "sources": [
+    "https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16/raw/main/README.md",
+    "https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Nano-4B-FP8/raw/main/README.md",
+    "https://ollama.com/library/nemotron-3-nano/tags"
+   ],
+   "notes": "An NVIDIA card that explicitly names GeForce RTX as a target. Best used as a small sub-agent, not as the main coding model."
+  },
+  {
+   "name": "NVIDIA Nemotron-Labs Dory1.0-4B",
+   "vendor": "NVIDIA",
+   "family": "Nemotron Labs",
+   "hf_repo": "nvidia/NVIDIA-Nemotron-Labs-Dory1.0-4B-NVFP4 (also -BF16, -MXFP8, -GGUF)",
+   "release_date": "2026-10-16",
+   "total_params_b": 4,
+   "active_params_b": 4,
+   "architecture": "Looped (latent-recurrent) normalized-GPT, interleaved sliding-window and full attention; 8 input + 20 recurrent + 8 output layers, recurrent block applied 1-4 times",
+   "context_length": "Up to 256K",
+   "license": "OpenMDW-1.1",
+   "modalities": "text, English only",
+   "thinking": "always",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "NVFP4 3.22 GB",
+    "BF16 7.97 GB",
+    "MXFP8 (size not checked)",
+    "GGUF Q5_K_M 3.67 GB"
+   ],
+   "vllm": "Card: needs vLLM PR #60149 (merged 2026-10-25; included in v0.33.0rc3, not in v0.32.0). vllm serve --model nvidia/NVIDIA-Nemotron-Labs-Dory1.0-4B-BF16 --hf-overrides '{\"n_recurrent_loops\": 2, \"recurrent_kv_cache_mode\": \"per_loop\"}' --reasoning-parser nemotron_v3 --tool-call-parser qwen3_coder --enable-auto-tool-choice. Card: 'Reasoning is always on in vLLM'. NVFP4 card supported hardware: Hopper, Blackwell.",
+   "llamacpp_ollama": "llama.cpp support only in open PR ggml-org/llama.cpp#30306 (still open 2026-11-14); card build instructions target macOS arm64. No Ollama tag found.",
+   "fit_16gb": "vLLM fits easily: NVFP4 ~3.2 GB or BF16 ~8 GB; KV grows with loop count unless recurrent_kv_cache_mode=last_loop.",
+   "coding_agent_evidence": "Vendor card: SWE-bench Verified 50.3 / 59.5 / 61.8 at 1 / 2 / 4 loops; Terminal-Bench 2.1 12.5 / 18.1 / 22.2; tau3 Banking 11.6-14.69 (NVIDIA-measured).",
+   "confidence": "medium",
+   "sources": [
+    "https://huggingface.co/nvidia/NVIDIA-Nemotron-Labs-Dory1.0-4B-BF16/raw/main/README.md",
+    "https://huggingface.co/api/models/nvidia/NVIDIA-Nemotron-Labs-Dory1.0-4B-NVFP4?blobs=true",
+    "https://github.com/vllm-project/vllm/pull/60149",
+    "https://github.com/ggml-org/llama.cpp/pull/30306"
+   ],
+   "notes": "Experimental 'Labs' model. Strong SWE-bench score for its size, but runtime support is very new: it needs the vLLM v0.33 rc or a nightly image, and llama.cpp support is unmerged."
+  },
+  {
+   "name": "NVIDIA Nemotron 3.5 Bolt E4B",
+   "vendor": "NVIDIA",
+   "family": "Nemotron 3.5",
+   "hf_repo": "nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-BF16 (Q4_K_M: nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-4GB)",
+   "release_date": "2026-10-23",
+   "total_params_b": 8,
+   "active_params_b": 4,
+   "architecture": "Gemma-4-E4B (post-trained from google/gemma-4-E4B-it); 4B effective params",
+   "context_length": "Input up to 64K, output up to 64K (Ollama lists 128K for GGUF tags)",
+   "license": "OpenMDW-1.1; base Gemma 4 under Apache-2.0",
+   "modalities": "text (vLLM recipe disables image/audio/video; Ollama tags list text+image)",
+   "thinking": "toggle",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "GGUF Q4_K_M (repo -4GB) 6.18 GB file",
+    "BF16 16.06 GB",
+    "DFlash drafter -BF16-DFlash-NVFP4",
+    "Ollama nemotron-3.5-bolt:e4b 7.2-7.9 GB, :e4b-q8_0 9.8 GB, :e4b-bf16 17 GB"
+   ],
+   "vllm": "vllm/vllm-openai:v0.31.0. Card: vllm serve nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-BF16 --dtype bfloat16 --gpu-memory-utilization 0.85 --max-model-len 65536 --chat-template $MODEL/chat_template.jinja --enable-auto-tool-choice --tool-call-parser gemma4 --reasoning-parser gemma4 --limit-mm-per-prompt '{\"image\":0,\"video\":0,\"audio\":0}'",
+   "llamacpp_ollama": "Official Q4_K_M GGUF; Ollama nemotron-3.5-bolt:e4b (vision, tools, thinking, audio tags).",
+   "fit_16gb": "vLLM BF16: does not fit (16.06 GB weights). llama.cpp/Ollama Q4_K_M ~6-8 GB fits fully on GPU with room for 64K context.",
+   "coding_agent_evidence": "Vendor card (NVIDIA-measured): BFCL-v3 68.51, Tau2-Bench 55.10, ToolSandbox 68.77; no SWE-bench or Terminal-Bench. Aimed at voice/device assistants, not coding.",
+   "confidence": "high",
+   "sources": [
+    "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-BF16/raw/main/README.md",
+    "https://huggingface.co/api/models/nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-4GB?blobs=true",
+    "https://ollama.com/library/nemotron-3.5-bolt/tags"
+   ],
+   "notes": "The repo is called '4GB', but the GGUF file is 6.18 GB. Good tool-calling scores for its size, but NVIDIA publishes no coding-agent results."
+  },
+  {
+   "name": "NVIDIA Nemotron 3.5 Bolt 74B-A9B 24GB",
+   "vendor": "NVIDIA",
+   "family": "Nemotron 3.5",
+   "hf_repo": "nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB (GGUF: -24GB-GGUF)",
+   "release_date": "2026-10-15",
+   "total_params_b": 74,
+   "active_params_b": 9,
+   "architecture": "Mamba-2/Transformer hybrid LatentMoE compressed from Nemotron 3.5 Super VL 120B-A12B, C-RADIO v4-H vision encoder; experts in IQ2_XXS (2-bit QAT), Mamba NVFP4, embeddings Q8_0",
+   "context_length": "Up to 256K",
+   "license": "OpenMDW-1.1",
+   "modalities": "text, image, video in / text out",
+   "thinking": "toggle",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "24GB packed safetensors 24.12 GB",
+    "GGUF 22.02 GB + mmproj 1.73 GB",
+    "Ollama nemotron-3.5-bolt:74b-a9b / :latest 25 GB"
+   ],
+   "vllm": "Card requires nightly image vllm/vllm-openai:nightly-77154ca6116ae34cbfe314beef1016bde9b63989 + pip install b12x + ultra_v3_reasoning_parser.py plugin; flags --linear-backend b12x --moe-backend b12x --tool-call-parser qwen3_coder --reasoning-parser-plugin ultra_v3_reasoning_parser.py --reasoning-parser ultra_v3 --kv-cache-dtype fp8.",
+   "llamacpp_ollama": "GGUF card recipes only for RTX Spark 64/128GB or RTX dGPU 32GB+ (28GB recipe, 64K ctx) and 48GB+ (32GB recipe, 256K ctx).",
+   "fit_16gb": "Does not fit in vLLM. NVIDIA documents no setup below 32 GB of VRAM. It might be tried with llama.cpp keeping experts in system RAM (~24 GB total), but that is speculative and untested.",
+   "coding_agent_evidence": "Vendor card: Terminal-Bench 2.1 50.98, MCP-Atlas 52.20, PinchBench 87.82 (NVIDIA-measured); no SWE-bench Verified number.",
+   "confidence": "medium",
+   "sources": [
+    "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB/raw/main/README.md",
+    "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB-GGUF/raw/main/README.md",
+    "https://ollama.com/library/nemotron-3.5-bolt/tags"
+   ],
+   "notes": "The strongest local Nemotron on paper, but it targets 24-32 GB devices. Listed to show where the ceiling is."
+  },
+  {
+   "name": "Nemotron-Cascade-2-30B-A3B",
+   "vendor": "NVIDIA",
+   "family": "Nemotron Cascade",
+   "hf_repo": "nvidia/Nemotron-Cascade-2-30B-A3B",
+   "release_date": "2026-03-18 (HF createdAt)",
+   "total_params_b": 30,
+   "active_params_b": 3,
+   "architecture": "Post-trained from Nemotron-3-Nano-30B-A3B-Base (hybrid Mamba/MoE)",
+   "context_length": "Up to 1M (recipe uses 262144)",
+   "license": "NVIDIA Open Model License",
+   "modalities": "text",
+   "thinking": "toggle",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "BF16 only from NVIDIA (63.18 GB)",
+    "Ollama nemotron-cascade-2:30b 18-24 GB, :30b-a3b-q4_K_M 24 GB"
+   ],
+   "vllm": "vLLM >= 0.17.1: vllm serve nvidia/Nemotron-Cascade-2-30B-A3B --max-model-len 262144 --reasoning-parser nano_v3 --mamba-ssm-cache-dtype float32 --trust_remote_code --enable-auto-tool-choice --tool-call-parser qwen3_coder (parser changed from nemotron_v3 to nano_v3 on 2026-07-09).",
+   "llamacpp_ollama": "Ollama nemotron-cascade-2 (community-built from BF16; no NVIDIA GGUF).",
+   "fit_16gb": "vLLM: does not fit (BF16 only). Ollama ~24 GB with CPU offload.",
+   "coding_agent_evidence": "Vendor card: SWE Verified (OpenHands) 50.2, Terminal Bench 2.0 21.1, BFCL v4 52.9, tau2 58.9, LiveCodeBench v6 87.2. Card: 'does not currently support OpenCode; it primarily supports OpenHands'.",
+   "confidence": "high",
+   "sources": [
+    "https://huggingface.co/nvidia/Nemotron-Cascade-2-30B-A3B/raw/main/README.md",
+    "https://ollama.com/library/nemotron-cascade-2/tags"
+   ],
+   "notes": "Excluded for OpenCode by the vendor's own statement."
+  },
+  {
+   "name": "Nemotron-Terminal-8B / 14B / 32B",
+   "vendor": "NVIDIA",
+   "family": "Nemotron Terminal",
+   "hf_repo": "nvidia/Nemotron-Terminal-14B (also -8B, -32B)",
+   "release_date": "2026-02-17 (HF createdAt)",
+   "total_params_b": 14,
+   "active_params_b": 14,
+   "architecture": "Dense Qwen3 (8B/14B/32B) fine-tuned on Nemotron-Terminal-Corpus",
+   "context_length": "unknown (not stated in card)",
+   "license": "NVIDIA Open Model License",
+   "modalities": "text",
+   "thinking": "unknown",
+   "tool_calling": "no",
+   "official_quantized": [
+    "None; BF16 only (14B 29.55 GB, 32B 65.54 GB)"
+   ],
+   "vllm": "No serve command or parser in card; output is a Terminus 2 JSON schema (analysis/plan/commands), not OpenAI tool calls.",
+   "llamacpp_ollama": "No official GGUF or Ollama tag found.",
+   "fit_16gb": "8B BF16 (~16 GB) does not fit with KV room. 14B and 32B would need community quantization.",
+   "coding_agent_evidence": "Vendor card: Terminal-Bench 2.0 13.0 (8B), 20.2 (14B), 27.4 (32B).",
+   "confidence": "medium",
+   "sources": [
+    "https://huggingface.co/nvidia/Nemotron-Terminal-14B/raw/main/README.md"
+   ],
+   "notes": "Trained for the Terminus 2 scaffold rather than function calling, so a poor fit for OpenCode."
+  },
+  {
+   "name": "NVIDIA Nemotron Nano 9B v2",
+   "vendor": "NVIDIA",
+   "family": "Nemotron Nano v2",
+   "hf_repo": "nvidia/NVIDIA-Nemotron-Nano-9B-v2 (also -FP8, -NVFP4)",
+   "release_date": "2025-08-18 (older than the 12-month window)",
+   "total_params_b": 9,
+   "active_params_b": 9,
+   "architecture": "Dense hybrid Mamba-2/Transformer (56 layers, 4 attention layers)",
+   "context_length": "128K",
+   "license": "NVIDIA Open Model License",
+   "modalities": "text",
+   "thinking": "toggle",
+   "tool_calling": "yes",
+   "official_quantized": [
+    "FP8 10.30 GB",
+    "NVFP4 7.85 GB",
+    "BF16 17.79 GB"
+   ],
+   "vllm": "vllm>=0.10.1 (vllm/vllm-openai:v0.10.1). Tool calling via --tool-parser-plugin nemotron_toolcall_parser_no_streaming.py --tool-call-parser nemotron_json; thinking via /think and /no_think in the system prompt.",
+   "llamacpp_ollama": "No official NVIDIA GGUF found.",
+   "fit_16gb": "vLLM fits: FP8 ~10.3 GB or NVFP4 ~7.9 GB; KV ~16 KiB/token, so 128K context needs ~2 GB.",
+   "coding_agent_evidence": "Vendor card: BFCL v3 66.3. No SWE-bench reported.",
+   "confidence": "medium",
+   "sources": [
+    "https://huggingface.co/nvidia/NVIDIA-Nemotron-Nano-9B-v2/raw/main/README.md",
+    "https://huggingface.co/api/models/nvidia/NVIDIA-Nemotron-Nano-9B-v2-FP8?blobs=true"
+   ],
+   "notes": "Older model. Its tool parser does not support streaming, which hurts OpenCode. The 12B v2 (2025-08-29, BF16 24.6 GB, same parsers, BFCL v3 66.98) does not fit without quantization."
+  },
+  {
+   "name": "NVIDIA Nemotron 3 Super 120B-A12B",
+   "vendor": "NVIDIA",
+   "family": "Nemotron 3",
+   "hf_repo": "nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-NVFP4",
+   "release_date": "2026-03 (HF createdAt 2026-03-10)",
+   "total_params_b": 120,
+   "active_params_b": 12,
+   "license": "NVIDIA Nemotron Open Model License",
+   "official_quantized": [
+    "NVFP4 80.37 GB",
+    "FP8",
+    "BF16"
+   ],
+   "fit_16gb": "Does not fit (NVFP4 alone is 80 GB, more than VRAM plus usable RAM headroom).",
+   "coding_agent_evidence": "Lightning card's table: SWE-bench Verified 63.08, Terminal-Bench 2.1 39.61 (NVIDIA-measured).",
+   "confidence": "high",
+   "sources": [
+    "https://huggingface.co/api/models/nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-NVFP4?blobs=true",
+    "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/raw/main/README.md"
+   ],
+   "notes": "Size reference only. Nemotron 3.5 Super VL 120B-A12B (2026-10-12) is the same size class and also does not fit."
+  },
+  {
+   "name": "NVIDIA Nemotron 3 Ultra 550B-A55B",
+   "vendor": "NVIDIA",
+   "family": "Nemotron 3",
+   "hf_repo": "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B-NVFP4",
+   "release_date": "2026-06 (HF createdAt 2026-06-03)",
+   "total_params_b": 550,
+   "active_params_b": 55,
+   "license": "OpenMDW-1.1",
+   "official_quantized": [
+    "NVFP4 352.38 GB",
+    "BF16"
+   ],
+   "fit_16gb": "Does not fit.",
+   "confidence": "high",
+   "sources": [
+    "https://huggingface.co/api/models/nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B-NVFP4?blobs=true"
+   ],
+   "notes": "Size reference only."
+  }
+ ],
+ "facts": [
+  {
+   "topic": "Nemotron 3.5 Lightning",
+   "claim": "Nemotron 3.5 Lightning 30B-A3B was released on August 11, 2026 under OpenMDW-1.1. It is a hybrid Mamba-2/MoE/attention model with 30B total and 3B active parameters, up to 1M context, and a reasoning on/off switch via enable_thinking.",
+   "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/raw/main/README.md",
+   "source_date": "2026-08-11 (card), repo lastModified 2026-08-24",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "Nemotron 3.5 Lightning",
+   "claim": "NVIDIA-measured agentic coding scores: SWE-bench Verified 51.56, Terminal-Bench 2.1 24.58, SWE-bench Multilingual 39.33. In the same table, Qwen 3.6 35B-A3B scores 70.12 / 44.38 and GPT-OSS 20B scores 52.44 / 15.17.",
+   "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/raw/main/README.md",
+   "source_date": "2026-08-11",
+   "support": "direct-statement",
+   "notes": "Vendor-run harness (NeMo Evaluator), not independent."
+  },
+  {
+   "topic": "Nemotron 3.5 Lightning",
+   "claim": "Every vLLM recipe for Lightning uses --tool-call-parser qwen3_coder --reasoning-parser nemotron_v3 --enable-auto-tool-choice, with the vllm/vllm-openai:v0.27.1 image.",
+   "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4/raw/main/README.md",
+   "source_date": "repo lastModified 2026-09-10",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "vLLM parsers",
+   "claim": "The vLLM v0.32.0 source registers a built-in 'nemotron_v3' reasoning parser and built-in 'qwen3_coder' and 'gemma4' tool parsers. 'nano_v3' is not in the built-in reasoning registry, so Nemotron 3 Nano still needs the nano_v3_reasoning_parser.py plugin file.",
+   "source_url": "https://github.com/vllm-project/vllm/blob/v0.32.0/vllm/reasoning/__init__.py",
+   "source_date": "v0.32.0 released 2026-10-18",
+   "support": "source-backed",
+   "notes": "Checked via gh api on vllm/reasoning/__init__.py and vllm/tool_parsers/__init__.py at tag v0.32.0."
+  },
+  {
+   "topic": "Nemotron 3.5 Lightning NVFP4 on RTX",
+   "claim": "In the Lightning NVFP4 hardware matrix, the GeForce RTX 5090 row reads compute path '_confirm_', MoE backend '_no recipe published_', native FP4 'Hardware: yes', and validated context '_confirm_'. No laptop or 16 GB RTX 50 configuration is mentioned.",
+   "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4/raw/main/README.md",
+   "source_date": "2026-09-10",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "NVFP4 on sm_120",
+   "claim": "The vLLM b12x backend 'provides optional CUDA kernels for NVIDIA SM120 and SM121 GPUs' and supports NVFP4 linear and NVFP4 MoE weights. It is installed with uv pip install \"vllm[b12x]\" and selected with --linear-backend b12x --moe-backend b12x.",
+   "source_url": "https://github.com/vllm-project/vllm/blob/v0.32.0/docs/features/quantization/b12x.md",
+   "source_date": "v0.32.0 (2026-10-18)",
+   "support": "direct-statement",
+   "notes": "The RTX 5080 Laptop GPU is sm_120, so this applies (inferred from the compute capability). It is unknown whether the b12x package ships in the stock vllm/vllm-openai image; the Bolt card installs it manually."
+  },
+  {
+   "topic": "Nemotron 3.5 Lightning sizes",
+   "claim": "The Lightning NVFP4 repo totals 21.58 GB. The ggml-org GGUF Q4_0 is 18.90 GB and Q8_0 is 33.59 GB. Both are larger than the 16 GB of VRAM on this machine.",
+   "source_url": "https://huggingface.co/api/models/ggml-org/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-GGUF?blobs=true",
+   "source_date": "queried 2026-11-15",
+   "support": "source-backed"
+  },
+  {
+   "topic": "Nemotron 3.5 Lightning GGUF discrepancy",
+   "claim": "The NVIDIA card's llama.cpp recipe uses the tag ggml-org/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-GGUF:Q4_K_M, but that repo only contains Q4_0, Q8_0 and BF16 files plus MTP heads. Q4_K_M quants exist only in community repos such as bartowski and lmstudio-community.",
+   "source_url": "https://huggingface.co/api/models/ggml-org/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-GGUF",
+   "source_date": "repo lastModified 2026-11-12",
+   "support": "source-backed"
+  },
+  {
+   "topic": "Nemotron 3.5 Lightning KV cache",
+   "claim": "Lightning's config.json has 52 layers, of which only 6 are attention layers, with 2 KV heads and head_dim 128. That works out to about 6 KiB of KV per token in BF16, about 0.8 GB per 128K tokens, so context length costs little VRAM; the weights are what limit it.",
+   "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/raw/main/config.json",
+   "source_date": "2026-08",
+   "support": "source-backed",
+   "notes": "Arithmetic: 6 x 2 (K,V) x 2 x 128 x 2 bytes = 6144 B/token. Mamba state adds a fixed per-sequence cost."
+  },
+  {
+   "topic": "Ollama Nemotron 3.5 Lightning",
+   "claim": "The Ollama card recipe uses Ollama 0.32.9 and ollama run nemotron-3.5-lightning, with tool calling and thinking enabled. Ollama sets context from available VRAM: under 24 GB it uses a 4K context, so num_ctx must be raised for agent use, and that may push work onto the CPU.",
+   "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-NVFP4/raw/main/README.md",
+   "source_date": "2026-09-10",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "Ollama Nemotron 3.5 Lightning tags",
+   "claim": "On Ollama, nemotron-3.5-lightning:30b-a3b-q4_K_M is 25 GB and q8_0 is 35 GB, both with a 1M context window. The 19 GB nvfp4/mlx tags are MLX builds. The library page shows the 'tools' and 'thinking' capabilities.",
+   "source_url": "https://ollama.com/library/nemotron-3.5-lightning/tags",
+   "source_date": "tags updated 4 weeks to 3 months before 2026-11-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "Nemotron 3.5 Lightning OpenCode",
+   "claim": "NVIDIA's Lightning blog post (Aug 11, 2026) lists OpenCode among the supported harnesses, alongside Cline, Kilo Code, Factory AI and OpenHands. It names the GeForce RTX 5090 as a local target.",
+   "source_url": "https://developer.nvidia.com/blog/nvidia-nemotron-3-5-lightning-delivers-fast-accurate-specialized-task-execution-for-long-running-agents/",
+   "source_date": "2026-08-11",
+   "support": "direct-statement",
+   "notes": "Read via the WebFetch summarizer; not confirmed with a raw read."
+  },
+  {
+   "topic": "Nemotron 3 Nano 30B-A3B",
+   "claim": "Nemotron 3 Nano 30B-A3B was released on Dec 15, 2025 under the NVIDIA Nemotron Open Model License. The vLLM recipe needs vllm>=0.12.0 and uses --tool-call-parser qwen3_coder --reasoning-parser-plugin nano_v3_reasoning_parser.py --reasoning-parser nano_v3. The NVFP4 repo is 19.36 GB.",
+   "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16/raw/main/README.md",
+   "source_date": "2025-12-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "Nemotron 3 Nano 30B-A3B benchmarks",
+   "claim": "Vendor card scores: SWE-Bench (OpenHands) 38.8, Terminal Bench hard subset 8.5, BFCL v4 53.8, TauBench V2 average 49.0, LiveCodeBench v6 68.3.",
+   "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16/raw/main/README.md",
+   "source_date": "2025-12-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "Nemotron 3 Nano 4B",
+   "claim": "Nemotron 3 Nano 4B was released on 3/16/2026. It is a dense hybrid Mamba-2/Transformer model with 262K context, a reasoning toggle and tool calling. Its supported hardware list includes 'GeForce RTX'. It needs vllm>=0.15.1 with the qwen3_coder + nano_v3 parsers. File sizes: FP8 5.28 GB, GGUF Q4_K_M 2.84 GB.",
+   "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16/raw/main/README.md",
+   "source_date": "2026-03-16",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "Dory1.0-4B",
+   "claim": "Nemotron-Labs Dory1.0-4B was released on Oct 16, 2026 under OpenMDW-1.1. It is a looped latent-recurrent nGPT with 256K context. NVIDIA reports SWE-bench Verified 50.3 / 59.5 / 61.8 at 1 / 2 / 4 loops and Terminal-Bench 2.1 12.5 / 18.1 / 22.2. Its vLLM recipe uses the nemotron_v3 reasoning parser and the qwen3_coder tool parser, and reasoning is always on in vLLM.",
+   "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-Labs-Dory1.0-4B-BF16/raw/main/README.md",
+   "source_date": "2026-10-16, repo lastModified 2026-11-13",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "Dory1.0-4B runtime support",
+   "claim": "vLLM PR #60149 'Add Dory support' was merged on 2026-10-25. Its merge commit is an ancestor of v0.33.0rc3 but not of v0.32.0, so the v0.32.0 stable release cannot serve Dory. llama.cpp PR #30306 for Dory was still open on 2026-11-14.",
+   "source_url": "https://github.com/vllm-project/vllm/pull/60149",
+   "source_date": "2026-10-25",
+   "support": "source-backed",
+   "notes": "Checked with gh api compare: merge_sha...v0.33.0rc3 returned 'ahead', and ...v0.32.0 returned 'diverged'. llama.cpp PR: https://github.com/ggml-org/llama.cpp/pull/30306"
+  },
+  {
+   "topic": "vLLM releases",
+   "claim": "Recent vLLM releases: v0.27.1 (2026-08-11), v0.31.0 (2026-10-05), v0.32.0 (2026-10-18), v0.33.0rc3 (2026-11-02).",
+   "source_url": "https://api.github.com/repos/vllm-project/vllm/releases?per_page=8",
+   "source_date": "queried 2026-11-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "Bolt E4B",
+   "claim": "Nemotron 3.5 Bolt E4B was released on 10/23/2026. It is post-trained from google/gemma-4-E4B-it, has 8B total and 4B effective parameters, 64K input and 64K output, and an enable_thinking toggle. The vLLM v0.31.0 recipe uses --tool-call-parser gemma4 --reasoning-parser gemma4. The BF16 weights are 16.06 GB and the Q4_K_M GGUF is 6.18 GB.",
+   "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-BF16/raw/main/README.md",
+   "source_date": "2026-10-23",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "Bolt 74B-A9B-24GB",
+   "claim": "Bolt 74B-A9B-24GB is a 74B total / 9B active VLM with 2-bit IQ2_XXS experts (QAT) and 256K context. NVIDIA reports Terminal-Bench 2.1 50.98. vLLM needs a nightly image plus the b12x package and the ultra_v3 reasoning parser plugin. The llama.cpp recipes are only for RTX dGPUs with 32 GB or more (28 GB recipe, 64K context).",
+   "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB-GGUF/raw/main/README.md",
+   "source_date": "2026-10-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "Cascade-2 and OpenCode",
+   "claim": "The Nemotron-Cascade-2-30B-A3B card says: 'does not currently support OpenCode; it primarily supports OpenHands for agentic coding and SWE tasks.' It scores SWE Verified (OpenHands) 50.2 and Terminal Bench 2.0 21.1.",
+   "source_url": "https://huggingface.co/nvidia/Nemotron-Cascade-2-30B-A3B/raw/main/README.md",
+   "source_date": "repo lastModified 2026-07-09",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "Nemotron-Terminal",
+   "claim": "Nemotron-Terminal 8B/14B/32B are Qwen3 fine-tunes for the Terminus 2 scaffold. They output a structured JSON format rather than OpenAI tool calls and score 13.0 / 20.2 / 27.4 on Terminal-Bench 2.0. Only BF16 weights are published.",
+   "source_url": "https://huggingface.co/nvidia/Nemotron-Terminal-14B/raw/main/README.md",
+   "source_date": "2026-02-17",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "Nemotron Nano 9B v2 (older)",
+   "claim": "Nemotron Nano 9B v2 was released on 08/18/2025, outside the window. It has 128K context and /think and /no_think control. Its tool calling needs the nemotron_toolcall_parser_no_streaming.py plugin with --tool-call-parser nemotron_json, which does not stream. FP8 is 10.30 GB and NVFP4 is 7.85 GB.",
+   "source_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-Nano-9B-v2/raw/main/README.md",
+   "source_date": "2025-08-18",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "Too-large Nemotrons",
+   "claim": "Nemotron 3 Super 120B-A12B NVFP4 is 80.37 GB and Nemotron 3 Ultra 550B-A55B NVFP4 is 352.38 GB, so neither fits on a 16 GB GPU with 64 GB of RAM.",
+   "source_url": "https://huggingface.co/api/models/nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-NVFP4?blobs=true",
+   "source_date": "queried 2026-11-15",
+   "support": "source-backed"
+  },
+  {
+   "topic": "Licenses",
+   "claim": "OpenMDW-1.1, used by the Nemotron 3.5, Ultra and Dory models, permits dealing in the model 'without restriction' at no charge. Redistributors must keep the license and notices, rights terminate if you sue over patent or copyright infringement by the model, and outputs are unrestricted. Nemotron 3 Nano and Super use the NVIDIA Nemotron Open Model License instead, and Cascade-2, Terminal and Nano v2 use the NVIDIA Open Model License.",
+   "source_url": "https://raw.githubusercontent.com/OpenMDW/OpenMDW/refs/heads/main/1.1/LICENSE.OpenMDW-1.1",
+   "source_date": "license v1.1",
+   "support": "direct-statement",
+   "notes": "The key terms of the NVIDIA Open Model License and Nemotron Open Model License were not re-read in this run."
+  }
+ ],
+ "gaps": [
+  "No NVIDIA source validates any Nemotron model on an RTX 5080 Laptop GPU or a 16 GB RTX 50 card. NVIDIA's local recipes target the RTX 5090, DGX Spark and RTX 6000 Pro, and the RTX 5090 NVFP4 row of the Lightning card says '_confirm_' / '_no recipe published_'.",
+  "I did not check whether the stock vllm/vllm-openai v0.32.0 image includes the b12x SM120 kernels or picks an NVFP4 path on sm_120 automatically. The Bolt card installs b12x by hand inside a nightly image.",
+  "The llama.cpp --n-cpu-moe split needed to run Lightning Q4_0 (18.9 GB) or the Ollama q4_K_M (25 GB) on 16 GB VRAM plus 64 GB RAM is my estimate. It was not measured, and no vendor document covers it.",
+  "The Lightning card links a Q4_K_M tag in ggml-org/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-GGUF that does not exist in the repo (only Q4_0, Q8_0 and BF16). Q4_K_M is available only from community repos (bartowski, lmstudio-community).",
+  "Dory MXFP8 size and Nano 12B v2 FP8/NVFP4 availability were not checked. Nemotron-Labs Diffusion 3B/8B/14B, Elastic 30B-A3B, Puzzle 75B-A9B, TwoTower and Audex were seen in the org listing but not evaluated, because they are research checkpoints without published tool-calling or coding-agent recipes.",
+  "The Nemotron-Terminal cards do not state context length, chat template, or thinking behaviour.",
+  "The GitHub REST API was rate-limited without authentication. I used gh api instead, and the NVIDIA blog was read only through the WebFetch summarizer, without a raw second read.",
+  "NVIDIA publishes no Ollama-specific OpenCode setup for Nemotron. Ollama's default 4K context on GPUs under 24 GB must be overridden for agent use."
+ ]
+}

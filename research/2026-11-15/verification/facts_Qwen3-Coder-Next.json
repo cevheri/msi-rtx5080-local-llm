@@ -1,0 +1,131 @@
+{
+ "overall": "holds-with-corrections",
+ "summary": "I tried to refute the Qwen3-Coder-Next record and could not. Every identity, capability and benchmark fact I checked holds against primary sources. The repo author is Qwen, createdAt is 2026-01-30T15:08:18Z, and the tech report was committed 2026-02-03 (11:19Z and 16:46Z). Config and card values match. The Apache-2.0 license appears both in the card front matter and in the API tags. The card states the model is non-thinking only, and the chat template has no enable_thinking or think branch. Tool calling uses the Qwen3-Coder XML format, and tool results go back as tool_response inside a user turn. All tech report numbers in Tables 3 to 7 match exactly. All Artificial Analysis (AA) values come from the object with slug qwen3-coder-next (isReasoning false, intelligenceIndex null, releaseDate 2026-02-03). All seven cited vLLM issues exist, are open, and their titles and dates match. The cited llama.cpp issue also exists and is open. vLLM v0.33.0 registry.py:118 and :735 and tool_parsers/__init__.py:206 and :217 match. In llama.cpp b12418, llama-arch.cpp:42 and the Qwen3-Coder handler in chat.cpp match. One small correction: in the llama.cpp section, the official Qwen Q4_K_M is given as 45.19 GiB. The API gives 48.41 GB = 45.09 GiB, as the checkpoints list already says. The 45.2 GiB figure belongs to unsloth's Q4_K_M (48.53 GB). Other minor points: the card's vLLM and SGLang text says 'tensor parallel on 4 GPUs' but the command uses TP 2. The record's '2+ GPUs' wording is fine. The card's scaffold list also includes Qoder and Trae. Gaps: I did not open the qwen.ai blog or the card's benchmark images. Apart from AA, there is no independent check of SWE-bench or Terminal-Bench scores, so the vendor numbers stay self-reported. The HF org has no verified badge (isVerified false). Files: $SCRATCH/fc_qcn/tr.txt (tech report text), $SCRATCH/fc_qcn/tpl.jinja, $SCRATCH/fc_qcn/aa.html.",
+ "verdicts": [
+  {
+   "claim": "Official Qwen repo; HF createdAt 2026-01-30T15:08:18Z, lastModified 2026-02-03; tech report committed 2026-02-03; inside 2025-11-15..2026-11-15",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/Qwen/Qwen3-Coder-Next",
+   "correction": "The API gives author Qwen. The org overview shows isVerified false, 469 models, 116473 followers and plan team. gh api commits for qwen3_coder_next_tech_report.pdf show 2026-02-03T11:19:53Z 'Add files via upload' and 16:46:01Z 'Update tech report'."
+  },
+  {
+   "claim": "License Apache-2.0 (card front matter and license_link)",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Qwen/Qwen3-Coder-Next/raw/main/README.md",
+   "correction": "The API tags also include license:apache-2.0. The LICENSE file text itself was not read."
+  },
+  {
+   "claim": "79,674,391,296 BF16 params; card '80B total, 3B activated', 79B non-embedding; safetensors 159.36 GB / 148.41 GiB; routed experts about 77.3B",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/Qwen/Qwen3-Coder-Next?blobs=true",
+   "correction": "Measured sum 159,358,031,480 B = 148.41 GiB. 48x512x3x2048x512 = 77.31B, which is 97.0% of the total."
+  },
+  {
+   "claim": "Architecture: Qwen3NextForCausalLM, 48 layers, hidden 2048, full_attention_interval 4, 16 Q / 2 KV heads, head_dim 256, partial_rotary 0.25, DeltaNet 32 V / 16 QK heads dim 128, conv 4, 512 experts top-10 + 1 shared, moe_intermediate 512, no sliding window, rope_theta 5e6, rope_scaling null",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Qwen/Qwen3-Coder-Next/raw/main/config.json"
+  },
+  {
+   "claim": "Context 262,144 native, no YaRN documented; card suggests 32,768 on OOM",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Qwen/Qwen3-Coder-Next/raw/main/README.md"
+  },
+  {
+   "claim": "Text-only modality",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Qwen/Qwen3-Coder-Next/raw/main/config.json",
+   "correction": "There is no vision config and the pipeline_tag is text-generation."
+  },
+  {
+   "claim": "Non-thinking only; no enable_thinking toggle in template; no reasoning parser needed",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Qwen/Qwen3-Coder-Next/raw/main/chat_template.jinja",
+   "correction": "The card note is quoted verbatim. Grepping the template for 'think' returns no matches."
+  },
+  {
+   "claim": "Tool calling via Qwen3-Coder XML (<tool_call><function=..><parameter=..>), tool results as <tool_response> inside a user turn; repo ships qwen3coder_tool_parser_vllm.py and qwen3_coder_detector_sgl.py",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Qwen/Qwen3-Coder-Next/raw/main/chat_template.jinja",
+   "correction": "Template line 66 holds the format instruction, lines 85-94 render tool_calls, and lines 99-105 wrap tool messages in user and tool_response."
+  },
+  {
+   "claim": "vLLM v0.33.0 registry.py:118 Qwen3NextForCausalLM and :735 Qwen3NextMTP; tool_parsers/__init__.py:206 qwen3_coder and qwen3_xml -> Qwen3EngineToolParser",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/tool_parsers/__init__.py"
+  },
+  {
+   "claim": "llama.cpp b12418 llama-arch.cpp:42 qwen3next; chat.cpp picks the Qwen3-Coder handler on <tool_call>/<function=/<parameter=",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12418/common/chat.cpp",
+   "correction": "The handler sits at about lines 1420-1428. It also excludes templates without newlines between tags, which does not apply here."
+  },
+  {
+   "claim": "SWE-bench Verified 70.6 / 71.1 / 71.3 (SWE-Agent / MiniSWE / OpenHands, 300 turns), Table 3",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/QwenLM/Qwen3-Coder/main/qwen3_coder_next_tech_report.pdf",
+   "correction": "Self-reported. I found no independent leaderboard row."
+  },
+  {
+   "claim": "SWE-bench Pro 44.3 / 37.9 and Multilingual 62.8 / 56.2 / 64.3, Table 4",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/QwenLM/Qwen3-Coder/main/qwen3_coder_next_tech_report.pdf"
+  },
+  {
+   "claim": "Terminal-Bench 2.0 34.2 / 36.2 / 30.9 / 25.8 (Terminus2-xml / json / ClaudeCode / QwenCode), Table 5",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/QwenLM/Qwen3-Coder/main/qwen3_coder_next_tech_report.pdf"
+  },
+  {
+   "claim": "Aider-Polyglot 66.2 (vs 480B 60.4) Table 7; LiveCodeBench v6 58.93 Table 6",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/QwenLM/Qwen3-Coder/main/qwen3_coder_next_tech_report.pdf"
+  },
+  {
+   "claim": "Artificial Analysis: tau2 0.7953, terminalbenchHard 0.1818, terminalBench21 0.3820, terminalBench40 0, SciCode 0.362, IFBench 0.352, LCR 0.47, GPQA 0.737, Intelligence Index null, releaseDate 2026-02-03",
+   "verdict": "confirmed",
+   "evidence_url": "https://artificialanalysis.ai/models/qwen3-coder-next",
+   "correction": "The values sit in the JSON object with slug qwen3-coder-next and isReasoning false (tau2 and terminalbenchHard are 57 chars apart). The model is not on the AA Intelligence Index (null)."
+  },
+  {
+   "claim": "Checkpoint sizes: FP8 80.38 GB; official GGUF Q4_K_M 48.41 GB (45.09 GiB) etc.; unsloth UD-IQ4_XS 38.43 GB / 35.79 GiB, UD-Q3_K_XL 36.28, UD-Q4_K_XL 49.61 / 46.20 GiB; Intel AutoRound 40.53 GiB; RedHat NVFP4 44.30 GiB; cyankiwi AWQ 44.93 GiB",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/unsloth/Qwen3-Coder-Next-GGUF?blobs=true"
+  },
+  {
+   "claim": "llamacpp section: 'official Q4_K_M (45.19 GiB)'",
+   "verdict": "refuted",
+   "evidence_url": "https://huggingface.co/api/models/Qwen/Qwen3-Coder-Next-GGUF?blobs=true",
+   "correction": "The official Qwen Q4_K_M is 48.41 GB = 45.09 GiB. The 45.20 GiB figure is unsloth's Q4_K_M (48.53 GB). This is a small internal inconsistency and does not change the conclusion."
+  },
+  {
+   "claim": "Cited vLLM issues #34322, #57699, #65774, #57541, #59248, #62320, #66423 and llama.cpp #30357 exist, open, as described",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/vllm-project/vllm/issues/34322",
+   "correction": "Each one is open and its title matches the description. #34322 was created 2026-02-11 and its title is in Chinese."
+  },
+  {
+   "claim": "Ollama qwen3-coder-next:latest = q4_K_M (ca06e9e4087c, 52GB), q8_0 (3f68e12b44ee), 256K context, tools badge only, 'ollama launch opencode' line",
+   "verdict": "confirmed",
+   "evidence_url": "https://ollama.com/library/qwen3-coder-next/tags",
+   "correction": "The q8_0 tag is 85GB."
+  },
+  {
+   "claim": "vLLM card command and min version vllm>=0.15.0, sglang>=0.5.8",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Qwen/Qwen3-Coder-Next/raw/main/README.md",
+   "correction": "The card prose says 'tensor parallel on 4 GPUs', but the command uses --tensor-parallel-size 2. This is a card inconsistency, not a record error."
+  },
+  {
+   "claim": "KV arithmetic: 24,576 B/token BF16 (12 full-attn layers x 2 KV x 256 x 2 x 2); about 6.0 GiB at 262,144; DeltaNet state about 72 MiB fp32",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Qwen/Qwen3-Coder-Next/raw/main/config.json",
+   "correction": "Checked as arithmetic on config values: 36x32x128x128x4 B = 72 MiB."
+  },
+  {
+   "claim": "Card names Claude Code, Qwen Code, Cline, Kilo as supported scaffolds",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Qwen/Qwen3-Coder-Next/raw/main/README.md",
+   "correction": "The card also names Qoder and Trae."
+  }
+ ]
+}

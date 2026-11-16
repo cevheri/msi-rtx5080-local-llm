@@ -1,0 +1,2 @@
+# Raw logs keep their original bytes, including carriage returns from progress output.
+*.log -text

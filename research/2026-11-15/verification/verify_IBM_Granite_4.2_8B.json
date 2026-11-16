@@ -1,0 +1,290 @@
+{
+ "name": "IBM Granite 4.2 8B",
+ "hf_repo": "ibm-granite/granite-4.2-8b",
+ "official_org": {
+  "value": "IBM Granite team (HF org ibm-granite). The HF org API reports isVerified=false but plan=enterprise, 252 models, 214 members. ibm.com/granite links to huggingface.co/ibm-granite and mentions Granite 4.2, and the model card links back to ibm.com/granite and github.com/ibm-granite/granite-4.2-language-models. The repo is genuinely IBM's.",
+  "source_url": "https://huggingface.co/api/organizations/ibm-granite/overview ; https://www.ibm.com/granite ; https://huggingface.co/ibm-granite/granite-4.2-8b",
+  "support": "source-backed"
+ },
+ "release_date": {
+  "value": "Announced 2026-08-25. The card says 'Release Date: August 25, 2026' and the HF blog 'Granite 4.2 LLMs: How They're Built' was published August 25, 2026. HF createdAt of the main repo is 2026-08-07T16:29:09Z (created privately before launch), lastModified 2026-10-20. That is inside 2025-11-15..2026-11-15. Quantized repos fp8/mxfp4/nvfp4 were created 2026-08-13 and GGUF on 2026-08-12.",
+  "source_url": "https://huggingface.co/api/models/ibm-granite/granite-4.2-8b ; https://huggingface.co/blog/ibm-granite/granite-4-2",
+  "support": "direct-statement"
+ },
+ "within_last_12_months": true,
+ "license": {
+  "value": "Apache-2.0. The HF tag is license:apache-2.0 and the card says 'All Granite models are released under the Apache 2.0 license, enabling unrestricted commercial and academic use'. There is no gating and no use-policy addendum. All official quant repos and granite-switch are also Apache-2.0.",
+  "source_url": "https://huggingface.co/ibm-granite/granite-4.2-8b/raw/main/README.md",
+  "support": "direct-statement"
+ },
+ "params": {
+  "value": "Dense, 8.79B total = 8.79B active. The HF API safetensors total is 8,791,592,960 (all BF16) and the card says '8B'. Input and output embeddings are untied: 2 x 100352 x 4096 = 822.4M of those parameters are embeddings plus lm_head, which the FP8/FP4 builds keep in BF16.",
+  "source_url": "https://huggingface.co/api/models/ibm-granite/granite-4.2-8b",
+  "support": "direct-statement"
+ },
+ "architecture": {
+  "value": "GraniteForCausalLM (model_type granite), a dense decoder-only transformer. 40 layers, all full attention (no sliding window, no Mamba). GQA with 32 query heads and 8 KV heads, head_dim 128 (4096/32), hidden 4096, SwiGLU MLP 12800, RMSNorm, RoPE theta 1e7 with no rope_scaling. It is post-trained (SFT plus GRPO RL including agentic SWE and terminal RL) from granite-4.1-8b-base. Vocab 100352, ChatML tokens.",
+  "source_url": "https://huggingface.co/ibm-granite/granite-4.2-8b/raw/main/config.json",
+  "support": "direct-statement"
+ },
+ "context_length": {
+  "value": "131072 tokens (config max_position_embeddings 131072, card 'Natively Supports 128K'). The card also claims 'Long-context extension to 512K', but the blog ties 512K to the Granite 4.1 base pre-training. The released 4.2 config has no rope_scaling and caps at 131072, and Ollama and Artificial Analysis both list 128K/131k. Vendor RULER: 80.99 at 64K and 71.41 at 128K.",
+  "source_url": "https://huggingface.co/ibm-granite/granite-4.2-8b/raw/main/config.json ; https://huggingface.co/blog/ibm-granite/granite-4-2",
+  "support": "direct-statement"
+ },
+ "modalities": {
+  "value": "Text in, text out. There is no vision tower, so the checkpoint is text-only. Granite-switch-4.1-8b, a different model, adds a speech encoder.",
+  "source_url": "https://huggingface.co/ibm-granite/granite-4.2-8b/raw/main/README.md ; https://artificialanalysis.ai/models/granite-4-2-8b",
+  "support": "direct-statement"
+ },
+ "thinking": {
+  "mode": "toggle",
+  "how_to_toggle": "Thinking is on by default: the template sets enable_thinking True and the generation prompt ends '<|im_start|>assistant\\n<think>\\n'. With enable_thinking=False the prompt ends '<think></think>'. Low effort is enable_thinking=True plus low_effort=True, or template var reasoning_effort=='low', which appends '{reasoning effort: low}' to the last user turn. Earlier turns' thinking is stripped unless truncate_history_thinking=false. vLLM v0.33.0: per request, extra_body chat_template_kwargs {\"enable_thinking\": false} or {\"enable_thinking\": true, \"low_effort\": true}. Use the built-in --reasoning-parser granite_thinking_parser (in vLLM since v0.31.0, PR #55957); nemotron_v3 also works. llama.cpp: per request \"chat_template_kwargs\": {\"enable_thinking\": false}; server-wide --reasoning off or --chat-template-kwargs '{\"enable_thinking\":false}'; the qwen3-coder handler sets supports_thinking because the template contains <think>. Ollama: the library page documents think true/false and low/medium/high (/set think, /set nothink), but the granite4.2 manifest has no template layer and shows no thinking badge (see gaps). OpenCode: the IBM card gives a config that sets body.chat_template_kwargs.enable_thinking and compatibility.reasoningField 'reasoning'.",
+  "source_url": "https://huggingface.co/ibm-granite/granite-4.2-8b/raw/main/chat_template.jinja ; https://huggingface.co/ibm-granite/granite-4.2-8b/raw/main/README.md ; https://github.com/vllm-project/vllm/pull/55957",
+  "support": "direct-statement"
+ },
+ "tool_calling": {
+  "supported": "yes",
+  "format": "Qwen3-Coder style XML: <tool_call>\\n<function=NAME>\\n<parameter=K>\\nV\\n</parameter>\\n</function>\\n</tool_call>, with tool results wrapped in <tool_response> inside a user turn",
+  "evidence": "The chat template renders the tools list: when tools are present it emits '# Tools ... <tools>' with each tool as JSON, then the XML call-format instructions, and it renders prior assistant tool_calls back in the same XML. The card has 'Tool Calling' and 'Tool calling parser: Use qwen3_coder' sections with an example output in that XML. It also has an OpenCode configuration section. vLLM v0.33.0 tool parser registry has qwen3_coder (correct for this format). granite4 is the older Granite 4.0 JSON-style parser and is the wrong choice for 4.2. A dedicated granite_toolcall_parser (PR #65216, merged 2026-11-03, a thin subclass of the granite thinking parser) is NOT in v0.33.0 but is in v0.34.0rc4. llama.cpp b12418 common/chat.cpp detects '<tool_call>' + '<function=' + '<parameter=' and routes this template to the Qwen3-Coder PEG handler, which also extracts <think>. Vendor BFCL v4 52.39 and tau3 avg 58.06.",
+  "source_url": "https://huggingface.co/ibm-granite/granite-4.2-8b/raw/main/chat_template.jinja ; https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/tool_parsers/__init__.py ; https://github.com/ggml-org/llama.cpp/blob/b12418/common/chat.cpp",
+  "support": "direct-statement"
+ },
+ "checkpoints": [
+  {
+   "repo": "ibm-granite/granite-4.2-8b",
+   "format": "safetensors BF16",
+   "size_gb": 17.583,
+   "official": true,
+   "publisher": "IBM",
+   "source_url": "https://huggingface.co/api/models/ibm-granite/granite-4.2-8b?blobs=true"
+  },
+  {
+   "repo": "ibm-granite/granite-4.2-8b-fp8",
+   "format": "compressed-tensors FP8 (W8A8, per-channel weights, dynamic per-token activations, lm_head BF16)",
+   "size_gb": 9.617,
+   "official": true,
+   "publisher": "IBM",
+   "source_url": "https://huggingface.co/api/models/ibm-granite/granite-4.2-8b-fp8?blobs=true"
+  },
+  {
+   "repo": "ibm-granite/granite-4.2-8b-mxfp4",
+   "format": "compressed-tensors mxfp4-pack-quantized W4A4 (group 32, E8M0 scales, dynamic MXFP4 activations, GPTQ-calibrated)",
+   "size_gb": 5.879,
+   "official": true,
+   "publisher": "IBM",
+   "source_url": "https://huggingface.co/api/models/ibm-granite/granite-4.2-8b-mxfp4?blobs=true"
+  },
+  {
+   "repo": "ibm-granite/granite-4.2-8b-nvfp4",
+   "format": "compressed-tensors nvfp4-pack-quantized W4A4 (group 16, FP8 scales, GPTQ-calibrated)",
+   "size_gb": 6.128,
+   "official": true,
+   "publisher": "IBM",
+   "source_url": "https://huggingface.co/api/models/ibm-granite/granite-4.2-8b-nvfp4?blobs=true"
+  },
+  {
+   "repo": "ibm-granite/granite-4.2-8b-GGUF",
+   "format": "GGUF Q2_K 3.41 / Q3_K_M 4.35 / Q4_K_M 5.348 / Q5_K_M 6.254 / Q6_K 7.216 / Q8_0 9.346 / BF16 17.587 GB (chat template embedded)",
+   "size_gb": 7.216,
+   "official": true,
+   "publisher": "IBM",
+   "source_url": "https://huggingface.co/api/models/ibm-granite/granite-4.2-8b-GGUF?blobs=true"
+  },
+  {
+   "repo": "bartowski/granite-4.2-8b-GGUF",
+   "format": "GGUF imatrix: Q4_K_M 5.539 / Q5_K_M 6.41 / Q6_K 7.521 / Q6_K_L 7.72 / Q8_0 9.346 GB",
+   "size_gb": 7.521,
+   "official": false,
+   "publisher": "bartowski",
+   "source_url": "https://huggingface.co/api/models/bartowski/granite-4.2-8b-GGUF?blobs=true"
+  },
+  {
+   "repo": "lmstudio-community/granite-4.2-8b-GGUF",
+   "format": "GGUF Q4_K_M 5.348 / Q6_K 7.216 / Q8_0 9.346 GB",
+   "size_gb": 7.216,
+   "official": false,
+   "publisher": "lmstudio-community",
+   "source_url": "https://huggingface.co/api/models/lmstudio-community/granite-4.2-8b-GGUF?blobs=true"
+  },
+  {
+   "repo": "mradermacher/granite-4.2-8b-i1-GGUF",
+   "format": "GGUF imatrix (sizes not pulled)",
+   "official": false,
+   "publisher": "mradermacher",
+   "source_url": "https://huggingface.co/api/models?search=granite-4.2-8b"
+  }
+ ],
+ "vllm": {
+  "arch_supported": "Yes. GraniteForCausalLM is registered in vllm/model_executor/models/registry.py at tag v0.33.0 (line 131, module granite). The architecture has been in vLLM for a long time. Reasoning registry at v0.33.0 has granite_thinking_parser (adapter GraniteThinkingParserReasoningAdapter) and nemotron_v3. Tool registry has qwen3_coder, granite4 and granite, but not granite_toolcall_parser.",
+  "min_version": "Any recent vLLM runs the BF16/FP8 model. The built-in --reasoning-parser granite_thinking_parser first ships in v0.31.0 (absent at v0.30.0, present at v0.31.0/v0.32.0/v0.33.0); before that you need the repo's granite_thinking_parser.py plugin (card says v0.20+). Use v0.33.0.",
+  "best_checkpoint": "ibm-granite/granite-4.2-8b-nvfp4 (5.71 GiB, native FP4 W4A4 on sm_120 through FlashInfer's SM12x cute-dsl NVFP4 runner). Alternative: ibm-granite/granite-4.2-8b-mxfp4 only with VLLM_DISABLED_KERNELS=FlashInferMxFp4LinearKernel, which forces Marlin W4A16. Safest kernel path but shorter context: ibm-granite/granite-4.2-8b-fp8.",
+  "weights_gib": 5.707,
+  "kv_bytes_per_token_bf16": 163840,
+  "kv_math": "Budget 16303 MiB x 0.92 = 14999 MiB = 14.647 GiB. KV per token = 2 x 40 full-attn layers x 8 KV heads x 128 x 2 B = 163,840 B (160 KiB) BF16, or 81,920 B FP8. NVFP4 5.707 GiB: pool 14.647-5.707-1.2 = 7.740 GiB, giving 50,725 tok BF16-KV or 101,450 tok FP8-KV. MXFP4 5.475 GiB: pool 7.972 GiB, giving 52,245 BF16 or 104,490 FP8. FP8 checkpoint 8.957 GiB: pool 4.491 GiB, giving 29,430 BF16 or 58,860 FP8 (65,120 at --gpu-memory-utilization 0.95). BF16 16.375 GiB does not fit. Cap is 131,072 (max_position_embeddings).",
+  "est_max_context_tokens": 101450,
+  "fits": "yes",
+  "quant_on_sm120": "Read from v0.33.0 source. MXFP4 linear kernel order on CUDA is FlashInferMxFp4LinearKernel, Marlin, Humming, B12x, Emulation. FlashInferMxFp4LinearKernel.is_supported only checks has_device_capability(100) plus flashinfer.cute_dsl present, so it passes on sm_120. It then hard-codes mm_fp4(backend='cute-dsl', block_size=32, use_nvfp4=False). In the pinned flashinfer-python 0.7.2.post1, the SM12x cute-dsl runner's check_requirement raises 'SM12x cute-dsl requires NVFP4 with 128x4 scales' for MXFP4. So the official MXFP4 build likely fails at the first forward on the RTX 5080 (inferred, not run; matches open PR #51783's 'mm_fp4 does not support backend cute-dsl with capability 120'). Workaround: env VLLM_DISABLED_KERNELS=FlashInferMxFp4LinearKernel gives MarlinMxFp4LinearKernel (W4A16 weight-only, logs a warning). B12x MXFP4 needs the optional vllm[b12x] extra (b12x==1.5.1), not verified in the image. NVFP4: kernel order starts FlashInferCuteDslNvFp4LinearKernel, then FlashInfer CUTLASS, then FlashInferB12x; FlashInfer 0.7.2 lists cc 120/121 for the cute-dsl FP4 requirement and the SM12x runner accepts NVFP4 with CUDA 13 (image is CUDA 13.0.3). FP8 (compressed-tensors W8A8 channel/token) uses the FlashInfer/CUTLASS FP8 scaled-mm list, the usual sm_120 path.",
+  "tool_call_parser": "qwen3_coder (IBM card; correct for the XML format). granite_toolcall_parser exists only from v0.34.0rc4. Do NOT use granite4.",
+  "reasoning_parser": "granite_thinking_parser (built in since v0.31.0); nemotron_v3 also works per card",
+  "serve_command": "docker run --rm --gpus all --ipc=host -p 8000:8000 -v ~/.cache/huggingface:/root/.cache/huggingface -e MAX_JOBS=2 vllm/vllm-openai:v0.33.0 ibm-granite/granite-4.2-8b-nvfp4 --served-model-name granite-4.2-8b --max-model-len 65536 --kv-cache-dtype fp8 --gpu-memory-utilization 0.92 --max-num-seqs 4 --reasoning-parser granite_thinking_parser --tool-call-parser qwen3_coder --enable-auto-tool-choice --generation-config auto    (For the MXFP4 build add -e VLLM_DISABLED_KERNELS=FlashInferMxFp4LinearKernel. For FP8 use ibm-granite/granite-4.2-8b-fp8 with --max-model-len 57344 --kv-cache-dtype fp8. The card's own command is BF16 with --max-model-len 131072 plus the parser plugin, which is too big for 16 GB.)",
+  "known_issues": "#51783 (open): FlashInfer MXFP4 linear hard-codes cute-dsl, fails on SM12x. v0.33.0 still hard-codes it; see quant_on_sm120. #65015 (open): granite4 tool parser drops streamed text (irrelevant if you use qwen3_coder). #53950 (open, 2026-08-26): granite-4.2-30b-fp8/nvfp4 failed to load with missing weight_scale. The 30B config.json now has quantization_config (repos updated 2026-09-02) and the 8B fp8/nvfp4/mxfp4 configs all carry compressed-tensors quantization_config, so the issue is likely stale for 8B. #66074/#66112 (open): Humming MXFP4 E8M0 rounding on Hopper; the PR says every Granite-4.2-8B layer is unaffected; not the sm_120 path. #61972 (open): leading newlines left by the qwen3 reasoning parser (Granite's parser strips them). Lead-reported first-start FlashInfer NVFP4 JIT can use about 52 GiB host RAM on sm_120; set MAX_JOBS=2. GitHub search was rate-limited before an sm_120-plus-Granite search finished.",
+  "sources": [
+   "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/model_executor/models/registry.py",
+   "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/reasoning/__init__.py",
+   "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/tool_parsers/__init__.py",
+   "https://github.com/vllm-project/vllm/pull/55957",
+   "https://github.com/vllm-project/vllm/pull/65216",
+   "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/model_executor/kernels/linear/__init__.py",
+   "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/model_executor/kernels/linear/mxfp4/flashinfer.py",
+   "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/model_executor/layers/quantization/compressed_tensors/schemes/compressed_tensors_w4a4_mxfp4.py",
+   "https://github.com/vllm-project/vllm/blob/v0.33.0/requirements/cuda.txt",
+   "https://github.com/flashinfer-ai/flashinfer/blob/v0.7.2.post1/flashinfer/gemm/gemm_base.py",
+   "https://github.com/flashinfer-ai/flashinfer/blob/v0.7.2.post1/flashinfer/gemm/kernels/sm12x_cute/runner.py",
+   "https://github.com/vllm-project/vllm/pull/51783",
+   "https://github.com/vllm-project/vllm/issues/53950",
+   "https://huggingface.co/ibm-granite/granite-4.2-8b-nvfp4/raw/main/config.json",
+   "https://huggingface.co/ibm-granite/granite-4.2-8b-mxfp4/raw/main/config.json",
+   "https://huggingface.co/ibm-granite/granite-4.2-8b-fp8/raw/main/config.json"
+  ]
+ },
+ "llamacpp": {
+  "arch_supported": "Yes. LLM_ARCH_GRANITE 'granite' is in src/llama-arch.cpp at b12418 and has been supported for a long time; the GGUF metadata architecture is 'granite'. (graniteswitch also exists.) Note: llama.cpp published a full release v1.0.0 on 2026-11-13; the b124xx builds are marked prerelease on GitHub.",
+  "gguf_repo": "ibm-granite/granite-4.2-8b-GGUF (official; embedded chat_template identical to the HF jinja, 9013 chars)",
+  "quant": "Q6_K (7.216 GB = 6.72 GiB) at 64K context; or Q5_K_M (6.254 GB) for 96K",
+  "file_gib": 6.72,
+  "est_vram_gib": 12.83,
+  "est_ram_gib": 1,
+  "est_context_tokens": 65536,
+  "offload_plan": "Fully on GPU (-ngl 99), no MoE, no CPU offload needed. Usable VRAM about 15.8 GiB (16303 MiB - 112 MiB idle). KV with q8_0 (1.0625 B/elem) = 2 x 40 x 8 x 128 x 1.0625 = 87,040 B/token. Q6_K: 6.72 + 5.31 (64K) + 0.8 = 12.83 GiB, OK; at 96K 6.72 + 7.97 + 0.8 = 15.49 GiB, too tight. Q5_K_M: 5.82 + 7.97 + 0.8 = 14.59 GiB at 96K. Q4_K_M: 4.98 + 7.97 + 0.8 = 13.75 at 96K; 128K = 16.41, does not fit. Q8_0 at 64K = 14.82 GiB. F16 KV doubles KV, so Q6_K plus F16 KV at 64K = 17.5 GiB does not fit.",
+  "server_command": "docker run --rm --gpus all -p 8080:8080 -v ~/.cache/llama.cpp:/root/.cache/llama.cpp ghcr.io/ggml-org/llama.cpp:server-cuda13 -hf ibm-granite/granite-4.2-8b-GGUF:Q6_K --host 0.0.0.0 --port 8080 -ngl 99 -c 65536 -fa on -ctk q8_0 -ctv q8_0 -np 1 --jinja --temp 1.0 --top-p 0.95",
+  "tool_calling_note": "Works through the Qwen3-Coder handler. common/chat.cpp at b12418 picks common_chat_params_init_qwen3_coder when the template contains '<tool_call>', '<function=' and '<parameter=' and does not contain the no-newline variant, which matches the Granite 4.2 template. common/parsers/qwen3-coder.cpp sets supports_thinking when the template contains <think>, and extracts reasoning ending at </think> or <tool_call>. Per-request thinking toggle: chat_template_kwargs {\"enable_thinking\": false}. Not tested end to end.",
+  "sources": [
+   "https://huggingface.co/api/models/ibm-granite/granite-4.2-8b-GGUF?blobs=true",
+   "https://github.com/ggml-org/llama.cpp/blob/b12418/common/chat.cpp",
+   "https://github.com/ggml-org/llama.cpp/blob/b12418/common/parsers/qwen3-coder.cpp",
+   "https://github.com/ggml-org/llama.cpp/blob/b12418/src/llama-arch.cpp",
+   "https://github.com/ggml-org/llama.cpp/blob/b12418/tools/server/README.md",
+   "https://github.com/ggml-org/llama.cpp/releases/tag/v1.0.0"
+  ]
+ },
+ "ollama": {
+  "tag": "granite4.2:8b (= latest, digest f586c02fdecd, Q4_K_M). Also 8b-q4_K_M 5.3, q5_K_M 6.3, q6_K 7.2, q8_0 9.3, bf16 18 GB",
+  "size_gb": 5.3,
+  "context": "128K listed (Ollama's default num_ctx on GPUs under 24 GiB is 4k, so set num_ctx to at least 65536)",
+  "capabilities": "Text input only. The library page shows NO 'tools' or 'thinking' badge, unlike granite4.1, which shows 'tools'. The granite4.2:8b manifest has only model, license and params layers (params: temperature 1, top_p 0.95); there is no template layer and no renderer/parser fields. The granite4.1:8b manifest has a template layer, and qwen3.6 has renderer and parser 'qwen3.5'. The readme still documents think on/off/low/high. Tool calling through Ollama is therefore doubtful (inferred).",
+  "source_url": "https://ollama.com/library/granite4.2/tags ; https://registry.ollama.ai/v2/library/granite4.2/manifests/8b"
+ },
+ "benchmarks": [
+  {
+   "name": "SWE-bench Verified",
+   "score": "47.67",
+   "setting": "thinking; NeMo Evaluator SDK based harness, scaffold not stated",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/ibm-granite/granite-4.2-8b/raw/main/README.md"
+  },
+  {
+   "name": "SWE-bench Pro",
+   "score": "19.11",
+   "setting": "vendor harness",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/ibm-granite/granite-4.2-8b/raw/main/README.md"
+  },
+  {
+   "name": "SWE-bench Multilingual",
+   "score": "30.78",
+   "setting": "vendor harness",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/ibm-granite/granite-4.2-8b/raw/main/README.md"
+  },
+  {
+   "name": "Terminal-Bench 2.1",
+   "score": "20.56",
+   "setting": "vendor harness",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/ibm-granite/granite-4.2-8b/raw/main/README.md"
+  },
+  {
+   "name": "BFCL v4",
+   "score": "52.39 (card) vs 50.29 (HF blog table): conflict",
+   "setting": "vendor",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/blog/ibm-granite/granite-4-2"
+  },
+  {
+   "name": "tau3-bench avg",
+   "score": "58.06",
+   "setting": "vendor",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/ibm-granite/granite-4.2-8b/raw/main/README.md"
+  },
+  {
+   "name": "LiveCodeBench v6",
+   "score": "73.24",
+   "setting": "thinking, vendor",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/ibm-granite/granite-4.2-8b/raw/main/README.md"
+  },
+  {
+   "name": "SciCode",
+   "score": "36.09",
+   "setting": "vendor",
+   "self_reported": true,
+   "source_url": "https://huggingface.co/ibm-granite/granite-4.2-8b/raw/main/README.md"
+  },
+  {
+   "name": "Artificial Analysis Intelligence Index v5.0.1",
+   "score": "5.1 (median 8 for comparable models; 'among the least intelligent')",
+   "setting": "reasoning, AA harness",
+   "self_reported": false,
+   "source_url": "https://artificialanalysis.ai/models/granite-4-2-8b"
+  },
+  {
+   "name": "Terminal-Bench 2.1 (AA)",
+   "score": "18.4%",
+   "setting": "AA harness; vendor reports 20.56",
+   "self_reported": false,
+   "source_url": "https://artificialanalysis.ai/models/granite-4-2-8b"
+  },
+  {
+   "name": "Terminal-Bench 4.0 (AA)",
+   "score": "0%",
+   "setting": "AA harness",
+   "self_reported": false,
+   "source_url": "https://artificialanalysis.ai/models/granite-4-2-8b"
+  },
+  {
+   "name": "SciCode (AA)",
+   "score": "31.5%",
+   "setting": "AA harness; vendor 36.09",
+   "self_reported": false,
+   "source_url": "https://artificialanalysis.ai/models/granite-4-2-8b"
+  },
+  {
+   "name": "tau-Banking (AA)",
+   "score": "7.6%",
+   "setting": "AA harness",
+   "self_reported": false,
+   "source_url": "https://artificialanalysis.ai/models/granite-4-2-8b"
+  }
+ ],
+ "speed_notes": "Inferred bandwidth ceilings at 896 GB/s for batch-1 decode: MXFP4 (5.88 GB) about 152 tok/s, NVFP4 (6.13 GB) about 146, FP8 (9.62 GB) about 93, GGUF Q4_K_M about 168, Q6_K about 124, Q8_0 about 96. KV reads cut this at long context, because this is a dense, all-full-attention model. At 32K tokens, BF16 KV adds 5.4 GB per token step, so NVFP4 drops to about 78 tok/s and FP8 to about 60; FP8/q8_0 KV gives about 102 and 73. Real numbers will be lower. One measured hosted figure: Artificial Analysis shows 66 tok/s output and 62.5 s time-to-first-answer-token on CoreWeave/DeepInfra, mostly thinking time. Thinking mode is verbose (vendor suggests max_new_tokens 8192 for thinking), so agentic turns will be slow-feeling unless you use low_effort or non-thinking mode. No RTX 50-series measurement was found.",
+ "opencode_fit": {
+  "verdict": "usable",
+  "recommended_runtime": "vLLM v0.33.0 (vllm/vllm-openai:v0.33.0) with --reasoning-parser granite_thinking_parser --tool-call-parser qwen3_coder --enable-auto-tool-choice. llama.cpp server-cuda13 with the official Q6_K GGUF and --jinja is an equally sound alternative. Avoid the Ollama library tag for tool use.",
+  "recommended_checkpoint": "ibm-granite/granite-4.2-8b-nvfp4 on vLLM (or -mxfp4 with VLLM_DISABLED_KERNELS=FlashInferMxFp4LinearKernel; -fp8 if FP4 kernels misbehave); ibm-granite/granite-4.2-8b-GGUF:Q6_K on llama.cpp",
+  "recommended_context": "65536 (vLLM FP4 + FP8 KV can go to about 100K; FP8 weights reach only about 58K with FP8 KV; llama.cpp Q6_K + q8_0 KV 64K, Q5_K_M 96K)",
+  "caveats": "1) Small model with weak independent results: AA Intelligence Index 5.1 vs median 8, Terminal-Bench 4.0 0%, tau-Banking 7.6%. Vendor SWE-bench Verified 47.67 / Pro 19.11 is respectable for 8B but well below 30B-class MoE options that fit this machine. 2) The MXFP4 build on sm_120 likely crashes on the FlashInfer cute-dsl path in v0.33.0 (source-traced, not run); workaround is to disable that kernel. 3) The NVFP4 first-start FlashInfer JIT may need MAX_JOBS=2 to cap host RAM. 4) The IBM card ships an OpenCode v2.3-style config (providers/package/settings, chat_template_kwargs.enable_thinking, compatibility.reasoningField 'reasoning'), but it does not set capabilities.tools; OpenCode v2.3.0 vLLM discovery starts models with tools disabled, so enable tools explicitly. 5) The chat template re-injects prior reasoning only from message.reasoning_content or from <think> inside content, not from a 'reasoning' field. Within a multi-tool-call turn OpenCode's returned reasoning may be dropped (inferred). 6) Vendor requires temperature 1.0 / top_p 0.95 for all modes; set these in OpenCode. 7) Context is 128K, not the card's '512K'. 8) Ollama granite4.2 has no template layer and no tools/thinking badge. 9) granite-switch-4.1-8b (created 2026-10-14, rev 4.1.1 on 2026-10-27, Apache-2.0, BF16 17.55 GB, official GGUF Q4_K_M 6.41 GB) is a different product. It is built on the older non-reasoning granite-4.1-8b plus two aLoRA adapters (decision, guardian-core) switched by control tokens, and a 470M speech-to-text encoder. It is not a coding or agentic upgrade over 4.2-8B and is not recommended for OpenCode."
+ },
+ "gaps": [
+  "Nothing was run on the machine: the MXFP4 failure on sm_120 (FlashInfer cute-dsl SM12x runner rejecting MXFP4) and NVFP4 success are traced from v0.33.0 + flashinfer 0.7.2.post1 source, not tested.",
+  "Not verified whether the v0.33.0 Docker image contains flashinfer.cute_dsl (if it does not, MXFP4 falls through to Marlin W4A16 automatically) or the optional b12x package.",
+  "FP8 KV cache (--kv-cache-dtype fp8) attention backend on sm_120 in v0.33.0 not checked; FlashAttention 2 does not do FP8 KV, so vLLM will pick another backend.",
+  "Whether vLLM v0.33.0 forwards the request-level reasoning_effort into the chat template (the template supports it) was not confirmed; chat_template_kwargs low_effort is confirmed by the card.",
+  "Ollama behaviour for granite4.2 without a template layer (whether it falls back to the GGUF jinja and exposes tools/thinking) was not established; only the missing badges and the manifest contents are verified.",
+  "No vLLM recipe exists for Granite 4.2 in vllm-project/recipes (only granite-3.2-2b-instruct). GitHub search hit the rate limit before a dedicated 'granite + sm_120/RTX 50' issue search could finish.",
+  "No unsloth, ggml-org, RedHatAI (only a 3B), nvidia or Intel builds of granite-4.2-8b exist on HF; mradermacher i1 sizes were not pulled.",
+  "SWE-bench scaffold and attempt settings for IBM's numbers are not stated beyond 'NeMo Evaluator SDK based'; BFCL v4 conflicts between card (52.39) and blog (50.29).",
+  "No measured tokens/s on RTX 50-series hardware found."
+ ]
+}

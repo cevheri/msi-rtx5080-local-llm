@@ -1,0 +1,404 @@
+{
+ "summary": "The latest stable vLLM is v0.33.0, released 2026-11-02. The GitHub release object is tagged v0.33.0rc3, is named \"v0.33.0\", and points at the same commit 4ba787e as tag v0.33.0 (https://api.github.com/repos/vllm-project/vllm/releases/latest). The newest pre-release tag is v0.34.0rc4 from 2026-11-14. It has no release page and no Docker tag, only nightly images. `vllm/vllm-openai:latest` and `:v0.33.0` share digest sha256:d825baf9… and are about 9.74 GB compressed for amd64 (https://hub.docker.com/v2/repositories/vllm/vllm-openai/tags/latest). The image is built on CUDA 13.0.3, Ubuntu 24.04 and PyTorch 2.14.0, and `TORCH_CUDA_ARCH_LIST` includes 12.0 on both v0.33.0 and main (https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/docker/Dockerfile). Since v0.33.0, CUDA 12.9 / `-cu129` images are no longer published. NVIDIA's table says CUDA 13.x needs driver R580 or newer and maps CUDA 13.2 to R595, so driver 595.99 runs the stable image natively (https://docs.nvidia.com/cuda/cuda-toolkit-release-notes/index.html). The official run command uses `--runtime nvidia --gpus all`, a mount of `~/.cache/huggingface`, `HF_TOKEN`, `-p 8000:8000` and `--ipc=host`. That needs the NVIDIA Container Toolkit, which this machine lacks (current release v1.20.1). The vLLM docs give no Compose guidance, so the Compose GPU syntax comes from Docker's docs (https://docs.vllm.ai/en/latest/deployment/docker/). The GPU requirement is \"compute capability 7.5 or higher\" with no RTX 50 statement (https://docs.vllm.ai/en/latest/getting_started/installation/gpu/). The quantization hardware table has no Blackwell column at all (https://docs.vllm.ai/en/latest/features/quantization/). SM120 support therefore has to be read from the b12x page, the FP8 page (\"Blackwell supported for W8A8\"), the source code and release notes. GGUF and bitsandbytes are now out-of-tree plugins (`vllm-gguf-plugin`, `vllm-bnb-plugin`). On sm_120, v0.33.0 picks FLASH_ATTN first and runs FlashAttention 2, because FA4 is only chosen when major==10 (vllm/platforms/cuda.py, fa_utils.py). Two SM120-specific backends exist, B12X attention and b12x linear/MoE kernels. Memory defaults on v0.33.0: `gpu_memory_utilization` is 0.92, about 14.6 GiB of 16303 MiB, and on a GPU under 70 GiB the API server defaults to `max_num_batched_tokens` 2048 and `max_num_seqs` 256. Weight offload exists as `--cpu-offload-gb` (UVA, \"requires fast CPU-GPU interconnect\", parameters fetched every forward pass), `--cpu-offload-params experts` for MoE experts, and a prefetch backend. The KV OffloadingConnector extends the prefix cache into CPU RAM. No vLLM doc gives speed numbers for running a MoE whose weights exceed 16 GB through offload. The biggest risk on this 64 GB laptop: a first start of an NVFP4 model on sm_120 JIT-compiles FlashInfer kernels and can use about 52 GiB of host RAM until OOM. The workaround is `MAX_JOBS=2` plus persistent caches; the fix PR #66864 was still open on 2026-11-15. vLLM Recipes (recipes.vllm.ai, repo updated 2026-11-15) list `rtx_5090` (32 GB) as a profile but nothing for a 16 GB card. The 16 GB-class recipe entries are gpt-oss-20b MXFP4 (vram_minimum 16, but sm120 is not in its verified list) and Gemma-4-26B-A4B NVFP4 (vram_minimum 16, rtx_5090 supported).",
+ "facts": [
+  {
+   "topic": "vLLM releases",
+   "claim": "The latest stable vLLM release is v0.33.0, published 2026-11-02T10:10:05Z. Its GitHub release object carries tag_name v0.33.0rc3 and name 'v0.33.0', and tags v0.33.0 and v0.33.0rc3 resolve to the same commit 4ba787ec (committed 2026-10-31). Before that came v0.32.0 (2026-10-18) and v0.31.0 (2026-10-05).",
+   "source_url": "https://api.github.com/repos/vllm-project/vllm/releases/latest",
+   "source_date": "2026-11-02",
+   "support": "direct-statement",
+   "notes": "Checked against the tags API and the commits API for both tags."
+  },
+  {
+   "topic": "vLLM releases",
+   "claim": "The newest pre-release tag is v0.34.0rc4, a commit dated 2026-11-14T10:15:55Z. It has no GitHub release object and no vllm/vllm-openai Docker tag; only nightly images exist.",
+   "source_url": "https://api.github.com/repos/vllm-project/vllm/tags?per_page=15",
+   "source_date": "2026-11-14",
+   "support": "direct-statement",
+   "notes": "Docker Hub returned 404 for tag v0.34.0rc4."
+  },
+  {
+   "topic": "vLLM releases / breaking",
+   "claim": "In v0.33.0: PyTorch moved to 2.14.0 (Triton 3.8.0), CUDA 12.9 was dropped so wheels and images are CUDA 13.0 only and the -cu129 images are no longer published, every image is also published as vllm/vllm:<tag>, and Medusa, the MLP speculator and the Ray compiled-graph executor were removed.",
+   "source_url": "https://github.com/vllm-project/vllm/releases/tag/v0.33.0rc3",
+   "source_date": "2026-11-02",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "vLLM releases / sm_120",
+   "claim": "Release notes over the last 6 months list sm_120 work. v0.29.0: b12x FP4 MoE for SM120/SM121 and SM120 sparse MLA fixes. v0.30.0: B12X causal paged attention for SM120/121 via --attention-backend B12X_ATTN, W4A4 NVFP4 preferred on SM120/121, DeepGEMM SM120 ports. v0.31.0: DeepGEMM SM120 fixes. v0.32.0: NVFP4 KV cache on SM12x, SM120 split-K attention, OAI Triton MXFP4 MoE on SM12x, ModelOpt IQ2_XS/IQ2_XXS/Q8_0 on SM120/121.",
+   "source_url": "https://api.github.com/repos/vllm-project/vllm/releases?per_page=15",
+   "source_date": "2026-08-26 to 2026-10-18",
+   "support": "direct-statement",
+   "notes": "Covers the release bodies of v0.29.0, v0.30.0, v0.31.0 and v0.32.0."
+  },
+  {
+   "topic": "vLLM releases / breaking",
+   "claim": "v0.28.0 moved bitsandbytes support to an out-of-tree plugin, bumped Transformers to 5.15.0, raised max_num_batched_tokens from 8192 to 16384 (on the large-GPU tier, per the source code), and added disk offloading to tiered KV cache offloading.",
+   "source_url": "https://github.com/vllm-project/vllm/releases/tag/v0.28.0",
+   "source_date": "2026-08-26",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "Docker image",
+   "claim": "vllm/vllm-openai:latest and :v0.33.0 share digest sha256:d825baf9ce4b…, last updated 2026-11-02. The compressed size is 9,738,495,250 bytes (about 9.7 GB) for amd64 and 10.9 GB for arm64. v0.32.0 amd64 was 9.2 GB.",
+   "source_url": "https://hub.docker.com/v2/repositories/vllm/vllm-openai/tags/latest",
+   "source_date": "2026-11-02",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "Docker image",
+   "claim": "The tags v0.33.0-cu130, v0.33.0-cu129 and v0.33.0-ubuntu2404 do not exist (404). The tag latest-cu130 is stale, last updated 2026-04-28. v0.32.0-cu129 is the last CUDA 12.9 image. Nightly tags 'nightly' (CUDA 13.2 base per Dockerfile main), 'cu134-nightly' and 'cu135-nightly' are pushed daily.",
+   "source_url": "https://hub.docker.com/v2/repositories/vllm/vllm-openai/tags?page_size=60&ordering=last_updated",
+   "source_date": "2026-11-15",
+   "support": "direct-statement",
+   "notes": "The CUDA version of the 'nightly' tag is inferred from ARG CUDA_VERSION=13.2.1 in the main Dockerfile."
+  },
+  {
+   "topic": "Docker image / arch",
+   "claim": "The v0.33.0 Dockerfile sets ARG CUDA_VERSION=13.0.3, PYTHON_VERSION=3.12, UBUNTU_VERSION=24.04 and torch_cuda_arch_list='7.5 8.0 8.6 8.9 9.0 10.0 11.0 12.0', so compute capability 12.0 is compiled in. On main, CUDA_VERSION=13.2.1 with the same arch list.",
+   "source_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/docker/Dockerfile",
+   "source_date": "2026-10-31",
+   "support": "direct-statement",
+   "notes": "Main checked at https://raw.githubusercontent.com/vllm-project/vllm/main/docker/Dockerfile on 2026-11-15."
+  },
+  {
+   "topic": "Docker image",
+   "claim": "v0.33.0 pins torch==2.14.0 and flashinfer-python==0.7.2.post1. The runtime image installs cuda-nvcc and nvrtc-dev because FlashInfer, DeepGEMM and EP kernels JIT-compile at runtime, and it bundles FlashInfer precompiled kernels.",
+   "source_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/requirements/cuda.txt",
+   "source_date": "2026-10-31",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "Driver compatibility",
+   "claim": "CUDA 13.x requires driver 580 or newer (no maximum). The CUDA-to-driver-branch table maps CUDA 13.0 to R580, 13.2 to R595, 13.4 to R615 and 13.5 to R620. So driver 595.99 meets the native branch for CUDA 13.0 (stable image) and 13.2 (nightly). The cu134/cu135 nightlies would run only under minor-version compatibility, and their 'new features require R615/R620'.",
+   "source_url": "https://docs.nvidia.com/cuda/cuda-toolkit-release-notes/index.html",
+   "source_date": "Release Notes 13.5 documentation (current 2026-11-15)",
+   "support": "source-backed",
+   "notes": "Issue #67177 shows that a CUDA 13.5 toolchain on an older driver gives cudaErrorUnsupportedPtxVersion."
+  },
+  {
+   "topic": "Docker docs",
+   "claim": "The official pre-built image command is 'docker run --runtime nvidia --gpus all -v ~/.cache/huggingface:/root/.cache/huggingface --env \"HF_TOKEN=$HF_TOKEN\" -p 8000:8000 --ipc=host vllm/vllm-openai:latest --model Qwen/Qwen3-0.6B'. The docs note that either --ipc=host or --shm-size gives the container access to host shared memory, which PyTorch uses.",
+   "source_url": "https://docs.vllm.ai/en/latest/getting_started/installation/gpu/",
+   "source_date": "main 2026-11-15",
+   "support": "direct-statement",
+   "notes": "Included into https://docs.vllm.ai/en/latest/deployment/docker/; raw file docs/getting_started/installation/gpu.cuda.inc.md."
+  },
+  {
+   "topic": "Docker docs",
+   "claim": "The Using Docker page adds three things: a named volume at /root/.cache/vllm (VLLM_CACHE_ROOT) that keeps torch.compile, Triton and AOT artifacts across containers; a non-root run with --user 2000:0 that mounts the HF cache at /home/vllm/.cache/huggingface; and a way to run vLLM Recipes config.yaml/env.sh. The image runs as root by default.",
+   "source_url": "https://docs.vllm.ai/en/latest/deployment/docker/",
+   "source_date": "main 2026-11-15 (identical at v0.33.0)",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "Docker docs",
+   "claim": "The vLLM docs contain no Docker Compose example. Docker's own Compose docs reserve a GPU with deploy.resources.reservations.devices: [{driver: nvidia, count: 1 or all, capabilities: [gpu]}], and capabilities is mandatory.",
+   "source_url": "https://docs.docker.com/compose/how-tos/gpu-support/",
+   "source_date": "docker/docs main 2026-11-15",
+   "support": "direct-statement",
+   "notes": "I grepped docs/deployment/*.md in the vLLM repo for 'compose' and found no hits."
+  },
+  {
+   "topic": "Docker prerequisites",
+   "claim": "The NVIDIA Container Toolkit's latest release is v1.20.1 (2026-09-19). Its install guide registers the runtime with 'sudo nvidia-ctk runtime configure --runtime=docker' followed by 'sudo systemctl restart docker'.",
+   "source_url": "https://github.com/NVIDIA/nvidia-container-toolkit/releases",
+   "source_date": "2026-09-19",
+   "support": "direct-statement",
+   "notes": "Install guide source: https://raw.githubusercontent.com/NVIDIA/cloud-native-docs/main/container-toolkit/install-guide.md. I did not check whether Ubuntu 26.04 is explicitly listed."
+  },
+  {
+   "topic": "GPU requirements",
+   "claim": "vLLM's CUDA requirement is only 'GPU: compute capability 7.5 or higher (e.g., T4, RTX20xx, A100, L4, H100, B200, etc.)'. The page names no RTX 50 or sm_120.",
+   "source_url": "https://docs.vllm.ai/en/latest/getting_started/installation/gpu/",
+   "source_date": "main 2026-11-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "Quantization hardware",
+   "claim": "The official quantization Supported Hardware table has columns only for Volta, Turing, Ampere, Ada, Hopper, AMD GPU, Intel GPU, x86 CPU and Arm CPU. Blackwell (SM100 or SM120) is absent, and the rows cover only AWQ, GPTQ, Marlin, llm-compressor INT8/FP8, bitsandbytes, DeepSpeedFP and GGUF. The old supported_hardware.html URL now returns 404.",
+   "source_url": "https://docs.vllm.ai/en/latest/features/quantization/",
+   "source_date": "main 2026-11-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "Quantization sm_120",
+   "claim": "b12x provides CUDA kernels for NVIDIA SM120 and SM121 and ships with flashinfer-python>=0.7.2. The linear backend supports per-tensor FP8, 128x128 block FP8, MXFP8, NVFP4 (including W4A16), MXFP4, IQ2_XS, IQ2_XXS and Q8_0. The MoE backend supports MXFP4 weights (BF16 or MXFP8 activations), NVFP4 weights, and IQ2/Q8_0. Select it with --linear-backend b12x --moe-backend b12x.",
+   "source_url": "https://docs.vllm.ai/en/latest/features/quantization/b12x/",
+   "source_date": "main 2026-11-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "Quantization FP8",
+   "claim": "FP8 W8A8 computation is supported on compute capability 8.9 or higher (Ada, Hopper, Blackwell). On compute capability 7.5 or higher, FP8 models run as weight-only W8A16 through FP8 Marlin.",
+   "source_url": "https://docs.vllm.ai/en/latest/features/quantization/llm_compressor/fp8/",
+   "source_date": "main 2026-11-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "Quantization NVFP4",
+   "claim": "For ModelOpt NVFP4 (quantization=modelopt_fp4), vLLM picks the GEMM kernel automatically from CUTLASS, FlashInfer and Marlin. On a GPU without a native FP4 GEMM it falls back to W4A16 Marlin. More generally, an unavailable activation-quantization kernel makes vLLM fall back to weight-only (W8A8 runs as W8A16, W4A4 as W4A16) with a warning, unless VLLM_STRICT_QUANT_SCHEME=1.",
+   "source_url": "https://docs.vllm.ai/en/latest/features/quantization/modelopt/",
+   "source_date": "main 2026-11-15",
+   "support": "direct-statement",
+   "notes": "The fallback rules are in the quantization README: https://docs.vllm.ai/en/latest/features/quantization/"
+  },
+  {
+   "topic": "Quantization GGUF/bnb",
+   "claim": "GGUF support has moved to the out-of-tree vllm-gguf-plugin ('highly experimental and under-optimized'), and BitsAndBytes to the out-of-tree vllm-bnb-plugin. Each must be installed with 'uv pip install' before use.",
+   "source_url": "https://docs.vllm.ai/en/latest/features/quantization/gguf/",
+   "source_date": "main 2026-11-15",
+   "support": "direct-statement",
+   "notes": "bnb page: https://docs.vllm.ai/en/latest/features/quantization/bnb/. The v0.33.0 Dockerfile installs the 'gguf' Python package but has no line for vllm-gguf-plugin or vllm-bnb-plugin, so they are probably not in the image (inferred)."
+  },
+  {
+   "topic": "KV cache quantization",
+   "claim": "--kv-cache-dtype fp8 (fp8_e4m3) or fp8_e5m2 is supported on CUDA 11.8+. With no calibration the scales default to 1.0, and calibration through llm-compressor is recommended. --kv-cache-dtype-skip-layers keeps sensitive layers, such as sliding-window layers, at native dtype.",
+   "source_url": "https://docs.vllm.ai/en/latest/features/quantization/quantized_kvcache/",
+   "source_date": "main 2026-11-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "Attention backend sm_120",
+   "claim": "In v0.33.0, standard attention on major==12 (sm_120) falls into the default priority FLASH_ATTN > FLASHINFER > TRITON_ATTN > FLEX_ATTENTION > TURBOQUANT. Only major==10 prefers FLASHINFER. FlashAttention version selection gives FA3 only to major 9 and FA4 only to major 10, so sm_120 gets FA2. MLA on major 12 uses TRITON_MLA, then FLASHINFER_MLA_SPARSE_SM120.",
+   "source_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/platforms/cuda.py",
+   "source_date": "2026-10-31",
+   "support": "source-backed",
+   "notes": "FA version logic: https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/v1/attention/backends/fa_utils.py. The docs page https://docs.vllm.ai/en/latest/design/attention_backends/ prints priority tables only for SM 10.x and SM 8.x-9.x, not SM 12.x."
+  },
+  {
+   "topic": "Attention backend sm_120",
+   "claim": "The B12X attention backend supports causal decoder attention on SM120/SM121 (bf16, head sizes 128/192/256, KV dtype auto only). Select it with --attention-backend b12x; it is not in the automatic priority list.",
+   "source_url": "https://docs.vllm.ai/en/latest/design/attention_backends/",
+   "source_date": "main 2026-11-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "Memory defaults",
+   "claim": "In v0.33.0, gpu_memory_utilization defaults to 0.92 per instance. On main (after v0.33) the default becomes None: 1.0 with the new extensible KV cache, otherwise 0.92.",
+   "source_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/config/cache.py",
+   "source_date": "2026-10-31",
+   "support": "direct-statement",
+   "notes": "Main: https://raw.githubusercontent.com/vllm-project/vllm/main/vllm/config/cache.py. Older docs and metrics examples still show 0.9."
+  },
+  {
+   "topic": "Memory defaults",
+   "claim": "On this GPU, 0.92 × 16303 MiB is about 14,999 MiB (about 14.6 GiB), the budget for weights, activations, CUDA graphs and KV cache. The roughly 112 MiB used at idle by other processes fits inside the remaining 8%.",
+   "source_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/config/cache.py",
+   "source_date": "2026-10-31",
+   "support": "source-backed",
+   "notes": "Arithmetic on the default value and the lead's nvidia-smi reading."
+  },
+  {
+   "topic": "Memory defaults",
+   "claim": "With the OpenAI API server on a GPU under 70 GiB (not B200-class), vLLM v0.33.0 defaults to max_num_batched_tokens=2048 and max_num_seqs=256. The larger defaults (8192/16384 tokens, 1024 seqs) apply only at 70 GiB or more and at 160 GiB or more.",
+   "source_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/engine/arg_utils.py",
+   "source_date": "2026-10-31",
+   "support": "direct-statement",
+   "notes": "Lines about 2946-3039, function _get_default_max_num_seqs_and_batched_tokens."
+  },
+  {
+   "topic": "Memory controls",
+   "claim": "The Conserving Memory guide lists quantization, max_model_len and max_num_seqs, a smaller cudagraph_capture_sizes, enforce_eager (disables CUDA graphs, which 'take up extra memory in the GPU'), and limit_mm_per_prompt (set 0 to skip unused modalities).",
+   "source_url": "https://docs.vllm.ai/en/latest/configuration/conserving_memory/",
+   "source_date": "main 2026-11-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "Weight offload",
+   "claim": "--cpu-offload-gb (UVA backend, default 0) works as 'a virtual way to increase the GPU memory size'. The docstring says it 'requires fast CPU-GPU interconnect, as part of the model is loaded from CPU memory to GPU memory on the fly in each model forward pass'. --cpu-offload-params can target segments such as 'experts' to offload only MoE expert weights. A prefetch backend (--offload-backend prefetch, --offload-group-size, --offload-num-in-group, --offload-prefetch-step) overlaps H2D copies to hide latency.",
+   "source_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/config/offload.py",
+   "source_date": "2026-10-31",
+   "support": "direct-statement",
+   "notes": "The CLI flags are confirmed in arg_utils.py v0.33.0, lines 1468-1475."
+  },
+  {
+   "topic": "Weight offload",
+   "claim": "vLLM can technically load a MoE whose quantized weights exceed 16 GB on one 16 GB GPU by offloading expert weights to CPU RAM with --cpu-offload-gb/--cpu-offload-params. The docs give no throughput figures and only warn that this needs a fast interconnect. Expect a large decode slowdown, because offloaded weights cross PCIe every forward pass.",
+   "source_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/config/offload.py",
+   "source_date": "2026-10-31",
+   "support": "inferred",
+   "notes": "No vLLM doc benchmarks this. llama.cpp's --n-cpu-moe is the usual alternative and belongs to another lane."
+  },
+  {
+   "topic": "KV offload",
+   "claim": "KV offloading through OffloadingConnector (CPUOffloadingSpec, or TieringOffloadingSpec with CPU plus secondary tiers including disk) 'extends the prefix cache' by copying completed KV blocks to pinned host memory over async DMA. Hits are promoted back to GPU. A simpler form is --kv-offloading-size <GiB> with --kv-offloading-backend native|lmcache.",
+   "source_url": "https://docs.vllm.ai/en/latest/features/kv_offloading_usage/",
+   "source_date": "main 2026-11-15",
+   "support": "direct-statement",
+   "notes": "Flags: https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/config/cache.py. My inference is that this helps cache reuse across turns (OpenCode re-sends long prefixes) but does not raise the maximum live context beyond what fits in GPU KV."
+  },
+  {
+   "topic": "Known issue sm_120 NVFP4 RAM",
+   "claim": "Loading a ModelOpt NVFP4 checkpoint on sm_120 makes FlashInfer JIT-compile the CUTLASS FP4 GEMM with about one compiler process per CPU. This used about 52 GiB of host RAM and OOM-killed 62-64 GB systems, including an RTX 5090 setup on vLLM 0.26.0. The verified workaround is MAX_JOBS=2 on the first run (15.8 GiB peak, about 8.5 min); after that the cached kernels are reused. It recompiles when system headers change. The issue is still open, and fix PR #66864 was open on 2026-11-15.",
+   "source_url": "https://github.com/vllm-project/vllm/issues/46268",
+   "source_date": "opened 2026-06-21, last comment 2026-11-15",
+   "support": "direct-statement",
+   "notes": "Fix PR: https://github.com/vllm-project/vllm/pull/66864. Related open issue: https://github.com/vllm-project/vllm/issues/54237 (RTX 5070 Ti, Ubuntu 26.04, driver 595.71, vLLM 0.28/0.29 freeze from host memory; MAX_JOBS workaround). This machine has 24 CPU threads and about 41 GiB free, so it is directly at risk."
+  },
+  {
+   "topic": "Known issue sm_120 FP8",
+   "claim": "v0.24.0 regressed FP8 checkpoints on sm_120 (RTX PRO 5000/6000) with a DeepGEMM 'Unknown recipe' assertion during kernel warmup. #47130 is still open. #47169 was closed as stale on 2026-11-14 after fixes PR #50829/#50893 (2026-08-03). A reported workaround is VLLM_USE_DEEP_GEMM=0.",
+   "source_url": "https://github.com/vllm-project/vllm/issues/47130",
+   "source_date": "opened 2026-06-30",
+   "support": "direct-statement",
+   "notes": "Also https://github.com/vllm-project/vllm/issues/47169. Whether v0.33.0 is affected is unknown."
+  },
+  {
+   "topic": "Known issue RTX 5080",
+   "claim": "Qwen3-VL-8B-Instruct-FP8 (block-wise FP8) on an RTX 5080 16 GB with vLLM 0.23.0 under WSL2 initialized but generate() hung. The issue was closed as not_planned on 2026-11-03.",
+   "source_url": "https://github.com/vllm-project/vllm/issues/46625",
+   "source_date": "opened 2026-06-24",
+   "support": "direct-statement",
+   "notes": "The companion doc issue https://github.com/vllm-project/vllm/issues/46619 is still open. It reflects an older version under WSL2, not native Linux."
+  },
+  {
+   "topic": "Known issue sm_120 MoE",
+   "claim": "On consumer Blackwell (SM_120/121), the FP8 MoE selector falls back to TRITON because CUTLASS 4.5 has no tensor/token-scaled FP8 grouped GEMM for SM120 (example: RedHatAI/gemma-4-26B-A4B-it-FP8-Dynamic). Separately, explicit --moe-backend flashinfer_cutlass on SM120 was reported to give silently corrupt output; PR #63473 to refuse it was closed without merging.",
+   "source_url": "https://github.com/vllm-project/vllm/issues/43507",
+   "source_date": "opened 2026-05-23, open",
+   "support": "direct-statement",
+   "notes": "PR: https://github.com/vllm-project/vllm/pull/63473 (closed 2026-11-04, merged_at null). Also https://github.com/vllm-project/vllm/issues/66423: segfault with any --reasoning-parser on SM120 + NVFP4 W4A4 + flashinfer_cutlass MoE, RTX 5090, official v0.32.0 image, open."
+  },
+  {
+   "topic": "Known issue sm_120 attention",
+   "claim": "#67177 reported that FLASH_ATTN on sm_120 crashed with cudaErrorUnsupportedPtxVersion on a 0.34 dev build. The reporter found the cause was a CUDA 13.5 toolchain on an older host driver (WSL2), not an SM120 bug, and a driver update fixed it. PR #67178, which would have preferred FlashInfer on SM120, was closed unmerged.",
+   "source_url": "https://github.com/vllm-project/vllm/issues/67177",
+   "source_date": "2026-11-12",
+   "support": "direct-statement",
+   "notes": "Lesson: keep the image CUDA version at or below the host driver's CUDA (13.2 here); avoid cu134/cu135 nightlies."
+  },
+  {
+   "topic": "Known issue AWQ",
+   "claim": "GLM-4.7-AWQ produced looping output on v0.20 to v0.31 under float16, reproduced on both sm_120 and H100. --dtype bfloat16 avoids it. The issue was closed 2026-11-10 after fix commits.",
+   "source_url": "https://github.com/vllm-project/vllm/issues/65533",
+   "source_date": "2026-11-04 to 2026-11-10",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "gpt-oss on sm_120",
+   "claim": "The vLLM GPT-OSS recipe says it runs on H100, H200, B200 and AMD MI300x-class GPUs and 'We are actively working on ensuring this model can work on Ampere, Ada Lovelace, and RTX 5090.' The gpt-oss-20b recipe (updated 2026-09-12) lists no sm120 or RTX hardware as verified. It does say MXFP4 'fits in 16GB VRAM on a single consumer or datacenter GPU', uses --tool-call-parser openai --enable-auto-tool-choice, and gives a 131072 context.",
+   "source_url": "https://github.com/vllm-project/recipes/blob/main/models/openai/gpt-oss-20b.yaml",
+   "source_date": "2026-09-12",
+   "support": "direct-statement",
+   "notes": "Prose: https://github.com/vllm-project/recipes/blob/main/OpenAI/GPT-OSS.md. v0.32.0 added OAI Triton MXFP4 MoE on SM12x (#58877) and b12x MXFP4 MoE exists, so kernel support exists, but nothing official verifies RTX 50."
+  },
+  {
+   "topic": "Recipes",
+   "claim": "vLLM Recipes (https://recipes.vllm.ai, repo updated 2026-11-15) has entries for openai/gpt-oss-20b and 120b; Qwen3, Qwen3.5 (0.8B-397B), Qwen3.6-27B and 35B-A3B, Qwen3.8-27B, Qwen3.8-Flash-Next, Qwen3-Coder-480B-A35B and Qwen3-Next-80B; Google gemma-4 E2B, E4B, 12B, 26B-A4B and 31B; NVIDIA Nemotron-3 Nano 4B and 30B-A3B, Nemotron-3.5 Lightning 30B-A3B, Super and Ultra; DeepSeek R1, V3.x, V4-Flash, V4-Pro and V4.1-Flash; GLM 4.5-5.3; Mistral Ministral-3 8B/14B and Small-4; MiniMax M2-M3; Kimi K2-K3; and Phi-4.",
+   "source_url": "https://github.com/vllm-project/recipes/tree/main/models",
+   "source_date": "2026-11-15",
+   "support": "direct-statement",
+   "notes": "There is no recipe for small Qwen3-Coder variants (only 480B-A35B)."
+  },
+  {
+   "topic": "Recipes / consumer GPUs",
+   "claim": "The recipes' hardware taxonomy has an rtx_5090 profile (sm120, 32 GB) and an rtx_4090 profile, but no 16 GB RTX 50 profile. Recipes listing rtx_5090: gemma-4-26B-A4B-it, Qwen3.6-27B, Qwen3.6-35B-A3B, Qwen3.8-27B, Muse-Glimmer-30B and MiniMax-H3.",
+   "source_url": "https://github.com/vllm-project/recipes/blob/main/taxonomy.yaml",
+   "source_date": "2026-11-15",
+   "support": "direct-statement"
+  },
+  {
+   "topic": "Recipes / 16 GB fit",
+   "claim": "The Gemma-4-26B-A4B-it recipe gives NVFP4 variants (RedHatAI/gemma-4-26B-A4B-it-NVFP4 and nvidia/Gemma-4-26B-A4B-NVFP4) vram_minimum_gb 16, with rtx_5090 among supported hardware. Its RTX 5090 override is VLLM_USE_V2_MODEL_RUNNER=1, --gpu-memory-utilization 0.9, --max-num-batched-tokens 4096, --max-num-seqs 4, --kv-cache-dtype fp8. Tool calling uses --tool-call-parser gemma4 with examples/tool_chat_template_gemma4.jinja, and reasoning uses --reasoning-parser gemma4.",
+   "source_url": "https://github.com/vllm-project/recipes/blob/main/models/Google/gemma-4-26B-A4B-it.yaml",
+   "source_date": "2026-09-27",
+   "support": "direct-statement",
+   "notes": "At 16 GB minimum on a 16 GB card, little or no room is left for KV; feasibility here is speculative until measured."
+  },
+  {
+   "topic": "Recipes / Qwen on RTX 5090",
+   "claim": "The Qwen3.6-35B-A3B NVFP4 variant needs vLLM 0.28.0 or newer on SM120 (FlashInfer XQA decode). On RTX 5090 it uses --quantization modelopt_fp4, --kv-cache-dtype fp8, --block-size 128, --moe-backend marlin, --attention-backend flashinfer with use_trtllm_attention, VLLM_HAS_FLASHINFER_CUBIN=1 and --gpu-memory-utilization 0.85. The recipe says 'The RTX 5090's 32 GB caps context at 64K'.",
+   "source_url": "https://github.com/vllm-project/recipes/blob/main/models/Qwen/Qwen3.6-35B-A3B.yaml",
+   "source_date": "2026-09-14",
+   "support": "direct-statement",
+   "notes": "My inference: on 16 GB this model needs CPU offload."
+  },
+  {
+   "topic": "Recipes / small models",
+   "claim": "Recipe minimums that fit 16 GB: Nemotron-3-Nano-4B FP8 5 GB (bf16 10 GB, 262144 context, --tool-call-parser qwen3_coder, reasoning parser nano_v3 via plugin); Qwen3.5-9B FP8-dynamic 11 GB (262144 context, --reasoning-parser qwen3); gemma-4-12B-it NVFP4 8 GB, QAT int4 9 GB, FP8 15 GB (131072 context); Ministral-3-8B-Reasoning 8 GB; Ministral-3-14B 12 GB. Nemotron-3.5-Lightning-30B-A3B NVFP4 needs 18 GB, and Qwen3.8-27B INT4 needs 24 GB.",
+   "source_url": "https://github.com/vllm-project/recipes/tree/main/models",
+   "source_date": "2026-04-28 to 2026-10-15",
+   "support": "direct-statement",
+   "notes": "Files: models/nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16.yaml, models/Qwen/Qwen3.5-9B.yaml, models/Google/gemma-4-12B-it.yaml, models/mistralai/*.yaml, models/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16.yaml, models/Qwen/Qwen3.8-27B.yaml."
+  },
+  {
+   "topic": "Recipes / Qwen parsers",
+   "claim": "For Qwen3.8-27B the recipe says the default tool parser is qwen3_coder (--enable-auto-tool-choice --tool-call-parser qwen3_coder) and the reasoning parser is qwen3, because the template opens every assistant turn with <think>.",
+   "source_url": "https://github.com/vllm-project/recipes/blob/main/models/Qwen/Qwen3.8-27B.yaml",
+   "source_date": "2026-10-15",
+   "support": "direct-statement"
+  }
+ ],
+ "snippets": [
+  {
+   "purpose": "Official vLLM Docker run command from the GPU install page, included into the Using Docker page",
+   "content": "docker run --runtime nvidia --gpus all \\\n    -v ~/.cache/huggingface:/root/.cache/huggingface \\\n    --env \"HF_TOKEN=$HF_TOKEN\" \\\n    -p 8000:8000 \\\n    --ipc=host \\\n    vllm/vllm-openai:latest \\\n    --model Qwen/Qwen3-0.6B",
+   "source_url": "https://docs.vllm.ai/en/latest/getting_started/installation/gpu/"
+  },
+  {
+   "purpose": "Official command for persisting the torch.compile / Triton cache across containers (faster restarts)",
+   "content": "docker run --rm --gpus all \\\n    -v ~/.cache/huggingface:/root/.cache/huggingface \\\n    -v vllm-cache:/root/.cache/vllm \\\n    -p 8000:8000 \\\n    vllm/vllm-openai:latest \\\n    meta-llama/Llama-3.1-8B-Instruct",
+   "source_url": "https://docs.vllm.ai/en/latest/deployment/docker/"
+  },
+  {
+   "purpose": "Official non-root run",
+   "content": "docker run --rm --gpus all \\\n    --user 2000:0 \\\n    -v ~/.cache/huggingface:/home/vllm/.cache/huggingface \\\n    -p 8000:8000 \\\n    vllm/vllm-openai:latest \\\n    meta-llama/Llama-3.1-8B-Instruct",
+   "source_url": "https://docs.vllm.ai/en/latest/deployment/docker/"
+  },
+  {
+   "purpose": "Official Recipes config run inside Docker",
+   "content": "docker run --rm --gpus all \\\n    -v ~/.cache/huggingface:/root/.cache/huggingface \\\n    -v \"$PWD/config.yaml:/recipe/config.yaml:ro\" \\\n    -v \"$PWD/env.sh:/recipe/env.sh:ro\" \\\n    -p 8000:8000 \\\n    --ipc=host \\\n    --entrypoint /bin/bash \\\n    vllm/vllm-openai:latest \\\n    -lc 'source /recipe/env.sh && exec vllm serve --config /recipe/config.yaml'",
+   "source_url": "https://docs.vllm.ai/en/latest/deployment/docker/"
+  },
+  {
+   "purpose": "Docker Compose GPU reservation syntax from Docker's docs (vLLM has no Compose example)",
+   "content": "services:\n  test:\n    image: nvidia/cuda:12.9.0-base-ubuntu22.04\n    command: nvidia-smi\n    deploy:\n      resources:\n        reservations:\n          devices:\n            - driver: nvidia\n              count: 1\n              capabilities: [gpu]",
+   "source_url": "https://docs.docker.com/compose/how-tos/gpu-support/"
+  },
+  {
+   "purpose": "SM120-specific b12x kernels",
+   "content": "vllm serve <model> \\\n    --linear-backend b12x \\\n    --moe-backend b12x\n# attention:\nvllm serve <model> --attention-backend b12x",
+   "source_url": "https://docs.vllm.ai/en/latest/features/quantization/b12x/"
+  },
+  {
+   "purpose": "CPU KV offloading (single tier)",
+   "content": "vllm serve <model> \\\n  --kv-transfer-config '{\n    \"kv_connector\": \"OffloadingConnector\",\n    \"kv_role\": \"kv_both\",\n    \"kv_connector_extra_config\": {\n      \"block_size\": 64,\n      \"cpu_bytes_to_use\": 1000000000\n    }\n  }'",
+   "source_url": "https://docs.vllm.ai/en/latest/features/kv_offloading_usage/"
+  },
+  {
+   "purpose": "Default CUDA arch list baked into v0.33.0 image (sm_120 included)",
+   "content": "ARG CUDA_VERSION=13.0.3\nARG UBUNTU_VERSION=24.04\nARG torch_cuda_arch_list='7.5 8.0 8.6 8.9 9.0 10.0 11.0 12.0'\nENV TORCH_CUDA_ARCH_LIST=${torch_cuda_arch_list}",
+   "source_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/docker/Dockerfile"
+  },
+  {
+   "purpose": "Workaround for NVFP4 first-start host-RAM blowup on sm_120 (from issue thread, not docs)",
+   "content": "Pass MAX_JOBS=<small number, e.g. 2> during the first `vllm serve` so FlashInfer's JIT compile spawns fewer cicc processes; once compiled and cached, MAX_JOBS can be dropped (cache must persist, e.g. a mounted volume).",
+   "source_url": "https://github.com/vllm-project/vllm/issues/46268"
+  }
+ ],
+ "gaps": [
+  "The official quantization hardware matrix has no Blackwell (SM100 or SM120) column, so no single official page says which methods run natively on sm_120. Support was pieced together from b12x.md, the FP8 docs, the modelopt docs, the release notes and the source code.",
+  "No vLLM doc or recipe covers a 16 GB RTX 50 laptop GPU. The smallest sm_120 profile in Recipes is rtx_5090 (32 GB). The RTX 5080 Laptop GPU's 140 W power limit and hybrid PRIME setup are not mentioned anywhere in vLLM docs.",
+  "No official throughput numbers for --cpu-offload-gb or expert offload (--cpu-offload-params experts) were found. The speed impact of serving a MoE larger than 16 GB on this machine is not quantified by any primary source.",
+  "Not verified whether vllm-gguf-plugin or vllm-bnb-plugin is preinstalled in vllm/vllm-openai:v0.33.0. The Dockerfile installs only the 'gguf' Python package, so the plugin is likely absent.",
+  "gpt-oss-20b (MXFP4) has no official verification on sm_120 / RTX 50. The GPT-OSS recipe still says support for RTX 5090 is being worked on, although v0.32.0 added Triton MXFP4 MoE on SM12x.",
+  "Not checked whether the DeepGEMM FP8 warmup regression (#47130, open) still reproduces on v0.33.0. VLLM_USE_DEEP_GEMM=0 is the reported workaround.",
+  "The docs.vllm.ai priority tables are generated and show only SM 10.x and SM 8.x-9.x. The sm_120 attention default (FLASH_ATTN with FA2) comes from reading v0.33.0 source, not from a doc statement.",
+  "The 'extensible KV cache' and the gpu_memory_utilization default of None exist only on main (after v0.33.0); I found no release note for them yet.",
+  "Not checked whether the NVIDIA Container Toolkit install guide lists Ubuntu 26.04 as a supported distribution."
+ ],
+ "candidate_models": [
+  "openai/gpt-oss-20b (MXFP4, recipe vram_minimum 16 GB, --tool-call-parser openai; not verified on sm_120)",
+  "google/gemma-4-26B-A4B-it NVFP4 (RedHatAI/gemma-4-26B-A4B-it-NVFP4 or nvidia/Gemma-4-26B-A4B-NVFP4; recipe vram_minimum 16 GB; parsers gemma4)",
+  "google/gemma-4-12B-it (RedHatAI NVFP4 8 GB, google qat-w4a16-ct 9 GB, FP8 15 GB)",
+  "Qwen/Qwen3.5-9B (RedHatAI FP8-dynamic 11 GB; reasoning parser qwen3)",
+  "Qwen/Qwen3.6-35B-A3B NVFP4 (verified on RTX 5090 32 GB; would need CPU expert offload on 16 GB)",
+  "Qwen/Qwen3.8-27B (INT4 W4A16 19.5 GB on disk, recipe minimum 24 GB; too big without offload)",
+  "nvidia/NVIDIA-Nemotron-3-Nano-4B (FP8 5 GB, BF16 10 GB, 262k context; qwen3_coder tool parser plus nano_v3 reasoning)",
+  "nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B NVFP4 (recipe minimum 18 GB; needs offload)",
+  "mistralai/Ministral-3-8B-Reasoning-2512 (8 GB) and Ministral-3-14B-Instruct-2512 (12 GB)",
+  "DeepSeek and GLM recipes (V4-Flash, GLM-5.3-Flash) need 170 GB or more and are not feasible on this machine"
+ ]
+}

@@ -1,0 +1,150 @@
+{
+  "name": "K2-Horizon-MoVA-36B-A4B",
+  "hf_repo": "IFM/K2-Horizon-MoVA-36B-A4B",
+  "exists_as_described": true,
+  "within_last_12_months": true,
+  "official_org": {
+    "value": "IFM (Institute of Foundation Models; Ollama readme: 'K2 Horizon is a family of fully open agentic models from the Institute of Foundation Models (IFM)'). HF author IFM; training logs on wandb.ai/llm360; code github.com/ifm-ai/xllm. The repo id in the lead note is the real one. MoVA is not a vision component: it is 'Mixture-of-Values attention' (card line 25).",
+    "source_url": "https://huggingface.co/api/models/IFM/K2-Horizon-MoVA-36B-A4B",
+    "support": "direct-statement"
+  },
+  "release_date": {
+    "value": "HF createdAt 2026-09-01T23:01:25Z; vLLM recipe date_added 2026-08-31, date_updated 2026-09-03; vLLM model PR #55063 merged 2026-09-03; Artificial Analysis lists 2026-09-03. Current main = checkpoint sft_2_2500 promoted 2026-10-01 (commit 'Promote checkpoint sft_2_2500 to main'); last README edit 2026-11-04. Official blog https://ifm.ai/blog/k2/ returned 403 to automated fetch, not read.",
+    "source_url": "https://huggingface.co/api/models/IFM/K2-Horizon-MoVA-36B-A4B/commits/main",
+    "support": "direct-statement"
+  },
+  "license": {
+    "value": "Apache-2.0 (card YAML license: apache-2.0; HF tag license:apache-2.0). No use restrictions beyond Apache-2.0; not gated. Training data repos IFM/K2-Horizon-Pretrain-Data and Midtrain-Data listed.",
+    "source_url": "https://huggingface.co/IFM/K2-Horizon-MoVA-36B-A4B/raw/main/README.md",
+    "support": "direct-statement"
+  },
+  "params": {
+    "value": "Total 37,444,792,020 (HF safetensors BF16). Active: vendor says 4B; vLLM v0.33.0 recipe says '5.95B active parameters per token' including embeddings. Arithmetic from config: routed FFN experts 8/100 x 26.54B = 2.12B, value experts 4/64 x 7.55B = 0.47B, attention 1.64B, shared experts 0.27B, dense MLP layers 0-2 0.14B = about 4.65B non-embedding; plus lm_head 0.64B and embedding 0.64B = 5.93B, matching the recipe.",
+    "source_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/recipes/models/IFM/K2-Horizon-MoVA-36B-A4B.yaml",
+    "support": "source-backed"
+  },
+  "architecture": {
+    "value": "K2HorizonForCausalLM (model_type k2_horizon, custom_code). 48 layers, hidden 2560, 32 query heads, 8 KV heads, head_dim 128, full attention on all 48 layers (sliding_window null, use_sliding_window false; llama.cpp graph uses build_attn_inp_kv, no SWA), softplus output gate on attention, partial-RoPE fields (rope_head_dim 128 = head_dim), rope_theta 1e7. MoE in layers 3-47 (mlp_only_layers [0,1,2]): 100 routed experts top-8, moe_intermediate 768, 1 shared expert (768), sigmoid router, scaling 2.5. MoVA: in layers 3-47 v_proj is replaced by 64 value experts top-4 (each 2560 -> 1024), so the value projection is itself a routed MoE. vocab 250,624, untied lm_head. Q4_K_M GGUF tensor split: ffn_*_exps 14.90 GiB, attn_v_exps 3.96 GiB, rest 1.96 GiB.",
+    "source_url": "https://huggingface.co/IFM/K2-Horizon-MoVA-36B-A4B/raw/main/config.json",
+    "support": "direct-statement"
+  },
+  "context_length": {
+    "value": "max_position_embeddings 524,288 (card: 'Native 524,288-token context from the midtraining stages onward'). On this machine: llama.cpp 64k with q8_0 KV (about 80k max with all experts in RAM); vLLM does not fit.",
+    "source_url": "https://huggingface.co/IFM/K2-Horizon-MoVA-36B-A4B/raw/main/config.json",
+    "support": "direct-statement"
+  },
+  "modalities": {
+    "value": "Text in, text out only. pipeline_tag text-generation; chat template raises on any non-text content part ('extract file contents to text before templating'); Ollama tags show 'Text input'. MoVA = Mixture-of-Values attention, not vision, so there is no vision tower and no --language-model-only concern.",
+    "source_url": "https://huggingface.co/IFM/K2-Horizon-MoVA-36B-A4B/raw/main/chat_template.jinja",
+    "support": "direct-statement"
+  },
+  "thinking": {
+    "mode": "always",
+    "how_to_toggle": "Reasoning always on, with three effort levels set by chat_template_kwargs reasoning_effort high (default, <ifm|think>), medium (<ifm|think_fast>), low (<ifm|think_faster>). The card says to always use high. vLLM v0.33.0: per request extra_body {\"chat_template_kwargs\":{\"reasoning_effort\":\"low\"}} or server-wide --default-chat-template-kwargs; reasoning parser k2_horizon; no off switch (HF main template has no enable_thinking). Open vLLM bug #62743: at medium/low the model closes with </ifm|think>, so reasoning leaks into content. llama.cpp b12407: --chat-template-kwargs '{\"reasoning_effort\":\"high\"}' or per request chat_template_kwargs; the dedicated parser accepts </ifm|think> at medium/low (fix #30335, 2026-11-12, in b12407). Real off only with the official IFM GGUF's embedded template, which contains 'enable_thinking is false' -> empty <ifm|think></ifm|think>; llama.cpp honours --reasoning off / enable_thinking only when the template contains enable_thinking (common/parsers/k2-horizon.cpp line 29). bartowski's GGUF embeds the newer template (identical to llama.cpp models/templates/IFM-K2-Horizon.jinja) without enable_thinking. Ollama ifm/k2-horizon: 'Reasoning can't be turned off.'",
+    "source_url": "https://huggingface.co/IFM/K2-Horizon-MoVA-36B-A4B/raw/main/chat_template.jinja",
+    "support": "direct-statement"
+  },
+  "tool_calling": {
+    "supported": "yes",
+    "format": "<ifm|tool_calls><ifm|tool_call>NAME\\n<ifm|arg_key>k</ifm|arg_key>\\n<ifm|arg_value>v</ifm|arg_value></ifm|tool_call></ifm|tool_calls> (default xml); json and xml_typed selectable via chat_template_kwargs tool_call_format. Tool results go in a 'tool' role turn.",
+    "evidence": "chat_template.jinja lines 786-792 (system instructions for the three formats) and 865-888 (render_tool_calls_block); vLLM v0.33.0 vllm/tool_parsers/k2_horizon_tool_parser.py (K2HorizonToolParser, formats json/xml/xml_typed) registered as k2_horizon; llama.cpp b12407 common/parsers/k2-horizon.cpp selected by common/chat.cpp line 1334 when the template contains <|ifm|im_start|> and <ifm|tool_calls>. Template caveat: the HF main template raises 'Assistant message is missing a thinking field' for any assistant history turn without think/reasoning/reasoning_content; llama.cpp injects reasoning_content='' (parser line 12-16), vLLM does not, Ollama does not pass prior reasoning back (open ollama PR #18281).",
+    "source_url": "https://huggingface.co/IFM/K2-Horizon-MoVA-36B-A4B/raw/main/chat_template.jinja",
+    "support": "direct-statement"
+  },
+  "checkpoints": [
+    {"repo": "IFM/K2-Horizon-MoVA-36B-A4B", "format": "safetensors BF16 (48 shards)", "size_gb": 69.78, "official": true, "publisher": "IFM", "source_url": "https://huggingface.co/api/models/IFM/K2-Horizon-MoVA-36B-A4B?blobs=true"},
+    {"repo": "IFM/K2-Horizon-MoVA-36B-A4B-FP8", "format": "FP8 dynamic (routed FFN experts only; attention and v_experts left BF16 in ignored_layers)", "size_gb": 45.07, "official": true, "publisher": "IFM", "source_url": "https://huggingface.co/api/models/IFM/K2-Horizon-MoVA-36B-A4B-FP8?blobs=true"},
+    {"repo": "IFM/K2-Horizon-MoVA-36B-A4B-GGUF", "format": "GGUF Q4_K_M 20.83 GiB (also Q5_0 24.10, Q5_K_M 24.62, Q6_K 28.65, Q8_0 37.10, BF16 69.78); uploaded 2026-09-22, before mainline support; embedded template has enable_thinking", "size_gb": 20.83, "official": true, "publisher": "IFM", "source_url": "https://huggingface.co/api/models/IFM/K2-Horizon-MoVA-36B-A4B-GGUF?blobs=true"},
+    {"repo": "bartowski/K2-Horizon-MoVA-36B-A4B-GGUF", "format": "GGUF imatrix, made with mainline b11462: Q4_K_M 21.14 GiB, IQ4_XS 19.02, Q4_K_S 20.53, Q3_K_M 16.16, IQ3_XXS 14.71, Q8_0 37.10", "size_gb": 21.14, "official": false, "publisher": "bartowski", "source_url": "https://huggingface.co/api/models/bartowski/K2-Horizon-MoVA-36B-A4B-GGUF?blobs=true"},
+    {"repo": "Siladrim/K2-Horizon-MoVA-36B-A4B-GPTQ-Int4", "format": "GPTQ int4 (smallest vLLM-format build)", "size_gb": 20.25, "official": false, "publisher": "Siladrim", "source_url": "https://huggingface.co/api/models/Siladrim/K2-Horizon-MoVA-36B-A4B-GPTQ-Int4?blobs=true"},
+    {"repo": "cyankiwi/K2-Horizon-MoVA-36B-A4B-AWQ-INT4", "format": "compressed-tensors W4 g32 (v_experts quantized)", "size_gb": 22.58, "official": false, "publisher": "cyankiwi", "source_url": "https://huggingface.co/api/models/cyankiwi/K2-Horizon-MoVA-36B-A4B-AWQ-INT4?blobs=true"},
+    {"repo": "primitive-ai/K2-Horizon-MoVA-36B-A4B-NVFP4", "format": "compressed-tensors NVFP4 W4A4 (v_experts in ignore list)", "size_gb": 34.22, "official": false, "publisher": "primitive-ai", "source_url": "https://huggingface.co/api/models/primitive-ai/K2-Horizon-MoVA-36B-A4B-NVFP4?blobs=true"}
+  ],
+  "vllm": {
+    "fits": "no",
+    "arch_supported": "Yes, native: registry.py line 147 'K2HorizonForCausalLM': ('k2_horizon', ...) at tag v0.33.0; vllm/model_executor/models/k2_horizon.py, reasoning and tool parsers k2_horizon, recipe recipes/models/IFM/K2-Horizon-MoVA-36B-A4B.yaml (verified hardware h200, vram_minimum_gb 90, TP 2).",
+    "min_version": "v0.30.0 (PR #55063 merged 2026-09-03; v0.29.0 diverged before it, v0.30.0 released 2026-09-22 contains it)",
+    "best_checkpoint": "none fits; smallest is Siladrim GPTQ-Int4 20.25 GiB",
+    "weights_gib": 20.25,
+    "kv_bytes_per_token_bf16": 196608,
+    "kv_math": "Budget 16303 MiB x 0.92 = 14999 MiB = 14.65 GiB. KV/token = 2 x 48 full-attention layers x 8 KV heads x 128 x 2 B = 196,608 B (192 KiB) BF16, 98,304 B FP8. Pool = 14.65 - weights - 1.2: BF16 69.78 -> -56.3 GiB; FP8 45.07 -> -31.6; GPTQ 20.25 -> -6.8; AWQ 22.58 -> -9.1; NVFP4 34.22 -> -20.8. Every checkpoint leaves a negative KV pool, so max context 0 for BF16 and FP8 KV. Expert CPU offload is not a plan (#66264, Marlin repack undoes it).",
+    "est_max_context_tokens": 0,
+    "quant_on_sm120": "Moot (no fit). Source note: K2HorizonMoVAAttention.compute_mova_v_sparse (k2_horizon.py lines 912-935) stacks expert.weight and calls fused_mova_impl with no quant flags, so a checkpoint that quantizes v_experts (GPTQ, AWQ builds) is likely to fail or miscompute in vLLM; the IFM FP8 and primitive-ai NVFP4 builds keep v_experts in BF16 (inferred from source; a vLLM maintainer comment in #55512 says in-tree supports fp8/int8/int4 in general).",
+    "tool_call_parser": "k2_horizon (with --enable-auto-tool-choice)",
+    "reasoning_parser": "k2_horizon",
+    "serve_command": "Not recommended on this machine. Vendor reference (2 GPUs): vllm serve IFM/K2-Horizon-MoVA-36B-A4B --tensor-parallel-size 2 --trust-remote-code --chat-template-content-format string --dtype bfloat16 --enable-expert-parallel --reasoning-parser k2_horizon --enable-auto-tool-choice --tool-call-parser k2_horizon",
+    "known_issues": "#62743 (open): reasoning parser only accepts the end tag of the requested effort; medium/low leak reasoning into content. HF main template raises on assistant history without a reasoning field, which vLLM does not fill in (inferred risk for OpenCode multi-turn).",
+    "sources": [
+      "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/models/registry.py",
+      "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/models/k2_horizon.py",
+      "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/recipes/models/IFM/K2-Horizon-MoVA-36B-A4B.yaml",
+      "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/reasoning/k2_horizon_reasoning_parser.py",
+      "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/tool_parsers/k2_horizon_tool_parser.py",
+      "https://github.com/vllm-project/vllm/pull/55063",
+      "https://github.com/vllm-project/vllm/issues/62743",
+      "https://github.com/vllm-project/vllm/issues/55512"
+    ]
+  },
+  "llamacpp": {
+    "arch_supported": "Yes: LLM_ARCH_K2_HORIZON 'k2-horizon' (src/llama-arch.cpp line 178 at b12407 and b12418), src/models/k2-horizon.cpp, tensor blk.%d.attn_v_exps, tokenizer pre k2-horizon, dedicated chat parser common/parsers/k2-horizon.cpp. Added by PR #29535, merged 2026-10-06 = release b11454. Later fixes in b12407: KV shifting #31683 (2026-11-05), </ifm|think> closer at medium/low #30335 (2026-11-12, closes #30246).",
+    "gguf_repo": "bartowski/K2-Horizon-MoVA-36B-A4B-GGUF (Q4_K_M, imatrix, mainline b11462); alternative IFM/K2-Horizon-MoVA-36B-A4B-GGUF Q4_K_M 20.83 GiB, whose embedded template allows enable_thinking=false",
+    "quant": "Q4_K_M",
+    "file_gib": 21.14,
+    "est_vram_gib": 15.2,
+    "est_ram_gib": 13.6,
+    "est_context_tokens": 65536,
+    "offload_plan": "Parsed GGUF header (bartowski Q4_K_M): ffn_{up,gate,down}_exps 14.94 GiB = 0.332 GiB per MoE block (blocks 3-47); attn_v_exps 3.96 GiB; everything else 2.23 GiB. --n-cpu-moe only matches '\\.ffn_(up|down|gate|gate_up)_(ch|)exps' (common.h line 1286), so attn_v_exps stays on GPU: 6.19 GiB fixed on GPU. KV q8_0 = 48 x 2 x 1024 x 1.0625 B = 104,448 B/token; 65,536 tokens = 6.375 GiB (f16 would be 12.0 GiB, does not fit). Compute buffers about 1.3 GiB (250k vocab: logits alone 0.49 GiB at ub 512). 6.19 + 6.375 + 1.3 = 13.87 GiB; about 15.8 GiB usable leaves room for 4 MoE blocks of experts (1.33 GiB): --n-cpu-moe 44 puts blocks 0-43 (41 MoE blocks, 13.6 GiB) in RAM and blocks 44-47 on GPU, total about 15.2 GiB VRAM. With --cpu-moe (all experts in RAM) VRAM left for KV is about 8.3 GiB: about 85k tokens q8_0 or 45k f16. 128k needs q4_0 KV, not recommended. Or leave -ncmoe unset and let --fit place experts.",
+    "server_command": "docker run --rm --device nvidia.com/gpu=all --memory 48g -e GGML_CUDA_DISABLE_GRAPHS=1 -p 127.0.0.1:8080:8080 -v $HOME/.cache/huggingface:/root/.cache/huggingface ghcr.io/ggml-org/llama.cpp:server-cuda-b12407 -hf bartowski/K2-Horizon-MoVA-36B-A4B-GGUF:Q4_K_M -c 65536 -np 1 -ngl 99 --n-cpu-moe 44 -fa on -ctk q8_0 -ctv q8_0 --jinja --temp 1.0 --top-p 0.95 --chat-template-kwargs '{\"reasoning_effort\":\"high\"}' --host 0.0.0.0 --port 8080",
+    "tool_calling_note": "Dedicated K2 parser in b12407 handles xml (default), xml_typed and json formats, tool_choice=required, and fills an empty reasoning_content on assistant history so the strict template does not raise. Reasoning returned in reasoning_content (OpenCode compatibility.reasoningField 'reasoning_content'). Not exercised on this machine.",
+    "sources": [
+      "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/src/llama-arch.cpp",
+      "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/src/models/k2-horizon.cpp",
+      "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/common/parsers/k2-horizon.cpp",
+      "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/common/chat.cpp",
+      "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/common/common.h",
+      "https://github.com/ggml-org/llama.cpp/pull/29535",
+      "https://github.com/ggml-org/llama.cpp/releases/tag/b11454",
+      "https://huggingface.co/bartowski/K2-Horizon-MoVA-36B-A4B-GGUF",
+      "https://huggingface.co/IFM/K2-Horizon-MoVA-36B-A4B-GGUF"
+    ]
+  },
+  "ollama": {
+    "tag": "ifm/k2-horizon:36b (= 36b-q4_K_M, digest 2a1342732f8d); also 36b-q5_0 26GB, 36b-q5_K_M 26GB, 36b-q6_K 31GB, 36b-q8_0 40GB, 36b-bf16 75GB. Vendor namespace ifm, not the official library. Community ahmgam/k2-horizon:36b 22GB.",
+    "size_gb": 22,
+    "context": "512K advertised; default 4k on GPUs under 24 GB; readme says set at least 32768 (OpenCode needs OLLAMA_CONTEXT_LENGTH=65536 plus q8_0 KV)",
+    "capabilities": "tools, thinking (reasoning cannot be turned off); requires Ollama 0.40.4+; Ollama does not pass earlier reasoning back in multi-turn tool loops (fix pending in ollama PR #18281, open)",
+    "source_url": "https://ollama.com/ifm/k2-horizon/tags"
+  },
+  "benchmarks": [
+    {"name": "Terminal-Bench 2.1", "score": "56.6", "self_reported": false, "setting": "Artificial Analysis, reasoning, 'median' provider full precision; Qwen3.6-35B-A3B 44.9 same table", "source_url": "https://artificialanalysis.ai/models/k2-horizon-mova-36b-a4b"},
+    {"name": "tau3-Banking", "score": "32.0", "self_reported": false, "setting": "Artificial Analysis; Qwen3.6-35B-A3B 9.3", "source_url": "https://artificialanalysis.ai/models/k2-horizon-mova-36b-a4b"},
+    {"name": "AutomationBench-AA", "score": "26.1", "self_reported": false, "setting": "Artificial Analysis", "source_url": "https://artificialanalysis.ai/models/k2-horizon-mova-36b-a4b"},
+    {"name": "GDPval-AA", "score": "1197.6 (Elo)", "self_reported": false, "setting": "Artificial Analysis", "source_url": "https://artificialanalysis.ai/models/k2-horizon-mova-36b-a4b"},
+    {"name": "AA Progress Index", "score": "281 (Qwen3.6-35B-A3B 261, Qwen3.8-27B xhigh 303)", "self_reported": false, "setting": "Artificial Analysis small open-weight view, 2026-11-15", "source_url": "https://artificialanalysis.ai/models/open-source/small"},
+    {"name": "Terminal-Bench 2.1", "score": "58.6", "self_reported": true, "setting": "vendor card table, high reasoning effort (differs from AA live 56.6)", "source_url": "https://huggingface.co/IFM/K2-Horizon-MoVA-36B-A4B/raw/main/README.md"},
+    {"name": "tau3-Banking", "score": "26.8", "self_reported": true, "setting": "vendor card table (differs from AA live 32.0)", "source_url": "https://huggingface.co/IFM/K2-Horizon-MoVA-36B-A4B/raw/main/README.md"},
+    {"name": "SciCode", "score": "38.9", "self_reported": true, "setting": "vendor card", "source_url": "https://huggingface.co/IFM/K2-Horizon-MoVA-36B-A4B/raw/main/README.md"},
+    {"name": "GPQA Diamond", "score": "80.8", "self_reported": true, "setting": "vendor card", "source_url": "https://huggingface.co/IFM/K2-Horizon-MoVA-36B-A4B/raw/main/README.md"},
+    {"name": "Humanity's Last Exam (no tools)", "score": "25.2", "self_reported": true, "setting": "vendor card", "source_url": "https://huggingface.co/IFM/K2-Horizon-MoVA-36B-A4B/raw/main/README.md"},
+    {"name": "AA-LCR", "score": "66.3", "self_reported": true, "setting": "vendor card", "source_url": "https://huggingface.co/IFM/K2-Horizon-MoVA-36B-A4B/raw/main/README.md"}
+  ],
+  "sampling": "temperature 1.0, top_p 0.95, reasoning_effort high on every request (card Best Practices 1-2; same on the GGUF card and Ollama readme). No top_k, min_p or penalties given. No Unsloth build or Unsloth doc found for this model.",
+  "speed_notes": "Inferred upper bound, llama.cpp bartowski Q4_K_M with --n-cpu-moe 44: GPU bytes per token about 2.25 GiB (attention 1.04, lm_head 0.49, shared experts 0.23, active value experts 4/64 x 3.96 = 0.25, dense MLP and routers 0.13, 4 GPU expert blocks x 8% = 0.11) = 2.4 GB / 896 GB/s = 2.7 ms; RAM experts 41 blocks x 0.332 GiB x 8/100 = 1.09 GiB = 1.17 GB / 80-100 GB/s = 11.7-14.6 ms; KV read at 32k q8_0 3.4 GB = 3.8 ms. Bound about 58-69 tok/s near empty context, 48-55 tok/s at 32k; expect roughly half in practice (25-40 tok/s), similar to Qwen3.6-35B-A3B pick #1. Always-on high reasoning multiplies tokens per turn. Prefill with experts in RAM is limited by #25859; raise -ub to 2048 only if VRAM allows (bigger compute buffer). Third-party measurement (not this machine): an out-of-tree vLLM plugin on an L40S reported about 69 tok/s single-stream decode on GPTQ Int4 (#55512).",
+  "opencode_fit": {
+    "verdict": "good",
+    "recommended_runtime": "llama.cpp (ghcr.io/ggml-org/llama.cpp:server-cuda-b12407), not vLLM",
+    "recommended_checkpoint": "bartowski/K2-Horizon-MoVA-36B-A4B-GGUF Q4_K_M (21.14 GiB); IFM official Q4_K_M (20.83 GiB) if a thinking-off option is wanted",
+    "recommended_context": "65536 with q8_0 KV and --n-cpu-moe 44 (about 85k is the ceiling with all experts in RAM)",
+    "caveats": "Best independent agentic scores in its size class among verified picks (AA TB2.1 56.6 vs 44.9 and tau3-Banking 32.0 vs 9.3 for Qwen3.6-35B-A3B), Apache-2.0, native llama.cpp support with a dedicated tool parser. But: KV is heavy (192 KiB/token f16, 48 full-attention layers), so 64k needs q8_0 KV and 128k is out of reach, where Qwen3.6 reaches 128k; reasoning is always on and the vendor wants high effort, so agent turns are slow and OpenCode can hit #55378 (reasoning-only turn) if output limits are low; temperature 1.0 recommended; llama.cpp support is about 6 weeks old with recent parser fixes; strict template rejects history without a reasoning field on vLLM and Ollama (llama.cpp patches it); vLLM cannot fit any checkpoint in 16 GB. Nothing has run on this machine: tool-call smoke test and a short OpenCode session are needed before promoting it."
+  },
+  "gaps": [
+    "Not run on this machine: VRAM, compute buffer size and tok/s are estimates.",
+    "IFM blog https://ifm.ai/blog/k2/ returned 403; announcement date and MoVA description taken from the HF card, vLLM recipe and Ollama readme instead.",
+    "Vendor card TB2.1 58.6 / tau3-Banking 26.8 differ from AA live 56.6 / 32.0 although the card says baselines come from AA; cause unknown (possibly a checkpoint or rerun difference).",
+    "Official IFM GGUF was uploaded 2026-09-22, before mainline support (b11454, 2026-10-06); its KV keys and tensor names match b12407 but loading was not tested. bartowski's build was made with mainline b11462.",
+    "The vLLM claim that quantized v_experts break MoVA is inferred from k2_horizon.py; not tested (and moot because nothing fits).",
+    "OpenCode behaviour with the <ifm|...> xml tool format and always-on reasoning is untested; no OpenCode issue specific to K2 Horizon found.",
+    "Configured DDR5 speed unverified, so the RAM bandwidth figure (80-100 GB/s) is an assumption.",
+    "Checkpoint size_gb values are GiB (2^30) from HF API byte counts; Ollama sizes are as displayed (GB)."
+  ]
+}

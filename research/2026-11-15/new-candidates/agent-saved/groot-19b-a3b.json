@@ -1,0 +1,142 @@
+{
+  "name": "Groot-19B-A3B-261023",
+  "hf_repo": "GrootTeam/Groot-19B-A3B-261023",
+  "exists_as_described": true,
+  "within_last_12_months": true,
+  "official_org": {
+    "value": "GrootTeam is a Hugging Face USER account (type 'user', fullname 'Groot', bio 'Developing Efficient Models', account created 2026-10-21T12:28:27Z, 12 models, 193 followers), member of the unverified org 'Groot-R' (fullname 'Groot-AI', isVerified false, 1 user, 0 models). No company, paper, website or named people. A 2026-10-26 discussion asking who the team is (#2) has no reply. The repo id in the task is the real one, but every serve command in the card uses the non-existent id 'Groot/Groot-19B-A3B-261023'. Treat as an anonymous publisher.",
+    "source_url": "https://huggingface.co/api/users/GrootTeam/overview",
+    "support": "direct-statement"
+  },
+  "release_date": {
+    "value": "HF createdAt 2026-10-23T08:47:29Z, lastModified 2026-10-23T09:44:16Z (the 261023 suffix is a date code). No announcement blog or paper found; the card is the only announcement. Same-day siblings: -FP8, -NVFP4, -GGUF, plus Groot-65B-A6B, 238B-A18B and 280B-A16B.",
+    "source_url": "https://huggingface.co/api/models/GrootTeam/Groot-19B-A3B-261023",
+    "support": "direct-statement"
+  },
+  "license": {
+    "value": "Apache-2.0 in card metadata (license: apache-2.0, license_link: LICENSE), but the repo has NO LICENSE file (raw/main/LICENSE returns 404; not in siblings). Base Qwen3.6-35B-A3B is Apache-2.0. The post-training data is described only as 'fewer than 0.1B tokens of open-source data', with no list. Apache-2.0 has no use restrictions, but provenance is undocumented.",
+    "source_url": "https://huggingface.co/GrootTeam/Groot-19B-A3B-261023/raw/main/README.md",
+    "support": "direct-statement"
+  },
+  "params": {
+    "value": "19,432,294,256 BF16 params (HF safetensors count, includes the vision tower; MTP is in separate files in the quant repos). Card: about 19B total, about 3B active, plus a 0.4B MTP layer. Pruned from Qwen3.6-35B-A3B: config.json is identical to Qwen3.6-35B-A3B except num_experts 128 vs 256 (plus pad_token_id, router_aux_loss_coef 0.0, use_cache), so the routed experts per layer were cut in half. Vendor reply in the GGUF discussion #2 (2026-11-02): 'the model was pruned from the base model, though the pruning method was not REAP'. The method is not disclosed. Active estimate from config: about 1.13B expert params (8 routed + 1 shared x 3 x 2048 x 512 x 40 layers) + about 1.8B attention/GDN + 0.51B lm_head = about 3.4B read per token.",
+    "source_url": "https://huggingface.co/GrootTeam/Groot-19B-A3B-261023/raw/main/config.json",
+    "support": "source-backed"
+  },
+  "architecture": {
+    "value": "Qwen3_5MoeForConditionalGeneration (model_type qwen3_5_moe), the same as Qwen3.6-35B-A3B. 40 layers, full_attention_interval 4: 10 full-attention layers (16 Q heads, 2 KV heads, head_dim 256, output gate, partial rotary 0.25, rope_theta 1e7, mrope) and 30 Gated DeltaNet linear-attention layers (16 key heads x 128, 32 value heads x 128, conv kernel 4, SSM state float32). Hidden 2048. MoE: 128 routed experts (moe_intermediate 512) + 1 shared expert (512), 8 routed per token. Vocab 248,320, untied embeddings. 1 MTP layer. Vision tower: 27 layers, hidden 1152.",
+    "source_url": "https://huggingface.co/GrootTeam/Groot-19B-A3B-261023/raw/main/config.json",
+    "support": "direct-statement"
+  },
+  "context_length": {
+    "value": "max_position_embeddings 262,144 (tokenizer model_max_length 262144); card says YaRN factor 4 reaches about 1M. The card recommends keeping at least 128K to preserve thinking quality. On this GPU: about 128k (llama.cpp Q4_K_M, f16 KV) or 256k (q8_0 KV); vLLM NVFP4 about 128k BF16 KV / 257k FP8 KV with --language-model-only.",
+    "source_url": "https://huggingface.co/GrootTeam/Groot-19B-A3B-261023/raw/main/config.json",
+    "support": "direct-statement"
+  },
+  "modalities": {
+    "value": "Image and video input + text output (pipeline_tag image-text-to-text; card says 'natively multimodal'). Text-only path: vLLM --language-model-only (skips the BF16 vision tower, about 0.84 GiB); llama.cpp: do not load the mmproj (pass --no-mmproj with -hf, because -hf would otherwise auto-fetch mmproj-Groot-19B-A3B-261023-BF16.gguf, 0.84 GiB).",
+    "source_url": "https://huggingface.co/GrootTeam/Groot-19B-A3B-261023/raw/main/README.md",
+    "support": "direct-statement"
+  },
+  "thinking": {
+    "mode": "toggle",
+    "how_to_toggle": "Thinking is on by default: the template appends '<think>\\n' to the generation prompt, and enable_thinking=false appends an empty '<think>\\n\\n</think>\\n\\n'. The card says there are no /think or /nothink soft switches. vLLM: per request extra_body chat_template_kwargs {\"enable_thinking\": false}; server default --default-chat-template-kwargs '{\"enable_thinking\":false}' (flag present in vllm/entrypoints/common/cli_args.py at v0.33.0); --reasoning-parser qwen3 puts the trace in 'reasoning' (the card says reasoning_content; the baseline says vLLM v0.33.0 uses 'reasoning'). llama.cpp b12407: --chat-template-kwargs '{\"enable_thinking\":false}' or --reasoning off as the server default, with per-request chat_template_kwargs in the body; --reasoning-budget N. Ollama: 'think' request field only if the model's capabilities include thinking; the only Ollama upload shows only the vision capability, so the toggle is unverified there. TEMPLATE DISCREPANCY: chat_template.jinja (used by the official GGUF, template length 7536) re-emits <think>reasoning</think> for EVERY past assistant turn and ignores preserve_thinking, while the template embedded in tokenizer_config.json (7764 chars, used by bartowski's GGUF) drops past reasoning unless preserve_thinking=true, as the card describes. vLLM/transformers 5.x normally prefer chat_template.jinja (inferred).",
+    "source_url": "https://huggingface.co/GrootTeam/Groot-19B-A3B-261023/raw/main/chat_template.jinja",
+    "support": "direct-statement"
+  },
+  "tool_calling": {
+    "supported": "yes",
+    "format": "Qwen3-Coder XML: <tool_call>\\n<function=NAME>\\n<parameter=ARG>\\nvalue\\n</parameter>\\n</function>\\n</tool_call>; tools are listed as JSON inside <tools> in the system turn; tool results go back as <tool_response> inside a user turn.",
+    "evidence": "chat_template.jinja lines 45-60 (tools block and format instructions), 101-125 (assistant tool_calls rendering), 127-138 (tool role as <tool_response>). Card lines 76, 134, 184: --tool-call-parser qwen3_coder (SGLang and vLLM). vLLM v0.33.0 vllm/tool_parsers/__init__.py lines 206-219: qwen3_coder and qwen3_xml both map to Qwen3EngineToolParser. Third-party Blackwall 'tools' task (simulated workspace, end-state graded): 100.0 for the NVFP4+MTP build. Community reports: 'Tool use I observed until now is unflawed' (main repo discussion #1); verbatim-copy defect with Polish paths (discussion #5).",
+    "source_url": "https://huggingface.co/GrootTeam/Groot-19B-A3B-261023/raw/main/chat_template.jinja",
+    "support": "direct-statement"
+  },
+  "checkpoints": [
+    {"repo": "GrootTeam/Groot-19B-A3B-261023", "format": "safetensors BF16 (6 shards, 36.22 GiB total incl. vision)", "official": true, "publisher": "GrootTeam", "size_gb": 36.22, "source_url": "https://huggingface.co/api/models/GrootTeam/Groot-19B-A3B-261023?blobs=true"},
+    {"repo": "GrootTeam/Groot-19B-A3B-261023-NVFP4", "format": "compressed-tensors mixed: NVFP4 W4A16 (group 16) for routed+shared experts and lm_head; FP8 W8A8 static per-tensor for attention and GDN projections; vision BF16; kv_cache_scheme FP8 static. Shards 3.73+3.73+3.73+0.60 = 11.78 GiB (12,644,124,396 B), plus mtp.safetensors 0.82 GiB", "official": true, "publisher": "GrootTeam", "size_gb": 11.78, "source_url": "https://huggingface.co/api/models/GrootTeam/Groot-19B-A3B-261023-NVFP4?blobs=true"},
+    {"repo": "GrootTeam/Groot-19B-A3B-261023-FP8", "format": "FP8 safetensors, 19.07 GiB + 0.42 GiB MTP (does not fit 16 GB)", "official": true, "publisher": "GrootTeam", "size_gb": 19.49, "source_url": "https://huggingface.co/api/models/GrootTeam/Groot-19B-A3B-261023-FP8?blobs=true"},
+    {"repo": "GrootTeam/Groot-19B-A3B-261023-GGUF", "format": "GGUF Q4_K_M 10.86 GiB (11,657,618,560 B), arch qwen35moe; mmproj BF16 0.84 GiB", "official": true, "publisher": "GrootTeam", "size_gb": 10.86, "source_url": "https://huggingface.co/api/models/GrootTeam/Groot-19B-A3B-261023-GGUF?blobs=true"},
+    {"repo": "bartowski/GrootTeam_Groot-19B-A3B-261023-GGUF", "format": "GGUF imatrix: IQ4_XS 10.19, Q4_K_S 10.74, Q4_K_M 11.63, Q4_K_L 12.43, Q5_K_S 12.81, Q5_K_M 13.71, Q6_K 15.64, Q8_0 18.84 GiB; uses the tokenizer_config template", "official": false, "publisher": "bartowski", "size_gb": 11.63, "source_url": "https://huggingface.co/api/models/bartowski/GrootTeam_Groot-19B-A3B-261023-GGUF?blobs=true"},
+    {"repo": "mradermacher/Groot-19B-A3B-261023-i1-GGUF", "format": "GGUF imatrix: i1-IQ4_XS 9.65, i1-Q4_K_S 10.20, i1-Q4_K_M 10.86, i1-Q5_K_M 12.65, i1-Q6_K 14.55 GiB", "official": false, "publisher": "mradermacher", "size_gb": 10.86, "source_url": "https://huggingface.co/api/models/mradermacher/Groot-19B-A3B-261023-i1-GGUF?blobs=true"}
+  ],
+  "vllm": {
+    "arch_supported": "Yes. v0.33.0 registry.py line 205 Qwen3_5MoeForCausalLM, lines 618-620 Qwen3_5MoeForConditionalGeneration, line 740 Qwen3_5MoeMTP (MTP). Card asks for vLLM >= 0.19.1.",
+    "best_checkpoint": "GrootTeam/Groot-19B-A3B-261023-NVFP4 with --language-model-only",
+    "fits": "yes",
+    "weights_gib": 10.94,
+    "kv_bytes_per_token_bf16": 20480,
+    "kv_math": "Budget 16303 MiB x 0.92 = 14999 MiB = 14.65 GiB. NVFP4 shards 11.78 GiB (vision tower included, BF16, estimated 0.84 GiB from the mmproj size). KV per token = 2 x 10 full-attn layers x 2 KV heads x 256 x 2 B = 20,480 B BF16, 10,240 B FP8. GDN state per sequence = 30 x (32x128x128x4 B SSM + 8192x3x2 B conv) = 0.06 GiB. (a) With vision: 14.65 - 11.78 - 1.2 = 1.67 GiB, minus 0.06 = 1.61 GiB -> 84.5k tokens BF16 / 169k FP8. (b) --language-model-only: 14.65 - 10.94 - 1.2 = 2.51, minus 0.06 = 2.45 GiB -> 128.5k BF16 / 257k FP8 (cap 262,144). (c) LM-only + MTP (0.82 GiB): 1.63 GiB -> 85k BF16 / 171k FP8. The checkpoint ships an FP8 kv_cache_scheme; FP8 KV on sm_120 needs --attention-backend TRITON_ATTN (baseline, FlashInfer race #61239).",
+    "est_max_context_tokens": 128529,
+    "quant_on_sm120": "Experts are NVFP4 weight-only (input_activations null), so compressed_tensors_moe.py at v0.33.0 builds CompressedTensorsW4A4Nvfp4MoEMethod(use_a16=True). oracle/nvfp4.py walks FLASHINFER_TRTLLM, CUTEDSL, CUTLASS, VLLM_CUTLASS, MARLIN; prioritize_humming only moves Humming ahead on cc 90 (humming/priority.py), so on sm_120 the MoE uses MARLIN W4A16 (inferred from the selection order; it matches the kernels logged in #54331). This avoids the W4A4 FlashInfer CUTLASS JIT host-RAM spike (#46268). Attention/GDN projections are FP8 W8A8 static per-tensor (CUTLASS FP8, supported on sm_120).",
+    "tool_call_parser": "qwen3_coder (or qwen3_xml, same class at v0.33.0)",
+    "reasoning_parser": "qwen3",
+    "min_version": "0.19.1 per the card; Qwen3_5Moe and the parsers are present at v0.33.0",
+    "serve_command": "docker run --rm --gpus all --ipc=host --memory 24g -p 127.0.0.1:8000:8000 -v $HOME/.cache/huggingface:/root/.cache/huggingface vllm/vllm-openai:v0.33.0 GrootTeam/Groot-19B-A3B-261023-NVFP4 --served-model-name groot-19b-a3b --language-model-only --max-model-len 131072 --gpu-memory-utilization 0.92 --kv-cache-dtype fp8 --attention-backend TRITON_ATTN --max-num-seqs 2 --enable-auto-tool-choice --tool-call-parser qwen3_coder --reasoning-parser qwen3 --default-chat-template-kwargs '{\"enable_thinking\":false}'",
+    "known_issues": "#54331 (OPEN): sm_120 hybrid-GDN NVFP4 (qwen3_5_moe, MARLIN NvFp4 MoE backend, also nvidia/Qwen3.6-35B-A3B-NVFP4) dies under sustained high-concurrency load whenever CUDA graphs are on, still reported on 0.26-0.28; only enforce_eager survived. That is the same arch and kernel path as this checkpoint, so add --enforce-eager if it crashes. Hybrid prefix caching uses mamba_cache_mode align. MTP speculative decoding costs 0.82 GiB and cuts the KV pool to about 85k BF16. The card's serve commands use the wrong repo id 'Groot/...'.",
+    "sources": [
+      "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/models/registry.py",
+      "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/tool_parsers/__init__.py",
+      "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/reasoning/__init__.py",
+      "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/layers/quantization/compressed_tensors/compressed_tensors_moe/compressed_tensors_moe.py",
+      "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/layers/fused_moe/oracle/nvfp4.py",
+      "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/layers/quantization/utils/humming/priority.py",
+      "https://huggingface.co/GrootTeam/Groot-19B-A3B-261023-NVFP4/raw/main/config.json",
+      "https://github.com/vllm-project/vllm/issues/54331"
+    ]
+  },
+  "llamacpp": {
+    "arch_supported": "Yes. b12407 src/llama-arch.cpp line 46 { LLM_ARCH_QWEN35MOE, \"qwen35moe\" }; the HF GGUF metadata of the official and bartowski files says architecture qwen35moe, context_length 262144.",
+    "gguf_repo": "GrootTeam/Groot-19B-A3B-261023-GGUF",
+    "quant": "Q4_K_M (official, 10.86 GiB; mradermacher i1-Q4_K_M is the same size with imatrix; bartowski Q4_K_M is 11.63 GiB)",
+    "file_gib": 10.86,
+    "est_vram_gib": 14.4,
+    "est_ram_gib": 1,
+    "est_context_tokens": 131072,
+    "offload_plan": "All layers on GPU, no --n-cpu-moe. VRAM: 10.86 GiB weights + KV f16 at 131072 = 131072 x 20,480 B = 2.50 GiB + recurrent state about 0.06 GiB + compute buffers about 1 GiB (248k vocab) = about 14.4 GiB of 15.9 GiB. 262144 with q8_0 KV (about 10,880 B/token) = 2.66 GiB -> about 14.6 GiB, tight but fits; 262144 f16 (5.0 GiB) does not fit. Context checkpoints for the hybrid model live in host RAM. The card's own estimate: 128K on a 16 GB card.",
+    "server_command": "docker run --rm --gpus all --memory 16g -e GGML_CUDA_DISABLE_GRAPHS=1 -p 127.0.0.1:8080:8080 -v $HOME/.cache/huggingface:/root/.cache/huggingface ghcr.io/ggml-org/llama.cpp:server-cuda-b12407 -hf GrootTeam/Groot-19B-A3B-261023-GGUF:Q4_K_M --no-mmproj -ngl 99 -np 1 -c 131072 -fa on --jinja --chat-template-kwargs '{\"enable_thinking\":false}' --temp 0.6 --top-p 0.95 --top-k 20 --min-p 0 --presence-penalty 0 --host 0.0.0.0 --port 8080",
+    "tool_calling_note": "The template uses the Qwen3-Coder XML format that llama.cpp's --jinja chat parser handles for Qwen3.5/3.6. Because the arch and template family match Qwen3.6, the open issues #30357 (reasoning/whitespace not round-trippable, prefix-cache invalidation, full re-prefill) and #30118 (tool call leaking into content) likely apply (inferred, untested on Groot). The official GGUF embeds the always-preserve-thinking chat_template.jinja; bartowski embeds the tokenizer_config variant. OpenCode reasoningField 'reasoning_content' for llama.cpp.",
+    "sources": [
+      "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/src/llama-arch.cpp",
+      "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12407/common/arg.cpp",
+      "https://huggingface.co/api/models/GrootTeam/Groot-19B-A3B-261023-GGUF?expand[]=gguf",
+      "https://huggingface.co/api/models/GrootTeam/Groot-19B-A3B-261023-GGUF?blobs=true"
+    ]
+  },
+  "ollama": {
+    "tag": "No official library entry (ollama.com/library/groot returns 404). Community: fauxpaslife/Groot-19B-A3B-261023:latest (12GB, Q4_0, 256K, Text+Image, 129 downloads; only the vision capability is listed, with no tools or thinking badge). Alternative: ollama pull hf.co/GrootTeam/Groot-19B-A3B-261023-GGUF:Q4_K_M (untested whether Ollama v0.40.16 loads qwen35moe from an HF GGUF).",
+    "size_gb": 12,
+    "context": "256K advertised; set OLLAMA_CONTEXT_LENGTH=65536 or higher",
+    "capabilities": "vision (tools/thinking not listed)",
+    "source_url": "https://ollama.com/fauxpaslife/Groot-19B-A3B-261023/tags"
+  },
+  "benchmarks": [
+    {"name": "Blackwall quality index (SuperGPQA, MATH, LiveCodeBench, MRCR, GraphWalks, tools), medium effort", "score": "78.5 (CI 75.7-81.1); tasks: SuperGPQA 45.9, MATH 84.9, LCB 75.2, MRCR 76.9, GraphWalks 96.1, tools 100.0", "self_reported": false, "setting": "Third party (guitaripod), single run, GrootTeam NVFP4 + MTP, vLLM, 256K, RTX PRO 6000 Blackwell; no Qwen3.6-35B-A3B on the board; same person published an uncensored NVFP4 (73.6). Board ranks it above Nemotron 3.5 Lightning 30B Q8 (66.1).", "source_url": "https://guitaripod.github.io/blackwall/#groot-19b-a3b-nvfp4~medium"},
+    {"name": "Terminal-Bench 2.1", "score": "52.10 (Qwen3.6-35B-A3B 43.82, Gemma-4-26B-A4B 26.52)", "self_reported": true, "setting": "Claude Code agent, thinking, temp 1.0, 128K output, 500 turns", "source_url": "https://huggingface.co/GrootTeam/Groot-19B-A3B-261023/raw/main/README.md"},
+    {"name": "SWE-bench Verified", "score": "31.66 (Qwen3.6-35B-A3B 36.27, Gemma-4-26B-A4B 20.44): Groot LOSES to its base here; the vendor's Qwen3.6 number is far below NVIDIA's 70.12 for Qwen3.6 in the baseline, so the harness is weak or unusual", "self_reported": true, "setting": "harness not stated; chart only", "source_url": "https://huggingface.co/GrootTeam/Groot-19B-A3B-261023/resolve/main/assets/bars_19b.png"},
+    {"name": "SWE-bench Pro", "score": "49.79 (Qwen3.6 48.02, Gemma 21.34)", "self_reported": true, "setting": "SWE-agent scaffold, chart", "source_url": "https://huggingface.co/GrootTeam/Groot-19B-A3B-261023/resolve/main/assets/bars_19b.png"},
+    {"name": "NL2Repo-Bench", "score": "35.65 (Qwen3.6 28.77, Gemma 16.55)", "self_reported": true, "setting": "Claude Code agent, 80K context", "source_url": "https://huggingface.co/GrootTeam/Groot-19B-A3B-261023/raw/main/README.md"},
+    {"name": "Toolathlon Verified", "score": "42.90 (Qwen3.6 35.80, Gemma 21.91)", "self_reported": true, "setting": "pass@1 mean of 3, chart", "source_url": "https://huggingface.co/GrootTeam/Groot-19B-A3B-261023/resolve/main/assets/bars_19b.png"},
+    {"name": "BFCL v4", "score": "74.13 (Qwen3.6 74.24, Gemma 68.45)", "self_reported": true, "setting": "chart", "source_url": "https://huggingface.co/GrootTeam/Groot-19B-A3B-261023/resolve/main/assets/bars_19b.png"},
+    {"name": "LiveCodeBench v6", "score": "85.69 (Qwen3.6 80.40, Gemma 77.10)", "self_reported": true, "setting": "chart", "source_url": "https://huggingface.co/GrootTeam/Groot-19B-A3B-261023/resolve/main/assets/bars_19b.png"},
+    {"name": "Other vendor chart values", "score": "ALE 29.59 (29.19 / 18.96), AutomationBench 10.94, JobBench 19.57, DeepSWE 1.1 4.43, HLE 21.21 (Qwen3.6 21.94), HLE with tools 32.39, BigCodeBench Hard 25.68 (Gemma 27.70), GPQA Diamond 85.35, LongBench v2 62.03; 16-benchmark average 41.44 vs 38.08 / 30.05; average output 20,903 tokens vs 27,199 (Qwen3.6)", "self_reported": true, "setting": "thinking mode, temp 1.0, top_p 0.95, top_k 20", "source_url": "https://huggingface.co/GrootTeam/Groot-19B-A3B-261023/resolve/main/assets/bars_19b.png"}
+  ],
+  "sampling": "Card (direct): thinking general temp 1.0, top_p 0.95, top_k 20, min_p 0, presence_penalty 1.5, repetition_penalty 1.0; precise coding temp 0.6, top_p 0.95, top_k 20, min_p 0, presence_penalty 0.0; non-thinking temp 0.7, top_p 0.8, top_k 20, min_p 0, presence_penalty 1.5. generation_config.json: temp 1.0, top_p 0.95, top_k 20. No Unsloth page or Unsloth quant exists (unsloth/Groot-19B-A3B-261023-GGUF not found). For OpenCode use the coding preset.",
+  "speed_notes": "Inferred bound for llama.cpp Q4_K_M on this GPU: about 3.4B params read per token x about 0.61 B/param (11.66e9 B / 18.99e9 GGUF params) = about 2.1 GB/token; 896 GB/s / 2.1 GB = about 430 tok/s ceiling, so about 150-250 tok/s decode at short context realistically (inferred; baseline anchor: desktop RTX 5080 gpt-oss-20b about 205 tok/s). Everything stays in VRAM, so it should be much faster than Qwen3.6-35B-A3B with --n-cpu-moe 21. Third-party measured on RTX PRO 6000 (1792 GB/s), vLLM NVFP4+MTP: decode 379 tok/s single stream, 303 tok/s at 120k context, prefill 27k tok/s at 32k (Blackwall). One user reported half the speed of Qwen3.6-35B Q4_K_M with the same settings (GGUF discussion #3, unexplained). Not measured on this machine.",
+  "opencode_fit": {
+    "verdict": "good",
+    "recommended_runtime": "llama.cpp (server-cuda-b12407) with the official Q4_K_M, all on GPU; vLLM NVFP4 as second",
+    "recommended_checkpoint": "GrootTeam/Groot-19B-A3B-261023-GGUF Groot-19B-A3B-261023-Q4_K_M.gguf (10.86 GiB)",
+    "recommended_context": "131072 with f16 KV (about 14.4 GiB VRAM); 65536-131072 on vLLM NVFP4 --language-model-only with FP8 KV",
+    "caveats": "A strong candidate to replace Qwen3.6-35B-A3B (#1) on this 16 GB laptop, because it fits fully in VRAM at 128k with Qwen3.6-class tool calling and parsers. Do not promote it until it is measured here: (1) anonymous publisher (user account, unverified org, team question unanswered), no LICENSE file, undisclosed pruning method and data; (2) every agentic score is self-reported, and on the vendor's own chart it LOSES to Qwen3.6 on SWE-bench Verified (31.66 vs 36.27) and ties on BFCL v4; the only third-party eval (Blackwall) is a single run without a Qwen3.6 comparison; (3) community reports of knowledge loss and alleged ideological data shaping (GGUF discussion #3), only English and Chinese output, and altered verbatim text in file paths (discussion #5), which matters for a coding agent; (4) chat_template.jinja differs from the tokenizer_config template (always preserves past thinking), and llama.cpp issues #30357/#30118 for this arch likely apply; (5) vLLM NVFP4 path shares #54331 (hybrid GDN + Marlin NVFP4 crash under load with CUDA graphs on sm_120). Run an A/B against Qwen3.6-35B-A3B with the same OpenCode tasks, thinking on and off."
+  },
+  "gaps": [
+    "Publisher identity and pruning method are undisclosed (vendor says only 'not REAP'); no paper, blog or LICENSE file.",
+    "No independent agentic-coding eval (SWE-bench, Terminal-Bench) by a neutral party; Blackwall is a single third-party run with its own suite and no Qwen3.6 baseline.",
+    "Vision tower size inside the NVFP4 shards is estimated from the 0.84 GiB mmproj, not counted per tensor.",
+    "Which chat template vLLM v0.33.0 actually applies (chat_template.jinja vs tokenizer_config) was not confirmed by running it.",
+    "Whether vLLM uses the checkpoint's FP8 kv_cache_scheme scales under --kv-cache-dtype auto was not checked.",
+    "Ollama loading of the HF qwen35moe GGUF and its tool/thinking support are unverified.",
+    "llama.cpp compute-buffer size for the 248k vocab is estimated (about 1 GiB), not measured; no tok/s measured on this laptop.",
+    "Whether llama.cpp #30357 and #30118 reproduce on Groot is untested."
+  ]
+}

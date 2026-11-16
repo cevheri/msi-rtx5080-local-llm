@@ -1,0 +1,405 @@
+{
+ "review": {
+  "key": "hf-models-vllm-llamacpp",
+  "url": "https://huggingface.co/models?num_parameters=min:3B,max:32B&apps=vllm,llama.cpp&base_model_relation=base&sort=trending",
+  "title": "Hugging Face model listing: 3B-32B, apps vLLM + llama.cpp, base models, sorted by trending",
+  "publisher": "Hugging Face (registry); individual model cards by their uploaders",
+  "as_of": "2026-11-15 (live fetch; listing order is the trending score at fetch time)",
+  "source_type": "registry",
+  "accessible": true,
+  "access_notes": "Pages p=0 and p=1 fetched with curl -A \"Mozilla/5.0\" and parsed from the embedded ModelList data-props (30 models each). The API equivalent https://huggingface.co/api/models?num_parameters=min:3B,max:32B&apps=vllm,llama.cpp&base_model_relation=base&sort=trendingScore&limit=60&full=true returned the same 60 models in the same order, with trendingScore and createdAt. Model cards read raw (/raw/main/README.md, config.json, /api/models/<id>, /api/models/<id>/tree/main). Runtime support was checked against the vLLM v0.33.0 tag (vllm/model_executor/models/registry.py, git tree) and llama.cpp b12407 src/llama-arch.cpp, plus gh pr view for llama.cpp #31589 and vLLM #64832. Files are in $SCRATCH/src/hf-models-vllm-llamacpp/.",
+  "credibility": "medium",
+  "credibility_reason": "The listing itself is authoritative for what exists, dates, licenses, sizes and file lists (registry metadata). It says nothing about quality. The \"apps=vllm,llama.cpp\" filter is a Hugging Face compatibility tag, not proof that stock runtimes load the model: Raon-1 and SenseNova-Loop appear in it but need forks or unmerged PRs. All benchmark numbers on the cards are vendor self-reports with differing harnesses; none are measurements on this laptop. The filter base_model_relation=base also drops any repo that declares a base_model, and num_parameters max 32B drops Qwen3.6-35B-A3B and Qwen3-Coder-Next.",
+  "summary": "The listing is mostly old Llama/Qwen bases, OCR/VL models and baseline models already covered (Qwen3.8-27B is #1 by trending score 442, also gpt-oss-20b, Ornith-1.5-9B, GLM-4.7-Flash, Gemma 4 26B-A4B/31B, Nemotron 3.5 Lightning, Muse Glimmer 30B, Qwen3-Coder-30B-A3B, DeepSeek-R1-0528-Qwen3-8B). Three coding/agentic candidates are missing from the baseline and run on stock runtimes: Groot-19B-A3B-261023 (Qwen3.6-35B-A3B derivative, 19B-A3B, Q4_K_M GGUF 10.86 GiB fits fully in 16 GB VRAM, NVFP4 about 11.8 GiB for vLLM, qwen3_coder/qwen3 parsers, vLLM >= 0.19.1, created 2026-10-23); Xing4.0-29B-A4B (China Telecom, Apache-2.0, llama.cpp mainline since b12174 via PR #31589 merged 2026-11-05, vLLM only via out-of-tree plugin, self-reported SWE-bench Verified 75.0 / TB2.1 57.5); K2-Horizon-7B (IFM, Apache-2.0, native in vLLM v0.33.0 with k2_horizon parsers and in llama.cpp, Q4_K_M 5.21 GiB, self-reported SWE-V 72.4 / TB2.1 44.6, 512K context). Raon-1 mini preview (KRAFTON, 28.8B-A4.3B, explicitly supports OpenCode) and SenseNova-Loop-9B need forks or an unmerged vLLM PR. Terminal-RSI-27B (Qwen3.8-27B RL fine-tune claiming TB2.1 86.52) is an unverified paper release whose card says GPU inference was not tested.",
+  "findings": [
+   {
+    "topic": "listing semantics",
+    "claim": "The apps=vllm,llama.cpp filter is a Hugging Face compatibility tag and does not guarantee stock-runtime support: KRAFTON/Raon-1-mini-preview and sensenova/SenseNova-Loop-9B-Preview are listed but need a KRAFTON vLLM/llama.cpp fork and unmerged vLLM PR #64832 (state OPEN) respectively.",
+    "evidence": "documented",
+    "location": "listing p=0 rows 7 and 27; Raon card Quickstart; gh pr view 64832",
+    "target": "models",
+    "relevance": "high"
+   },
+   {
+    "topic": "listing semantics",
+    "claim": "base_model_relation=base excludes every repo that declares a base_model (all quants and declared fine-tunes), and the 32B cap excludes Qwen3.6-35B-A3B and Qwen3-Coder-Next, so this listing cannot be used to find quants or the top two baseline MoE picks.",
+    "evidence": "documented",
+    "location": "listing URL parameters; API result set",
+    "target": "models",
+    "relevance": "medium"
+   },
+   {
+    "topic": "trending",
+    "claim": "Qwen/Qwen3.8-27B is the top trending model in the filter (trendingScore 442, 6,547,772 downloads, 20,091 likes, lastModified 2026-11-07); the next is KRAFTON/Raon-1-nano at 92.",
+    "evidence": "documented",
+    "location": "API json row 0-1",
+    "target": "models",
+    "relevance": "medium"
+   },
+   {
+    "topic": "Groot-19B-A3B-261023",
+    "claim": "GrootTeam/Groot-19B-A3B-261023 (created 2026-10-23, Apache-2.0, 19,432,294,256 params, Qwen3_5MoeForConditionalGeneration, 40 layers 10 full + 30 linear attention, 128 experts + 1 shared, 8 active, about 3B active, 262,144 context, MTP layer) is stated to start from Qwen3.6-35B-A3B and be post-trained on fewer than 0.1B tokens; it does not declare base_model in metadata.",
+    "evidence": "documented",
+    "location": "Groot card Model Overview, config.json, /api/models",
+    "target": "models",
+    "relevance": "high"
+   },
+   {
+    "topic": "Groot-19B-A3B-261023",
+    "claim": "Groot runs on stock runtimes: vLLM >= 0.19.1 (Qwen3_5Moe arch is in v0.33.0 registry) with --tool-call-parser qwen3_coder --reasoning-parser qwen3, and llama.cpp (qwen35moe arch in b12407). Thinking is on by default; card gives non-thinking sampling too.",
+    "evidence": "documented",
+    "location": "Groot card Quickstart; vllm v0.33.0 registry.py lines 205, 618; llama.cpp b12407 llama-arch.cpp",
+    "target": "models",
+    "relevance": "high"
+   },
+   {
+    "topic": "Groot-19B-A3B-261023",
+    "claim": "Official GGUF Groot-19B-A3B-261023-Q4_K_M.gguf is 10.86 GiB (plus 0.84 GiB mmproj), so it fits entirely in 16 GB VRAM with no --n-cpu-moe; official NVFP4 is 3x3.73 + 0.60 GiB = about 11.8 GiB plus 0.82 GiB MTP, a vLLM candidate on 16 GB.",
+    "evidence": "documented",
+    "location": "HF tree API for GrootTeam/Groot-19B-A3B-261023-GGUF and -NVFP4",
+    "target": "models",
+    "relevance": "high"
+   },
+   {
+    "topic": "Groot-19B-A3B-261023",
+    "claim": "Self-reported: Terminal-Bench 2.1 52.10 vs Qwen3.6-35B-A3B 43.82 and Gemma-4-26B-A4B 26.52 (Claude Code agent harness, thinking mode), and 23.1% fewer output tokens than Qwen3.6-35B-A3B; full table is an image only.",
+    "evidence": "vendor-reported",
+    "location": "Groot card line 26",
+    "target": "models",
+    "relevance": "high"
+   },
+   {
+    "topic": "Groot-19B-A3B-261023",
+    "claim": "Community uptake is high (official GGUF 33,542 downloads; bartowski, mradermacher and unsloth-style requants exist) but the org is new and card serve commands use the wrong repo id 'Groot/Groot-19B-A3B-261023'.",
+    "evidence": "documented",
+    "location": "HF search api ?search=Groot-19B; card vLLM section",
+    "target": "models",
+    "relevance": "medium"
+   },
+   {
+    "topic": "Xing4.0-29B-A4B",
+    "claim": "XingChen-AGI/Xing4.0-29B-A4B (China Telecom AI, formerly TeleChat; Apache-2.0; created 2026-09-16, updated 2026-11-10; 1,868 likes) is a 29B-A4B MoE with MLA + mHC + MTP, 64 routed + 1 shared experts, 4 active, 256K context, thinking toggle via chat_template_kwargs.enable_thinking.",
+    "evidence": "documented",
+    "location": "Xing card Model at a Glance, Architecture, Quickstart",
+    "target": "models",
+    "relevance": "high"
+   },
+   {
+    "topic": "Xing4.0-29B-A4B",
+    "claim": "llama.cpp supports xing4_0 natively since PR #31589 (merged 2026-11-05T16:47:27Z), stock b12174+; the arch string is present in b12407. vLLM support is only through the out-of-tree XingChen-AGI/xing4-vllm-plugin (xing4_0 tool and reasoning parsers); vLLM v0.33.0 registry has no Xing4 entry.",
+    "evidence": "documented",
+    "location": "Xing card Serving table; gh pr view 31589; vllm v0.33.0 registry.py",
+    "target": "llamacpp",
+    "relevance": "high"
+   },
+   {
+    "topic": "Xing4.0-29B-A4B",
+    "claim": "Official GGUF sizes: iq3_xxs 13.03 GiB, iq3_m 14.39 GiB, iq4_xs 17.02 GiB, iq4_nl 17.88 GiB, q5_0 19.01 GiB; iq3 fits mostly on GPU, iq4 needs --n-cpu-moe.",
+    "evidence": "documented",
+    "location": "HF tree API XingChen-AGI/Xing4.0-29B-A4B-GGUF",
+    "target": "llamacpp",
+    "relevance": "high"
+   },
+   {
+    "topic": "Xing4.0-29B-A4B",
+    "claim": "Self-reported vs Qwen3.6-35B-A3B / Gemma4-26B-A4B: SWE-bench Verified 75.00 / 76.00 / 53.00 (SWE-agent, 210K context), Terminal-Bench 2.1 57.50 / 51.50 / 30.00 (terminus-2, mean of 3), Tau3-Bench 64.63 / 67.20 / 58.90. Recommended coding sampling temp 0.8, top_p 0.95, repetition_penalty 1.05.",
+    "evidence": "vendor-reported",
+    "location": "Xing card Benchmarks and Evaluation Details",
+    "target": "models",
+    "relevance": "high"
+   },
+   {
+    "topic": "K2-Horizon-7B",
+    "claim": "IFM/K2-Horizon-7B (created 2026-09-01, Apache-2.0, 8,999,178,240 params, dense, 36 layers, 524,288 context, fully open data and code) is native in vLLM v0.33.0 (k2_horizon model, reasoning parser and tool parser files exist at the tag; card uses --trust-remote-code) and in llama.cpp (k2-horizon arch in b12407).",
+    "evidence": "documented",
+    "location": "K2-Horizon card lines 78-129; vllm v0.33.0 git tree; llama-arch.cpp b12407",
+    "target": "models",
+    "relevance": "high"
+   },
+   {
+    "topic": "K2-Horizon-7B",
+    "claim": "Self-reported released checkpoint: SWE-bench Verified 72.4, Terminal-Bench 2.1 44.6 (3.7B: 65.6 / 39.7). Official Q4_K_M GGUF 5.21 GiB, Q8_0 8.92 GiB. Tool-call format selectable via chat_template_kwargs (json, xml, xml_typed; default xml). Family also has K2-Horizon-32B (Q4_K_M 19.63 GiB) and MoVA-36B-A4B.",
+    "evidence": "vendor-reported",
+    "location": "K2-Horizon card lines 66-67, 129; HF tree API IFM/K2-Horizon-7B-GGUF and -32B-GGUF",
+    "target": "models",
+    "relevance": "high"
+   },
+   {
+    "topic": "Raon-1 mini preview",
+    "claim": "KRAFTON/Raon-1-mini-preview (created 2026-10-21, Apache-2.0, 28.8B total / 4.3B active, 18 RDA linear + 7 MLA layers, 262K context, thinking-only design, card names OpenCode support) needs KRAFTON's vLLM fork (parsers raon_1) and llama.cpp fork (branch raon-1-mini-preview, 'upstream support is pending'). Neither arch is in vLLM v0.33.0 or llama.cpp b12407. Official NVFP4 is about 16.3 GiB and Q4_K_M 18.33 GiB, IQ4_XS 14.97 GiB.",
+    "evidence": "documented",
+    "location": "Raon card Quickstart; HF tree API for -gguf and -nvfp4",
+    "target": "models",
+    "relevance": "medium"
+   },
+   {
+    "topic": "Raon-1 mini preview",
+    "claim": "Self-reported (mini-SWE-agent): SWE-Verified 70.8 vs Qwen3.6-35B-A3B 63.2, Gemma 4 26B-A4B 61.6, Qwen3.8-27B 74.6; Terminal-Bench Lite 47.0 vs 63.3 / 52.0 / 67.0; BFCL v4 59.8 vs 64.7 / 65.8 / 72.4. On its own table Qwen3.8-27B beats it on coding agent tasks.",
+    "evidence": "vendor-reported",
+    "location": "Raon card benchmark HTML table",
+    "target": "models",
+    "relevance": "medium"
+   },
+   {
+    "topic": "Raon-1 mini speculative decoding",
+    "claim": "KRAFTON reports DFlash2 speculative decoding up to 2.18x output throughput at concurrency 1 (GSM8K 296.3 to 646.3 tok/s) on one NVIDIA B300 with vLLM 0.28.0 fork and MXFP8 target; datacenter numbers, not laptop.",
+    "evidence": "vendor-reported",
+    "location": "Raon card Speculative Decoding",
+    "target": "benchmarking",
+    "relevance": "low"
+   },
+   {
+    "topic": "Terminal-RSI-27B",
+    "claim": "Teriminal-RSI/Terminal-RSI-27B (created 2026-10-21, Apache-2.0) is a Qwen3.8-27B RL fine-tune (paper arXiv 2610.22192) claiming Terminal-Bench 2.1 86.52 vs base 51.70 (thinking disabled, own harness, Mean@3). The card says the numbers refer to the paper's retained checkpoint with a 'checkpoint distinction', and full GPU inference was not tested by the uploader; org name is misspelled. Treat as unverified.",
+    "evidence": "vendor-reported",
+    "location": "Terminal-RSI card Paper-reported evaluation",
+    "target": "models",
+    "relevance": "medium"
+   },
+   {
+    "topic": "SenseNova-Loop-9B-Preview",
+    "claim": "sensenova/SenseNova-Loop-9B-Preview (released 2026-10-30, Apache-2.0, looped 9B multimodal, custom_code) needs vLLM PR #64832, still OPEN; not in llama.cpp b12407. Not usable with stock containers.",
+    "evidence": "documented",
+    "location": "card line 288-299; gh pr view 64832",
+    "target": "models",
+    "relevance": "low"
+   },
+   {
+    "topic": "S5-nano",
+    "claim": "maritaca-ai/S5-nano (created 2026-11-02, Apache-2.0) is a Qwen3.5-4B continued-pretrain for Brazilian Portuguese with tool calling, think/instruct modes, 262K context; FP8 5.8 GB; Qwen3_5 arch so stock vLLM and llama.cpp. Not a coding pick.",
+    "evidence": "documented",
+    "location": "S5-nano card intro",
+    "target": "models",
+    "relevance": "low"
+   },
+   {
+    "topic": "Nemotron-Labs-Dory1.0-4B",
+    "claim": "nvidia/NVIDIA-Nemotron-Labs-Dory1.0-4B-BF16 (created 2026-10-16) is native in vLLM v0.33.0 (dory.py at the tag) but llama.cpp needs a 'llama.cpp-dory' fork; dory arch absent in b12407.",
+    "evidence": "documented",
+    "location": "Dory card grep; vllm v0.33.0 tree; llama-arch.cpp b12407",
+    "target": "models",
+    "relevance": "low"
+   },
+   {
+    "topic": "non-candidates",
+    "claim": "Other recent entries are not chat/coding LLMs for this use: fastino/GLiDE-27B and -9B are decision/classification models (no generation, 52.2 GB bf16), ByteDance-Seed/Cola2 is a continuous-latent research LM, sevren-ai/Embla1 is a phone MoE (10B-A1B), translated/Lara-4-Mini-Base is translation with CC-BY-NC-SA, gnani-evon-v3.3 is Indic-focused, plus OCR/VL models (Unlimited-OCR-2, LightOnOCR-3, WeVisOne-VL).",
+    "evidence": "documented",
+    "location": "respective model cards",
+    "target": "models",
+    "relevance": "low"
+   }
+  ],
+  "measurements": [
+   {
+    "model": "Groot-19B-A3B-261023",
+    "gpu": "none (file size)",
+    "measured_or_estimated": "measured",
+    "quant": "Q4_K_M GGUF (official)",
+    "vram": "10.86 GiB weights + 0.84 GiB mmproj",
+    "runtime": "llama.cpp",
+    "settings": "file size from HF tree API, not a run"
+   },
+   {
+    "model": "Groot-19B-A3B-261023",
+    "gpu": "none (file size)",
+    "measured_or_estimated": "measured",
+    "quant": "NVFP4 experts, FP8 attention (official)",
+    "vram": "about 11.79 GiB weights + 0.82 GiB MTP",
+    "runtime": "vLLM",
+    "settings": "sum of safetensors shards from HF tree API"
+   },
+   {
+    "model": "Xing4.0-29B-A4B",
+    "gpu": "none (file size)",
+    "measured_or_estimated": "measured",
+    "quant": "iq3_xxs / iq3_m / iq4_xs GGUF (official)",
+    "vram": "13.03 / 14.39 / 17.02 GiB",
+    "runtime": "llama.cpp b12174+",
+    "settings": "file sizes from HF tree API"
+   },
+   {
+    "model": "K2-Horizon-7B",
+    "gpu": "none (file size)",
+    "measured_or_estimated": "measured",
+    "quant": "Q4_K_M / Q8_0 GGUF (official)",
+    "vram": "5.21 / 8.92 GiB",
+    "runtime": "llama.cpp",
+    "settings": "file sizes from HF tree API"
+   },
+   {
+    "model": "Raon-1-mini-preview",
+    "gpu": "none (file size)",
+    "measured_or_estimated": "measured",
+    "quant": "IQ4_XS / Q4_K_M GGUF; NVFP4",
+    "vram": "14.97 / 18.33 GiB; NVFP4 about 16.3 GiB",
+    "runtime": "KRAFTON forks only",
+    "settings": "file sizes from HF tree API"
+   },
+   {
+    "model": "Raon-1-mini-preview",
+    "gpu": "NVIDIA B300 (datacenter)",
+    "measured_or_estimated": "measured",
+    "quant": "MXFP8",
+    "gen_tok_s": "296.3 AR, 646.3 with DFlash2 (GSM8K, C=1)",
+    "runtime": "vLLM 0.28.0 KRAFTON fork",
+    "settings": "vendor-reported; 7 draft tokens, thinking on, up to 4096 new tokens; not comparable to the laptop"
+   }
+  ],
+  "conflicts": [
+   {
+    "baseline_claim": "Pick #1 Qwen3.6-35B-A3B needs --n-cpu-moe 21 with about 9 GiB of experts in RAM; Gemma 4 26B-A4B at 13.45 GiB is the strongest all-on-GPU MoE.",
+    "source_claim": "Groot-19B-A3B-261023, a Qwen3.6-35B-A3B derivative, has an official 10.86 GiB Q4_K_M that fits entirely on GPU and self-reports Terminal-Bench 2.1 52.10 vs Qwen3.6-35B-A3B 43.82.",
+    "assessment": "Not a contradiction of verified facts, but a gap in the candidate list. Vendor claim from a new org; should be added as a candidate to measure, not as a pick. Note its Qwen3.6 TB2.1 figure (43.82) is close to the NVIDIA-harness 44.38 in the baseline, which lends some plausibility."
+   },
+   {
+    "baseline_claim": "Exclusion list and honorable mentions do not mention Xing4.0-29B-A4B, K2-Horizon-7B, Groot-19B-A3B or Terminal-RSI-27B.",
+    "source_claim": "All four are 2026-09 to 2026-10 releases inside the 3B-32B vLLM+llama.cpp filter, and three run on stock runtimes in the versions the baseline pins.",
+    "assessment": "Baseline research missed them (no mention in disc/ or ver/). Add Groot and Xing4.0 to the candidate pool and K2-Horizon-7B as a small fast option; record Terminal-RSI as unverified."
+   },
+   {
+    "baseline_claim": "Raon-1 mini and nano need KRAFTON forks; SenseNova-Loop-9B-Preview needs unmerged vLLM PR #64832 (disc/models-others.json).",
+    "source_claim": "Raon card: llama.cpp 'upstream support is pending'; vLLM only from krafton-ai fork. PR #64832 still OPEN on 2026-11-15.",
+    "assessment": "Agrees; still true as of today."
+   }
+  ],
+  "agreements": [
+   "Qwen3.8-27B is the most-trending model in this class (trendingScore 442, Apache-2.0, lastModified 2026-11-07), consistent with it being baseline pick #2.",
+   "Baseline picks and exclusions present in the listing match their recorded licenses and dates: gpt-oss-20b (Apache-2.0, created 2025-08-04), Ornith-1.5-9B (MIT, created 2026-08-18), GLM-4.7-Flash (MIT, created 2026-01-19), Nemotron 3.5 Lightning 30B-A3B BF16 (created 2026-08-01), DeepSeek-R1-0528-Qwen3-8B (MIT, 2025-05-29), Muse Glimmer 30B, Gemma 4 31B, Qwen3-Coder-30B-A3B.",
+   "Dory1.0-4B is native in vLLM v0.33.0, matching disc/models-nvidia.json."
+  ],
+  "kb_notes": [
+   {
+    "target_doc": "docs/model-selection.md",
+    "note": "Groot-19B-A3B-261023 (GrootTeam, created 2026-10-23, Apache-2.0) is a 19B-A3B MoE post-trained from Qwen3.6-35B-A3B; its official Q4_K_M GGUF is 10.86 GiB, so unlike Qwen3.6-35B-A3B it fits entirely in 16 GB VRAM. The vendor reports Terminal-Bench 2.1 52.10 vs 43.82 for Qwen3.6-35B-A3B (Claude Code harness, thinking on); this is unverified and must be measured here before it replaces pick #1. Source: https://huggingface.co/GrootTeam/Groot-19B-A3B-261023"
+   },
+   {
+    "target_doc": "docs/model-selection.md",
+    "note": "Xing4.0-29B-A4B (China Telecom AI, Apache-2.0, updated 2026-11-10) self-reports SWE-bench Verified 75.0 and Terminal-Bench 2.1 57.5 against 76.0 and 51.5 for Qwen3.6-35B-A3B. It runs in stock llama.cpp b12174+ (PR #31589, merged 2026-11-05) but needs an out-of-tree plugin for vLLM, so test it on llama.cpp only. Source: https://huggingface.co/XingChen-AGI/Xing4.0-29B-A4B"
+   },
+   {
+    "target_doc": "docs/model-selection.md",
+    "note": "K2-Horizon-7B (IFM, Apache-2.0, 2026-09-01, fully open data and code) self-reports SWE-bench Verified 72.4 and Terminal-Bench 2.1 44.6 at 9.0B parameters with a 512K context; Q4_K_M is 5.21 GiB. Such a high SWE-bench score for a 7B dense model needs a local check before trust. Source: https://huggingface.co/IFM/K2-Horizon-7B"
+   },
+   {
+    "target_doc": "docs/model-selection.md",
+    "note": "Excluded for now: Raon-1 mini preview (needs KRAFTON vLLM and llama.cpp forks, smallest useful GGUF IQ4_XS 14.97 GiB), SenseNova-Loop-9B-Preview (needs open vLLM PR #64832), and Terminal-RSI-27B (Qwen3.8-27B fine-tune claiming TB2.1 86.52; the uploader did not test GPU inference and the released checkpoint may differ from the paper's). Source: https://huggingface.co/models?num_parameters=min:3B,max:32B&apps=vllm,llama.cpp&base_model_relation=base&sort=trending"
+   },
+   {
+    "target_doc": "llamacpp/models.md",
+    "note": "Groot-19B-A3B-261023: use GrootTeam/Groot-19B-A3B-261023-GGUF Q4_K_M (10.86 GiB, all layers on GPU, no --n-cpu-moe), arch qwen35moe as for Qwen3.6, so the open Qwen3.5+ issues #30357 and #30118 likely apply. Thinking is on by default; card coding sampling temp 0.6, top_p 0.95, top_k 20, presence_penalty 0. Source: https://huggingface.co/GrootTeam/Groot-19B-A3B-261023"
+   },
+   {
+    "target_doc": "llamacpp/models.md",
+    "note": "Xing4.0-29B-A4B: official GGUFs in XingChen-AGI/Xing4.0-29B-A4B-GGUF are iq3_xxs 13.03 GiB, iq3_m 14.39 GiB, iq4_xs 17.02 GiB; iq4_xs needs --n-cpu-moe on 16 GB. Arch xing4_0 is in mainline since b12174; tool-call parsing through the generic --jinja path is untested. Recommended coding sampling: temp 0.8, top_p 0.95, repeat-penalty 1.05; thinking via --chat-template-kwargs '{\"enable_thinking\":false}'. Source: https://huggingface.co/XingChen-AGI/Xing4.0-29B-A4B"
+   },
+   {
+    "target_doc": "vllm/models.md",
+    "note": "Groot-19B-A3B-261023-NVFP4 (NVFP4 experts, FP8 attention) is about 11.8 GiB of weights plus 0.82 GiB MTP and uses the Qwen3_5Moe arch that v0.33.0 supports; serve with --enable-auto-tool-choice --tool-call-parser qwen3_coder --reasoning-parser qwen3. The NVFP4 W4A4 JIT memory issue (#46268) and hybrid GDN NVFP4 crash (#54331) in the baseline likely apply. Source: https://huggingface.co/GrootTeam/Groot-19B-A3B-261023"
+   },
+   {
+    "target_doc": "vllm/models.md",
+    "note": "K2-Horizon-7B is native in vLLM v0.33.0 (k2_horizon model, --reasoning-parser k2_horizon, --tool-call-parser k2_horizon); the card adds --trust-remote-code and offers FP8 (IFM/K2-Horizon-7B-FP8). Source: https://huggingface.co/IFM/K2-Horizon-7B"
+   },
+   {
+    "target_doc": "docs/sources.md",
+    "note": "Hugging Face filtered listing (registry, live 2026-11-15): the apps=vllm,llama.cpp filter is a compatibility tag, not proof that stock runtimes load a model, and base_model_relation=base hides all quants and declared fine-tunes. Use it for discovery only; confirm support in the vLLM registry.py and llama.cpp llama-arch.cpp at the pinned versions. Source: https://huggingface.co/models?num_parameters=min:3B,max:32B&apps=vllm,llama.cpp&base_model_relation=base&sort=trending"
+   }
+  ],
+  "gaps": [
+   "No measured throughput or quality on this laptop for Groot, Xing4.0 or K2-Horizon; all scores are vendor self-reports with different harnesses.",
+   "Groot full 16-benchmark table is only an image (assets/bars_19b.png); SWE-bench Verified for Groot not stated in text.",
+   "Xing4.0 tool-call behaviour in llama.cpp's --jinja path and its compatibility with OpenCode are unknown; the vLLM plugin version compatibility with v0.33.0 was not checked.",
+   "Whether llama.cpp issues #30357 / #30118 reproduce on Groot (same qwen35moe arch) is untested.",
+   "K2-Horizon-32B (Q4_K_M 19.63 GiB) and K2-Horizon-MoVA-36B-A4B were not reviewed; only 7B was checked.",
+   "Terminal-RSI-27B: which checkpoint was uploaded and whether it runs in vLLM/llama.cpp (Qwen3_5 arch suggests yes) was not verified.",
+   "Raon-1 mini API reports gated=false while the card front matter still declares gated fields; not resolved."
+  ],
+  "new_candidates": [
+   {
+    "name": "Groot-19B-A3B-261023",
+    "hf_repo": "GrootTeam/Groot-19B-A3B-261023",
+    "why": "Qwen3.6-35B-A3B derivative, 19B-A3B, official Q4_K_M 10.86 GiB fits fully on 16 GB GPU, NVFP4 about 11.8 GiB for vLLM, stock vLLM and llama.cpp support, qwen3_coder tools, self-reported TB2.1 52.10 above Qwen3.6-35B-A3B."
+   },
+   {
+    "name": "Xing4.0-29B-A4B",
+    "hf_repo": "XingChen-AGI/Xing4.0-29B-A4B",
+    "why": "Agentic 29B-A4B MoE, Apache-2.0, mainline llama.cpp since b12174, official IQ3/IQ4 GGUFs 13-17 GiB, self-reported SWE-V 75.0 and TB2.1 57.5; vLLM only via plugin."
+   },
+   {
+    "name": "K2-Horizon-7B",
+    "hf_repo": "IFM/K2-Horizon-7B",
+    "why": "Fully open 9B dense with 512K context, native in vLLM v0.33.0 and llama.cpp with dedicated parsers, Q4_K_M 5.21 GiB, self-reported SWE-V 72.4 / TB2.1 44.6; candidate for a fast small agent model."
+   },
+   {
+    "name": "Terminal-RSI-27B",
+    "hf_repo": "Teriminal-RSI/Terminal-RSI-27B",
+    "why": "Qwen3.8-27B terminal-agent RL fine-tune claiming TB2.1 86.52; unverified, watch only."
+   }
+  ],
+  "methodology": "Fetched listing pages p=0 and p=1 and the equivalent JSON API (60 models) with curl and parsed with python3 -I. Filtered entries created in the last 30 days or not mentioned in the baseline, downloaded each candidate's README, config.json and API metadata, and listed quantized repo file sizes through the HF tree API. Checked runtime support against vLLM v0.33.0 registry.py and git tree, llama.cpp b12407 llama-arch.cpp, and PR states with gh. Grepped scratchpad disc/ and ver/ to confirm which candidates the baseline research had already seen."
+ },
+ "check": {
+  "verdicts": [
+   {
+    "item": "Publisher, type, as-of: Hugging Face registry listing, live 2026-11-15, 60 models in trending order",
+    "verdict": "confirmed",
+    "evidence": "curl -A Mozilla/5.0 https://huggingface.co/api/models?num_parameters=min:3B,max:32B&apps=vllm,llama.cpp&base_model_relation=base&sort=trendingScore&limit=60 returned 60 rows; row 0 Qwen/Qwen3.8-27B trendingScore 442, downloads 6547772, likes 20091; row 1 KRAFTON/Raon-1-nano 92. Raon-1-mini-preview row 27, SenseNova-Loop row 7, Groot row 32, K2-Horizon-7B row 44, Xing4.0 row 58 (likes 1868)."
+   },
+   {
+    "item": "Groot Q4_K_M GGUF 10.86 GiB + mmproj 0.84 GiB; NVFP4 3x3.73 + 0.60 GiB + 0.82 GiB MTP",
+    "verdict": "confirmed",
+    "evidence": "HF tree API GrootTeam/Groot-19B-A3B-261023-GGUF: Groot-19B-A3B-261023-Q4_K_M.gguf 10.86 GiB, mmproj BF16 0.84; -NVFP4: shards 3.73/3.73/3.73/0.60, mtp.safetensors 0.82. These are file sizes, not runtime VRAM; KV cache and compute buffers come on top."
+   },
+   {
+    "item": "Groot self-reported TB2.1 52.10 vs 43.82 / 26.52, Claude Code harness, thinking mode, 23.1% fewer output tokens, starts from Qwen3.6-35B-A3B with <0.1B tokens, vLLM >= 0.19.1, qwen3_coder parser, wrong repo id 'Groot/...' in serve commands",
+    "verdict": "confirmed",
+    "evidence": "Groot README lines 14, 26, 28, 33-34 ('Terminal-Bench 2.1: Evaluated with the Claude Code agent'), 81 ('vLLM >= 0.19.1'), 134/184 (--tool-call-parser qwen3_coder), 165 ('vllm serve Groot/Groot-19B-A3B-261023'). vLLM v0.33.0 registry.py lines 205/618 contain Qwen3_5Moe; llama.cpp b12407 llama-arch.cpp line 46 qwen35moe."
+   },
+   {
+    "item": "Xing4.0 self-reported SWE-V 75.00 / TB2.1 57.50 / Tau3 64.63 vs Qwen3.6 76.00 / 51.50 / 67.20 and Gemma4 53.00 / 30.00 / 58.90; harnesses SWE-agent 210K and terminus-2 mean of 3; repetition_penalty 1.05",
+    "verdict": "confirmed",
+    "evidence": "Xing README lines 102-105, 111, 134, 168-169."
+   },
+   {
+    "item": "Xing4.0 llama.cpp mainline via PR #31589 (merged 2026-11-05T16:47:27Z, b12174+), vLLM only via out-of-tree plugin",
+    "verdict": "confirmed",
+    "evidence": "gh pr view 31589: state MERGED, mergedAt 2026-11-05T16:47:27Z; README lines 152-154; llama-arch.cpp b12407 line 93 xing4_0; no Xing entry in vLLM v0.33.0 registry.py grep."
+   },
+   {
+    "item": "Xing4.0 official GGUF sizes iq3_xxs 13.03, iq3_m 14.39, iq4_xs 17.02, iq4_nl 17.88, q5_0 19.01 GiB",
+    "verdict": "confirmed",
+    "evidence": "HF tree API XingChen-AGI/Xing4.0-29B-A4B-GGUF matches exactly. Omitted by the review: xing4_0-29b-iq2_M-slim.gguf 10.99 GiB (fits fully on GPU), a second IQ4_NL file 18.72 GiB, q6_k 25.03, q8_0 31.82.",
+    "correction": "Add the iq2_M-slim 10.99 GiB option, the only Xing GGUF that fits entirely in 16 GB with room for KV cache. Also add that the card says it is 'format-aligned with agent frameworks such as OpenCode' (README line 75), relevant to docs/opencode.md."
+   },
+   {
+    "item": "K2-Horizon-7B self-reported SWE-V 72.4 / TB2.1 44.6 (3.7B 65.6 / 39.7), 524,288 context, k2_horizon parsers with --trust-remote-code, Q4_K_M 5.21 / Q8_0 8.92 GiB, native in vLLM v0.33.0 and llama.cpp b12407",
+    "verdict": "confirmed",
+    "evidence": "K2 README lines 33, 66-67, 82-87, 129; HF tree API K2-Horizon-7B-GGUF Q4_K_M 5.21, Q8_0 8.92; vLLM v0.33.0 registry.py line 147 K2HorizonForCausalLM; llama-arch.cpp line 178 k2-horizon. Card's comparison table pits it against Gemma 4-12B 30.6, Granite 4.2-8B 47.7, Qwen3.5-9B 50.8 on SWE-V."
+   },
+   {
+    "item": "Raon-1-mini-preview GGUF IQ4_XS 14.97 / Q4_K_M 18.33 GiB, needs forks",
+    "verdict": "confirmed",
+    "evidence": "HF tree API KRAFTON/Raon-1-mini-preview-gguf: IQ4_XS 14.97, Q4_K_M 18.33. No raon arch found in vLLM v0.33.0 registry.py or llama-arch.cpp b12407. NVFP4 size and benchmark table not re-checked."
+   },
+   {
+    "item": "SenseNova-Loop needs open vLLM PR #64832",
+    "verdict": "confirmed",
+    "evidence": "gh pr view 64832 -R vllm-project/vllm: state OPEN, title '[Model] Add SenseNova Loop support'. Agrees with disc/models-others.json."
+   },
+   {
+    "item": "Terminal-RSI-27B claims TB2.1 86.52 vs 51.70, numbers refer to paper's retained checkpoint, GPU inference not tested",
+    "verdict": "confirmed",
+    "evidence": "Terminal-RSI README line 62 ('These results refer to the paper's retained RPR-2 step-18 model; see the checkpoint distinction above'), line 67 (51.70 / 86.52), line 91 ('Full model loading and GPU inference were not tested as part of packaging'), line 130 (13 shards including 'model-missing-from-origin' files)."
+   },
+   {
+    "item": "Conflicts with baseline: Groot/Xing/K2/Terminal-RSI absent from baseline; Qwen3.6 pick needs --n-cpu-moe 21 and Gemma 13.45 GiB all-on-GPU",
+    "verdict": "confirmed",
+    "evidence": "current-knowledge.md lines 67, 69, 80 match the quoted baseline claims (Qwen3.6 TB2.1 44.38 NVIDIA harness). grep for groot|xing4|k2-horizon|terminal-rsi across disc/, ver/, kb/ returns no files. Assessed correctly as gaps, not contradictions."
+   }
+  ],
+  "credibility_fair": true,
+  "credibility_note": "Medium is fair. The registry metadata (dates, licenses, file sizes, trending order) is authoritative and reproduced exactly. All quality numbers are vendor self-reports with different harnesses. The apps filter is a tag, not proof of stock-runtime support, as Raon and SenseNova show. Calling file sizes 'measured' in the measurements rows is right only if read as file sizes. They are not VRAM use at runtime, and the rows say so in settings.",
+  "overall": "holds-with-corrections",
+  "summary": "The review holds. I re-fetched the API listing (60 rows, same order and scores), the HF tree APIs for the Groot, Xing, K2-Horizon and Raon quants, the raw model cards, vLLM v0.33.0 registry.py, llama.cpp b12407 llama-arch.cpp, and the states of PRs #31589 and #64832. Every number I checked matches verbatim. Two small corrections. First, Xing4.0 also has an official iq2_M-slim GGUF of 10.99 GiB, the only one that fits fully in 16 GB. Second, its card says it is format-aligned with OpenCode (README line 75). The review left out both. GGUF and safetensors sizes are file sizes, not runtime VRAM. The Raon NVFP4 size and benchmark table were not re-checked. Files are in $SCRATCH/src/chk-hf-models/."
+ }
+}

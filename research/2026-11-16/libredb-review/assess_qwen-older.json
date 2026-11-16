@@ -1,0 +1,146 @@
+{
+ "lane": "qwen-older",
+ "mac_setup_notes": "Hardware: Apple M5 Max with 64 GB unified memory, 2 TB SSD, macOS high-power mode on AC (methodology.md, \"The machine\"). A 64 GB M5 Max is the 40-core-GPU part, 614 GB/s, per apple.com/macbook-pro/specs (the 32-core part, 460 GB/s, comes only with 36 GB). Serving: Ollama 0.32.13 and 0.33.0 through the OpenAI-compatible /v1 endpoint. The page itself warns that the engine version changes results: gemma4:12b dropped from 5/5 to 1/5 on 0.33.0 with the same digest. Measured 22-23 August 2026 on the embedded SQLite sample, six surfaces, five consecutive passes each. Durations are whole agent runs (many turns), not tok/s, and are the median and slowest of the passing runs. Per-turn limit is 90 s (shipped default). None of the five lane models carries a 150 s override. Sampling defaults are temperature 0 and top_p 1, with an unreported-call ceiling of 12, one report reminder and one present reminder. A model with no tuning entry also gets one plan-statement ask and one unread-stop answer (model-tuning.md). Per model: qwen2.5:7b got one plan ask but never used it. qwen2.5:14b ran at pure defaults. qwen2.5:32b needs the one plan ask, and without it the plan cell is 4/5. qwen2.5-coder:14b got one plan ask but never used it. qwq:32b ran at defaults with nothing configured. Context: the pages do not record OLLAMA_CONTEXT_LENGTH, num_ctx, KV cache type, flash attention or per-turn prompt sizes. Ollama's default context depends on memory size, so the Mac runs probably used a much larger default than the 4k Ollama gives on a GPU under 24 GiB here (inference, not recorded). Thinking: no think or reasoning setting is recorded for these five. suppressAgentReasoning and suppressPlanReasoning default to false, so qwq:32b reasoned on every turn. Tool protocol: Studio falls back to a prose tool protocol when an endpoint lacks native tool calling, and decides this per endpoint (setup.md:95, testing-your-own.md:15). So a pass shows the model is reliable in Studio's guarded loop. It does not by itself prove native tool_calls emission. Sustained-load caveat: lost cells were re-measured on a rested machine. The authors call every timing a best case and the pass/fail column the transferable part. Doc drift: methodology.md says six models carry 150 s and \"the other sixteen\" keep 90, while README.md says nine of fifty-one. This does not affect this lane.",
+ "models": [
+  {
+   "tag": "qwen2.5:7b",
+   "underlying_model": "Qwen2.5-7B-Instruct (Sep 2024), HF Qwen/Qwen2.5-7B-Instruct; GGUF header general.name 'Qwen2.5 7B Instruct', 28 blocks, 4 KV heads, context_length 32768, no rope-scaling keys",
+   "family_page": "$HOME/projects/libredb/libredb-studio/docs/llms/qwen/qwen2.5.md",
+   "ollama_tag_facts": "Q4_K_M (file_type 15), model layer 4,683,073,952 bytes (4.36 GiB), tag id 845dbda0ea48 (= latest), 32K context window, text input, capability badge 'tools' only (no thinking). Sources: https://ollama.com/library/qwen2.5/tags and https://registry.ollama.ai/v2/library/qwen2.5/manifests/7b. The HF card says the native config is 32,768 and 131,072 needs YaRN (static in vLLM, 'potentially impacting performance on shorter texts').",
+   "mac_result": "(measured on the M5 Max, libredb-studio) 30/30 runs. Median 6 s, slowest 21 s. Per surface: Investigate 6 s, Optimize 10 s, Assess 5 s, Operate 9 s, Analyze 5 s, Plan 2 s. 90 s per-turn limit. One plan ask was configured but never used. Ollama 0.32.13/0.33.0. Fastest model on the whole 51-model roster. Page: $HOME/projects/libredb/libredb-studio/docs/llms/qwen/qwen2.5.md",
+   "kb_status": "not evaluated (absent from the ranking, honorable mentions and exclusions in docs/model-selection.md). Appears only as a third-party throughput row in docs/community-benchmarks.md:77 (TechFuelHQ desktop RTX 5080, Ollama 0.32.1: 176.6-180.0 tok/s decode).",
+   "fit_here": "all-in-vram",
+   "fit_detail": "(estimate) Weights 4.36 GiB. f16 KV is 56 KiB/token (28 x 4 x 128 x 2 x 2 B): 32k = 1.75 GiB, 64k = 3.5 GiB, 128k = 7 GiB. Weights plus 64k f16 KV plus about 0.5-1 GiB compute is about 8.5-9 GiB, well under 15.47 GiB. 128k f16 is about 12 GiB and still fits. No CPU offload, and system RAM needs only a few GiB. Caveat: the GGUF is trained to 32,768 and carries no YaRN metadata. Ollama's OLLAMA_CONTEXT_LENGTH=65536 alone does not enable YaRN, so OpenCode's 64k floor needs llama.cpp with explicit --rope-scaling yarn --rope-scale 2 (or 4) --yarn-orig-ctx 32768. Whether Ollama clamps num_ctx to 32768 for this model was not verified.",
+   "best_runtime_here": "Two runtimes, depending on the job. For reproducing the libredb harness, use Ollama, because the evidence is engine-specific and should match the Ollama 0.33.0 the Mac used. Set OLLAMA_CONTEXT_LENGTH to at least 32768 instead of the 4k default; the harness's own prompt sizes are unrecorded. For OpenCode, use llama.cpp server-cuda-b12407 with -e GGML_CUDA_DISABLE_GRAPHS=1, --jinja (Hermes-style Qwen2.5 tool format), -ngl 99 -fa on, and -c 65536 --rope-scaling yarn --rope-scale 2 --yarn-orig-ctx 32768. vLLM would need an AWQ/GPTQ 4-bit build, because the BF16 build is about 15 GB, plus --tool-call-parser hermes. There is no reason to prefer it here.",
+   "speed_here_vs_mac": "faster (estimate). The model fits fully in VRAM, so decode is bandwidth-bound: 896/614 = about 1.46x the M5 Max ceiling, roughly 190 vs 130 tok/s theoretical. TechFuelHQ measured 177-180 tok/s on the desktop 5080 at 960 GB/s (third-party), so expect about 160-170 here if clocks hold at 140 W. Prefill on the RTX should beat the Mac by more than decode does. Whole-run times are therefore likely at or below the Mac's 6 s median, but that is not a conversion of the run numbers.",
+   "opencode_suitability": "Native tools (Ollama 'tools' badge; Hermes tool format, vLLM hermes parser). No thinking mode. Native context is 32k, so the 64k OpenCode floor needs static YaRN, which may cost quality on short prompts per the Qwen card. libredb evidence: 30/30 consecutive passes with no tuning needed. That is strong evidence of reliable tool calls in a guarded, short-context SQL tool loop. It does not show multi-file coding or long-context behaviour. As an OpenCode main agent it is a 2024 7B with no modern agentic scores, so treat it as a fast sub-agent or small-model backend at most.",
+   "recommendation": "try-here-first",
+   "reason": "Cheapest and lowest-risk cross-check of the user's harness on this GPU. It fits fully in VRAM with room for 64k or more of KV, should run faster than on the Mac, and is the roster's fastest and steadiest small model. Try it first for the libredb use case. For OpenCode it is limited by the 32k native context and its age.",
+   "sources": [
+    "$HOME/projects/libredb/libredb-studio/docs/llms/qwen/qwen2.5.md",
+    "$HOME/projects/libredb/libredb-studio/docs/llms/README.md",
+    "$HOME/projects/libredb/libredb-studio/docs/llms/methodology.md",
+    "https://ollama.com/library/qwen2.5/tags",
+    "https://registry.ollama.ai/v2/library/qwen2.5/manifests/7b",
+    "GGUF header range-read of blob sha256:2bada8a74506... via registry.ollama.ai (qwen2.context_length 32768, block_count 28, head_count_kv 4)",
+    "https://huggingface.co/Qwen/Qwen2.5-7B-Instruct/raw/main/README.md",
+    "https://www.apple.com/macbook-pro/specs/ (M5 Max 40-core GPU, 614 GB/s; 64 GB only with 40-core)",
+    "$HOME/projects/llm/docs/community-benchmarks.md:77"
+   ]
+  },
+  {
+   "tag": "qwen2.5:14b",
+   "underlying_model": "Qwen2.5-14B-Instruct, HF Qwen/Qwen2.5-14B-Instruct; GGUF header 'Qwen2.5 14B Instruct', 48 blocks, 8 KV heads, context_length 32768, no rope-scaling keys",
+   "family_page": "$HOME/projects/libredb/libredb-studio/docs/llms/qwen/qwen2.5.md",
+   "ollama_tag_facts": "Q4_K_M, model layer 8,988,110,688 bytes (8.37 GiB), tag id 7cdf5a0187d5, 9.0 GB, 32K context window, text input, badge 'tools'. Sources: https://ollama.com/library/qwen2.5/tags and https://registry.ollama.ai/v2/library/qwen2.5/manifests/14b",
+   "mac_result": "(measured on the M5 Max, libredb-studio) 30/30 runs. Median 18 s, slowest 65 s (an Assess run). Per surface: Investigate 17 s, Optimize 35 s, Assess 1:03, Operate 18 s, Analyze 13 s, Plan 1 s. 90 s per-turn limit, pure defaults with no tuning entry needed. Ollama 0.32.13/0.33.0. Page: $HOME/projects/libredb/libredb-studio/docs/llms/qwen/qwen2.5.md",
+   "kb_status": "not evaluated (no ranking, honorable or exclusion entry). It appears only as third-party throughput: docs/community-benchmarks.md:75 (TechFuelHQ desktop RTX 5080, 94.5-97.0 tok/s) and llamacpp/benchmarking.md:296.",
+   "fit_here": "all-in-vram-short-context",
+   "fit_detail": "(estimate) Weights 8.37 GiB. KV is 192 KiB/token at f16 (48 x 8 x 128 x 2 x 2 B). At 32k: f16 is 6 GiB, about 14.9 GiB total, which is too tight. q8_0 is about 3.2 GiB, about 12.1 GiB total, which fits. At 64k: f16 is 12 GiB and does not fit. q8_0 is about 6.4 GiB, about 15.3-15.8 GiB with compute, which is at or over the 15.47 GiB CUDA limit, and Ollama would push a few layers to the CPU. q4_0 is about 3.4 GiB, about 12.3 GiB total, which fits. At 48k with q8_0, about 13.7 GiB fits. Beyond 32k also needs YaRN, which Ollama does not apply from this GGUF. Ollama needs OLLAMA_FLASH_ATTENTION=1 and OLLAMA_KV_CACHE_TYPE=q8_0 or q4_0 (server-wide) to quantize the KV cache. RAM need is small if it stays on the GPU. TechFuelHQ measured 13,159 MiB whole-GPU at 16k f16 on Ollama (third-party, desktop).",
+   "best_runtime_here": "For the libredb harness, use Ollama with OLLAMA_CONTEXT_LENGTH=32768, OLLAMA_FLASH_ATTENTION=1 and OLLAMA_KV_CACHE_TYPE=q8_0. That keeps it fully on the GPU on the engine family the evidence comes from. For OpenCode at 64k, use llama.cpp b12407 with GGML_CUDA_DISABLE_GRAPHS=1, --jinja, -ngl 99 -fa on, -ctk q4_0 -ctv q4_0 (or q8_0 at about 48k) and -c 65536 --rope-scaling yarn --rope-scale 2 --yarn-orig-ctx 32768. Check nvidia-smi for spill. vLLM with an AWQ build (about 9.4 GiB) would leave too little KV room after vLLM's roughly 2 GiB reserve for 64k.",
+   "speed_here_vs_mac": "faster while it stays fully in VRAM (estimate): 896/614 is about 1.46x the decode ceiling, roughly 107 vs 73 tok/s theoretical. TechFuelHQ measured 94.5-97 tok/s on the desktop 5080, so expect about 85-90 here. If 64k q8_0 KV forces Ollama to put a few layers on the CPU, decode drops sharply, so keep KV small enough to stay resident. Whole-run times are not converted.",
+   "opencode_suitability": "Native tools ('tools' badge, Hermes format), no thinking, 32k native and 64k only through YaRN plus quantized KV. libredb evidence: 30/30 at pure defaults, so tool calling in a guarded loop is reliable without per-model tuning. The tail is a single slow Assess cell (1:03). Old (2024) with no modern agentic-coding scores, so it is weaker than the KB's Qwen3.x picks for OpenCode.",
+   "recommendation": "worth-trying",
+   "reason": "First-hand 30/30 tool reliability at defaults, and it fits fully in VRAM at 32k with q8_0 KV and should run faster than on the Mac. But 64k needs YaRN plus q4_0 KV, and it is a generation behind the KB picks, so it is a libredb backend candidate more than an OpenCode one.",
+   "sources": [
+    "$HOME/projects/libredb/libredb-studio/docs/llms/qwen/qwen2.5.md",
+    "https://ollama.com/library/qwen2.5/tags",
+    "https://registry.ollama.ai/v2/library/qwen2.5/manifests/14b",
+    "GGUF header range-read of blob sha256:2049f5674b1e... (block_count 48, head_count_kv 8, context_length 32768)",
+    "https://huggingface.co/Qwen/Qwen2.5-7B-Instruct/raw/main/README.md (same YaRN guidance across Qwen2.5 instruct cards)",
+    "$HOME/projects/llm/docs/community-benchmarks.md:75",
+    "https://techfuelhq.com/data/rtx-5080-llm-throughput/"
+   ]
+  },
+  {
+   "tag": "qwen2.5:32b",
+   "underlying_model": "Qwen2.5-32B-Instruct, HF Qwen/Qwen2.5-32B-Instruct; 64 blocks, 8 KV heads, 32,768 native. The architecture is inferred from the identical QwQ-32B base read here; the qwen2.5:32b header itself was not read.",
+   "family_page": "$HOME/projects/libredb/libredb-studio/docs/llms/qwen/qwen2.5.md",
+   "ollama_tag_facts": "Q4_K_M, model layer 19,851,336,288 bytes (18.49 GiB), tag id 9f13ba1299af, 20 GB on ollama.com (libredb lists 19 GB), 32K context window, text input, badge 'tools'. Sources: https://ollama.com/library/qwen2.5/tags and https://registry.ollama.ai/v2/library/qwen2.5/manifests/32b",
+   "mac_result": "(measured on the M5 Max, libredb-studio) 30/30 runs. Median 20 s, slowest 36 s. Per surface: Investigate 19 s, Optimize 28 s, Assess 29 s, Operate 28 s, Analyze 16 s, Plan 3 s. 90 s per-turn limit. The one plan ask is load-bearing: one of five plan runs needed it, and without it the plan cell is 4/5 and unsupported. Ollama 0.32.13/0.33.0. Page: $HOME/projects/libredb/libredb-studio/docs/llms/qwen/qwen2.5.md",
+   "kb_status": "not evaluated. Dense Qwen 32B-class models fall under the KB's general 'dense too big for 16 GB' reasoning (Devstral 24B exclusion), but Qwen2.5-32B itself is not listed.",
+   "fit_here": "partial-offload",
+   "fit_detail": "(estimate) Weights 18.49 GiB against 15.47 GiB of CUDA memory, so it cannot fit even at 4k. KV is 256 KiB/token at f16 (64 x 8 x 128 x 2 x 2 B): 64k = 16 GiB at f16 and about 8.5 GiB at q8_0. Ollama places whole layers: one layer is about 0.28 GiB of weights plus 0.25 GiB of 64k f16 KV (or 0.13 GiB at q8_0). That puts about 26 of 64 layers on the GPU at 64k f16, or about 33 at 64k q8_0, roughly 40-50% resident. About 9-11 GiB of weights plus their KV sit in system RAM, well within the about 40 GiB free. Native context is 32k, and 64k needs YaRN. It is dense, so --n-cpu-moe does not apply.",
+   "best_runtime_here": "If at all, llama.cpp b12407 with GGML_CUDA_DISABLE_GRAPHS=1, --jinja, -fa on, -ctk q8_0 -ctv q8_0 and a tuned -ngl (about 30-36) at 32k. That is no structural improvement over Ollama's layer split for a dense model. vLLM does not fit.",
+   "speed_here_vs_mac": "much slower (estimate). On the Mac all 18.5 GiB are read at 614 GB/s (about 31 tok/s ceiling). Here about half the weights are read from DDR5 (102.4 GB/s peak, realistic 60-80 GB/s), so decode is about 5-8 tok/s, roughly 3-4x slower. Prefill for the CPU-resident layers is also far slower. The Mac's 20 s median and 36 s worst runs would stretch to minutes, and long turns could approach the 90 s per-turn limit.",
+   "opencode_suitability": "Tools yes, no thinking, 32k native. libredb shows 30/30, but only with the plan ask. Not practical for OpenCode here: 64k of KV plus offload makes it slow, and newer models in the KB (Qwen3.8-27B, Qwen3.6-35B-A3B) dominate it.",
+   "recommendation": "skip-here",
+   "reason": "Dense 18.5 GiB weights spill about half the model into DDR5. The Mac result does not transfer in speed, it needs a tuning entry to pass, and qwen2.5:14b matches it on the same harness while fitting in VRAM.",
+   "sources": [
+    "$HOME/projects/libredb/libredb-studio/docs/llms/qwen/qwen2.5.md",
+    "https://ollama.com/library/qwen2.5/tags",
+    "https://registry.ollama.ai/v2/library/qwen2.5/manifests/32b",
+    "https://www.apple.com/macbook-pro/specs/",
+    "$HOME/projects/llm/docs/model-selection.md (Devstral Small 2 exclusion reasoning for dense models)"
+   ]
+  },
+  {
+   "tag": "qwen2.5-coder:14b",
+   "underlying_model": "Qwen2.5-Coder-14B-Instruct, HF Qwen/Qwen2.5-Coder-14B-Instruct; same Qwen2 14B architecture (48 blocks, 8 KV heads, 32,768 native, YaRN to 131,072 per card). The header was not range-read; the architecture is taken from the card and the identical 8,988,110,784-byte layer size.",
+   "family_page": "$HOME/projects/libredb/libredb-studio/docs/llms/qwen/qwen2.5-coder.md",
+   "ollama_tag_facts": "Q4_K_M, model layer 8,988,110,784 bytes (8.37 GiB), tag id 9ec8897f747e, 9.0 GB, 32K context window, text input, badge 'tools'. Its template (1,615 bytes) differs from qwen2.5's (1,482). Sources: https://ollama.com/library/qwen2.5-coder/tags and https://registry.ollama.ai/v2/library/qwen2.5-coder/manifests/14b",
+   "mac_result": "(measured on the M5 Max, libredb-studio) 30/30 runs, every cell closed on its first attempt. Median 20 s, slowest 37 s. Per surface: Investigate 29 s, Optimize 34 s, Assess 21 s, Operate 17 s, Analyze 10 s, Plan 1 s (fastest plan turn on the roster). 90 s per-turn limit. One plan ask was configured but never used. Ollama 0.32.13/0.33.0. Page: $HOME/projects/libredb/libredb-studio/docs/llms/qwen/qwen2.5-coder.md",
+   "kb_status": "not evaluated in the ranking. Third-party rows in docs/community-benchmarks.md:76 (93.4-94.9 tok/s) and :301, where TechFuelHQ's coding eval scored it 5/8 and it FAILED the two-turn Tools task on Ollama on a desktop RTX 5080.",
+   "fit_here": "all-in-vram-short-context",
+   "fit_detail": "(estimate) Identical to qwen2.5:14b. Weights 8.37 GiB plus 32k q8_0 KV (about 3.2 GiB) is about 12.1 GiB and fits. 64k needs q4_0 KV (about 12.3 GiB total) plus YaRN. 64k q8_0 is about 15.3-15.8 GiB, at or over the limit. Small RAM need. TechFuelHQ measured 12,487 MiB whole-GPU at 16k on Ollama (third-party, desktop).",
+   "best_runtime_here": "Same as qwen2.5:14b. Use Ollama (32k, flash attention, q8_0 KV) to reproduce the libredb result. Use llama.cpp b12407 with --jinja, q4_0 KV and YaRN at 64k for OpenCode. Verify native tool_calls with the setup.md curl probe first, because of the conflicting TechFuelHQ result.",
+   "speed_here_vs_mac": "faster if fully resident (estimate): about 1.46x the decode bandwidth. TechFuelHQ desktop 5080: 93.4-94.9 tok/s, so about 85-90 on the laptop. Whole-run times are not converted.",
+   "opencode_suitability": "Tools badge yes, no thinking, 32k native. Tool-reliability evidence conflicts. libredb has 30/30 at defaults, first attempt every cell. TechFuelHQ (Ollama, RTX 5080) failed its Tools task. Studio's prose-tool fallback and its reminder loop may explain the difference: a pass in Studio does not prove native tool_calls. The page itself says this is one data point. For OpenCode, the KB already prefers newer Qwen3-Coder/Qwen3.6 models.",
+   "recommendation": "worth-trying",
+   "reason": "It fits in VRAM at 32k and passed the user's harness cleanly. But third-party evidence says its native tool calls fail on Ollama, so run the 10-second tool_calls probe here before relying on it, and do not promote it for OpenCode.",
+   "sources": [
+    "$HOME/projects/libredb/libredb-studio/docs/llms/qwen/qwen2.5-coder.md",
+    "$HOME/projects/libredb/libredb-studio/docs/llms/setup.md (prose tool fallback, line 95)",
+    "https://ollama.com/library/qwen2.5-coder/tags",
+    "https://registry.ollama.ai/v2/library/qwen2.5-coder/manifests/14b",
+    "https://huggingface.co/Qwen/Qwen2.5-Coder-14B-Instruct/raw/main/README.md",
+    "$HOME/projects/llm/docs/community-benchmarks.md:76 and :301",
+    "https://techfuelhq.com/data/rtx-5080-llm-throughput/"
+   ]
+  },
+  {
+   "tag": "qwq:32b",
+   "underlying_model": "QwQ-32B (reasoning, Qwen2.5-32B base), HF Qwen/QwQ-32B; GGUF header 'QwQ 32B', 64 blocks, 8 KV heads, context_length 40960, no rope-scaling keys",
+   "family_page": "$HOME/projects/libredb/libredb-studio/docs/llms/qwen/qwq.md",
+   "ollama_tag_facts": "Q4_K_M, model layer 19,851,336,480 bytes (18.49 GiB), tag id 009cb3f08d74 (= latest = 32b-q4_K_M), 20 GB, 40K context window, text input, badge 'tools' only (no 'thinking' badge, but it always reasons). Params blob: temperature 0.6, top_k 40, top_p 0.95, repeat_penalty 1. Studio overrides the sampling to temperature 0 and top_p 1. The HF card says YaRN must be enabled for prompts over 8,192 tokens, with 131,072 the maximum. Sources: https://ollama.com/library/qwq/tags and https://registry.ollama.ai/v2/library/qwq/manifests/32b",
+   "mac_result": "(measured on the M5 Max, libredb-studio) 30/30 runs at pure defaults. Median 76 s, slowest 6:00. Per surface: Investigate 69 s, Optimize 189 s, Assess 208 s, Operate 75 s, Analyze 70 s, Plan 61 s. 90 s per-turn limit with no override. The page says no single turn came close to 90 s (Assess was about a dozen turns in 208 s) and names 150 s as the first fix if it times out. Ollama 0.32.13/0.33.0. Slowest model on the roster. Page: $HOME/projects/libredb/libredb-studio/docs/llms/qwen/qwq.md",
+   "kb_status": "not evaluated (not in the ranking, honorable or exclusion lists). The KB mentions it only as a vLLM parser fact (hermes tool parser, deepseek_r1 reasoning parser) in research/2026-11-15/discovery/platform-vllm-tools.json.",
+   "fit_here": "partial-offload",
+   "fit_detail": "(estimate) Same as qwen2.5:32b: 18.49 GiB of weights cannot fit in 15.47 GiB. 256 KiB/token f16 KV. About 26-33 of 64 layers on the GPU at 64k (f16 or q8_0 KV), about 9-11 GiB of weights in RAM, within the 40 GiB free. Context is 40,960 in the GGUF, YaRN is needed past 8k per the card, and 64k requires explicit rope scaling. Reasoning traces also eat context quickly.",
+   "best_runtime_here": "Not recommended on any runtime here. If tried, use llama.cpp b12407 with --jinja, --reasoning-format deepseek, -fa on, q8_0 KV and -ngl about 30. vLLM does not fit.",
+   "speed_here_vs_mac": "much slower (estimate). It spills about half its weights to DDR5, for about 5-8 tok/s decode vs about 20-30 on the Mac, roughly 3-4x slower. As a reasoning model it generates long hidden traces every turn, so the slowdown multiplies across turns. The Mac's roughly 17 s average turn would become about 50-70 s, and its tail turns would very likely exceed the 90 s per-turn limit (model-timeout). It would need turnTimeoutMs near the 179,999 maximum, and whole runs would take 10-20+ minutes.",
+   "opencode_suitability": "Tools badge yes, always-on reasoning, 40k GGUF context (64k only through YaRN). libredb shows 30/30 at defaults, so tool calling is reliable despite reasoning, but only on a fast machine. Here it is impractical for an interactive agent and is superseded by the KB's Qwen3.x thinking-toggle picks.",
+   "recommendation": "skip-here",
+   "reason": "A dense 32B reasoning model that spills about half its weights to DDR5. It is already the slowest model on the Mac roster, and the per-turn 90 s budget that held on the Mac would very likely break here.",
+   "sources": [
+    "$HOME/projects/libredb/libredb-studio/docs/llms/qwen/qwq.md",
+    "https://ollama.com/library/qwq/tags",
+    "https://ollama.com/library/qwq",
+    "https://registry.ollama.ai/v2/library/qwq/manifests/32b",
+    "GGUF header range-read of blob sha256:7ccc6415b2c7... (block_count 64, head_count_kv 8, context_length 40960)",
+    "https://huggingface.co/Qwen/QwQ-32B/raw/main/README.md",
+    "$HOME/projects/llm/research/2026-11-15/discovery/platform-vllm-tools.json"
+   ]
+  }
+ ],
+ "kb_implications": [
+  "Add the libredb-studio results to docs/community-benchmarks.md and docs/sources.md as a first-hand evidence source. Label it '(measured on the M5 Max, libredb-studio)' and note: Ollama 0.32.13/0.33.0, a 90 s per-turn limit, whole-run durations rather than tok/s, and a guarded loop with reminders and a possible prose-tool fallback. The KB currently has no first-hand tool-reliability evidence for any Ollama tag.",
+  "No model in this lane is in the KB's ranking, honorable mentions or exclusions, so the harness covers none of the KB's top 10 from this lane. The KB should list the Qwen2.5 generation explicitly so the omission is a recorded decision. Suggested row: 'Qwen2.5 7B/14B/32B, Qwen2.5-Coder-14B, QwQ-32B: reliable tool calls in the user's libredb harness, but 32k native context (40k for QwQ) and no modern agentic scores; superseded for OpenCode by Qwen3.x'.",
+  "Add an exclusion or not-for-this-laptop line for qwen2.5:32b and qwq:32b: dense Q4_K_M weights of 18.49 GiB exceed 15.47 GiB of CUDA memory, so about half the layers run from DDR5 (estimate 5-8 tok/s). QwQ is always-reasoning, already the slowest model on the Mac roster, and would likely break the 90 s per-turn limit here.",
+  "Consider qwen2.5:7b, and possibly qwen2.5:14b, as a 'fast tool-calling sub-agent / libredb backend' note rather than a ranked OpenCode pick. qwen2.5:7b passed 30/30 at the fastest times on the Mac and fits fully in VRAM with 64k+ of KV (estimate about 9 GiB at 64k f16).",
+  "Record a context caveat the KB does not yet have. Qwen2.5 GGUFs on Ollama carry qwen2.context_length 32768 and no YaRN keys, verified by GGUF header read. Setting OLLAMA_CONTEXT_LENGTH=65536 does not enable YaRN. OpenCode's 64k floor (docs/opencode.md:190) for these models needs llama.cpp --rope-scaling yarn --rope-scale 2 --yarn-orig-ctx 32768, or vLLM static YaRN, and the Qwen card warns of quality loss on short texts.",
+  "Record the conflict on qwen2.5-coder:14b in docs/community-benchmarks.md:301. TechFuelHQ on Ollama with an RTX 5080 says it failed the Tools task. libredb says 30/30 first-attempt passes. Note that Studio decides native vs prose tool protocol per endpoint (libredb setup.md:95), so the two results measure different things, and the KB should not claim either 'qwen2.5-coder tools broken' or 'reliable' without a native tool_calls probe here.",
+  "Nuance docs/opencode.md:201. The claim that small models fail agent loops through malformed or missing tool calls is about 2B-4B. The libredb harness shows a 7B (qwen2.5:7b) and even 4B models (qwen3:4b, qwen3.5:4b, outside this lane) passing 30/30 in a short-context, guarded SQL tool loop. That does not refute the OpenCode claim, whose long contexts and free-form edits are harder, but the sentence should say it refers to OpenCode-style loops.",
+  "Confirm the KB's runtime guidance. These are dense models, so --n-cpu-moe does not apply. For the 32B dense models neither Ollama nor llama.cpp avoids the DDR5 bottleneck, which supports keeping dense 32B models out of the picks as was done for Devstral.",
+  "The TechFuelHQ desktop 5080 rows already in community-benchmarks.md (qwen2.5:7b 177-180 tok/s, :14b 94-97, coder:14b 93-95) can serve as the expected ceiling when these tags are measured here. Expect about 5-10% lower on the 896 GB/s laptop at 140 W (estimate)."
+ ],
+ "gaps": [
+  "The libredb pages do not record OLLAMA_CONTEXT_LENGTH or num_ctx, KV cache type, flash attention, per-turn prompt token counts, or tag digests. So it is unknown how much context the harness needs, and whether it would pass at Ollama's 4k default on this GPU.",
+  "No think or reasoning setting is recorded for qwq:32b beyond the defaults (suppressAgentReasoning false), and no per-turn durations are published. That makes the per-turn-limit risk here an estimate.",
+  "Whether Ollama 0.33.x clamps num_ctx to the GGUF's 32768 (40960 for QwQ) or silently runs past the trained context without YaRN was not verified.",
+  "qwen2.5:32b and qwen2.5-coder:14b GGUF headers were not range-read. Their architecture (64/8 and 48/8 layers/KV heads) is inferred from the identical QwQ-32B and qwen2.5:14b layer sizes and the HF cards.",
+  "No laptop measurement exists for any lane model: Ollama is not pulled and the GPU is busy. All speed and fit figures here are estimates. The configured DDR5 speed (dmidecode) is still unverified, which affects the offload estimates for the 32B models.",
+  "The libredb harness's prose-tool fallback means a pass does not prove native tool_calls emission. The setup.md curl probe should be run here per tag, especially for qwen2.5-coder:14b given the conflicting TechFuelHQ result.",
+  "Internal drift in libredb methodology.md (six models with 150 s and 'the other sixteen') vs README.md (nine of fifty-one). It is not in this lane and the libredb folder is read-only, so it is noted only."
+ ]
+}

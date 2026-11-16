@@ -1,0 +1,95 @@
+{
+ "verdicts": [
+  {
+   "claim": "Official Google repo google/gemma-4-26B-A4B-it, HF createdAt 2026-03-11T21:25:57Z, lastModified 2026-07-20, blog datePublished 2026-04-02T16:00Z, inside the 12-month window",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/google/gemma-4-26B-A4B-it ; https://blog.google/innovation-and-ai/technology/developers-tools/gemma-4/",
+   "correction": "API author=google, createdAt 2026-03-11T21:25:57Z, lastModified 2026-07-20T16:42:12Z. Blog title 'Gemma 4: Our most capable open models to date', datePublished 2026-04-02T16:00:00+00:00. QAT GGUF repo is also author google (createdAt 2026-05-01)."
+  },
+  {
+   "claim": "License Apache 2.0 (tag, card, license_link redirects to /gemma/apache_2, blog says Apache 2.0)",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/google/gemma-4-26B-A4B-it/raw/main/README.md",
+   "correction": "README front matter license: apache-2.0; ai.google.dev/gemma/docs/gemma_4_license returns 301 to https://ai.google.dev/gemma/apache_2; blog text contains 'Apache 2.0 license'."
+  },
+  {
+   "claim": "25.2B total, 3.8B active, 128 experts 8 active + 1 shared, ~550M vision encoder; safetensors 25,805,936,206 BF16 params (51.61 GB)",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/google/gemma-4-26B-A4B-it",
+   "correction": "Card MoE table lines 72-80 match; API safetensors.total 25805936206 BF16. The QAT GGUF text-only count 25,233,142,046 was not re-read."
+  },
+  {
+   "claim": "Architecture: 30 layers, hidden 2816, 16 heads, 25 sliding (window 1024, 8 KV heads, head_dim 256) + 5 full at 5,11,17,23,29 (2 global KV heads, global_head_dim 512, k_eq_v, partial_rotary 0.25, theta 1e6), MoE 128/8/704 + dense 2112, vocab 262144, tied, softcap 30, vision 27 layers hidden 1152",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/google/gemma-4-26B-A4B-it/raw/main/config.json",
+   "correction": "All values match config.json text_config. Full-attention rope_type is 'proportional' (the record calls it p-RoPE). The vLLM gemma4.py and llama.cpp gemma4.cpp line references for K->V reuse were not re-read here."
+  },
+  {
+   "claim": "Context 262144 native, card says 256K",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/google/gemma-4-26B-A4B-it/raw/main/config.json"
+  },
+  {
+   "claim": "Modalities: text and image in, text out; no audio on 26B",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/google/gemma-4-26B-A4B-it/raw/main/README.md",
+   "correction": "Card: 'Supported Modalities: Text, Image' for 26B A4B; audio only on E2B, E4B, 12B; no audio_config in config.json. Card line 33 also mentions video for the family."
+  },
+  {
+   "claim": "Thinking toggle via <|think|> at start of system turn; template enable_thinking default false; empty thought channel emitted when off",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/google/gemma-4-26B-A4B-it/raw/main/chat_template.jinja",
+   "correction": "chat_template.jinja line 186 'enable_thinking | default(false)', line 194 emits '<|think|>', lines 384-385 prefill '<|channel>thought\\n<channel|>' when off. Template header 'Published: 2026-07-09' confirmed."
+  },
+  {
+   "claim": "Multi-turn thoughts dropped except on tool-call turns, handled via preserve_thinking",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/google/gemma-4-26B-A4B-it/raw/main/chat_template.jinja",
+   "correction": "Nuance: line 240 thinking_gate = (loop.index0 > last_user_idx) or (preserve_thinking and tool_calls). Thoughts after the last user message (the current agent loop) are always kept. preserve_thinking (default false) only keeps thoughts on older tool-call turns."
+  },
+  {
+   "claim": "Native tool calling: tools rendered as <|tool>...<tool|> in system turn, calls as <|tool_call>call:name{...}",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/google/gemma-4-26B-A4B-it/raw/main/chat_template.jinja",
+   "correction": "Lines 207-213 render tools; line 248 emits '<|tool_call>call:'. Card line 122 'Function Calling - Native support for structured tool use'."
+  },
+  {
+   "claim": "vLLM v0.33.0 registers Gemma4ForConditionalGeneration->gemma4_mm (line 427), tool parser gemma4->Gemma4EngineToolParser, reasoning parser gemma4->Gemma4ParserReasoningAdapter",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/model_executor/models/registry.py",
+   "correction": "registry.py line 427 confirmed, plus Gemma4ForCausalLM (117), Gemma4MTPModel (723), Gemma4DSparkModel (697); tool_parsers/__init__.py line 253, reasoning/__init__.py line 55."
+  },
+  {
+   "claim": "Google card: Tau2 (avg over 3) 68.2%, LiveCodeBench v6 77.1%, Codeforces ELO 1718, MRCR v2 8-needle 128k 44.1% (self-reported)",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/google/gemma-4-26B-A4B-it/raw/main/README.md",
+   "correction": "Values exact (README lines 92, 93, 95, 109). The record's setting 'thinking' for Tau2 is inferred: the card only labels the Gemma 3 column '(no think)' and does not state Gemma 4's thinking setting."
+  },
+  {
+   "claim": "NVIDIA Nemotron 3.5 Lightning card: SWE-bench Verified 57.40, Terminal-Bench 2.1 37.22, SWE-bench Multilingual 43.40 (Qwen3.6 70.12/44.38, gpt-oss-20b 52.44/15.17), consistent NVIDIA harness",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/raw/main/README.md",
+   "correction": "README lines 149-151; line 161 'measured by NVIDIA under a consistent harness'; line 163 says SWE-Bench and Terminal-Bench used NeMo Evaluator. Third-party but competitor-run."
+  },
+  {
+   "claim": "Qwen3.6-35B-A3B card: Gemma4-26BA4B SWE-bench Verified 17.4, SWE-bench Pro 13.8, Terminal-Bench 2.0 34.2, TAU3-Bench 59.0 (Qwen3.6 73.4)",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Qwen/Qwen3.6-35B-A3B/raw/main/README.md",
+   "correction": "Gemma4-26BA4B is column 4 of the table headed at line 65; values match. Settings at lines 307, 308, 313 match the record. Competitor-run."
+  },
+  {
+   "claim": "KAT-Coder-V2.5-Dev card: Gemma4-26BA4B SWE-bench Verified 35.80, SWE-bench Pro 9.58, Terminal-Bench 2.1 20.94 (27.27/14.60), claude_code@2.1.195, 256k; context overflow and hallucinated MultiEdit calls",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/Kwaipilot/KAT-Coder-V2.5-Dev/raw/main/README.md",
+   "correction": "Gemma4-26BA4B is column 7 of 8; values match. Notes at lines 154 and 162. Terminal-Bench 2.1 used temp 0.7 and the Terminus-2 and Claude Code agents. The 'single run' label comes from pass@k=1."
+  },
+  {
+   "claim": "Artificial Analysis: Intelligence Index not scored, releaseDate 2026-04-02; API output speed 71 tok/s, TTFA 25.88 s",
+   "verdict": "uncertain",
+   "evidence_url": "https://artificialanalysis.ai/models/gemma-4-26b-a4b",
+   "correction": "Confirmed: Intelligence Index N/A (intelligenceIndex null), releaseDate 2026-04-02, name 'Gemma 4 26B A4B'. The 71 tok/s and 25.88 s figures were not found in the raw page I parsed."
+  }
+ ],
+ "overall": "holds-with-corrections",
+ "summary": "Raw reads found nothing to refute. These all hold for Gemma 4 26B-A4B IT: identity (author google; createdAt 2026-03-11; blog 2026-04-02), Apache 2.0 license (the license link redirects to /gemma/apache_2), parameter counts, every config.json architecture value, 262144 context, text+image modalities, the thinking toggle (template default off) and native tool calling (template lines 207-213 and 248). The vLLM v0.33.0 registrations (registry line 427, gemma4 tool and reasoning parsers) hold too. All 14 cited benchmark numbers match their sources exactly: Google card 68.2/77.1/1718/44.1; NVIDIA 57.40/37.22/43.40; Qwen 17.4/13.8/34.2/59.0; KAT 35.80/9.58/20.94. Corrections: (1) Calling the Tau2 setting 'thinking' is inferred; the card does not state it. (2) The template keeps thoughts from the current turn after the last user message whatever preserve_thinking is set to. preserve_thinking (default false) only extends this to older tool-call turns. (3) Artificial Analysis Intelligence Index N/A and release date 2026-04-02 are confirmed; the 71 tok/s and 25.88 s TTFA could not be found in the raw page. Gaps: I did not re-check the QAT GGUF text-only parameter count, the K-to-V line references in vLLM gemma4.py and llama.cpp gemma4.cpp, the llama.cpp, Ollama and memory-arithmetic claims, or the open issue numbers. Files are in $SCRATCH/fc26/."
+}

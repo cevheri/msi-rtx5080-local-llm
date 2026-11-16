@@ -1,0 +1,61 @@
+{
+ "file": "$HOME/projects/llm/docs/host-setup.md",
+ "checked_claims": 28,
+ "fixes": [
+  {
+   "what": "Smoke-test commands at 'Configure and verify' (CDI and legacy nvidia-smi runs) now carry --memory=1g --memory-swap=1g",
+   "why": "Writing rule 9: every docker run sets a container memory cap",
+   "source": "https://docs.docker.com/engine/containers/resource_constraints/"
+  },
+  {
+   "what": "The three Compose GPU syntax demo services now set mem_limit: 1g and memswap_limit: 1g. I re-ran 'docker compose config -q' on both YAML blocks from scratchpad copies: both OK, so the 'checked with docker compose config' sentence is still true",
+   "why": "Rule 9 memory caps, and the doc's syntax-check claim had to stay valid after the edit",
+   "source": "https://docs.docker.com/reference/compose-file/services/"
+  },
+  {
+   "what": "The LLAMA_ARG_HOST=0.0.0.0 / LLAMA_ARG_PORT=8080 citation now points to .devops/cuda.Dockerfile at b12418 instead of the server README",
+   "why": "Those ENV lines are in the Dockerfile (lines 128-129). The server README does not show that the image sets them",
+   "source": "https://github.com/ggml-org/llama.cpp/blob/b12418/.devops/cuda.Dockerfile"
+  },
+  {
+   "what": "Changed 'llama.cpp guide uses the CUDA 12.8 server-cuda image' to 'pins server-cuda-b12407 (CUDA 12.8.1)', with a Dockerfile link",
+   "why": "llamacpp/README.md pins server-cuda-b12407 and tells readers never to use floating server-cuda. The Dockerfile has ARG CUDA_VERSION=12.8.1",
+   "source": "https://github.com/ggml-org/llama.cpp/blob/b12418/.devops/cuda.Dockerfile"
+  },
+  {
+   "what": "NVFP4 first-start row: says vllm#46268 is still open, cites the open fix PR vllm#66864 (it budgets about 8 GiB per compiler job), and marks 'MAX_JOBS=2 fits in 32g' as an estimate that has not been tested",
+   "why": "The MAX_JOBS=2 workaround had no source next to it. PR #66864 is the primary source for the per-job memory figure",
+   "source": "https://github.com/vllm-project/vllm/pull/66864"
+  },
+  {
+   "what": "Restart-policy sentence rewritten: 'always' (or 'unless-stopped' if the container was not stopped by hand) starts the container again with the daemon after a reboot. Added a Docker restart-policy docs link there and on the 'default is no' sentence, and added the link to Sources",
+   "why": "The old line said unless-stopped comes back at every boot, but Docker docs say a stopped unless-stopped container is not restarted. The 'default is no' claim had no source",
+   "source": "https://docs.docker.com/engine/containers/start-containers-automatically/"
+  },
+  {
+   "what": "Bind-mount auto-create sentence: 'owned by root' is now marked as inferred from the rootful daemon",
+   "why": "Docker docs say -v creates the missing directory but say nothing about who owns it",
+   "source": "https://docs.docker.com/engine/storage/bind-mounts/"
+  },
+  {
+   "what": "Reworded the docker-group sentence: the user is in the docker group, so sudo is not needed, and the group is root-equivalent, so treat it like sudo",
+   "why": "The old sentence gave root-equivalence as the reason sudo is not needed, which reversed the logic",
+   "source": "observed host state in kb/current-knowledge.md"
+  },
+  {
+   "what": "Sources: added cuda.Dockerfile under llama.cpp b12418, vllm#66864 under vLLM, and restart policies under Docker",
+   "why": "Rule 11: deduplicated main sources must include the newly cited primary sources",
+   "source": ""
+  }
+ ],
+ "remaining_concerns": [
+  "Verified live and unchanged (OK): toolkit docs pin 1.20.1-1. Apt Packages index serves 1.20.0-1, 1.20.1-1 and 1.20.2-1. GitHub latest release is v1.20.1 (2026-09-19). Launchpad has 1.19.0+dfsg1-0ubuntu1~26.04.1 (inputs place it in resolute-proposed). 1.20.1 release notes cover cdi-refresh ordering before Docker, preservation of Docker feature flags, and NVIDIA_GPU_MEMORY_LIMIT needing R615. CDI schema v0.7.0 needs docker >= 26.1.0. Auto-generation since 1.18.0 and the removal limitation. NVIDIA_DRIVER_CAPABILITIES default utility,compute. CUDA 13.0-13.5 to R580-R620 mapping. Forward compatibility limited to data center, NGC Server Ready RTX and Jetson. RTD3 0x03 default, UVM persistence disables RTD3, the procfs path. Open modules: Blackwell open-only, slower init and longer RTD3 entry and exit. Docker: CDI default since 28.3.0, systemd.slice parent and slice-name rule, ufw bypass in the nat table, Ubuntu Resolute 26.04 support, loopback publish, pre-28.0.0 L2 issue (moby#45610 closed), ip and host_binding_ipv4 daemon options, memory-swap semantics, Compose gpus requires 2.30.0, deploy capabilities required and count/device_ids exclusive. Docker Hub: vllm v0.33.0 is 9738495250 B, x86_64-zstd is 7702613782 B, ubuntu26.04 CUDA base tags start at 13.3.0. vLLM v0.33.0: CUDA_VERSION=13.0.3, huggingface_hub >= 1.31.0, host None / port 8000, --api-key wins over VLLM_API_KEY, docker.md ipc=host and the cache mounts. vllm#46268 (about 52 GiB, open). llama.cpp b12418: hf-cache.cpp search order, --api-key / LLAMA_API_KEY / --api-key-file, /health public. HF: hf cache ls/verify/rm/prune and .incomplete blobs.",
+  "Not re-verified live: the NVIDIA laptop compare page values (80-150 W, 896 GB/s), because the page is JS-rendered. They match kb/current-knowledge.md, which records them from the NVIDIA spec page.",
+  "The disk-budget row 'about 164 GiB, sum of the sizes in model-selection.md' cannot be checked yet: docs/model-selection.md does not exist on disk. Re-check the sum once that file is written.",
+  "These relative link targets are planned but do not exist yet: ../vllm/README.md, ../vllm/models.md, ../llamacpp/models.md, model-selection.md. Present: community-benchmarks.md, opencode.md, sources.md, ../llamacpp/README.md.",
+  "Out of scope (not my file): llamacpp/README.md line 162 shows a docker run of llama-fit-params with no --memory cap. Its owner should fix it.",
+  "Writing-rule scan of host-setup.md: no U+2013 or U+2014, no emoji, no restart policies in commands, every published port uses 127.0.0.1, the 'Last verified' line, Sources and Maintenance sections are present, and no physical line holds more than one prose sentence."
+ ],
+ "verdict": "ready-with-concerns",
+ "used_playwright": false
+}

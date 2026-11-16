@@ -1,0 +1,78 @@
+{
+ "overall": "holds",
+ "summary": "I found no refutation. Every load-bearing runtime claim I re-read from primary sources matched the record. The three safetensors shards sum to 13,761,316,904 B (12.816 GiB). The ggml-org file gpt-oss-20b-MXFP4.gguf is 12,109,566,624 B (11.278 GiB). config.json gives 12 full and 12 sliding (window 128) layers, 8 KV heads and head_dim 64, so 24,576 B/token in BF16. Re-running the budget arithmetic: at 0.92 the KV pool is 0.631 GiB (27.6k BF16, 55.1k FP8); at 0.95 it is 1.110 GiB (48.5k BF16, 97k FP8). For vLLM, OpenCode's 64k minimum is therefore met only with --gpu-memory-utilization 0.95 plus --kv-cache-dtype fp8. Code at v0.33.0 shows that path is allowed: TRITON_ATTN supports sinks and accepts FP8 KV on SM89+, so sm_120 qualifies. This partly closes the record's FP8-plus-sinks gap, but it is still unmeasured. llama.cpp b12418 (published 2026-11-15) maps the gpt-oss arch and has a dedicated gpt-oss parser that enforces tool_choice=required with a non-lazy grammar. Full 131072 context with q8_0 KV comes to about 13.8 GiB, so the record's ranking holds: llama.cpp first, vLLM second. Remaining risks are inferred or unmeasured: the 1.2 GiB vLLM reserve, compute buffers at -ub 2048 on the laptop GPU, and open vLLM Harmony tool-call bugs (#65770, #58825, #46464) that could break long OpenCode sessions under vLLM. Verdict: good fit for OpenCode with working tool calls and 64k or more context, best served by llama.cpp.",
+ "verdicts": [
+  {
+   "claim": "openai/gpt-oss-20b safetensors weights are 3 shards totalling 13,761,316,904 B = 12.82 GiB",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/openai/gpt-oss-20b?blobs=true",
+   "correction": "Shards 4,792,272,488 + 4,798,702,184 + 4,170,342,232 B. createdAt 2025-08-04, lastModified 2025-08-26."
+  },
+  {
+   "claim": "ggml-org/gpt-oss-20b-GGUF has gpt-oss-20b-MXFP4.gguf of about 11.28 GiB, repo updated 2026-11-12",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/ggml-org/gpt-oss-20b-GGUF?blobs=true",
+   "correction": "12,109,566,624 B = 11.278 GiB. lastModified 2026-11-12T09:57:40Z. Eagle3 draft files are 0.92 GB (Q8_0) and 1.72 GB (BF16)."
+  },
+  {
+   "claim": "KV bytes per token are 24,576 in BF16 (12 full-attention layers x 8 KV heads x head_dim 64) and sliding layers use window 128",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/openai/gpt-oss-20b/raw/main/config.json",
+   "correction": "Source-backed arithmetic: 2 x 12 x 8 x 64 x 2 B = 24,576 B. max_position_embeddings is 131072 (YaRN factor 32 over 4096)."
+  },
+  {
+   "claim": "vLLM context: 0.92 gives about 27.4k BF16 / 55k FP8; 0.95 gives about 48k BF16 / 96.7k FP8, so 65536 needs 0.95 plus FP8 KV",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/openai/gpt-oss-20b/raw/main/config.json",
+   "correction": "Recomputed: 0.92 gives a 0.631 GiB pool (27.6k BF16, 55.1k FP8); 0.95 gives 1.110 GiB (48.5k BF16, 97.0k FP8). This depends on the 1.2 GiB reserve assumption, so check the 'Available KV cache memory' log line."
+  },
+  {
+   "claim": "GptOssForCausalLM is registered in vLLM v0.33.0, tool parser 'openai' maps to GptOssToolParser, and reasoning parser 'openai_gptoss' exists",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/models/registry.py",
+   "correction": "registry.py line 128; vllm/tool_parsers/__init__.py line 194 ('openai' -> gptoss_tool_parser.GptOssToolParser); vllm/reasoning/__init__.py line 71."
+  },
+  {
+   "claim": "On sm_120 the v0.33.0 MXFP4 MoE oracle deliberately prefers MARLIN over TRITON (consumer Blackwell comment)",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/model_executor/layers/fused_moe/oracle/mxfp4.py",
+   "correction": "Lines 426-432: is_device_capability_family(120) moves TRITON after BATCHED_MARLIN, citing the 99KB shared-memory budget. Not runtime-verified (no log)."
+  },
+  {
+   "claim": "Harmony reasoning_effort accepts only low/medium/high, and --reasoning-effort-map with keys none/minimal/xhigh/max is valid",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/entrypoints/common/cli_args.py",
+   "correction": "harmony_utils.py REASONING_EFFORT has high/medium/low only. validate_reasoning_effort_map checks keys against ReasoningEffort = Literal['none','minimal','low','medium','high','xhigh','max'] (vllm/renderers/params.py line 27), so the proposed map passes validation."
+  },
+  {
+   "claim": "FP8 KV combined with attention sinks on sm_120 is unverified",
+   "verdict": "uncertain",
+   "evidence_url": "https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/vllm/v1/attention/backends/triton_attn.py",
+   "correction": "Partly resolved from source: FA2 lacks sink support (flash_attn_supports_sinks requires FA3/4). TRITON_ATTN declares supports_sink, lists fp8 in supported_kv_cache_dtypes and rejects FP8 only below SM89, so sm_120 is allowed. FlashInfer sink support on family 120 depends on supports_trtllm_attention(is_prefill=False). Code permits the combination, but it is not measured."
+  },
+  {
+   "claim": "Cited open vLLM issues #65770, #44216, #58825, #46464, #66989, #30135, #37030 and #66284 exist and are open with the described topics",
+   "verdict": "confirmed",
+   "evidence_url": "https://github.com/vllm-project/vllm/issues/65770",
+   "correction": "All 8 are open (checked via gh api on 2026-11-15). A search for open gpt-oss issues on sm_120 / RTX 50 found no additional blocker for gpt-oss-20b MXFP4 on sm_120. #67603 (Quark W4A4 gpt-oss on Blackwell) concerns a different checkpoint format."
+  },
+  {
+   "claim": "llama.cpp b12418 supports gpt-oss (LLM_ARCH_OPENAI_MOE) and its gpt-oss parser enforces tool_choice=required via a non-lazy grammar",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12418/common/parsers/gpt-oss.cpp",
+   "correction": "Release b12418 was published 2026-11-15T15:53:48Z. llama-arch.cpp line 138; gpt-oss.cpp lines 127 and 138 (grammar_lazy is false when tool_choice is REQUIRED)."
+  },
+  {
+   "claim": "llama.cpp fits 131072 context fully on GPU: about 13.9 GiB with q8_0 KV, about 15.1 GiB with F16 KV",
+   "verdict": "confirmed",
+   "evidence_url": "https://huggingface.co/api/models/ggml-org/gpt-oss-20b-GGUF?blobs=true",
+   "correction": "Arithmetic holds: 11.28 GiB weights + 1.59 GiB q8_0 full-attention KV (3.0 GiB F16) + under 0.1 GiB SWA + 0.5 to 1 GiB compute = about 13.5 to 14.0 GiB. F16 comes to about 14.9 to 15.4 GiB against about 15.8 GiB free. Compute-buffer size is inferred, not measured."
+  },
+  {
+   "claim": "Verdict: serves OpenCode with working tool calls and at least 64k context; llama.cpp primary, vLLM secondary",
+   "verdict": "confirmed",
+   "evidence_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/b12418/common/parsers/gpt-oss.cpp",
+   "correction": "Best realistic configuration: llama.cpp :server-cuda with -c 131072 -ctk q8_0 -ctv q8_0 -fa on. vLLM reaches 64k only at 0.95 utilization with FP8 KV and carries open Harmony tool-call bugs (#65770 can make every later turn return HTTP 500)."
+  }
+ ]
+}

@@ -1,0 +1,16 @@
+(APIServer pid=1) INFO 11-15 21:53:31 [startup.py:38]  ▄▄ ▄█ █     █     █ ▀▄▀ █  version 0.33.0
+(APIServer pid=1) INFO 11-15 21:53:31 [startup.py:96] non-default args: {'model_tag': 'openai/gpt-oss-20b', 'reasoning_effort_map': {'none': 'low', 'minimal': 'low', 'xhigh': 'high', 'max': 'high'}, 'enable_auto_tool_choice': True, 'tool_call_parser': 'openai', 'model': 'openai/gpt-oss-20b', 'max_model_len': 65536, 'enforce_eager': True, 'served_model_name': ['gpt-oss-20b'], 'override_generation_c
+(APIServer pid=1) INFO 11-15 21:53:31 [model.py:744] Resolved architecture: GptOssForCausalLM
+(APIServer pid=1) WARNING 11-15 21:53:32 [vllm.py:1778] Enforce eager set, disabling torch.compile, CUDAGraphs, and JIT kernel warmup. This is equivalent to setting -cc.mode=none -cc.cudagraph_mode=none and --kernel_config.enable_jit_warmup=False
+(EngineCore pid=168) INFO 11-15 21:53:39 [core.py:139] Initializing a V1 LLM engine (v0.33.0) with config: model='/root/.cache/huggingface/hub/models--openai--gpt-oss-20b/snapshots/6cee5e81ee83917806bbde320786a8fb61efebee', speculative_config=None, tokenizer='/root/.cache/huggingface/hub/models--openai--gpt-oss-20b/snapshots/6cee5e81ee83917806bbde320786a8fb61efebee', skip_tokenizer_init=False, tok
+(EngineCore pid=168) INFO 11-15 21:53:40 [parallel_state.py:1929] world_size=1 rank=0 local_rank=0 distributed_init_method=file:///tmp/vllm_dist_a69ccdee03d04a28a79676354eb5bfea backend=nccl
+(EngineCore pid=168) INFO 11-15 21:53:40 [cuda.py:448] Using AttentionBackendEnum.TRITON_ATTN backend.
+(EngineCore pid=168) INFO 11-15 21:53:41 [mxfp4.py:730] Using 'MARLIN' Mxfp4 MoE backend.
+(EngineCore pid=168) INFO 11-15 21:53:41 [cuda.py:448] Using AttentionBackendEnum.TRITON_ATTN backend.
+(EngineCore pid=168) INFO 11-15 21:53:43 [model_runner.py:428] Model loading took 13.8 GiB memory and 3.111595 seconds
+(EngineCore pid=168) INFO 11-15 21:53:45 [gpu_worker.py:772] Available KV cache memory: 0.94 GiB
+(EngineCore pid=168) INFO 11-15 21:53:45 [kv_cache_utils.py:1147] GPU KV cache size: 81,504 tokens, Maximum concurrency for 65,536 tokens per request: 1.24x
+(EngineCore pid=168) WARNING 11-15 21:53:48 [vllm.py:1778] Enforce eager set, disabling torch.compile, CUDAGraphs, and JIT kernel warmup. This is equivalent to setting -cc.mode=none -cc.cudagraph_mode=none and --kernel_config.enable_jit_warmup=False
+(APIServer pid=1) INFO 11-15 21:53:49 [entry.py:139] Starting vLLM server on http://0.0.0.0:8000
+(APIServer pid=1) INFO 11-15 21:53:49 [launcher.py:197] Route: /version, Methods: GET
+INFO:     Application startup complete.
