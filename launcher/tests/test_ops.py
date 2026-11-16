@@ -1,7 +1,7 @@
 import unittest
 
 from launcher import ops
-from launcher.errors import PreflightError, StartError
+from launcher.errors import PreflightError, StartError, UsageError
 from launcher.lock import hold_lock
 from launcher.tests.fakes import http, ok
 from launcher.tests.ops_fixture import OpsFixture, managed_line
@@ -92,6 +92,78 @@ class UpTest(unittest.TestCase):
         out = self.f.host.out.getvalue()
         self.assertIn("chat only, no tool calling", out)
         self.assertIn("no OpenCode entry", out)
+
+    def config(self):
+        path = self.f.runtime_dir / "xdg" / "opencode" / "opencode.json"
+        path.parent.mkdir(parents=True)
+        from launcher.tests.test_opencode_config import doc_config_text
+        path.write_text(doc_config_text().replace("llamacpp-docker/qwen3.6-35b-a3b", "vllm-docker/gpt-oss-20b", 1))
+        self.f.host.env["XDG_CONFIG_HOME"] = str(path.parent.parent)
+        self.f.host.on(("opencode", "reload"), ok("Configuration reloaded\n"))
+        return path
+
+    def test_up_sets_opencode_default(self):
+        path = self.config()
+        self.assertEqual(ops.up(self.f.host, self.f.catalog, "qwen3.6", None, replace=False, dry_run=False,
+                                set_opencode_default=True), 0)
+        self.assertIn('"model": "llamacpp-docker/qwen3.6-35b-a3b"', path.read_text())
+        out = self.f.host.out.getvalue()
+        self.assertIn("OpenCode default model: vllm-docker/gpt-oss-20b -> llamacpp-docker/qwen3.6-35b-a3b", out)
+        self.assertIn(["opencode", "reload"], self.f.host.calls)
+
+    def test_set_default_refused_before_start(self):
+        self.config()
+        self.f.place_files("deepseek-r1-0528-qwen3-8b")
+        with self.assertRaises(UsageError):
+            ops.up(self.f.host, self.f.catalog, "deepseek-r1", None, replace=False, dry_run=False,
+                   set_opencode_default=True)
+        self.assertEqual(self.f.calls_starting("docker", "run"), [])
+
+    def test_set_default_untouched_when_start_fails(self):
+        path = self.config()
+        before = path.read_text()
+        self.f.health = [http(503)]
+        self.f.state = "exited"
+        with self.assertRaises(StartError):
+            ops.up(self.f.host, self.f.catalog, "qwen3.6", None, replace=False, dry_run=False,
+                   set_opencode_default=True)
+        self.assertEqual(path.read_text(), before)
+
+    def test_set_default_dry_run_writes_nothing(self):
+        path = self.config()
+        before = path.read_text()
+        self.assertEqual(ops.up(self.f.host, self.f.catalog, "qwen3.6", None, replace=False, dry_run=True,
+                                set_opencode_default=True), 0)
+        self.assertEqual(path.read_text(), before)
+        self.assertIn("would set OpenCode's default model", self.f.host.out.getvalue())
+
+    def running_qwen(self, sha=None):
+        recipe, runtime = __import__("launcher.catalog", fromlist=["resolve"]).resolve(self.f.catalog, "qwen3.6", None)
+        self.f.managed_lines = [managed_line("llamacpp", "running", recipe.id, sha=sha or recipe.source.sha256,
+                                             runtime_sha=runtime.source.sha256)]
+        self.f.health = [http(200)]
+
+    def test_same_recipe_running_is_not_restarted(self):
+        self.running_qwen()
+        self.assertEqual(self.up(), 0)
+        self.assertEqual(self.f.calls_starting("docker", "run"), [])
+        self.assertEqual(self.f.calls_starting("docker", "stop"), [])
+        out = self.f.host.out.getvalue()
+        self.assertIn("already running", out)
+        self.assertIn("OpenCode model: llamacpp-docker/qwen3.6-35b-a3b", out)
+
+    def test_same_recipe_running_still_sets_opencode_default(self):
+        self.running_qwen()
+        path = self.config()
+        self.assertEqual(ops.up(self.f.host, self.f.catalog, "qwen3.6", None, replace=False, dry_run=False,
+                                set_opencode_default=True), 0)
+        self.assertIn('"model": "llamacpp-docker/qwen3.6-35b-a3b"', path.read_text())
+
+    def test_changed_recipe_file_still_needs_replace(self):
+        self.running_qwen(sha="ef" * 32)
+        with self.assertRaises(PreflightError) as ctx:
+            self.up()
+        self.assertIn("--replace", str(ctx.exception))
 
     def test_lock_held_refuses(self):
         with hold_lock(self.f.host.env):

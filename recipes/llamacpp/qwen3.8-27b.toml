@@ -29,6 +29,7 @@ gpu_mib = 14678
 [evidence]
 kind = "measured"
 summary = "36.4 tok/s decode with 64k context, 14,790 MiB GPU peak, OpenCode session passed"
+decode_tok_s = 36.4
 date = "2026-11-16"
 hardware = "MSI Raider 18 Max HX A2WI, RTX 5080 Laptop GPU 16 GB, 61 GiB RAM"
 record = "research/2026-11-16/llamacpp-qwen3.8-27b/"

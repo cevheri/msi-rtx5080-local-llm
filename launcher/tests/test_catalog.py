@@ -69,7 +69,7 @@ class CatalogTest(unittest.TestCase):
         text = self.shipped_text("llamacpp", QWEN_FILE)
         text = text.replace('"--moe-cache-mib", "3200", ', "").replace('kind = "measured"', 'kind = "estimate"\ndoc = "mine"')
         text = "\n".join(line for line in text.splitlines()
-                         if not line.startswith(("date =", "hardware =", "record =")))
+                         if not line.startswith(("date =", "hardware =", "record =", "decode_tok_s =")))
         self.write_override("llamacpp", QWEN_FILE, text)
         catalog = load_catalog(self.shipped, self.overrides)
         recipe, _ = resolve(catalog, "qwen3.6", None)
@@ -138,6 +138,18 @@ class CatalogTest(unittest.TestCase):
     def test_shipped_recipes_have_no_problems(self):
         catalog = load_catalog(REPO / "recipes", None)
         self.assertEqual([p for rc in catalog.runtimes.values() for p in rc.problems], [])
+
+
+class SpeedTest(unittest.TestCase):
+    def test_measured_recipes_state_their_speed(self):
+        catalog = load_catalog(REPO / "recipes", None)
+        for name, entry in catalog.runtimes.items():
+            for recipe in entry.recipes.values():
+                if recipe.evidence.kind != "measured":
+                    continue
+                with self.subTest(recipe=f"{name}/{recipe.id}"):
+                    self.assertIsNotNone(recipe.evidence.decode_tok_s)
+                    self.assertIn(f"{recipe.evidence.decode_tok_s:g} tok/s", recipe.evidence.summary)
 
 
 class OverrideDirTest(unittest.TestCase):

@@ -12,6 +12,7 @@ from launcher.errors import LlmctlError, PreflightError, UsageError
 from launcher.hfcache import hf_home
 from launcher.host import RealHost
 from launcher.model import HostEnv
+from launcher.opencode_config import current_default
 from launcher.runtimes import ADAPTERS
 from launcher.smoke import smoke
 
@@ -42,6 +43,8 @@ def build_parser() -> argparse.ArgumentParser:
     up.add_argument("--runtime")
     up.add_argument("--replace", action="store_true", help="stop the model server that is running first")
     up.add_argument("--dry-run", action="store_true", help="print the docker command and start nothing")
+    up.add_argument("--set-opencode-default", action="store_true",
+                    help="once the server is ready, make it OpenCode's default model (or set LLMCTL_SET_OPENCODE_DEFAULT=1)")
     sub.add_parser("status", help="the model server llmctl started, and its health")
     logs = sub.add_parser("logs", help="the model server's log")
     logs.add_argument("-f", "--follow", action="store_true")
@@ -58,11 +61,30 @@ def _table(rows: list[tuple[str, ...]]) -> str:
     return "\n".join("  ".join(cell.ljust(widths[i]) for i, cell in enumerate(row)).rstrip() for row in rows) + "\n"
 
 
+def _status(host, recipe, entry, running) -> str:
+    """'-', 'running', 'starting', 'running (older file)', or '?' when Docker did not answer."""
+    if running is None:
+        return "?"
+    container = running.get((recipe.runtime, recipe.id))
+    if container is None:
+        return "-"
+    if container.labels.get(LABEL_PREFIX + "sha256") != recipe.source.sha256:
+        return "running (older file)"
+    return "running" if ADAPTERS[recipe.runtime].ready(host, entry.runtime, recipe) else "starting"
+
+
 def _list(host, catalog, runtime_name) -> int:
     if runtime_name is not None and runtime_name not in ADAPTERS:
         raise UsageError(f"unknown runtime '{runtime_name}'; choose {' or '.join(ADAPTERS)}")
     home = hf_home(host.env)
-    rows = [("ID", "RUNTIME", "ALIASES", "EVIDENCE", "CONTEXT", "GPU", "RAM GiB", "SIZE GB", "FILES", "IMAGE", "SOURCE")]
+    try:
+        containers = [c for c in docker_state.managed(host) if c.state == "running"]
+        running = {(c.labels.get(LABEL_PREFIX + "runtime"), c.labels.get(LABEL_PREFIX + "recipe")): c for c in containers}
+        docker_problem = None
+    except PreflightError as exc:
+        containers, running, docker_problem = [], None, str(exc)
+    rows = [("ID", "RUNTIME", "STATUS", "ALIASES", "EVIDENCE", "TOK/S", "CONTEXT", "GPU", "RAM GiB", "SIZE GB",
+             "FILES", "IMAGE", "SOURCE")]
     problems = []
     for name, entry in catalog.runtimes.items():
         if runtime_name and name != runtime_name:
@@ -75,11 +97,22 @@ def _list(host, catalog, runtime_name) -> int:
             gpu = adapter.gpu_need_text(recipe, entry.runtime) if entry.runtime else "?"
             ram = f"{recipe.needs_ram_gib:g}" if recipe.needs_ram_gib else "-"
             files = "no" if adapter.file_problems(recipe, home) else "yes"
-            rows.append((recipe.id, name, ",".join(recipe.aliases) or "-", recipe.evidence.kind, str(recipe.context),
-                         gpu, ram, f"{recipe.model.size_bytes / 1e9:.1f}", files, image, recipe.source.kind))
+            speed = f"{recipe.evidence.decode_tok_s:g}" if recipe.evidence.decode_tok_s else "-"
+            rows.append((recipe.id, name, _status(host, recipe, entry, running), ",".join(recipe.aliases) or "-",
+                         recipe.evidence.kind, speed, str(recipe.context), gpu, ram,
+                         f"{recipe.model.size_bytes / 1e9:.1f}", files, image, recipe.source.kind))
     host.out.write(_table(rows))
     for problem in problems:
         host.out.write(f"problem: {problem.message}\n")
+    if docker_problem:
+        host.out.write(f"Docker did not answer, so STATUS is unknown: {docker_problem}\n")
+    for container in containers:
+        runtime_label = container.labels.get(LABEL_PREFIX + "runtime", "?")
+        entry = catalog.runtimes.get(runtime_label)
+        address = f", http://127.0.0.1:{entry.runtime.host_port}/v1" if entry and entry.runtime else ""
+        host.out.write(f"running: {container.labels.get(LABEL_PREFIX + 'recipe', '?')} on {runtime_label}{address}\n")
+    _, default, problem = current_default(host.env)
+    host.out.write(f"OpenCode default: {default or problem or 'not set'}\n")
     host.out.write(f"model cache: {home}\noverrides: {override_dir(host.env)}\n")
     return 0
 
@@ -156,7 +189,9 @@ def main(argv: list[str], host=None) -> int:
         if command == "pull":
             return ops.pull(host, catalog, args.model, args.runtime, yes=args.yes, env_file=args.hf_env_file)
         if command == "up":
-            return ops.up(host, catalog, args.model, args.runtime, replace=args.replace, dry_run=args.dry_run)
+            set_default = args.set_opencode_default or host.env.get("LLMCTL_SET_OPENCODE_DEFAULT") == "1"
+            return ops.up(host, catalog, args.model, args.runtime, replace=args.replace, dry_run=args.dry_run,
+                          set_opencode_default=set_default)
         if command == "status":
             return ops.status(host, catalog)
         if command == "logs":

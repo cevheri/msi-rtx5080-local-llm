@@ -30,6 +30,7 @@ ram_gib = 31.9
 [evidence]
 kind = "measured"
 summary = "71.5 tok/s decode with 128k context and 58.6 after a 101k prompt, 15,076 MiB GPU peak, 31.9 GiB container RAM, OpenCode session passed"
+decode_tok_s = 71.5
 date = "2026-11-16"
 hardware = "MSI Raider 18 Max HX A2WI, RTX 5080 Laptop GPU 16 GB, 61 GiB RAM"
 record = "research/2026-11-16/llamacpp-qwen3-coder-next/"

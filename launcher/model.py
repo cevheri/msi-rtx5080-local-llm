@@ -19,6 +19,7 @@ class Evidence:
     hardware: str | None
     record: str | None
     doc: str | None
+    decode_tok_s: float | None = None  # measured decode speed, for list
 
 
 @dataclass(frozen=True)

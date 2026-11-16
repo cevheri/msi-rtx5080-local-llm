@@ -30,6 +30,7 @@ ram_gib = 3.0
 [evidence]
 kind = "measured"
 summary = "70.6 tok/s decode with 64k context, 13,286 MiB GPU peak; chat only: with tools enabled, the OpenCode session wrote the tool call as text"
+decode_tok_s = 70.6
 date = "2026-11-16"
 hardware = "MSI Raider 18 Max HX A2WI, RTX 5080 Laptop GPU 16 GB, 61 GiB RAM"
 record = "research/2026-11-16/llamacpp-deepseek-r1-0528-qwen3-8b/"

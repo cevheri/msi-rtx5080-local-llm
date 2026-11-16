@@ -15,9 +15,10 @@ GPU_APPS = ("nvidia-smi", "--query-compute-apps=pid,process_name,used_memory", "
 HEALTH = "http://127.0.0.1:8080/health"
 
 
-def managed_line(name, state, recipe, runtime="llamacpp", sha="ab" * 32, source="shipped"):
+def managed_line(name, state, recipe, runtime="llamacpp", sha="ab" * 32, source="shipped", runtime_sha="cd" * 32):
     labels = (f"io.llmctl.managed=true,io.llmctl.runtime={runtime},io.llmctl.recipe={recipe},"
-              f"io.llmctl.source={source},io.llmctl.sha256={sha},io.llmctl.evidence=measured")
+              f"io.llmctl.source={source},io.llmctl.sha256={sha},io.llmctl.evidence=measured,"
+              f"io.llmctl.runtime-source=shipped,io.llmctl.runtime-sha256={runtime_sha}")
     return f"{name}|id-{name}|{state}|{labels}"
 
 

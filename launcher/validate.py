@@ -97,7 +97,7 @@ def get_table(data: dict, key: str, where: str, *, required: bool = True) -> dic
     return value
 
 
-_EVIDENCE_KEYS = {"kind", "summary", "date", "hardware", "record", "doc"}
+_EVIDENCE_KEYS = {"kind", "summary", "date", "hardware", "record", "doc", "decode_tok_s"}
 
 
 def parse_evidence(data: dict, where: str) -> Evidence:
@@ -106,6 +106,8 @@ def parse_evidence(data: dict, where: str) -> Evidence:
     if kind not in ("measured", "estimate"):
         raise RecipeError(f"{where}: 'kind' must be 'measured' or 'estimate', found '{kind}'")
     measured = kind == "measured"
+    if not measured and "decode_tok_s" in data:
+        raise RecipeError(f"{where}: 'decode_tok_s' is a measurement, and an estimate may not state one")
     return Evidence(
         kind=kind,
         summary=get_str(data, "summary", where),
@@ -113,4 +115,5 @@ def parse_evidence(data: dict, where: str) -> Evidence:
         hardware=get_str(data, "hardware", where, required=measured),
         record=get_str(data, "record", where, required=measured),
         doc=get_str(data, "doc", where, required=not measured),
+        decode_tok_s=get_float(data, "decode_tok_s", where, lo=0.1, hi=10000, required=False),
     )

@@ -25,11 +25,11 @@ Checked on the reference laptop on 2026-11-16: `up qwen3.6` was ready in 9 s and
 
 | Command | What it does |
 |---|---|
-| `./llmctl list [--runtime R]` | Every recipe: ID, runtime, aliases, evidence, context, GPU need, RAM need, download size, whether the files and the image are present, and whether an override replaces it |
+| `./llmctl list [--runtime R]` | Every recipe: ID, runtime, status, aliases, evidence, measured decode speed, context, GPU need, RAM need, download size, whether the files and the image are present, and whether an override replaces it; below the table, the running server's address and OpenCode's default model |
 | `./llmctl show <model> [--runtime R]` | The effective recipe, its file and SHA-256, and the exact `docker run` command `up` would run |
 | `./llmctl show <model> --as-override` | A complete copy of the recipe, marked as an estimate, to save in the override directory and edit |
 | `./llmctl pull <model> [--runtime R] [--yes] [--hf-env-file F]` | Says how much it will download, asks, then pulls the image if it is missing and downloads the model files; without a terminal it needs `--yes` |
-| `./llmctl up <model> [--runtime R] [--replace] [--dry-run]` | Runs the checks below, starts the container, waits until the server answers, and prints the endpoint, the served name, the context, the OpenCode model and the evidence |
+| `./llmctl up <model> [--runtime R] [--replace] [--dry-run] [--set-opencode-default]` | Runs the checks below, starts the container, waits until the server answers, and prints the endpoint, the served name, the context, the OpenCode model and the evidence; with `--set-opencode-default` it also makes the model OpenCode's default |
 | `./llmctl status` | The container llmctl started: its recipe, source file and SHA-256, state, port, health, memory use and the GPU memory in use |
 | `./llmctl logs [-f] [--tail N]` | The server's log, the last 100 lines by default |
 | `./llmctl test` | Three requests against the running server: a reply, one tool call, and a decode of up to 512 tokens |
@@ -38,7 +38,17 @@ Checked on the reference laptop on 2026-11-16: `up qwen3.6` was ready in 9 s and
 
 A model is named by its recipe ID or an alias, such as `qwen3.6` for `qwen3.6-35b-a3b`.
 When a name has a recipe for both runtimes, llama.cpp is used, because it is the main runtime here; `--runtime vllm` picks vLLM.
+Running `up` for the model that is already running from the same recipe file starts nothing and prints the summary again; `--replace` restarts it.
 Run `./llmctl <command> --help` for every option.
+In `list`, STATUS is `running` for the server that answers, `starting` while it loads, `running (older file)` when it was started from an earlier version of its recipe file, and `?` when Docker did not answer.
+
+## OpenCode's default model
+
+`./llmctl up <model> --set-opencode-default` makes the model OpenCode's default once its server is ready, so a new OpenCode session opens with it and you do not need `/models`.
+Put `export LLMCTL_SET_OPENCODE_DEFAULT=1` in your shell profile to do this on every `up`.
+It changes only the top-level `"model"` line of `~/.config/opencode/opencode.json` (under `$XDG_CONFIG_HOME/opencode/` when that is set), checks that the rest of the file is unchanged, and runs `opencode reload` so an OpenCode that is already open sees the change.
+It refuses before starting anything when that file is missing, contains comments, or has no entry for the model, and it leaves the file alone when the server fails to start.
+A session that already picked a model with `/models` keeps it; new sessions use the default ([OpenCode models docs](https://opencode.ai/docs/models/)).
 
 ## What llmctl enforces
 
@@ -76,6 +86,7 @@ A llama.cpp recipe has these keys:
 | `[needs] gpu_mib`, `ram_gib` | The GPU memory the server used at its measured peak, and the container's measured RAM peak (optional) |
 | `[evidence] kind`, `summary` | `measured` or `estimate`, and one sentence on what was measured |
 | `[evidence] date`, `hardware`, `record` | For a measured recipe: when, on what, and the record folder under `research/` |
+| `[evidence] decode_tok_s` | For a measured recipe: the decode speed it measured, which `list` shows; the summary must state the same number, and an estimate may not state one |
 | `[evidence] doc` | For an estimate: the document it comes from |
 
 A vLLM recipe differs in three places: `[model]` has `include` and `exclude` patterns and a `served_name` instead of `files`; `args` are the flags after the model; and `[needs]` has only `ram_gib`, because the GPU need is the `--gpu-memory-utilization` share of the memory CUDA can use, which is vLLM's own start check.

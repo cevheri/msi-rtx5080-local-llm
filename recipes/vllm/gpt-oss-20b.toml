@@ -29,6 +29,7 @@ args = [
 [evidence]
 kind = "measured"
 summary = "83.5 tok/s decode in eager mode with 64k context, 15,698 MiB GPU memory, OpenCode session passed"
+decode_tok_s = 83.5
 date = "2026-11-16"
 hardware = "MSI Raider 18 Max HX A2WI, RTX 5080 Laptop GPU 16 GB, 61 GiB RAM"
 record = "research/2026-11-16/vllm-gpt-oss-20b/"

@@ -94,6 +94,22 @@ class EvidenceTest(unittest.TestCase):
         self.assertEqual((evidence.kind, evidence.record, evidence.doc), ("measured", "r/", None))
 
 
+class DecodeSpeedTest(unittest.TestCase):
+    base = {"kind": "measured", "summary": "s", "date": "2026-11-16", "hardware": "h", "record": "r/"}
+
+    def test_speed_is_optional_and_bounded(self):
+        self.assertIsNone(parse_evidence(dict(self.base), "w").decode_tok_s)
+        self.assertEqual(parse_evidence(dict(self.base, decode_tok_s=122.5), "w").decode_tok_s, 122.5)
+        for bad in ("fast", 0, 100000):
+            with self.assertRaises(RecipeError):
+                parse_evidence(dict(self.base, decode_tok_s=bad), "w")
+
+    def test_estimate_may_not_state_a_speed(self):
+        with self.assertRaises(RecipeError) as ctx:
+            parse_evidence({"kind": "estimate", "summary": "s", "doc": "d", "decode_tok_s": 90}, "w")
+        self.assertIn("decode_tok_s", str(ctx.exception))
+
+
 class ReadTomlTest(unittest.TestCase):
     def test_toml_syntax_error_names_file(self):
         with tempfile.TemporaryDirectory() as tmp:

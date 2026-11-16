@@ -13,7 +13,7 @@
  "--label",
  "io.llmctl.source=shipped",
  "--label",
- "io.llmctl.sha256=81c224a6cdf395a8e638a99dd09dd85566aaf5ddcd2ffdb752b5f200e775e053",
+ "io.llmctl.sha256=878d2c7d6d616a2a3fb94d46362d17a6dfda4950b12e6ba0aac43fe7ff0ae19a",
  "--label",
  "io.llmctl.evidence=measured",
  "--label",

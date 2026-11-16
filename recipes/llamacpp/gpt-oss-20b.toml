@@ -27,7 +27,8 @@ gpu_mib = 13296
 
 [evidence]
 kind = "measured"
-summary = "166 tok/s decode with 128k context, 13,408 MiB GPU peak, OpenCode session passed with a test entry; the run used -hf, and this revision is the only snapshot in the cache, downloaded on 2026-11-15 before the run"
+summary = "166.2 tok/s decode with 128k context, 13,408 MiB GPU peak, OpenCode session passed with a test entry; the run used -hf, and this revision is the only snapshot in the cache, downloaded on 2026-11-15 before the run"
+decode_tok_s = 166.2
 date = "2026-11-16"
 hardware = "MSI Raider 18 Max HX A2WI, RTX 5080 Laptop GPU 16 GB, 61 GiB RAM"
 record = "research/2026-11-16/llamacpp-gpt-oss-20b/"

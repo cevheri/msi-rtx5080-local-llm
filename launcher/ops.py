@@ -10,6 +10,7 @@ from launcher.gpu import gpu_info
 from launcher.hfcache import hf_home, read_auth
 from launcher.lock import hold_lock
 from launcher.model import HostEnv
+from launcher.opencode_config import apply_default, plan_default
 from launcher.preflight import check_containers, check_port, check_resources, check_static
 from launcher.runtimes import ADAPTERS
 
@@ -35,8 +36,44 @@ def _wait_ready(host, recipe, runtime, adapter) -> None:
         host.sleep(1)
 
 
-def up(host, catalog, name: str, runtime_name: str | None, *, replace: bool, dry_run: bool) -> int:
+def _same_recipe(running, recipe, runtime) -> bool:
+    """True when the one server running was started from this very recipe and runtime file."""
+    if len(running) != 1:
+        return False
+    labels = running[0].labels
+    return (labels.get(LABEL_PREFIX + "runtime") == recipe.runtime and labels.get(LABEL_PREFIX + "recipe") == recipe.id
+            and labels.get(LABEL_PREFIX + "sha256") == recipe.source.sha256
+            and labels.get(LABEL_PREFIX + "runtime-sha256") == runtime.source.sha256)
+
+
+def _start(host, recipe, runtime, adapter, argv, running, replace) -> None:
+    out = host.out
+    if running and not replace:
+        names = ", ".join(describe(container) for container in running)
+        raise PreflightError(f"another model server is running: {names}; stop it with ./llmctl down, "
+                             "or start this one with --replace")
+    for container in running:
+        out.write(f"stopping {describe(container)}\n")
+        docker_state.stop(host, container.name)
+    check_port(host, runtime)
+    existing = docker_state.by_name(host, runtime.container_name)
+    if existing is not None:
+        out.write(f"removing the stopped container '{existing.name}' from an earlier llmctl run\n")
+        docker_state.remove(host, existing.name)
+    check_resources(host, recipe, runtime, adapter)
+    result = host.run(argv)
+    if result.returncode != 0:
+        raise StartError(f"docker run failed: {(result.stderr or result.stdout).strip()}")
+
+
+def up(host, catalog, name: str, runtime_name: str | None, *, replace: bool, dry_run: bool,
+       set_opencode_default: bool = False) -> int:
     recipe, runtime = resolve(catalog, name, runtime_name)
+    plan = None
+    if set_opencode_default:
+        if not recipe.opencode:
+            raise UsageError(f"{recipe.id} has no OpenCode entry, so OpenCode's default cannot point at it")
+        plan = plan_default(host.env, f"{runtime.opencode_provider}/{recipe.id}")
     adapter = ADAPTERS[recipe.runtime]
     home = hf_home(host.env)
     uid, gid = host.uid_gid()
@@ -52,26 +89,16 @@ def up(host, catalog, name: str, runtime_name: str | None, *, replace: bool, dry
         out.write("warning: this recipe was never run on the reference laptop; it may not start or fit\n")
     if dry_run:
         out.write(shlex.join(argv) + "\n")
+        if plan is not None:
+            out.write(f"would set OpenCode's default model: {plan.previous} -> {plan.model} ({plan.path})\n")
         return 0
     with hold_lock(host.env):
         check_static(host, recipe, runtime, adapter, home)
         running = check_containers(host, runtime)
-        if running and not replace:
-            names = ", ".join(describe(container) for container in running)
-            raise PreflightError(f"another model server is running: {names}; stop it with ./llmctl down, "
-                                 "or start this one with --replace")
-        for container in running:
-            out.write(f"stopping {describe(container)}\n")
-            docker_state.stop(host, container.name)
-        check_port(host, runtime)
-        existing = docker_state.by_name(host, runtime.container_name)
-        if existing is not None:
-            out.write(f"removing the stopped container '{existing.name}' from an earlier llmctl run\n")
-            docker_state.remove(host, existing.name)
-        check_resources(host, recipe, runtime, adapter)
-        result = host.run(argv)
-        if result.returncode != 0:
-            raise StartError(f"docker run failed: {(result.stderr or result.stdout).strip()}")
+        if _same_recipe(running, recipe, runtime) and not replace:
+            out.write(f"{recipe.id} is already running from this recipe file; nothing to start\n")
+        else:
+            _start(host, recipe, runtime, adapter, argv, running, replace)
         try:
             _wait_ready(host, recipe, runtime, adapter)
         except KeyboardInterrupt:
@@ -88,11 +115,25 @@ def up(host, catalog, name: str, runtime_name: str | None, *, replace: bool, dry
         out.write("OpenCode: no OpenCode entry for this recipe in docs/opencode.md\n")
     if recipe.chat_only:
         out.write("note: chat only, no tool calling\n")
+    if plan is not None:
+        _set_opencode_default(host, plan)
     evidence = recipe.evidence
     where = f"{evidence.date}, {evidence.record}" if evidence.kind == "measured" else evidence.doc
     out.write(f"evidence: {evidence.summary} ({where})\n")
     out.write("stop with ./llmctl down\n")
     return 0
+
+
+def _set_opencode_default(host, plan) -> None:
+    if plan.new_text is None:
+        host.out.write(f"OpenCode default model is already {plan.model}\n")
+        return
+    apply_default(plan)
+    host.out.write(f"OpenCode default model: {plan.previous} -> {plan.model} ({plan.path})\n")
+    if host.run(["opencode", "reload"]).returncode == 0:
+        host.out.write("OpenCode reloaded its configuration; new sessions open with this model\n")
+    else:
+        host.out.write("note: run `opencode reload`, or restart OpenCode, so an OpenCode that is already open sees it\n")
 
 
 def down(host, *, remove: bool) -> int:
