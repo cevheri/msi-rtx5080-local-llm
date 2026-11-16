@@ -1,0 +1,51 @@
+#!/bin/bash
+# Run a command against the owner's real ~/.hermes layout without being able to change it:
+#  - $HOME is an empty tmpfs; the real ~/.hermes is mounted back as an overlayfs whose
+#    lower layer is the real directory (never written by overlayfs) and whose upper layer is
+#    $S/ovl/<name>/upper, so every write Hermes makes lands in scratch and can be inspected there
+#  - .env, auth.json and gateway.sock are replaced by an empty read-only file (no secrets readable,
+#    no gateway reachable)
+#  - /run/user/1000 (systemd user bus) is an empty tmpfs and the Docker socket is /dev/null
+#  - private network namespace (loopback only), private PID namespace, cleared environment
+# HXO_DROP_SOCK=1: instead of masking gateway.sock, delete it inside the overlay (a whiteout in the
+#   upper layer) before the command starts, so a sandboxed host gateway can create its own socket.
+#   The real socket is never reachable: it is hidden before any process in the sandbox runs.
+# usage: hxo <overlay-name> <HERMES_HOME or ""> <workdir> <command...>
+set -euo pipefail
+S=$SCRATCH/clients/research-hermes
+O="$1"; shift
+H="$1"; shift
+W="$1"; shift
+U="$S/ovl/$O/upper"; K="$S/ovl/$O/work"
+mkdir -p "$U" "$K"
+home_env=()
+if [ -n "$H" ]; then home_env=(--setenv HERMES_HOME "$H"); fi
+sock_args=(--ro-bind "$S/masks/empty" $HOME/.hermes/gateway.sock)
+pre=()
+if [ "${HXO_DROP_SOCK:-0}" = 1 ]; then
+  sock_args=()
+  pre=(/bin/bash -c 'rm -f $HOME/.hermes/gateway.sock && [ ! -e $HOME/.hermes/gateway.sock ] && exec "$@"' hxo-drop-sock)
+fi
+exec bwrap \
+  --ro-bind / / \
+  --dev /dev --proc /proc \
+  --tmpfs $HOME \
+  --overlay-src $HOME/.hermes --overlay "$U" "$K" $HOME/.hermes \
+  --ro-bind "$S/masks/empty" $HOME/.hermes/.env \
+  --ro-bind "$S/masks/empty" $HOME/.hermes/auth.json \
+  "${sock_args[@]}" \
+  --ro-bind $HOME/.local/bin/hermes $HOME/.local/bin/hermes \
+  --tmpfs /run/user/1000 \
+  --ro-bind /dev/null /run/docker.sock \
+  --bind "$S" "$S" \
+  --unshare-net --unshare-pid --die-with-parent \
+  --clearenv \
+  --setenv HOME $HOME \
+  --setenv USER "$USER" \
+  --setenv LOGNAME "$USER" \
+  --setenv PATH $HOME/.local/bin:/usr/local/bin:/usr/bin:/bin \
+  --setenv LANG C.UTF-8 \
+  --setenv TERM dumb \
+  "${home_env[@]}" \
+  --chdir "$W" \
+  -- "${pre[@]}" "$@"

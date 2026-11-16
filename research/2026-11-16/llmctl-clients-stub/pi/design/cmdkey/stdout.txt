@@ -1,0 +1,2 @@
+provider  model  context  max-out  thinking  images
+llmctl    local  131.1K   16.4K    yes       no    

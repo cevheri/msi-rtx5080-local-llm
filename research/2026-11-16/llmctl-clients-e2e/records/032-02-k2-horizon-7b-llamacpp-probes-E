@@ -1,0 +1,23 @@
+{
+  "request": {
+    "model": "local",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Reply with exactly the word OK."
+      }
+    ],
+    "max_tokens": 256,
+    "chat_template_kwargs": {
+      "tool_call_format": "xml"
+    }
+  },
+  "status": 200,
+  "reply": "{\"choices\":[{\"finish_reason\":\"stop\",\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"OK\",\"reasoning_content\":\"1.  **Analyze the Request:** The user wants me to reply with exactly the word \\\"OK\\\".\\n2.  **Identify the Constraint:** The word \\\"exactly\\\" is key. It means no extra punctuation, no capitalization issues (though \\\"OK\\\" is usually capitalized), no surrounding text, no code blocks, nothing but \\\"OK\\\".\\n3.  **Formulate the Output:** The output should be just the string \\\"OK\\\".\\n4.  **Final Verification:** Does the proposed output meet the request perfectly? Yes. It is exactly the word \\\"OK\\\".\"}}],\"created\":1794853782,\"model\":\"local\",\"system_fingerprint\":\"b12407-e574a17b0\",\"object\":\"chat.completion\",\"usage\":{\"completion_tokens\":117,\"prompt_tokens\":17,\"total_tokens\":134,\"prompt_tokens_details\":{\"cached_tokens\":16}},\"id\":\"chatcmpl-Q7c9QsjgSvPsHedocDGiXaaJvBtYyQjI\",\"timings\":{\"cache_n\":16,\"prompt_n\":1,\"prompt_ms\":14.847,\"prompt_per_token_ms\":14.847,\"prompt_per_second\":67.3536741429245,\"predicted_n\":117,\"predicted_ms\":1707.752,\"predicted_per_token_ms\":14.722,\"predicted_per_second\":67.9255535932618}}",
+  "record": {
+    "probe": "E",
+    "status": 200,
+    "content": true,
+    "reasoning": true
+  }
+}

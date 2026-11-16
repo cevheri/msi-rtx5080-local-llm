@@ -1,0 +1,6 @@
+d 4096 agent
+f 2 agent/auth.json
+f 880 agent/models.json
+f 2 agent/models-store.json
+d 4096 home
+d 4096 work

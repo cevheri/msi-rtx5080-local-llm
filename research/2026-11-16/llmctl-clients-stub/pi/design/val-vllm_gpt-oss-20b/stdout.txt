@@ -1,0 +1,2 @@
+provider  model        context  max-out  thinking  images
+llmctl    gpt-oss-20b  65.5K    16.4K    yes       no    

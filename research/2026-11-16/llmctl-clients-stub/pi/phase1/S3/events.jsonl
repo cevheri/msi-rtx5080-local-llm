@@ -1,0 +1,53 @@
+{"type": "session"}
+{"type": "agent_start"}
+{"type": "turn_start"}
+{"type": "message_start", "message.role": "system"}
+{"type": "message_end", "message.role": "system"}
+{"type": "message_start", "message.role": "user"}
+{"type": "message_end", "message.role": "user"}
+{"type": "message_start", "message.role": "assistant", "message.provider": "my-other", "message.model": "other-model", "message.stopReason": "pending"}
+{"type": "message_update"}
+{"type": "message_update"}
+{"type": "message_update"}
+{"type": "message_update"}
+{"type": "message_update"}
+{"type": "message_update"}
+{"type": "message_update"}
+{"type": "message_update"}
+{"type": "message_update"}
+{"type": "message_end", "message.role": "assistant", "message.provider": "my-other", "message.model": "other-model", "message.stopReason": "toolUse"}
+{"type": "tool_execution_start", "toolName": "write"}
+{"type": "tool_execution_end", "toolName": "write", "isError": false}
+{"type": "message_start", "message.role": "toolResult"}
+{"type": "message_end", "message.role": "toolResult"}
+{"type": "turn_end", "message.role": "assistant", "message.provider": "my-other", "message.model": "other-model", "message.stopReason": "toolUse"}
+{"type": "turn_start"}
+{"type": "message_start", "message.role": "assistant", "message.provider": "my-other", "message.model": "other-model", "message.stopReason": "pending"}
+{"type": "message_update"}
+{"type": "message_update"}
+{"type": "message_update"}
+{"type": "message_update"}
+{"type": "message_update"}
+{"type": "message_update"}
+{"type": "message_update"}
+{"type": "message_update"}
+{"type": "message_update"}
+{"type": "message_end", "message.role": "assistant", "message.provider": "my-other", "message.model": "other-model", "message.stopReason": "toolUse"}
+{"type": "tool_execution_start", "toolName": "read"}
+{"type": "tool_execution_end", "toolName": "read", "isError": false}
+{"type": "message_start", "message.role": "toolResult"}
+{"type": "message_end", "message.role": "toolResult"}
+{"type": "turn_end", "message.role": "assistant", "message.provider": "my-other", "message.model": "other-model", "message.stopReason": "toolUse"}
+{"type": "turn_start"}
+{"type": "message_start", "message.role": "assistant", "message.provider": "my-other", "message.model": "other-model", "message.stopReason": "pending"}
+{"type": "message_update"}
+{"type": "message_update"}
+{"type": "message_update"}
+{"type": "message_update"}
+{"type": "message_update"}
+{"type": "message_update"}
+{"type": "message_update"}
+{"type": "message_end", "message.role": "assistant", "message.provider": "my-other", "message.model": "other-model", "message.stopReason": "stop"}
+{"type": "turn_end", "message.role": "assistant", "message.provider": "my-other", "message.model": "other-model", "message.stopReason": "stop"}
+{"type": "agent_end"}
+{"type": "agent_settled"}

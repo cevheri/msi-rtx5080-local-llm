@@ -1,0 +1,8 @@
+{
+  "command": "hermes -p llmctl config get providers --json",
+  "cwd": "$WORK/04-qwen3.6-35b-a3b-llamacpp-hermes-config-providers",
+  "exit": 0,
+  "seconds": 0.4,
+  "stdout": "{\"llmctl\": {\"name\": \"llmctl: qwen3.6-35b-a3b on llama.cpp\", \"api\": \"http://127.0.0.1:8080/v1\", \"transport\": \"chat_completions\", \"default_model\": \"local\", \"discover_models\": false, \"extra_body\": {\"max_tokens\": 16384}, \"models\": {\"local\": {\"context_length\": 131072}}}}\n",
+  "stderr": ""
+}

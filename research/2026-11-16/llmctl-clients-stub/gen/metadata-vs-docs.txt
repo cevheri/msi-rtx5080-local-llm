@@ -1,0 +1,23 @@
+llamacpp/qwen3.8-27b vs docs/opencode.md: match
+llamacpp/qwen3.6-35b-a3b vs docs/opencode.md: match
+llamacpp/gemma-4-26b-a4b vs docs/opencode.md: match
+llamacpp/nemotron-3.5-lightning vs docs/opencode.md: match
+llamacpp/groot-19b-a3b vs docs/opencode.md: match
+llamacpp/nemotron-3.5-bolt vs docs/opencode.md: match
+llamacpp/k2-horizon-mova-36b vs docs/opencode.md: match
+llamacpp/k2-horizon-7b vs docs/opencode.md: match
+llamacpp/qwen3-coder-next vs docs/opencode.md: match
+llamacpp/gpt-oss-20b: NO documented OpenCode entry (opencode=False)
+llamacpp/deepseek-r1-0528-qwen3-8b: NO documented OpenCode entry (opencode=False)
+vllm/gpt-oss-20b vs docs/opencode.md: match
+vllm/gpt-oss-20b vs vllm/models.md: match
+vllm/groot-19b-a3b vs docs/opencode.md: match
+vllm/groot-19b-a3b vs vllm/models.md: match
+vllm/k2-horizon-7b vs vllm/models.md: match
+vllm/deepseek-r1-0528-qwen3-8b vs vllm/models.md: match
+vllm/gemma-4-12b vs vllm/models.md: match
+vllm/gemma-4-e4b vs vllm/models.md: MISMATCH
+    documented {"capabilities": {"input": ["text"], "output": ["text"], "reasoning": {"supported": true}, "tools": true}, "limit": {"context": 65536, "output": 16384}, "modelID": "gemma-4-e4b"}
+    expected   {"capabilities": {"input": ["text"], "output": ["text"], "reasoning": {"supported": true}, "tools": true}, "limit": {"context": 65536, "output": 16384}, "modelID": "gemma-4-e4b", "variants": [{"body": {"chat_template_kwargs": {"enable_thinking": true}}, "id": "thinking"}, {"body": {"chat_template_kwargs": {"enable_thinking": false}}, "id": "none"}]}
+vllm/qwen3.5-9b vs vllm/models.md: match
+vllm/mellum2.1-12b vs vllm/models.md: match

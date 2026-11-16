@@ -1,0 +1,21 @@
+{
+  "request": {
+    "model": "local",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Reply with exactly the word OK."
+      }
+    ],
+    "reasoning_effort": "none",
+    "max_tokens": 256
+  },
+  "status": 200,
+  "reply": "{\"choices\":[{\"finish_reason\":\"stop\",\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"OK\",\"reasoning_content\":\"1.  **Analyze the User's Request:**\\n    *   The user wants me to \\\"Reply with exactly the word OK.\\\"\\n    *   Key constraints: \\\"exactly\\\", \\\"the word\\\", \\\"OK\\\".\\n\\n2.  **Formulate the Response:**\\n    *   The response must be \\\"OK\\\".\\n    *   I should not add any extra characters, punctuation, or words. For example, \\\"Okay.\\\" or \\\"OK!\\\" or \\\"The word is OK\\\" would violate the \\\"exactly\\\" part of the request.\\n    *   The response should be a single word.\\n\\n3.  **Final Output Generation:**\\n    *   The final output is simply \\\"OK\\\".\"}}],\"created\":1794853780,\"model\":\"local\",\"system_fingerprint\":\"b12407-e574a17b0\",\"object\":\"chat.completion\",\"usage\":{\"completion_tokens\":143,\"prompt_tokens\":17,\"total_tokens\":160,\"prompt_tokens_details\":{\"cached_tokens\":2}},\"id\":\"chatcmpl-LXWX5EVdzpoglhvLA3jk5BlA66cWRL9l\",\"timings\":{\"cache_n\":2,\"prompt_n\":15,\"prompt_ms\":19.388,\"prompt_per_token_ms\":1.2925333333333335,\"prompt_per_second\":773.6744377965751,\"predicted_n\":143,\"predicted_ms\":2091.584,\"predicted_per_token_ms\":14.729464788732393,\"predicted_per_second\":67.89112940240507}}",
+  "record": {
+    "probe": "C",
+    "status": 200,
+    "content": true,
+    "reasoning": true
+  }
+}

@@ -1,0 +1,1 @@
+hermes -p r12-baseline-for-flag -z Create hello.py that prints hello, then read it back and show its contents -t file --reasoning high

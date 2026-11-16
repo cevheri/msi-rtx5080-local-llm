@@ -1,0 +1,3 @@
+No models available. Use /login to log into a provider via OAuth or API key. See:
+  $HOME/.pi/agent/install/releases/1.5.2/node_modules/@earendil-works/pi-coding-agent/docs/providers.md
+  $HOME/.pi/agent/install/releases/1.5.2/node_modules/@earendil-works/pi-coding-agent/docs/models.md

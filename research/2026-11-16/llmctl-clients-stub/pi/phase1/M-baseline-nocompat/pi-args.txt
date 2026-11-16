@@ -1,0 +1,1 @@
+--mode json --no-session --no-approve --no-context-files --offline --tools read\,write --model llmctl/local Create\ hello.py\ containing\ print\(\'hello\'\)\,\ then\ read\ hello.py\ back\ and\ reply\ with\ its\ exact\ contents. 

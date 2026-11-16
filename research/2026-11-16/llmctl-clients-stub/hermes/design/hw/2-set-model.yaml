@@ -1,0 +1,14 @@
+# Hermes profile written by llmctl (docs/llmctl.md#hermes-agent).
+# Settings outside the llmctl block are yours and are kept; llmctl owns the keys model, providers,
+# model_overrides, gateway and platform_toolsets, so do not add them outside the block.
+_config_version: 53
+
+# >>> llmctl managed block: rewritten by llmctl on every start; edits here are lost >>>
+# qwen3.6-35b-a3b on llamacpp, recipe sha256 4beed67c1e47
+model: {"provider": "custom:llmctl", "default": "other-model"}
+providers: {"llmctl": {"name": "llmctl: qwen3.6-35b-a3b on llama.cpp", "api": "http://127.0.0.1:8080/v1", "transport": "chat_completions", "default_model": "local", "discover_models": false, "extra_body": {"max_tokens": 16384}, "models": {"local": {"context_length": 131072}}}}
+model_overrides: {"custom": {"local": {"supports_reasoning": false}}}
+gateway: {"standalone": true}
+agent:
+  reasoning_effort: low
+# <<< llmctl managed block <<<

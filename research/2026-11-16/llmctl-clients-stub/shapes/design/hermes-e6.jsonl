@@ -1,0 +1,67 @@
+{"run": "design/hz/z-bolt", "method": "POST", "path": "/v1/chat/completions", "model": "local", "keys": ["max_tokens", "messages", "model", "stream", "stream_options", "tools"], "max_tokens": 16384, "stream": true, "tools": ["patch", "read_file", "search_files", "write_file"], "authorization": "Bearer"}
+{"run": "design/hz/z-bolt", "method": "GET", "path": "/v1/models", "authorization": "Bearer"}
+{"run": "design/hz/z-bolt", "method": "GET", "path": "/v1/props", "authorization": "Bearer"}
+{"run": "design/hz/z-bolt", "method": "POST", "path": "/v1/chat/completions", "model": "local", "keys": ["max_tokens", "messages", "model", "stream", "stream_options", "tools"], "max_tokens": 16384, "stream": true, "tools": ["patch", "read_file", "search_files", "write_file"], "authorization": "Bearer"}
+{"run": "design/hz/z-bolt", "method": "POST", "path": "/v1/chat/completions", "model": "local", "keys": ["max_tokens", "messages", "model", "stream", "stream_options", "tools"], "max_tokens": 16384, "stream": true, "tools": ["patch", "read_file", "search_files", "write_file"], "authorization": "Bearer"}
+{"run": "design/hz/z-coder", "method": "POST", "path": "/v1/chat/completions", "model": "local", "keys": ["max_tokens", "messages", "model", "stream", "stream_options", "tools"], "max_tokens": 16384, "stream": true, "tools": ["patch", "read_file", "search_files", "write_file"], "authorization": "Bearer"}
+{"run": "design/hz/z-coder", "method": "GET", "path": "/v1/models", "authorization": "Bearer"}
+{"run": "design/hz/z-coder", "method": "GET", "path": "/v1/props", "authorization": "Bearer"}
+{"run": "design/hz/z-coder", "method": "POST", "path": "/v1/chat/completions", "model": "local", "keys": ["max_tokens", "messages", "model", "stream", "stream_options", "tools"], "max_tokens": 16384, "stream": true, "tools": ["patch", "read_file", "search_files", "write_file"], "authorization": "Bearer"}
+{"run": "design/hz/z-coder", "method": "POST", "path": "/v1/chat/completions", "model": "local", "keys": ["max_tokens", "messages", "model", "stream", "stream_options", "tools"], "max_tokens": 16384, "stream": true, "tools": ["patch", "read_file", "search_files", "write_file"], "authorization": "Bearer"}
+{"run": "design/hz/z-deepseek", "method": "POST", "path": "/v1/chat/completions", "model": "local", "keys": ["max_tokens", "messages", "model", "stream", "stream_options"], "max_tokens": 16384, "stream": true, "authorization": "Bearer"}
+{"run": "design/hz/z-deepseek", "method": "GET", "path": "/v1/models", "authorization": "Bearer"}
+{"run": "design/hz/z-deepseek", "method": "GET", "path": "/v1/props", "authorization": "Bearer"}
+{"run": "design/hz/z-gptoss-vllm", "method": "GET", "path": "/api/v1/models", "authorization": "Bearer"}
+{"run": "design/hz/z-gptoss-vllm", "method": "GET", "path": "/api/tags", "authorization": "Bearer"}
+{"run": "design/hz/z-gptoss-vllm", "method": "GET", "path": "/v1/props", "authorization": "Bearer"}
+{"run": "design/hz/z-gptoss-vllm", "method": "GET", "path": "/props", "authorization": "Bearer"}
+{"run": "design/hz/z-gptoss-vllm", "method": "GET", "path": "/version", "authorization": "Bearer"}
+{"run": "design/hz/z-gptoss-vllm", "method": "POST", "path": "/v1/chat/completions", "model": "gpt-oss-20b", "keys": ["max_tokens", "messages", "model", "reasoning_effort", "stream", "stream_options", "tools"], "max_tokens": 16384, "reasoning_effort": "medium", "stream": true, "tools": ["patch", "read_file", "search_files", "write_file"], "authorization": "Bearer"}
+{"run": "design/hz/z-gptoss-vllm", "method": "GET", "path": "/v1/models", "authorization": "Bearer"}
+{"run": "design/hz/z-gptoss-vllm", "method": "POST", "path": "/v1/chat/completions", "model": "gpt-oss-20b", "keys": ["max_tokens", "messages", "model", "reasoning_effort", "stream", "stream_options", "tools"], "max_tokens": 16384, "reasoning_effort": "medium", "stream": true, "tools": ["patch", "read_file", "search_files", "write_file"], "authorization": "Bearer"}
+{"run": "design/hz/z-gptoss-vllm", "method": "POST", "path": "/v1/chat/completions", "model": "gpt-oss-20b", "keys": ["max_tokens", "messages", "model", "reasoning_effort", "stream", "stream_options", "tools"], "max_tokens": 16384, "reasoning_effort": "medium", "stream": true, "tools": ["patch", "read_file", "search_files", "write_file"], "authorization": "Bearer"}
+{"run": "design/hz/z-k27b", "method": "POST", "path": "/v1/chat/completions", "model": "local", "keys": ["max_tokens", "messages", "model", "stream", "stream_options", "tools"], "max_tokens": 32768, "stream": true, "tools": ["patch", "read_file", "search_files", "write_file"], "authorization": "Bearer"}
+{"run": "design/hz/z-k27b", "method": "GET", "path": "/v1/models", "authorization": "Bearer"}
+{"run": "design/hz/z-k27b", "method": "GET", "path": "/v1/props", "authorization": "Bearer"}
+{"run": "design/hz/z-k27b", "method": "POST", "path": "/v1/chat/completions", "model": "local", "keys": ["max_tokens", "messages", "model", "stream", "stream_options", "tools"], "max_tokens": 32768, "stream": true, "tools": ["patch", "read_file", "search_files", "write_file"], "authorization": "Bearer"}
+{"run": "design/hz/z-k27b", "method": "POST", "path": "/v1/chat/completions", "model": "local", "keys": ["max_tokens", "messages", "model", "stream", "stream_options", "tools"], "max_tokens": 32768, "stream": true, "tools": ["patch", "read_file", "search_files", "write_file"], "authorization": "Bearer"}
+{"run": "design/hz/z-qwen36", "method": "GET", "path": "/api/v1/models", "authorization": "Bearer"}
+{"run": "design/hz/z-qwen36", "method": "GET", "path": "/api/tags", "authorization": "Bearer"}
+{"run": "design/hz/z-qwen36", "method": "GET", "path": "/v1/props", "authorization": "Bearer"}
+{"run": "design/hz/z-qwen36", "method": "POST", "path": "/v1/chat/completions", "model": "local", "keys": ["max_tokens", "messages", "model", "stream", "stream_options", "tools"], "max_tokens": 16384, "stream": true, "tools": ["patch", "read_file", "search_files", "write_file"], "authorization": "Bearer"}
+{"run": "design/hz/z-qwen36", "method": "GET", "path": "/v1/models", "authorization": "Bearer"}
+{"run": "design/hz/z-qwen36", "method": "GET", "path": "/v1/props", "authorization": "Bearer"}
+{"run": "design/hz/z-qwen36", "method": "POST", "path": "/v1/chat/completions", "model": "local", "keys": ["max_tokens", "messages", "model", "stream", "stream_options", "tools"], "max_tokens": 16384, "stream": true, "tools": ["patch", "read_file", "search_files", "write_file"], "authorization": "Bearer"}
+{"run": "design/hz/z-qwen36", "method": "POST", "path": "/v1/chat/completions", "model": "local", "keys": ["max_tokens", "messages", "model", "stream", "stream_options", "tools"], "max_tokens": 16384, "stream": true, "tools": ["patch", "read_file", "search_files", "write_file"], "authorization": "Bearer"}
+{"run": "design/hz/z-qwen38", "method": "POST", "path": "/v1/chat/completions", "model": "local", "keys": ["max_tokens", "messages", "model", "reasoning_effort", "stream", "stream_options", "tools"], "max_tokens": 16384, "reasoning_effort": "medium", "stream": true, "tools": ["patch", "read_file", "search_files", "write_file"], "authorization": "Bearer"}
+{"run": "design/hz/z-qwen38", "method": "GET", "path": "/v1/models", "authorization": "Bearer"}
+{"run": "design/hz/z-qwen38", "method": "GET", "path": "/v1/props", "authorization": "Bearer"}
+{"run": "design/hz/z-qwen38", "method": "POST", "path": "/v1/chat/completions", "model": "local", "keys": ["max_tokens", "messages", "model", "reasoning_effort", "stream", "stream_options", "tools"], "max_tokens": 16384, "reasoning_effort": "medium", "stream": true, "tools": ["patch", "read_file", "search_files", "write_file"], "authorization": "Bearer"}
+{"run": "design/hz/z-qwen38", "method": "POST", "path": "/v1/chat/completions", "model": "local", "keys": ["max_tokens", "messages", "model", "reasoning_effort", "stream", "stream_options", "tools"], "max_tokens": 16384, "reasoning_effort": "medium", "stream": true, "tools": ["patch", "read_file", "search_files", "write_file"], "authorization": "Bearer"}
+{"run": "design/hz2/z-qwen36-final", "method": "GET", "path": "/api/v1/models", "authorization": "Bearer"}
+{"run": "design/hz2/z-qwen36-final", "method": "GET", "path": "/api/tags", "authorization": "Bearer"}
+{"run": "design/hz2/z-qwen36-final", "method": "GET", "path": "/v1/props", "authorization": "Bearer"}
+{"run": "design/hz2/z-qwen36-final", "method": "POST", "path": "/v1/chat/completions", "model": "local", "keys": ["max_tokens", "messages", "model", "stream", "stream_options", "tools"], "max_tokens": 16384, "stream": true, "tools": ["patch", "read_file", "search_files", "write_file"], "authorization": "Bearer"}
+{"run": "design/hz2/z-qwen36-final", "method": "GET", "path": "/v1/models", "authorization": "Bearer"}
+{"run": "design/hz2/z-qwen36-final", "method": "GET", "path": "/v1/props", "authorization": "Bearer"}
+{"run": "design/hz2/z-qwen36-final", "method": "POST", "path": "/v1/chat/completions", "model": "local", "keys": ["max_tokens", "messages", "model", "stream", "stream_options", "tools"], "max_tokens": 16384, "stream": true, "tools": ["patch", "read_file", "search_files", "write_file"], "authorization": "Bearer"}
+{"run": "design/hz2/z-qwen36-final", "method": "POST", "path": "/v1/chat/completions", "model": "local", "keys": ["max_tokens", "messages", "model", "stream", "stream_options", "tools"], "max_tokens": 16384, "stream": true, "tools": ["patch", "read_file", "search_files", "write_file"], "authorization": "Bearer"}
+{"run": "design/hq/q-k27b", "method": "POST", "path": "/v1/chat/completions", "model": "local", "keys": ["max_tokens", "messages", "model", "stream", "stream_options", "tools"], "max_tokens": 32768, "stream": true, "tools": ["patch", "read_file", "search_files", "write_file"], "authorization": "Bearer"}
+{"run": "design/hq/q-k27b", "method": "GET", "path": "/v1/models", "authorization": "Bearer"}
+{"run": "design/hq/q-k27b", "method": "GET", "path": "/v1/props", "authorization": "Bearer"}
+{"run": "design/hq/q-k27b", "method": "POST", "path": "/v1/chat/completions", "model": "local", "keys": ["max_tokens", "messages", "model", "stream", "stream_options", "tools"], "max_tokens": 32768, "stream": true, "tools": ["patch", "read_file", "search_files", "write_file"], "authorization": "Bearer"}
+{"run": "design/hq/q-k27b", "method": "POST", "path": "/v1/chat/completions", "model": "local", "keys": ["max_tokens", "messages", "model", "stream", "stream_options", "tools"], "max_tokens": 32768, "stream": true, "tools": ["patch", "read_file", "search_files", "write_file"], "authorization": "Bearer"}
+{"run": "design/hq/q-k27b", "method": "POST", "path": "/v1/chat/completions", "model": "local", "keys": ["max_tokens", "messages", "model", "reasoning_effort", "response_format"], "max_tokens": 32768, "reasoning_effort": "none", "response_format_type": "json_schema", "authorization": "Bearer"}
+{"run": "design/hq/q-k27b", "method": "GET", "path": "/v1/models"}
+{"run": "design/hq/q-k27b", "method": "GET", "path": "/v1/props"}
+{"run": "design/hq/q-qwen36", "method": "GET", "path": "/api/v1/models", "authorization": "Bearer"}
+{"run": "design/hq/q-qwen36", "method": "GET", "path": "/api/tags", "authorization": "Bearer"}
+{"run": "design/hq/q-qwen36", "method": "GET", "path": "/v1/props", "authorization": "Bearer"}
+{"run": "design/hq/q-qwen36", "method": "POST", "path": "/v1/chat/completions", "model": "local", "keys": ["max_tokens", "messages", "model", "stream", "stream_options", "tools"], "max_tokens": 16384, "stream": true, "tools": ["patch", "read_file", "search_files", "write_file"], "authorization": "Bearer"}
+{"run": "design/hq/q-qwen36", "method": "GET", "path": "/v1/models", "authorization": "Bearer"}
+{"run": "design/hq/q-qwen36", "method": "GET", "path": "/v1/props", "authorization": "Bearer"}
+{"run": "design/hq/q-qwen36", "method": "POST", "path": "/v1/chat/completions", "model": "local", "keys": ["max_tokens", "messages", "model", "stream", "stream_options", "tools"], "max_tokens": 16384, "stream": true, "tools": ["patch", "read_file", "search_files", "write_file"], "authorization": "Bearer"}
+{"run": "design/hq/q-qwen36", "method": "POST", "path": "/v1/chat/completions", "model": "local", "keys": ["max_tokens", "messages", "model", "stream", "stream_options", "tools"], "max_tokens": 16384, "stream": true, "tools": ["patch", "read_file", "search_files", "write_file"], "authorization": "Bearer"}
+{"run": "design/hq/q-qwen36", "method": "POST", "path": "/v1/chat/completions", "model": "local", "keys": ["max_tokens", "messages", "model", "reasoning_effort", "response_format"], "max_tokens": 16384, "reasoning_effort": "none", "response_format_type": "json_schema", "authorization": "Bearer"}
+{"run": "design/hq/q-qwen36", "method": "GET", "path": "/v1/models"}
+{"run": "design/hq/q-qwen36", "method": "GET", "path": "/v1/props"}

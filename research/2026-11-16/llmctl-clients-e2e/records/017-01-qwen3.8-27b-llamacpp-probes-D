@@ -1,0 +1,20 @@
+{
+  "request": {
+    "model": "qwen3.8-27b",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Reply with exactly the word OK."
+      }
+    ],
+    "max_tokens": 256
+  },
+  "status": 200,
+  "reply": "{\"choices\":[{\"finish_reason\":\"stop\",\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"OK\",\"reasoning_content\":\"The user wants me to reply with exactly the word \\\"OK\\\". This is a simple request. I should respond with just \\\"OK\\\" and nothing else.\"}}],\"created\":1794853731,\"model\":\"local\",\"system_fingerprint\":\"b12407-e574a17b0\",\"object\":\"chat.completion\",\"usage\":{\"completion_tokens\":36,\"prompt_tokens\":17,\"total_tokens\":53,\"prompt_tokens_details\":{\"cached_tokens\":0}},\"id\":\"chatcmpl-USQdvjCGetz93zGdrLtdyvpx3e6bxkPW\",\"timings\":{\"cache_n\":0,\"prompt_n\":17,\"prompt_ms\":96.297,\"prompt_per_token_ms\":5.664529411764706,\"prompt_per_second\":176.53717145913163,\"predicted_n\":36,\"predicted_ms\":952.928,\"predicted_per_token_ms\":27.226514285714284,\"predicted_per_second\":36.728902918163804}}",
+  "record": {
+    "probe": "D",
+    "status": 200,
+    "content": true,
+    "reasoning": true
+  }
+}

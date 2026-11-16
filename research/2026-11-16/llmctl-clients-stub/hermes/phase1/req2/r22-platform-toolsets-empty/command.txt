@@ -1,0 +1,1 @@
+hermes -p r22-platform-toolsets-empty -z Create hello.py that prints hello, then read it back and show its contents

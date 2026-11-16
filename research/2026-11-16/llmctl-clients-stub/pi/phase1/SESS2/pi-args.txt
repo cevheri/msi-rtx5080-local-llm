@@ -1,0 +1,1 @@
+--mode json --no-approve --no-context-files --offline --tools read\,write --continue Second\ prompt\ after\ the\ switch\ to\ vLLM. 

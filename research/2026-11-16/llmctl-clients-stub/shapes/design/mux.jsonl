@@ -1,0 +1,6 @@
+{"run": "design/mux", "method": "GET", "path": "/api/v1/models", "authorization": "Bearer"}
+{"run": "design/mux", "method": "GET", "path": "/api/tags", "authorization": "Bearer"}
+{"run": "design/mux", "method": "GET", "path": "/v1/props", "authorization": "Bearer"}
+{"run": "design/mux", "method": "POST", "path": "/v1/chat/completions", "model": "local", "keys": ["max_tokens", "messages", "model", "stream", "stream_options", "tools"], "max_tokens": 16384, "stream": true, "tools": ["browser_exec", "delegate_task", "execute_code", "manage_connections", "memory", "patch", "read_file", "search_files", "skill_manage", "skill_view", "skills_list", "terminal", "text_to_speech", "vision_analyze", "web_extract", "web_search", "write_file", "tool_search", "tool_describe", "tool_call"], "authorization": "Bearer"}
+{"run": "design/mux", "method": "GET", "path": "/v1/models", "authorization": "Bearer"}
+{"run": "design/mux", "method": "GET", "path": "/v1/props", "authorization": "Bearer"}

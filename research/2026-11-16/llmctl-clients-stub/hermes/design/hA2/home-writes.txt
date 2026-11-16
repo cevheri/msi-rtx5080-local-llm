@@ -1,0 +1,5 @@
+$HOME/.local
+$HOME/.local/bin
+$HOME/.local/bin/hermes
+$HOME/.local/bin/hermes-acp
+$HOME/.local/bin/hermes-agent

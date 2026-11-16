@@ -1,0 +1,8 @@
+{
+  "command": "./llmctl up qwen3.6-35b-a3b --set-default",
+  "cwd": "$HOME/projects/llm",
+  "exit": 0,
+  "seconds": 0.9,
+  "stdout": "qwen3.6-35b-a3b on llamacpp: shipped recipe, measured\nclients: opencode, hermes, pi\nqwen3.6-35b-a3b is already running from this recipe file; nothing to start\nwaiting for qwen3.6-35b-a3b to load (up to 300 s)\nready: http://127.0.0.1:8080/v1, served as 'local', context 131072, output 16384\nwrote $HOME/.pi/agent/settings.json: defaultProvider llmctl (was absent); defaultModel local (was absent)\nran hermes profile use llmctl: plain hermes commands, hermes gateway and hermes config included, now use the profile llmctl; switch back with hermes profile use default\nHermes default profile: default -> llmctl\nOpenCode: llamacpp-docker/qwen3.6-35b-a3b, the default\n  in the OpenCode screen: type /models (or press ctrl+x m) and pick it\n  for a single prompt: opencode run --model llamacpp-docker/qwen3.6-35b-a3b \"your prompt\"\n  thinking: off; add #thinking to the model to turn it on\nHermes: profile llmctl, the default\n  hermes -p llmctl\n  thinking: off, as the server sets it\nPi: llmctl/local, the default\n  pi --model llmctl/local\n  thinking: off; --thinking medium turns it on\nevidence: 122.5 tok/s decode with 128k context, 15,190 MiB GPU peak, OpenCode session passed (2026-11-16, research/2026-11-16/llamacpp-qwen3.6-35b-a3b/)\nstop with ./llmctl down\n",
+  "stderr": ""
+}

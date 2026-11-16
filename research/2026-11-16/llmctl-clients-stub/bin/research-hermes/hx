@@ -1,0 +1,46 @@
+#!/bin/bash
+# Run a command in a sandbox that cannot touch the owner's Hermes state:
+#  - the whole filesystem is read-only, except the scratch folder
+#  - $HOME is an empty tmpfs; only the Hermes code, its bundled tools and the
+#    launcher are bound back in, read-only (no real config.yaml, .env, auth.json, gateway socket)
+#  - private network namespace (loopback only: no internet, no host ports) and private PID namespace
+#  - environment cleared; only a minimal set of variables is passed
+# usage: hx <hermes_home> <workdir> <command...>
+# HX_REAL_HOME=1 shows the real $HOME read-only instead of the tmpfs, with .env, auth.json
+# and gateway.sock replaced by /dev/null (diagnostic runs only).
+set -euo pipefail
+S=$SCRATCH/clients/research-hermes
+H="$1"; shift
+W="$1"; shift
+home_args=(
+  --tmpfs $HOME
+  --ro-bind $HOME/.hermes/hermes-agent $HOME/.hermes/hermes-agent
+  --ro-bind $HOME/.hermes/tools $HOME/.hermes/tools
+  --ro-bind $HOME/.hermes/installs $HOME/.hermes/installs
+  --ro-bind $HOME/.local/bin/hermes $HOME/.local/bin/hermes
+)
+if [ "${HX_REAL_HOME:-0}" = 1 ]; then
+  home_args=(
+    --ro-bind "$S/masks/empty" $HOME/.hermes/.env
+    --ro-bind "$S/masks/empty" $HOME/.hermes/auth.json
+    --ro-bind "$S/masks/empty" $HOME/.hermes/gateway.sock
+  )
+fi
+exec bwrap \
+  --ro-bind / / \
+  --dev /dev --proc /proc \
+  "${home_args[@]}" \
+  --bind "$S" "$S" \
+  --unshare-net --unshare-pid --die-with-parent \
+  --clearenv \
+  --setenv HOME $HOME \
+  --setenv USER "$USER" \
+  --setenv LOGNAME "$USER" \
+  --setenv PATH $HOME/.local/bin:/usr/local/bin:/usr/bin:/bin \
+  --setenv LANG C.UTF-8 \
+  --setenv TERM dumb \
+  --setenv TMPDIR "$S/tmp" \
+  --setenv HERMES_HOME "$H" \
+  ${HX_EXTRA_ENV:+--setenv ${HX_EXTRA_ENV%%=*} ${HX_EXTRA_ENV#*=}} \
+  --chdir "$W" \
+  -- "$@"

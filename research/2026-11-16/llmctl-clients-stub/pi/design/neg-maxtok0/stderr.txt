@@ -1,0 +1,5 @@
+Warning: errors loading models.json:
+Invalid models.json schema:
+  - providers.llmctl.models.0.maxTokens: must be > 0
+
+File: $SCRATCH/clients/design/pi/runs/neg-maxtok0/agent/models.json

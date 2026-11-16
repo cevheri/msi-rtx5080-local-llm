@@ -1,0 +1,18 @@
+### profile use lc
+Switched to: lc
+rc=0
+active_profile=lc
+### plain config get (no -p, HERMES_HOME unset)
+custom:llmctl
+$HOME/.hermes/profiles/lc/config.yaml
+### HERMES_HOME=$HOME/.hermes explicit
+$HOME/.hermes/profiles/lc/config.yaml
+### as supervised child (HERMES_SUPERVISED_CHILD=1, like the gateway unit)
+$HOME/.hermes/config.yaml
+### -p default
+$HOME/.hermes/config.yaml
+### profile use default
+Switched to: default (~/.hermes)
+rc=0
+ls: cannot access '$HOME/.hermes/active_profile': No such file or directory
+$HOME/.hermes/config.yaml

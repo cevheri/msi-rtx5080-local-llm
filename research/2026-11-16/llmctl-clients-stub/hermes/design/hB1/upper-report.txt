@@ -1,0 +1,12 @@
+MODIFIED: 5
+  cache/scratch/.last_prune (0 B)
+  installs/bee28312d1f6279b/.install.lock (0 B)
+  installs/bee28312d1f6279b/pm-runtime/.prepare.lock (0 B)
+  logs/agent.log (274589 B)
+  logs/errors.log (989 B)
+DELETED: 2
+  installs/bee28312d1f6279b/pm-runtime/generations/a281eed4ab28452592c36f92f19dda45/.leases/7537226a7cc1442c8fdee8c19bb4e9d9 (0 B)
+  installs/bee28312d1f6279b/environments/34040ee59aff49e98fa9d162649cd4ce/.leases/2e008857d23b47e1a43ce2d76078e2d2 (0 B)
+NEW: 2
+  active_profile (7 B)
+  profiles/llmctl/config.yaml (886 B)

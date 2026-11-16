@@ -1,0 +1,65 @@
+{
+  "request": {
+    "model": "local",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Create a file named hello.py containing a function add(a, b) that returns a + b, and a main block that prints add(2, 3). Then read the file back and tell me how many lines it has. Do not run any shell commands."
+      },
+      {
+        "role": "assistant",
+        "content": "",
+        "reasoning": "I will write the file.",
+        "reasoning_content": "I will write the file.",
+        "tool_calls": [
+          {
+            "id": "call_1",
+            "type": "function",
+            "function": {
+              "name": "write",
+              "arguments": "{\"path\": \"hello.py\", \"content\": \"print(1)\\n\"}"
+            }
+          }
+        ]
+      },
+      {
+        "role": "tool",
+        "tool_call_id": "call_1",
+        "content": "ok"
+      }
+    ],
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "write",
+          "description": "Write content to a file.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string"
+              },
+              "content": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "path",
+              "content"
+            ]
+          }
+        }
+      }
+    ],
+    "max_tokens": 256
+  },
+  "status": 200,
+  "reply": "{\"choices\":[{\"finish_reason\":\"tool_calls\",\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"I made a mistake with the content. Let me correct that.\",\"reasoning_content\":\"Wait, that's not the right content. I made a mistake. Let me write the correct file content.\",\"tool_calls\":[{\"type\":\"function\",\"function\":{\"name\":\"write\",\"arguments\":\"{\\\"path\\\":\\\"hello.py\\\",\\\"content\\\":\\\"def add(a, b):\\\\n    return a + b\\\\n\\\\nif __name__ == \\\\\\\"__main__\\\\\\\":\\\\n    print(add(2, 3))\\\\n\\\"}\"},\"id\":\"S4WHlkhUdSiGoUoqk6vxh2QcavUPfbyu\"}]}}],\"created\":1794853730,\"model\":\"local\",\"system_fingerprint\":\"b12407-e574a17b0\",\"object\":\"chat.completion\",\"usage\":{\"completion_tokens\":108,\"prompt_tokens\":398,\"total_tokens\":506,\"prompt_tokens_details\":{\"cached_tokens\":0}},\"id\":\"chatcmpl-9L0zWg9orYCd43lc466j31soDPPOLeMc\",\"timings\":{\"cache_n\":0,\"prompt_n\":398,\"prompt_ms\":399.956,\"prompt_per_token_ms\":1.0049145728643216,\"prompt_per_second\":995.1094620408244,\"predicted_n\":108,\"predicted_ms\":2940.351,\"predicted_per_token_ms\":27.479915887850467,\"predicted_per_second\":36.39021327725839}}",
+  "record": {
+    "probe": "B",
+    "status": 200,
+    "content": true,
+    "reasoning": true
+  }
+}

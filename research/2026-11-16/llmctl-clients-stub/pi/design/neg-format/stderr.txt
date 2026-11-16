@@ -1,0 +1,12 @@
+Warning: errors loading models.json:
+Invalid models.json schema:
+  - providers.llmctl.models.0.compat.thinkingFormat: must be equal to constant
+  - providers.llmctl.models.0.compat.thinkingFormat: must be equal to constant
+  - providers.llmctl.models.0.compat.thinkingFormat: must be equal to constant
+  - providers.llmctl.models.0.compat.thinkingFormat: must be equal to constant
+  - providers.llmctl.models.0.compat.thinkingFormat: must be equal to constant
+  - providers.llmctl.models.0.compat.thinkingFormat: must be equal to constant
+  - providers.llmctl.models.0.compat.thinkingFormat: must be equal to constant
+  - providers.llmctl.models.0.compat.thinkingFormat: must be equal to constant
+
+File: $SCRATCH/clients/design/pi/runs/neg-format/agent/models.json

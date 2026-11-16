@@ -1,0 +1,8 @@
+{
+  "command": "opencode --version",
+  "cwd": "$HOME/projects/llm",
+  "exit": 0,
+  "seconds": 0.0,
+  "stdout": "opencode v2.3.0\n",
+  "stderr": ""
+}

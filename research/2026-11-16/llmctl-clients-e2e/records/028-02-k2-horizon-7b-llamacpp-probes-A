@@ -1,0 +1,42 @@
+{
+  "request": {
+    "model": "local",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a short title for a chat about adding two numbers in Python."
+      }
+    ],
+    "reasoning_effort": "none",
+    "response_format": {
+      "type": "json_schema",
+      "json_schema": {
+        "name": "session_title",
+        "strict": true,
+        "schema": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "title"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "max_tokens": 32768,
+    "stream": false
+  },
+  "status": 200,
+  "reply": "{\"choices\":[{\"finish_reason\":\"stop\",\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{ \\\"title\\\": \\\"Adding Two Numbers in Python\\\" }\",\"reasoning_content\":\"Thinking Process:\\n\\n1.  **Analyze the Request:**\\n    *   Task: Write a short title for a chat about adding two numbers in Python.\\n    *   Role: Student solver (not a tutor/grader).\\n    *   Constraints: Concise, hidden reasoning, visible student answer/attempt, no meta-commentary on instructions.\\n\\n2.  **Determine the Content:**\\n    *   Topic: Adding two numbers.\\n    *   Language: Python.\\n    *   Tone: Short, conversational (since it's a \\\"chat\\\" title).\\n\\n3.  **Brainstorm Titles:**\\n    *   Adding Numbers in Python\\n    *   Python Addition 101\\n    *   Adding Two Numbers in Python\\n    *   Simple Python Math\\n    *   Code Chat: Add Two Numbers\\n\\n4.  **Select the Best Option:**\\n    *   \\\"Adding Two Numbers in Python\\\" is clear, descriptive, and fits the \\\"short title\\\" requirement.\\n    *   \\\"Python Addition 101\\\" is catchy but slightly less specific.\\n    *   Let's go with a straightforward, student-like title.\\n\\n5.  **Format Output:**\\n    *   Provide the title clearly.\\n    *   Keep it brief.\\n\\n6.  **Final Polish:**\\n    *   Title: \\\"Adding Two Numbers in Python\\\"\\n\\n7.  **Check Constraints:**\\n    *   Did I act like a student solver? Yes, providing a direct answer.\\n    *   Is reasoning hidden? Yes.\\n    *   Is there a visible answer? Yes.\\n\\n8.  **Construct Final Output:**\\n    *   \\\"Adding Two Numbers in Python\\\"\"}}],\"created\":1794853776,\"model\":\"local\",\"system_fingerprint\":\"b12407-e574a17b0\",\"object\":\"chat.completion\",\"usage\":{\"completion_tokens\":349,\"prompt_tokens\":24,\"total_tokens\":373,\"prompt_tokens_details\":{\"cached_tokens\":2}},\"id\":\"chatcmpl-ppoA0fiJgvS8ArtUFQa4HaUDGnvz0I7G\",\"timings\":{\"cache_n\":2,\"prompt_n\":22,\"prompt_ms\":16.057,\"prompt_per_token_ms\":0.7298636363636363,\"prompt_per_second\":1370.1189512362212,\"predicted_n\":349,\"predicted_ms\":5173.507,\"predicted_per_token_ms\":14.866399425287355,\"predicted_per_second\":67.26578315251145}}",
+  "record": {
+    "probe": "A",
+    "status": 200,
+    "content": true,
+    "reasoning": true,
+    "title_ok": true
+  }
+}

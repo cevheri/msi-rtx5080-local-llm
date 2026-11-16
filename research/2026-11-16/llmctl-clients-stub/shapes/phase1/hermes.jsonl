@@ -1,0 +1,66 @@
+{"run": "phase1/req2/r02-mo-full", "method": "GET", "path": "/api/v1/models", "authorization": "Bearer"}
+{"run": "phase1/req2/r02-mo-full", "method": "GET", "path": "/api/tags", "authorization": "Bearer"}
+{"run": "phase1/req2/r02-mo-full", "method": "GET", "path": "/v1/props", "authorization": "Bearer"}
+{"run": "phase1/req2/r02-mo-full", "method": "POST", "path": "/v1/chat/completions", "model": "local", "keys": ["messages", "model", "reasoning_effort", "stream", "stream_options", "tools"], "reasoning_effort": "medium", "stream": true, "tools": ["patch", "read_file", "search_files", "write_file"], "authorization": "Bearer"}
+{"run": "phase1/req2/r02-mo-full", "method": "GET", "path": "/v1/models", "authorization": "Bearer"}
+{"run": "phase1/req2/r02-mo-full", "method": "GET", "path": "/v1/props", "authorization": "Bearer"}
+{"run": "phase1/req2/r02-mo-full", "method": "POST", "path": "/v1/chat/completions", "model": "local", "keys": ["messages", "model", "reasoning_effort", "stream", "stream_options", "tools"], "reasoning_effort": "medium", "stream": true, "tools": ["patch", "read_file", "search_files", "write_file"], "authorization": "Bearer"}
+{"run": "phase1/req2/r02-mo-full", "method": "POST", "path": "/v1/chat/completions", "model": "local", "keys": ["messages", "model", "reasoning_effort", "stream", "stream_options", "tools"], "reasoning_effort": "medium", "stream": true, "tools": ["patch", "read_file", "search_files", "write_file"], "authorization": "Bearer"}
+{"run": "phase1/req2/r03-mo-bare", "method": "GET", "path": "/api/v1/models", "authorization": "Bearer"}
+{"run": "phase1/req2/r03-mo-bare", "method": "GET", "path": "/api/tags", "authorization": "Bearer"}
+{"run": "phase1/req2/r03-mo-bare", "method": "GET", "path": "/v1/props", "authorization": "Bearer"}
+{"run": "phase1/req2/r03-mo-bare", "method": "POST", "path": "/v1/chat/completions", "model": "local", "keys": ["messages", "model", "stream", "stream_options", "tools"], "stream": true, "tools": ["patch", "read_file", "search_files", "write_file"], "authorization": "Bearer"}
+{"run": "phase1/req2/r03-mo-bare", "method": "GET", "path": "/v1/models", "authorization": "Bearer"}
+{"run": "phase1/req2/r03-mo-bare", "method": "GET", "path": "/v1/props", "authorization": "Bearer"}
+{"run": "phase1/req2/r03-mo-bare", "method": "POST", "path": "/v1/chat/completions", "model": "local", "keys": ["messages", "model", "stream", "stream_options", "tools"], "stream": true, "tools": ["patch", "read_file", "search_files", "write_file"], "authorization": "Bearer"}
+{"run": "phase1/req2/r03-mo-bare", "method": "POST", "path": "/v1/chat/completions", "model": "local", "keys": ["messages", "model", "stream", "stream_options", "tools"], "stream": true, "tools": ["patch", "read_file", "search_files", "write_file"], "authorization": "Bearer"}
+{"run": "phase1/req2/r04-mo-bare-effort-medium", "method": "GET", "path": "/api/v1/models", "authorization": "Bearer"}
+{"run": "phase1/req2/r04-mo-bare-effort-medium", "method": "GET", "path": "/api/tags", "authorization": "Bearer"}
+{"run": "phase1/req2/r04-mo-bare-effort-medium", "method": "GET", "path": "/v1/props", "authorization": "Bearer"}
+{"run": "phase1/req2/r04-mo-bare-effort-medium", "method": "POST", "path": "/v1/chat/completions", "model": "local", "keys": ["messages", "model", "reasoning_effort", "stream", "stream_options", "tools"], "reasoning_effort": "medium", "stream": true, "tools": ["patch", "read_file", "search_files", "write_file"], "authorization": "Bearer"}
+{"run": "phase1/req2/r04-mo-bare-effort-medium", "method": "GET", "path": "/v1/models", "authorization": "Bearer"}
+{"run": "phase1/req2/r04-mo-bare-effort-medium", "method": "GET", "path": "/v1/props", "authorization": "Bearer"}
+{"run": "phase1/req2/r04-mo-bare-effort-medium", "method": "POST", "path": "/v1/chat/completions", "model": "local", "keys": ["messages", "model", "reasoning_effort", "stream", "stream_options", "tools"], "reasoning_effort": "medium", "stream": true, "tools": ["patch", "read_file", "search_files", "write_file"], "authorization": "Bearer"}
+{"run": "phase1/req2/r04-mo-bare-effort-medium", "method": "POST", "path": "/v1/chat/completions", "model": "local", "keys": ["messages", "model", "reasoning_effort", "stream", "stream_options", "tools"], "reasoning_effort": "medium", "stream": true, "tools": ["patch", "read_file", "search_files", "write_file"], "authorization": "Bearer"}
+{"run": "phase1/req2/r12-baseline-for-flag", "method": "GET", "path": "/api/v1/models", "authorization": "Bearer"}
+{"run": "phase1/req2/r12-baseline-for-flag", "method": "GET", "path": "/api/tags", "authorization": "Bearer"}
+{"run": "phase1/req2/r12-baseline-for-flag", "method": "GET", "path": "/v1/props", "authorization": "Bearer"}
+{"run": "phase1/req2/r12-baseline-for-flag", "method": "POST", "path": "/v1/chat/completions", "model": "local", "keys": ["messages", "model", "reasoning_effort", "stream", "stream_options", "tools"], "reasoning_effort": "high", "stream": true, "tools": ["patch", "read_file", "search_files", "write_file"], "authorization": "Bearer"}
+{"run": "phase1/req2/r12-baseline-for-flag", "method": "GET", "path": "/v1/models", "authorization": "Bearer"}
+{"run": "phase1/req2/r12-baseline-for-flag", "method": "GET", "path": "/v1/props", "authorization": "Bearer"}
+{"run": "phase1/req2/r12-baseline-for-flag", "method": "POST", "path": "/v1/chat/completions", "model": "local", "keys": ["messages", "model", "reasoning_effort", "stream", "stream_options", "tools"], "reasoning_effort": "high", "stream": true, "tools": ["patch", "read_file", "search_files", "write_file"], "authorization": "Bearer"}
+{"run": "phase1/req2/r12-baseline-for-flag", "method": "POST", "path": "/v1/chat/completions", "model": "local", "keys": ["messages", "model", "reasoning_effort", "stream", "stream_options", "tools"], "reasoning_effort": "high", "stream": true, "tools": ["patch", "read_file", "search_files", "write_file"], "authorization": "Bearer"}
+{"run": "phase1/req2/r13-mo-bare-for-flag", "method": "GET", "path": "/api/v1/models", "authorization": "Bearer"}
+{"run": "phase1/req2/r13-mo-bare-for-flag", "method": "GET", "path": "/api/tags", "authorization": "Bearer"}
+{"run": "phase1/req2/r13-mo-bare-for-flag", "method": "GET", "path": "/v1/props", "authorization": "Bearer"}
+{"run": "phase1/req2/r13-mo-bare-for-flag", "method": "POST", "path": "/v1/chat/completions", "model": "local", "keys": ["messages", "model", "reasoning_effort", "stream", "stream_options", "tools"], "reasoning_effort": "high", "stream": true, "tools": ["patch", "read_file", "search_files", "write_file"], "authorization": "Bearer"}
+{"run": "phase1/req2/r13-mo-bare-for-flag", "method": "GET", "path": "/v1/models", "authorization": "Bearer"}
+{"run": "phase1/req2/r13-mo-bare-for-flag", "method": "GET", "path": "/v1/props", "authorization": "Bearer"}
+{"run": "phase1/req2/r13-mo-bare-for-flag", "method": "POST", "path": "/v1/chat/completions", "model": "local", "keys": ["messages", "model", "reasoning_effort", "stream", "stream_options", "tools"], "reasoning_effort": "high", "stream": true, "tools": ["patch", "read_file", "search_files", "write_file"], "authorization": "Bearer"}
+{"run": "phase1/req2/r13-mo-bare-for-flag", "method": "POST", "path": "/v1/chat/completions", "model": "local", "keys": ["messages", "model", "reasoning_effort", "stream", "stream_options", "tools"], "reasoning_effort": "high", "stream": true, "tools": ["patch", "read_file", "search_files", "write_file"], "authorization": "Bearer"}
+{"run": "phase1/req2/r19-ctx-32k", "method": "GET", "path": "/api/v1/models", "authorization": "Bearer"}
+{"run": "phase1/req2/r19-ctx-32k", "method": "GET", "path": "/api/tags", "authorization": "Bearer"}
+{"run": "phase1/req2/r19-ctx-32k", "method": "GET", "path": "/v1/props", "authorization": "Bearer"}
+{"run": "phase1/req2/r22-platform-toolsets-empty", "method": "GET", "path": "/api/v1/models", "authorization": "Bearer"}
+{"run": "phase1/req2/r22-platform-toolsets-empty", "method": "GET", "path": "/api/tags", "authorization": "Bearer"}
+{"run": "phase1/req2/r22-platform-toolsets-empty", "method": "GET", "path": "/v1/props", "authorization": "Bearer"}
+{"run": "phase1/req2/r22-platform-toolsets-empty", "method": "POST", "path": "/v1/chat/completions", "model": "local", "keys": ["messages", "model", "reasoning_effort", "stream", "stream_options"], "reasoning_effort": "medium", "stream": true, "authorization": "Bearer"}
+{"run": "phase1/req2/r22-platform-toolsets-empty", "method": "GET", "path": "/v1/models", "authorization": "Bearer"}
+{"run": "phase1/req2/r22-platform-toolsets-empty", "method": "GET", "path": "/v1/props", "authorization": "Bearer"}
+{"run": "phase1/cfg/c2/cap8080", "method": "GET", "path": "/api/v1/models", "authorization": "Bearer"}
+{"run": "phase1/cfg/c2/cap8080", "method": "GET", "path": "/api/tags", "authorization": "Bearer"}
+{"run": "phase1/cfg/c2/cap8080", "method": "GET", "path": "/v1/props", "authorization": "Bearer"}
+{"run": "phase1/cfg/c2/cap8080", "method": "POST", "path": "/v1/chat/completions", "model": "local", "keys": ["chat_template_kwargs", "max_tokens", "messages", "model", "reasoning_effort", "stream", "stream_options", "tools"], "max_tokens": 16384, "reasoning_effort": "medium", "chat_template_kwargs": {"enable_thinking": false}, "stream": true, "tools": ["patch", "read_file", "search_files", "write_file"], "authorization": "Bearer"}
+{"run": "phase1/cfg/c2/cap8080", "method": "GET", "path": "/v1/models", "authorization": "Bearer"}
+{"run": "phase1/cfg/c2/cap8080", "method": "GET", "path": "/v1/props", "authorization": "Bearer"}
+{"run": "phase1/cfg/c2/cap8080", "method": "POST", "path": "/v1/chat/completions", "model": "local", "keys": ["chat_template_kwargs", "max_tokens", "messages", "model", "reasoning_effort", "stream", "stream_options", "tools"], "max_tokens": 16384, "reasoning_effort": "medium", "chat_template_kwargs": {"enable_thinking": false}, "stream": true, "tools": ["patch", "read_file", "search_files", "write_file"], "authorization": "Bearer"}
+{"run": "phase1/cfg/c2/cap8080", "method": "POST", "path": "/v1/chat/completions", "model": "local", "keys": ["chat_template_kwargs", "max_tokens", "messages", "model", "reasoning_effort", "stream", "stream_options", "tools"], "max_tokens": 16384, "reasoning_effort": "medium", "chat_template_kwargs": {"enable_thinking": false}, "stream": true, "tools": ["patch", "read_file", "search_files", "write_file"], "authorization": "Bearer"}
+{"run": "phase1/cfg/c2/cap8000", "method": "GET", "path": "/api/v1/models", "authorization": "Bearer"}
+{"run": "phase1/cfg/c2/cap8000", "method": "GET", "path": "/api/tags", "authorization": "Bearer"}
+{"run": "phase1/cfg/c2/cap8000", "method": "GET", "path": "/v1/props", "authorization": "Bearer"}
+{"run": "phase1/cfg/c2/cap8000", "method": "GET", "path": "/props", "authorization": "Bearer"}
+{"run": "phase1/cfg/c2/cap8000", "method": "GET", "path": "/version", "authorization": "Bearer"}
+{"run": "phase1/cfg/c2/cap8000", "method": "POST", "path": "/v1/chat/completions", "model": "gpt-oss-20b", "keys": ["max_tokens", "messages", "model", "reasoning_effort", "stream", "stream_options", "tools"], "max_tokens": 16384, "reasoning_effort": "medium", "stream": true, "tools": ["patch", "read_file", "search_files", "write_file"], "authorization": "Bearer"}
+{"run": "phase1/cfg/c2/cap8000", "method": "GET", "path": "/v1/models", "authorization": "Bearer"}
+{"run": "phase1/cfg/c2/cap8000", "method": "POST", "path": "/v1/chat/completions", "model": "gpt-oss-20b", "keys": ["max_tokens", "messages", "model", "reasoning_effort", "stream", "stream_options", "tools"], "max_tokens": 16384, "reasoning_effort": "medium", "stream": true, "tools": ["patch", "read_file", "search_files", "write_file"], "authorization": "Bearer"}
+{"run": "phase1/cfg/c2/cap8000", "method": "POST", "path": "/v1/chat/completions", "model": "gpt-oss-20b", "keys": ["max_tokens", "messages", "model", "reasoning_effort", "stream", "stream_options", "tools"], "max_tokens": 16384, "reasoning_effort": "medium", "stream": true, "tools": ["patch", "read_file", "search_files", "write_file"], "authorization": "Bearer"}

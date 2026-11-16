@@ -1,0 +1,2 @@
+Warning: errors loading models.json:
+Provider "llmctl": Provider llmctl: "baseUrl" is required when defining custom models.

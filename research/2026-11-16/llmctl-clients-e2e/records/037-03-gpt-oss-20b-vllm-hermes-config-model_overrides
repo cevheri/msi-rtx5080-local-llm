@@ -1,0 +1,8 @@
+{
+  "command": "hermes -p llmctl config get model_overrides --json",
+  "cwd": "$WORK/03-gpt-oss-20b-vllm-hermes-config-model_overrides",
+  "exit": 0,
+  "seconds": 0.4,
+  "stdout": "{}\n",
+  "stderr": ""
+}
