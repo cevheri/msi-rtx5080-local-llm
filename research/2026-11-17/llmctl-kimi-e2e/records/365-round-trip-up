@@ -1,0 +1,8 @@
+{
+  "command": "./llmctl up qwen3.6-35b-a3b --set-default",
+  "cwd": "$HOME/projects/llm",
+  "exit": 0,
+  "seconds": 2.2,
+  "stdout": "qwen3.6-35b-a3b on llamacpp: shipped recipe, measured\nclients: opencode, hermes, pi, dsh, kimi\nqwen3.6-35b-a3b is already running from this recipe file; nothing to start\nwaiting for qwen3.6-35b-a3b to load (up to 300 s)\nready: http://127.0.0.1:8080/v1, served as 'local', context 131072, output 16384\nwrote $HOME/.kimi-code/config.toml: provider llmctl and model llmctl/local for qwen3.6-35b-a3b on llama.cpp (same recipe); default_model llmctl/local (was unset)\nOpenCode: llamacpp-docker/qwen3.6-35b-a3b, the default\n  in the OpenCode screen: type /models (or press ctrl+x m) and pick it\n  for a single prompt: opencode run --model llamacpp-docker/qwen3.6-35b-a3b \"your prompt\"\n  thinking: off; add #thinking to the model to turn it on\nHermes: profile llmctl, the default\n  hermes -p llmctl\n  thinking: off, as the server sets it\nPi: llmctl/local, the default\n  pi --model llmctl/local\n  thinking: off; --thinking medium turns it on\ndsh: llmctl/local, the default in every dsh profile\n  dsh web, or for a single prompt: dsh --profile headless \"your prompt\"\n  thinking: off; choose Medium under Effort in dsh's model picker to turn it on\nKimi: llmctl/local, the default\n  kimi, or for a single prompt: kimi -p \"your prompt\"\n  thinking: off, as the server sets it\nevidence: 122.5 tok/s decode with 128k context, 15,190 MiB GPU peak, OpenCode session passed (2026-11-16, research/2026-11-16/llamacpp-qwen3.6-35b-a3b/)\nstop with ./llmctl down\n",
+  "stderr": ""
+}

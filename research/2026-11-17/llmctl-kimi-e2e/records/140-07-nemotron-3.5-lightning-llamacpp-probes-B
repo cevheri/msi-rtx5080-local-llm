@@ -1,0 +1,65 @@
+{
+  "request": {
+    "model": "local",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Create a file named hello.py containing a function add(a, b) that returns a + b, and a main block that prints add(2, 3). Then read the file back and tell me how many lines it has. Do not run any shell commands."
+      },
+      {
+        "role": "assistant",
+        "content": "",
+        "reasoning": "I will write the file.",
+        "reasoning_content": "I will write the file.",
+        "tool_calls": [
+          {
+            "id": "call_1",
+            "type": "function",
+            "function": {
+              "name": "write",
+              "arguments": "{\"path\": \"hello.py\", \"content\": \"print(1)\\n\"}"
+            }
+          }
+        ]
+      },
+      {
+        "role": "tool",
+        "tool_call_id": "call_1",
+        "content": "ok"
+      }
+    ],
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "write",
+          "description": "Write content to a file.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string"
+              },
+              "content": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "path",
+              "content"
+            ]
+          }
+        }
+      }
+    ],
+    "max_tokens": 256
+  },
+  "status": 200,
+  "reply": "{\"choices\":[{\"finish_reason\":\"tool_calls\",\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"The file has been written. Now I need to read it back to count the lines. Since I don't have a read tool, I can infer the number of lines from the content I wrote. The content I wrote was just \\\"print(1)\\\" followed by a newline, which is 1 line.\\n\\nBut wait, the user asked to create a file containing a function add(a, b) that returns a + b, and a main block that prints add(2, 3). I didn't include that; I just wrote a placeholder. I need to rewrite the file with the correct content.\\n\\nLet me rewrite the file properly.</think>\",\"tool_calls\":[{\"type\":\"function\",\"function\":{\"name\":\"write\",\"arguments\":\"{\\\"path\\\":\\\"hello.py\\\",\\\"content\\\":\\\"def add(a, b):\\\\n    return a + b\\\\n\\\\nif __name__ == \\\\\\\"__main__\\\\\\\":\\\\n    print(add(2, 3))\\\\n\\\"}\"},\"id\":\"Ovy86sqckOUvLHkYsT9UK3NsmRODtFnE\"}]}}],\"created\":1794916172,\"model\":\"local\",\"system_fingerprint\":\"b12407-e574a17b0\",\"object\":\"chat.completion\",\"usage\":{\"completion_tokens\":192,\"prompt_tokens\":404,\"total_tokens\":596,\"prompt_tokens_details\":{\"cached_tokens\":0}},\"id\":\"chatcmpl-gqIVy1BrSKDqozWZQjHEvJJFftn7hgWe\",\"timings\":{\"cache_n\":0,\"prompt_n\":404,\"prompt_ms\":322.642,\"prompt_per_token_ms\":0.7986188118811881,\"prompt_per_second\":1252.1618388182567,\"predicted_n\":192,\"predicted_ms\":1397.653,\"predicted_per_token_ms\":7.31755497382199,\"predicted_per_second\":136.65766824812738}}",
+  "record": {
+    "probe": "B",
+    "status": 200,
+    "content": true,
+    "reasoning": false
+  }
+}

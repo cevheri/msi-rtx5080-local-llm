@@ -1,0 +1,532 @@
+ 
+
+  ⠋ Preparing Kimi Code…                                                                                                                   
+
+ 
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │                                                                                                                                        │
+
+ │  ▐█▛█▛█▌  Welcome to Kimi Code!                                                                                                        │
+
+ │  ▐█████▌  Send /help for help information.                                                                                             │
+
+ │                                                                                                                                        │
+
+ │  Directory: $SCRATCH/kimi-tui-XXXXXX/work           │
+
+ │  Session:                                                                                                                              │
+
+ │  Model:     qwen3.8-27b on llama.cpp (llmctl)                                                                                          │
+
+ │  Version:   2.5.3                                                                                                                      │
+
+ │                                                                                                                                        │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ 
+
+   No session yet — one will be created on your first message.                                                                             
+
+ 
+
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ >                                                                                                                                      │
+
+ ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────���─────────╯
+
+ qwen3.8-27b on llama.cpp (llmctl) thinking: medium  …/$W/work          @: mention files | ! to run a shell command
+
+                                                                                                                        context: 0% (0/64k)
+<<<MARK start>>>
+
+ │ > R                                                                                                                                    │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ qwen3.8-27b on llama.cpp (llmctl) thinking: medium  …/$W/work                             ! to run a shell command
+ │ > Re                                                                                                                                   │
+ │ > Rep                                                                                                                                  │
+ │ > Repl                                                                                                                                 │
+ │ > Reply                                                                                                                                │
+ │ > Reply                                                                                                                                │
+ │ > Reply w                                                                                                                              │
+ │ > Reply wi                                                                                                                             │
+ │ > Reply wit                                                                                                                            │
+ │ > Reply with                                                                                                                           │
+ │ > Reply with                                                                                                                           │
+ │ > Reply with t                                                                                                                         │
+ │ > Reply with th                                                                                                                        │
+ │ > Reply with the                                                                                                                       │
+ │ > Reply with the                                                                                                                       │
+ │ > Reply with the w                                                                                                                     │
+ │ > Reply with the wo                                                                                                                    │
+ │ > Reply with the wor                                                                                                                   │
+ │ > Reply with the word                                                                                                                  │
+ │ > Reply with the word                                                                                                                  │
+ │ > Reply with the word b                                                                                                                │
+ │ > Reply with the word ba                                                                                                               │
+ │ > Reply with the word ban                                                                                                              │
+ │ > Reply with the word bana                                                                                                             │
+ │ > Reply with the word banan                                                                                                            │
+ │ > Reply with the word banana                                                                                                           │
+ │ > Reply with the word banana                                                                                                           │
+ │ > Reply with the word banana i                                                                                                         │
+ │ > Reply with the word banana in                                                                                                        │
+ │ > Reply with the word banana in                                                                                                        │
+ │ > Reply with the word banana in c                                                                                                      │
+ │ > Reply with the word banana in ca                                                                                                     │
+ │ > Reply with the word banana in cap                                                                                                    │
+ │ > Reply with the word banana in capi                                                                                                   │
+ │ > Reply with the word banana in capit                                                                                                  │
+ │ > Reply with the word banana in capita                                                                                                 │
+ │ > Reply with the word banana in capital                                                                                                │
+ │ > Reply with the word banana in capital                                                                                                │
+ │ > Reply with the word banana in capital l                                                                                              │
+ │ > Reply with the word banana in capital le                                                                                             │
+ │ > Reply with the word banana in capital let                                                                                            │
+ │ > Reply with the word banana in capital lett                                                                                           │
+ │ > Reply with the word banana in capital lette                                                                                          │
+ │ > Reply with the word banana in capital letter                                                                                         │
+ │ > Reply with the word banana in capital letters                                                                                        │
+ │ > Reply with the word banana in capital letters                                                                                        │
+ │ > Reply with the word banana in capital letters a                                                                                      │
+ │ > Reply with the word banana in capital letters an                                                                                     │
+ │ > Reply with the word banana in capital letters and                                                                                    │
+ │ > Reply with the word banana in capital letters and                                                                                    │
+ │ > Reply with the word banana in capital letters and n                                                                                  │
+ │ > Reply with the word banana in capital letters and no                                                                                 │
+ │ > Reply with the word banana in capital letters and not                                                                                │
+ │ > Reply with the word banana in capital letters and noth                                                                               │
+ │ > Reply with the word banana in capital letters and nothi                                                                              │
+ │ > Reply with the word banana in capital letters and nothin                                                                             │
+ │ > Reply with the word banana in capital letters and nothing                                                                            │
+ │ > Reply with the word banana in capital letters and nothing                                                                            │
+ │ > Reply with the word banana in capital letters and nothing e                                                                          │
+ │ > Reply with the word banana in capital letters and nothing el                                                                         │
+ │ > Reply with the word banana in capital letters and nothing els                                                                        │
+ │ > Reply with the word banana in capital letters and nothing else                                                                       │
+ │ > Reply with the word banana in capital letters and nothing else.                                                                      │
+ │ >                                                                                                                                      │
+ │  Session:   session_<id>                                                                               │
+
+ │  Model:     qwen3.8-27b on llama.cpp (llmctl)                                                                                          │
+
+ │  Version:   2.5.3                                                                                                                      │
+
+ │                                                                                                                                        │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ 
+
+   No session yet — one will be created on your first message.                                                                             
+
+ 
+
+ ❯ Reply with the word banana in capital letters and nothing else.                                                                         
+
+ 
+
+  🌑 · Tip: /sessions to browse and resume earlier sessions                                                                                
+
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ >                                                                                                                                      │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ qwen3.8-27b on llama.cpp (llmctl) thinking: medium  …/$W/work                             ! to run a shell command
+
+                                                                                                                        context: 0% (0/64k)
+  🌒 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌓 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌔 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌕 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌖 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌗 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌘 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌑 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌒 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌓 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌔 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌕 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌖 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌗 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌘 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌑 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌒 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌓 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌔 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌕 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌖 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌗 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌘 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌑 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌒 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌓 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌔 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌕 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌖 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌗 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌘 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌑 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌒 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌓 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌔 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌕 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌖 · Tip: /sessions to browse and resume earlier sessions                                                                                
+
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ >                                                                                                                                      │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ qwen3.8-27b on llama.cpp (llmctl) thinking: medium  …/$W/work        /compact compresses context when it gets long
+  🌗 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌘 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌑 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌒 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌓 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌔 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌕 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌖 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌗 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌘 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌑 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌒 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌓 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌔 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌕 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌖 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌗 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌘 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌑 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌒 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌓 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌔 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌕 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌖 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌗 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌘 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌑 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌒 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌓 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌔 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌕 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌖 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌗 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌘 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌑 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌒 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌓 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌔 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌕 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌖 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌗 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌘 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌑 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌒 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌓 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌔 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌕 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌖 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌗 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌘 · Tip: /sessions to browse and resume earlier sessions                                                                                
+  🌑 · Tip: /sessions to browse and resume earlier sessions                                                                                
+ ⠋ thinking…
+
+   The                                                                                                                                     
+
+ 
+
+  ⠋ Working… · Tip: ask Kimi to schedule tasks, e.g. "remind me at 5pm"                                                                    
+
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ >                                                                                                                                      │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ qwen3.8-27b on llama.cpp (llmctl) thinking: medium  …/$W/work        /compact compresses context when it gets long
+
+                                                                                                                        context: 0% (0/64k)
+   The user is                                                                                                                             
+ ⠙ thinking…
+
+   The user is                                                                                                                             
+
+ 
+
+  ⠙ Working… · Tip: ask Kimi to schedule tasks, e.g. "remind me at 5pm"                                                                    
+   The user is asking me                                                                                                                   
+   The user is asking me to simply                                                                                                         
+ ⠹ thinking…
+
+   The user is asking me to simply                                                                                                         
+
+ 
+
+  ⠹ Working… · Tip: ask Kimi to schedule tasks, e.g. "remind me at 5pm"                                                                    
+   The user is asking me to simply reply                                                                                                   
+  ⠸ Working… · Tip: ask Kimi to schedule tasks, e.g. "remind me at 5pm"                                                                    
+ ⠸ thinking…
+
+   The user is asking me to simply reply with the                                                                                          
+   The user is asking me to simply reply with the capitalized word                                                                         
+  ⠼ Working… · Tip: ask Kimi to schedule tasks, e.g. "remind me at 5pm"                                                                    
+ ⠼ thinking…
+   The user is asking me to simply reply with the capitalized word "                                                                       
+ ⠴ thinking…
+
+   The user is asking me to simply reply with the capitalized word "                                                                       
+
+ 
+
+  ⠴ Working… · Tip: ask Kimi to schedule tasks, e.g. "remind me at 5pm"                                                                    
+   The user is asking me to simply reply with the capitalized word "BANANA                                                                 
+   The user is asking me to simply reply with the capitalized word "BANANA" and                                                            
+ ⠦ thinking…
+
+   The user is asking me to simply reply with the capitalized word "BANANA" and                                                            
+
+ 
+
+  ⠦ Working… · Tip: ask Kimi to schedule tasks, e.g. "remind me at 5pm"                                                                    
+   The user is asking me to simply reply with the capitalized word "BANANA" and nothing else                                               
+   The user is asking me to simply reply with the capitalized word "BANANA" and nothing else. It                                           
+ ⠧ thinking…
+
+   The user is asking me to simply reply with the capitalized word "BANANA" and nothing else. It                                           
+
+ 
+
+  ⠧ Working… · Tip: ask Kimi to schedule tasks, e.g. "remind me at 5pm"                                                                    
+   The user is asking me to simply reply with the capitalized word "BANANA" and nothing else. It's                                         
+  ⠇ Working… · Tip: ask Kimi to schedule tasks, e.g. "remind me at 5pm"                                                                    
+ ⠇ thinking…
+
+   The user is asking me to simply reply with the capitalized word "BANANA" and nothing else. It's a trivial                               
+   The user is asking me to simply reply with the capitalized word "BANANA" and nothing else. It's a trivial,                              
+  ⠏ Working… · Tip: ask Kimi to schedule tasks, e.g. "remind me at 5pm"                                                                    
+ ⠏ thinking…
+   The user is asking me to simply reply with the capitalized word "BANANA" and nothing else. It's a trivial, harmless request             
+  ⠋ Working… · Tip: ask Kimi to schedule tasks, e.g. "remind me at 5pm"                                                                    
+ ⠋ thinking…
+
+   The user is asking me to simply reply with the capitalized word "BANANA" and nothing else. It's a trivial, harmless request.            
+ ⠙ thinking…
+
+   The user is asking me to simply reply with the capitalized word "BANANA" and nothing else. It's a trivial, harmless request.            
+
+ 
+
+  ⠙ Working… · Tip: ask Kimi to schedule tasks, e.g. "remind me at 5pm"                                                                    
+ ● The user is asking me to simply reply with the capitalized word "BANANA" and nothing else. It's a trivial, harmless request.            
+
+ 
+
+ ● BAN                                                                                                                                     
+
+ 
+
+  ⠙ Working… · Tip: ask Kimi to schedule tasks, e.g. "remind me at 5pm"                                                                    
+
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ >                                                                                                                                      │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ qwen3.8-27b on llama.cpp (llmctl) thinking: medium  …/$W/work        /compact compresses context when it gets long
+
+                                                                                                                        context: 0% (0/64k)
+ ● BANANA                                                                                                                                  
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ >                                                                                                                                      │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ qwen3.8-27b on llama.cpp (llmctl) thinking: medium  …/$W/work        /compact compresses context when it gets long
+
+                                                                                                                   context: 21% (13.4k/64k)
+
+
+<<<MARK answered-1>>>
+
+<<<MARK swapped>>>
+
+ │ > R                                                                                                                                    │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ qwen3.8-27b on llama.cpp (llmctl) thinking: medium  …/$W/work
+ │ > Re                                                                                                                                   │
+ │ > Rep                                                                                                                                  │
+ │ > Repl                                                                                                                                 │
+ │ > Reply                                                                                                                                │
+ │ > Reply                                                                                                                                │
+ │ > Reply w                                                                                                                              │
+ │ > Reply wi                                                                                                                             │
+ │ > Reply wit                                                                                                                            │
+ │ > Reply with                                                                                                                           │
+ │ > Reply with                                                                                                                           │
+ │ > Reply with t                                                                                                                         │
+ │ > Reply with th                                                                                                                        │
+ │ > Reply with the                                                                                                                       │
+ │ > Reply with the                                                                                                                       │
+ │ > Reply with the w                                                                                                                     │
+ │ > Reply with the wo                                                                                                                    │
+ │ > Reply with the wor                                                                                                                   │
+ │ > Reply with the word                                                                                                                  │
+ │ > Reply with the word                                                                                                                  │
+ │ > Reply with the word c                                                                                                                │
+ │ > Reply with the word ch                                                                                                               │
+ │ > Reply with the word che                                                                                                              │
+ │ > Reply with the word cher                                                                                                             │
+ │ > Reply with the word cherr                                                                                                            │
+ │ > Reply with the word cherry                                                                                                           │
+ │ > Reply with the word cherry                                                                                                           │
+ │ > Reply with the word cherry i                                                                                                         │
+ │ > Reply with the word cherry in                                                                                                        │
+ │ > Reply with the word cherry in                                                                                                        │
+ │ > Reply with the word cherry in c                                                                                                      │
+ │ > Reply with the word cherry in ca                                                                                                     │
+ │ > Reply with the word cherry in cap                                                                                                    │
+ │ > Reply with the word cherry in capi                                                                                                   │
+ │ > Reply with the word cherry in capit                                                                                                  │
+ │ > Reply with the word cherry in capita                                                                                                 │
+ │ > Reply with the word cherry in capital                                                                                                │
+ │ > Reply with the word cherry in capital                                                                                                │
+ │ > Reply with the word cherry in capital l                                                                                              │
+ │ > Reply with the word cherry in capital le                                                                                             │
+ │ > Reply with the word cherry in capital let                                                                                            │
+ │ > Reply with the word cherry in capital lett                                                                                           │
+ │ > Reply with the word cherry in capital lette                                                                                          │
+ │ > Reply with the word cherry in capital letter                                                                                         │
+ │ > Reply with the word cherry in capital letters                                                                                        │
+ │ > Reply with the word cherry in capital letters                                                                                        │
+ │ > Reply with the word cherry in capital letters a                                                                                      │
+ │ > Reply with the word cherry in capital letters an                                                                                     │
+ │ > Reply with the word cherry in capital letters and                                                                                    │
+ │ > Reply with the word cherry in capital letters and                                                                                    │
+ │ > Reply with the word cherry in capital letters and n                                                                                  │
+ │ > Reply with the word cherry in capital letters and no                                                                                 │
+ │ > Reply with the word cherry in capital letters and not                                                                                │
+ │ > Reply with the word cherry in capital letters and noth                                                                               │
+ │ > Reply with the word cherry in capital letters and nothi                                                                              │
+ │ > Reply with the word cherry in capital letters and nothin                                                                             │
+ │ > Reply with the word cherry in capital letters and nothing                                                                            │
+ │ > Reply with the word cherry in capital letters and nothing                                                                            │
+ │ > Reply with the word cherry in capital letters and nothing e                                                                          │
+ │ > Reply with the word cherry in capital letters and nothing el                                                                         │
+ │ > Reply with the word cherry in capital letters and nothing els                                                                        │
+ │ > Reply with the word cherry in capital letters and nothing else                                                                       │
+ │ > Reply with the word cherry in capital letters and nothing else.                                                                      │
+ 
+
+ ❯ Reply with the word cherry in capital letters and nothing else.                                                                         
+
+ 
+
+  🌑 · Tip: /init: generate AGENTS.md                                                                                                      
+
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ >                                                                                                                                      │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ qwen3.8-27b on llama.cpp (llmctl) thinking: medium  …/$W/work
+
+                                                                                                                   context: 21% (13.4k/64k)
+  🌒 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌓 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌔 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌕 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌖 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌗 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌘 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌑 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌒 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌓 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌔 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌕 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌖 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌗 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌘 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌑 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌒 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌓 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌔 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌕 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌖 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌗 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌘 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌑 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌒 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌓 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌔 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌕 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌖 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌗 · Tip: /init: generate AGENTS.md                                                                                                      
+
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ >                                                                                                                                      │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ qwen3.8-27b on llama.cpp (llmctl) thinking: medium  …/$W/work                                 /model: switch model
+  🌘 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌑 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌒 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌓 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌔 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌕 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌖 · Tip: /init: generate AGENTS.md                                                                                                      
+ 
+
+ ● CH                                                                                                                                      
+
+ 
+
+  ⠋ Working… · Tip: ask Kimi to schedule tasks, e.g. "remind me at 5pm"                                                                    
+
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ >                                                                                                                                      │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ qwen3.8-27b on llama.cpp (llmctl) thinking: medium  …/$W/work                                 /model: switch model
+
+                                                                                                                   context: 21% (13.4k/64k)
+ ● CHERRY                                                                                                                                  
+
+ 
+
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ >                                                                                                                                      │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ qwen3.8-27b on llama.cpp (llmctl) thinking: medium  …/$W/work                                 /model: switch model
+
+                                                                                                                  context: 10% (11.9k/128k)
+
+
+<<<MARK answered-2>>>
+
+ Press Ctrl+C again to exit                                                                                       context: 10% (11.9k/128k)
+                                                                                                                  context: 10% (11.9k/128k)
+ Shutting down… (running shutdown hooks)                                                                          context: 10% (11.9k/128k) 
+
+ Bye!
+
+ To resume this session: kimi -r session_<id>

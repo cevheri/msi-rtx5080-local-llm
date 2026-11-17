@@ -1,0 +1,35 @@
+qwen3.8-27b on llamacpp: shipped recipe, measured
+clients: opencode, hermes, pi, dsh, kimi
+stopping gpt-oss-20b in container 'vllm'
+removing the stopped container 'llamacpp' from an earlier llmctl run
+waiting for qwen3.8-27b to load (up to 300 s)
+ready: http://127.0.0.1:8080/v1, served as 'local', context 65536, output 16384
+wrote $HOME/.config/opencode/opencode.json: model llamacpp-docker/qwen3.8-27b (was vllm-docker/gpt-oss-20b); OpenCode reloaded its configuration
+wrote $HOME/.hermes/profiles/llmctl/config.yaml: llmctl block for qwen3.8-27b on llama.cpp (was gpt-oss-20b on vLLM)
+wrote $HOME/.pi/agent/models.json: provider llmctl for qwen3.8-27b on llama.cpp, model local (was gpt-oss-20b on vLLM)
+wrote $HOME/.pi/agent/settings.json: modelThinkingLevels llmctl/local medium (was absent); removed modelThinkingLevels llmctl/gpt-oss-20b; defaultModel local (was gpt-oss-20b)
+wrote $HOME/.dsh/cordis.patch.yml: llmctl rows for qwen3.8-27b on llama.cpp (was gpt-oss-20b on vLLM); dsh's default llmctl/local in every profile (was llmctl/gpt-oss-20b)
+wrote $HOME/.kimi-code/config.toml: provider llmctl and model llmctl/local for qwen3.8-27b on llama.cpp (was gpt-oss-20b on vLLM)
+OpenCode: llamacpp-docker/qwen3.8-27b, the default
+  in the OpenCode screen: type /models (or press ctrl+x m) and pick it
+  for a single prompt: opencode run --model llamacpp-docker/qwen3.8-27b "your prompt"
+  thinking: medium effort; add #<level> for another (none, low, medium)
+Hermes: profile llmctl, the default
+  hermes -p llmctl
+  thinking: medium effort; hermes --reasoning <level> for another (none, low, medium)
+Pi: llmctl/local, the default
+  pi --model llmctl/local
+  thinking: medium effort; --thinking <level> for another (off, low, medium)
+dsh: llmctl/local, the default in every dsh profile
+  dsh web, or for a single prompt: dsh --profile headless "your prompt"
+  thinking: medium effort; choose another under Effort (off, low, medium)
+  compaction: dsh compacts these sessions only after the server rejects an overlong prompt, because context 65536 minus output 16384 leaves no room for its 65,536-token headroom (docs/clients.md#context-compaction-and-timeouts)
+Kimi: llmctl/local, not the default (./llmctl up qwen3.8-27b --set-default makes it one)
+  kimi -m llmctl/local, or pick qwen3.8-27b on llama.cpp (llmctl) with /model in kimi
+  kimi -p needs Kimi's default even with -m, so for a single prompt run ./llmctl up qwen3.8-27b --set-default first
+  thinking: medium effort; /effort in kimi for another (off, low, medium)
+note: Hermes and Pi sessions that were open before keep the model they started with; start a new session
+note: dsh web uses the new rows within seconds, and its open sessions on llmctl/gpt-oss-20b fail until you pick llmctl/local; dsh headless, acp and sdk processes that are already running keep the old rows until they restart
+note: an open Kimi session on llmctl/gpt-oss-20b fails its next turn until you pick llmctl/local with /model or start a new session
+evidence: 36.4 tok/s decode with 64k context, 14,790 MiB GPU peak, OpenCode session passed (2026-11-16, research/2026-11-16/llamacpp-qwen3.8-27b/)
+stop with ./llmctl down

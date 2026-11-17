@@ -1,0 +1,20 @@
+{
+  "request": {
+    "model": "k2-horizon-7b",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Reply with exactly the word OK."
+      }
+    ],
+    "max_tokens": 256
+  },
+  "status": 200,
+  "reply": "{\"choices\":[{\"finish_reason\":\"stop\",\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"OK\",\"reasoning_content\":\"1.  **Analyze the user's request:** The user's request is \\\"Reply with exactly the word OK.\\\"\\n2.  **Identify the core constraint:** The response must be *exactly* the word \\\"OK\\\".\\n3.  **Evaluate potential responses:**\\n    *   \\\"OK\\\" -> This meets the requirement. It's the word OK.\\n    *   \\\"Okay\\\" -> This is not the *exact* word \\\"OK\\\". It fails the constraint.\\n    *   \\\"Ok\\\" -> This is case-sensitive. The user specified \\\"OK\\\" in uppercase. While \\\"Ok\\\" might be considered the same word by a human, in a strict, programmatic sense, it's different. \\\"Exactly the word OK\\\" usually implies matching the string \\\"OK\\\".\\n    *   \\\"OK.\\\" -> Adding a period makes it a sentence fragment, not \\\"exactly the word OK\\\". Fails.\\n    *   \\\"Is it OK?\\\" -> This is a question, not just the word. Fails.\\n    *   \\\"Yes, OK.\\\" -> Fails.\\n4.  **Formulate the final response:** The only correct response is the two-letter string \\\"OK\\\". No extra punctuation, no extra words, no capitalization changes.\"}}],\"created\":1794915802,\"model\":\"local\",\"system_fingerprint\":\"b12407-e574a17b0\",\"object\":\"chat.completion\",\"usage\":{\"completion_tokens\":250,\"prompt_tokens\":17,\"total_tokens\":267,\"prompt_tokens_details\":{\"cached_tokens\":16}},\"id\":\"chatcmpl-KFxjgImTSSYqptlJSB1S2pTNpFAJZXSW\",\"timings\":{\"cache_n\":16,\"prompt_n\":1,\"prompt_ms\":14.9,\"prompt_per_token_ms\":14.9,\"prompt_per_second\":67.11409395973155,\"predicted_n\":250,\"predicted_ms\":3681.051,\"predicted_per_token_ms\":14.78333734939759,\"predicted_per_second\":67.6437245775731}}",
+  "record": {
+    "probe": "D",
+    "status": 200,
+    "content": true,
+    "reasoning": true
+  }
+}

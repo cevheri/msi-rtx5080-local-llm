@@ -1,0 +1,8 @@
+{
+  "command": "dsh web --port 3182 --no-open",
+  "cwd": "$WORK/14-qwen3.5-9b-vllm-dsh-web",
+  "exit": 0,
+  "seconds": 4.6,
+  "stdout": "dsh web: <address withheld>\n",
+  "stderr": ""
+}

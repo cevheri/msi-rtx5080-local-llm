@@ -1,0 +1,386 @@
+ 
+
+  ⠋ Preparing Kimi Code…                                                                                                                   
+
+ 
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │                                                                                                                                        │
+
+ │  ▐█▛█▛█▌  Welcome to Kimi Code!                                                                                                        │
+
+ │  ▐█████▌  Send /help for help information.                                                                                             │
+
+ │                                                                                                                                        │
+
+ │  Directory: $SCRATCH/kimi-tui-XXXXXX/work           │
+
+ │  Session:                                                                                                                              │
+
+ │  Model:     gemma-4-26b-a4b on llama.cpp (llmctl)                                                                                      │
+
+ │  Version:   2.5.3                                                                                                                      │
+
+ │                                                                                                                                        │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ 
+
+   No session yet — one will be created on your first message.                                                                             
+
+ 
+
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ >                                                                                                                                      │
+
+ ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────���─────────╯
+
+ gemma-4-26b-a4b on llama.cpp (llmctl)  …/$W/work                /goal for multi-step work with a clear finish line
+
+                                                                                                                       context: 0% (0/128k)
+<<<MARK start>>>
+
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ > /                                                                                                                                    │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+ │   → yolo                   Ask When Needed mode: routine edits and commands run automatically; risky actions, questions, and plans     │
+
+ │                            still ask.                                                                                                  │
+
+ │     model                  Switch LLM model                                                                                            │
+
+ │     permission             Select permission mode                                                                                      │
+
+ │     plan                   Toggle plan mode                                                                                            │
+
+ │     settings               Open TUI settings                                                                                           │
+
+ │     (1/52)                                                                                                                             │
+
+ gemma-4-26b-a4b on llama.cpp (llmctl)  …/$W/work                /goal for multi-step work with a clear finish line
+
+                                                                                                                       context: 0% (0/128k)
+ │ > /m                                                                                                                                   │
+ │   → model                 Switch LLM model                                                                                             │
+
+ │     mcp                   Show MCP server status                                                                                       │
+
+ │     mcp-config            Configure MCP servers and handle MCP OAuth login.                                                            │
+
+ │     export-md             Export current session as a Markdown file                                                                    │
+
+ │     secondary-model       Configure the secondary model for subagents                                                                  │
+
+ │     (1/17)                                                                                                                             │
+
+ gemma-4-26b-a4b on llama.cpp (llmctl)  …/$W/work                /goal for multi-step work with a clear finish line
+
+                                                                                                                       context: 0% (0/128k)
+
+
+ │ > /mo                                                                                                                                  │
+ │     secondary-model       Configure the secondary model for subagents                                                                  │
+
+ │     mcp-config            Configure MCP servers and handle MCP OAuth login.                                                            │
+
+ │     remote-control        Open the current session through Kimi Remote Control                                                         │
+
+ │     import-sessions       Import recent Claude Code and Codex sessions                                                                 │
+
+ │     (1/8)                                                                                                                              │
+ │ > /mod                                                                                                                                 │
+ │     check-kimi-code-docs  Answer questions about the Kimi Code product using the official documentation — CLI usage,                   │
+
+ │                           configuration, slash commands, features, membership and quota, API onboarding, third-party tool setup,…      │
+
+ │     import-from-cc-codex  Import Claude Code and Codex instructions, skills, and MCP settings into Kimi Code.                          │
+
+ gemma-4-26b-a4b on llama.cpp (llmctl)  …/$W/work                /goal for multi-step work with a clear finish line
+
+                                                                                                                       context: 0% (0/128k)
+
+
+ │ > /mode                                                                                                                                │
+ │ > /model                                                                                                                               │
+ │   → model            Switch LLM model                                                                                                  │
+
+ │     secondary-model  Configure the secondary model for subagents                                                                       │
+
+ gemma-4-26b-a4b on llama.cpp (llmctl)  …/$W/work                /goal for multi-step work with a clear finish line
+
+                                                                                                                       context: 0% (0/128k)
+
+
+
+
+
+
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ >                                                                                                                                      │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ gemma-4-26b-a4b on llama.cpp (llmctl)  …/$W/work                /goal for multi-step work with a clear finish line
+
+                                                                                                                       context: 0% (0/128k)
+
+
+
+
+ ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+  Select a model  (type to search)
+
+  Tab toggle provider · ↑↓ navigate · Enter select · Alt+S session-only · Esc cancel
+
+ 
+
+   All   llmctl 
+
+ 
+
+   ❯ gemma-4-26b-a4b on llama.cpp (llmctl)  llmctl ← current
+
+ 
+
+  Thinking
+
+     On (Unsupported)   [ Off ]
+
+ 
+
+ ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+ gemma-4-26b-a4b on llama.cpp (llmctl)  …/$W/work                /goal for multi-step work with a clear finish line
+
+                                                                                                                       context: 0% (0/128k)
+<<<MARK selector>>>
+
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ >                                                                                                                                      │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ gemma-4-26b-a4b on llama.cpp (llmctl)  …/$W/work                       @: mention files | ! to run a shell command
+
+                                                                                                                       context: 0% (0/128k)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   Saved gemma-4-26b-a4b on llama.cpp (llmctl) with thinking off as default.                                                               
+
+ 
+
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ >                                                                                                                                      │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ gemma-4-26b-a4b on llama.cpp (llmctl)  …/$W/work                       @: mention files | ! to run a shell command
+
+                                                                                                                       context: 0% (0/128k)
+<<<MARK picked>>>
+
+ │ > R                                                                                                                                    │
+ │ > Re                                                                                                                                   │
+ │ > Rep                                                                                                                                  │
+ │ > Repl                                                                                                                                 │
+ │ > Reply                                                                                                                                │
+ │ > Reply                                                                                                                                │
+ │ > Reply w                                                                                                                              │
+ │ > Reply wi                                                                                                                             │
+ │ > Reply wit                                                                                                                            │
+ │ > Reply with                                                                                                                           │
+ │ > Reply with                                                                                                                           │
+ │ > Reply with t                                                                                                                         │
+ │ > Reply with th                                                                                                                        │
+ │ > Reply with the                                                                                                                       │
+ │ > Reply with the                                                                                                                       │
+ │ > Reply with the w                                                                                                                     │
+ │ > Reply with the wo                                                                                                                    │
+ │ > Reply with the wor                                                                                                                   │
+ │ > Reply with the word                                                                                                                  │
+ │ > Reply with the word                                                                                                                  │
+ │ > Reply with the word b                                                                                                                │
+ │ > Reply with the word ba                                                                                                               │
+ │ > Reply with the word ban                                                                                                              │
+ │ > Reply with the word bana                                                                                                             │
+ │ > Reply with the word banan                                                                                                            │
+ │ > Reply with the word banana                                                                                                           │
+ │ > Reply with the word banana                                                                                                           │
+ │ > Reply with the word banana i                                                                                                         │
+ │ > Reply with the word banana in                                                                                                        │
+ │ > Reply with the word banana in                                                                                                        │
+ │ > Reply with the word banana in c                                                                                                      │
+ │ > Reply with the word banana in ca                                                                                                     │
+ │ > Reply with the word banana in cap                                                                                                    │
+ │ > Reply with the word banana in capi                                                                                                   │
+ │ > Reply with the word banana in capit                                                                                                  │
+ │ > Reply with the word banana in capita                                                                                                 │
+ │ > Reply with the word banana in capital                                                                                                │
+ │ > Reply with the word banana in capital                                                                                                │
+ │ > Reply with the word banana in capital l                                                                                              │
+ │ > Reply with the word banana in capital le                                                                                             │
+ │ > Reply with the word banana in capital let                                                                                            │
+ │ > Reply with the word banana in capital lett                                                                                           │
+ │ > Reply with the word banana in capital lette                                                                                          │
+ │ > Reply with the word banana in capital letter                                                                                         │
+ │ > Reply with the word banana in capital letters                                                                                        │
+ │ > Reply with the word banana in capital letters                                                                                        │
+ │ > Reply with the word banana in capital letters a                                                                                      │
+ │ > Reply with the word banana in capital letters an                                                                                     │
+ │ > Reply with the word banana in capital letters and                                                                                    │
+ │ > Reply with the word banana in capital letters and                                                                                    │
+ │ > Reply with the word banana in capital letters and n                                                                                  │
+ │ > Reply with the word banana in capital letters and no                                                                                 │
+ │ > Reply with the word banana in capital letters and not                                                                                │
+ │ > Reply with the word banana in capital letters and noth                                                                               │
+ │ > Reply with the word banana in capital letters and nothi                                                                              │
+ │ > Reply with the word banana in capital letters and nothin                                                                             │
+ │ > Reply with the word banana in capital letters and nothing                                                                            │
+ │ > Reply with the word banana in capital letters and nothing                                                                            │
+ │ > Reply with the word banana in capital letters and nothing e                                                                          │
+ │ > Reply with the word banana in capital letters and nothing el                                                                         │
+ │ > Reply with the word banana in capital letters and nothing els                                                                        │
+ │ > Reply with the word banana in capital letters and nothing else                                                                       │
+ │ > Reply with the word banana in capital letters and nothing else.                                                                      │
+ │ >                                                                                                                                      │
+ │  Session:   session_<id>                                                                               │
+
+ │  Model:     gemma-4-26b-a4b on llama.cpp (llmctl)                                                                                      │
+
+ │  Version:   2.5.3                                                                                                                      │
+
+ │                                                                                                                                        │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ 
+
+   No session yet — one will be created on your first message.                                                                             
+
+   Saved gemma-4-26b-a4b on llama.cpp (llmctl) with thinking off as default.                                                               
+
+ 
+
+ ❯ Reply with the word banana in capital letters and nothing else.                                                                         
+
+ 
+
+  🌑 · Tip: /plugins: manage plugins — try the "Kimi Datasource" for reliable financial, economic, and academic data                       
+
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ >                                                                                                                                      │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ gemma-4-26b-a4b on llama.cpp (llmctl)  …/$W/work                       @: mention files | ! to run a shell command
+
+                                                                                                                       context: 0% (0/128k)
+  🌒 · Tip: /plugins: manage plugins — try the "Kimi Datasource" for reliable financial, economic, and academic data                       
+  🌓 · Tip: /plugins: manage plugins — try the "Kimi Datasource" for reliable financial, economic, and academic data                       
+  🌔 · Tip: /plugins: manage plugins — try the "Kimi Datasource" for reliable financial, economic, and academic data                       
+  🌕 · Tip: /plugins: manage plugins — try the "Kimi Datasource" for reliable financial, economic, and academic data                       
+  🌖 · Tip: /plugins: manage plugins — try the "Kimi Datasource" for reliable financial, economic, and academic data                       
+  🌗 · Tip: /plugins: manage plugins — try the "Kimi Datasource" for reliable financial, economic, and academic data                       
+  🌘 · Tip: /plugins: manage plugins — try the "Kimi Datasource" for reliable financial, economic, and academic data                       
+  🌑 · Tip: /plugins: manage plugins — try the "Kimi Datasource" for reliable financial, economic, and academic data                       
+  🌒 · Tip: /plugins: manage plugins — try the "Kimi Datasource" for reliable financial, economic, and academic data                       
+  🌓 · Tip: /plugins: manage plugins — try the "Kimi Datasource" for reliable financial, economic, and academic data                       
+  🌔 · Tip: /plugins: manage plugins — try the "Kimi Datasource" for reliable financial, economic, and academic data                       
+  🌕 · Tip: /plugins: manage plugins — try the "Kimi Datasource" for reliable financial, economic, and academic data                       
+  🌖 · Tip: /plugins: manage plugins — try the "Kimi Datasource" for reliable financial, economic, and academic data                       
+  🌗 · Tip: /plugins: manage plugins — try the "Kimi Datasource" for reliable financial, economic, and academic data                       
+  🌘 · Tip: /plugins: manage plugins — try the "Kimi Datasource" for reliable financial, economic, and academic data                       
+  🌑 · Tip: /plugins: manage plugins — try the "Kimi Datasource" for reliable financial, economic, and academic data                       
+  🌒 · Tip: /plugins: manage plugins — try the "Kimi Datasource" for reliable financial, economic, and academic data                       
+  🌓 · Tip: /plugins: manage plugins — try the "Kimi Datasource" for reliable financial, economic, and academic data                       
+  🌔 · Tip: /plugins: manage plugins — try the "Kimi Datasource" for reliable financial, economic, and academic data                       
+  🌕 · Tip: /plugins: manage plugins — try the "Kimi Datasource" for reliable financial, economic, and academic data                       
+  🌖 · Tip: /plugins: manage plugins — try the "Kimi Datasource" for reliable financial, economic, and academic data                       
+
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ >                                                                                                                                      │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ gemma-4-26b-a4b on llama.cpp (llmctl)  …/$W/work                                          ! to run a shell command
+  🌗 · Tip: /plugins: manage plugins — try the "Kimi Datasource" for reliable financial, economic, and academic data                       
+  🌘 · Tip: /plugins: manage plugins — try the "Kimi Datasource" for reliable financial, economic, and academic data                       
+  🌑 · Tip: /plugins: manage plugins — try the "Kimi Datasource" for reliable financial, economic, and academic data                       
+  🌒 · Tip: /plugins: manage plugins — try the "Kimi Datasource" for reliable financial, economic, and academic data                       
+  🌓 · Tip: /plugins: manage plugins — try the "Kimi Datasource" for reliable financial, economic, and academic data                       
+  🌔 · Tip: /plugins: manage plugins — try the "Kimi Datasource" for reliable financial, economic, and academic data                       
+  🌕 · Tip: /plugins: manage plugins — try the "Kimi Datasource" for reliable financial, economic, and academic data                       
+  🌖 · Tip: /plugins: manage plugins — try the "Kimi Datasource" for reliable financial, economic, and academic data                       
+  🌗 · Tip: /plugins: manage plugins — try the "Kimi Datasource" for reliable financial, economic, and academic data                       
+  🌘 · Tip: /plugins: manage plugins — try the "Kimi Datasource" for reliable financial, economic, and academic data                       
+  🌑 · Tip: /plugins: manage plugins — try the "Kimi Datasource" for reliable financial, economic, and academic data                       
+  🌒 · Tip: /plugins: manage plugins — try the "Kimi Datasource" for reliable financial, economic, and academic data                       
+  🌓 · Tip: /plugins: manage plugins — try the "Kimi Datasource" for reliable financial, economic, and academic data                       
+  🌔 · Tip: /plugins: manage plugins — try the "Kimi Datasource" for reliable financial, economic, and academic data                       
+ 
+
+ ● BAN                                                                                                                                     
+
+ 
+
+  ⠋ Working… · Tip: ! to run a shell command                                                                                               
+
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ >                                                                                                                                      │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ gemma-4-26b-a4b on llama.cpp (llmctl)  …/$W/work                                          ! to run a shell command
+
+                                                                                                                       context: 0% (0/128k)
+ ● BANANA                                                                                                                                  
+
+ 
+
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ >                                                                                                                                      │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ gemma-4-26b-a4b on llama.cpp (llmctl)  …/$W/work                                          ! to run a shell command
+
+                                                                                                                  context: 10% (11.8k/128k)
+
+
+<<<MARK answered-1>>>
+
+ Press Ctrl+C again to exit                                                                                       context: 10% (11.8k/128k)
+                                                                                                                  context: 10% (11.8k/128k)
+ Shutting down… (running shutdown hooks)                                                                          context: 10% (11.8k/128k) 
+
+ Bye!
+
+ To resume this session: kimi -r session_<id>

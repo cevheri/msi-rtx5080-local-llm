@@ -1,0 +1,20 @@
+{
+  "request": {
+    "model": "k2-horizon-mova-36b",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Reply with exactly the word OK."
+      }
+    ],
+    "max_tokens": 256
+  },
+  "status": 200,
+  "reply": "{\"choices\":[{\"finish_reason\":\"stop\",\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"OK\",\"reasoning_content\":\"User asks: \\\"Reply with exactly the word OK.\\\" Must comply. So respond with \\\"OK\\\". Ensure no extra characters.\\n\"}}],\"created\":1794916370,\"model\":\"local\",\"system_fingerprint\":\"b12407-e574a17b0\",\"object\":\"chat.completion\",\"usage\":{\"completion_tokens\":29,\"prompt_tokens\":17,\"total_tokens\":46,\"prompt_tokens_details\":{\"cached_tokens\":16}},\"id\":\"chatcmpl-kIvsbPpgWYiR8pctTEbZoPhtVSYl4n4K\",\"timings\":{\"cache_n\":16,\"prompt_n\":1,\"prompt_ms\":25.616,\"prompt_per_token_ms\":25.616,\"prompt_per_second\":39.038101186758276,\"predicted_n\":29,\"predicted_ms\":679.781,\"predicted_per_token_ms\":24.277892857142856,\"predicted_per_second\":41.18973610618715}}",
+  "record": {
+    "probe": "D",
+    "status": 200,
+    "content": true,
+    "reasoning": true
+  }
+}

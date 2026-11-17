@@ -1,0 +1,21 @@
+{
+  "request": {
+    "model": "local",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Reply with exactly the word OK."
+      }
+    ],
+    "max_tokens": 256,
+    "reasoning_effort": "low"
+  },
+  "status": 200,
+  "reply": "{\"choices\":[{\"finish_reason\":\"stop\",\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"OK\",\"reasoning_content\":\"We need to reply with exactly \\\"OK\\\".\\n\"}}],\"created\":1794916370,\"model\":\"local\",\"system_fingerprint\":\"b12407-e574a17b0\",\"object\":\"chat.completion\",\"usage\":{\"completion_tokens\":13,\"prompt_tokens\":17,\"total_tokens\":30,\"prompt_tokens_details\":{\"cached_tokens\":15}},\"id\":\"chatcmpl-2vaBGTxePPzytF1W3QC4maVdsqIZFkeS\",\"timings\":{\"cache_n\":15,\"prompt_n\":2,\"prompt_ms\":44.565,\"prompt_per_token_ms\":22.2825,\"prompt_per_second\":44.87826769886683,\"predicted_n\":13,\"predicted_ms\":288.311,\"predicted_per_token_ms\":24.025916666666664,\"predicted_per_second\":41.621720988793356}}",
+  "record": {
+    "probe": "G",
+    "status": 200,
+    "content": true,
+    "reasoning": true
+  }
+}

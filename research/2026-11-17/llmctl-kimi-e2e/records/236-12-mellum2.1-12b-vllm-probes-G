@@ -1,0 +1,21 @@
+{
+  "request": {
+    "model": "mellum2.1",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Reply with exactly the word OK."
+      }
+    ],
+    "max_tokens": 256,
+    "reasoning_effort": "low"
+  },
+  "status": 200,
+  "reply": "{\"id\":\"chatcmpl-8dd78319c5797c1e\",\"object\":\"chat.completion\",\"created\":1794916629,\"model\":\"mellum2.1\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"\\n\\nOK\",\"refusal\":null,\"annotations\":null,\"audio\":null,\"function_call\":null,\"reasoning\":\"\\nWe need to respond with exactly the word OK. No extra text. So output \\\"OK\\\".\\n\"},\"logprobs\":null,\"finish_reason\":\"stop\",\"stop_reason\":null,\"token_ids\":null,\"routed_experts\":null,\"weight_versions\":null}],\"service_tier\":null,\"system_fingerprint\":\"vllm-0.33.0-835217af\",\"usage\":{\"prompt_tokens\":15,\"total_tokens\":42,\"completion_tokens\":27,\"prompt_tokens_details\":null,\"completion_tokens_details\":{\"reasoning_tokens\":21}},\"prompt_logprobs\":null,\"prompt_token_ids\":null,\"prompt_text\":null,\"kv_transfer_params\":null,\"ec_transfer_params\":null,\"metrics\":null}",
+  "record": {
+    "probe": "G",
+    "status": 200,
+    "content": true,
+    "reasoning": true
+  }
+}

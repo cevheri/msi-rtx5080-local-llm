@@ -1,0 +1,5 @@
+3.38.962.332 I slot launch_slot_: id  0 | task 12 | processing task, is_child = 0
+3.43.012.299 I slot print_timing: id  0 | task 12 | prompt eval time =    4034.64 ms / 12109 tokens (    0.33 ms per token,  3001.26 tokens per second)
+3.43.012.301 I slot print_timing: id  0 | task 12 |        eval time =      15.30 ms /     3 tokens (    7.65 ms per token,   130.70 tokens per second)
+3.43.012.302 I slot print_timing: id  0 | task 12 |       total time =    4049.94 ms / 12112 tokens
+3.43.012.614 I slot      release: id  0 | task 12 | stop processing: n_tokens = 12111, truncated = 0

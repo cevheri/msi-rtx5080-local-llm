@@ -1,0 +1,8 @@
+{
+  "command": "dsh --profile headless --patch $WORK/05-deepseek-r1-0528-qwen3-8b-llamacpp-dsh-headless/llmctl-default.patch.yml --patch $WORK/05-deepseek-r1-0528-qwen3-8b-llamacpp-dsh-headless/llmctl-no-tools.patch.yml --json 'Say hello in one sentence.'",
+  "cwd": "$WORK/05-deepseek-r1-0528-qwen3-8b-llamacpp-dsh-headless",
+  "exit": 0,
+  "seconds": 5.0,
+  "stdout": "{\"type\":\"session\",\"sessionId\":\"session-708040b1-03c4-453d-8a99-4e05ec2734b3\",\"cwd\":\"$WORK/05-deepseek-r1-0528-qwen3-8b-llamacpp-dsh-headless\"}\n{\"type\":\"status\",\"phase\":\"turn_start\",\"turn\":1}\n{\"type\":\"status\",\"phase\":\"step_start\",\"turn\":1,\"step\":1}\n{\"type\":\"thinking\",\"text\":\"\\nWe are in a session that requires approval for certain operations. However, the user's request is to say hello in one sentence, which is a simple text output and does not require any file operation or other actions that would be subject to the DSH file policy. Therefore, we can simply respond with a greeting.\\n\\nBut note: the system reminder is just to remind about the context. We are to respond as a coding agent, but the user's request is for a greeting.\\n\\nLet's output a simple hello sentence.\\n\"}\n{\"type\":\"text\",\"text\":\"\\nHello! How can I assist you with coding today?\"}\n{\"type\":\"status\",\"phase\":\"step_end\",\"turn\":1,\"step\":1,\"usage\":{\"inputTokens\":205,\"outputTokens\":120,\"totalTokens\":326,\"cacheReadTokens\":1}}\n{\"type\":\"status\",\"phase\":\"turn_end\",\"turn\":1,\"reason\":{\"kind\":\"completed\"}}\n{\"type\":\"final\",\"sessionId\":\"session-708040b1-03c4-453d-8a99-4e05ec2734b3\",\"reason\":{\"kind\":\"completed\"},\"text\":\"\\nHello! How can I assist you with coding today?\"}\n",
+  "stderr": ""
+}

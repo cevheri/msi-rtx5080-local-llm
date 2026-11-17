@@ -1,0 +1,42 @@
+{
+  "request": {
+    "model": "deepseek-r1-8b",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a short title for a chat about adding two numbers in Python."
+      }
+    ],
+    "reasoning_effort": "none",
+    "response_format": {
+      "type": "json_schema",
+      "json_schema": {
+        "name": "session_title",
+        "strict": true,
+        "schema": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "title"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "max_tokens": 16384,
+    "stream": false
+  },
+  "status": 200,
+  "reply": "{\"id\":\"chatcmpl-8ab72ceeba193f14\",\"object\":\"chat.completion\",\"created\":1794917154,\"model\":\"deepseek-r1-8b\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"title\\\":Ġ\\\"AddingĠTwoĠNumbersĠinĠPython\\\"}\",\"refusal\":null,\"annotations\":null,\"audio\":null,\"function_call\":null,\"reasoning\":\"ĊWeĠareĠgoingĠtoĠcreateĠaĠtitleĠforĠaĠchatĠaboutĠaddingĠtwoĠnumbersĠinĠPython.ĊĠSinceĠtheĠuserĠsaidĠ\\\"WriteashorttitleforachataboutaddingtwonumbersinPython\\\",ĠIĠwillĠbreakĠitĠdownĠandĠcreateĠaĠconciseĠtitle.ĊĠLet'sĠthink:ĠtheĠtopicĠisĠaddingĠtwoĠnumbers,ĠandĠtheĠlanguageĠisĠPython.ĊĠWeĠcanĠhaveĠtitlesĠlike:ĊĠĠĠ-Ġ\\\"AddingĠTwoĠNumbersĠinĠPython\\\"ĊĠĠĠ-Ġ\\\"Python:ĠSummingĠTwoĠNumbers\\\"ĊĠĠĠ-Ġ\\\"SimpleĠAdditionĠinĠPython\\\"ĊĊĠHowever,ĠtheĠuserĠwantsĠaĠshortĠtitle.ĠLetĠmeĠchooseĠoneĠthatĠisĠbriefĠandĠclear.ĊĊĠButĠnote:ĠtheĠuserĠwroteĠtheĠrequestĠwithoutĠspacesĠinĠtheĠtitle,ĠsoĠI'llĠkeepĠtheĠtitleĠwithoutĠspacesĠasĠperĠtheĠexample?ĊĠActually,ĠtheĠexampleĠrequestĠisĠwrittenĠwithoutĠspaces,ĠbutĠtheĠtitleĠshouldĠbeĠreadable.ĠLetĠmeĠclarify:ĊĊĠTheĠuser'sĠrequest:Ġ\\\"WriteashorttitleforachataboutaddingtwonumbersinPython\\\"ĊĊĠWeĠareĠtoĠwriteĠaĠshortĠtitleĠforĠaĠchat.ĠTheĠtitleĠshouldĠbeĠaĠstringĠwithoutĠspaces?ĠOrĠwithĠspaces?ĊĊĠSinceĠtheĠuserĠwroteĠitĠwithoutĠspaces,ĠmaybeĠtheyĠwantĠtheĠtitleĠtoĠbeĠaĠcontinuousĠstring.ĊĊĠHowever,ĠletĠmeĠconsiderĠtheĠcontext:ĠaĠchatĠtitleĠisĠusuallyĠaĠstringĠthatĠmightĠhaveĠspacesĠforĠreadability.ĊĊĠButĠtheĠinstructionĠsaysĠ\\\"short\\\",ĠsoĠlet'sĠgoĠwithĠaĠshortĠandĠclearĠtitle.ĊĊĠIĠthinkĠtheĠbestĠisĠtoĠhaveĠaĠtitleĠthatĠisĠconciseĠandĠwithĠspacesĠforĠreadability.ĊĊĠAlternatively,ĠifĠtheĠuserĠintendedĠnoĠspaces,ĠweĠcanĠdoĠthatĠtoo.ĊĊĠLetĠmeĠproposeĠtwoĠoptionsĠandĠthenĠchooseĠone.ĊĊĠOptionĠ1Ġ(withĠspaces):Ġ\\\"AddingĠTwoĠNumbersĠinĠPython\\\"ĊĠOptionĠ2Ġ(withoutĠspaces):Ġ\\\"AddingtwonumbersinPython\\\"ĊĊĠSinceĠtheĠuser'sĠrequestĠisĠwrittenĠwithoutĠspaces,ĠbutĠaĠtitleĠinĠaĠchatĠmightĠbeĠbetterĠwithĠspaces,ĠI'llĠchooseĠOptionĠ1.ĊĊĠHowever,ĠtheĠuserĠmightĠhaveĠmeantĠtoĠwriteĠaĠtitleĠwithoutĠspaces.ĠButĠnote:ĠtheĠrequestĠitselfĠisĠbrokenĠintoĠwordsĠwithoutĠspaces.ĊĊĠLetĠmeĠre-read:Ġ\\\"WriteashorttitleforachataboutaddingtwonumbersinPython\\\"ĊĊĠThisĠisĠoneĠword:Ġ\\\"WriteashorttitleforachataboutaddingtwonumbersinPython\\\"ĊĊĠSo,ĠperhapsĠtheĠuserĠwantsĠaĠtitleĠwithoutĠspaces?ĠButĠthatĠmightĠbeĠhardĠtoĠread.ĊĊĠAlternatively,ĠmaybeĠtheĠuserĠwantsĠaĠtitleĠthatĠisĠaĠshortĠphraseĠwithoutĠspaces?ĠĊĊĠButĠIĠthinkĠtheĠmostĠcommonĠandĠreadableĠwayĠisĠtoĠuseĠspaces.ĊĊĠConsideringĠtheĠambiguity,ĠI'llĠwriteĠaĠtitleĠwithĠspacesĠandĠthenĠaĠversionĠwithoutĠspaces.ĊĊĠHowever,ĠtheĠinstructionĠsaysĠ\\\"Writeashorttitle\\\",ĠmeaningĠweĠshouldĠoutputĠaĠstring.ĊĊĠSinceĠtheĠuser'sĠexampleĠisĠwithoutĠspaces,ĠI'llĠassumeĠtheyĠwantĠaĠsingleĠwordĠorĠaĠcontinuousĠstring.ĊĊĠLetĠmeĠmakeĠaĠdecision:ĠI'llĠwriteĠaĠtitleĠwithĠspacesĠbecauseĠit'sĠmoreĠstandardĠandĠreadable.ĊĊĠButĠnote:ĠtheĠuserĠmightĠbeĠusingĠthisĠinĠaĠcontextĠwhereĠspacesĠareĠnotĠallowedĠ(likeĠaĠfilenameĠorĠaĠcommandĠwithoutĠspaces).ĠĊĊĠHowever,ĠtheĠproblemĠsaysĠ\\\"aĠshortĠtitleĠforĠaĠchat\\\",ĠandĠinĠmostĠchatĠplatforms,ĠtitlesĠcanĠhaveĠspaces.ĊĊĠSo,ĠIĠchoose:Ġ\\\"AddingĠTwoĠNumbersĠinĠPython\\\"ĊĊĠButĠwait,ĠtheĠuserĠmightĠwantĠsomethingĠveryĠshort.ĠLetĠmeĠconsider:ĊĊĠĠĠ-Ġ\\\"AddĠTwoĠNumbersĠinĠPython\\\"ĊĠĠĠ-Ġ\\\"PythonĠAddition\\\"ĊĊĠIĠthinkĠtheĠfirstĠoneĠisĠmoreĠspecificĠtoĠtheĠtopic.ĊĊĠAlternatively,ĠifĠweĠareĠtoĠbeĠveryĠshort,Ġ\\\"Python:ĠAddĠTwoĠNumbers\\\"ĠorĠ\\\"AddĠinĠPython\\\".ĊĊĠButĠtheĠtopicĠisĠaboutĠaddingĠtwoĠnumbers,ĠsoĠlet'sĠstickĠtoĠbeingĠspecific.ĊĊĠI'llĠgoĠwith:Ġ\\\"AddingĠTwoĠNumbersĠinĠPython\\\"ĊĊĠHowever,ĠifĠtheĠuserĠwantsĠevenĠshorter,ĠtheyĠcanĠspecify.ĊĊĠLetĠmeĠoutputĠtheĠtitleĠasĠaĠstring.Ċ\"},\"logprobs\":null,\"finish_reason\":\"stop\",\"stop_reason\":null,\"token_ids\":null,\"routed_experts\":null,\"weight_versions\":null}],\"service_tier\":null,\"system_fingerprint\":\"vllm-0.33.0-a1a729cb\",\"usage\":{\"prompt_tokens\":19,\"total_tokens\":786,\"completion_tokens\":767,\"prompt_tokens_details\":null,\"completion_tokens_details\":{\"reasoning_tokens\":754}},\"prompt_logprobs\":null,\"prompt_token_ids\":null,\"prompt_text\":null,\"kv_transfer_params\":null,\"ec_transfer_params\":null,\"metrics\":null}",
+  "record": {
+    "probe": "A",
+    "status": 200,
+    "content": true,
+    "reasoning": true,
+    "title_ok": false
+  }
+}

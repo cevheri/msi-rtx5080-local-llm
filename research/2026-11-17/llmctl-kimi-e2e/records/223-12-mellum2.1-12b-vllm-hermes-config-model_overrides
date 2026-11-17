@@ -1,0 +1,8 @@
+{
+  "command": "hermes -p llmctl config get model_overrides --json",
+  "cwd": "$WORK/12-mellum2.1-12b-vllm-hermes-config-model_overrides",
+  "exit": 0,
+  "seconds": 0.4,
+  "stdout": "{\"custom\": {\"mellum2.1\": {\"supports_reasoning\": false}}}\n",
+  "stderr": ""
+}

@@ -1,0 +1,8 @@
+{
+  "command": "hermes -p llmctl config get providers --json",
+  "cwd": "$WORK/16-gemma-4-e4b-vllm-hermes-config-providers",
+  "exit": 0,
+  "seconds": 0.4,
+  "stdout": "{\"llmctl\": {\"name\": \"llmctl: gemma-4-e4b on vLLM\", \"api\": \"http://127.0.0.1:8000/v1\", \"transport\": \"chat_completions\", \"default_model\": \"gemma-4-e4b\", \"discover_models\": false, \"extra_body\": {\"max_tokens\": 16384}, \"models\": {\"gemma-4-e4b\": {\"context_length\": 65536}}}}\n",
+  "stderr": ""
+}

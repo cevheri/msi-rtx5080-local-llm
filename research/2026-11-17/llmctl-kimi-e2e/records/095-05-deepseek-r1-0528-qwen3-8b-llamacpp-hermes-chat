@@ -1,0 +1,11 @@
+{
+  "command": "hermes -p llmctl chat -q 'Say hello in one sentence.' --format stream-json --source tool --max-turns 10",
+  "cwd": "$WORK/05-deepseek-r1-0528-qwen3-8b-llamacpp-hermes-chat",
+  "exit": 0,
+  "seconds": 12.5,
+  "stdout": "{\"type\": \"system\", \"subtype\": \"init\", \"model\": \"\", \"session_id\": \"\", \"timestamp\": 1794916022826}\n{\"type\": \"result\", \"session_id\": \"local-28ee948f96789fd0a6fb77fab7c583026506e9030b545dc8337214520ac066fb\", \"exit_code\": 0, \"text\": \"Hello.\", \"tokens\": {\"input\": 628, \"output\": 137, \"total\": 765, \"cache_read\": 558, \"cache_write\": 0}, \"duration_ms\": 12148, \"timestamp\": 1794916034975}\n",
+  "stderr": "Session: local-28ee948f96789fd0a6fb77fab7c583026506e9030b545dc8337214520ac066fb\n\nsession_id: local-28ee948f96789fd0a6fb77fab7c583026506e9030b545dc8337214520ac066fb\n",
+  "dropped_events": {
+    "text": 2
+  }
+}

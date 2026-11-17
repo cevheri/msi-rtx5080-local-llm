@@ -1,0 +1,8 @@
+{
+  "command": "opencode run --standalone --archived --auto --format json --model llamacpp-docker/deepseek-r1-0528-qwen3-8b 'Say hello in one sentence.'",
+  "cwd": "$WORK/05-deepseek-r1-0528-qwen3-8b-llamacpp-opencode",
+  "exit": 0,
+  "seconds": 10.3,
+  "stdout": "{\"type\":\"step_start\",\"timestamp\":1794916014742,\"sessionID\":\"ses_e16ab3c1cffeVoliLGnDLFyYgU\",\"part\":{\"id\":\"prt_1e954da96001HbGtfYb1dAFZOx\",\"sessionID\":\"ses_e16ab3c1cffeVoliLGnDLFyYgU\",\"messageID\":\"msg_1e954caaf001k557vdl2I6v3n0\",\"type\":\"step-start\"}}\n{\"type\":\"text\",\"timestamp\":1794916018828,\"sessionID\":\"ses_e16ab3c1cffeVoliLGnDLFyYgU\",\"part\":{\"id\":\"prt_1e954e9eb002zEpVUos2JLAlaw\",\"sessionID\":\"ses_e16ab3c1cffeVoliLGnDLFyYgU\",\"messageID\":\"msg_1e954caaf001k557vdl2I6v3n0\",\"type\":\"text\",\"text\":\"\\nHello! How can I assist you today?\",\"time\":{\"start\":1794916018667,\"end\":1794916018828}}}\n{\"type\":\"step_finish\",\"timestamp\":1794916018831,\"sessionID\":\"ses_e16ab3c1cffeVoliLGnDLFyYgU\",\"part\":{\"id\":\"prt_1e954ea8f001dbRLoA5vhajpDS\",\"sessionID\":\"ses_e16ab3c1cffeVoliLGnDLFyYgU\",\"messageID\":\"msg_1e954caaf001k557vdl2I6v3n0\",\"type\":\"step-finish\",\"reason\":\"stop\",\"cost\":0,\"tokens\":{\"input\":6239,\"output\":260,\"reasoning\":0,\"cache\":{\"read\":2,\"write\":0}}}}\n",
+  "stderr": ""
+}

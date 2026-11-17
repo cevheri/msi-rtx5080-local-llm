@@ -1,0 +1,42 @@
+{
+  "request": {
+    "model": "local",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a short title for a chat about adding two numbers in Python."
+      }
+    ],
+    "reasoning_effort": "none",
+    "response_format": {
+      "type": "json_schema",
+      "json_schema": {
+        "name": "session_title",
+        "strict": true,
+        "schema": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "title"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "max_tokens": 16384,
+    "stream": false
+  },
+  "status": 200,
+  "reply": "{\"choices\":[{\"finish_reason\":\"stop\",\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"title\\\": \\\"Python: Add Two Numbers\\\"}\",\"reasoning_content\":\"1.  **Deconstruct the Request:**\\n    *   **Core Topic:** Adding two numbers in Python.\\n    *   **Format:** Short title for a chat.\\n    *   **Implicit Need:** The title should be clear, concise, and hint at the nature of the conversation (e.g., a tutorial, a problem, a quick question).\\n\\n2.  **Brainstorming Keywords & Concepts:**\\n    *   **The action:** Adding, Sum, Calculate, Add, Python.\\n    *   **The objects:** Two Numbers, a Number, Input.\\n    *   **The language:** Python.\\n    *   **The context:** How to, Guide, Quick Tip, Tutorial, Beginner, Problem, Question, Help, Syntax.\\n    *   **Chat-specific terms:** Chat, Chat about, Quick Question.\\n\\n3.  **Categorize Potential Titles:** I'll group the ideas to ensure I cover different angles and tones.\\n\\n    *   **Very Direct & Simple (Good for quick, specific questions):**\\n        *   Python: Add Two Numbers\\n        *   Adding Two Numbers in Python\\n        *   Python Sum Calculator\\n        *   Add Numbers in Python\\n\\n    *   **Slightly More \\\"Chat-like\\\" (Implies a conversation is happening):**\\n        *   Python: How to Add Two Numbers\\n        *   Quick Python Chat: Adding Numbers\\n        *   Let's Talk: Adding in Python\\n        *   Python Addition Basics\\n\\n    *   **Beginner-Friendly:**\\n        *   Beginner Python: Addition\\n        *   Python's First Addition\\n        *   How to Add Numbers in Python (For Beginners)\\n\\n    *   **Slightly More Technical/Code-Oriented:**\\n        *   Python Addition Syntax\\n        *   The `+` Operator in Python\\n        *   Simple Python Calculator\\n\\n    *   **Question-oriented:**\\n        *   Python Addition Question\\n        *   How Do I Add Two Numbers in Python?\\n        *   Python `input()` and Addition\\n\\n4.  **Select the Best Options & Refine:** Now I'll review the brainstormed list and pick the strongest candidates for the final output. I want to provide a variety of styles.\\n\\n    *   **\\\"Python: Add Two Numbers\\\"**: Excellent. Very direct, uses a colon which is a common title convention. It's clear and concise.\\n    *   **\\\"Adding Two Numbers in Python\\\"**: Also excellent. A full sentence, very natural.\\n    *   **\\\"Python Addition Basics\\\"**: Good, implies a foundational or tutorial-style chat.\\n    *   **\\\"Quick Python Chat: Adding Numbers\\\"**: A bit more verbose, but explicitly states it's a chat. Might be too long for a *very* short title.\\n    *   **\\\"Let's Add Numbers in Python\\\"**: Friendly and conversational.\\n    *   **\\\"Python Sum Calculator\\\"**: Casts it in a slightly different light, perhaps more practical.\\n    *   **\\\"How to Add in Python\\\"**: Very direct, focuses on the \\\"how-to\\\" aspect.\\n\\n5.  **Structure the Final Answer:** I'll present the best options, categorized by the *feel* they give. This provides more value than just a single answer. I'll offer a \\\"Most Direct\\\" choice, a \\\"Conversational\\\" choice, and a \\\"Tutorial\\\" choice. This covers the likely use cases.\\n\\n    *   **Start with the most likely best answer:** \\\"Python: Add Two Numbers\\\" is a great default. It's short, clear, and standard.\\n    *   **Offer alternatives:**\\n        *   For a slightly more descriptive title: \\\"Adding Two Numbers in Python\\\"\\n        *   For a more casual/chat-like feel: \\\"Python Addition Basics\\\" or \\\"Let's Talk Python Addition\\\"\\n        *   For a question-based chat: \\\"How to Add Two Numbers in Python?\\\"\\n\\n6.  **Final Polish:** I'll re-read the original request one last time: \\\"Write a short title...\\\". My proposed options all fit this constraint. They are all short and directly related to the topic. The final selection is a good, well-reasoned set of choices. I'll present the top one first and then a few others for good measure. This is a common and effective pattern for simple request like this.\\n\"}}],\"created\":1794916365,\"model\":\"local\",\"system_fingerprint\":\"b12407-e574a17b0\",\"object\":\"chat.completion\",\"usage\":{\"completion_tokens\":896,\"prompt_tokens\":24,\"total_tokens\":920,\"prompt_tokens_details\":{\"cached_tokens\":2}},\"id\":\"chatcmpl-Uvf5a0ScJ14py2ALc40dCIpXQNyfk0CN\",\"timings\":{\"cache_n\":2,\"prompt_n\":22,\"prompt_ms\":212.955,\"prompt_per_token_ms\":9.679772727272727,\"prompt_per_second\":103.30821065483318,\"predicted_n\":896,\"predicted_ms\":22878.88,\"predicted_per_token_ms\":25.56299441340782,\"predicted_per_second\":39.119047785555935}}",
+  "record": {
+    "probe": "A",
+    "status": 200,
+    "content": true,
+    "reasoning": true,
+    "title_ok": true
+  }
+}

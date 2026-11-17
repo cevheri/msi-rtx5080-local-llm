@@ -1,0 +1,21 @@
+{
+  "request": {
+    "model": "gemma-4-12b",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Reply with exactly the word OK."
+      }
+    ],
+    "max_tokens": 256,
+    "reasoning_effort": "low"
+  },
+  "status": 200,
+  "reply": "{\"id\":\"chatcmpl-ae2967996321fdff\",\"object\":\"chat.completion\",\"created\":1794916923,\"model\":\"gemma-4-12b\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"OK\",\"refusal\":null,\"annotations\":null,\"audio\":null,\"function_call\":null,\"reasoning\":\"The user wants me to reply with exactly the word \\\"OK\\\".\\n\\n    - Prompt: \\\"Reply with exactly the word OK.\\\"\\n    - Constraints: \\\"exactly the word OK\\\".\\n    - Content: \\\"OK\\\".\\n    - Formatting: No extra punctuation, no \\\"Sure\\\", no \\\"Okay\\\", just \\\"OK\\\".\\n\\n    - Is there a hidden trick? No, it's a direct command.\\n    - Should I include a period? The prompt says \\\"exactly the word OK\\\", so \\\"OK\\\" is safer than \\\"OK.\\\".\\n\\n    - OK\"},\"logprobs\":null,\"finish_reason\":\"stop\",\"stop_reason\":106,\"token_ids\":null,\"routed_experts\":null,\"weight_versions\":null}],\"service_tier\":null,\"system_fingerprint\":\"vllm-0.33.0-b9344da9\",\"usage\":{\"prompt_tokens\":23,\"total_tokens\":145,\"completion_tokens\":122,\"prompt_tokens_details\":null,\"completion_tokens_details\":{\"reasoning_tokens\":118}},\"prompt_logprobs\":null,\"prompt_token_ids\":null,\"prompt_text\":null,\"kv_transfer_params\":null,\"ec_transfer_params\":null,\"metrics\":null}",
+  "record": {
+    "probe": "G",
+    "status": 200,
+    "content": true,
+    "reasoning": true
+  }
+}

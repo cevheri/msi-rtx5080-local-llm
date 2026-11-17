@@ -1,0 +1,20 @@
+{
+  "request": {
+    "model": "deepseek-r1-0528-qwen3-8b",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Reply with exactly the word OK."
+      }
+    ],
+    "max_tokens": 256
+  },
+  "status": 200,
+  "reply": "{\"choices\":[{\"finish_reason\":\"stop\",\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"\\nOK\",\"reasoning_content\":\"\\nHmm, the user just asked me to reply with exactly the word \\\"OK\\\". That's straightforward. \\n\\nI need to make sure my response complies perfectly with their instruction. No extra words, no explanations—just the single word \\\"OK\\\". \\n\\nIt's possible they're testing my ability to follow directions precisely, or maybe they want a minimalist response for some reason. \\n\\nSince I'm designed to be helpful and precise, I'll stick to the exact word they requested. \\n\\nThe user might be looking for a quick confirmation or perhaps they're in a hurry. \\n\\nThey could be a developer testing API responses or someone who prefers concise interactions. \\n\\nI'll keep it simple and respond with \\\"OK\\\" as instructed. \\n\\nThis seems like a basic compliance task, but it's important to get it right to build trust. \\n\\nNo need to overcomplicate things here—just adhere to the request. \\n\\nFinal response: \\\"OK\\\".\\n\"}}],\"created\":1794916081,\"model\":\"local\",\"system_fingerprint\":\"b12407-e574a17b0\",\"object\":\"chat.completion\",\"usage\":{\"completion_tokens\":194,\"prompt_tokens\":10,\"total_tokens\":204,\"prompt_tokens_details\":{\"cached_tokens\":2}},\"id\":\"chatcmpl-fq3WIVMyJw9YobNk8LDraIai6Iks4wei\",\"timings\":{\"cache_n\":2,\"prompt_n\":8,\"prompt_ms\":20.107,\"prompt_per_token_ms\":2.513375,\"prompt_per_second\":397.8713880738052,\"predicted_n\":194,\"predicted_ms\":2693.909,\"predicted_per_token_ms\":13.958077720207255,\"predicted_per_second\":71.64310301498678}}",
+  "record": {
+    "probe": "D",
+    "status": 200,
+    "content": true,
+    "reasoning": true
+  }
+}

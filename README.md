@@ -13,7 +13,7 @@ Figures for every other model and runtime are still estimates or third-party num
 
 ## Quick start
 
-Start a measured model by name with [llmctl](docs/llmctl.md), which applies the rules below for you and points OpenCode, Hermes Agent and Pi at it; `--set-default` also makes it each installed client's default:
+Start a measured model by name with [llmctl](docs/llmctl.md), which applies the rules below for you and points OpenCode, Hermes Agent, Pi, DeepSeek Harness (dsh) and Kimi Code CLI at it; `--set-default` also makes it each installed client's default:
 
 ```bash
 ./llmctl list
@@ -60,7 +60,7 @@ The bandwidth figure is NVIDIA's laptop specification ([NVIDIA](https://www.nvid
 | [docs/agent-harness-evidence.md](docs/agent-harness-evidence.md) | First-hand tool-loop results from the user's LibreDB Studio harness (measured on the M5 Max), what transfers to this laptop, and which models to try first |
 | [research/2026-11-15/](research/2026-11-15/README.md) | Raw research records behind these documents (discovery, verification, source reviews, ranking, writer and reviewer reports, the no-toolkit GPU probe) |
 | [research/2026-11-16/](research/2026-11-16/README.md) | Measurement records from this laptop: gpt-oss-20b on llama.cpp and vLLM, Qwen3.8-27B, Qwen3.6-35B-A3B and Gemma 4 26B-A4B with their tuning variants, K2 Horizon 7B with an f16 KV check, K2 Horizon MoVA, Qwen3-Coder-Next with offload and KV variants, Nemotron 3.5 Bolt, Groot-19B-A3B, DeepSeek-R1-0528-Qwen3-8B, Nemotron 3.5 Lightning, five Ollama 0.40.16 cross-checks of LibreDB Studio models, the launch plans for the next eight models, and the LibreDB Studio review |
-| [research/2026-11-17/](research/2026-11-17/README.md) | vLLM measurement records from this laptop: Mellum2.1, K2 Horizon 7B, Qwen3.5-9B, Gemma 4 12B, Gemma 4 E4B and Groot-19B-A3B measured, and DeepSeek-R1-0528-Qwen3-8B failed on its tokenizer; the llmctl clients e2e over every recipe with Hermes, Pi and dsh, and with OpenCode for every recipe that has an OpenCode entry (`llmctl-dsh-e2e/`), the first e2e run's summary and cited records (`llmctl-dsh-e2e-run1/`), the dsh Web UI checklist (`llmctl-dsh-web/`), and the Kimi Code CLI stub evidence behind the Kimi entry (`llmctl-kimi-stub/`) |
+| [research/2026-11-17/](research/2026-11-17/README.md) | vLLM measurement records from this laptop: Mellum2.1, K2 Horizon 7B, Qwen3.5-9B, Gemma 4 12B, Gemma 4 E4B and Groot-19B-A3B measured, and DeepSeek-R1-0528-Qwen3-8B failed on its tokenizer; the llmctl clients e2e over every recipe with Hermes, Pi and dsh, and with OpenCode for every recipe that has an OpenCode entry (`llmctl-dsh-e2e/`), the first e2e run's summary and cited records (`llmctl-dsh-e2e-run1/`), the dsh Web UI checklist (`llmctl-dsh-web/`), the Kimi Code CLI stub evidence behind the Kimi entry (`llmctl-kimi-stub/`), and the e2e run with Kimi Code as the fifth client with its strace check and TUI checklist (`llmctl-kimi-e2e/`) |
 
 ## Current picks
 

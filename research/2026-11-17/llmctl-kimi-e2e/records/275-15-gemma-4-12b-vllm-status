@@ -1,0 +1,8 @@
+{
+  "command": "./llmctl status",
+  "cwd": "$HOME/projects/llm",
+  "exit": 0,
+  "seconds": 1.1,
+  "stdout": "gemma-4-12b on vllm, container 'vllm', running\n  recipe: shipped file, sha256 770c6149772a, measured\n  port: 8000/tcp -> 127.0.0.1:8000, health: ready\n  container memory: 8.279GiB / 32GiB, GPU memory in use: 14702 MiB of 16303 MiB\ngpt-oss-20b on llamacpp, container 'llamacpp', exited\n  recipe: shipped file, sha256 fffc2c8b42cb, measured\nclients:\n  OpenCode: default vllm-docker/gemma-4-12b, the running model ($HOME/.config/opencode/opencode.json)\n  Hermes: profile llmctl for gemma-4-12b on vLLM, the running model; default profile: llmctl ($HOME/.hermes/profiles/llmctl/config.yaml)\n  Pi: llmctl/gemma-4-12b for gemma-4-12b on vLLM, the running model; default llmctl/gemma-4-12b, thinking off ($HOME/.pi/agent)\n  dsh: llmctl/gemma-4-12b for gemma-4-12b on vLLM, the running model; default llmctl/gemma-4-12b, held by llmctl ($HOME/.dsh/cordis.patch.yml)\n  Kimi: llmctl/gemma-4-12b for gemma-4-12b on vLLM, the running model; default not set ($HOME/.kimi-code/config.toml)\n",
+  "stderr": ""
+}
