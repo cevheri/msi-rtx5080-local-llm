@@ -31,7 +31,7 @@ def build_parser() -> argparse.ArgumentParser:
     show = sub.add_parser("show", help="the effective recipe and the docker command it runs")
     show.add_argument("model")
     show.add_argument("--runtime")
-    show.add_argument("--as-override", action="store_true", help="print a complete recipe to save as an override")
+    show.add_argument("--as-override", action="store_true", help="print a copy of the shipped recipe to save as an override")
     pull = sub.add_parser("pull", help="download the model files and the image, after asking")
     pull.add_argument("model")
     pull.add_argument("--runtime")
@@ -132,11 +132,27 @@ def _as_override(recipe, directory: Path) -> str:
     return header + text[:match.start()] + evidence + (("\n" + rest) if rest.strip() else "")
 
 
+def _shipped_for_override(catalog, model, runtime_name):
+    """The shipped recipe, read without the override folder, so that a redirect into the override path works."""
+    shipped = load_catalog(REPO / "recipes", None)
+    try:
+        recipe, _ = resolve(shipped, model, runtime_name)
+        return recipe
+    except UsageError:
+        pass
+    # Not shipped: the full catalog either reports why the name fails or finds it in the override folder.
+    recipe, _ = resolve(catalog, model, runtime_name)
+    # An override may give a shipped model an extra alias; its shipped ID still copies.
+    shipped_id = f", or name the shipped ID '{recipe.id}'" if recipe.id in shipped.runtimes[recipe.runtime].recipes else ""
+    raise UsageError(f"'{model}' exists only as the override {recipe.source.path}; show --as-override copies shipped "
+                     f"recipes, so copy that file instead{shipped_id}")
+
+
 def _show(host, catalog, model, runtime_name, as_override) -> int:
-    recipe, runtime = resolve(catalog, model, runtime_name)
     if as_override:
-        host.out.write(_as_override(recipe, override_dir(host.env)))
+        host.out.write(_as_override(_shipped_for_override(catalog, model, runtime_name), override_dir(host.env)))
         return 0
+    recipe, runtime = resolve(catalog, model, runtime_name)
     adapter = ADAPTERS[recipe.runtime]
     uid, gid = host.uid_gid()
     argv = docker_run_argv(recipe, runtime, adapter.container_spec(recipe, runtime, HostEnv(hf_home(host.env), uid, gid)))

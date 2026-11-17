@@ -12,7 +12,7 @@ The recipes were measured on an MSI Raider 18 Max HX A2WI with an RTX 5080 Lapto
 ./llmctl list                 # every recipe, its evidence, and what is downloaded
 ./llmctl pull qwen3.6         # asks, then downloads the model files, and the image if it is missing
 ./llmctl up qwen3.6           # checks the machine, starts the server, waits until it answers
-./llmctl test                 # a reply, a tool call and a decode speed
+./llmctl test                 # a reply of exactly OK, a tool call and a decode speed
 ./llmctl down                 # stops the server
 ```
 
@@ -28,12 +28,12 @@ Checked on the reference laptop on 2026-11-16: `up qwen3.6` was ready in 9 s and
 |---|---|
 | `./llmctl list [--runtime R]` | Every recipe: ID, runtime, status, aliases, evidence, measured decode speed, context, GPU need, RAM need, download size, whether the files and the image are present, and whether an override replaces it; below the table, the running server's address and the client lines of `status` without paths |
 | `./llmctl show <model> [--runtime R]` | The effective recipe, its file and SHA-256, and the exact `docker run` command `up` would run |
-| `./llmctl show <model> --as-override` | A complete copy of the recipe, marked as an estimate, to save in the override directory and edit |
+| `./llmctl show <model> [--runtime R] --as-override` | A complete copy of the shipped recipe, marked as an estimate, to save as an override and edit; redirecting into an override that already exists loses what it held ([Overrides for another machine](#overrides-for-another-machine)) |
 | `./llmctl pull <model> [--runtime R] [--yes] [--hf-env-file F]` | Says how much it will download, asks, then pulls the image if it is missing and downloads the model files; without a terminal it needs `--yes` |
 | `./llmctl up <model> [--runtime R] [--replace] [--dry-run] [--set-default]` | Runs the checks below, starts the container, waits until the server answers, writes the llmctl entries of the installed clients ([Clients](#clients)), and prints the endpoint, the served name, the context, the output cap, each client's model and thinking choices, and the evidence; with `--set-default` it also makes the model every installed client's default |
 | `./llmctl status` | The container llmctl started: its recipe, source file and SHA-256, state, port, health, memory use and the GPU memory in use; then each client's llmctl entry and default, and whether they match the running model |
 | `./llmctl logs [-f] [--tail N]` | The server's log, the last 100 lines by default |
-| `./llmctl test` | Three requests against the running server: a reply, one tool call, and a decode of up to 512 tokens |
+| `./llmctl test` | Three requests against the running server: a reply that must be exactly OK (ignoring case and any whitespace, quotes, backticks, `*`, `_`, `.`, `!` or `,` around it); one tool call; and a decode of up to 512 tokens |
 | `./llmctl down [--remove]` | Stops the server with a 60-second grace period; the stopped container stays for its logs unless `--remove`; then names the clients whose default still points at llmctl, and changes no client file |
 | `./llmctl check` | Validates every shipped recipe and every override and lists each problem with its file |
 
@@ -235,7 +235,12 @@ Put your own files in `~/.config/llmctl/recipes/llamacpp/` and `~/.config/llmctl
 - A file with a shipped recipe's name replaces that recipe whole; nothing is merged across the two files, because half of one measurement beside half of another is a configuration nobody has run.
 - A file with a new name adds a model.
 - A `_runtime.toml` replaces that runtime's settings whole, for another image tag, port or cache volume; the rules above still hold, and when you change the port, change the OpenCode provider's `baseURL` to match.
-- `./llmctl show qwen3.6 --as-override > ~/.config/llmctl/recipes/llamacpp/qwen3.6-35b-a3b.toml` writes a complete copy to start from, marked `kind = "estimate"` until you measure it; [recipes/examples/](../recipes/examples/llamacpp/qwen3.6-35b-a3b.toml) has one.
+- `mkdir -p ~/.config/llmctl/recipes/llamacpp && ./llmctl show qwen3.6 --as-override > ~/.config/llmctl/recipes/llamacpp/qwen3.6-35b-a3b.toml` writes a complete copy to start from, marked `kind = "estimate"` until you measure it; [recipes/examples/](../recipes/examples/llamacpp/qwen3.6-35b-a3b.toml) has one.
+  For a shipped model it copies the shipped recipe and does not read the override folder for that model, so the redirect works although the shell creates the empty target file before llmctl runs.
+  For a model both runtimes ship, `--runtime vllm` (or `--runtime llamacpp`) picks which recipe is copied; without it the copy follows the same runtime order as `show`, llama.cpp first, and the copy's first line names the path it belongs at.
+  Redirecting into an override that already exists loses what that override held, because the shell empties the file before llmctl runs: for a shipped model the file then holds the shipped recipe, and for a model that exists only in the override folder it stays empty.
+  To keep your own override, copy that file instead.
+  A model that exists only in the override folder has no shipped recipe to copy, so `--as-override` refuses it and names its file.
 - An override that does not validate is listed by `check` and `list`, and `up` refuses that model until it is fixed or removed, instead of quietly running the shipped recipe.
 
 On a GPU with less memory, lower `--moe-cache-mib` first and then raise `--n-cpu-moe`, as [llamacpp/README.md](../llamacpp/README.md#moe-expert-offload) explains; on a machine with less RAM, lower `--cache-ram` or `memory_gib`.

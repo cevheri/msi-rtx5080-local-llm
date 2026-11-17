@@ -180,6 +180,79 @@ class CliTest(unittest.TestCase):
         self.assertEqual(recipe.args, llamacpp.parse_recipe(*read_toml(REPO / "recipes/llamacpp/qwen3.6-35b-a3b.toml",
                                                                         "shipped"), "qwen3.6-35b-a3b").args)
 
+    def shipped_args(self, runtime, recipe_id):
+        from launcher.catalog import load_catalog
+        return list(load_catalog(REPO / "recipes", None).runtimes[runtime].recipes[recipe_id].args)
+
+    def test_show_as_override_into_empty_override(self):
+        """The shell redirect of docs/llmctl.md creates the empty override before llmctl reads the override folder."""
+        path = self.overrides / "vllm" / "gemma-4-12b.toml"
+        path.parent.mkdir(parents=True)
+        path.write_text("")
+        host = self.host()
+        self.assertEqual(main(["show", "gemma-4-12b", "--runtime", "vllm", "--as-override"], host), 0, host.err.getvalue())
+        text = host.out.getvalue()
+        data = tomllib.loads(text)
+        self.assertEqual(data["evidence"]["kind"], "estimate")
+        self.assertEqual(data["server"]["args"], self.shipped_args("vllm", "gemma-4-12b"))
+        path.write_text(text)
+        shown = self.host()
+        self.assertEqual(main(["show", "gemma-4-12b", "--runtime", "vllm"], shown), 0, shown.err.getvalue())
+        self.assertIn(f"recipe file: {path} (override)", shown.out.getvalue())
+
+    def test_show_as_override_copies_the_shipped_recipe(self):
+        path = self.overrides / "vllm" / "gemma-4-12b.toml"
+        path.parent.mkdir(parents=True)
+        path.write_text((REPO / "recipes/vllm/gemma-4-12b.toml").read_text().replace('"--max-num-seqs", "1"',
+                                                                                    '"--max-num-seqs", "2"'))
+        shown = self.host()
+        self.assertEqual(main(["show", "gemma-4-12b", "--runtime", "vllm"], shown), 0, shown.err.getvalue())
+        self.assertIn("(override)", shown.out.getvalue())
+        host = self.host()
+        self.assertEqual(main(["show", "gemma-4-12b", "--runtime", "vllm", "--as-override"], host), 0, host.err.getvalue())
+        data = tomllib.loads(host.out.getvalue())
+        self.assertEqual(data["server"]["args"], self.shipped_args("vllm", "gemma-4-12b"))
+        self.assertIn("Copied from the shipped recipe gemma-4-12b", data["evidence"]["summary"])
+
+    def override_only(self, text):
+        path = self.overrides / "vllm" / "my-gemma.toml"
+        path.parent.mkdir(parents=True)
+        path.write_text(text)
+        return path
+
+    def test_show_as_override_of_override_only_model(self):
+        shipped = (REPO / "recipes/vllm/gemma-4-12b.toml").read_text()
+        path = self.override_only(shipped.replace('id = "gemma-4-12b"', 'id = "my-gemma"')
+                                  .replace('aliases = ["gemma4-12b"]', "aliases = []"))
+        shown = self.host()
+        self.assertEqual(main(["show", "my-gemma", "--runtime", "vllm"], shown), 0, shown.err.getvalue())
+        host = self.host()
+        self.assertEqual(main(["show", "my-gemma", "--runtime", "vllm", "--as-override"], host), 1)
+        self.assertIn(str(path), host.err.getvalue())
+        self.assertIn("shipped", host.err.getvalue())
+        self.assertNotIn("shipped ID", host.err.getvalue())
+        self.assertEqual(host.out.getvalue(), "")
+
+    def test_show_as_override_of_alias_only_in_override(self):
+        """An override that gives a shipped model an extra alias: the alias is not shipped, but the ID is."""
+        path = self.overrides / "llamacpp" / "qwen3.6-35b-a3b.toml"
+        path.parent.mkdir(parents=True)
+        path.write_text((REPO / "recipes/llamacpp/qwen3.6-35b-a3b.toml").read_text()
+                        .replace('aliases = ["qwen3.6"]', 'aliases = ["qwen3.6", "my-qwen"]'))
+        shown = self.host()
+        self.assertEqual(main(["show", "my-qwen"], shown), 0, shown.err.getvalue())
+        host = self.host()
+        self.assertEqual(main(["show", "my-qwen", "--as-override"], host), 1)
+        self.assertIn(str(path), host.err.getvalue())
+        self.assertIn("or name the shipped ID 'qwen3.6-35b-a3b'", host.err.getvalue())
+        self.assertEqual(host.out.getvalue(), "")
+
+    def test_show_as_override_of_empty_override_only_model(self):
+        path = self.override_only("")
+        host = self.host()
+        self.assertEqual(main(["show", "my-gemma", "--runtime", "vllm", "--as-override"], host), 2)
+        self.assertIn(f"fix or remove {path}", host.err.getvalue())
+
     def test_pull_needs_yes_without_tty(self):
         host = self.host(tty=False)
         self.assertEqual(main(["pull", "qwen3.8"], host), 1)
