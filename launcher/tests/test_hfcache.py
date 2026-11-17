@@ -1,9 +1,11 @@
 import hashlib
 import io
 import os
+import stat
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from launcher import hfcache
 from launcher.catalog import load_catalog, resolve
@@ -221,6 +223,80 @@ class SnapshotHelpersTest(unittest.TestCase):
             hfcache.cli_download(host, recipe.id, recipe.model, runtime.image, "hf", (), self.home,
                                  HfAuth(None, None), self.out)
         self.assertTrue(str(ctx.exception).startswith("gpt-oss-20b: the snapshot holds"))
+
+
+class BuildOverlayTest(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self.tmp.name)
+        self.snapshot = self.root / "snap"
+        for name, data in (("config.json", b"{}"), (".gitattributes", b""), ("tokenizer_config.json", b"{}"),
+                           ("sub/a.bin", b"a")):
+            (self.snapshot / name).parent.mkdir(parents=True, exist_ok=True)
+            (self.snapshot / name).write_bytes(data)
+        self.folder = self.root / "cache" / "x" / "m"
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def build(self, files=None, snapshot=None):
+        return hfcache.build_overlay(self.folder, snapshot or self.snapshot, "/c/snap", files or {})
+
+    def links(self) -> dict[str, str]:
+        return {path.relative_to(self.folder).as_posix(): os.readlink(path)
+                for path in sorted(self.folder.rglob("*")) if path.is_symlink()}
+
+    def test_build_overlay_links_and_writes(self):
+        files = {"tokenizer_config.json": b'{"a": 1}\n', "extra.json": b"{}\n"}
+        with mock.patch.object(hfcache.os, "fsync", wraps=os.fsync) as fsync:
+            self.assertEqual(self.build(files), 3)
+        self.assertEqual(fsync.call_count, 2)
+        self.assertEqual(self.links(), {".gitattributes": "/c/snap/.gitattributes",
+                                        "config.json": "/c/snap/config.json", "sub/a.bin": "/c/snap/sub/a.bin"})
+        self.assertTrue((self.folder / "sub").is_dir())
+        self.assertFalse((self.folder / "sub").is_symlink())
+        for name, data in files.items():
+            path = self.folder / name
+            self.assertFalse(path.is_symlink(), name)
+            self.assertEqual(path.read_bytes(), data)
+            self.assertEqual(stat.S_IMODE(path.stat().st_mode), 0o644)
+        self.assertFalse(os.path.lexists(self.folder.parent / ".m.llmctl-tmp"))
+        self.assertFalse(os.path.lexists(self.folder.parent / ".m.llmctl-old"))
+
+    def test_build_overlay_replaces_the_live_folder(self):
+        self.build()
+        (self.folder / "junk").write_bytes(b"x")
+        (self.snapshot / "new.json").write_bytes(b"{}")
+        (self.snapshot / "config.json").unlink()
+        self.assertEqual(self.build(), 4)
+        self.assertEqual(sorted(self.links()), [".gitattributes", "new.json", "sub/a.bin", "tokenizer_config.json"])
+        self.assertFalse(os.path.lexists(self.folder / "junk"))
+
+    def test_build_overlay_removes_leftovers(self):
+        self.folder.parent.mkdir(parents=True)
+        (self.folder.parent / ".m.llmctl-tmp").mkdir()
+        (self.folder.parent / ".m.llmctl-tmp" / "x").write_bytes(b"x")
+        (self.folder.parent / ".m.llmctl-old").write_bytes(b"old")
+        self.build()
+        self.assertEqual(sorted(path.name for path in self.folder.parent.iterdir()), ["m"])
+
+    def test_build_overlay_failures(self):
+        with self.assertRaises(FileNotFoundError):
+            self.build(snapshot=self.root / "missing")
+        self.assertFalse(os.path.lexists(self.root / "cache"))
+
+        if os.geteuid() == 0:
+            self.skipTest("root reads a folder with mode 0o000")
+        self.build()
+        before = self.links()
+        (self.snapshot / "new.json").write_bytes(b"{}")
+        (self.snapshot / "sub").chmod(0o000)
+        try:
+            with self.assertRaises(PermissionError):
+                self.build()
+        finally:
+            (self.snapshot / "sub").chmod(0o755)
+        self.assertEqual(self.links(), before)
 
 
 class PullTest(unittest.TestCase):

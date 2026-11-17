@@ -1,15 +1,26 @@
-"""SGLang: the recipe schema, the runtime file and the checks a recipe's server args must pass.
+"""SGLang: the recipe schema, the runtime file, the container and its model overlay, and the post-ready check.
 
 This module reads only recipes/sglang/ and imports no other adapter or client module.
 """
 
+import http.client
 import json
 import re
 from dataclasses import dataclass
+from pathlib import Path
 
-from launcher.errors import RecipeError
-from launcher.hfcache import HfRepoModel
-from launcher.model import ClientMeta, GpuInfo, Recipe, RuntimeConfig, Source
+from launcher.errors import DownloadError, PreflightError, RecipeError, UsageError
+from launcher.gpu import gpu_info
+from launcher.hfcache import (
+    HfAuth,
+    HfRepoModel,
+    build_overlay,
+    cli_download,
+    repo_dirname,
+    snapshot_dir,
+    snapshot_problems,
+)
+from launcher.model import ClientMeta, ContainerSpec, GpuInfo, HostEnv, Recipe, RuntimeConfig, Source, StartCheck
 from launcher.validate import (
     check_keys,
     flag_present,
@@ -354,3 +365,172 @@ def gpu_advice(recipe: Recipe) -> str:
                 "you measure with it (sglang/README.md#paged-experts)")
     return ("write an override with a smaller --mem-fraction-static or context and the gpu_mib you measure with it "
             "(sglang/README.md#memory-budget)")
+
+
+def overlay_dir(recipe: Recipe, env: HostEnv) -> Path:
+    """The recipe's model overlay, mounted read-only at MODEL_MOUNT."""
+    if env.cache_dir is None:
+        raise ValueError("the SGLang adapter needs HostEnv.cache_dir")
+    if not env.cache_dir.is_absolute():
+        raise UsageError(f"llmctl's cache folder {env.cache_dir} is not an absolute path; "
+                         "set XDG_CACHE_HOME (or HOME) to one")
+    return env.cache_dir / "sglang" / "overlays" / recipe.id
+
+
+def container_spec(recipe: Recipe, runtime: RuntimeConfig, env: HostEnv) -> ContainerSpec:
+    args = LAUNCH + ("--model-path", MODEL_MOUNT, "--served-model-name", served_name(recipe, runtime),
+                     "--context-length", str(recipe.context), "--host", "0.0.0.0",
+                     "--port", str(CONTAINER_PORT)) + recipe.args
+    return ContainerSpec(
+        user=None,
+        env=runtime.env,
+        mounts=(f"{env.hf_home}:{CONTAINER_HF_HOME}:ro", f"{overlay_dir(recipe, env)}:{MODEL_MOUNT}:ro")
+        + runtime.volumes,
+        extra_flags=("--ipc=host",),  # as in every measured start
+        image=runtime.image,
+        args=args,
+        container_port=CONTAINER_PORT,
+    )
+
+
+def _generation_config(snapshot: Path, revision: str) -> tuple[dict | None, str | None]:
+    """The snapshot's top-level generation_config.json as an object (None when there is none), or the problem."""
+    path = snapshot / "generation_config.json"
+    if not path.is_file():
+        return None, None
+    try:
+        config = json.loads(path.read_bytes())
+        reason = None if isinstance(config, dict) else "its top level is not an object"
+    except (OSError, ValueError) as exc:
+        reason = str(exc)
+    if reason is None:
+        return config, None
+    return None, (f"generation_config.json in snapshot {revision[:12]} is not a JSON object ({reason}), so the "
+                  "overlay cannot add the recipe's sampling; delete that file and its blob from the Hugging Face "
+                  "cache, then pull again")
+
+
+def file_problems(recipe: Recipe, hf_home: Path) -> list[str]:
+    problems = snapshot_problems(recipe.model, hf_home)
+    if problems or not recipe.model.sampling:
+        return problems
+    snapshot = snapshot_dir(hf_home, recipe.model.repo, recipe.model.revision)
+    _, problem = _generation_config(snapshot, recipe.model.revision)
+    return [problem] if problem else []
+
+
+def prepare_start(recipe: Recipe, runtime: RuntimeConfig, env: HostEnv, *, dry_run: bool) -> tuple[str, ...]:
+    """Build the model overlay from the snapshot as it is now, or with dry_run only describe it; return up's lines."""
+    folder = overlay_dir(recipe, env)
+    model = recipe.model
+    if model.sampling:
+        ending = "and generation_config.json with " + ", ".join(f"{key} {value}" for key, value in model.sampling)
+    else:
+        ending = "so the checkpoint's own generation_config.json applies"
+    described = f"into snapshot {model.revision[:12]} of {model.repo}, {ending}"
+    if dry_run:
+        return (f"would write {folder}: model overlay with links {described}",)
+    snapshot = snapshot_dir(env.hf_home, model.repo, model.revision)
+    if not snapshot.is_dir():
+        raise PreflightError(f"cannot write the model overlay {folder}: missing snapshot {model.revision} of "
+                             f"{model.repo}")
+    files = {}
+    if model.sampling:
+        config, problem = _generation_config(snapshot, model.revision)
+        if problem:
+            raise PreflightError(f"cannot write the model overlay {folder}: {problem}")
+        config = config if config is not None else {}
+        for key, value in model.sampling:
+            config[key] = value  # replaced in place, or appended in SAMPLING_KEYS order
+        files["generation_config.json"] = (json.dumps(config, indent=2, ensure_ascii=False) + "\n").encode("utf-8")
+    link_root = f"{CONTAINER_HF_HOME}/hub/{repo_dirname(model.repo)}/snapshots/{model.revision}"
+    try:
+        links = build_overlay(folder, snapshot, link_root, files)
+    except OSError as exc:
+        raise PreflightError(f"cannot write the model overlay {folder}: {exc}; check the free space and "
+                             f"permissions of {env.cache_dir}") from None
+    return (f"wrote {folder}: model overlay with {links} links {described}",)
+
+
+def ready(host, runtime: RuntimeConfig, recipe: Recipe) -> bool:
+    """/ready answers 200 once the server's own warm-up is done; /v1/models must then list the served name."""
+    base = f"http://127.0.0.1:{runtime.host_port}"
+    try:
+        response = host.http("GET", f"{base}{runtime.ready_path}", timeout=2.0)
+        if response.status != 200:
+            return False
+        response = host.http("GET", f"{base}{MODELS_PATH}", timeout=2.0)
+    except (OSError, http.client.HTTPException):  # Docker's port proxy drops connections before the server listens
+        return False
+    if response.status != 200:
+        return False
+    try:
+        listed = {entry.get("id") for entry in json.loads(response.body).get("data", [])}
+    except (ValueError, AttributeError, TypeError):
+        return False
+    return served_name(recipe, runtime) in listed
+
+
+def _token_capacity(host, base: str) -> tuple[int | None, str | None]:
+    url = f"{base}{SERVER_INFO_PATH}"
+    try:
+        response = host.http("GET", url, timeout=10.0)
+    except (OSError, http.client.HTTPException) as exc:
+        reason = f"the request failed ({exc})"
+    else:
+        if response.status != 200:
+            reason = f"it answered {response.status}"
+        else:
+            try:
+                capacity = json.loads(response.body)["internal_states"][0]["memory_usage"]["token_capacity"]
+            except (ValueError, LookupError, TypeError):
+                capacity = None
+            if isinstance(capacity, int) and not isinstance(capacity, bool):
+                return capacity, None
+            reason = "the answer has no integer there"
+    return None, (f"could not read internal_states[0].memory_usage.token_capacity from {url}: {reason} "
+                  "(sglang/README.md#readiness-and-the-memory-check)")
+
+
+def check_started(host, runtime: SglangRuntimeConfig, recipe: Recipe) -> StartCheck:
+    """The KV pool must hold the context, and enough GPU memory must stay free after a flush of the idle server."""
+    base = f"http://127.0.0.1:{runtime.host_port}"
+    capacity, problem = _token_capacity(host, base)
+    if problem:
+        return StartCheck((), problem)
+    parts = []
+    if capacity < recipe.context:
+        parts.append(f"the KV pool holds {capacity} tokens, fewer than the context {recipe.context}, so a session "
+                     "that fills the context would fail; write an override with a smaller context, FP8 KV "
+                     "(--kv-cache-dtype fp8_e4m3) or fewer Mamba slots (sglang/README.md#memory-budget)")
+    url = f"{base}{FLUSH_PATH}"
+    try:
+        response = host.http("POST", url, body=b"", timeout=30.0)
+        flushed = f"answered {response.status}" if response.status != 200 else None
+    except (OSError, http.client.HTTPException) as exc:
+        flushed = f"failed ({exc})"
+    if flushed:
+        parts.append(f"POST {url} {flushed}, so llmctl could not read the free memory after the start")
+        return StartCheck((), "; ".join(parts))
+    try:
+        free = gpu_info(host).free_mib
+    except PreflightError as exc:
+        parts.append(str(exc))
+        return StartCheck((), "; ".join(parts))
+    need = runtime.min_free_at_ready_mib
+    line = (f"memory: KV pool {capacity} tokens for context {recipe.context}; {free} MiB of GPU memory free after "
+            f"the start, at least {need} MiB needed")
+    if free < need:
+        parts.append(f"only {free} MiB of GPU memory is free after the start, below the {need} MiB that long "
+                     f"prompts and grammar requests need (min_free_at_ready_mib in {runtime.source.path}); close "
+                     "other GPU programs, or write an override with a --mem-fraction-static 0.02 lower, which frees "
+                     "about 300 MiB (sglang/README.md#memory-budget)")
+    return StartCheck((line,), "; ".join(parts) or None)
+
+
+def pull(host, recipe: Recipe, runtime: RuntimeConfig, hf_home: Path, auth: HfAuth, out) -> None:
+    """Download the repository at its pinned revision with the image's hf module, then check the snapshot."""
+    cli_download(host, recipe.id, recipe.model, runtime.image, "python3", HF_COMMAND, hf_home, auth, out)
+    problems = file_problems(recipe, hf_home)
+    if problems:
+        raise DownloadError(f"{recipe.id}: " + "; ".join(problems))
