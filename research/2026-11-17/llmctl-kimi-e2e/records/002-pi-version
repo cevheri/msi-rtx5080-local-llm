@@ -1,0 +1,8 @@
+{
+  "command": "pi --version",
+  "cwd": "$HOME/projects/llm",
+  "exit": 0,
+  "seconds": 0.1,
+  "stdout": "1.5.2\n",
+  "stderr": ""
+}

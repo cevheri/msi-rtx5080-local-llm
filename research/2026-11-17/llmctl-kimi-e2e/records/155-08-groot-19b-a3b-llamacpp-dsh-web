@@ -1,0 +1,8 @@
+{
+  "command": "dsh web --port 3182 --no-open",
+  "cwd": "$WORK/08-groot-19b-a3b-llamacpp-dsh-web",
+  "exit": 0,
+  "seconds": 4.6,
+  "stdout": "dsh web: <address withheld>\n",
+  "stderr": ""
+}

@@ -1,0 +1,21 @@
+{
+  "request": {
+    "model": "groot-19b-a3b",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Reply with exactly the word OK."
+      }
+    ],
+    "max_tokens": 256,
+    "reasoning_effort": "low"
+  },
+  "status": 200,
+  "reply": "{\"id\":\"chatcmpl-804038e19ff328c9\",\"object\":\"chat.completion\",\"created\":1794917082,\"model\":\"groot-19b-a3b\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"\\n\\nOK\",\"refusal\":null,\"annotations\":null,\"audio\":null,\"function_call\":null,\"reasoning\":\"Thinking Process:\\n1.  The user requested to reply with exactly the word \\\"OK\\\".\\n2.  No other instructions or context are provided.\\n3.  Formulate the response: \\\"OK\\\".\\n4.  Verify the response matches the constraint \\\"exactly the word OK\\\". Yes.\\n5.  Output: OK.\\n\"},\"logprobs\":null,\"finish_reason\":\"stop\",\"stop_reason\":null,\"token_ids\":null,\"routed_experts\":null,\"weight_versions\":null}],\"service_tier\":null,\"system_fingerprint\":\"vllm-0.33.0-2fe6b7ce\",\"usage\":{\"prompt_tokens\":17,\"total_tokens\":92,\"completion_tokens\":75,\"prompt_tokens_details\":null,\"completion_tokens_details\":{\"reasoning_tokens\":71}},\"prompt_logprobs\":null,\"prompt_token_ids\":null,\"prompt_text\":null,\"kv_transfer_params\":null,\"ec_transfer_params\":null,\"metrics\":null}",
+  "record": {
+    "probe": "G",
+    "status": 200,
+    "content": true,
+    "reasoning": true
+  }
+}

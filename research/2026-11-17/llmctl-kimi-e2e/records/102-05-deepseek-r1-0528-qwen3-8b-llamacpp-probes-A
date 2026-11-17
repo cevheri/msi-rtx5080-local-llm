@@ -1,0 +1,42 @@
+{
+  "request": {
+    "model": "local",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a short title for a chat about adding two numbers in Python."
+      }
+    ],
+    "reasoning_effort": "none",
+    "response_format": {
+      "type": "json_schema",
+      "json_schema": {
+        "name": "session_title",
+        "strict": true,
+        "schema": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "title"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "max_tokens": 16384,
+    "stream": false
+  },
+  "status": 200,
+  "reply": "{\"choices\":[{\"finish_reason\":\"stop\",\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\n    \\\"title\\\": \\\"Adding Two Numbers in Python\\\"\\n}\",\"reasoning_content\":\"\\nWe are going to write a short title for a chat about adding two numbers in Python.\\n The title should be concise and clear. Since it's about adding two numbers, we can simply say \\\"Adding Two Numbers in Python\\\".\\n However, to make it even more specific, we can consider including the context of the chat (like if it's for beginners, or if it's part of a larger project).\\n But since the instruction is for a short title, I'll assume we are to keep it simple and direct.\\n\\n Let me propose a few options and then choose the best one.\\n\\n Option 1: \\\"Add Two Numbers in Python\\\"\\n Option 2: \\\"Python: Summing Two Integers\\\"\\n Option 3: \\\"How to Sum in Python: Two Numbers\\\"\\n\\n But note: the problem says \\\"adding two numbers\\\", not necessarily integers. However, in programming, numbers can be integers or floats.\\n We can keep it general by saying \\\"numbers\\\" or specify \\\"integers\\\". Since the problem doesn't specify, let's keep it general.\\n\\n Another option: \\\"Simple Number Addition in Python\\\"\\n\\n However, the user's requirement is for a short title, so let's look for brevity.\\n\\n The most straightforward and common way is to use the term \\\"Add\\\" or \\\"Sum\\\" and mention the two numbers.\\n\\n Let me go with: \\\"Adding Two Numbers in Python\\\"\\n\\n But if we want to be a bit more modern, we might say \\\"Two-Number Sum in Python\\\".\\n\\n However, I think the first one is clear and direct.\\n\\n We can also consider: \\\"Python: Basic Addition\\\"\\n\\n But the user might want the title to specifically mention the operation (addition) and the operands (two numbers).\\n\\n Considering the above, I choose:\\n\\n Title: \\\"Adding Two Numbers in Python\\\"\\n\"}}],\"created\":1794916079,\"model\":\"local\",\"system_fingerprint\":\"b12407-e574a17b0\",\"object\":\"chat.completion\",\"usage\":{\"completion_tokens\":383,\"prompt_tokens\":17,\"total_tokens\":400,\"prompt_tokens_details\":{\"cached_tokens\":1}},\"id\":\"chatcmpl-w8oF9sWchZ8PkdtBZnsivrMJsxKjm5dY\",\"timings\":{\"cache_n\":1,\"prompt_n\":16,\"prompt_ms\":17.22,\"prompt_per_token_ms\":1.07625,\"prompt_per_second\":929.1521486643438,\"predicted_n\":383,\"predicted_ms\":5384.839,\"predicted_per_token_ms\":14.096437172774868,\"predicted_per_second\":70.9399111096915}}",
+  "record": {
+    "probe": "A",
+    "status": 200,
+    "content": true,
+    "reasoning": true,
+    "title_ok": true
+  }
+}

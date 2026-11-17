@@ -1,0 +1,22 @@
+# Private test config for the hands-on lane. No secrets: api_key is a placeholder.
+default_model = "llmctl/local"
+telemetry = false
+
+[thinking]
+enabled = true
+
+[providers.llmctl]
+type = "openai"
+base_url = "http://127.0.0.1:47303/v1"
+api_key = "llmctl-local"
+model_source = "static"
+
+[models."llmctl/local"]
+provider = "llmctl"
+model = "local"
+display_name = "gemma-4-26b-a4b (llmctl)"
+max_context_size = 131072
+max_output_size = 16384
+capabilities = ["tool_use", "thinking"]
+support_efforts = ["low", "medium", "high"]
+default_effort = "medium"

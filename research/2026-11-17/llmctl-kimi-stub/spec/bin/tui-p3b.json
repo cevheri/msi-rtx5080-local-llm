@@ -1,0 +1,9 @@
+[["wait", "Welcome to Kimi Code", 20], ["sleep", 2], ["mark", "start"],
+ ["copy", "$KIMI_CODE_HOME/config.toml", "c0-start.toml"],
+ ["type", "/effort"], ["sleep", 1.2], ["send", "\r"], ["sleep", 2.5], ["mark", "effort-selector"],
+ ["send", "\u001b[D"], ["sleep", 0.8], ["mark", "after-left"], ["send", "\r"], ["sleep", 2.5], ["mark", "picked"],
+ ["copy", "$KIMI_CODE_HOME/config.toml", "c1-after-effort.toml"],
+ ["type", "Reply with the stub word."], ["sleep", 0.5], ["send", "\r"], ["wait", "PONG-ONE|rror", 30], ["sleep", 1.5], ["mark", "answered-1"],
+ ["copy", "$KIMI_CODE_HOME/config.toml", "c2-after-prompt.toml"],
+ ["send", "\u0003"], ["sleep", 0.6], ["send", "\u0003"], ["sleep", 3],
+ ["copy", "$KIMI_CODE_HOME/config.toml", "c3-after-exit.toml"]]

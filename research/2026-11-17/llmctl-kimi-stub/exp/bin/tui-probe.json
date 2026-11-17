@@ -1,0 +1,1 @@
+[["wait", "(?i)(model|ask|prompt|>)", 15], ["sleep", 3], ["mark", "after-start"], ["type", "/model"], ["sleep", 1.5], ["mark", "typed /model"], ["send", "\r"], ["sleep", 2.5], ["mark", "after enter"], ["send", "\u001b"], ["sleep", 1], ["send", "\u0003"], ["sleep", 0.5], ["send", "\u0003"], ["sleep", 1]]

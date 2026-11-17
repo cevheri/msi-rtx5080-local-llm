@@ -1,0 +1,15 @@
+{"t": 0.0, "step": ["wait", "(?i)(model|ask|prompt|>)", 15], "hit": true}
+{"t": 0.41, "step": ["sleep", 3]}
+{"t": 3.43, "step": ["mark", "after-start"]}
+{"t": 3.43, "step": ["type", "/model"]}
+{"t": 3.84, "step": ["sleep", 1.5]}
+{"t": 5.35, "step": ["mark", "typed /model"]}
+{"t": 5.35, "step": ["send", "\r"]}
+{"t": 5.68, "step": ["sleep", 2.5]}
+{"t": 8.2, "step": ["mark", "after enter"]}
+{"t": 8.2, "step": ["send", "\u001b"]}
+{"t": 8.51, "step": ["sleep", 1]}
+{"t": 9.52, "step": ["send", "\u0003"]}
+{"t": 9.82, "step": ["sleep", 0.5]}
+{"t": 10.32, "step": ["send", "\u0003"]}
+{"t": 10.4, "step": ["sleep", 1]}

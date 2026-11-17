@@ -1,0 +1,8 @@
+[["wait", "Welcome to Kimi Code", 20], ["sleep", 2],
+ ["copy", "$KIMI_CODE_HOME/config.toml", "c0-start.toml"], ["mark", "start"],
+ ["type", "Reply with the stub word."], ["sleep", 0.5], ["send", "\r"], ["wait", "PONG-ONE", 30], ["sleep", 1.5], ["mark", "answered-1"],
+ ["replace", "$KIMI_CODE_HOME/config.toml.next", "$KIMI_CODE_HOME/config.toml"], ["mark", "swapped"], ["sleep", 5],
+ ["type", "Reply again."], ["sleep", 0.5], ["send", "\r"], ["wait", "PONG-TWO|rror", 40], ["sleep", 2], ["mark", "answered-2"],
+ ["copy", "$KIMI_CODE_HOME/config.toml", "c3-after-second-prompt.toml"],
+ ["send", "\u0003"], ["sleep", 0.6], ["send", "\u0003"], ["sleep", 3],
+ ["copy", "$KIMI_CODE_HOME/config.toml", "c4-after-exit.toml"]]

@@ -1,0 +1,8 @@
+{
+  "command": "docker logs --since 2026-11-17T12:03:27Z vllm",
+  "cwd": "$HOME/projects/llm",
+  "exit": 0,
+  "seconds": 0.0,
+  "stdout": "INFO:     172.17.0.1:57754 - \"POST /v1/chat/completions HTTP/1.1\" 200 OK\nINFO:     172.17.0.1:57754 - \"POST /v1/chat/completions HTTP/1.1\" 200 OK\nINFO:     172.17.0.1:57754 - \"POST /v1/chat/completions HTTP/1.1\" 200 OK\n",
+  "stderr": ""
+}

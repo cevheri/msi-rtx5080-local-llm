@@ -1,0 +1,35 @@
+gpt-oss-20b on vllm: shipped recipe, measured
+clients: opencode, hermes, pi, dsh, kimi
+stopping qwen3.8-27b in container 'llamacpp'
+removing the stopped container 'vllm' from an earlier llmctl run
+waiting for gpt-oss-20b to load (up to 900 s)
+ready: http://127.0.0.1:8000/v1, served as 'gpt-oss-20b', context 65536, output 16384
+wrote $HOME/.config/opencode/opencode.json: model vllm-docker/gpt-oss-20b (was llamacpp-docker/qwen3.8-27b); OpenCode reloaded its configuration
+wrote $HOME/.hermes/profiles/llmctl/config.yaml: llmctl block for gpt-oss-20b on vLLM (was qwen3.8-27b on llama.cpp)
+wrote $HOME/.pi/agent/models.json: provider llmctl for gpt-oss-20b on vLLM, model gpt-oss-20b (was qwen3.8-27b on llama.cpp)
+wrote $HOME/.pi/agent/settings.json: modelThinkingLevels llmctl/gpt-oss-20b medium (was absent); removed modelThinkingLevels llmctl/local; defaultModel gpt-oss-20b (was local)
+wrote $HOME/.dsh/cordis.patch.yml: llmctl rows for gpt-oss-20b on vLLM (was qwen3.8-27b on llama.cpp); dsh's default llmctl/gpt-oss-20b in every profile (was llmctl/local)
+wrote $HOME/.kimi-code/config.toml: provider llmctl and model llmctl/gpt-oss-20b for gpt-oss-20b on vLLM (was qwen3.8-27b on llama.cpp)
+OpenCode: vllm-docker/gpt-oss-20b, the default
+  in the OpenCode screen: type /models (or press ctrl+x m) and pick it
+  for a single prompt: opencode run --model vllm-docker/gpt-oss-20b "your prompt"
+  thinking: medium effort; add #<level> for another (low, medium, high)
+Hermes: profile llmctl, the default
+  hermes -p llmctl
+  thinking: medium effort; hermes --reasoning <level> for another (low, medium, high)
+Pi: llmctl/gpt-oss-20b, the default
+  pi --model llmctl/gpt-oss-20b
+  thinking: medium effort; --thinking <level> for another (low, medium, high)
+dsh: llmctl/gpt-oss-20b, the default in every dsh profile
+  dsh web, or for a single prompt: dsh --profile headless "your prompt"
+  thinking: medium effort; choose another under Effort (low, medium, high)
+  compaction: dsh compacts these sessions only after the server rejects an overlong prompt, because context 65536 minus output 16384 leaves no room for its 65,536-token headroom (docs/clients.md#context-compaction-and-timeouts)
+Kimi: llmctl/gpt-oss-20b, not the default (./llmctl up gpt-oss-20b --runtime vllm --set-default makes it one)
+  kimi -m llmctl/gpt-oss-20b, or pick gpt-oss-20b on vLLM (llmctl) with /model in kimi
+  kimi -p needs Kimi's default even with -m, so for a single prompt run ./llmctl up gpt-oss-20b --runtime vllm --set-default first
+  thinking: medium effort; /effort in kimi for another (low, medium, high)
+note: Hermes and Pi sessions that were open before keep the model they started with; start a new session
+note: dsh web uses the new rows within seconds, and its open sessions on llmctl/local fail until you pick llmctl/gpt-oss-20b; dsh headless, acp and sdk processes that are already running keep the old rows until they restart
+note: an open Kimi session on llmctl/local fails its next turn until you pick llmctl/gpt-oss-20b with /model or start a new session
+evidence: 83.5 tok/s decode in eager mode with 64k context, 15,698 MiB GPU memory, OpenCode session passed (2026-11-16, research/2026-11-16/vllm-gpt-oss-20b/)
+stop with ./llmctl down

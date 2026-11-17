@@ -342,7 +342,7 @@ class CliTest(unittest.TestCase):
         self.assertEqual(host.calls, [])
 
     def assert_nothing_ran(self, host, clients, before):
-        ran = [call for call in host.calls if call[0] in ("docker", "opencode", "hermes", "pi")]
+        ran = [call for call in host.calls if call[0] in ("docker", "opencode", "hermes", "pi", "dsh", "kimi")]
         self.assertEqual(ran, [])
         self.assertEqual(clients.snapshot(), before)
 
@@ -367,13 +367,31 @@ class CliTest(unittest.TestCase):
         out = io.StringIO()
         with contextlib.redirect_stdout(out), self.assertRaises(SystemExit):
             build_parser().parse_args(["up", "--help"])
-        self.assertIn("make it the default of every installed client: OpenCode, Hermes, Pi and dsh (or set "
+        self.assertIn("make it the default of every installed client: OpenCode, Hermes, Pi, dsh and Kimi (or set "
                       "LLMCTL_SET_DEFAULT=1)", " ".join(out.getvalue().split()))
 
-    def test_unknown_client_lists_dsh(self):
+    def test_unknown_client_lists_kimi(self):
         host, clients = self.client_host(LLMCTL_CLIENTS="claude")
         self.assertEqual(main(["up", "qwen3.6"], host), 1)
-        self.assertIn("use opencode, hermes, pi or dsh", host.err.getvalue())
+        self.assertIn("use opencode, hermes, pi, dsh or kimi, comma-separated", host.err.getvalue())
+
+    def test_empty_kimi_home_is_usage_error(self):
+        host, clients = self.client_host(KIMI_CODE_HOME="")
+        clients.install("kimi")
+        before = clients.snapshot()
+        self.assertEqual(main(["up", "qwen3.6"], host), 1)
+        self.assertTrue(host.err.getvalue().startswith("error: KIMI_CODE_HOME is set but empty"), host.err.getvalue())
+        self.assertEqual(host.calls, [])
+        self.assertEqual(clients.snapshot(), before)
+
+    def test_relative_kimi_home_is_usage_error(self):
+        host, clients = self.client_host(KIMI_CODE_HOME="rel")
+        clients.install("kimi")
+        before = clients.snapshot()
+        self.assertEqual(main(["up", "qwen3.6"], host), 1)
+        self.assertTrue(host.err.getvalue().startswith("error: KIMI_CODE_HOME is relative (rel)"), host.err.getvalue())
+        self.assertEqual(host.calls, [])
+        self.assertEqual(clients.snapshot(), before)
 
     def test_relative_dsh_home_is_usage_error(self):
         host, clients = self.client_host(DSH_HOME="rel")

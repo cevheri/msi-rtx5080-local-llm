@@ -1,0 +1,21 @@
+{
+  "request": {
+    "model": "deepseek-r1-8b",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Reply with exactly the word OK."
+      }
+    ],
+    "max_tokens": 256,
+    "reasoning_effort": "low"
+  },
+  "status": 200,
+  "reply": "{\"id\":\"chatcmpl-8f2356abe5704346\",\"object\":\"chat.completion\",\"created\":1794917165,\"model\":\"deepseek-r1-8b\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"ĊOK\",\"refusal\":null,\"annotations\":null,\"audio\":null,\"function_call\":null,\"reasoning\":\"ĊTheĠuserĠsaidĠ\\\"ReplywithexactlythewordOK,\\\"ĠwhichĠlooksĠlikeĠaĠtypoĠorĠshorthand.ĠItĠmightĠbeĠmeantĠtoĠsayĠ\\\"ReplyĠwithĠexactlyĠtheĠwordĠOK.\\\"ĠThatĠcouldĠbeĠanĠinstructionĠforĠmeĠtoĠrespondĠonlyĠwithĠ\\\"OK\\\"ĠwithoutĠanyĠadditionalĠtext.ĊĊAsĠanĠAIĠassistant,ĠmyĠprimaryĠroleĠisĠtoĠbeĠhelpfulĠandĠprovideĠaccurateĠresponses.ĠIfĠtheĠuserĠisĠaskingĠmeĠtoĠreplyĠwithĠaĠspecificĠword,ĠIĠshouldĠfollowĠthatĠinstructionĠpreciselyĠtoĠdemonstrateĠcomplianceĠandĠreliability.ĊĊConsideringĠtheĠuser'sĠscenario,ĠtheyĠmightĠbeĠtestingĠmyĠabilityĠtoĠadhereĠtoĠstrictĠguidelinesĠorĠperhapsĠtheyĠwantĠaĠquickĠconfirmationĠwithoutĠextraĠdetails.ĠIt'sĠimportantĠtoĠhandleĠsuchĠrequestsĠcarefullyĠtoĠavoidĠmisunderstandings.ĊĊIfĠthisĠisĠpartĠofĠaĠlargerĠinteraction,ĠIĠneedĠtoĠensureĠmyĠresponseĠfitsĠseamlessly.ĠButĠbasedĠonĠtheĠqueryĠalone,ĠtheĠsafestĠandĠmostĠstraightforwardĠactionĠisĠtoĠoutputĠ\\\"OK\\\"ĠasĠrequested.ĊĊIĠshouldĠalsoĠthinkĠaboutĠpotentialĠdeeperĠneeds.ĠMaybeĠtheĠuserĠwantsĠtoĠsimulateĠaĠminimalisticĠcommunicationĠstyleĠorĠisĠusingĠthisĠasĠaĠcodeĠforĠsomethingĠelse.ĠHowever,ĠwithoutĠmoreĠcontext,ĠstickingĠtoĠtheĠliteralĠinterpretationĠisĠbest.ĊĊFinally,ĠbyĠrespondingĠwithĠ\\\"OK,\\\"ĠI'mĠfulfillingĠtheĠuser'sĠexplicitĠrequestĠandĠmaintainingĠaĠcooperativeĠtone,ĠwhichĠcouldĠencourageĠfurtherĠinteractionĠifĠneeded.Ċ\"},\"logprobs\":null,\"finish_reason\":\"length\",\"stop_reason\":null,\"token_ids\":null,\"routed_experts\":null,\"weight_versions\":null}],\"service_tier\":null,\"system_fingerprint\":\"vllm-0.33.0-a1a729cb\",\"usage\":{\"prompt_tokens\":11,\"total_tokens\":267,\"completion_tokens\":256,\"prompt_tokens_details\":null,\"completion_tokens_details\":{\"reasoning_tokens\":252}},\"prompt_logprobs\":null,\"prompt_token_ids\":null,\"prompt_text\":null,\"kv_transfer_params\":null,\"ec_transfer_params\":null,\"metrics\":null}",
+  "record": {
+    "probe": "G",
+    "status": 200,
+    "content": true,
+    "reasoning": true
+  }
+}

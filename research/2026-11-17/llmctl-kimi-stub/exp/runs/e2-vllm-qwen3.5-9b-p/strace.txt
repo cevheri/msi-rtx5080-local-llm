@@ -1,0 +1,20 @@
+936534 +++ exited with 0 +++
+936527 connect(20, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+936527 connect(20, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+936539 connect(10, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+936539 connect(10, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+936539 +++ exited with 0 +++
+936527 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=936539, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+936527 connect(21, {sa_family=AF_INET, sin_port=htons(8000), sin_addr=inet_addr("127.0.0.1")}, 16) = -1 EINPROGRESS (Operation now in progress)
+936531 +++ exited with 0 +++
+936530 +++ exited with 0 +++
+936529 +++ exited with 0 +++
+936528 +++ exited with 0 +++
+936532 +++ exited with 0 +++
+936538 +++ exited with 0 +++
+936536 +++ exited with 0 +++
+936535 +++ exited with 0 +++
+936537 +++ exited with 0 +++
+936533 +++ exited with 0 +++
+936527 +++ exited with 0 +++
+936526 +++ exited with 0 +++

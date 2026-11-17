@@ -1,0 +1,23 @@
+# ~/.kimi-code/config.toml
+# Environment settings for Kimi Code.
+# This file starts empty so built-in defaults can apply.
+# Login will populate managed Kimi provider and model entries.
+
+telemetry = false
+
+[providers.llmctl]
+type = "openai"
+base_url = "http://127.0.0.1:8080/v1"
+api_key = "no-key-required"
+model_source = "static"
+
+[models."llmctl/local"]
+provider = "llmctl"
+model = "local"
+display_name = "qwen3.8-27b on llama.cpp (llmctl)"
+max_context_size = 65536
+max_output_size = 16384
+capabilities = ["tool_use", "thinking"]
+support_efforts = ["low", "medium"]
+default_effort = "medium"
+off_effort = "none"

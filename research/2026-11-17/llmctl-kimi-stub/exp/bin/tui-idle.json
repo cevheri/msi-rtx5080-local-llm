@@ -1,0 +1,1 @@
+[["wait", "Welcome to Kimi Code", 20], ["sleep", 12], ["mark", "idle 12 s"], ["send", "\u0003"], ["sleep", 0.6], ["send", "\u0003"], ["sleep", 3]]

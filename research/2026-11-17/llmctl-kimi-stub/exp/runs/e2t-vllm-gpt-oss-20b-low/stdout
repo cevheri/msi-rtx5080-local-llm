@@ -1,0 +1,5 @@
+{"role":"meta","type":"system.version","version":"2.5.3"}
+{"role":"assistant","tool_calls":[{"type":"function","id":"call_stub_1","function":{"name":"Write","arguments":"{\"path\":\"hello.txt\",\"content\":\"hello\\n\"}"}}]}
+{"role":"tool","tool_call_id":"call_stub_1","content":"Wrote 6 bytes to hello.txt"}
+{"role":"assistant","content":"Done."}
+{"role":"meta","type":"session.resume_hint","session_id":"session_0b4b22cd-02b5-4d5e-a2fd-5c9668d32a32","command":"kimi -r session_0b4b22cd-02b5-4d5e-a2fd-5c9668d32a32","content":"To resume this session: kimi -r session_0b4b22cd-02b5-4d5e-a2fd-5c9668d32a32"}

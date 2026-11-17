@@ -135,6 +135,39 @@ Independently re-checked on 2026-11-17 against the registry, the repository at t
   An aborted headless turn exits 1 without the `dsh: <code>: <message>` line, which only a failed turn prints (`headless/README.md:136`).
   The schema citation now covers the route keys (`llm-pi-ai/src/config.ts:355-380`), the `DSH_HOME` rule names `~\`, which dsh expands like `~/` (`home-paths/src/index.ts:89`), and the compaction formula cites `config.ts:20` and `172-194`.
 
+### Kimi Code CLI
+
+Reviewed on 2026-11-17 by two research lanes: the docs lane quoted 212 claims from 30 pages of the kimi.com docs, their GitHub Pages copies, the GitHub repository and the npm registry, and the binary lane made 51 claims from the 2.5.3 executable, its extracted bundle and offline runs.
+The 71 claims that [clients.md](clients.md) and the design cite, written `docs-K036` for the docs lane and `local-K25` for the binary lane, are archived with their verdicts and sources in [research-claims.json](../research/2026-11-17/llmctl-kimi-stub/research-claims.json), described in [its README](../research/2026-11-17/llmctl-kimi-stub/README.md#research-claims).
+Independently re-checked on 2026-11-17: each page below was fetched again with `curl` into an empty scratch folder and turned into text with `python3 -I` (`html.parser`, entities unescaped, whitespace collapsed), and a docs claim holds when its quote, backticks removed, is on the kimi.com page and on its GitHub Pages copy and the claim says no more than the quote; a local claim holds when the bundle's sha256 matches and its cited lines, read with `sed -n`, or its cited command record show what it says.
+Of the 71 claims, 67 hold and 4 hold with corrections (docs-K152, docs-K154, local-K07 and local-K09), and none fails; the corrections are in the list below.
+
+- The kimi.com docs pages under [kimi-code-cli/](https://www.kimi.com/code/docs/en/kimi-code-cli/configuration/config-files.html), each with its GitHub Pages copy under [moonshotai.github.io/kimi-code/en/](https://moonshotai.github.io/kimi-code/en/configuration/config-files.html) as the second source (vendor-reported):
+  [config files](https://www.kimi.com/code/docs/en/kimi-code-cli/configuration/config-files.html) ([copy](https://moonshotai.github.io/kimi-code/en/configuration/config-files.html)): docs-K016, docs-K065, docs-K067, docs-K081, docs-K123, docs-K142, docs-K155 and docs-K161;
+  [environment variables](https://www.kimi.com/code/docs/en/kimi-code-cli/configuration/env-vars.html) ([copy](https://moonshotai.github.io/kimi-code/en/configuration/env-vars.html)): docs-K012, docs-K031, docs-K055, docs-K056, docs-K143, docs-K156, docs-K163 and docs-K168;
+  [providers](https://www.kimi.com/code/docs/en/kimi-code-cli/configuration/providers.html) ([copy](https://moonshotai.github.io/kimi-code/en/configuration/providers.html)): docs-K036, docs-K041 and docs-K043;
+  [overrides](https://www.kimi.com/code/docs/en/kimi-code-cli/configuration/overrides.html) ([copy](https://moonshotai.github.io/kimi-code/en/configuration/overrides.html)): docs-K019 and docs-K144;
+  [data locations](https://www.kimi.com/code/docs/en/kimi-code-cli/configuration/data-locations.html) ([copy](https://moonshotai.github.io/kimi-code/en/configuration/data-locations.html)): docs-K014 and docs-K162;
+  [the kimi command](https://www.kimi.com/code/docs/en/kimi-code-cli/reference/kimi-command.html) ([copy](https://moonshotai.github.io/kimi-code/en/reference/kimi-command.html)): docs-K021, docs-K100 and docs-K101;
+  [server API](https://www.kimi.com/code/docs/en/kimi-code-cli/reference/server-api.html) ([copy](https://moonshotai.github.io/kimi-code/en/reference/server-api.html)): docs-K154;
+  [slash commands](https://www.kimi.com/code/docs/en/kimi-code-cli/reference/slash-commands.html) ([copy](https://moonshotai.github.io/kimi-code/en/reference/slash-commands.html)): docs-K152;
+  [agents](https://www.kimi.com/code/docs/en/kimi-code-cli/customization/agents.html) ([copy](https://moonshotai.github.io/kimi-code/en/customization/agents.html)): docs-K138;
+  [interaction](https://www.kimi.com/code/docs/en/kimi-code-cli/guides/interaction.html) ([copy](https://moonshotai.github.io/kimi-code/en/guides/interaction.html)): docs-K114;
+  [sessions](https://www.kimi.com/code/docs/en/kimi-code-cli/guides/sessions.html) ([copy](https://moonshotai.github.io/kimi-code/en/guides/sessions.html)): docs-K131;
+  [migration](https://www.kimi.com/code/docs/en/kimi-code-cli/guides/migration.html) ([copy](https://moonshotai.github.io/kimi-code/en/guides/migration.html)): docs-K002;
+  [changelog](https://www.kimi.com/code/docs/en/kimi-code-cli/changelog.html) ([copy](https://moonshotai.github.io/kimi-code/en/release-notes/changelog.html)): docs-K145 and docs-K164, and on the copy docs-K111.
+  Hold, apart from two corrections: `/feedback` sends diagnostic logs and codebase context only when you choose to, because the page calls them optional (docs-K152), and the session-title text is only on the kimi.com page, the GitHub Pages copy listing the route without it, so docs-K154 cites the kimi.com page and its claim about the TUI rests on the bundle (local-K47).
+  Every other quote is on both pages, docs-K100 and docs-K131 with the pages' dash where the archive has a hyphen; the kimi.com changelog ends at 2.5.3 (2026-11-10), while the copy starts at 2.6.2 and has 2.6.0's fix of docs-K111.
+- [Kimi Code CLI 2.5.3 on npm](https://www.npmjs.com/package/@moonshot-ai/kimi-code/v/2.5.3) (`@moonshot-ai/kimi-code`) and [its registry record](https://registry.npmjs.org/@moonshot-ai%2fkimi-code/2.5.3), with the [full record](https://registry.npmjs.org/@moonshot-ai%2fkimi-code) for the dist-tags and dates: the pinned version and the newer releases (docs-K007, docs-K008).
+  Holds: the record and `npm view @moonshot-ai/kimi-code time dist-tags --json` give 2.5.3 published 2026-11-10 13:12 UTC, `latest` 2.6.2 (2026-11-13 17:28 UTC) and `canary` 2.7.0-canary.20261113055733-391d9e7; the 2.5.3 record has no `gitHead` and names the repository's `apps/kimi-code` folder.
+  The npm page answers scripts with HTTP 403, so the record is the checkable source.
+- [The repository at tag `@moonshot-ai/kimi-code@2.5.3`](https://github.com/MoonshotAI/kimi-code/tree/5af9942e9fb789b6a1530830575b3768499932e9), commit `5af9942e9fb789b6a1530830575b3768499932e9` (annotated tag object `cf71981af39152921167175b46124c6c7e82b132`).
+  Holds: `git ls-remote --tags` lists the tag and its commit; the documents cite no file from it, because the installed program is the native executable `~/.kimi-code/bin/kimi`, whose bundle the local claims read.
+- The stub records in [research/2026-11-17/llmctl-kimi-stub/](../research/2026-11-17/llmctl-kimi-stub/README.md): measured on this laptop, E1 to E8 and P1 to P3 in private Kimi homes inside an offline sandbox against a recording stub or with no server, the prototype with Python's `tomllib`, and the hands-on runs through a recording proxy to the gemma-4-26b-a4b recipe on llama.cpp b12407; the plan's archive review covers them, not this check.
+- The bundle claims (`local-` ids): `main.cjs` extracted from the 2.5.3 executable by [sea_extract.py](../research/2026-11-17/llmctl-kimi-stub/bin/sea_extract.py), 23,705,892 bytes with sha256 `0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57`, not archived; each claim was re-read at its cited lines.
+  Hold, apart from two corrections: `--base-url` and `--api-key` exist on `kimi provider add` and `kimi provider catalog add`, only the root command lacks them (local-K07), and an empty `KIMI_CODE_HOME` counts as unset in `getDataDir` and the login code but is kept by the engine's `resolveKimiHome` (local-K09), which is why llmctl refuses an empty value.
+  local-K01 rests on the `xxd` bytes its sources quote, which decode to the `NODE_SEA_BLOB` note with Node's SEA magic, because this check reads nothing in the owner's `~/.kimi-code`.
+
 ### Model cards, vendor posts and quant publishers
 
 - Hugging Face model cards and raw `config.json` files are primary for architecture, context length, license, parser hints and sampling; their benchmark tables are vendor-reported.
@@ -233,6 +266,7 @@ Credibility is for the stated use.
 - [Hermes Agent v0.23.1](https://github.com/NousResearch/hermes-agent/tree/v0.23.1), source at commit `3b421578588243f920886e6fe79a6faa87ea026e`
 - [Pi 1.5.2 on npm](https://www.npmjs.com/package/@earendil-works/pi-coding-agent/v/1.5.2) with its [registry record](https://registry.npmjs.org/@earendil-works/pi-coding-agent/1.5.2), and [its source at v1.5.2](https://github.com/earendil-works/pi/tree/v1.5.2/packages/coding-agent)
 - [DeepSeek Harness 0.2.2-rc.3 on npm](https://www.npmjs.com/package/@deepseek-ai/dsh/v/0.2.2-rc.3) with its [registry record](https://registry.npmjs.org/@deepseek-ai%2fdsh/0.2.2-rc.3), [the repository at tag `dsh-v0.2.2-rc.3`](https://github.com/deepseek-ai/deepseek-harness/tree/dsh-v0.2.2-rc.3) (commit `38a6a5c965aa99ab525161efb7cc5cf1fe62fced`), the [docs site](https://deepseek-harness.github.io/deepseek-harness/en/reference/index.md) and the [privacy policy](https://www.deepseek.com/en/harness/privacy/), independently re-checked on 2026-11-17
+- [Kimi Code CLI 2.5.3 on npm](https://www.npmjs.com/package/@moonshot-ai/kimi-code/v/2.5.3) with its [registry record](https://registry.npmjs.org/@moonshot-ai%2fkimi-code/2.5.3), [the repository at tag `@moonshot-ai/kimi-code@2.5.3`](https://github.com/MoonshotAI/kimi-code/tree/5af9942e9fb789b6a1530830575b3768499932e9) (commit `5af9942e9fb789b6a1530830575b3768499932e9`), and the [kimi.com docs](https://www.kimi.com/code/docs/en/kimi-code-cli/configuration/config-files.html) with their [GitHub Pages copy](https://moonshotai.github.io/kimi-code/en/configuration/config-files.html), independently re-checked on 2026-11-17
 - [Artificial Analysis](https://artificialanalysis.ai/)
 - [Nemotron 3.5 Lightning model card](https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16)
 - The 19 user-provided sources linked in the table above
@@ -240,6 +274,6 @@ Credibility is for the stated use.
 
 ## Maintenance
 
-Re-verify before relying on this catalog: the pinned versions (vLLM, llama.cpp build and image tag, Ollama, Container Toolkit, OpenCode, Hermes Agent, Pi, DeepSeek Harness), whether the stale leaderboards have resumed, and the as-of dates of the live sources (Artificial Analysis index version, Ollama and OpenRouter catalogs, calculator data dates).
+Re-verify before relying on this catalog: the pinned versions (vLLM, llama.cpp build and image tag, Ollama, Container Toolkit, OpenCode, Hermes Agent, Pi, DeepSeek Harness, Kimi Code CLI), whether the stale leaderboards have resumed, and the as-of dates of the live sources (Artificial Analysis index version, Ollama and OpenRouter catalogs, calculator data dates).
 Re-run the independent check for any source whose page date has moved since 2026-11-15 before citing a new number from it.
 When the first measurement on this laptop exists, add it as the first "Measured on this machine" example in the evidence class table.

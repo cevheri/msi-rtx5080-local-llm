@@ -1,0 +1,8 @@
+{
+  "command": "dsh web --port 3182 --no-open",
+  "cwd": "$WORK/04-qwen3-coder-next-llamacpp-dsh-web",
+  "exit": 0,
+  "seconds": 4.6,
+  "stdout": "dsh web: <address withheld>\n",
+  "stderr": ""
+}

@@ -1,0 +1,42 @@
+{
+  "request": {
+    "model": "local",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a short title for a chat about adding two numbers in Python."
+      }
+    ],
+    "reasoning_effort": "none",
+    "response_format": {
+      "type": "json_schema",
+      "json_schema": {
+        "name": "session_title",
+        "strict": true,
+        "schema": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "title"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "max_tokens": 32768,
+    "stream": false
+  },
+  "status": 200,
+  "reply": "{\"choices\":[{\"finish_reason\":\"stop\",\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"title\\\": \\\"Adding Two Numbers in Python: Quick & Easy\\\"}\",\"reasoning_content\":\"We are going to write a short title for a chat about adding two numbers in Python.\\n The topic is very simple: adding two numbers in Python.\\n Possible titles:\\n - \\\"Adding Two Numbers in Python: A Beginner's Guide\\\"\\n - \\\"Python: How to Add Two Numbers\\\"\\n - \\\"Simple Addition in Python\\\"\\n - \\\"Adding Numbers in Python: Step by Step\\\"\\n - \\\"Python Basics: Adding Two Numbers\\\"\\n\\n Since it's a chat, it should be short and catchy. Let's go with something concise and clear.\\n\\n I think \\\"Adding Two Numbers in Python\\\" is the most direct, but we can add a bit more to make it appealing for a chat.\\n\\n How about: \\\"Let's Add Two Numbers in Python!\\\" \\n\\n But the instruction says \\\"short title\\\", so maybe without the exclamation? However, in a chat context, an exclamation is common.\\n\\n Alternatively: \\\"Python Addition: A Quick Guide\\\"\\n\\n Let me choose one that is short and to the point.\\n\\n Final choice: \\\"Adding Two Numbers in Python\\\" is 30 characters without spaces, but with spaces it's 26. It's acceptable.\\n\\n However, to make it a bit more engaging for a chat, I'll go with: \\\"Let's Add Two Numbers in Python!\\\"\\n\\n But note: the instruction says \\\"short title\\\", so we don't want it too long.\\n\\n Another option: \\\"Python: Adding Two Numbers\\\"\\n\\n I think \\\"Adding Two Numbers in Python\\\" is the most standard and clear.\\n\\n However, the problem says \\\"write a short title for a chat\\\", so we can be a bit informal.\\n\\n I'll go with: \\\"Adding Two Numbers in Python - Quick Chat\\\"\\n\\n But let's keep it very short: \\\"Adding Two Numbers in Python\\\"\\n\\n Actually, the problem says \\\"short title\\\", so the above is short enough.\\n\\n Let's output: \\\"Adding Two Numbers in Python\\\"\"}}],\"created\":1794915796,\"model\":\"local\",\"system_fingerprint\":\"b12407-e574a17b0\",\"object\":\"chat.completion\",\"usage\":{\"completion_tokens\":391,\"prompt_tokens\":24,\"total_tokens\":415,\"prompt_tokens_details\":{\"cached_tokens\":2}},\"id\":\"chatcmpl-qgFZl028BqjFq42dSI36yGXrTghKOvsL\",\"timings\":{\"cache_n\":2,\"prompt_n\":22,\"prompt_ms\":16.842,\"prompt_per_token_ms\":0.7655454545454545,\"prompt_per_second\":1306.258164113526,\"predicted_n\":391,\"predicted_ms\":5766.739,\"predicted_per_token_ms\":14.786510256410255,\"predicted_per_second\":67.62920950644724}}",
+  "record": {
+    "probe": "A",
+    "status": 200,
+    "content": true,
+    "reasoning": true,
+    "title_ok": true
+  }
+}

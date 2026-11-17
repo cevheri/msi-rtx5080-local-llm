@@ -1,0 +1,20 @@
+934122 +++ exited with 0 +++
+934115 connect(20, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+934115 connect(20, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+934127 connect(10, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+934127 connect(10, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+934127 +++ exited with 0 +++
+934115 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=934127, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+934115 connect(21, {sa_family=AF_INET, sin_port=htons(8000), sin_addr=inet_addr("127.0.0.1")}, 16) = -1 EINPROGRESS (Operation now in progress)
+934119 +++ exited with 0 +++
+934117 +++ exited with 0 +++
+934120 +++ exited with 0 +++
+934118 +++ exited with 0 +++
+934116 +++ exited with 0 +++
+934126 +++ exited with 0 +++
+934124 +++ exited with 0 +++
+934123 +++ exited with 0 +++
+934125 +++ exited with 0 +++
+934121 +++ exited with 0 +++
+934115 +++ exited with 0 +++
+934114 +++ exited with 0 +++

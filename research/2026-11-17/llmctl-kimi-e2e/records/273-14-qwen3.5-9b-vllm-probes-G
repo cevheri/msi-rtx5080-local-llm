@@ -1,0 +1,21 @@
+{
+  "request": {
+    "model": "qwen3.5-9b",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Reply with exactly the word OK."
+      }
+    ],
+    "max_tokens": 256,
+    "reasoning_effort": "low"
+  },
+  "status": 200,
+  "reply": "{\"id\":\"chatcmpl-8b2f4853699c3c1f\",\"object\":\"chat.completion\",\"created\":1794916825,\"model\":\"qwen3.5-9b\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"\\n\\nOK\",\"refusal\":null,\"annotations\":null,\"audio\":null,\"function_call\":null,\"reasoning\":\"Thinking Process:\\n1.  **Analyze the Request:** The user is asking me to reply with exactly the word \\\"OK\\\".\\n2.  **Check Constraints:** The constraint is \\\"exactly the word OK\\\". This means no extra punctuation, no extra text, no explanations.\\n3.  **Formulate Output:** The output must be \\\"OK\\\".\\n4.  **Verify:** Does \\\"OK\\\" meet the criteria? Yes.\\n5.  **Final Decision:** Output \\\"OK\\\".\\n\"},\"logprobs\":null,\"finish_reason\":\"stop\",\"stop_reason\":null,\"token_ids\":null,\"routed_experts\":null,\"weight_versions\":null}],\"service_tier\":null,\"system_fingerprint\":\"vllm-0.33.0-ea1bf86c\",\"usage\":{\"prompt_tokens\":17,\"total_tokens\":125,\"completion_tokens\":108,\"prompt_tokens_details\":null,\"completion_tokens_details\":{\"reasoning_tokens\":104}},\"prompt_logprobs\":null,\"prompt_token_ids\":null,\"prompt_text\":null,\"kv_transfer_params\":null,\"ec_transfer_params\":null,\"metrics\":null}",
+  "record": {
+    "probe": "G",
+    "status": 200,
+    "content": true,
+    "reasoning": true
+  }
+}

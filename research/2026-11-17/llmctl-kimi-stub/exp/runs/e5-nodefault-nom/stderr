@@ -1,0 +1,3 @@
+error: failed to run prompt: No model configured. Run `kimi` and use /login to sign in, then retry; or set default_model in config.toml.
+See log: $SCRATCH/kimi/exp/homes/e5-nodefault-nom/.kimi-code/logs/kimi-code.log
+2026/11/17 11:49:42 socat[930763] W exiting on signal 15

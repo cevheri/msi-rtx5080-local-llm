@@ -1,0 +1,8 @@
+{
+  "command": "hermes -p llmctl config get providers --json",
+  "cwd": "$WORK/02-k2-horizon-7b-llamacpp-hermes-config-providers",
+  "exit": 0,
+  "seconds": 0.4,
+  "stdout": "{\"llmctl\": {\"name\": \"llmctl: k2-horizon-7b on llama.cpp\", \"api\": \"http://127.0.0.1:8080/v1\", \"transport\": \"chat_completions\", \"default_model\": \"local\", \"discover_models\": false, \"extra_body\": {\"max_tokens\": 32768}, \"models\": {\"local\": {\"context_length\": 81920}}}}\n",
+  "stderr": ""
+}

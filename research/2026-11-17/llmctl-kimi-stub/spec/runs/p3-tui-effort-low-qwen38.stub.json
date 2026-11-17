@@ -1,0 +1,1 @@
+{"record": "$SCRATCH/kimi/spec/runs/p3-tui-effort-low-qwen38/records.jsonl", "canned_reasoning": "", "rules": [{"nth": 1, "action": {"type": "text", "text": "PONG-ONE"}}], "default": {"type": "text", "text": "PONG-MORE"}}

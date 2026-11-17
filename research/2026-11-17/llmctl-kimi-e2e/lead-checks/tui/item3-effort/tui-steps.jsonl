@@ -1,0 +1,29 @@
+{"t": 0.0, "step": ["wait", "Welcome to Kimi Code", 30], "hit": true}
+{"t": 0.87, "step": ["sleep", 2]}
+{"t": 2.89, "step": ["mark", "start"]}
+{"t": 2.89, "step": ["copy", "$KIMI_CODE_HOME/config.toml", "c0-start.toml"], "ok": true}
+{"t": 2.89, "step": ["type", "/effort"]}
+{"t": 3.36, "step": ["sleep", 1.2]}
+{"t": 4.57, "step": ["send", "\r"]}
+{"t": 4.88, "step": ["wait", "Select thinking effort", 10], "hit": true}
+{"t": 5.08, "step": ["sleep", 1.5]}
+{"t": 6.59, "step": ["mark", "effort-selector"]}
+{"t": 6.59, "step": ["send", "\u001b[D"]}
+{"t": 6.89, "step": ["sleep", 0.8]}
+{"t": 7.7, "step": ["mark", "after-left"]}
+{"t": 7.7, "step": ["send", "\u001bs"]}
+{"t": 8.02, "step": ["sleep", 2.5]}
+{"t": 10.54, "step": ["mark", "picked-alt-s"]}
+{"t": 10.54, "step": ["copy", "$KIMI_CODE_HOME/config.toml", "c1-after-effort.toml"], "ok": true}
+{"t": 10.54, "step": ["type", "Reply with the word banana in capital letters and nothing else."]}
+{"t": 13.78, "step": ["sleep", 0.5]}
+{"t": 14.28, "step": ["send", "\r"]}
+{"t": 14.59, "step": ["wait", "BANANA|rror", 300], "hit": true}
+{"t": 25.34, "step": ["sleep", 3]}
+{"t": 28.35, "step": ["mark", "answered-1"]}
+{"t": 28.35, "step": ["copy", "$KIMI_CODE_HOME/config.toml", "c2-after-prompt.toml"], "ok": true}
+{"t": 28.35, "step": ["send", "\u0003"]}
+{"t": 28.65, "step": ["sleep", 0.6]}
+{"t": 29.26, "step": ["send", "\u0003"]}
+{"t": 29.34, "step": ["sleep", 3]}
+{"t": 29.34, "step": ["copy", "$KIMI_CODE_HOME/config.toml", "c3-after-exit.toml"], "ok": true}

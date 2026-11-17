@@ -1,0 +1,6 @@
+# ~/.kimi-code/config.toml
+# Environment settings for Kimi Code.
+# This file starts empty so built-in defaults can apply.
+# Login will populate managed Kimi provider and model entries.
+
+telemetry = false

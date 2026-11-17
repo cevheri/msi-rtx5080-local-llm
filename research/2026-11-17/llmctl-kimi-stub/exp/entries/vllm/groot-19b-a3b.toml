@@ -1,0 +1,13 @@
+[providers.llmctl]
+type = "openai"
+base_url = "http://127.0.0.1:8000/v1"
+api_key = "no-key-required"
+model_source = "static"
+
+[models."llmctl/groot-19b-a3b"]
+provider = "llmctl"
+model = "groot-19b-a3b"
+display_name = "groot-19b-a3b on vLLM (llmctl)"
+max_context_size = 131072
+max_output_size = 16384
+capabilities = ["tool_use"]

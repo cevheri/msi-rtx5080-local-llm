@@ -1,0 +1,20 @@
+869368 +++ exited with 0 +++
+869361 connect(20, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+869361 connect(20, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+869373 connect(10, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+869373 connect(10, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+869373 +++ exited with 0 +++
+869361 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=869373, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+869361 connect(21, {sa_family=AF_INET, sin_port=htons(47303), sin_addr=inet_addr("127.0.0.1")}, 16) = -1 EINPROGRESS (Operation now in progress)
+869366 +++ exited with 0 +++
+869365 +++ exited with 0 +++
+869363 +++ exited with 0 +++
+869364 +++ exited with 0 +++
+869362 +++ exited with 0 +++
+869370 +++ exited with 0 +++
+869369 +++ exited with 0 +++
+869372 +++ exited with 0 +++
+869371 +++ exited with 0 +++
+869367 +++ exited with 0 +++
+869361 +++ exited with 0 +++
+869360 +++ exited with 0 +++

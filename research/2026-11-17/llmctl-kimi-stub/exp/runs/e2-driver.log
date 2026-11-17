@@ -1,0 +1,42 @@
+e2-llamacpp-deepseek-r1-0528-qwen3-8b True 0
+e2-llamacpp-gemma-4-26b-a4b True 0
+e2-llamacpp-gpt-oss-20b True 0
+e2-llamacpp-groot-19b-a3b True 0
+e2-llamacpp-k2-horizon-7b True 0
+e2-llamacpp-k2-horizon-mova-36b True 0
+e2-llamacpp-nemotron-3.5-bolt True 0
+e2-llamacpp-nemotron-3.5-lightning True 0
+e2-llamacpp-qwen3-coder-next True 0
+e2-llamacpp-qwen3.6-35b-a3b True 0
+e2-llamacpp-qwen3.8-27b True 0
+e2-vllm-deepseek-r1-0528-qwen3-8b True 0
+e2-vllm-gemma-4-12b True 0
+e2-vllm-gemma-4-e4b True 0
+e2-vllm-gpt-oss-20b True 0
+e2-vllm-groot-19b-a3b True 0
+e2-vllm-k2-horizon-7b True 0
+e2-vllm-mellum2.1-12b True 0
+e2-vllm-qwen3.5-9b True 0
+e2r-llamacpp-qwen3.6-35b-a3b 0
+e2r-vllm-mellum2.1-12b 0
+e2r-llamacpp-qwen3.8-27b 0
+e2r-llamacpp-gpt-oss-20b 0
+e2r-vllm-k2-horizon-7b 0
+e2r-llamacpp-qwen3-coder-next 0
+e2r-vllm-deepseek-r1-0528-qwen3-8b 0
+e2r-vllm-mellum2.1-12b-reasoning 0
+e2r-vllm-k2-horizon-7b-reasoning 0
+e2r-vllm-deepseek-r1-0528-qwen3-8b-reasoning 0
+e2r-vllm-gpt-oss-20b-reasoning 0
+e2t-llamacpp-qwen3.8-27b-off 0
+e2t-llamacpp-qwen3.8-27b-low 0
+e2t-llamacpp-qwen3.8-27b-on 0
+e2t-llamacpp-gpt-oss-20b-off 1
+e2t-llamacpp-gpt-oss-20b-low 0
+e2t-llamacpp-gpt-oss-20b-on 0
+e2t-vllm-gpt-oss-20b-off 1
+e2t-vllm-gpt-oss-20b-low 0
+e2t-vllm-gpt-oss-20b-on 0
+e2t-llamacpp-qwen3.6-35b-a3b-on 0
+e2t-llamacpp-qwen3.6-35b-a3b-off 0
+wrote $SCRATCH/kimi/exp/runs/e2-summary-all.jsonl

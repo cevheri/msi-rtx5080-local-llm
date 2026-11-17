@@ -1,0 +1,1 @@
+kimi -p Reply\ with\ exactly\ OK. --output-format stream-json -m llmctl/gemma-4-12b 

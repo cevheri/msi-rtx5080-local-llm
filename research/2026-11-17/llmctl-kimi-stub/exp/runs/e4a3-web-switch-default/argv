@@ -1,0 +1,1 @@
+bash $SCRATCH/kimi/exp/bin/e4_web.sh $SCRATCH/kimi/exp/runs/e4a3-web-switch-default other%2Fm 

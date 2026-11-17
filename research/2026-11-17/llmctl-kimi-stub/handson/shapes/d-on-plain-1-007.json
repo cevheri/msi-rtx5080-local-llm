@@ -1,0 +1,106 @@
+{
+ "idx": 7,
+ "time": "08:54:05",
+ "method": "POST",
+ "path": "/v1/chat/completions",
+ "headers": {
+  "host": "127.0.0.1:47303",
+  "connection": "keep-alive",
+  "Accept": "application/json",
+  "X-Stainless-Retry-Count": "0",
+  "X-Stainless-Lang": "js",
+  "X-Stainless-Package-Version": "6.34.0",
+  "X-Stainless-OS": "Linux",
+  "X-Stainless-Arch": "x64",
+  "X-Stainless-Runtime": "node",
+  "X-Stainless-Runtime-Version": "v24.15.0",
+  "authorization": "<masked>",
+  "User-Agent": "kimi-code-cli/2.5.3",
+  "content-type": "application/json",
+  "accept-language": "*",
+  "sec-fetch-mode": "cors",
+  "accept-encoding": "gzip, deflate",
+  "content-length": "56928"
+ },
+ "request": {
+  "keys": [
+   "max_tokens",
+   "messages",
+   "model",
+   "prompt_cache_key",
+   "stream",
+   "stream_options",
+   "tools"
+  ],
+  "model": "local",
+  "max_tokens": 16384,
+  "stream": true,
+  "stream_options": {
+   "include_usage": true
+  },
+  "prompt_cache_key": "session_8fb78a39-23c9-47e4-8303-d15af5e34fe8",
+  "tool_count": 24,
+  "tool_names": [
+   "Agent",
+   "AgentSwarm",
+   "AskUserQuestion",
+   "Bash",
+   "CreateGoal",
+   "CronCreate",
+   "CronDelete",
+   "CronList",
+   "Edit",
+   "ExitPlanMode",
+   "FetchURL",
+   "GetGoal",
+   "Glob",
+   "Grep",
+   "Read",
+   "SetGoalBudget",
+   "Skill",
+   "TaskList",
+   "TaskOutput",
+   "TaskStop",
+   "TodoList",
+   "UpdateGoal",
+   "WaitFor",
+   "Write"
+  ],
+  "messages": [
+   {
+    "role": "system",
+    "content": "<10179 chars dropped>"
+   },
+   {
+    "role": "user",
+    "content": "What is 17 times 23? Reply with only the number."
+   },
+   {
+    "role": "user",
+    "content": "<285 chars dropped>"
+   },
+   {
+    "role": "user",
+    "content": "<452 chars dropped>"
+   }
+  ]
+ },
+ "status": 200,
+ "response": {
+  "seen": {
+   "reasoning_content": false,
+   "tool_calls": false,
+   "content": true
+  },
+  "finish_reason": "stop",
+  "usage": {
+   "completion_tokens": 4,
+   "prompt_tokens": 12217,
+   "total_tokens": 12221,
+   "prompt_tokens_details": {
+    "cached_tokens": 1
+   }
+  },
+  "seconds": 3.94
+ }
+}

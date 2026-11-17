@@ -1,0 +1,4 @@
+# connect calls of one Kimi print-mode session (L-c), with counts
+      1 connect({sa_family=AF_INET, sin_port=htons(8080), sin_addr=inet_addr("127.0.0.1")}, 16) = -1 EINPROGRESS
+      2 connect({sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT
+# sendto calls: 0

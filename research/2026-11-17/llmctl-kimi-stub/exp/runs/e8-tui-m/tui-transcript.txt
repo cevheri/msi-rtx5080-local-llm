@@ -1,0 +1,129 @@
+ 
+
+  ⠋ Preparing Kimi Code…                                                                                                                   
+
+ 
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │                                                                                                                                        │
+
+ │  ▐█▛█▛█▌  Welcome to Kimi Code!                                                                                                        │
+
+ │  ▐█████▌  Send /help for help information.                                                                                             │
+
+ │                                                                                                                                        │
+
+ │  Directory: $SCRATCH/kimi/exp/work/e8-tui-m         │
+
+ │  Session:                                                                                                                              │
+
+ │  Model:     gemma-4-26b-a4b on llama.cpp (llmctl)                                                                                      │
+
+ │  Version:   2.5.3                                                                                                                      │
+
+ │                                                                                                                                        │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ 
+
+   No session yet — one will be created on your first message.                                                                             
+
+ 
+
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ >                                                                                                                                      │
+
+ ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────���─────────╯
+
+ gemma-4-26b-a4b on llama.cpp (llmctl)  …/exp/work/e8-tui-m                                                       /init: generate AGENTS.md
+
+                                                                                                                       context: 0% (0/128k)
+<<<MARK start>>>
+
+ │ > R                                                                                                                                    │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ gemma-4-26b-a4b on llama.cpp (llmctl)  …/exp/work/e8-tui-m                              /goal for multi-step work with a clear finish line
+ │ > Re                                                                                                                                   │
+ │ > Rep                                                                                                                                  │
+ │ > Repl                                                                                                                                 │
+ │ > Reply                                                                                                                                │
+ │ > Reply                                                                                                                                │
+ │ > Reply w                                                                                                                              │
+ │ > Reply wi                                                                                                                             │
+ │ > Reply wit                                                                                                                            │
+ │ > Reply with                                                                                                                           │
+ │ > Reply with                                                                                                                           │
+ │ > Reply with t                                                                                                                         │
+ │ > Reply with th                                                                                                                        │
+ │ > Reply with the                                                                                                                       │
+ │ > Reply with the                                                                                                                       │
+ │ > Reply with the s                                                                                                                     │
+ │ > Reply with the st                                                                                                                    │
+ │ > Reply with the stu                                                                                                                   │
+ │ > Reply with the stub                                                                                                                  │
+ │ > Reply with the stub                                                                                                                  │
+ │ > Reply with the stub w                                                                                                                │
+ │ > Reply with the stub wo                                                                                                               │
+ │ > Reply with the stub wor                                                                                                              │
+ │ > Reply with the stub word                                                                                                             │
+ │ > Reply with the stub word.                                                                                                            │
+ │ >                                                                                                                                      │
+ │  Session:   session_c1df8d12-0d81-4f6d-b76e-83183a8fb7ad                                                                               │
+
+ │  Model:     gemma-4-26b-a4b on llama.cpp (llmctl)                                                                                      │
+
+ │  Version:   2.5.3                                                                                                                      │
+
+ │                                                                                                                                        │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ 
+
+   No session yet — one will be created on your first message.                                                                             
+
+ 
+
+ ❯ Reply with the stub word.                                                                                                               
+
+ 
+
+  🌑 · Tip: @: mention files                                                                                                               
+
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ >                                                                                                                                      │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ gemma-4-26b-a4b on llama.cpp (llmctl)  …/exp/work/e8-tui-m                              /goal for multi-step work with a clear finish line
+
+                                                                                                                       context: 0% (0/128k)
+ 
+
+ ● PONG-ONE                                                                                                                                
+
+ 
+
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ >                                                                                                                                      │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ gemma-4-26b-a4b on llama.cpp (llmctl)  …/exp/work/e8-tui-m                              /goal for multi-step work with a clear finish line
+
+                                                                                                                      context: 1% (86/128k)
+<<<MARK answered-1>>>
+
+ Press Ctrl+C again to exit                                                                                           context: 1% (86/128k)
+                                                                                                                      context: 1% (86/128k)
+ Shutting down… (running shutdown hooks)                                                                              context: 1% (86/128k) 
+
+ Bye!
+
+ To resume this session: kimi -r session_c1df8d12-0d81-4f6d-b76e-83183a8fb7ad

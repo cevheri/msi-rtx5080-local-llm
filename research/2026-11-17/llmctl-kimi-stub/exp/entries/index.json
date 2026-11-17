@@ -1,0 +1,620 @@
+[
+ {
+  "runtime": "llamacpp",
+  "label": "llama.cpp",
+  "id": "deepseek-r1-0528-qwen3-8b",
+  "served": "local",
+  "alias": "llmctl/local",
+  "port": 8080,
+  "chat_only": true,
+  "thinking": "always",
+  "default": null,
+  "efforts": [],
+  "context": 65536,
+  "output": 16384,
+  "provider": {
+   "type": "openai",
+   "base_url": "http://127.0.0.1:8080/v1",
+   "api_key": "no-key-required",
+   "model_source": "static"
+  },
+  "model": {
+   "provider": "llmctl",
+   "model": "local",
+   "display_name": "deepseek-r1-0528-qwen3-8b on llama.cpp (llmctl)",
+   "max_context_size": 65536,
+   "max_output_size": 16384,
+   "capabilities": []
+  },
+  "file": "llamacpp/deepseek-r1-0528-qwen3-8b.toml"
+ },
+ {
+  "runtime": "llamacpp",
+  "label": "llama.cpp",
+  "id": "gemma-4-26b-a4b",
+  "served": "local",
+  "alias": "llmctl/local",
+  "port": 8080,
+  "chat_only": false,
+  "thinking": "toggle",
+  "default": "off",
+  "efforts": [],
+  "context": 131072,
+  "output": 16384,
+  "provider": {
+   "type": "openai",
+   "base_url": "http://127.0.0.1:8080/v1",
+   "api_key": "no-key-required",
+   "model_source": "static"
+  },
+  "model": {
+   "provider": "llmctl",
+   "model": "local",
+   "display_name": "gemma-4-26b-a4b on llama.cpp (llmctl)",
+   "max_context_size": 131072,
+   "max_output_size": 16384,
+   "capabilities": [
+    "tool_use"
+   ]
+  },
+  "file": "llamacpp/gemma-4-26b-a4b.toml"
+ },
+ {
+  "runtime": "llamacpp",
+  "label": "llama.cpp",
+  "id": "gpt-oss-20b",
+  "served": "local",
+  "alias": "llmctl/local",
+  "port": 8080,
+  "chat_only": false,
+  "thinking": "effort",
+  "default": null,
+  "efforts": [
+   "low",
+   "medium",
+   "high"
+  ],
+  "context": 131072,
+  "output": 16384,
+  "provider": {
+   "type": "openai",
+   "base_url": "http://127.0.0.1:8080/v1",
+   "api_key": "no-key-required",
+   "model_source": "static"
+  },
+  "model": {
+   "provider": "llmctl",
+   "model": "local",
+   "display_name": "gpt-oss-20b on llama.cpp (llmctl)",
+   "max_context_size": 131072,
+   "max_output_size": 16384,
+   "capabilities": [
+    "tool_use",
+    "thinking"
+   ],
+   "support_efforts": [
+    "low",
+    "medium",
+    "high"
+   ],
+   "default_effort": "medium"
+  },
+  "file": "llamacpp/gpt-oss-20b.toml"
+ },
+ {
+  "runtime": "llamacpp",
+  "label": "llama.cpp",
+  "id": "groot-19b-a3b",
+  "served": "local",
+  "alias": "llmctl/local",
+  "port": 8080,
+  "chat_only": false,
+  "thinking": "toggle",
+  "default": "off",
+  "efforts": [],
+  "context": 131072,
+  "output": 16384,
+  "provider": {
+   "type": "openai",
+   "base_url": "http://127.0.0.1:8080/v1",
+   "api_key": "no-key-required",
+   "model_source": "static"
+  },
+  "model": {
+   "provider": "llmctl",
+   "model": "local",
+   "display_name": "groot-19b-a3b on llama.cpp (llmctl)",
+   "max_context_size": 131072,
+   "max_output_size": 16384,
+   "capabilities": [
+    "tool_use"
+   ]
+  },
+  "file": "llamacpp/groot-19b-a3b.toml"
+ },
+ {
+  "runtime": "llamacpp",
+  "label": "llama.cpp",
+  "id": "k2-horizon-7b",
+  "served": "local",
+  "alias": "llmctl/local",
+  "port": 8080,
+  "chat_only": false,
+  "thinking": "always",
+  "default": null,
+  "efforts": [],
+  "context": 81920,
+  "output": 32768,
+  "provider": {
+   "type": "openai",
+   "base_url": "http://127.0.0.1:8080/v1",
+   "api_key": "no-key-required",
+   "model_source": "static"
+  },
+  "model": {
+   "provider": "llmctl",
+   "model": "local",
+   "display_name": "k2-horizon-7b on llama.cpp (llmctl)",
+   "max_context_size": 81920,
+   "max_output_size": 32768,
+   "capabilities": [
+    "tool_use"
+   ]
+  },
+  "file": "llamacpp/k2-horizon-7b.toml"
+ },
+ {
+  "runtime": "llamacpp",
+  "label": "llama.cpp",
+  "id": "k2-horizon-mova-36b",
+  "served": "local",
+  "alias": "llmctl/local",
+  "port": 8080,
+  "chat_only": false,
+  "thinking": "always",
+  "default": null,
+  "efforts": [],
+  "context": 65536,
+  "output": 16384,
+  "provider": {
+   "type": "openai",
+   "base_url": "http://127.0.0.1:8080/v1",
+   "api_key": "no-key-required",
+   "model_source": "static"
+  },
+  "model": {
+   "provider": "llmctl",
+   "model": "local",
+   "display_name": "k2-horizon-mova-36b on llama.cpp (llmctl)",
+   "max_context_size": 65536,
+   "max_output_size": 16384,
+   "capabilities": [
+    "tool_use"
+   ]
+  },
+  "file": "llamacpp/k2-horizon-mova-36b.toml"
+ },
+ {
+  "runtime": "llamacpp",
+  "label": "llama.cpp",
+  "id": "nemotron-3.5-bolt",
+  "served": "local",
+  "alias": "llmctl/local",
+  "port": 8080,
+  "chat_only": false,
+  "thinking": "toggle",
+  "default": "off",
+  "efforts": [],
+  "context": 131072,
+  "output": 16384,
+  "provider": {
+   "type": "openai",
+   "base_url": "http://127.0.0.1:8080/v1",
+   "api_key": "no-key-required",
+   "model_source": "static"
+  },
+  "model": {
+   "provider": "llmctl",
+   "model": "local",
+   "display_name": "nemotron-3.5-bolt on llama.cpp (llmctl)",
+   "max_context_size": 131072,
+   "max_output_size": 16384,
+   "capabilities": [
+    "tool_use"
+   ]
+  },
+  "file": "llamacpp/nemotron-3.5-bolt.toml"
+ },
+ {
+  "runtime": "llamacpp",
+  "label": "llama.cpp",
+  "id": "nemotron-3.5-lightning",
+  "served": "local",
+  "alias": "llmctl/local",
+  "port": 8080,
+  "chat_only": false,
+  "thinking": "toggle",
+  "default": "off",
+  "efforts": [],
+  "context": 131072,
+  "output": 16384,
+  "provider": {
+   "type": "openai",
+   "base_url": "http://127.0.0.1:8080/v1",
+   "api_key": "no-key-required",
+   "model_source": "static"
+  },
+  "model": {
+   "provider": "llmctl",
+   "model": "local",
+   "display_name": "nemotron-3.5-lightning on llama.cpp (llmctl)",
+   "max_context_size": 131072,
+   "max_output_size": 16384,
+   "capabilities": [
+    "tool_use"
+   ]
+  },
+  "file": "llamacpp/nemotron-3.5-lightning.toml"
+ },
+ {
+  "runtime": "llamacpp",
+  "label": "llama.cpp",
+  "id": "qwen3-coder-next",
+  "served": "local",
+  "alias": "llmctl/local",
+  "port": 8080,
+  "chat_only": false,
+  "thinking": "none",
+  "default": null,
+  "efforts": [],
+  "context": 131072,
+  "output": 16384,
+  "provider": {
+   "type": "openai",
+   "base_url": "http://127.0.0.1:8080/v1",
+   "api_key": "no-key-required",
+   "model_source": "static"
+  },
+  "model": {
+   "provider": "llmctl",
+   "model": "local",
+   "display_name": "qwen3-coder-next on llama.cpp (llmctl)",
+   "max_context_size": 131072,
+   "max_output_size": 16384,
+   "capabilities": [
+    "tool_use"
+   ]
+  },
+  "file": "llamacpp/qwen3-coder-next.toml"
+ },
+ {
+  "runtime": "llamacpp",
+  "label": "llama.cpp",
+  "id": "qwen3.6-35b-a3b",
+  "served": "local",
+  "alias": "llmctl/local",
+  "port": 8080,
+  "chat_only": false,
+  "thinking": "toggle",
+  "default": "off",
+  "efforts": [],
+  "context": 131072,
+  "output": 16384,
+  "provider": {
+   "type": "openai",
+   "base_url": "http://127.0.0.1:8080/v1",
+   "api_key": "no-key-required",
+   "model_source": "static"
+  },
+  "model": {
+   "provider": "llmctl",
+   "model": "local",
+   "display_name": "qwen3.6-35b-a3b on llama.cpp (llmctl)",
+   "max_context_size": 131072,
+   "max_output_size": 16384,
+   "capabilities": [
+    "tool_use"
+   ]
+  },
+  "file": "llamacpp/qwen3.6-35b-a3b.toml"
+ },
+ {
+  "runtime": "llamacpp",
+  "label": "llama.cpp",
+  "id": "qwen3.8-27b",
+  "served": "local",
+  "alias": "llmctl/local",
+  "port": 8080,
+  "chat_only": false,
+  "thinking": "effort",
+  "default": null,
+  "efforts": [
+   "none",
+   "low",
+   "medium"
+  ],
+  "context": 65536,
+  "output": 16384,
+  "provider": {
+   "type": "openai",
+   "base_url": "http://127.0.0.1:8080/v1",
+   "api_key": "no-key-required",
+   "model_source": "static"
+  },
+  "model": {
+   "provider": "llmctl",
+   "model": "local",
+   "display_name": "qwen3.8-27b on llama.cpp (llmctl)",
+   "max_context_size": 65536,
+   "max_output_size": 16384,
+   "capabilities": [
+    "tool_use",
+    "thinking"
+   ],
+   "support_efforts": [
+    "low",
+    "medium"
+   ],
+   "default_effort": "medium",
+   "off_effort": "none"
+  },
+  "file": "llamacpp/qwen3.8-27b.toml"
+ },
+ {
+  "runtime": "vllm",
+  "label": "vLLM",
+  "id": "deepseek-r1-0528-qwen3-8b",
+  "served": "deepseek-r1-8b",
+  "alias": "llmctl/deepseek-r1-8b",
+  "port": 8000,
+  "chat_only": true,
+  "thinking": "always",
+  "default": null,
+  "efforts": [],
+  "context": 65536,
+  "output": 16384,
+  "provider": {
+   "type": "openai",
+   "base_url": "http://127.0.0.1:8000/v1",
+   "api_key": "no-key-required",
+   "model_source": "static"
+  },
+  "model": {
+   "provider": "llmctl",
+   "model": "deepseek-r1-8b",
+   "display_name": "deepseek-r1-0528-qwen3-8b on vLLM (llmctl)",
+   "max_context_size": 65536,
+   "max_output_size": 16384,
+   "capabilities": []
+  },
+  "file": "vllm/deepseek-r1-0528-qwen3-8b.toml"
+ },
+ {
+  "runtime": "vllm",
+  "label": "vLLM",
+  "id": "gemma-4-12b",
+  "served": "gemma-4-12b",
+  "alias": "llmctl/gemma-4-12b",
+  "port": 8000,
+  "chat_only": false,
+  "thinking": "toggle",
+  "default": "off",
+  "efforts": [],
+  "context": 131072,
+  "output": 16384,
+  "provider": {
+   "type": "openai",
+   "base_url": "http://127.0.0.1:8000/v1",
+   "api_key": "no-key-required",
+   "model_source": "static"
+  },
+  "model": {
+   "provider": "llmctl",
+   "model": "gemma-4-12b",
+   "display_name": "gemma-4-12b on vLLM (llmctl)",
+   "max_context_size": 131072,
+   "max_output_size": 16384,
+   "capabilities": [
+    "tool_use"
+   ]
+  },
+  "file": "vllm/gemma-4-12b.toml"
+ },
+ {
+  "runtime": "vllm",
+  "label": "vLLM",
+  "id": "gemma-4-e4b",
+  "served": "gemma-4-e4b",
+  "alias": "llmctl/gemma-4-e4b",
+  "port": 8000,
+  "chat_only": false,
+  "thinking": "toggle",
+  "default": "off",
+  "efforts": [],
+  "context": 65536,
+  "output": 16384,
+  "provider": {
+   "type": "openai",
+   "base_url": "http://127.0.0.1:8000/v1",
+   "api_key": "no-key-required",
+   "model_source": "static"
+  },
+  "model": {
+   "provider": "llmctl",
+   "model": "gemma-4-e4b",
+   "display_name": "gemma-4-e4b on vLLM (llmctl)",
+   "max_context_size": 65536,
+   "max_output_size": 16384,
+   "capabilities": [
+    "tool_use"
+   ]
+  },
+  "file": "vllm/gemma-4-e4b.toml"
+ },
+ {
+  "runtime": "vllm",
+  "label": "vLLM",
+  "id": "gpt-oss-20b",
+  "served": "gpt-oss-20b",
+  "alias": "llmctl/gpt-oss-20b",
+  "port": 8000,
+  "chat_only": false,
+  "thinking": "effort",
+  "default": null,
+  "efforts": [
+   "low",
+   "medium",
+   "high"
+  ],
+  "context": 65536,
+  "output": 16384,
+  "provider": {
+   "type": "openai",
+   "base_url": "http://127.0.0.1:8000/v1",
+   "api_key": "no-key-required",
+   "model_source": "static"
+  },
+  "model": {
+   "provider": "llmctl",
+   "model": "gpt-oss-20b",
+   "display_name": "gpt-oss-20b on vLLM (llmctl)",
+   "max_context_size": 65536,
+   "max_output_size": 16384,
+   "capabilities": [
+    "tool_use",
+    "thinking"
+   ],
+   "support_efforts": [
+    "low",
+    "medium",
+    "high"
+   ],
+   "default_effort": "medium"
+  },
+  "file": "vllm/gpt-oss-20b.toml"
+ },
+ {
+  "runtime": "vllm",
+  "label": "vLLM",
+  "id": "groot-19b-a3b",
+  "served": "groot-19b-a3b",
+  "alias": "llmctl/groot-19b-a3b",
+  "port": 8000,
+  "chat_only": false,
+  "thinking": "toggle",
+  "default": "off",
+  "efforts": [],
+  "context": 131072,
+  "output": 16384,
+  "provider": {
+   "type": "openai",
+   "base_url": "http://127.0.0.1:8000/v1",
+   "api_key": "no-key-required",
+   "model_source": "static"
+  },
+  "model": {
+   "provider": "llmctl",
+   "model": "groot-19b-a3b",
+   "display_name": "groot-19b-a3b on vLLM (llmctl)",
+   "max_context_size": 131072,
+   "max_output_size": 16384,
+   "capabilities": [
+    "tool_use"
+   ]
+  },
+  "file": "vllm/groot-19b-a3b.toml"
+ },
+ {
+  "runtime": "vllm",
+  "label": "vLLM",
+  "id": "k2-horizon-7b",
+  "served": "k2-horizon-7b",
+  "alias": "llmctl/k2-horizon-7b",
+  "port": 8000,
+  "chat_only": false,
+  "thinking": "always",
+  "default": null,
+  "efforts": [],
+  "context": 65536,
+  "output": 16384,
+  "provider": {
+   "type": "openai",
+   "base_url": "http://127.0.0.1:8000/v1",
+   "api_key": "no-key-required",
+   "model_source": "static"
+  },
+  "model": {
+   "provider": "llmctl",
+   "model": "k2-horizon-7b",
+   "display_name": "k2-horizon-7b on vLLM (llmctl)",
+   "max_context_size": 65536,
+   "max_output_size": 16384,
+   "capabilities": [
+    "tool_use"
+   ]
+  },
+  "file": "vllm/k2-horizon-7b.toml"
+ },
+ {
+  "runtime": "vllm",
+  "label": "vLLM",
+  "id": "mellum2.1-12b",
+  "served": "mellum2.1",
+  "alias": "llmctl/mellum2.1",
+  "port": 8000,
+  "chat_only": false,
+  "thinking": "toggle",
+  "default": "on",
+  "efforts": [],
+  "context": 131072,
+  "output": 16384,
+  "provider": {
+   "type": "openai",
+   "base_url": "http://127.0.0.1:8000/v1",
+   "api_key": "no-key-required",
+   "model_source": "static"
+  },
+  "model": {
+   "provider": "llmctl",
+   "model": "mellum2.1",
+   "display_name": "mellum2.1-12b on vLLM (llmctl)",
+   "max_context_size": 131072,
+   "max_output_size": 16384,
+   "capabilities": [
+    "tool_use"
+   ]
+  },
+  "file": "vllm/mellum2.1-12b.toml"
+ },
+ {
+  "runtime": "vllm",
+  "label": "vLLM",
+  "id": "qwen3.5-9b",
+  "served": "qwen3.5-9b",
+  "alias": "llmctl/qwen3.5-9b",
+  "port": 8000,
+  "chat_only": false,
+  "thinking": "toggle",
+  "default": "off",
+  "efforts": [],
+  "context": 131072,
+  "output": 16384,
+  "provider": {
+   "type": "openai",
+   "base_url": "http://127.0.0.1:8000/v1",
+   "api_key": "no-key-required",
+   "model_source": "static"
+  },
+  "model": {
+   "provider": "llmctl",
+   "model": "qwen3.5-9b",
+   "display_name": "qwen3.5-9b on vLLM (llmctl)",
+   "max_context_size": 131072,
+   "max_output_size": 16384,
+   "capabilities": [
+    "tool_use"
+   ]
+  },
+  "file": "vllm/qwen3.5-9b.toml"
+ }
+]

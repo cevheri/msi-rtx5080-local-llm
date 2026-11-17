@@ -1,0 +1,21 @@
+{
+  "request": {
+    "model": "local",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Reply with exactly the word OK."
+      }
+    ],
+    "reasoning_effort": "none",
+    "max_tokens": 256
+  },
+  "status": 200,
+  "reply": "{\"choices\":[{\"finish_reason\":\"stop\",\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"OK\",\"reasoning_content\":\"The user says: \\\"Reply with exactly the word OK.\\\" So I must reply with exactly \\\"OK\\\". No extra punctuation, no extra spaces? Probably just \\\"OK\\\". Must obey.\"}}],\"created\":1794915798,\"model\":\"local\",\"system_fingerprint\":\"b12407-e574a17b0\",\"object\":\"chat.completion\",\"usage\":{\"completion_tokens\":40,\"prompt_tokens\":17,\"total_tokens\":57,\"prompt_tokens_details\":{\"cached_tokens\":2}},\"id\":\"chatcmpl-if5MfYDVgId1nQ6VHXLC0lMWfS60I8bd\",\"timings\":{\"cache_n\":2,\"prompt_n\":15,\"prompt_ms\":19.361,\"prompt_per_token_ms\":1.2907333333333333,\"prompt_per_second\":774.7533701771603,\"predicted_n\":40,\"predicted_ms\":573.899,\"predicted_per_token_ms\":14.715358974358974,\"predicted_per_second\":67.95620832237032}}",
+  "record": {
+    "probe": "C",
+    "status": 200,
+    "content": true,
+    "reasoning": true
+  }
+}

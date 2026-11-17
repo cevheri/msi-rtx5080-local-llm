@@ -1,0 +1,8 @@
+{
+  "command": "hermes -p llmctl -z 'Say hello in one sentence.' --usage-file $WORK/18-deepseek-r1-0528-qwen3-8b-vllm-hermes-z/usage.json",
+  "cwd": "$WORK/18-deepseek-r1-0528-qwen3-8b-vllm-hermes-z",
+  "exit": 0,
+  "seconds": 6.1,
+  "stdout": "ĊHello,ĠI'mĠHermesAgent,ĠanĠAIĠassistantĠbuiltĠbyĠNousResearch.\n",
+  "stderr": ""
+}

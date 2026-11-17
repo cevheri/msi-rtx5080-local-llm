@@ -1,0 +1,42 @@
+{
+  "request": {
+    "model": "local",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a short title for a chat about adding two numbers in Python."
+      }
+    ],
+    "reasoning_effort": "none",
+    "response_format": {
+      "type": "json_schema",
+      "json_schema": {
+        "name": "session_title",
+        "strict": true,
+        "schema": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "title"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "max_tokens": 16384,
+    "stream": false
+  },
+  "status": 200,
+  "reply": "{\"choices\":[{\"finish_reason\":\"stop\",\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"title\\\":\\\"Add Two Numbers in Python\\\"}\",\"reasoning_content\":\"The user wants: \\\"Write a short title for a chat about adding two numbers in Python.\\\" They want a short title. Could be like \\\"Python Add Two Numbers\\\" or \\\"Adding Two Numbers in Python\\\". They want a short title. They probably want something like \\\"Add Two Numbers in Python\\\". We'll produce a concise title. Let's answer.\"}}],\"created\":1794916413,\"model\":\"local\",\"system_fingerprint\":\"b12407-e574a17b0\",\"object\":\"chat.completion\",\"usage\":{\"completion_tokens\":88,\"prompt_tokens\":81,\"total_tokens\":169,\"prompt_tokens_details\":{\"cached_tokens\":35}},\"id\":\"chatcmpl-WJIshc9ieiu5UGQsxsYI1WSyj2aP20Kc\",\"timings\":{\"cache_n\":35,\"prompt_n\":46,\"prompt_ms\":46.577,\"prompt_per_token_ms\":1.0125434782608695,\"prompt_per_second\":987.6119114584452,\"predicted_n\":88,\"predicted_ms\":498.779,\"predicted_per_token_ms\":5.7330919540229885,\"predicted_per_second\":174.42594816541998}}",
+  "record": {
+    "probe": "A",
+    "status": 200,
+    "content": true,
+    "reasoning": true,
+    "title_ok": true
+  }
+}

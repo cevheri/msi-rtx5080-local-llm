@@ -1,0 +1,12 @@
+[["wait", "Welcome to Kimi Code", 30], ["sleep", 2], ["mark", "start"],
+ ["copy", "$KIMI_CODE_HOME/config.toml", "c0-start.toml"],
+ ["type", "Reply with the word banana in capital letters and nothing else."], ["sleep", 0.5], ["send", "\r"],
+ ["wait", "BANANA|rror", 300], ["sleep", 3], ["mark", "answered-1"],
+ ["copy", "$KIMI_CODE_HOME/config.toml", "c1-after-first-prompt.toml"],
+ ["touch", "$SYNC/ready"], ["waitfile", "$SYNC/go", 1200], ["mark", "swapped"], ["sleep", 5],
+ ["copy", "$KIMI_CODE_HOME/config.toml", "c2-after-swap.toml"],
+ ["type", "Reply with the word cherry in capital letters and nothing else."], ["sleep", 0.5], ["send", "\r"],
+ ["wait", "CHERRY|rror", 300], ["sleep", 3], ["mark", "answered-2"],
+ ["copy", "$KIMI_CODE_HOME/config.toml", "c3-after-second-prompt.toml"],
+ ["send", "\u0003"], ["sleep", 0.6], ["send", "\u0003"], ["sleep", 3],
+ ["copy", "$KIMI_CODE_HOME/config.toml", "c4-after-exit.toml"]]

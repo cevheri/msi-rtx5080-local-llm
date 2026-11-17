@@ -1,0 +1,3 @@
+error: failed to run prompt: provider.api_error: Model 'local' reasons by default but declares no off effort, so thinking cannot be turned off. Declare offEffort (for example 'none') for this model in the model catalog configuration.
+See log: $SCRATCH/kimi/exp/homes/e2t-llamacpp-gpt-oss-20b-off/.kimi-code/logs/kimi-code.log
+2026/11/17 11:48:04 socat[929218] W exiting on signal 15

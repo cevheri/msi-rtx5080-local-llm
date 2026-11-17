@@ -1,0 +1,13 @@
+[providers.llmctl]
+type = "openai"
+base_url = "http://127.0.0.1:8000/v1"
+api_key = "no-key-required"
+model_source = "static"
+
+[models."llmctl/k2-horizon-7b"]
+provider = "llmctl"
+model = "k2-horizon-7b"
+display_name = "k2-horizon-7b on vLLM (llmctl)"
+max_context_size = 65536
+max_output_size = 16384
+capabilities = ["tool_use"]

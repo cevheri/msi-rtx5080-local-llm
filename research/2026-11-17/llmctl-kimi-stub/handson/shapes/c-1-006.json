@@ -1,0 +1,120 @@
+{
+ "idx": 6,
+ "time": "08:53:54",
+ "method": "POST",
+ "path": "/v1/chat/completions",
+ "headers": {
+  "host": "127.0.0.1:47303",
+  "connection": "keep-alive",
+  "Accept": "application/json",
+  "X-Stainless-Retry-Count": "0",
+  "X-Stainless-Lang": "js",
+  "X-Stainless-Package-Version": "6.34.0",
+  "X-Stainless-OS": "Linux",
+  "X-Stainless-Arch": "x64",
+  "X-Stainless-Runtime": "node",
+  "X-Stainless-Runtime-Version": "v24.15.0",
+  "authorization": "<masked>",
+  "User-Agent": "kimi-code-cli/2.5.3",
+  "content-type": "application/json",
+  "accept-language": "*",
+  "sec-fetch-mode": "cors",
+  "accept-encoding": "gzip, deflate",
+  "content-length": "57343"
+ },
+ "request": {
+  "keys": [
+   "max_tokens",
+   "messages",
+   "model",
+   "prompt_cache_key",
+   "stream",
+   "stream_options",
+   "tools"
+  ],
+  "model": "local",
+  "max_tokens": 16384,
+  "stream": true,
+  "stream_options": {
+   "include_usage": true
+  },
+  "prompt_cache_key": "session_2c45826a-519c-485d-8ccf-bd75bcefc9de",
+  "tool_count": 24,
+  "tool_names": [
+   "Agent",
+   "AgentSwarm",
+   "AskUserQuestion",
+   "Bash",
+   "CreateGoal",
+   "CronCreate",
+   "CronDelete",
+   "CronList",
+   "Edit",
+   "ExitPlanMode",
+   "FetchURL",
+   "GetGoal",
+   "Glob",
+   "Grep",
+   "Read",
+   "SetGoalBudget",
+   "Skill",
+   "TaskList",
+   "TaskOutput",
+   "TaskStop",
+   "TodoList",
+   "UpdateGoal",
+   "WaitFor",
+   "Write"
+  ],
+  "messages": [
+   {
+    "role": "system",
+    "content": "<10170 chars dropped>"
+   },
+   {
+    "role": "user",
+    "content": "Use your shell tool to run exactly: cat /proc/self/cgroup. Then reply with its output."
+   },
+   {
+    "role": "user",
+    "content": "<285 chars dropped>"
+   },
+   {
+    "role": "user",
+    "content": "<452 chars dropped>"
+   },
+   {
+    "role": "assistant",
+    "tool_calls": [
+     {
+      "name": "Bash",
+      "arguments": "{\"command\":\"cat /proc/self/cgroup\"}"
+     }
+    ]
+   },
+   {
+    "role": "tool",
+    "content": "Wall time: 0.010 seconds\n0::/user.slice/user-1000.slice/user@1000.service/heavy.slice/run-p869176-i5068800.scope\n",
+    "tool_call_id": "aBR1d6U68hMiS3q1dfl2m1QpCm3PTqD1"
+   }
+  ]
+ },
+ "status": 200,
+ "response": {
+  "seen": {
+   "reasoning_content": false,
+   "tool_calls": false,
+   "content": true
+  },
+  "finish_reason": "stop",
+  "usage": {
+   "completion_tokens": 54,
+   "prompt_tokens": 12307,
+   "total_tokens": 12361,
+   "prompt_tokens_details": {
+    "cached_tokens": 12216
+   }
+  },
+  "seconds": 0.6
+ }
+}

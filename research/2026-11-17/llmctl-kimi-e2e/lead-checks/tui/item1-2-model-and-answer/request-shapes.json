@@ -1,0 +1,48 @@
+[
+ {
+  "file": "p8080-001.json",
+  "time": "15:12:07",
+  "path": "/v1/chat/completions",
+  "status": 200,
+  "user_agent": "kimi-code-cli/2.5.3",
+  "keys": [
+   "max_tokens",
+   "messages",
+   "model",
+   "prompt_cache_key",
+   "stream",
+   "stream_options",
+   "tools"
+  ],
+  "model": "local",
+  "max_tokens": 16384,
+  "stream": true,
+  "stream_options": {
+   "include_usage": true
+  },
+  "prompt_cache_key": "<session id>",
+  "tool_count": 24,
+  "roles": [
+   "system",
+   "user",
+   "user"
+  ],
+  "response": {
+   "seen": {
+    "reasoning_content": false,
+    "tool_calls": false,
+    "content": true
+   },
+   "finish_reason": "stop",
+   "usage": {
+    "completion_tokens": 3,
+    "prompt_tokens": 12109,
+    "total_tokens": 12112,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    }
+   },
+   "seconds": 4.22
+  }
+ }
+]

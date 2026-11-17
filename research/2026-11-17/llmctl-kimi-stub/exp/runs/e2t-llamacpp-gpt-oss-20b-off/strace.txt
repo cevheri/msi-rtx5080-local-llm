@@ -1,0 +1,19 @@
+929233 +++ exited with 0 +++
+929226 connect(20, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+929226 connect(20, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+929238 connect(10, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+929238 connect(10, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+929238 +++ exited with 0 +++
+929226 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=929238, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+929234 +++ exited with 0 +++
+929237 +++ exited with 0 +++
+929236 +++ exited with 0 +++
+929235 +++ exited with 0 +++
+929230 +++ exited with 0 +++
+929229 +++ exited with 0 +++
+929231 +++ exited with 0 +++
+929228 +++ exited with 0 +++
+929227 +++ exited with 0 +++
+929232 +++ exited with 1 +++
+929226 +++ exited with 1 +++
+929225 +++ exited with 1 +++

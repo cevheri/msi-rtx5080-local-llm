@@ -1,0 +1,3 @@
+{"role":"meta","type":"system.version","version":"2.5.3"}
+{"role":"assistant","content":"OK"}
+{"role":"meta","type":"session.resume_hint","session_id":"session_9816aee6-4267-4462-a52e-5e703e25604a","command":"kimi -r session_9816aee6-4267-4462-a52e-5e703e25604a","content":"To resume this session: kimi -r session_9816aee6-4267-4462-a52e-5e703e25604a"}

@@ -1,0 +1,4 @@
+Kimi doctor found 1 issue.
+
+ERROR config.toml  $SCRATCH/kimi/exp/homes/neg-n1-bad-string/.kimi-code/config.toml
+  Invalid TOML in $SCRATCH/kimi/exp/homes/neg-n1-bad-string/.kimi-code/config.toml: Invalid TOML document: newlines are not allowed in strings (line 4, column 27)

@@ -1,0 +1,1 @@
+python3 -I $SCRATCH/kimi/exp/bin/tui.py $SCRATCH/kimi/exp/runs/e8-tui-same $SCRATCH/kimi/exp/bin/tui-e8-same.json -- $HOME/.kimi-code/bin/kimi 

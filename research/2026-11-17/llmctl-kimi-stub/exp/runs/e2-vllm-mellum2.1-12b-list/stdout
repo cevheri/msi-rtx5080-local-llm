@@ -1,0 +1,22 @@
+{
+  "providers": {
+    "llmctl": {
+      "modelSource": "static",
+      "baseUrl": "http://127.0.0.1:8000/v1",
+      "type": "openai",
+      "apiKey": "no-key-required"
+    }
+  },
+  "models": {
+    "llmctl/mellum2.1": {
+      "provider": "llmctl",
+      "model": "mellum2.1",
+      "maxContextSize": 131072,
+      "maxOutputSize": 16384,
+      "capabilities": [
+        "tool_use"
+      ],
+      "displayName": "mellum2.1-12b on vLLM (llmctl)"
+    }
+  }
+}

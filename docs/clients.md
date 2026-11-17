@@ -1,8 +1,8 @@
-# Hermes Agent, Pi and DeepSeek Harness with the local servers
+# Hermes Agent, Pi, DeepSeek Harness and Kimi Code CLI with the local servers
 
 Last verified: 2026-11-17.
 
-`./llmctl up <model>` writes one llmctl entry into Hermes Agent, one into Pi and one block of rows into DeepSeek Harness (dsh), so each reaches the model llmctl runs with its context, output cap and default thinking, without a manual config edit.
+`./llmctl up <model>` writes one llmctl entry into Hermes Agent, one into Pi, one block of rows into DeepSeek Harness (dsh), and two tables into Kimi Code CLI's `config.toml`, `[providers.llmctl]` and `[models."llmctl/<served name>"]`, with Kimi's `default_model` when you ask for it, so each reaches the model llmctl runs with its context, output cap and default thinking, without a manual config edit.
 This document shows those entries, how each client thinks with them, what llmctl checks, and what was measured; which files llmctl writes and when, `LLMCTL_CLIENTS`, `--set-default` and the refusals are in [llmctl.md](llmctl.md#clients), and OpenCode is in [opencode.md](opencode.md).
 
 ## Versions
@@ -11,9 +11,11 @@ This document shows those entries, how each client thinks with them, what llmctl
 - [Pi 1.5.2 on npm](https://www.npmjs.com/package/@earendil-works/pi-coding-agent/v/1.5.2) (`@earendil-works/pi-coding-agent`; that page answers scripts with HTTP 403, so a script checks the [registry record](https://registry.npmjs.org/@earendil-works/pi-coding-agent/1.5.2) instead) and [its source at v1.5.2](https://github.com/earendil-works/pi/tree/v1.5.2/packages/coding-agent), tag `v1.5.2` = commit `b4afdddf44e059c67ccf5097e5317d913521b470`; the `dist/` and `docs/` files cited here are in the 1.5.2 npm package as published, and the `packages/ai/src/` file is at that tag.
 - [DeepSeek Harness 0.2.2-rc.3 on npm](https://www.npmjs.com/package/@deepseek-ai/dsh/v/0.2.2-rc.3) (`@deepseek-ai/dsh`, dist-tag `next`; a script checks [its registry record](https://registry.npmjs.org/@deepseek-ai%2fdsh/0.2.2-rc.3)) and [the repository at commit `38a6a5c965aa99ab525161efb7cc5cf1fe62fced`](https://github.com/deepseek-ai/deepseek-harness/tree/38a6a5c965aa99ab525161efb7cc5cf1fe62fced), tag `dsh-v0.2.2-rc.3`; it needs Node 24.9 or newer (24.22.1 here) and resolves `@earendil-works/pi-ai` 1.5.2 from `^1.3.0` without a shrinkwrap.
   Install it with `npm install -g @deepseek-ai/dsh@0.2.2-rc.3`, because the `latest` dist-tag is still 0.2.2-rc.1 and every release is a developer preview (`runtime-1`).
+- Kimi Code CLI 2.5.3, the native executable `~/.kimi-code/bin/kimi`, a Node.js v24.15.0 single executable application (local-K01), published on npm as [`@moonshot-ai/kimi-code` 2.5.3](https://www.npmjs.com/package/@moonshot-ai/kimi-code/v/2.5.3) (a script checks [its registry record](https://registry.npmjs.org/@moonshot-ai%2fkimi-code/2.5.3)) from [the repository `MoonshotAI/kimi-code` at tag `@moonshot-ai/kimi-code@2.5.3`](https://github.com/MoonshotAI/kimi-code/tree/5af9942e9fb789b6a1530830575b3768499932e9).
+  npm's `latest` is already 2.6.2, published on 2026-11-13 (docs-K007, docs-K008) (vendor-reported), and Kimi checks for a newer version at every interactive and `-p` start and installs it in the background (local-K41, docs-K161, docs-K164), so `export KIMI_CODE_NO_AUTO_UPDATE=1` in your shell profile to stay on 2.5.3; it stops the check itself, not only the install (docs-K163) (vendor-reported).
 - OpenCode v2.3.0, as in [opencode.md](opencode.md).
 
-These are the versions the entries were verified with on 2026-11-16; any other version is unverified.
+These are the versions the entries were verified with on 2026-11-16, and for Kimi on 2026-11-17; any other version is unverified.
 The request shapes below were recorded with the real clients against a recording stub server on 127.0.0.1, with no model behind it, and are labelled "(measured on the MSI Raider 18 Max HX against a recording stub, Hermes v0.23.1)" or "(measured on the MSI Raider 18 Max HX against a recording stub, Pi 1.5.2)".
 The records, the scripts and the claim ids used below (E1 to E9, R02 and the others) are in [research/2026-11-16/llmctl-clients-stub/](../research/2026-11-16/llmctl-clients-stub/README.md); a request shape keeps the model, the top-level keys and the thinking fields of a request, never its messages.
 Real sessions through real llama.cpp and vLLM servers, and the servers' replies to these request shapes, come from the opt-in e2e run of 2026-11-16 in [Verified on this laptop](#verified-on-this-laptop); [Maintenance](#maintenance) has its command.
@@ -572,6 +574,333 @@ With telemetry disabled, no DeepSeek key and only llmctl's route, the research f
 A headless `pong` session run under `strace -f -e trace=connect` without `DSH_TELEMETRY_DISABLED`, with the home patch's `session-telemetry-otel` row disabled and llmctl's route as the default, made two connect calls, both to 127.0.0.1 port 8080, and no DNS lookup (measured on the MSI Raider 18 Max HX, llama.cpp b12407, dsh 0.2.2-rc.3, 2026-11-17; [connect lines](../research/2026-11-17/llmctl-dsh-e2e/lead-checks/connect.strace.txt)).
 That one short session used no tool, rating, note or web search, so it does not cover the paths above.
 
+## Kimi Code CLI
+
+llmctl points Kimi Code CLI at the running model through two tables in Kimi's own `config.toml`, `[providers.llmctl]` and one `[models."llmctl/<served name>"]`, and through Kimi's top-level `default_model` when you ask for it.
+Use it with `kimi -m llmctl/<served name>` or pick `<id> on <runtime> (llmctl)` with `/model` in Kimi, or make it Kimi's default with `./llmctl up <model> --set-default`, after which plain `kimi` and `kimi -p` use it.
+The evidence ids below (E1 to E8, P1 to P3, the prototype and the hands-on runs) are mapped to their files in [research/2026-11-17/llmctl-kimi-stub/](../research/2026-11-17/llmctl-kimi-stub/README.md#claims-and-files), and the research ids (`docs-K036` for the docs lane, `local-K25` for the binary lane) to the verdicts archived in [research-claims.json](../research/2026-11-17/llmctl-kimi-stub/research-claims.json), described in that README's [Research claims](../research/2026-11-17/llmctl-kimi-stub/README.md#research-claims).
+E1 to E8 and P1 to P3 ran Kimi Code 2.5.3 in private Kimi homes inside an offline sandbox, against a recording stub on the entry's own port or with no server, and are labelled "(measured on the MSI Raider 18 Max HX, Kimi Code 2.5.3, recording stub)" or "(measured on the MSI Raider 18 Max HX, Kimi Code 2.5.3, no server)"; the hands-on runs used one hand-written entry through a recording proxy to the gemma-4-26b-a4b llama.cpp server and are labelled "(measured on the MSI Raider 18 Max HX, Kimi Code 2.5.3, llama.cpp b12407)".
+A `main.cjs:<lines>` citation is lines of the bundle that [sea_extract.py](../research/2026-11-17/llmctl-kimi-stub/bin/sea_extract.py) extracts from the 2.5.3 executable ([The bundle](../research/2026-11-17/llmctl-kimi-stub/README.md#the-bundle)), read in the code and not run unless a record says so.
+
+### The Kimi tables
+
+The file is `$KIMI_CODE_HOME/config.toml`, or `~/.kimi-code/config.toml` when `KIMI_CODE_HOME` is unset; Kimi has no flag or variable for another path (local-K07, local-K09; docs-K019, docs-K021 (vendor-reported)).
+`KIMI_CODE_HOME` moves everything Kimi keeps, sessions, logs and credentials included, not only the config (docs-K012) (vendor-reported).
+Kimi 2.5.3 disagrees with itself about an empty `KIMI_CODE_HOME`: its `getDataDir` and its login code treat an empty value as unset and use `~/.kimi-code`, while the engine's `resolveKimiHome` keeps the empty value and so reads `config.toml` from the working folder (local-K09, main.cjs:61652-61657 against 322789-322793, 16023-16027 and 17479-17483) (inferred from main.cjs, not run).
+So llmctl refuses an empty `KIMI_CODE_HOME`, and a relative one, which Kimi uses as given against each command's working folder; it expands neither `~` nor `$NAME`, because Kimi does not ([llmctl.md](llmctl.md#when-up-refuses)).
+llmctl never creates the Kimi home; when the home exists without `config.toml`, the first write creates the file with mode 0600, the mode Kimi gives it (local-K13).
+
+In that file llmctl owns, by name and wherever Kimi moved them:
+
+- `[providers.llmctl]` and every table or array of tables below it;
+- every `[models."<alias>"]` table whose alias starts with `llmctl/`, and every table below one; after each write exactly one exists, `llmctl/<served name>`;
+- the top-level `default_model`, only by the rules of [The Kimi default model](#the-kimi-default-model).
+
+Everything else is yours or Kimi's, and llmctl writes no comment and no marker.
+A key or a table that you or Kimi add inside llmctl's tables is removed by the next write that changes them, as an edit inside the Hermes and dsh blocks is.
+llmctl never writes `telemetry`, `[thinking]`, `[tools]`, `default_provider` or any other key, and no other file in the Kimi home: not `tui.toml`, `agents/`, `mcp.json`, `credentials/` or `device_id`.
+
+The provider table, in this key order:
+
+| Key | Value | Why |
+|---|---|---|
+| `type` | `"openai"` | The Chat Completions wire, documented for compatible servers (docs-K036, docs-K041) (vendor-reported) |
+| `base_url` | `"http://127.0.0.1:<port>/v1"`, 8080 for llama.cpp and 8000 for vLLM | The type's default is the OpenAI endpoint (docs-K043), and without a `base_url` Kimi uses the shell's `OPENAI_BASE_URL` (local-K30) |
+| `api_key` | `"no-key-required"` | Without a credential Kimi sends the shell's `OPENAI_API_KEY`, else `Bearer unused` (local-K30); E2 recorded `Authorization: Bearer no-key-required` |
+| `model_source` | `"static"` | Keeps the provider out of every catalog refresh (local-K45); a refresh left llmctl's tables byte for byte (E4d) |
+
+The model table, in this key order:
+
+| Key | Value | Why |
+|---|---|---|
+| `provider` | `"llmctl"` | The provider table above |
+| `model` | The served name | Sent as `model` by all 19 entries (E2) |
+| `display_name` | `"<id> on <runtime> (llmctl)"` | The label in `/model` and in the TUI's footer (E8, P1) |
+| `max_context_size` | The recipe's context | Required (docs-K065, local-K20) |
+| `max_output_size` | The recipe's output cap | Sent as `max_tokens` by all 19 entries (E2), although the docs say only the anthropic type reads it (docs-K067) |
+| `capabilities` | `["tool_use"]`, plus `"thinking"` for an effort recipe, and `[]` for a chat-only recipe | [Kimi thinking per type](#kimi-thinking-per-type), [Kimi chat-only recipes](#kimi-chat-only-recipes); never `image_in`, because every llmctl entry is text only |
+| `support_efforts` | The recipe's efforts without `none` | Effort recipes only |
+| `default_effort` | `"medium"` | Effort recipes only; the servers' default effort |
+| `off_effort` | `"none"` | Only when the recipe's efforts include `none`, which today is Qwen3.8-27B |
+
+Each value is written as JSON, which TOML reads as the same value, so llmctl needs no TOML writer, and the alias is always quoted, as Kimi asks for an alias with a dot (docs-K016) (vendor-reported).
+All 19 generated table pairs were accepted by `kimi provider list --json` with every value, and each first request carried `max_tokens`, `messages`, `model` (the served name), `prompt_cache_key`, `stream`, `stream_options` and 24 `tools`, plus `reasoning_effort: "medium"` for the three effort entries only (E2, [summary](../research/2026-11-17/llmctl-kimi-stub/exp/runs/e2-summary-all.jsonl)) (measured on the MSI Raider 18 Max HX, Kimi Code 2.5.3, recording stub).
+
+Generated tables for qwen3.6-35b-a3b on llama.cpp, toggle with the server's default off (`launcher/tests/golden/clients/llamacpp/qwen3.6-35b-a3b.kimi.toml`):
+
+```toml
+[providers.llmctl]
+type = "openai"
+base_url = "http://127.0.0.1:8080/v1"
+api_key = "no-key-required"
+model_source = "static"
+
+[models."llmctl/local"]
+provider = "llmctl"
+model = "local"
+display_name = "qwen3.6-35b-a3b on llama.cpp (llmctl)"
+max_context_size = 131072
+max_output_size = 16384
+capabilities = ["tool_use"]
+```
+
+Generated tables for gpt-oss-20b on vLLM, effort without `none` (`launcher/tests/golden/clients/vllm/gpt-oss-20b.kimi.toml`):
+
+```toml
+[providers.llmctl]
+type = "openai"
+base_url = "http://127.0.0.1:8000/v1"
+api_key = "no-key-required"
+model_source = "static"
+
+[models."llmctl/gpt-oss-20b"]
+provider = "llmctl"
+model = "gpt-oss-20b"
+display_name = "gpt-oss-20b on vLLM (llmctl)"
+max_context_size = 65536
+max_output_size = 16384
+capabilities = ["tool_use", "thinking"]
+support_efforts = ["low", "medium", "high"]
+default_effort = "medium"
+```
+
+Every llama.cpp recipe is served as `local`, so its alias is `llmctl/local`; a vLLM recipe's alias is `llmctl/<served name>`, such as `llmctl/gpt-oss-20b`.
+The golden files for all 19 recipes are under `launcher/tests/golden/clients/`, and the tests keep them equal to what llmctl writes.
+
+Kimi rewrites `config.toml` itself, so llmctl finds its tables as TOML, never by text patterns (measured on the MSI Raider 18 Max HX, Kimi Code 2.5.3, no server):
+
+- Kimi's first `default_model`, from `kimi web` or from a `/model` pick in the TUI, rewrote the whole file: every comment gone, `default_model` first, arrays written as `[ "tool_use" ]`, and a new inode (E4a, [file](../research/2026-11-17/llmctl-kimi-stub/exp/writer/a-web-set-default.toml)); a later default change edited only that line (E4a, [file](../research/2026-11-17/llmctl-kimi-stub/exp/writer/a3-web-switch-default.toml)).
+- `kimi provider add` put the new provider and its `source` sub-table between `[providers.llmctl]` and llmctl's model table (E4b, [file](../research/2026-11-17/llmctl-kimi-stub/exp/writer/b-provider-add.toml)).
+- `kimi provider remove` deleted only the other provider's lines and left runs of blank lines (E4c, [file](../research/2026-11-17/llmctl-kimi-stub/exp/writer/c-provider-remove.toml)).
+- `/effort` in the TUI appended `[thinking]` directly after llmctl's last line, without a blank line (P3) (measured on the MSI Raider 18 Max HX, Kimi Code 2.5.3, recording stub).
+
+llmctl parses the whole file with Python's `tomllib`, splits it into headers and statements, and recognises its tables by their decoded header paths, so a moved table, Kimi's spacing, a quoted or literal key and a multi-line array do not confuse it.
+A table of llmctl's that already holds llmctl's values stays as it is, Kimi's spacing included; one that differs is replaced in place, and the tables below it and every other `llmctl/` alias are removed.
+A missing provider table goes after the last `providers` table, and a missing model table after the last `models` table, else at the end of the file, which is where Kimi's own writer puts new ones (main.cjs:168489-168496; E4b, E4d).
+Every line outside llmctl's tables and the `default_model` line keeps its bytes and its place, and new lines take the file's line ending, CRLF when the first line ends with one.
+The design's prototype planned the eight E4 files, the two P3 files and a template file for four recipes with and without `--set-default`, and all 88 results parsed back with llmctl's tables and default as intended and everything else equal (measured on the MSI Raider 18 Max HX, Python 3.14 tomllib, no server; [prototype](../research/2026-11-17/llmctl-kimi-stub/spec/proto/kimi_proto.py)).
+
+For example, a `config.toml` that holds Kimi's four template comment lines, a blank line and `telemetry = false` looks like this after `./llmctl up gemma-4-26b-a4b` without `--set-default`: the six lines that were there keep their bytes, and the tables follow after a blank line ([prototype output](../research/2026-11-17/llmctl-kimi-stub/spec/proto/out/owner--gemma--nodefault.toml)):
+
+```toml
+# ~/.kimi-code/config.toml
+# Environment settings for Kimi Code.
+# This file starts empty so built-in defaults can apply.
+# Login will populate managed Kimi provider and model entries.
+
+telemetry = false
+
+[providers.llmctl]
+type = "openai"
+base_url = "http://127.0.0.1:8080/v1"
+api_key = "no-key-required"
+model_source = "static"
+
+[models."llmctl/local"]
+provider = "llmctl"
+model = "local"
+display_name = "gemma-4-26b-a4b on llama.cpp (llmctl)"
+max_context_size = 131072
+max_output_size = 16384
+capabilities = ["tool_use"]
+```
+
+With `--set-default`, the same write adds one line, `default_model = "llmctl/local"`, right after `telemetry = false`, and nothing else changes ([prototype output](../research/2026-11-17/llmctl-kimi-stub/spec/proto/out/owner--gemma--default.toml)).
+After a `kimi provider add`, llmctl's two tables change in place while the provider Kimi put between them, its `source` sub-table and Kimi's `[ "tool_use" ]` spacing stay ([prototype output](../research/2026-11-17/llmctl-kimi-stub/spec/proto/out/b-provider-add--gptoss-vllm--nodefault.toml)).
+
+Before anything starts, llmctl refuses a `config.toml` it cannot change safely, and writes nothing:
+
+- a file that is not UTF-8 text, or not valid TOML, a byte-order mark included, which TOML does not allow;
+- `providers` or `models` that is not a table, such as `[[providers]]`;
+- `providers` or `models` written at the top level as an inline table or with dotted keys, because a `[providers.llmctl]` header cannot be added after it;
+- llmctl's provider, or an `llmctl/` alias, written with dotted keys or as an inline table, because llmctl replaces its tables line by line;
+- a `default_model` that llmctl must change but cannot edit in place, such as a value over several lines or one that is not a string.
+
+The messages and what to do are in [llmctl.md](llmctl.md#when-up-refuses).
+
+Before its first change to a file that holds anything besides llmctl's tables and an llmctl `default_model` line, llmctl copies it once to `config.toml.llmctl-backup` beside it, with its mode; that copy also keeps the comments that Kimi's own first full rewrite drops.
+A table under llmctl's names that llmctl could not have written, such as a `[providers.llmctl]` with another `type`, a remote `base_url` or a key of your own, counts as your content for that test, so its first replacement is backed up too.
+A backup is written once, never overwritten and never restored by llmctl.
+The write goes through `config.toml.llmctl-tmp` in the same folder and a rename, keeps the file's mode, and follows a symlink to its target; Kimi watches only `config.toml` (main.cjs:168816-168824, local-K46).
+Kimi takes no lock on `config.toml` and reads it again before each of its own writes (main.cjs:169229-169277), so llmctl takes none either: it plans again right before the rename and reads the file back afterwards, and when the text changed meanwhile, probably through an open Kimi, `up` exits 6 with `<path>: the file changed while llmctl wrote it, probably through Kimi; check it, then run ./llmctl up again`, the other clients written.
+A Kimi write that read the file before llmctl's rename and lands after the read-back can still undo llmctl's change (inferred from main.cjs:169229-169277); no open TUI wrote the file back in E8, and the next `./llmctl status` shows such a loss.
+
+### Kimi thinking per type
+
+| Thinking type | Recipes | Model keys | Main request (E2) | `thinking:` line of `up` |
+|---|---|---|---|---|
+| toggle, default off | Qwen3.6, Gemma 4 26B-A4B, Gemma 4 12B and E4B, Groot (both runtimes), Nemotron 3.5 Bolt and Lightning, Qwen3.5 | `capabilities = ["tool_use"]` | No thinking field, so the server's default applies | `off, as the server sets it` |
+| toggle, default on | Mellum2.1 | `capabilities = ["tool_use"]` | No thinking field | `on, as the server sets it` |
+| effort with `none` | Qwen3.8-27B | `["tool_use", "thinking"]`, `support_efforts = ["low", "medium"]`, `default_effort = "medium"`, `off_effort = "none"` | `reasoning_effort: "medium"` | `medium effort; /effort in kimi for another (off, low, medium)` |
+| effort without `none` | gpt-oss-20b (both runtimes) | `["tool_use", "thinking"]`, `support_efforts = ["low", "medium", "high"]`, `default_effort = "medium"` | `reasoning_effort: "medium"` | `medium effort; /effort in kimi for another (low, medium, high)` |
+| always | K2 Horizon 7B (both runtimes), K2 Horizon Mova 36B, DeepSeek-R1 (both runtimes) | `["tool_use"]`, and `[]` for DeepSeek-R1 | No thinking field | `always on, at the effort the server sets` |
+| none | Qwen3-Coder-Next | `["tool_use"]` | No thinking field | `none` |
+
+That is 10 toggle, 3 effort, 5 always and 1 none recipe (E1, E2) (measured on the MSI Raider 18 Max HX, Kimi Code 2.5.3, recording stub).
+Kimi sends a thinking level on this wire only as `reasoning_effort` (local-K31), so a toggle recipe cannot be switched from Kimi, as in Hermes, and Nemotron 3.5 Bolt's `medium_kwargs` cannot be sent, because the wire carries no `chat_template_kwargs` (E2 never saw one).
+Kimi replays reasoning verbatim under the field the server used, `reasoning_content` from llama.cpp and `reasoning` from vLLM, and keeps `reasoning_effort` unchanged after a reply with reasoning (E2 `e2r-*` and `e2c-*` runs).
+gpt-oss-20b cannot stop reasoning, so it has no `off_effort`, and Kimi refuses thinking off for it with exit 1 in 0.53 s, before any request: `Model '<name>' reasons by default but declares no off effort, so thinking cannot be turned off.` (E2 `e2t-*-gpt-oss-20b-off` runs); llmctl never sends another effort in its place.
+`/effort` in the TUI offered `Off  Low  [ Medium ]` for Qwen3.8-27B (P3); for gpt-oss-20b its levels follow from `support_efforts` (inferred from main.cjs:481166-481180, not run).
+
+Your global `[thinking]` table in `config.toml` reaches llmctl's entries too:
+
+- `enabled = false`, or `effort = "off"`: Qwen3.8-27B sends `reasoning_effort: "none"`, gpt-oss-20b is refused before any request, and an entry without the `thinking` capability sends nothing (E2) (measured on the MSI Raider 18 Max HX, Kimi Code 2.5.3, recording stub).
+- `effort = "<level>"` with `enabled` not false: print mode sends that level verbatim as `reasoning_effort` to every entry, also outside its `support_efforts` and to an entry without the `thinking` capability: `high`, `max` and `minimal` to Qwen3.8-27B, `max` to gpt-oss-20b and `high` to Qwen3.6-35B-A3B, each with exit 0 (P2, [summary](../research/2026-11-17/llmctl-kimi-stub/spec/runs/p2-summary.jsonl)) (measured on the MSI Raider 18 Max HX, Kimi Code 2.5.3, recording stub); Kimi validates no effort on the `openai` type (inferred from main.cjs:204832-204841 and 287940-287943).
+- Kimi's TUI writes this table itself: a `/model` pick of an entry without `thinking` appended `enabled = false` (E4a), `/effort` Medium saved `enabled = true` and printed `Saved qwen3.8-27b on llama.cpp (llmctl) with thinking medium as default.`, and `/effort` Low saved `enabled = true` and `effort = "low"`, which the next request sent (P3, [Medium](../research/2026-11-17/llmctl-kimi-stub/spec/runs/p3-tui-effort-qwen38/), [Low](../research/2026-11-17/llmctl-kimi-stub/spec/runs/p3-tui-effort-low-qwen38/)) (measured on the MSI Raider 18 Max HX, Kimi Code 2.5.3, recording stub).
+- `forced_effort` in `[thinking]` and the variable `KIMI_MODEL_THINKING_EFFORT` override the effort for every model (local-K17; main.cjs:287932-287939, not run); llmctl does not read them.
+
+llmctl never writes `[thinking]`; instead `up`, after the Kimi lines, and `status`, while the running model's entry is the file's, print one line from this table, the first row that matches winning:
+
+| `[thinking]` in the file | Running recipe | Line |
+|---|---|---|
+| `enabled = false`, or `effort = "off"` | effort, efforts without `none` | `warning: [thinking] enabled = false in <path> makes Kimi refuse every prompt to llmctl/<served> before sending it, ...` |
+| `enabled = false`, or `effort = "off"` | effort, efforts with `none` | `warning: [thinking] enabled = false in <path> makes Kimi send reasoning_effort none to llmctl/<served>, so <id> runs without thinking; ...` |
+| `effort` is a string other than `on` and `off`, and not one of the recipe's efforts | effort | `warning: [thinking] effort = "<x>" in <path> makes Kimi send reasoning_effort <x> to llmctl/<served>, which lists only <efforts>; ...` |
+| `effort` is a string other than `on` and `off` | toggle, always or none | `warning: [thinking] effort = "<x>" in <path> makes Kimi send reasoning_effort <x> to llmctl/<served>, which sets its thinking on the server (<type>); ...` |
+| `effort` is one of the recipe's efforts and not `medium` | effort | `note: [thinking] effort = "<x>" in <path> makes Kimi use effort <x> for llmctl/<served> instead of medium` |
+| Anything else, or no table | any | Nothing |
+
+Each warning names its fix: `set enabled = true there`, or another effort with `/effort` in Kimi, or removing the effort line.
+Kimi's effort selector saves the choice for every model; to choose an effort for llmctl's model in one session only, press Alt+S in the selector, which the TUI shows as `Alt+S session-only` (P3), and leave the saved table alone unless you want that effort for every model.
+Probe G of the e2e sent the plain OK request with `reasoning_effort: "low"`, the field a global `[thinking] effort = "low"` makes Kimi send, to every recipe, a level that only Qwen3.8-27B and gpt-oss-20b list, and every server answered with status 200 and content ([table](#verified-on-this-laptop)) (measured on the MSI Raider 18 Max HX, llama.cpp b12407 and vLLM v0.33.0, 2026-11-17).
+On llama.cpp no recipe whose server default is off returned reasoning, as without the field in probe D; on vLLM Qwen3.5-9B, Gemma 4 12B and Groot-19B-A3B returned reasoning, Gemma 4 E4B did not, and the run recorded no control without the field for them, so this does not show that the field caused it; K2 Horizon 7B on vLLM returned none.
+
+### The Kimi default model
+
+The rules of [llmctl.md](llmctl.md#defaults-and-the-follow-rule) apply to `default_model`:
+
+1. With `--set-default` or `LLMCTL_SET_DEFAULT=1`, llmctl writes `default_model = "llmctl/<served name>"`.
+2. Without it, a string `default_model` that starts with `llmctl/` follows the running alias, and any other value, or none, never changes.
+3. Every recipe gets an entry, so Kimi can always point at the running model.
+4. `down` changes nothing; it names Kimi when its default starts with `llmctl/` and prints how long Kimi retries a stopped server ([Kimi sessions, a stopped server and timeouts](#kimi-sessions-a-stopped-server-and-timeouts)).
+
+Kimi's `/model` and `/effort` save `default_model` themselves (local-K16, P3), so a default you pick in Kimi for llmctl's model then follows every `up`.
+llmctl changes a one-line string value in place and keeps the key text, the spacing around `=` and a comment after it, as Kimi's own edit of an existing default does (E4a); a missing key is inserted after the last top-level statement, or as the first line when there is none, because a line at the end of the file would belong to the last table: Kimi accepted such a line silently as `defaultModel` inside `[models."llmctl/local"]` (E6, [negative records](../research/2026-11-17/llmctl-kimi-stub/exp/neg/)) (measured on the MSI Raider 18 Max HX, Kimi Code 2.5.3, no server).
+
+The default matters more for Kimi than for the other clients, because print mode resolves `default_model` even when `-m` names another alias (E5, [summary](../research/2026-11-17/llmctl-kimi-stub/exp/runs/e5e7-summary-e5.jsonl); main.cjs:499744-499746 and 261009-261018) (measured on the MSI Raider 18 Max HX, Kimi Code 2.5.3, recording stub):
+
+- without a `default_model`, `kimi -p ... -m llmctl/local` fails with `no default model configured`;
+- a `default_model` that names an alias the file lacks fails every `kimi -p`, with or without `-m`, with `Model "<x>" is not configured in config.toml.` or `model <x> does not resolve to a configured provider`, in about 0.5 s and before any request;
+- the TUI with `-m` works without a default (E8 `e8-tui-m`), and shows `Model: not set, run /login or /provider` when there is none.
+
+So `up` prints, for a model that is not Kimi's default, that `kimi -p` needs `--set-default` first, and `up` and `status` warn when `default_model` names an alias the file does not define: `warning: Kimi's default_model <x> names no model in <path>, so every kimi -p fails (...); pick a model with /model in kimi, or run ./llmctl up <model> --set-default`.
+The follow rule keeps an llmctl default from naming a missing alias when the alias changes between `llmctl/local` on llama.cpp and `llmctl/<served name>` on vLLM.
+
+`KIMI_MODEL_NAME` in the shell outranks `default_model`, and only `-m` outranks it (docs-K031) (vendor-reported); it activates an alias of its own, `__kimi_env_model__`, on a provider of its own whose id is `__kimi_env__` and whose type is `KIMI_MODEL_PROVIDER_TYPE`, `kimi` by default, and neither is ever written to the file (local-K32).
+`up` and `status` print `note: KIMI_MODEL_NAME is set in this shell, so kimi uses that model instead of Kimi's default_model; unset it, or pass -m llmctl/<served>` when llmctl's environment has it set.
+Other `KIMI_MODEL_*` variables, such as `KIMI_MODEL_TEMPERATURE` and `KIMI_MODEL_MAX_TOKENS`, change Kimi's requests even without `KIMI_MODEL_NAME` (local-K32).
+
+### Kimi checks before writing
+
+Before anything starts, and again after the server is ready, llmctl checks its own result: the candidate parses with `tomllib`, llmctl's two tables and `default_model` parse to the intended values, no other `llmctl/` alias exists, everything else parses equal to the old file, and every line outside llmctl's tables and the `default_model` statement is the same, in order; otherwise `up` refuses with `<path>: llmctl's own check of the new config.toml failed; nothing was written`.
+
+Then the installed Kimi reads the candidate, on every `up` that is not a dry run, also when llmctl's tables do not change, so a file from which Kimi no longer reads llmctl's entry after your edit, Kimi's own write or an update refuses:
+
+1. llmctl makes a private temporary folder (`llmctl-kimi-*`, mode 0700) with `home/config.toml` (mode 0600, the whole candidate, your other tables included) and an empty `cache/`, and runs both commands with `KIMI_CODE_HOME` and `KIMI_CODE_CACHE_DIR` pointing there and `KIMI_DISABLE_TELEMETRY=1`, `KIMI_CODE_NO_AUTO_UPDATE=1` and `KIMI_CODE_REGION_MARKER=off`; the folder is removed afterwards.
+2. `kimi --version`: a failure, or no output, refuses; a version other than 2.5.3 prints a warning after the clients line, and the check goes on.
+3. `kimi provider list --json`: it passes only when it exits 0, its output is a JSON object, and the `llmctl` provider and the `llmctl/<served name>` model hold every value llmctl writes under Kimi's camelCase names (`baseUrl`, `apiKey`, `maxContextSize`, `supportEfforts` and the others, as `providerEntryFromToml` converts them, main.cjs:169306-169314); keys llmctl does not write are ignored.
+
+The exit status alone proves nothing: on a file that is not valid TOML, `kimi provider list --json` exits 0 with `{"providers": {}, "models": {}}` and an empty stderr (E6, [record](../research/2026-11-17/llmctl-kimi-stub/exp/records/provider-list-invalid-toml.json)).
+Its output holds every provider's `apiKey`, so llmctl never prints, logs or records it, and a refusal names only the llmctl key that is missing or differs.
+`kimi --version` took 0.27 to 0.29 s and `kimi provider list --json` 0.31 to 0.32 s, with a fresh or a warm cache; a fresh cache folder got 9 files with 1,932,692 bytes and the home a 36-byte `device_id`, and neither command made a connect call other than four to the local `nscd` socket (E6, [summary](../research/2026-11-17/llmctl-kimi-stub/exp/runs/e6-summary.jsonl)) (measured on the MSI Raider 18 Max HX, Kimi Code 2.5.3, no server).
+So one check costs about 0.6 s and writes about 1.9 MB into a folder that it removes.
+`kimi doctor config` is not used, because it accepted a model without `max_context_size`, an unknown provider type and an unquoted dotted alias (local-K23; E6).
+
+What the check proves: Kimi 2.5.3's own parser and schemas read llmctl's values from the whole candidate, and llmctl changed nothing else.
+What it does not prove: that a request succeeds, which E2, the golden files and the e2e cover.
+`up --dry-run` runs no `kimi` command and creates no folder; when Kimi is the only checking client it ends with `dry run: nothing was written, and Kimi has not checked llmctl's entry`, and with Pi or dsh also active it ends with one of the other endings in [llmctl.md](llmctl.md#clients), such as `dry run: nothing was written, and none of Pi, dsh and Kimi has checked llmctl's entries` on this laptop.
+
+### Kimi chat-only recipes
+
+Kimi has no per-model tool switch: `tool_use` gates only dynamic tool selection, and every request carries Kimi's 24 tools, the two DeepSeek-R1 entries with `capabilities = []` included (E2; local-K22).
+On vLLM, whose DeepSeek-R1 recipe has no tool parser, a request with tools gets HTTP 400, and Kimi exited 1 after 0.61 s without retrying against a stub that answers as that server does (E3, [summary](../research/2026-11-17/llmctl-kimi-stub/exp/runs/e3-summary.jsonl)) (measured on the MSI Raider 18 Max HX, Kimi Code 2.5.3, recording stub).
+As for dsh, llmctl writes both DeepSeek-R1 entries anyway, so Kimi's default stays on the running model, and `up` prints a chat-only line.
+
+A prompt without tools works in print mode with an agent file whose front matter has `tools: []`: the request then has no `tools` key, and the agent's body is its system prompt (E3).
+llmctl ships that agent file as `launcher/kimi-chat-only.md`, and `up` prints its absolute path:
+
+```markdown
+---
+name: llmctl-chat-only
+description: Chat-only agent for llmctl's chat-only recipes; it has no tools.
+tools: []
+---
+
+You are a helpful assistant.
+Answer the user directly in plain text.
+You have no tools.
+```
+
+```bash
+kimi -p "your prompt" --agent-file <path>
+```
+
+The name is kebab-case, as Kimi requires, and does not clash with an agent of yours called `chat-only` (main.cjs:69803-69835).
+P1 ran the same text with the body's three sentences on one line, joined by single spaces: `kimi -p "Reply with exactly OK." --output-format stream-json --agent-file <file>` sent no `tools`, an 87-character system prompt, answered `PONG-ONE` and exited 0 in 0.49 s (P1, [summary](../research/2026-11-17/llmctl-kimi-stub/spec/runs/p1-summary.jsonl), [agent file](../research/2026-11-17/llmctl-kimi-stub/spec/agents/llmctl-chat-only.md)) (measured on the MSI Raider 18 Max HX, Kimi Code 2.5.3, recording stub).
+The shipped file puts each sentence on its own line, which gives the model the same 87 characters with two line breaks in place of the two spaces (not measured).
+The TUI ignores `--agent-file`: with it, with `-m` or with a default, the TUI sent all 24 tools and Kimi's default system prompt and showed `Error: [provider.api_error] "auto" tool choice requires --enable-auto-tool-choice and --tool-call-parser to be set`, as the control run without the file did (P1).
+So `up` prints only the print-mode route, which needs Kimi's default ([The Kimi default model](#the-kimi-default-model)), and llmctl writes nothing into Kimi's `agents/` folder; on llama.cpp the TUI sends the tools too, and the model may write a tool call as text, as it did in OpenCode (inferred from the recipe's evidence).
+
+### Kimi sessions, a stopped server and timeouts
+
+Kimi watches `config.toml` and reloads it when it changes (local-K46); an open TUI picked up llmctl's rename within 5 s (E8) (measured on the MSI Raider 18 Max HX, Kimi Code 2.5.3, recording stub):
+
+- When the alias changed, the next prompt failed with `Error: [config.invalid] Model "llmctl/local" is not configured in config.toml.`, sent no request, and the footer still named the old model (E8, [run](../research/2026-11-17/llmctl-kimi-stub/exp/runs/e8-tui/)).
+- When the alias stayed, the next prompt went out with the new entry's values but the session's old thinking level, `reasoning_effort: "none"` after a toggle model's `off`, while the footer still showed the old model (E8, [run](../research/2026-11-17/llmctl-kimi-stub/exp/runs/e8-tui-same/)).
+- In neither case did the TUI write the file back.
+
+So after an `up` that changed llmctl's tables, `up` prints `note: an open Kimi session on llmctl/<old> fails its next turn until you pick llmctl/<served> with /model or start a new session`, or, when the alias stayed, `note: an open Kimi session on llmctl/<served> sends its next turn to <id> on <runtime> but keeps its old thinking level; start a new session`.
+
+The lead's TUI checklist after the e2e drove Kimi's TUI through a pseudo-terminal against the real servers, in a private home whose `config.toml` was a copy of the real one with llmctl's default edit, through a recording proxy that kept every entry's `base_url` ([checklist](../research/2026-11-17/llmctl-kimi-e2e/lead-checks/tui/README.md)); all five items passed:
+
+1. `/model` listed `gemma-4-26b-a4b on llama.cpp (llmctl)` with `Thinking  On (Unsupported)  [ Off ]`, and Enter picked it with `Saved gemma-4-26b-a4b on llama.cpp (llmctl) with thinking off as default.`, appending `[thinking]` with `enabled = false` to the private file, as E4a found (measured on the MSI Raider 18 Max HX, Kimi Code 2.5.3, llama.cpp b12407).
+2. A prompt got the answer from the real server in about 4 s: one request with `model: "local"`, `max_tokens: 16384`, 24 tools and no `reasoning_effort`, and one task with a 12,109-token prompt in the llama.cpp log (measured on the MSI Raider 18 Max HX, Kimi Code 2.5.3, llama.cpp b12407).
+3. After `./llmctl up qwen3.8-27b --replace`, `/effort` offered `Off  Low  [ Medium ]` with `Alt+S session-only`; Low with Alt+S printed `Thinking set to low for this session only.`, the request carried `reasoning_effort: "low"`, and the private `config.toml` stayed byte for byte as copied (measured on the MSI Raider 18 Max HX, Kimi Code 2.5.3, llama.cpp b12407).
+4. Alias changed: after `./llmctl up gpt-oss-20b --runtime vllm --replace`, an open session on `llmctl/local` failed its next turn with `Error: [config.invalid] Model "llmctl/local" is not configured in config.toml.`, no request reached either server, the footer still named qwen3.8-27b, and the TUI did not write the file (measured on the MSI Raider 18 Max HX, Kimi Code 2.5.3, llama.cpp b12407 and vLLM v0.33.0).
+5. Alias kept: after `./llmctl up gemma-4-26b-a4b --replace`, an open session on `llmctl/local` sent its next turn to gemma with the old `reasoning_effort: "medium"` and got the answer, and the TUI did not write the file; the footer still showed `qwen3.8-27b on llama.cpp (llmctl) thinking: medium`, but its context total changed from 64k to 128k, where E8 saw the footer keep the old values (measured on the MSI Raider 18 Max HX, Kimi Code 2.5.3, llama.cpp b12407).
+
+The notes `up` printed before each switch matched what the sessions did, and at the end `./llmctl status` showed Kimi on `llmctl/local for gemma-4-26b-a4b on llama.cpp, the running model; default not set`.
+
+A stopped server fails a `kimi -p` after 151.2 s of 10 connection attempts, with nine `turn.step.retrying` lines in stream-json and `error: failed to run prompt: provider.connection_error: Connection error.` (E7, [run](../research/2026-11-17/llmctl-kimi-stub/exp/runs/e7-refused-json/)) (measured on the MSI Raider 18 Max HX, Kimi Code 2.5.3, no server); `down` prints `Kimi retries a stopped server for about two and a half minutes before a prompt fails` when Kimi's default points at llmctl.
+Kimi waits 300 s for the first response byte unless `KIMI_CODE_LLM_HEADERS_TIMEOUT_MS` is exported, and 10 minutes per attempt (docs-K055, docs-K056, local-K37) (vendor-reported); neither can be set in `config.toml`, and llmctl sets neither, so a long first prefill of an offloaded model may need the variable.
+
+Kimi sends `max_tokens` as the smaller of `max_output_size` and `max_context_size` minus the tokens used, at most 131072 (local-K26; E2: 16384, and 32768 for llama.cpp K2 Horizon 7B).
+Kimi's first request in the hands-on run `a-1` carried 12,202 prompt tokens (gemma-4-26b-a4b; [README](../research/2026-11-17/llmctl-kimi-stub/handson/README.md)) (measured on the MSI Raider 18 Max HX, Kimi Code 2.5.3, llama.cpp b12407), so a 65,536-token recipe keeps about 37,000 tokens for the conversation after the 16,384-token output reserve (estimate).
+The docs tie Kimi's automatic compaction to `reserved_context_size` (docs-K081) (vendor-reported), which llmctl does not write; when it compacts with llmctl's entries was not measured.
+
+### Kimi privacy and side effects
+
+What Kimi Code 2.5.3 does beyond the model requests, from its docs and its bundle; llmctl writes none of the switches into Kimi's files:
+
+| Item | What happens | Off switch | Evidence |
+|---|---|---|---|
+| Telemetry | On by default; events go by POST to the region's collector, and failed batches wait in `telemetry/` | `telemetry = false` in `config.toml`, or `KIMI_DISABLE_TELEMETRY=1`, which wins over `telemetry = true` and which print mode honours | docs-K142 to docs-K145 (vendor-reported); local-K40, local-K44 |
+| Device id | `device_id` (0600) is created on the first run and sent as `X-Msh-Device-Id` only to `kimi`-type providers | Not needed for llmctl's provider; no hands-on request carried an `X-Msh-*` header | local-K29, local-K35, local-K42; hands-on [README](../research/2026-11-17/llmctl-kimi-stub/handson/README.md) |
+| Region | Chosen locally from the login, a `region` marker in the Kimi home, the time zone and the locale, else `mainland-cn`, whose hosts are on kimi.com; `global` uses kimi.ai | `KIMI_CODE_REGION_MARKER=off` turns off the marker and the local inference, which falls back to `mainland-cn` | local-K44; docs-K168 (vendor-reported) |
+| Update check | A request for `latest.json` from Kimi's CDN at every interactive and `-p` start, a background install, and a binary swap at the next start | `KIMI_CODE_NO_AUTO_UPDATE=1` stops all three; `[upgrade] auto_install = false` in `tui.toml` stops only the install and the swap | local-K41; docs-K161 to docs-K164 (vendor-reported) |
+| Client configs | A POST to the managed API's `client_configs`, also without a login, cached for 24 h | None found; print mode did not call it in the hands-on runs, so it is likely a TUI path (inferred) | local-K43, local-K44 |
+| ripgrep, fd | Downloaded from Kimi's CDN into the Kimi home when `rg`, or `fd` and `fdfind`, are not on `PATH` and Kimi's Grep or Glob runs | Install `ripgrep` and `fd-find` | local-K43 |
+| FetchURL | Fetches directly from this machine without a login, and through Kimi's service with one | No login, or drop the tool in the global `[tools]` | local-K47; docs-K123, docs-K156 (vendor-reported) |
+| Session titles | Generated only through the managed Kimi provider, so none without a login; with a login, the TUI's titles would send the session's prompts to Kimi even for a local model (inferred from local-K47) | `auto_session_title = false` | local-K47; docs-K154 on the kimi.com server API page, docs-K155 (vendor-reported) |
+| `/feedback` | Can upload diagnostic logs and codebase context, which the command offers as optional | Do not use it, or leave them out | docs-K152 (vendor-reported) |
+| Session files | Sessions keep `wire.jsonl` request traces with whole system prompts and tool schemas, and may hold prompts, command output and traces of credentials | None; they stay in the Kimi home | local-K42; docs-K131, docs-K138 (vendor-reported) |
+| Native assets | Written under `~/.cache/kimi-code/native/<version>/`, or `KIMI_CODE_CACHE_DIR`, at every start, `--version` included | None | local-K11, local-K12 |
+
+To keep Kimi's print mode (`kimi -p`) on this machine with llmctl's model: set `telemetry = false` in `config.toml`, export `KIMI_CODE_NO_AUTO_UPDATE=1` (and `KIMI_DISABLE_TELEMETRY=1` if you prefer the variable), do not log in, and install ripgrep and fd from apt with `sudo apt install ripgrep fd-find`, Ubuntu's `fd-find` providing `fdfind`.
+This does not keep the TUI local: an idle TUI with `KIMI_DISABLE_TELEMETRY=1`, `KIMI_CODE_NO_AUTO_UPDATE=1` and `KIMI_CODE_REGION_MARKER=off` set still looked up `api.kimi.com` and `code.kimi.com` (E8, the idle-TUI sentence later in this section).
+llmctl's own `kimi` commands set `KIMI_DISABLE_TELEMETRY=1`, `KIMI_CODE_NO_AUTO_UPDATE=1` and `KIMI_CODE_REGION_MARKER=off`, and llmctl never uses a region.
+Which region Kimi picks on a given machine, and whether to change it, is left open here: llmctl reads no region, and print mode with the switches set contacted no kimi.com host.
+
+With the switches set, print mode made no DNS lookup and no outside connection: the hands-on runs' only connect target was 127.0.0.1, besides failed lookups of the local `nscd` socket ([README](../research/2026-11-17/llmctl-kimi-stub/handson/README.md)) (measured on the MSI Raider 18 Max HX, Kimi Code 2.5.3, llama.cpp b12407).
+The experiments agree: over all 67 straced runs, in an offline sandbox, no print-mode, `provider`, `doctor` or `kimi web` run made a DNS lookup, and the only run that did was the idle TUI below ([How every run worked](../research/2026-11-17/llmctl-kimi-stub/exp/findings.md#how-every-run-worked)) (measured on the MSI Raider 18 Max HX, Kimi Code 2.5.3, recording stub).
+Without the switches, as the owner runs Kimi, the lead's L-c check after the e2e ran one print-mode session with only `KIMI_CODE_NO_AUTO_UPDATE=1` from the environment, `KIMI_DISABLE_TELEMETRY` and `KIMI_CODE_REGION_MARKER` unset, and `telemetry = false` from a byte copy of the owner's `config.toml`, against gemma-4-26b-a4b ([L-c](../research/2026-11-17/llmctl-kimi-e2e/lead-checks/README.md)).
+It answered `OK` with exit 0 and made one connect, to 127.0.0.1:8080, and no other connect besides two failed ones to the missing `nscd` socket, no `sendto` call and no DNS lookup (measured on the MSI Raider 18 Max HX, Kimi Code 2.5.3, llama.cpp b12407).
+Those runs used no Grep, Glob or TUI, so they do not cover the ripgrep and fd downloads or the client configs.
+An idle TUI, started with all three switches, looked up `api.kimi.com` 12 times and `code.kimi.com` 4 times in 12 s (E8, [strace](../research/2026-11-17/llmctl-kimi-stub/exp/runs/e8-tui-idle-strace/strace.txt)) (measured on the MSI Raider 18 Max HX, Kimi Code 2.5.3, recording stub), so the switches do not keep the TUI off the network; the purposes, client configs and the CDN, are inferred from local-K43 and local-K44.
+
+Print mode approves every tool call, sensitive files included, and leaves out the dangerous-command guard (docs-K100, docs-K114 (vendor-reported); local-K49), and 2.5.3 may not apply `config.toml` permission rules at session start in print mode, which 2.6.0 lists as a fix (docs-K111) (vendor-reported).
+Kimi's Bash tool runs `/bin/bash -c` as a plain child process, with no sandbox and no systemd scope (local-K48), so unlike dsh's commands its commands stay under heavy's cap when `kimi` itself runs under `heavy`: a command run that way reported a scope inside `heavy.slice` ([run](../research/2026-11-17/llmctl-kimi-stub/handson/runs/c-1/)) (measured on the MSI Raider 18 Max HX, Kimi Code 2.5.3, llama.cpp b12407).
+
 ## Silent fallbacks and exit codes
 
 These are the ways a client can answer from the wrong model without an error, and what guards each one:
@@ -584,13 +913,57 @@ These are the ways a client can answer from the wrong model without an error, an
 - dsh with a renamed row id would leave llmctl's row unapplied and answer from its own default provider; the dsh check before each write refuses when the installed dsh lacks one of the three ids or did not apply a row ([Checks before writing](#checks-before-writing)).
 - dsh with an `llm-pi-ai` row in a profile patch hides that row behind llmctl's home row without a message (A2-home); llmctl refuses until the row is gone ([Moving a hand-made setup](#moving-a-hand-made-setup)).
 - dsh's model picker cannot save another default while llmctl holds dsh's default, and says nothing; `up` prints a note when it takes the default ([The default model and the picker](#the-default-model-and-the-picker)).
+- Kimi with `KIMI_MODEL_NAME` set in the shell uses that model instead of `default_model` (docs-K031, local-K32); `up` and `status` print a note when llmctl's environment has it set ([The Kimi default model](#the-kimi-default-model)).
+- Kimi with a global `[thinking] effort` sends that level verbatim to every entry, also to one that does not list it or has no `thinking` capability (Kimi's P2); `up` and `status` warn ([Kimi thinking per type](#kimi-thinking-per-type)).
+- `kimi provider list --json` exits 0 with empty maps on a `config.toml` it cannot read as TOML (Kimi's E6); llmctl's Kimi check therefore reads llmctl's values in its output, not the exit status ([Kimi checks before writing](#kimi-checks-before-writing)).
+- Kimi's TUI ignores `--agent-file` and sends its tools for a chat-only recipe too (Kimi's P1); `up` prints only the print-mode route ([Kimi chat-only recipes](#kimi-chat-only-recipes)).
+- A Kimi `default_model` that names an alias the file lacks fails every `kimi -p` loudly, with or without `-m` (Kimi's E5), rather than falling back; the follow rule and the missing-alias warning keep it from happening through llmctl ([The Kimi default model](#the-kimi-default-model)).
 
 Exit codes: `pi --mode json` exits 0 when the provider fails, because only the text mode turns a failed reply into exit 1 (`dist/modes/print-mode.js:17` and `103-139`, `dist/main.js:868-879`), so look for an assistant `message_end` with `stopReason` `error`; Hermes exits 2 when it refuses a context below 64,000 tokens (R19).
 `dsh --profile headless` exits 1 when a turn fails or is aborted and prints `dsh: <code>: <message>` on stderr only for a failed turn, and it exits 1 with an empty line when the run produced no assistant message (`runtime-13`; [headless/README.md:36](https://github.com/deepseek-ai/deepseek-harness/blob/38a6a5c965aa99ab525161efb7cc5cf1fe62fced/packages/bundle/headless/README.md?plain=1#L36), [136](https://github.com/deepseek-ai/deepseek-harness/blob/38a6a5c965aa99ab525161efb7cc5cf1fe62fced/packages/bundle/headless/README.md?plain=1#L136) and [190](https://github.com/deepseek-ai/deepseek-harness/blob/38a6a5c965aa99ab525161efb7cc5cf1fe62fced/packages/bundle/headless/README.md?plain=1#L190)); with `--json`, a failure outside a turn writes an `error` event and no `final` event (`runtime-14`, [104](https://github.com/deepseek-ai/deepseek-harness/blob/38a6a5c965aa99ab525161efb7cc5cf1fe62fced/packages/bundle/headless/README.md?plain=1#L104)).
+`kimi -p` exits 0 on success, 1 for a startup or turn error (a missing model, a refused request, a stopped server after its retries), 4 when the session is occupied, and 129, 130 or 143 on signals; in `--output-format stream-json` a retry shows as a `turn.step.retrying` line, and thinking is never printed (local-K39, docs-K101).
 llmctl exits 3 when a client file refuses the start, and 6 when the model is running but a client file or command failed ([llmctl.md](llmctl.md#when-up-refuses)).
 llmctl waits up to the runtime's `start_timeout_s` for the server, then 2 s at most for Pi's settings lock.
 
 ## Verified on this laptop
+
+On 2026-11-17, from 14:40 to 15:07, the driver ran every shipped recipe again with Kimi Code CLI as the fifth client: `--matrix all --set-default-round-trip` over all 19 recipes with OpenCode, Hermes, Pi, dsh and Kimi, 333 rows (measured on the MSI Raider 18 Max HX, Kimi Code 2.5.3, llama.cpp b12407 and vLLM v0.33.0, 2026-11-17); [README](../research/2026-11-17/llmctl-kimi-e2e/README.md), [summary](../research/2026-11-17/llmctl-kimi-e2e/summary.md), [records](../research/2026-11-17/llmctl-kimi-e2e/records/).
+All 39 Kimi rows read Yes: 19 `kimi-config` rows, 19 `kimi -p` sessions, and the round trip's session without `-m`, which used the `default_model` that `./llmctl up qwen3.6-35b-a3b --set-default` wrote ([record 365](../research/2026-11-17/llmctl-kimi-e2e/records/365-round-trip-up), [record 372](../research/2026-11-17/llmctl-kimi-e2e/records/372-round-trip-kimi)).
+The restore put Kimi's `default_model` back to the owner's earlier state, unset, with every other client's default, and read it back (the `restore` row).
+Both DeepSeek-R1 recipes answered through the agent file `launcher/kimi-chat-only.md` ([record 100](../research/2026-11-17/llmctl-kimi-e2e/records/100-05-deepseek-r1-0528-qwen3-8b-llamacpp-kimi), [record 341](../research/2026-11-17/llmctl-kimi-e2e/records/341-18-deepseek-r1-0528-qwen3-8b-vllm-kimi)).
+K2 Horizon 7B on vLLM passed in Kimi, which wrote and read `hello.py` ([record 250](../research/2026-11-17/llmctl-kimi-e2e/records/250-13-k2-horizon-7b-vllm-kimi)), while Hermes and Pi failed on its template with HTTP 400 `Assistant message is missing a thinking field` in `hermes -z`, `hermes chat` and Pi ([record 244](../research/2026-11-17/llmctl-kimi-e2e/records/244-13-k2-horizon-7b-vllm-hermes-z), [record 245](../research/2026-11-17/llmctl-kimi-e2e/records/245-13-k2-horizon-7b-vllm-hermes-chat), [record 246](../research/2026-11-17/llmctl-kimi-e2e/records/246-13-k2-horizon-7b-vllm-pi)).
+The run's 11 No rows belong to the other clients and the probes, and the README classifies none as a defect in llmctl or the driver ([The No rows](../research/2026-11-17/llmctl-kimi-e2e/README.md#the-no-rows)): those three K2 Horizon 7B rows, vLLM DeepSeek-R1's probe A with its garbled title, and seven sessions that failed on model behaviour, Nemotron 3.5 Bolt's parallel write and read in Pi, the refused `justification` argument of gemma-4-26b-a4b and vLLM gemma-4-e4b in dsh, and four Hermes sessions whose `hello.py` landed outside the working folder or whose write Hermes refused.
+The run used Claude Code's ripgrep 14.1.1 through a symlink named `rg` on `PATH`, because ripgrep from apt was installed after the run, so any Kimi Grep call in it ran that build.
+
+Probe G of that run, the plain OK request with `max_tokens` 256 and `reasoning_effort: "low"`, recorded without judging, got these replies (measured on the MSI Raider 18 Max HX, llama.cpp b12407 and vLLM v0.33.0, 2026-11-17); the thinking type is the recipe's in [Kimi thinking per type](#kimi-thinking-per-type):
+
+| Recipe | Runtime | Thinking type | Status | Content | Reasoning | Record |
+|---|---|---|---|---|---|---|
+| qwen3.8-27b | llama.cpp | effort | 200 | Yes | Yes | [025](../research/2026-11-17/llmctl-kimi-e2e/records/025-01-qwen3.8-27b-llamacpp-probes-G) |
+| k2-horizon-7b | llama.cpp | always | 200 | Yes | Yes | [046](../research/2026-11-17/llmctl-kimi-e2e/records/046-02-k2-horizon-7b-llamacpp-probes-G) |
+| nemotron-3.5-bolt | llama.cpp | toggle, default off | 200 | Yes | No | [066](../research/2026-11-17/llmctl-kimi-e2e/records/066-03-nemotron-3.5-bolt-llamacpp-probes-G) |
+| qwen3-coder-next | llama.cpp | none | 200 | Yes | No | [085](../research/2026-11-17/llmctl-kimi-e2e/records/085-04-qwen3-coder-next-llamacpp-probes-G) |
+| deepseek-r1-0528-qwen3-8b | llama.cpp | always | 200 | Yes | Yes | [104](../research/2026-11-17/llmctl-kimi-e2e/records/104-05-deepseek-r1-0528-qwen3-8b-llamacpp-probes-G) |
+| gemma-4-26b-a4b | llama.cpp | toggle, default off | 200 | Yes | No | [123](../research/2026-11-17/llmctl-kimi-e2e/records/123-06-gemma-4-26b-a4b-llamacpp-probes-G) |
+| nemotron-3.5-lightning | llama.cpp | toggle, default off | 200 | Yes | No | [142](../research/2026-11-17/llmctl-kimi-e2e/records/142-07-nemotron-3.5-lightning-llamacpp-probes-G) |
+| groot-19b-a3b | llama.cpp | toggle, default off | 200 | Yes | No | [161](../research/2026-11-17/llmctl-kimi-e2e/records/161-08-groot-19b-a3b-llamacpp-probes-G) |
+| k2-horizon-mova-36b | llama.cpp | always | 200 | Yes | Yes | [181](../research/2026-11-17/llmctl-kimi-e2e/records/181-09-k2-horizon-mova-36b-llamacpp-probes-G) |
+| gpt-oss-20b | llama.cpp | effort | 200 | Yes | Yes | [200](../research/2026-11-17/llmctl-kimi-e2e/records/200-10-gpt-oss-20b-llamacpp-probes-G) |
+| qwen3.6-35b-a3b | llama.cpp | toggle, default off | 200 | Yes | No | [364](../research/2026-11-17/llmctl-kimi-e2e/records/364-19-qwen3.6-35b-a3b-llamacpp-probes-G) |
+| gpt-oss-20b | vLLM | effort | 200 | Yes | Yes | [218](../research/2026-11-17/llmctl-kimi-e2e/records/218-11-gpt-oss-20b-vllm-probes-G) |
+| mellum2.1-12b | vLLM | toggle, default on | 200 | Yes | Yes | [236](../research/2026-11-17/llmctl-kimi-e2e/records/236-12-mellum2.1-12b-vllm-probes-G) |
+| k2-horizon-7b | vLLM | always | 200 | Yes | No | [255](../research/2026-11-17/llmctl-kimi-e2e/records/255-13-k2-horizon-7b-vllm-probes-G) |
+| qwen3.5-9b | vLLM | toggle, default off | 200 | Yes | Yes | [273](../research/2026-11-17/llmctl-kimi-e2e/records/273-14-qwen3.5-9b-vllm-probes-G) |
+| gemma-4-12b | vLLM | toggle, default off | 200 | Yes | Yes | [291](../research/2026-11-17/llmctl-kimi-e2e/records/291-15-gemma-4-12b-vllm-probes-G) |
+| gemma-4-e4b | vLLM | toggle, default off | 200 | Yes | No | [309](../research/2026-11-17/llmctl-kimi-e2e/records/309-16-gemma-4-e4b-vllm-probes-G) |
+| groot-19b-a3b | vLLM | toggle, default off | 200 | Yes | Yes | [327](../research/2026-11-17/llmctl-kimi-e2e/records/327-17-groot-19b-a3b-vllm-probes-G) |
+| deepseek-r1-0528-qwen3-8b | vLLM | always | 200 | Yes | Yes | [344](../research/2026-11-17/llmctl-kimi-e2e/records/344-18-deepseek-r1-0528-qwen3-8b-vllm-probes-G) |
+
+On llama.cpp, probe D sent the same plain request without `reasoning_effort`, with the recipe id as its model, to every recipe, and the toggle recipes whose server default is off returned no reasoning there either.
+On vLLM, probe D is not sent, so the run holds no control of the plain request without the field for Qwen3.5-9B, Gemma 4 12B and Groot-19B-A3B, whose server default is off but which returned reasoning to probe G; their only requests without the field were probe B's tool replays, a different request, which returned no reasoning.
+K2 Horizon 7B on vLLM, which always thinks, returned no reasoning to probe G, as to probes A and C with `reasoning_effort: "none"`, while its probe B returned reasoning.
+
+The dsh run below, earlier that day, covered four clients before Kimi support existed.
 
 On 2026-11-17 the driver ran every shipped recipe, 11 on llama.cpp and 8 on vLLM, with `heavy python3 -m launcher.e2e.clients --out research/2026-11-17/llmctl-dsh-e2e --matrix all --set-default-round-trip`, after six of the seven vLLM estimates had been measured and the seventh, DeepSeek-R1-0528-Qwen3-8B, had failed, and after the owner's hand-made dsh setup moved to llmctl's block (measured on the MSI Raider 18 Max HX, llama.cpp b12407, vLLM v0.33.0, dsh 0.2.2-rc.3, 2026-11-17); [README](../research/2026-11-17/llmctl-dsh-e2e/README.md), [summary](../research/2026-11-17/llmctl-dsh-e2e/summary.md), [records](../research/2026-11-17/llmctl-dsh-e2e/records/).
 Every recipe ran on Hermes, Pi and dsh, and every recipe except vLLM DeepSeek-R1-0528-Qwen3-8B, which has no OpenCode entry, on OpenCode too.
@@ -650,7 +1023,7 @@ Across runs 2 to 4 every setup step passed, and the session failures changed fro
 
 ## Maintenance
 
-- Re-check the pinned versions before relying on this document: Hermes Agent v0.23.1, Pi 1.5.2 and DeepSeek Harness 0.2.2-rc.3 (see [Versions](#versions)); on an upgrade, rerun the e2e below before trusting the entries.
+- Re-check the pinned versions before relying on this document: Hermes Agent v0.23.1, Pi 1.5.2, DeepSeek Harness 0.2.2-rc.3 and Kimi Code CLI 2.5.3 (see [Versions](#versions)); on an upgrade, rerun the e2e below before trusting the entries.
 - Watch Hermes' `gateway.standalone` shim in each Hermes release; if it goes, the profile llmctl may be served by the messaging gateway, which the gateway warning reports.
 - Hermes' `_config_version` default (53 at v0.23.1) and its owned keys: a newer Hermes migrates the stamp itself, but a new key that must live in the block needs a change in `launcher/hermes_config.py`.
 - Pi's `ModelDefinitionSchema` keys (`dist/core/model-config.js:32-49`): Pi 1.5.2 accepts keys its schemas do not list (`dist/core/model-config.js:32-89` sets no `additionalProperties: false`), so a key llmctl writes that a later Pi drops or renames may still pass the check during `up` while the setting stops working; compare the keys on every Pi upgrade and rerun the e2e below.
@@ -659,19 +1032,31 @@ Across runs 2 to 4 every setup step passed, and the session failures changed fro
 - The dump format the dsh check reads: `# == ..., patched by ...` groups that list the patch files, and `- id: <id>` lines under them; if a later dsh prints another format, the check refuses with `dsh did not apply llmctl's ... row` and `launcher/dsh_config.py` needs a change.
 - pi-ai's resolved version (`@earendil-works/pi-ai` 1.5.2 from `^1.3.0`, with no shrinkwrap): a reinstall of the same dsh can resolve a newer pi-ai, so check `npm ls -g @earendil-works/pi-ai` after each install.
 - The Bolt budget rule: Nemotron 3.5 Bolt's medium level depends on pi-ai leaving out a budget of 0, so record B1-2 again on every pi-ai upgrade ([Rows per thinking type](#rows-per-thinking-type)).
-- The e2e run proves real sessions through OpenCode, Hermes, Pi and dsh on both runtimes; run it only alone, through heavy, after the unit suite passes: `heavy python3 -m launcher.e2e.clients --out research/<date>/llmctl-clients-e2e [--matrix default|extended|all] [--keep-running] [--set-default-round-trip] [--skip-dsh]`.
-  `--matrix all` runs every shipped recipe, and `--skip-dsh` checks only OpenCode, Hermes and Pi, with no dsh step and `LLMCTL_CLIENTS=opencode,hermes,pi` for every command.
+- Kimi Code CLI 2.5.3 is `VERIFIED_VERSION` in `launcher/kimi_config.py`; on any other version `up` warns after the clients line and goes on, and on an upgrade update the constant, regenerate the golden files with `python3 -m launcher.tests.regen_golden`, and rerun the Kimi steps of the e2e before relying on the entry.
+- The output the Kimi check reads: `kimi provider list --json` prints llmctl's keys in camelCase (`baseUrl`, `apiKey`, `modelSource`, `maxContextSize`, `maxOutputSize`, `displayName`, `supportEfforts`, `defaultEffort`, `offEffort`) ([record](../research/2026-11-17/llmctl-kimi-stub/exp/records/provider-list-llamacpp-qwen3.8-27b.json)); if a later Kimi prints other names, the check refuses with `Kimi ... does not read llmctl's entry` and `launcher/kimi_config.py` needs a change.
+- Kimi's writer, which [The Kimi tables](#the-kimi-tables) relies on: on an upgrade, rerun E4's writer runs (`exp/bin/e4.sh`, `e4_web.sh` and `e4_registry.sh` in [the archive](../research/2026-11-17/llmctl-kimi-stub/README.md#rerun)) and check that llmctl still finds and keeps its tables in the files Kimi writes, because a writer that moves, splits or reformats tables in a new way is what the line-by-line edit must survive.
+- P1 to P3 on an upgrade: whether the TUI still ignores `--agent-file` and print mode still drops `tools` with the shipped agent file (P1), whether print mode still sends a global `[thinking] effort` verbatim (P2), and what `/effort` saves (P3); the warnings and the chat-only line of `up` rest on them.
+- The e2e run proves real sessions through OpenCode, Hermes, Pi, dsh and Kimi on both runtimes; run it only alone, through heavy, after the unit suite passes: `PATH=$HOME/.kimi-code/bin:$PATH heavy python3 -m launcher.e2e.clients --out research/<date>/llmctl-clients-e2e [--matrix default|extended|all] [--keep-running] [--set-default-round-trip] [--skip-dsh] [--skip-kimi]`.
+  `--matrix all` runs every shipped recipe.
+  `--skip-dsh` leaves out the dsh steps and `--skip-kimi` the Kimi steps, and each sets `LLMCTL_CLIENTS` for every command to the clients that stay: `opencode,hermes,pi,kimi`, `opencode,hermes,pi,dsh`, or `opencode,hermes,pi` with both.
+  Without `--skip-kimi` the driver puts `$HOME/.kimi-code/bin` first on `PATH` for itself and every command, so `./llmctl` and every step find the native `kimi` before any other.
   Before it starts anything, it refuses with exit 1 when `LLMCTL_CLIENTS` is set, when an llmctl model server is running (`error: an llmctl model server is running (<recipe> on <runtime>); stop it with ./llmctl down, then run the driver again`), or when the `--out` folder exists.
+  Without `--skip-kimi` it also refuses when Kimi is not installed with that `PATH`, when any `KIMI_MODEL_` variable is set (they change which model Kimi uses and what it sends), when no `rg` executable is on `PATH`, when neither `fd` nor `fdfind` is (Kimi's Grep and Glob tools would download them from Kimi's CDN; a shell function or alias does not count), when `config.toml` cannot be read or is not valid TOML, or when its `default_model` is in a form that llmctl's default edit cannot change, such as an integer, a one-line multi-line string or a `[default_model]` table, because every Kimi session of the matrix gets that edit on its private copy; it reads only `config.toml` in the Kimi home and runs no Kimi command for these checks.
   Without `--skip-dsh` it also refuses when dsh is not installed, when a profile patch sets the `llm-pi-ai` row, when `DEEPSEEK_API_KEY` is set (dsh's `web_search` could send model-written queries to DeepSeek), when 127.0.0.1:3182 is in use, or when the home patch is unreadable or its markers are damaged; it never opens a `.env` or credential file.
   Per recipe, after the Pi session, it checks the home patch against what llmctl writes from the text it held at the start, runs one `dsh --profile headless` session and boots `dsh web --port 3182 --no-open`, each with telemetry off, `TMPDIR` under the work root and a private dsh home there that holds a byte copy of the real home patch; the web step records `dsh web: <address withheld>` instead of its launch address.
   The web step waits up to 30 s for the `dsh web:` line and, once it came, reads stderr 3 s more, then stops the process group with SIGTERM, and with SIGKILL when it is still there 15 s later (`WEB_READY_S`, `WEB_TAIL_S` and `WEB_KILL_S` in `launcher/e2e/clients.py`).
   Without the line after 30 s it sends the group SIGTERM at once, and SIGKILL 15 s later even when the process ignores SIGTERM, so the step always ends.
   `dsh --version` runs with telemetry off, `TMPDIR` under the work root and its working folder a fresh `<work root>/dsh-version`.
-  The probes are those of [Verified on this laptop](#verified-on-this-laptop), except that a chat-only recipe gets no probe B, because none of the e2e's sessions sends it tools: OpenCode's entry has `"tools": false` (vLLM DeepSeek-R1 has no entry and so no OpenCode session), Hermes' block has `platform_toolsets: {"cli": []}`, Pi runs with `--no-tools`, and the dsh session adds the no-tools `--patch` of [Chat-only recipes](#chat-only-recipes).
+  Per recipe, after the dsh steps (after the Pi session with `--skip-dsh`), a `kimi-config` step checks in process that the real `config.toml` holds llmctl's two tables for the recipe by value, the `default_model` that `up` without `--set-default` gives from the one at the start, and the same lines outside llmctl's tables as at the start; on a mismatch its record holds only llmctl's tables and `default_model` as found and as wanted, with any other `api_key` written `<withheld>`.
+  Then a `kimi` step runs `kimi -p <task> --output-format stream-json -m llmctl/<served name>` (a chat-only recipe gets the chat prompt and `--agent-file launcher/kimi-chat-only.md`) in its own work folder, with a private Kimi home `<work root>/<step>.kimi` (mode 0700) holding a copy of the real `config.toml` (mode 0600), with llmctl's own default edit when its `default_model` does not name the recipe, because print mode needs a default.
+  The session also gets an empty `HOME` and a `TMPDIR` under the work root, one Kimi cache folder per run (`<work root>/kimi-cache`), `KIMI_DISABLE_TELEMETRY=1`, `KIMI_CODE_NO_AUTO_UPDATE=1` and `KIMI_CODE_REGION_MARKER=off`, so no Kimi session runs in your Kimi home and your `~/.agents` skills stay out.
+  It passes on exit 0, JSON lines only, no retried request, with tools a `Write` and a `Read` call each answered by a tool line, no `Bash` call and a valid `hello.py`, without tools no tool call, a last assistant message with text, the private `config.toml` unchanged by the session, and a chat completion in the server log since the session started.
+  `kimi --version` runs the same way, in a fresh `<work root>/kimi-version` with its own private Kimi home.
+  The probes are those of [Verified on this laptop](#verified-on-this-laptop) plus probe G, the plain OK request with `reasoning_effort: "low"` for every recipe, which the run records without judging; a chat-only recipe gets no probe B, because none of the e2e's sessions sends it tools: OpenCode's entry has `"tools": false` (vLLM DeepSeek-R1 has no entry and so no OpenCode session), Hermes' block has `platform_toolsets: {"cli": []}`, Pi runs with `--no-tools`, and the dsh session adds the no-tools `--patch` of [Chat-only recipes](#chat-only-recipes).
   A probe with tools would test a request no session sends, and vLLM refuses tools without `--enable-auto-tool-choice` (HTTP 400 for vLLM deepseek-r1-0528-qwen3-8b in the first run of 2026-11-17, that run's [record 291](../research/2026-11-17/llmctl-dsh-e2e-run1/records/291-18-deepseek-r1-0528-qwen3-8b-vllm-probes-B)).
-  With `--set-default-round-trip` it also refuses when OpenCode's config has no top-level `"model"` to restore, when `HERMES_HOME` names a profile in that shell, or when Pi's `enabledModels` would start a session without `--model` on another model, because the round trip runs `hermes` without `-p` and `pi` without `--model`.
+  With `--set-default-round-trip` it also refuses when OpenCode's config has no top-level `"model"` to restore, when Kimi's `default_model` exists but is not a string, when `HERMES_HOME` names a profile in that shell, or when Pi's `enabledModels` would start a session without `--model` on another model, because the round trip runs `hermes` without `-p` and `pi` without `--model`.
   `--out` holds only the records: one file per command or probe under `records/`, and the `summary.md` table.
   The client sessions run in fresh work folders under one private folder per run, made with `mkdtemp` (prefix `llmctl-e2e-`, mode 0700) outside the repository and left in place; the first line names both, `records in <out>; work folders in <work root>, left in place after the run`, and every record shows that folder as `$WORK` and your home as `$HOME`.
   The live-gateway check runs 35 s after the first passing `up` that created the profile llmctl, or right after the first passing `up` when the profile existed before the run, and adds a `gateway` row; when no `up` created the profile, `summary.md` gets `- | gateway | No | no up created the profile llmctl (<path>), so the gateway check did not run`, and a `status` step that prints the gateway warning fails as well.
-  The round trip runs `./llmctl up qwen3.6-35b-a3b --set-default`, then OpenCode, `hermes -z`, Pi and a dsh session in the real dsh home without `--model`, `-p` or `--patch`, and always restores the defaults it snapshotted; `summary.md` gets a `round-trip | check | No | <Type>: <error>` row when the check itself failed, and a `round-trip | restore` row with each value the restore could not put back.
+  The round trip runs `./llmctl up qwen3.6-35b-a3b --set-default`, then OpenCode, `hermes -z`, Pi, a dsh session in the real dsh home and a Kimi session in a private Kimi home whose `config.toml` stays a pure byte copy of the real one, without `--model`, `-p`, `--patch` or `-m`, and always restores the defaults it snapshotted, Kimi's `default_model` included, which it removes again when you had none; `summary.md` gets a `round-trip | check | No | <Type>: <error>` row when the check itself failed, and a `round-trip | restore` row with each value the restore could not put back.
   It writes your real client files and moves defaults that point at llmctl, ending on qwen3.6-35b-a3b; its run of 2026-11-16 is in [Verified on this laptop](#verified-on-this-laptop), and the request shapes above keep their stub labels, because the e2e records the client sessions and the probe replies, not the requests the clients send.

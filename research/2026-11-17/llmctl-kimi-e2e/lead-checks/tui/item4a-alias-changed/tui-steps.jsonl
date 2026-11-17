@@ -1,0 +1,28 @@
+{"t": 0.0, "step": ["wait", "Welcome to Kimi Code", 30], "hit": true}
+{"t": 0.86, "step": ["sleep", 2]}
+{"t": 2.87, "step": ["mark", "start"]}
+{"t": 2.87, "step": ["copy", "$KIMI_CODE_HOME/config.toml", "c0-start.toml"], "ok": true}
+{"t": 2.87, "step": ["type", "Reply with the word banana in capital letters and nothing else."]}
+{"t": 6.11, "step": ["sleep", 0.5]}
+{"t": 6.61, "step": ["send", "\r"]}
+{"t": 6.92, "step": ["wait", "BANANA|rror", 300], "hit": true}
+{"t": 17.69, "step": ["sleep", 3]}
+{"t": 20.71, "step": ["mark", "answered-1"]}
+{"t": 20.71, "step": ["copy", "$KIMI_CODE_HOME/config.toml", "c1-after-first-prompt.toml"], "ok": true}
+{"t": 20.71, "step": ["touch", "$SYNC/ready"]}
+{"t": 20.71, "step": ["waitfile", "$SYNC/go", 1200], "hit": true}
+{"t": 49.9, "step": ["mark", "swapped"]}
+{"t": 49.9, "step": ["sleep", 5]}
+{"t": 54.93, "step": ["copy", "$KIMI_CODE_HOME/config.toml", "c2-after-swap.toml"], "ok": true}
+{"t": 54.93, "step": ["type", "Reply with the word cherry in capital letters and nothing else."]}
+{"t": 58.16, "step": ["sleep", 0.5]}
+{"t": 58.67, "step": ["send", "\r"]}
+{"t": 59.0, "step": ["wait", "CHERRY|rror", 300], "hit": true}
+{"t": 59.2, "step": ["sleep", 3]}
+{"t": 62.22, "step": ["mark", "answered-2"]}
+{"t": 62.22, "step": ["copy", "$KIMI_CODE_HOME/config.toml", "c3-after-second-prompt.toml"], "ok": true}
+{"t": 62.22, "step": ["send", "\u0003"]}
+{"t": 62.52, "step": ["sleep", 0.6]}
+{"t": 63.13, "step": ["send", "\u0003"]}
+{"t": 63.22, "step": ["sleep", 3]}
+{"t": 63.22, "step": ["copy", "$KIMI_CODE_HOME/config.toml", "c4-after-exit.toml"], "ok": true}

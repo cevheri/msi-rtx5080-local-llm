@@ -1,6 +1,6 @@
 """The exact `docker run` argument list each shipped recipe produces, kept under launcher/tests/golden/, and the
-client entries generated from it (the Hermes block, Pi's models.json and the dsh block with its default lines), kept
-under launcher/tests/golden/clients/.
+client entries generated from it (the Hermes block, Pi's models.json, the dsh block with its default lines and Kimi's
+two tables, [providers.llmctl] and [models."llmctl/<served name>"]), kept under launcher/tests/golden/clients/.
 
 Rewrite them on purpose, and read the diff before keeping it:
     python3 -m launcher.tests.regen_golden
@@ -9,7 +9,7 @@ Rewrite them on purpose, and read the diff before keeping it:
 import json
 from pathlib import Path
 
-from launcher import dsh_config, hermes_config, pi_config
+from launcher import dsh_config, hermes_config, kimi_config, pi_config
 from launcher.catalog import load_catalog
 from launcher.command import docker_run_argv
 from launcher.model import HostEnv, Target
@@ -51,13 +51,15 @@ def main() -> None:
         print(f"{runtime}: {len(entry.recipes)} golden files")
         clients = CLIENT_GOLDEN / runtime
         clients.mkdir(parents=True, exist_ok=True)
-        for old in [*clients.glob("*.hermes.yaml"), *clients.glob("*.pi.json"), *clients.glob("*.dsh.yml")]:
+        for old in [*clients.glob("*.hermes.yaml"), *clients.glob("*.pi.json"), *clients.glob("*.dsh.yml"),
+                    *clients.glob("*.kimi.toml")]:
             old.unlink()
         for recipe_id in sorted(entry.recipes):
             target = target_for(recipe_id, runtime, REPO / "recipes")
             (clients / f"{recipe_id}.hermes.yaml").write_text(hermes_config.render_block(target))
             (clients / f"{recipe_id}.pi.json").write_text(pi_config.new_models_text(target))
             (clients / f"{recipe_id}.dsh.yml").write_text(dsh_config.render_block(target, default=True))
+            (clients / f"{recipe_id}.kimi.toml").write_text(kimi_config.render_tables(target))
         print(f"{runtime}: {len(entry.recipes)} client golden files of each kind")
 
 

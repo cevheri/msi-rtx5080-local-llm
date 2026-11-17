@@ -1,0 +1,43 @@
+default_model = "llmctl/gpt-oss-20b"
+[providers.llmctl]
+type = "openai"
+base_url = "http://127.0.0.1:8000/v1"
+api_key = "no-key-required"
+model_source = "static"
+
+[providers.dummy]
+base_url = "http://127.0.0.1:47401/v1"
+type = "openai"
+api_key = ""
+
+[providers.dummy.source]
+kind = "apiJson"
+url = "http://127.0.0.1:47400/api.json"
+apiKey = ""
+
+[models."llmctl/gpt-oss-20b"]
+provider = "llmctl"
+model = "gpt-oss-20b"
+display_name = "gpt-oss-20b on vLLM (llmctl)"
+max_context_size = 65536
+max_output_size = 16384
+capabilities = ["tool_use", "thinking"]
+support_efforts = ["low", "medium", "high"]
+default_effort = "medium"
+
+[models."dummy/dummy-model"]
+provider = "dummy"
+model = "dummy-model"
+max_context_size = 65536
+max_output_size = 4096
+capabilities = [ "tool_use" ]
+display_name = "Dummy Model"
+
+[models."dummy/dummy-model-2"]
+provider = "dummy"
+model = "dummy-model-2"
+max_context_size = 16384
+max_output_size = 2048
+capabilities = [ "tool_use" ]
+display_name = "Dummy Model 2"
+

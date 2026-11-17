@@ -1,0 +1,8 @@
+{
+  "command": "dsh web --port 3182 --no-open",
+  "cwd": "$WORK/05-deepseek-r1-0528-qwen3-8b-llamacpp-dsh-web",
+  "exit": 0,
+  "seconds": 4.6,
+  "stdout": "dsh web: <address withheld>\n",
+  "stderr": ""
+}

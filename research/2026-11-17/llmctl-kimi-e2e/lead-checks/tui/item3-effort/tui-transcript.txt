@@ -1,0 +1,513 @@
+ 
+
+  ⠋ Preparing Kimi Code…                                                                                                                   
+
+ 
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │                                                                                                                                        │
+
+ │  ▐█▛█▛█▌  Welcome to Kimi Code!                                                                                                        │
+
+ │  ▐█████▌  Send /help for help information.                                                                                             │
+
+ │                                                                                                                                        │
+
+ │  Directory: $SCRATCH/kimi-tui-XXXXXX/work           │
+
+ │  Session:                                                                                                                              │
+
+ │  Model:     qwen3.8-27b on llama.cpp (llmctl)                                                                                          │
+
+ │  Version:   2.5.3                                                                                                                      │
+
+ │                                                                                                                                        │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ 
+
+   No session yet — one will be created on your first message.                                                                             
+
+ 
+
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ >                                                                                                                                      │
+
+ ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────���─────────╯
+
+ qwen3.8-27b on llama.cpp (llmctl) thinking: medium  …/$W/work
+
+                                                                                                                        context: 0% (0/64k)
+<<<MARK start>>>
+
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ > /                                                                                                                                    │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+ │   → yolo                   Ask When Needed mode: routine edits and commands run automatically; risky actions, questions, and plans     │
+
+ │                            still ask.                                                                                                  │
+
+ │     model                  Switch LLM model                                                                                            │
+
+ │     permission             Select permission mode                                                                                      │
+
+ │     plan                   Toggle plan mode                                                                                            │
+
+ │     settings               Open TUI settings                                                                                           │
+
+ │     (1/52)                                                                                                                             │
+
+ qwen3.8-27b on llama.cpp (llmctl) thinking: medium  …/$W/work
+
+                                                                                                                        context: 0% (0/64k)
+ │ > /e                                                                                                                                   │
+ │   → effort                 Switch thinking effort                                                                                      │
+
+ │     editor                 Set the external editor for Ctrl-G                                                                          │
+
+ │     experiments            Manage experimental features                                                                                │
+
+ │     export-debug-zip       Export current session as a debug ZIP archive                                                               │
+
+ │     export-md              Export current session as a Markdown file                                                                   │
+
+ │     (1/34)                                                                                                                             │
+
+ qwen3.8-27b on llama.cpp (llmctl) thinking: medium  …/$W/work
+
+                                                                                                                        context: 0% (0/64k)
+
+
+ │ > /ef                                                                                                                                  │
+ │   → effort         Switch thinking effort                                                                                              │
+
+ │     update-config  Inspect or edit kimi-code's own config — `config.toml` (model, provider, permission, hooks) and `tui.toml`          │
+
+ │                    (theme, editor, notifications, auto-update). Use when the user asks what a setting does, wants to change one,…      │
+
+ qwen3.8-27b on llama.cpp (llmctl) thinking: medium  …/$W/work
+
+                                                                                                                        context: 0% (0/64k)
+
+
+
+
+
+
+ │ > /eff                                                                                                                                 │
+ │   → effort      Switch thinking effort                                                                                                 │
+
+ qwen3.8-27b on llama.cpp (llmctl) thinking: medium  …/$W/work
+
+                                                                                                                        context: 0% (0/64k)
+
+
+
+
+ │ > /effo                                                                                                                                │
+ │ > /effor                                                                                                                               │
+ │ > /effort                                                                                                                              │
+ ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+  Select thinking effort
+
+  ←→ switch · Enter select · Alt+S session-only · Esc cancel
+
+ 
+
+     Off      Low    [ Medium ]
+
+ 
+
+ ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+ qwen3.8-27b on llama.cpp (llmctl) thinking: medium  …/$W/work
+
+                                                                                                                        context: 0% (0/64k)
+<<<MARK effort-selector>>>
+
+     Off    [ Low ]    Medium  
+<<<MARK after-left>>>
+
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ >                                                                                                                                      │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ qwen3.8-27b on llama.cpp (llmctl) thinking: medium  …/$W/work
+
+                                                                                                                        context: 0% (0/64k)
+
+
+
+
+
+
+
+
+   Thinking set to low for this session only.                                                                                              
+
+ 
+
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ >                                                                                                                                      │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ qwen3.8-27b on llama.cpp (llmctl) thinking: low  …/$W/work
+
+                                                                                                                        context: 0% (0/64k)
+<<<MARK picked-alt-s>>>
+
+ │ > R                                                                                                                                    │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ qwen3.8-27b on llama.cpp (llmctl) thinking: low  …/$W/work     ask Kimi to schedule tasks, e.g. "remind me at 5pm"
+ │ > Re                                                                                                                                   │
+ │ > Rep                                                                                                                                  │
+ │ > Repl                                                                                                                                 │
+ │ > Reply                                                                                                                                │
+ │ > Reply                                                                                                                                │
+ │ > Reply w                                                                                                                              │
+ │ > Reply wi                                                                                                                             │
+ │ > Reply wit                                                                                                                            │
+ │ > Reply with                                                                                                                           │
+ │ > Reply with                                                                                                                           │
+ │ > Reply with t                                                                                                                         │
+ │ > Reply with th                                                                                                                        │
+ │ > Reply with the                                                                                                                       │
+ │ > Reply with the                                                                                                                       │
+ │ > Reply with the w                                                                                                                     │
+ │ > Reply with the wo                                                                                                                    │
+ │ > Reply with the wor                                                                                                                   │
+ │ > Reply with the word                                                                                                                  │
+ │ > Reply with the word                                                                                                                  │
+ │ > Reply with the word b                                                                                                                │
+ │ > Reply with the word ba                                                                                                               │
+ │ > Reply with the word ban                                                                                                              │
+ │ > Reply with the word bana                                                                                                             │
+ │ > Reply with the word banan                                                                                                            │
+ │ > Reply with the word banana                                                                                                           │
+ │ > Reply with the word banana                                                                                                           │
+ │ > Reply with the word banana i                                                                                                         │
+ │ > Reply with the word banana in                                                                                                        │
+ │ > Reply with the word banana in                                                                                                        │
+ │ > Reply with the word banana in c                                                                                                      │
+ │ > Reply with the word banana in ca                                                                                                     │
+ │ > Reply with the word banana in cap                                                                                                    │
+ │ > Reply with the word banana in capi                                                                                                   │
+ │ > Reply with the word banana in capit                                                                                                  │
+ │ > Reply with the word banana in capita                                                                                                 │
+ │ > Reply with the word banana in capital                                                                                                │
+ │ > Reply with the word banana in capital                                                                                                │
+ │ > Reply with the word banana in capital l                                                                                              │
+ │ > Reply with the word banana in capital le                                                                                             │
+ │ > Reply with the word banana in capital let                                                                                            │
+ │ > Reply with the word banana in capital lett                                                                                           │
+ │ > Reply with the word banana in capital lette                                                                                          │
+ │ > Reply with the word banana in capital letter                                                                                         │
+ │ > Reply with the word banana in capital letters                                                                                        │
+ │ > Reply with the word banana in capital letters                                                                                        │
+ │ > Reply with the word banana in capital letters a                                                                                      │
+ │ > Reply with the word banana in capital letters an                                                                                     │
+ │ > Reply with the word banana in capital letters and                                                                                    │
+ │ > Reply with the word banana in capital letters and                                                                                    │
+ │ > Reply with the word banana in capital letters and n                                                                                  │
+ │ > Reply with the word banana in capital letters and no                                                                                 │
+ │ > Reply with the word banana in capital letters and not                                                                                │
+ │ > Reply with the word banana in capital letters and noth                                                                               │
+ │ > Reply with the word banana in capital letters and nothi                                                                              │
+ │ > Reply with the word banana in capital letters and nothin                                                                             │
+ │ > Reply with the word banana in capital letters and nothing                                                                            │
+ │ > Reply with the word banana in capital letters and nothing                                                                            │
+ │ > Reply with the word banana in capital letters and nothing e                                                                          │
+ │ > Reply with the word banana in capital letters and nothing el                                                                         │
+ │ > Reply with the word banana in capital letters and nothing els                                                                        │
+ │ > Reply with the word banana in capital letters and nothing else                                                                       │
+ │ > Reply with the word banana in capital letters and nothing else.                                                                      │
+ │ >                                                                                                                                      │
+ │  Session:   session_<id>                                                                               │
+
+ │  Model:     qwen3.8-27b on llama.cpp (llmctl)                                                                                          │
+
+ │  Version:   2.5.3                                                                                                                      │
+
+ │                                                                                                                                        │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ 
+
+   No session yet — one will be created on your first message.                                                                             
+
+   Thinking set to low for this session only.                                                                                              
+
+ 
+
+ ❯ Reply with the word banana in capital letters and nothing else.                                                                         
+
+ 
+
+  🌑 · Tip: /tasks to check progress and status for background tasks                                                                       
+
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ >                                                                                                                                      │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ qwen3.8-27b on llama.cpp (llmctl) thinking: low  …/$W/work     ask Kimi to schedule tasks, e.g. "remind me at 5pm"
+
+                                                                                                                        context: 0% (0/64k)
+  🌒 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌓 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌔 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌕 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌖 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌗 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌘 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌑 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌒 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌓 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌔 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌕 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌖 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌗 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌘 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌑 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌒 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌓 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌔 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌕 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌖 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌗 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌘 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌑 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌒 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌓 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌔 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌕 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌖 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌗 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌘 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌑 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌒 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌓 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌔 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌕 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌖 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌗 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌘 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌑 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌒 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌓 · Tip: /tasks to check progress and status for background tasks                                                                       
+
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ >                                                                                                                                      │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ qwen3.8-27b on llama.cpp (llmctl) thinking: low  …/$W/work
+  🌔 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌕 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌖 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌗 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌘 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌑 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌒 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌓 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌔 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌕 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌖 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌗 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌘 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌑 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌒 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌓 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌔 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌕 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌖 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌗 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌘 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌑 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌒 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌓 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌔 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌕 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌖 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌗 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌘 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌑 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌒 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌓 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌔 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌕 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌖 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌗 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌘 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌑 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌒 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌓 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌔 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌕 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌖 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌗 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌘 · Tip: /tasks to check progress and status for background tasks                                                                       
+  🌑 · Tip: /tasks to check progress and status for background tasks                                                                       
+ ⠋ thinking…
+
+   The                                                                                                                                     
+
+ 
+
+  ⠋ Working… · Tip: ctrl-s to add guidance without waiting for the turn to finish                                                          
+
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ >                                                                                                                                      │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ qwen3.8-27b on llama.cpp (llmctl) thinking: low  …/$W/work
+
+                                                                                                                        context: 0% (0/64k)
+   The user is                                                                                                                             
+ ⠙ thinking…
+
+   The user is                                                                                                                             
+
+ 
+
+  ⠙ Working… · Tip: ctrl-s to add guidance without waiting for the turn to finish                                                          
+   The user is asking me                                                                                                                   
+   The user is asking me to reply                                                                                                          
+ ⠹ thinking…
+
+   The user is asking me to reply                                                                                                          
+
+ 
+
+  ⠹ Working… · Tip: ctrl-s to add guidance without waiting for the turn to finish                                                          
+   The user is asking me to reply with                                                                                                     
+  ⠸ Working… · Tip: ctrl-s to add guidance without waiting for the turn to finish                                                          
+ ⠸ thinking…
+
+   The user is asking me to reply with "BAN                                                                                                
+   The user is asking me to reply with "BANANA"                                                                                            
+  ⠼ Working… · Tip: ctrl-s to add guidance without waiting for the turn to finish                                                          
+ ⠼ thinking…
+   The user is asking me to reply with "BANANA" in capital                                                                                 
+   The user is asking me to reply with "BANANA" in capital letters                                                                         
+
+ 
+
+  ⠴ Working… · Tip: ctrl-s to add guidance without waiting for the turn to finish                                                          
+ ⠴ thinking…
+   The user is asking me to reply with "BANANA" in capital letters and nothing                                                             
+  ⠦ Working… · Tip: ctrl-s to add guidance without waiting for the turn to finish                                                          
+ ⠦ thinking…
+   The user is asking me to reply with "BANANA" in capital letters and nothing else.                                                       
+   The user is asking me to reply with "BANANA" in capital letters and nothing else. This is                                               
+ ⠧ thinking…
+
+   The user is asking me to reply with "BANANA" in capital letters and nothing else. This is                                               
+
+ 
+
+  ⠧ Working… · Tip: ctrl-s to add guidance without waiting for the turn to finish                                                          
+   The user is asking me to reply with "BANANA" in capital letters and nothing else. This is straightforward                               
+  ⠇ Working… · Tip: ctrl-s to add guidance without waiting for the turn to finish                                                          
+ ⠇ thinking…
+
+   The user is asking me to reply with "BANANA" in capital letters and nothing else. This is straightforward - they                        
+   The user is asking me to reply with "BANANA" in capital letters and nothing else. This is straightforward - they want                   
+  ⠏ Working… · Tip: ctrl-s to add guidance without waiting for the turn to finish                                                          
+ ⠏ thinking…
+   The user is asking me to reply with "BANANA" in capital letters and nothing else. This is straightforward - they want just that         
+   The user is asking me to reply with "BANANA" in capital letters and nothing else. This is straightforward - they want just that word    
+
+ 
+
+  ⠋ Working… · Tip: ctrl-s to add guidance without waiting for the turn to finish                                                          
+ ⠋ thinking…
+   The user is asking me to reply with "BANANA" in capital letters and nothing else. This is straightforward - they want just that word, no
+  ⠙ Working… · Tip: ctrl-s to add guidance without waiting for the turn to finish                                                          
+ ⠙ thinking…
+   The user is asking me to reply with "BANANA" in capital letters and nothing else. This is straightforward - they want just that word, no
+
+   additional                                                                                                                              
+
+ 
+
+  ⠙ Working… · Tip: ctrl-s to add guidance without waiting for the turn to finish                                                          
+
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ >                                                                                                                                      │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ qwen3.8-27b on llama.cpp (llmctl) thinking: low  …/$W/work
+
+                                                                                                                        context: 0% (0/64k)
+   additional text.                                                                                                                        
+ ⠹ thinking…
+
+   The user is asking me to reply with "BANANA" in capital letters and nothing else. This is straightforward - they want just that word, no
+
+   additional text.                                                                                                                        
+
+ 
+
+  ⠹ Working… · Tip: ctrl-s to add guidance without waiting for the turn to finish                                                          
+  ⠸ Working… · Tip: ctrl-s to add guidance without waiting for the turn to finish                                                          
+ ● The user is asking me to reply with "BANANA" in capital letters and nothing else. This is straightforward - they want just that word, no
+
+   additional text.                                                                                                                        
+
+ 
+
+ ● BAN                                                                                                                                     
+
+ 
+
+  ⠸ Working… · Tip: ctrl-s to add guidance without waiting for the turn to finish                                                          
+
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ >                                                                                                                                      │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ qwen3.8-27b on llama.cpp (llmctl) thinking: low  …/$W/work
+
+                                                                                                                        context: 0% (0/64k)
+ ● BANANA                                                                                                                                  
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ >                                                                                                                                      │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ qwen3.8-27b on llama.cpp (llmctl) thinking: low  …/$W/work
+
+                                                                                                                   context: 21% (13.4k/64k)
+
+
+<<<MARK answered-1>>>
+
+ Press Ctrl+C again to exit                                                                                        context: 21% (13.4k/64k)
+                                                                                                                   context: 21% (13.4k/64k)
+ Shutting down… (running shutdown hooks)                                                                           context: 21% (13.4k/64k) 
+
+ Bye!
+
+ To resume this session: kimi -r session_<id>

@@ -1,0 +1,22 @@
+{
+  "providers": {
+    "llmctl": {
+      "modelSource": "static",
+      "baseUrl": "http://127.0.0.1:8000/v1",
+      "type": "openai",
+      "apiKey": "no-key-required"
+    }
+  },
+  "models": {
+    "llmctl/qwen3.5-9b": {
+      "provider": "llmctl",
+      "model": "qwen3.5-9b",
+      "maxContextSize": 131072,
+      "maxOutputSize": 16384,
+      "capabilities": [
+        "tool_use"
+      ],
+      "displayName": "qwen3.5-9b on vLLM (llmctl)"
+    }
+  }
+}

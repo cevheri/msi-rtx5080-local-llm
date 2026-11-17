@@ -1,0 +1,201 @@
+ 
+
+  ⠋ Preparing Kimi Code…                                                                                                                   
+
+ 
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │                                                                                                                                        │
+
+ │  ▐█▛█▛█▌  Welcome to Kimi Code!                                                                                                        │
+
+ │  ▐█████▌  Send /help for help information.                                                                                             │
+
+ │                                                                                                                                        │
+
+ │  Directory: $SCRATCH/kimi/exp/work/e8-probe         │
+
+ │  Session:                                                                                                                              │
+
+ │  Model:     gemma-4-26b-a4b on llama.cpp (llmctl)                                                                                      │
+
+ │  Version:   2.5.3                                                                                                                      │
+
+ │                                                                                                                                        │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ 
+
+   No session yet — one will be created on your first message.                                                                             
+
+ 
+
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ >                                                                                                                                      │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ gemma-4-26b-a4b on llama.cpp (llmctl)  …/exp/work/e8-probe                                     @: mention files | ! to run a shell command
+
+                                                                                                                       context: 0% (0/128k)
+<<<MARK after-start>>>
+
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ > /                                                                                                                                    │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+ │   → yolo                   Ask When Needed mode: routine edits and commands run automatically; risky actions, questions, and plans     │
+
+ │                            still ask.                                                                                                  │
+
+ │     model                  Switch LLM model                                                                                            │
+
+ │     permission             Select permission mode                                                                                      │
+
+ │     plan                   Toggle plan mode                                                                                            │
+
+ │     settings               Open TUI settings                                                                                           │
+
+ │     (1/52)                                                                                                                             │
+
+ gemma-4-26b-a4b on llama.cpp (llmctl)  …/exp/work/e8-probe                                     @: mention files | ! to run a shell command
+
+                                                                                                                       context: 0% (0/128k)
+ │ > /m                                                                                                                                   │
+ │   → model                 Switch LLM model                                                                                             │
+
+ │     mcp                   Show MCP server status                                                                                       │
+
+ │     mcp-config            Configure MCP servers and handle MCP OAuth login.                                                            │
+
+ │     export-md             Export current session as a Markdown file                                                                    │
+
+ │     secondary-model       Configure the secondary model for subagents                                                                  │
+
+ │     (1/17)                                                                                                                             │
+
+ gemma-4-26b-a4b on llama.cpp (llmctl)  …/exp/work/e8-probe                                     @: mention files | ! to run a shell command
+
+                                                                                                                       context: 0% (0/128k)
+
+
+ │ > /mo                                                                                                                                  │
+ │     secondary-model       Configure the secondary model for subagents                                                                  │
+
+ │     mcp-config            Configure MCP servers and handle MCP OAuth login.                                                            │
+
+ │     remote-control        Open the current session through Kimi Remote Control                                                         │
+
+ │     import-sessions       Import recent Claude Code and Codex sessions                                                                 │
+
+ │     (1/8)                                                                                                                              │
+ │ > /mod                                                                                                                                 │
+ │     check-kimi-code-docs  Answer questions about the Kimi Code product using the official documentation — CLI usage,                   │
+
+ │                           configuration, slash commands, features, membership and quota, API onboarding, third-party tool setup,…      │
+
+ │     import-from-cc-codex  Import Claude Code and Codex instructions, skills, and MCP settings into Kimi Code.                          │
+
+ gemma-4-26b-a4b on llama.cpp (llmctl)  …/exp/work/e8-probe                                     @: mention files | ! to run a shell command
+
+                                                                                                                       context: 0% (0/128k)
+
+
+ │ > /mode                                                                                                                                │
+ │ > /model                                                                                                                               │
+ │   → model            Switch LLM model                                                                                                  │
+
+ │     secondary-model  Configure the secondary model for subagents                                                                       │
+
+ gemma-4-26b-a4b on llama.cpp (llmctl)  …/exp/work/e8-probe                                     @: mention files | ! to run a shell command
+
+                                                                                                                       context: 0% (0/128k)
+
+
+
+
+
+
+<<<MARK typed /model>>>
+
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ >                                                                                                                                      │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ gemma-4-26b-a4b on llama.cpp (llmctl)  …/exp/work/e8-probe                                     @: mention files | ! to run a shell command
+
+                                                                                                                       context: 0% (0/128k)
+
+
+
+
+ ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+  Select a model  (type to search)
+
+  Tab toggle provider · ↑↓ navigate · Enter select · Alt+S session-only · Esc cancel
+
+ 
+
+   All   llmctl   other 
+
+ 
+
+   ❯ gemma-4-26b-a4b on llama.cpp (llmctl)  llmctl ← current
+
+     m                                      other
+
+ 
+
+  Thinking
+
+     On (Unsupported)   [ Off ]
+
+ 
+
+ ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+ gemma-4-26b-a4b on llama.cpp (llmctl)  …/exp/work/e8-probe                                     @: mention files | ! to run a shell command
+
+                                                                                                                       context: 0% (0/128k)
+<<<MARK after enter>>>
+
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ >                                                                                                                                      │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ gemma-4-26b-a4b on llama.cpp (llmctl)  …/exp/work/e8-probe        ! to run a shell command | /compact compresses context when it gets long
+
+                                                                                                                       context: 0% (0/128k)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ Press Ctrl+C again to exit                                                                                            context: 0% (0/128k)
+                                                                                                                       context: 0% (0/128k)
+ Shutting down… (running shutdown hooks)                                                                               context: 0% (0/128k) 
+
+ Bye!

@@ -1,0 +1,2 @@
+error: failed to run prompt: provider.connection_error: Connection error.
+See log: $SCRATCH/kimi/exp/homes/e7-refused-json/.kimi-code/logs/kimi-code.log

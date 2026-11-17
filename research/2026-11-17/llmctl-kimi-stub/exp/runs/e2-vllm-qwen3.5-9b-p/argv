@@ -1,0 +1,1 @@
+kimi -p Reply\ with\ exactly\ OK. --output-format stream-json -m llmctl/qwen3.5-9b 

@@ -1,0 +1,1 @@
+-p Use\ your\ shell\ tool\ to\ run\ exactly:\ cat\ /proc/self/cgroup.\ Then\ reply\ with\ its\ output. --output-format stream-json 

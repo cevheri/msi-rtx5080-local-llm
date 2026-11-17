@@ -8,7 +8,7 @@ import re
 import shlex
 import unittest
 
-from launcher import dsh_config, opencode_config
+from launcher import dsh_config, kimi_config, opencode_config
 from launcher.catalog import load_catalog
 from launcher.runtimes import ADAPTERS
 from launcher.tests.fakes import REPO
@@ -156,6 +156,26 @@ DSH_REFUSALS = (
     "`of the new home patch failed`",
 )
 
+# The first cells of the Kimi rows in docs/llmctl.md "When up refuses" (Kimi design, Failure modes).
+KIMI_REFUSALS = (
+    "`KIMI_CODE_HOME is set but empty`",
+    "`KIMI_CODE_HOME is relative`",
+    "`... is not valid TOML`",
+    "`...: \"providers\" is not a table` or `...: \"models\" is not a table`",
+    "`... line N: providers is written as an inline table or with dotted keys`",
+    "`...: llmctl's provider is written with dotted keys or as an inline table`",
+    "`could not change the top-level default_model in ... safely`",
+    "`kimi --version failed` or `kimi provider list --json failed`",
+    "`Kimi ... does not read llmctl's entry for ...`",
+    "`cannot check ... with kimi`",
+    "`...: the file changed while llmctl wrote it, probably through Kimi`",
+    "`of the new config.toml failed`",
+)
+
+# Ruling 11 of the Kimi plan: the documents cite only claims archived with a verdict that holds.
+KIMI_CLAIMS = REPO / "research/2026-11-17/llmctl-kimi-stub/research-claims.json"
+KIMI_CLAIM_DOCS = ("docs/clients.md", "docs/llmctl.md", "docs/sources.md", "README.md")
+
 
 class DocsConsistencyTest(unittest.TestCase):
     catalog = load_catalog(REPO / "recipes", None)
@@ -235,8 +255,9 @@ class DocsConsistencyTest(unittest.TestCase):
                 # Compared as text, so the document shows the layout llmctl writes, not only the same values.
                 self.assertEqual(shown, golden)
         for required in ("llamacpp/qwen3.6-35b-a3b.hermes.yaml", "llamacpp/qwen3.6-35b-a3b.pi.json",
-                         "llamacpp/qwen3.6-35b-a3b.dsh.yml", "vllm/gpt-oss-20b.hermes.yaml",
-                         "vllm/gpt-oss-20b.pi.json", "vllm/gpt-oss-20b.dsh.yml"):
+                         "llamacpp/qwen3.6-35b-a3b.dsh.yml", "llamacpp/qwen3.6-35b-a3b.kimi.toml",
+                         "vllm/gpt-oss-20b.hermes.yaml", "vllm/gpt-oss-20b.pi.json", "vllm/gpt-oss-20b.dsh.yml",
+                         "vllm/gpt-oss-20b.kimi.toml"):
             self.assertIn(required, named)
 
     def test_no_tools_block_matches(self):
@@ -252,6 +273,31 @@ class DocsConsistencyTest(unittest.TestCase):
             with self.subTest(start=start):
                 self.assertTrue(any(start in cell for cell in first_cells),
                                 f"no row of docs/llmctl.md#when-up-refuses starts with {start}")
+
+    def test_kimi_agent_file_block_matches(self):
+        blocks = fenced_blocks(section("docs/clients.md#kimi-chat-only-recipes"))
+        self.assertTrue(blocks, "docs/clients.md#kimi-chat-only-recipes has no fenced block")
+        # Compared as text, so a reader can save the block as the agent file that llmctl ships and up prints.
+        self.assertEqual(blocks[0], kimi_config.AGENT_FILE.read_text(encoding="utf-8"))
+
+    def test_every_kimi_refusal_has_a_row(self):
+        first_cells = [line.split("|")[1].strip() for line in section("docs/llmctl.md#when-up-refuses")
+                       if line.startswith("|")]
+        for start in KIMI_REFUSALS:
+            with self.subTest(start=start):
+                self.assertTrue(any(start in cell for cell in first_cells),
+                                f"no row of docs/llmctl.md#when-up-refuses starts with {start}")
+
+    def test_kimi_claim_ids_resolve(self):
+        verdicts = {claim["id"]: claim["verdict"] for claim in json.loads(KIMI_CLAIMS.read_text())}
+        found = 0
+        for doc in KIMI_CLAIM_DOCS:
+            for claim_id in re.findall(r"\b(docs-K\d{3}|local-K\d{2})\b", (REPO / doc).read_text()):
+                found += 1
+                with self.subTest(doc=doc, claim=claim_id):
+                    self.assertIn(claim_id, verdicts, "the claim is not in the archive's research-claims.json")
+                    self.assertTrue(verdicts[claim_id].startswith("Holds"), verdicts[claim_id])
+        self.assertGreater(found, 0)
 
     def test_compaction_list_matches_recipes(self):
         text = "\n".join(section("docs/clients.md#context-compaction-and-timeouts"))

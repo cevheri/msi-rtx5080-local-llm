@@ -1,0 +1,20 @@
+927175 +++ exited with 0 +++
+927168 connect(20, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+927168 connect(20, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+927180 connect(10, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+927180 connect(10, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+927180 +++ exited with 0 +++
+927168 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=927180, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+927168 connect(21, {sa_family=AF_INET, sin_port=htons(8080), sin_addr=inet_addr("127.0.0.1")}, 16) = -1 EINPROGRESS (Operation now in progress)
+927171 +++ exited with 0 +++
+927169 +++ exited with 0 +++
+927170 +++ exited with 0 +++
+927173 +++ exited with 0 +++
+927172 +++ exited with 0 +++
+927179 +++ exited with 0 +++
+927178 +++ exited with 0 +++
+927177 +++ exited with 0 +++
+927176 +++ exited with 0 +++
+927174 +++ exited with 0 +++
+927168 +++ exited with 0 +++
+927167 +++ exited with 0 +++

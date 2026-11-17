@@ -1,0 +1,23 @@
+{
+  "request": {
+    "model": "local",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Reply with exactly the word OK."
+      }
+    ],
+    "max_tokens": 256,
+    "chat_template_kwargs": {
+      "tool_call_format": "xml"
+    }
+  },
+  "status": 200,
+  "reply": "{\"choices\":[{\"finish_reason\":\"stop\",\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"OK\",\"reasoning_content\":\"The user says: \\\"Reply with exactly the word OK.\\\" So we must output exactly \\\"OK\\\". No extra punctuation or spaces? Typically \\\"OK\\\" is two letters capital. Should be exactly the word OK. So output: OK. Ensure no extra newline? Usually okay to have newline after. But the content should be exactly \\\"OK\\\". We'll respond with OK.\"}}],\"created\":1794915803,\"model\":\"local\",\"system_fingerprint\":\"b12407-e574a17b0\",\"object\":\"chat.completion\",\"usage\":{\"completion_tokens\":77,\"prompt_tokens\":17,\"total_tokens\":94,\"prompt_tokens_details\":{\"cached_tokens\":16}},\"id\":\"chatcmpl-wjG2prohwqx91oVq0GGwXogpmeHRu3I5\",\"timings\":{\"cache_n\":16,\"prompt_n\":1,\"prompt_ms\":14.996,\"prompt_per_token_ms\":14.996,\"prompt_per_second\":66.68444918644971,\"predicted_n\":77,\"predicted_ms\":1120.521,\"predicted_per_token_ms\":14.743697368421053,\"predicted_per_second\":67.825591845222}}",
+  "record": {
+    "probe": "E",
+    "status": 200,
+    "content": true,
+    "reasoning": true
+  }
+}

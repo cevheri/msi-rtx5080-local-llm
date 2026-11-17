@@ -1,0 +1,20 @@
+927446 +++ exited with 0 +++
+927439 connect(20, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+927439 connect(20, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+927451 connect(10, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+927451 connect(10, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+927451 +++ exited with 0 +++
+927439 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=927451, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+927439 connect(21, {sa_family=AF_INET, sin_port=htons(8080), sin_addr=inet_addr("127.0.0.1")}, 16) = -1 EINPROGRESS (Operation now in progress)
+927443 +++ exited with 0 +++
+927440 +++ exited with 0 +++
+927444 +++ exited with 0 +++
+927441 +++ exited with 0 +++
+927442 +++ exited with 0 +++
+927449 +++ exited with 0 +++
+927448 +++ exited with 0 +++
+927447 +++ exited with 0 +++
+927450 +++ exited with 0 +++
+927445 +++ exited with 0 +++
+927439 +++ exited with 0 +++
+927438 +++ exited with 0 +++

@@ -1,0 +1,13 @@
+[providers.llmctl]
+type = "openai"
+base_url = "http://127.0.0.1:8080/v1"
+api_key = "no-key-required"
+model_source = "static"
+
+[models."llmctl/local"]
+provider = "llmctl"
+model = "local"
+display_name = "qwen3.6-35b-a3b on llama.cpp (llmctl)"
+max_context_size = 131072
+max_output_size = 16384
+capabilities = ["tool_use"]

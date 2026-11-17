@@ -1,0 +1,1 @@
+python3 -I $SCRATCH/kimi/spec/bin/tui.py $SCRATCH/kimi/spec/runs/p1-tui-agent-m $SCRATCH/kimi/spec/bin/tui-p1.json -- kimi -m llmctl/deepseek-r1-8b --agent-file $SCRATCH/kimi/spec/agents/llmctl-chat-only.md 

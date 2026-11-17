@@ -1,0 +1,13 @@
+2026/11/17 11:43:09 socat[922938] E connect(, AF=1 "/tmp/kn/s.sock", 16): No such file or directory
+2026/11/17 11:43:10 socat[922940] E connect(, AF=1 "/tmp/kn/s.sock", 16): No such file or directory
+2026/11/17 11:43:11 socat[922942] E connect(, AF=1 "/tmp/kn/s.sock", 16): No such file or directory
+2026/11/17 11:43:13 socat[922953] E connect(, AF=1 "/tmp/kn/s.sock", 16): No such file or directory
+2026/11/17 11:43:18 socat[922996] E connect(, AF=1 "/tmp/kn/s.sock", 16): No such file or directory
+2026/11/17 11:43:27 socat[923034] E connect(, AF=1 "/tmp/kn/s.sock", 16): No such file or directory
+2026/11/17 11:43:44 socat[923090] E connect(, AF=1 "/tmp/kn/s.sock", 16): No such file or directory
+2026/11/17 11:44:18 socat[923263] E connect(, AF=1 "/tmp/kn/s.sock", 16): No such file or directory
+2026/11/17 11:44:57 socat[923424] E connect(, AF=1 "/tmp/kn/s.sock", 16): No such file or directory
+2026/11/17 11:45:36 socat[923802] E connect(, AF=1 "/tmp/kn/s.sock", 16): No such file or directory
+error: failed to run prompt: provider.connection_error: Connection error.
+See log: $SCRATCH/kimi/exp/homes/e2-llamacpp-gemma-4-26b-a4b/.kimi-code/logs/kimi-code.log
+2026/11/17 11:45:37 socat[922910] W exiting on signal 15

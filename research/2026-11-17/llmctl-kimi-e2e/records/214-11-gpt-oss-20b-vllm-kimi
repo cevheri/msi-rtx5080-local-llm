@@ -1,0 +1,8 @@
+{
+  "command": "kimi -p 'Create a file named hello.py containing a function add(a, b) that returns a + b, and a main block that prints add(2, 3). Then read the file back and tell me how many lines it has. Do not run any shell commands.' --output-format stream-json -m llmctl/gpt-oss-20b",
+  "cwd": "$WORK/11-gpt-oss-20b-vllm-kimi",
+  "exit": 0,
+  "seconds": 9.6,
+  "stdout": "{\"role\":\"meta\",\"type\":\"system.version\",\"version\":\"2.5.3\"}\n{\"role\":\"assistant\",\"tool_calls\":[{\"type\":\"function\",\"id\":\"chatcmpl-tool-a4fa5cb11ee74e9f\",\"function\":{\"name\":\"Write\",\"arguments\":\"{\\\"path\\\":\\\"hello.py\\\",\\\"content\\\":\\\"def add(a, b):\\\\n    return a + b\\\\n\\\\nif __name__ == \\\\\\\"__main__\\\\\\\":\\\\n    print(add(2, 3))\\\\n\\\",\\\"mode\\\":\\\"overwrite\\\"}\"}}]}\n{\"role\":\"tool\",\"tool_call_id\":\"chatcmpl-tool-a4fa5cb11ee74e9f\",\"content\":\"Wrote 81 bytes to hello.py\"}\n{\"role\":\"assistant\",\"tool_calls\":[{\"type\":\"function\",\"id\":\"chatcmpl-tool-a59754ed03efa76b\",\"function\":{\"name\":\"Read\",\"arguments\":\"{\\\"path\\\":\\\"hello.py\\\",\\\"n_lines\\\":20}\"}}]}\n{\"role\":\"tool\",\"tool_call_id\":\"chatcmpl-tool-a59754ed03efa76b\",\"content\":\"1\\tdef add(a, b):\\n2\\t    return a + b\\n3\\t\\n4\\tif __name__ == \\\"__main__\\\":\\n5\\t    print(add(2, 3))\"}\n{\"role\":\"assistant\",\"content\":\"The file `hello.py` has **5 lines**.\"}\n{\"role\":\"meta\",\"type\":\"session.resume_hint\",\"session_id\":\"session_27b970b8-6b46-4e42-b331-68dd94255bb7\",\"command\":\"kimi -r session_27b970b8-6b46-4e42-b331-68dd94255bb7\",\"content\":\"To resume this session: kimi -r session_27b970b8-6b46-4e42-b331-68dd94255bb7\"}\n",
+  "stderr": ""
+}

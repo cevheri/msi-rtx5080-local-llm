@@ -1,0 +1,62 @@
+[
+ {
+  "file": "f0-template-plus-llmctl.toml",
+  "kind": "input",
+  "made_by": "hand: Kimi's own 185-byte config template (written by kimi provider list in an empty private home, run e6-empty-list) + one blank line + bin/gen_kimi.py's tables for llamacpp/gemma-4-26b-a4b",
+  "notes": "what llmctl's first write into the owner's comment-only file would look like"
+ },
+ {
+  "file": "f2-default-at-top-plus-other.toml",
+  "kind": "input",
+  "made_by": "hand: Kimi's 4 template comment lines, default_model = \"llmctl/local\" above the first table, llmctl's gemma tables, then an owner comment and a hand-written [providers.other] and [models.\"other/m\"]",
+  "notes": "a file where default_model already exists"
+ },
+ {
+  "file": "a-web-set-default.toml",
+  "kind": "kimi output",
+  "from": "f0-template-plus-llmctl.toml",
+  "made_by": "kimi web --no-open --port 58627 in the sandbox, then POST /api/v1/models/llmctl%2Flocal:set_default with the banner token (bin/e4.sh a, bin/e4_web.sh)",
+  "run": "runs/e4a-web-set-default",
+  "result": "whole file rewritten: comments dropped, default_model first, arrays as [ \"tool_use\" ], trailing blank line, mode 600 kept, new inode; llmctl's tables equal in value"
+ },
+ {
+  "file": "a2-tui-model-pick.toml",
+  "kind": "kimi output",
+  "from": "f0-template-plus-llmctl.toml",
+  "made_by": "the TUI through a pseudo-terminal (bin/tui.py with bin/tui-e8.json): type /model, Enter, Enter on llmctl/local (thinking shown as Off)",
+  "run": "runs/e8-tui (c1-after-pick.toml)",
+  "result": "whole file rewritten as above, plus [thinking] enabled = false appended at the end"
+ },
+ {
+  "file": "a3-web-switch-default.toml",
+  "kind": "kimi output",
+  "from": "f2-default-at-top-plus-other.toml",
+  "made_by": "kimi web, POST /api/v1/models/other%2Fm:set_default (bin/e4.sh a3)",
+  "run": "runs/e4a3-web-switch-default",
+  "result": "one-line in-place edit of default_model; comments and every table kept"
+ },
+ {
+  "file": "b-provider-add.toml",
+  "kind": "kimi output",
+  "from": "f0-template-plus-llmctl.toml",
+  "made_by": "kimi provider add http://127.0.0.1:47400/api.json, registry/v1/api.json served by python3 -m http.server inside the sandbox (bin/e4.sh b)",
+  "run": "runs/e4b-provider-add",
+  "result": "whole file rewritten (comments dropped); [providers.dummy] and [providers.dummy.source] land between [providers.llmctl] and [models.\"llmctl/local\"], [models.\"dummy/dummy-model\"] after llmctl's model; llmctl's tables equal in value"
+ },
+ {
+  "file": "d-web-start-refresh.toml",
+  "kind": "kimi output",
+  "from": "b-provider-add.toml",
+  "made_by": "kimi web start (startup catalog refresh, scope all) with the registry changed to registry/v2/api.json, no API call, then POST /api/v1/shutdown (bin/e4.sh b, second step)",
+  "run": "runs/e4d-web-start-refresh",
+  "result": "dummy tables refreshed (context 65536, new [models.\"dummy/dummy-model-2\"] appended); llmctl's static tables byte-identical"
+ },
+ {
+  "file": "c-provider-remove.toml",
+  "kind": "kimi output",
+  "from": "d-web-start-refresh.toml",
+  "made_by": "kimi provider remove dummy (bin/e4.sh b, third step)",
+  "run": "runs/e4c-provider-remove",
+  "result": "dummy provider, its source table and both dummy models removed by line edits; llmctl's tables byte-identical; three blank lines left between llmctl's two tables and three at the end"
+ }
+]

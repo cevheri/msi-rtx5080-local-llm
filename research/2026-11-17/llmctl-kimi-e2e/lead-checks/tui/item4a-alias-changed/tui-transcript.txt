@@ -1,0 +1,432 @@
+ 
+
+  ⠋ Preparing Kimi Code…                                                                                                                   
+
+ 
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │                                                                                                                                        │
+
+ │  ▐█▛█▛█▌  Welcome to Kimi Code!                                                                                                        │
+
+ │  ▐█████▌  Send /help for help information.                                                                                             │
+
+ │                                                                                                                                        │
+
+ │  Directory: $SCRATCH/kimi-tui-XXXXXX/work           │
+
+ │  Session:                                                                                                                              │
+
+ │  Model:     qwen3.8-27b on llama.cpp (llmctl)                                                                                          │
+
+ │  Version:   2.5.3                                                                                                                      │
+
+ │                                                                                                                                        │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ 
+
+   No session yet — one will be created on your first message.                                                                             
+
+ 
+
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ >                                                                                                                                      │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ qwen3.8-27b on llama.cpp (llmctl) thinking: medium  …/$W/work
+
+                                                                                                                        context: 0% (0/64k)
+<<<MARK start>>>
+
+ │ > R                                                                                                                                    │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ qwen3.8-27b on llama.cpp (llmctl) thinking: medium  …/$W/work                            /init: generate AGENTS.md
+ │ > Re                                                                                                                                   │
+ │ > Rep                                                                                                                                  │
+ │ > Repl                                                                                                                                 │
+ │ > Reply                                                                                                                                │
+ │ > Reply                                                                                                                                │
+ │ > Reply w                                                                                                                              │
+ │ > Reply wi                                                                                                                             │
+ │ > Reply wit                                                                                                                            │
+ │ > Reply with                                                                                                                           │
+ │ > Reply with                                                                                                                           │
+ │ > Reply with t                                                                                                                         │
+ │ > Reply with th                                                                                                                        │
+ │ > Reply with the                                                                                                                       │
+ │ > Reply with the                                                                                                                       │
+ │ > Reply with the w                                                                                                                     │
+ │ > Reply with the wo                                                                                                                    │
+ │ > Reply with the wor                                                                                                                   │
+ │ > Reply with the word                                                                                                                  │
+ │ > Reply with the word                                                                                                                  │
+ │ > Reply with the word b                                                                                                                │
+ │ > Reply with the word ba                                                                                                               │
+ │ > Reply with the word ban                                                                                                              │
+ │ > Reply with the word bana                                                                                                             │
+ │ > Reply with the word banan                                                                                                            │
+ │ > Reply with the word banana                                                                                                           │
+ │ > Reply with the word banana                                                                                                           │
+ │ > Reply with the word banana i                                                                                                         │
+ │ > Reply with the word banana in                                                                                                        │
+ │ > Reply with the word banana in                                                                                                        │
+ │ > Reply with the word banana in c                                                                                                      │
+ │ > Reply with the word banana in ca                                                                                                     │
+ │ > Reply with the word banana in cap                                                                                                    │
+ │ > Reply with the word banana in capi                                                                                                   │
+ │ > Reply with the word banana in capit                                                                                                  │
+ │ > Reply with the word banana in capita                                                                                                 │
+ │ > Reply with the word banana in capital                                                                                                │
+ │ > Reply with the word banana in capital                                                                                                │
+ │ > Reply with the word banana in capital l                                                                                              │
+ │ > Reply with the word banana in capital le                                                                                             │
+ │ > Reply with the word banana in capital let                                                                                            │
+ │ > Reply with the word banana in capital lett                                                                                           │
+ │ > Reply with the word banana in capital lette                                                                                          │
+ │ > Reply with the word banana in capital letter                                                                                         │
+ │ > Reply with the word banana in capital letters                                                                                        │
+ │ > Reply with the word banana in capital letters                                                                                        │
+ │ > Reply with the word banana in capital letters a                                                                                      │
+ │ > Reply with the word banana in capital letters an                                                                                     │
+ │ > Reply with the word banana in capital letters and                                                                                    │
+ │ > Reply with the word banana in capital letters and                                                                                    │
+ │ > Reply with the word banana in capital letters and n                                                                                  │
+ │ > Reply with the word banana in capital letters and no                                                                                 │
+ │ > Reply with the word banana in capital letters and not                                                                                │
+ │ > Reply with the word banana in capital letters and noth                                                                               │
+ │ > Reply with the word banana in capital letters and nothi                                                                              │
+ │ > Reply with the word banana in capital letters and nothin                                                                             │
+ │ > Reply with the word banana in capital letters and nothing                                                                            │
+ │ > Reply with the word banana in capital letters and nothing                                                                            │
+ │ > Reply with the word banana in capital letters and nothing e                                                                          │
+ │ > Reply with the word banana in capital letters and nothing el                                                                         │
+ │ > Reply with the word banana in capital letters and nothing els                                                                        │
+ │ > Reply with the word banana in capital letters and nothing else                                                                       │
+ │ > Reply with the word banana in capital letters and nothing else.                                                                      │
+ │ >                                                                                                                                      │
+ │  Session:   session_<id>                                                                               │
+
+ │  Model:     qwen3.8-27b on llama.cpp (llmctl)                                                                                          │
+
+ │  Version:   2.5.3                                                                                                                      │
+
+ │                                                                                                                                        │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ 
+
+   No session yet — one will be created on your first message.                                                                             
+
+ 
+
+ ❯ Reply with the word banana in capital letters and nothing else.                                                                         
+
+ 
+
+  🌑 · Tip: /init: generate AGENTS.md                                                                                                      
+
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ >                                                                                                                                      │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ qwen3.8-27b on llama.cpp (llmctl) thinking: medium  …/$W/work                            /init: generate AGENTS.md
+
+                                                                                                                        context: 0% (0/64k)
+  🌒 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌓 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌔 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌕 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌖 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌗 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌘 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌑 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌒 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌓 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌔 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌕 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌖 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌗 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌘 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌑 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌒 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌓 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌔 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌕 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌖 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌗 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌘 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌑 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌒 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌓 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌔 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌕 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌖 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌗 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌘 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌑 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌒 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌓 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌔 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌕 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌖 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌗 · Tip: /init: generate AGENTS.md                                                                                                      
+
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ >                                                                                                                                      │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ qwen3.8-27b on llama.cpp (llmctl) thinking: medium  …/$W/work   /goal for multi-step work with a clear finish line
+  🌘 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌑 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌒 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌓 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌔 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌕 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌖 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌗 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌘 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌑 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌒 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌓 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌔 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌕 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌖 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌗 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌘 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌑 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌒 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌓 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌔 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌕 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌖 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌗 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌘 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌑 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌒 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌓 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌔 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌕 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌖 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌗 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌘 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌑 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌒 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌓 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌔 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌕 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌖 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌗 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌘 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌑 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌒 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌓 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌔 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌕 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌖 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌗 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌘 · Tip: /init: generate AGENTS.md                                                                                                      
+  🌑 · Tip: /init: generate AGENTS.md                                                                                                      
+ ⠋ thinking…
+
+   The                                                                                                                                     
+
+ 
+
+  ⠋ Working… · Tip: /plugins: manage plugins — try the "Kimi Datasource" for reliable financial, economic, and academic data               
+
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ >                                                                                                                                      │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ qwen3.8-27b on llama.cpp (llmctl) thinking: medium  …/$W/work   /goal for multi-step work with a clear finish line
+
+                                                                                                                        context: 0% (0/64k)
+   The user                                                                                                                                
+ ⠙ thinking…
+
+   The user                                                                                                                                
+
+ 
+
+  ⠙ Working… · Tip: /plugins: manage plugins — try the "Kimi Datasource" for reliable financial, economic, and academic data               
+   The user is asking                                                                                                                      
+   The user is asking me to                                                                                                                
+ ⠹ thinking…
+
+   The user is asking me to                                                                                                                
+
+ 
+
+  ⠹ Working… · Tip: /plugins: manage plugins — try the "Kimi Datasource" for reliable financial, economic, and academic data               
+   The user is asking me to respond with                                                                                                   
+ ⠸ thinking…
+
+   The user is asking me to respond with                                                                                                   
+
+ 
+
+  ⠸ Working… · Tip: /plugins: manage plugins — try the "Kimi Datasource" for reliable financial, economic, and academic data               
+   The user is asking me to respond with only "                                                                                            
+   The user is asking me to respond with only "BAN                                                                                         
+  ⠼ Working… · Tip: /plugins: manage plugins — try the "Kimi Datasource" for reliable financial, economic, and academic data               
+ ⠼ thinking…
+   The user is asking me to respond with only "BANANA".                                                                                    
+  ⠴ Working… · Tip: /plugins: manage plugins — try the "Kimi Datasource" for reliable financial, economic, and academic data               
+ ⠴ thinking…
+ ● The user is asking me to respond with only "BANANA".                                                                                    
+
+ 
+
+ ● BAN                                                                                                                                     
+
+ 
+
+  ⠴ Working… · Tip: /plugins: manage plugins — try the "Kimi Datasource" for reliable financial, economic, and academic data               
+
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ >                                                                                                                                      │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ qwen3.8-27b on llama.cpp (llmctl) thinking: medium  …/$W/work   /goal for multi-step work with a clear finish line
+
+                                                                                                                        context: 0% (0/64k)
+  ⠦ Working… · Tip: /plugins: manage plugins — try the "Kimi Datasource" for reliable financial, economic, and academic data               
+ ● BANANA                                                                                                                                  
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ >                                                                                                                                      │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ qwen3.8-27b on llama.cpp (llmctl) thinking: medium  …/$W/work   /goal for multi-step work with a clear finish line
+
+                                                                                                                   context: 21% (13.4k/64k)
+
+
+<<<MARK answered-1>>>
+
+<<<MARK swapped>>>
+
+ │ > R                                                                                                                                    │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ qwen3.8-27b on llama.cpp (llmctl) thinking: medium  …/$W/work
+ │ > Re                                                                                                                                   │
+ │ > Rep                                                                                                                                  │
+ │ > Repl                                                                                                                                 │
+ │ > Reply                                                                                                                                │
+ │ > Reply                                                                                                                                │
+ │ > Reply w                                                                                                                              │
+ │ > Reply wi                                                                                                                             │
+ │ > Reply wit                                                                                                                            │
+ │ > Reply with                                                                                                                           │
+ │ > Reply with                                                                                                                           │
+ │ > Reply with t                                                                                                                         │
+ │ > Reply with th                                                                                                                        │
+ │ > Reply with the                                                                                                                       │
+ │ > Reply with the                                                                                                                       │
+ │ > Reply with the w                                                                                                                     │
+ │ > Reply with the wo                                                                                                                    │
+ │ > Reply with the wor                                                                                                                   │
+ │ > Reply with the word                                                                                                                  │
+ │ > Reply with the word                                                                                                                  │
+ │ > Reply with the word c                                                                                                                │
+ │ > Reply with the word ch                                                                                                               │
+ │ > Reply with the word che                                                                                                              │
+ │ > Reply with the word cher                                                                                                             │
+ │ > Reply with the word cherr                                                                                                            │
+ │ > Reply with the word cherry                                                                                                           │
+ │ > Reply with the word cherry                                                                                                           │
+ │ > Reply with the word cherry i                                                                                                         │
+ │ > Reply with the word cherry in                                                                                                        │
+ │ > Reply with the word cherry in                                                                                                        │
+ │ > Reply with the word cherry in c                                                                                                      │
+ │ > Reply with the word cherry in ca                                                                                                     │
+ │ > Reply with the word cherry in cap                                                                                                    │
+ │ > Reply with the word cherry in capi                                                                                                   │
+ │ > Reply with the word cherry in capit                                                                                                  │
+ │ > Reply with the word cherry in capita                                                                                                 │
+ │ > Reply with the word cherry in capital                                                                                                │
+ │ > Reply with the word cherry in capital                                                                                                │
+ │ > Reply with the word cherry in capital l                                                                                              │
+ │ > Reply with the word cherry in capital le                                                                                             │
+ │ > Reply with the word cherry in capital let                                                                                            │
+ │ > Reply with the word cherry in capital lett                                                                                           │
+ │ > Reply with the word cherry in capital lette                                                                                          │
+ │ > Reply with the word cherry in capital letter                                                                                         │
+ │ > Reply with the word cherry in capital letters                                                                                        │
+ │ > Reply with the word cherry in capital letters                                                                                        │
+ │ > Reply with the word cherry in capital letters a                                                                                      │
+ │ > Reply with the word cherry in capital letters an                                                                                     │
+ │ > Reply with the word cherry in capital letters and                                                                                    │
+ │ > Reply with the word cherry in capital letters and                                                                                    │
+ │ > Reply with the word cherry in capital letters and n                                                                                  │
+ │ > Reply with the word cherry in capital letters and no                                                                                 │
+ │ > Reply with the word cherry in capital letters and not                                                                                │
+ │ > Reply with the word cherry in capital letters and noth                                                                               │
+ │ > Reply with the word cherry in capital letters and nothi                                                                              │
+ │ > Reply with the word cherry in capital letters and nothin                                                                             │
+ │ > Reply with the word cherry in capital letters and nothing                                                                            │
+ │ > Reply with the word cherry in capital letters and nothing                                                                            │
+ │ > Reply with the word cherry in capital letters and nothing e                                                                          │
+ │ > Reply with the word cherry in capital letters and nothing el                                                                         │
+ │ > Reply with the word cherry in capital letters and nothing els                                                                        │
+ │ > Reply with the word cherry in capital letters and nothing else                                                                       │
+ │ > Reply with the word cherry in capital letters and nothing else.                                                                      │
+ 
+
+ ❯ Reply with the word cherry in capital letters and nothing else.                                                                         
+
+ 
+
+  🌑 · Tip: /sessions to browse and resume earlier sessions                                                                                
+
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ >                                                                                                                                      │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ qwen3.8-27b on llama.cpp (llmctl) thinking: medium  …/$W/work
+
+                                                                                                                   context: 21% (13.4k/64k)
+   Error: [config.invalid] Model "llmctl/local" is not configured in config.toml.                                                          
+
+   If this persists, run `/export-debug-zip` and share the file with us for diagnosis. Please don't share it publicly.                     
+
+ 
+
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ >                                                                                                                                      │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ qwen3.8-27b on llama.cpp (llmctl) thinking: medium  …/$W/work
+
+                                                                                                                                context: 0%
+<<<MARK answered-2>>>
+
+ Press Ctrl+C again to exit                                                                                                     context: 0%
+                                                                                                                                context: 0%
+ Shutting down… (running shutdown hooks)                                                                                        context: 0% 
+
+ Bye!
+
+ To resume this session: kimi -r session_<id>

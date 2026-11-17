@@ -1,0 +1,113 @@
+932302 connect(3, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+932302 connect(3, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+932304 +++ exited with 0 +++
+932302 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=932304, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+932305 sendmsg(3, {msg_name={sa_family=AF_NETLINK, nl_pid=0, nl_groups=00000000}, msg_namelen=12, msg_iov=[{iov_base=[{nlmsg_len=72, nlmsg_type=SOCK_DIAG_BY_FAMILY, nlmsg_flags=NLM_F_REQUEST|NLM_F_DUMP, nlmsg_seq=123456, nlmsg_pid=0}, {sdiag_family=AF_INET, sdiag_protocol=IPPROTO_TCP, idiag_ext=0, idiag_states=1<<TCP_CLOSE|1<<TCP_LISTEN, id={idiag_sport=htons(0), idiag_dport=htons(0), idiag_src=inet_addr("0.0.0.0"), idiag_dst=inet_addr("0.0.0.0"), idiag_if=0, idiag_cookie=[0, 0]}}], iov_len=72}], msg_iovlen=1, msg_controllen=0, msg_flags=0}, 0) = 72
+932305 sendmsg(3, {msg_name={sa_family=AF_NETLINK, nl_pid=0, nl_groups=00000000}, msg_namelen=12, msg_iov=[{iov_base=[{nlmsg_len=72, nlmsg_type=SOCK_DIAG_BY_FAMILY, nlmsg_flags=NLM_F_REQUEST|NLM_F_DUMP, nlmsg_seq=123456, nlmsg_pid=0}, {sdiag_family=AF_INET6, sdiag_protocol=IPPROTO_TCP, idiag_ext=0, idiag_states=1<<TCP_CLOSE|1<<TCP_LISTEN, id={idiag_sport=htons(0), idiag_dport=htons(0), inet_pton(AF_INET6, "::", &idiag_src), inet_pton(AF_INET6, "::", &idiag_dst), idiag_if=0, idiag_cookie=[0, 0]}}], iov_len=72}], msg_iovlen=1, msg_controllen=0, msg_flags=0}, 0) = 72
+932305 +++ exited with 0 +++
+932306 +++ exited with 1 +++
+932302 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=932305, si_uid=1000, si_status=0, si_utime=0, si_stime=2 /* 0.02 s */} ---
+932303 connect(4, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+932303 connect(4, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+932307 +++ exited with 0 +++
+932302 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=932307, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+932308 sendmsg(3, {msg_name={sa_family=AF_NETLINK, nl_pid=0, nl_groups=00000000}, msg_namelen=12, msg_iov=[{iov_base=[{nlmsg_len=72, nlmsg_type=SOCK_DIAG_BY_FAMILY, nlmsg_flags=NLM_F_REQUEST|NLM_F_DUMP, nlmsg_seq=123456, nlmsg_pid=0}, {sdiag_family=AF_INET, sdiag_protocol=IPPROTO_TCP, idiag_ext=0, idiag_states=1<<TCP_CLOSE|1<<TCP_LISTEN, id={idiag_sport=htons(0), idiag_dport=htons(0), idiag_src=inet_addr("0.0.0.0"), idiag_dst=inet_addr("0.0.0.0"), idiag_if=0, idiag_cookie=[0, 0]}}], iov_len=72}], msg_iovlen=1, msg_controllen=0, msg_flags=0}, 0) = 72
+932308 sendmsg(3, {msg_name={sa_family=AF_NETLINK, nl_pid=0, nl_groups=00000000}, msg_namelen=12, msg_iov=[{iov_base=[{nlmsg_len=72, nlmsg_type=SOCK_DIAG_BY_FAMILY, nlmsg_flags=NLM_F_REQUEST|NLM_F_DUMP, nlmsg_seq=123456, nlmsg_pid=0}, {sdiag_family=AF_INET6, sdiag_protocol=IPPROTO_TCP, idiag_ext=0, idiag_states=1<<TCP_CLOSE|1<<TCP_LISTEN, id={idiag_sport=htons(0), idiag_dport=htons(0), inet_pton(AF_INET6, "::", &idiag_src), inet_pton(AF_INET6, "::", &idiag_dst), idiag_if=0, idiag_cookie=[0, 0]}}], iov_len=72}], msg_iovlen=1, msg_controllen=0, msg_flags=0}, 0) = 72
+932308 +++ exited with 0 +++
+932309 +++ exited with 0 +++
+932302 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=932308, si_uid=1000, si_status=0, si_utime=0, si_stime=1 /* 0.01 s */} ---
+932310 connect(3, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+932310 connect(3, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+932311 +++ exited with 0 +++
+932310 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=932311, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+932313 +++ exited with 0 +++
+932310 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=932313, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+932314 +++ exited with 1 +++
+932310 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=932314, si_uid=1000, si_status=1, si_utime=0, si_stime=0} ---
+932322 +++ exited with 0 +++
+932315 +++ exited with 0 +++
+932310 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=932315, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+932323 +++ exited with 1 +++
+932310 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=932323, si_uid=1000, si_status=1, si_utime=0, si_stime=0} ---
+932324 +++ exited with 0 +++
+932310 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=932324, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+932325 +++ exited with 1 +++
+932310 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=932325, si_uid=1000, si_status=1, si_utime=0, si_stime=0} ---
+932326 +++ exited with 0 +++
+932310 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=932326, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+932332 +++ exited with 1 +++
+932310 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=932332, si_uid=1000, si_status=1, si_utime=0, si_stime=0} ---
+932312 connect(20, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+932312 connect(20, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+932334 connect(10, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+932334 connect(10, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+932334 +++ exited with 0 +++
+932312 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=932334, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+932333 +++ exited with 0 +++
+932310 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=932333, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+932336 +++ exited with 1 +++
+932310 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=932336, si_uid=1000, si_status=1, si_utime=0, si_stime=0} ---
+932337 +++ exited with 0 +++
+932310 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=932337, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+932338 +++ exited with 1 +++
+932310 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=932338, si_uid=1000, si_status=1, si_utime=0, si_stime=0} ---
+932339 +++ exited with 0 +++
+932310 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=932339, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+932347 +++ exited with 1 +++
+932310 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=932347, si_uid=1000, si_status=1, si_utime=0, si_stime=0} ---
+932312 connect(39, {sa_family=AF_INET, sin_port=htons(47400), sin_addr=inet_addr("127.0.0.1")}, 16) = -1 EINPROGRESS (Operation now in progress)
+932349 sendto(4, "HTTP/1.0 200 OK\r\nServer: SimpleHTTP/0.6 Python/3.14.4\r\nDate: Tue, 17 Nov 2026 08:52:54 GMT\r\nContent-type: application/json\r\nContent-Length: 569\r\nLast-Modified: Tue, 17 Nov 2026 08:50:57 GMT\r\n\r\n", 193, 0, NULL, 0) = 193
+932349 sendto(4, "{\n  \"dummy\": {\n    \"id\": \"dummy\",\n    \"name\": \"Dummy registry provider\",\n    \"api\": \"http://127.0.0.1:47401/v1\",\n    \"type\": \"openai\",\n    \"models\": {\n      \"dummy-model\": {\n        \"id\": \"dummy-model\",\n        \"name\": \"Dummy Model\",\n        \"limit\": {\n   "..., 569, 0, NULL, 0) = 569
+932349 +++ exited with 0 +++
+932348 +++ exited with 0 +++
+932310 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=932348, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+932350 +++ exited with 0 +++
+932310 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=932350, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+932352 +++ exited with 0 +++
+932353 +++ exited with 0 +++
+932354 +++ exited with 0 +++
+932355 +++ exited with 0 +++
+932351 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=932352, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+932351 +++ exited with 0 +++
+932310 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=932351, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+932356 +++ exited with 0 +++
+932310 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=932356, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+932359 +++ exited with 0 +++
+932310 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=932359, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+932360 connect(3, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+932360 connect(3, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+932360 connect(4, {sa_family=AF_INET, sin_port=htons(58627), sin_addr=inet_addr("127.0.0.1")}, 16) = -1 EINPROGRESS (Operation now in progress)
+932360 sendto(4, "GET /api/v1/models HTTP/1.1\r\nHost: 127.0.0.1:58627\r\nUser-Agent: curl/8.18.0\r\nAccept: */*\r\nAuthorization: Bearer <redacted>\r\n\r\n", 159, MSG_NOSIGNAL, NULL, 0) = 159
+932360 +++ exited with 0 +++
+932310 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=932360, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+932368 +++ exited with 0 +++
+932310 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=932368, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+932369 connect(3, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+932369 connect(3, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+932369 connect(4, {sa_family=AF_INET, sin_port=htons(58627), sin_addr=inet_addr("127.0.0.1")}, 16) = -1 EINPROGRESS (Operation now in progress)
+932369 sendto(4, "POST /api/v1/shutdown HTTP/1.1\r\nHost: 127.0.0.1:58627\r\nUser-Agent: curl/8.18.0\r\nAccept: */*\r\nAuthorization: Bearer <redacted>\r\n\r\n", 162, MSG_NOSIGNAL, NULL, 0) = 162
+932369 +++ exited with 0 +++
+932310 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=932369, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+932370 +++ exited with 0 +++
+932310 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=932370, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+932318 +++ exited with 0 +++
+932320 +++ exited with 0 +++
+932316 +++ exited with 0 +++
+932317 +++ exited with 0 +++
+932319 +++ exited with 0 +++
+932330 +++ exited with 0 +++
+932329 +++ exited with 0 +++
+932328 +++ exited with 0 +++
+932327 +++ exited with 0 +++
+932321 +++ exited with 0 +++
+932312 +++ exited with 0 +++
+932371 +++ exited with 0 +++
+932310 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=932312, si_uid=1000, si_status=0, si_utime=77 /* 0.77 s */, si_stime=20 /* 0.20 s */} ---
+932372 +++ exited with 0 +++
+932310 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=932372, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+932310 +++ exited with 0 +++
+932302 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=932310, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+932302 +++ exited with 0 +++
+932303 --- SIGTERM {si_signo=SIGTERM, si_code=SI_USER, si_pid=932302, si_uid=1000} ---
+932301 +++ exited with 0 +++
+932303 +++ killed by SIGTERM +++

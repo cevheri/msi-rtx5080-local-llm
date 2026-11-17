@@ -1,0 +1,1 @@
+python3 -I $SCRATCH/kimi/spec/bin/tui.py $SCRATCH/kimi/spec/runs/p3-tui-effort-qwen38 $SCRATCH/kimi/spec/bin/tui-p3.json -- kimi 

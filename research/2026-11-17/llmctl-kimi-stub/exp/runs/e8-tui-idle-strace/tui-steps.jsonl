@@ -1,0 +1,7 @@
+{"t": 0.0, "step": ["wait", "Welcome to Kimi Code", 20], "hit": true}
+{"t": 0.62, "step": ["sleep", 12]}
+{"t": 12.66, "step": ["mark", "idle 12 s"]}
+{"t": 12.66, "step": ["send", "\u0003"]}
+{"t": 12.97, "step": ["sleep", 0.6]}
+{"t": 13.58, "step": ["send", "\u0003"]}
+{"t": 13.66, "step": ["sleep", 3]}

@@ -1,0 +1,334 @@
+{
+ "a-web-set-default.toml": {
+  "bytes": 354,
+  "comment_lines": 0,
+  "blank_lines": 3,
+  "top_level_keys": [
+   "default_model"
+  ],
+  "tables": [
+   "models",
+   "providers"
+  ],
+  "default_model": "llmctl/local",
+  "thinking": null,
+  "providers": [
+   "llmctl"
+  ],
+  "models": [
+   "llmctl/local"
+  ],
+  "llmctl_provider_equal": true,
+  "llmctl_model_equal": true,
+  "headers": [
+   [
+    3,
+    "[providers.llmctl]"
+   ],
+   [
+    9,
+    "[models.\"llmctl/local\"]"
+   ]
+  ],
+  "array_style": [
+   "[ \"tool_use\" ]"
+  ]
+ },
+ "a2-tui-model-pick.toml": {
+  "bytes": 381,
+  "comment_lines": 0,
+  "blank_lines": 3,
+  "top_level_keys": [
+   "default_model"
+  ],
+  "tables": [
+   "models",
+   "providers",
+   "thinking"
+  ],
+  "default_model": "llmctl/local",
+  "thinking": {
+   "enabled": false
+  },
+  "providers": [
+   "llmctl"
+  ],
+  "models": [
+   "llmctl/local"
+  ],
+  "llmctl_provider_equal": true,
+  "llmctl_model_equal": true,
+  "headers": [
+   [
+    3,
+    "[providers.llmctl]"
+   ],
+   [
+    9,
+    "[models.\"llmctl/local\"]"
+   ],
+   [
+    17,
+    "[thinking]"
+   ]
+  ],
+  "array_style": [
+   "[ \"tool_use\" ]"
+  ]
+ },
+ "a3-web-switch-default.toml": {
+  "bytes": 752,
+  "comment_lines": 5,
+  "blank_lines": 4,
+  "top_level_keys": [
+   "default_model"
+  ],
+  "tables": [
+   "models",
+   "providers"
+  ],
+  "default_model": "other/m",
+  "thinking": null,
+  "providers": [
+   "llmctl",
+   "other"
+  ],
+  "models": [
+   "llmctl/local",
+   "other/m"
+  ],
+  "llmctl_provider_equal": true,
+  "llmctl_model_equal": true,
+  "headers": [
+   [
+    7,
+    "[providers.llmctl]"
+   ],
+   [
+    13,
+    "[models.\"llmctl/local\"]"
+   ],
+   [
+    22,
+    "[providers.other]"
+   ],
+   [
+    27,
+    "[models.\"other/m\"]"
+   ]
+  ],
+  "array_style": [
+   "[\"tool_use\"]"
+  ]
+ },
+ "b-provider-add.toml": {
+  "bytes": 682,
+  "comment_lines": 0,
+  "blank_lines": 5,
+  "top_level_keys": [],
+  "tables": [
+   "models",
+   "providers"
+  ],
+  "default_model": null,
+  "thinking": null,
+  "providers": [
+   "dummy",
+   "llmctl"
+  ],
+  "models": [
+   "dummy/dummy-model",
+   "llmctl/local"
+  ],
+  "llmctl_provider_equal": true,
+  "llmctl_model_equal": true,
+  "headers": [
+   [
+    1,
+    "[providers.llmctl]"
+   ],
+   [
+    7,
+    "[providers.dummy]"
+   ],
+   [
+    12,
+    "[providers.dummy.source]"
+   ],
+   [
+    17,
+    "[models.\"llmctl/local\"]"
+   ],
+   [
+    25,
+    "[models.\"dummy/dummy-model\"]"
+   ]
+  ],
+  "array_style": [
+   "[ \"tool_use\" ]"
+  ]
+ },
+ "c-provider-remove.toml": {
+  "bytes": 326,
+  "comment_lines": 0,
+  "blank_lines": 6,
+  "top_level_keys": [],
+  "tables": [
+   "models",
+   "providers"
+  ],
+  "default_model": null,
+  "thinking": null,
+  "providers": [
+   "llmctl"
+  ],
+  "models": [
+   "llmctl/local"
+  ],
+  "llmctl_provider_equal": true,
+  "llmctl_model_equal": true,
+  "headers": [
+   [
+    1,
+    "[providers.llmctl]"
+   ],
+   [
+    9,
+    "[models.\"llmctl/local\"]"
+   ]
+  ],
+  "array_style": [
+   "[ \"tool_use\" ]"
+  ]
+ },
+ "d-web-start-refresh.toml": {
+  "bytes": 866,
+  "comment_lines": 0,
+  "blank_lines": 6,
+  "top_level_keys": [],
+  "tables": [
+   "models",
+   "providers"
+  ],
+  "default_model": null,
+  "thinking": null,
+  "providers": [
+   "dummy",
+   "llmctl"
+  ],
+  "models": [
+   "dummy/dummy-model",
+   "dummy/dummy-model-2",
+   "llmctl/local"
+  ],
+  "llmctl_provider_equal": true,
+  "llmctl_model_equal": true,
+  "headers": [
+   [
+    1,
+    "[providers.llmctl]"
+   ],
+   [
+    7,
+    "[providers.dummy]"
+   ],
+   [
+    12,
+    "[providers.dummy.source]"
+   ],
+   [
+    17,
+    "[models.\"llmctl/local\"]"
+   ],
+   [
+    25,
+    "[models.\"dummy/dummy-model\"]"
+   ],
+   [
+    33,
+    "[models.\"dummy/dummy-model-2\"]"
+   ]
+  ],
+  "array_style": [
+   "[ \"tool_use\" ]"
+  ]
+ },
+ "f0-template-plus-llmctl.toml": {
+  "bytes": 505,
+  "comment_lines": 4,
+  "blank_lines": 2,
+  "top_level_keys": [],
+  "tables": [
+   "models",
+   "providers"
+  ],
+  "default_model": null,
+  "thinking": null,
+  "providers": [
+   "llmctl"
+  ],
+  "models": [
+   "llmctl/local"
+  ],
+  "llmctl_provider_equal": true,
+  "llmctl_model_equal": true,
+  "headers": [
+   [
+    6,
+    "[providers.llmctl]"
+   ],
+   [
+    12,
+    "[models.\"llmctl/local\"]"
+   ]
+  ],
+  "array_style": [
+   "[\"tool_use\"]"
+  ]
+ },
+ "f2-default-at-top-plus-other.toml": {
+  "bytes": 757,
+  "comment_lines": 5,
+  "blank_lines": 4,
+  "top_level_keys": [
+   "default_model"
+  ],
+  "tables": [
+   "models",
+   "providers"
+  ],
+  "default_model": "llmctl/local",
+  "thinking": null,
+  "providers": [
+   "llmctl",
+   "other"
+  ],
+  "models": [
+   "llmctl/local",
+   "other/m"
+  ],
+  "llmctl_provider_equal": true,
+  "llmctl_model_equal": true,
+  "headers": [
+   [
+    7,
+    "[providers.llmctl]"
+   ],
+   [
+    13,
+    "[models.\"llmctl/local\"]"
+   ],
+   [
+    22,
+    "[providers.other]"
+   ],
+   [
+    27,
+    "[models.\"other/m\"]"
+   ]
+  ],
+  "array_style": [
+   "[\"tool_use\"]"
+  ]
+ }
+}

@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from launcher import clients, dsh_config, hermes_config, ops, pi_config
+from launcher import clients, dsh_config, hermes_config, kimi_config, ops, pi_config
 from launcher.catalog import resolve
 from launcher.errors import ClientError, ClientWriteError, PreflightError, StartError, UsageError
 from launcher.lock import hold_lock, lock_path
@@ -14,9 +14,10 @@ from launcher.tests.client_fixture import ClientFixture
 from launcher.tests.fakes import REPO, fail, http, ok
 from launcher.tests.ops_fixture import OpsFixture, managed_line
 from launcher.tests.regen_golden import target_for
+from launcher.tests.test_kimi_config import OWNER_TEXT
 
 NO_CLIENTS = ("clients: none (opencode: not installed, no opencode on PATH) (hermes: not installed, no hermes on PATH) "
-              "(pi: not installed, no pi on PATH) (dsh: not installed, no dsh on PATH)")
+              "(pi: not installed, no pi on PATH) (dsh: not installed, no dsh on PATH) (kimi: not installed, no kimi on PATH)")
 
 
 class UpTest(unittest.TestCase):
@@ -140,7 +141,7 @@ def running_qwen(fixture, sha=None, name="qwen3.6"):
 
 SAMPLE = """\
 qwen3.6-35b-a3b on llamacpp: shipped recipe, measured
-clients: opencode, hermes, pi, dsh
+clients: opencode, hermes, pi, dsh, kimi
 waiting for qwen3.6-35b-a3b to load (up to 300 s)
 ready: http://127.0.0.1:8080/v1, served as 'local', context 131072, output 16384
 backed up /home/u/.pi/agent/settings.json to /home/u/.pi/agent/settings.json.llmctl-backup before the first change
@@ -149,6 +150,7 @@ wrote /home/u/.hermes/profiles/llmctl/config.yaml: llmctl block for qwen3.6-35b-
 wrote /home/u/.pi/agent/models.json: provider llmctl for qwen3.6-35b-a3b on llama.cpp, model local (was gpt-oss-20b on vLLM)
 wrote /home/u/.pi/agent/settings.json: modelThinkingLevels llmctl/local off (was absent); defaultModel local (was gpt-oss-20b)
 wrote /home/u/.dsh/cordis.patch.yml: llmctl rows for qwen3.6-35b-a3b on llama.cpp (was gpt-oss-20b on vLLM); dsh's default llmctl/local in every profile (was llmctl/gpt-oss-20b)
+wrote /home/u/.kimi-code/config.toml: provider llmctl and model llmctl/local for qwen3.6-35b-a3b on llama.cpp (was gpt-oss-20b on vLLM); default_model llmctl/local (was llmctl/gpt-oss-20b)
 OpenCode: llamacpp-docker/qwen3.6-35b-a3b, the default
   in the OpenCode screen: type /models (or press ctrl+x m) and pick it
   for a single prompt: opencode run --model llamacpp-docker/qwen3.6-35b-a3b "your prompt"
@@ -162,8 +164,12 @@ Pi: llmctl/local, the default
 dsh: llmctl/local, the default in every dsh profile
   dsh web, or for a single prompt: dsh --profile headless "your prompt"
   thinking: off; choose Medium under Effort in dsh's model picker to turn it on
+Kimi: llmctl/local, the default
+  kimi, or for a single prompt: kimi -p "your prompt"
+  thinking: off, as the server sets it
 note: Hermes and Pi sessions that were open before keep the model they started with; start a new session
 note: dsh web uses the new rows within seconds, and its open sessions on llmctl/gpt-oss-20b fail until you pick llmctl/local; dsh headless, acp and sdk processes that are already running keep the old rows until they restart
+note: an open Kimi session on llmctl/gpt-oss-20b fails its next turn until you pick llmctl/local with /model or start a new session
 evidence: 122.5 tok/s decode with 128k context, 15,190 MiB GPU peak, OpenCode session passed (2026-11-16, research/2026-11-16/llamacpp-qwen3.6-35b-a3b/)
 stop with ./llmctl down
 """
@@ -171,6 +177,7 @@ stop with ./llmctl down
 START_SETTINGS = {"lastChangelogVersion": "1.5.2", "defaultProvider": "llmctl", "defaultModel": "gpt-oss-20b"}
 PI_LIST = ["pi", "--offline", "--list-models", "llmctl"]
 DSH_DUMP = ["dsh", "--profile", "acp", "--dump-config"]
+KIMI_LIST = ["kimi", "provider", "list", "--json"]
 TELEMETRY = "- id: session-telemetry-otel\n  disabled: true\n"
 # The bytes of dsh's profile template (dsh 0.2.2-rc.3), as the lead kept them in $SCRATCH/dsh/templates/.
 PROFILE_TEMPLATE = ("# Your patch layer for this dsh profile, applied after every bundle layer:\n"
@@ -189,7 +196,7 @@ class UpClientsTest(unittest.TestCase):
         self.f = OpsFixture()
         self.addCleanup(self.f.cleanup)
         self.c = ClientFixture(self.f.host, Path(self.f.tmp.name))
-        self.c.install("opencode", "hermes", "pi", "dsh")
+        self.c.install("opencode", "hermes", "pi", "dsh", "kimi")
         self.c.route_clients()
         self.c.write_opencode("llamacpp-docker/gemma-4-26b-a4b")
         Path(str(self.c.opencode_path) + ".llmctl-backup").write_text("{}\n", encoding="utf-8")
@@ -199,6 +206,13 @@ class UpClientsTest(unittest.TestCase):
         self.c.settings_path.write_text(json.dumps(START_SETTINGS, indent=2) + "\n", encoding="utf-8")
         self.write_patch(TELEMETRY + dsh_config.new_home_text(self.old_target, default=True))
         Path(str(self.c.home_patch) + ".llmctl-backup").write_text(TELEMETRY, encoding="utf-8")
+        self.kimi_start = kimi_config.config_text(self.c.kimi_file, OWNER_TEXT, self.old_target, set_default=True)
+        self.write_kimi(self.kimi_start)
+        Path(str(self.c.kimi_file) + ".llmctl-backup").write_text(OWNER_TEXT, encoding="utf-8")
+
+    def write_kimi(self, text):
+        with open(self.c.kimi_file, "w", encoding="utf-8", newline="") as handle:
+            handle.write(text)
 
     def write_patch(self, text):
         with open(self.c.home_patch, "w", encoding="utf-8", newline="") as handle:
@@ -216,7 +230,7 @@ class UpClientsTest(unittest.TestCase):
 
     def client_calls(self, calls=None):
         return [call for call in (self.f.host.calls if calls is None else calls)
-                if call[0] in ("opencode", "hermes", "pi", "dsh")]
+                if call[0] in ("opencode", "hermes", "pi", "dsh", "kimi")]
 
     def test_down_prints_client_lines_and_changes_nothing(self):
         running_qwen(self.f)
@@ -226,9 +240,11 @@ class UpClientsTest(unittest.TestCase):
         self.assertEqual(ops.down(self.f.host, self.f.catalog, remove=False), 0)
         self.assertEqual(self.out().splitlines(), [
             "stopped qwen3.6-35b-a3b in container 'llamacpp'",
-            "OpenCode, Hermes, Pi and dsh still point at qwen3.6-35b-a3b and get no answer until the next ./llmctl up",
+            "OpenCode, Hermes, Pi, dsh and Kimi still point at qwen3.6-35b-a3b and get no answer until the next "
+            "./llmctl up",
             "  switch back: OpenCode /models; hermes profile use default; Pi /model; dsh: delete the "
-            f"agent-default-model and acp lines in {self.c.home_patch}",
+            f"agent-default-model and acp lines in {self.c.home_patch}; Kimi /model",
+            "  Kimi retries a stopped server for about two and a half minutes before a prompt fails",
         ])
         self.assertEqual(self.c.snapshot(), before)
         self.assertEqual(self.client_calls(), [])
@@ -272,6 +288,7 @@ class UpClientsTest(unittest.TestCase):
             "  thinking: medium effort; hermes --reasoning <level> for another (none, low, medium)",
             "  thinking: medium effort; --thinking <level> for another (off, low, medium)",
             "  thinking: medium effort; choose another under Effort (off, low, medium)",
+            "  thinking: medium effort; /effort in kimi for another (off, low, medium)",
         ])
 
     def test_vllm_hint_names_the_runtime(self):
@@ -312,7 +329,8 @@ class UpClientsTest(unittest.TestCase):
         calls = self.f.host.calls
         self.assertEqual(calls.count(PI_LIST), 1)
         self.assertEqual(calls.count(DSH_DUMP), 1)
-        self.assertEqual(self.client_calls(calls[calls.index(DSH_DUMP) + 1:]), [])
+        self.assertEqual(calls.count(KIMI_LIST), 1)
+        self.assertEqual(self.client_calls(calls[calls.index(KIMI_LIST) + 1:]), [])
 
     def point_at_llmctl(self):
         (self.c.hermes_root / "active_profile").write_text("llmctl\n", encoding="utf-8")
@@ -377,7 +395,8 @@ class UpClientsTest(unittest.TestCase):
         self.assertIn("would set OpenCode's default model: llamacpp-docker/gemma-4-26b-a4b -> "
                       f"llamacpp-docker/qwen3.6-35b-a3b ({self.c.opencode_path})", lines)
         self.assertIn("would run hermes profile use llmctl", lines)
-        self.assertEqual(lines[-1], "dry run: nothing was written, and neither Pi nor dsh has checked llmctl's entries")
+        self.assertEqual(lines[-1], "dry run: nothing was written, and none of Pi, dsh and Kimi has checked llmctl's "
+                                    "entries")
 
     def test_client_write_failure_is_exit_6(self):
         lock = Path(os.path.realpath(self.c.settings_path) + ".lock")
@@ -487,22 +506,24 @@ class UpClientsTest(unittest.TestCase):
         self.c.write_opencode("llamacpp-docker/qwen3.6-35b-a3b")
         always = "  thinking: always on, at the effort the server sets"
         dsh_on = "  thinking: on; choose Off under Effort to turn it off"
+        kimi_on = "  thinking: on, as the server sets it"
         qwen_on = dataclasses.replace(self.qwen, recipe=dataclasses.replace(
             self.qwen.recipe, clients=dataclasses.replace(self.qwen.recipe.clients, default="on")))
         cases = [
             (target_for("mellum2.1-12b", "vllm", REPO / "recipes"),
              ["  thinking: on; add #none to turn it off", "  thinking: on, as the server sets it",
-              "  thinking: on; --thinking off turns it off", dsh_on]),
+              "  thinking: on; --thinking off turns it off", dsh_on, kimi_on]),
             (target_for("nemotron-3.5-bolt", "llamacpp", REPO / "recipes"),
              ["  thinking: off; add #thinking to the model to turn it on, #medium for medium effort",
               "  thinking: off, as the server sets it",
               "  thinking: off; --thinking medium for medium effort, --thinking high for full thinking",
-              "  thinking: off; Medium under Effort for medium effort, High for full thinking"]),
-            (target_for("k2-horizon-7b", "llamacpp", REPO / "recipes"), [always] * 4),
-            (target_for("qwen3-coder-next", "llamacpp", REPO / "recipes"), ["  thinking: none"] * 4),
-            (target_for("deepseek-r1-0528-qwen3-8b", "llamacpp", REPO / "recipes"), [always] * 4),
+              "  thinking: off; Medium under Effort for medium effort, High for full thinking",
+              "  thinking: off, as the server sets it"]),
+            (target_for("k2-horizon-7b", "llamacpp", REPO / "recipes"), [always] * 5),
+            (target_for("qwen3-coder-next", "llamacpp", REPO / "recipes"), ["  thinking: none"] * 5),
+            (target_for("deepseek-r1-0528-qwen3-8b", "llamacpp", REPO / "recipes"), [always] * 5),
             (qwen_on, ["  thinking: on; add #none to turn it off", "  thinking: on, as the server sets it",
-                       "  thinking: on; --thinking off turns it off", dsh_on]),
+                       "  thinking: on; --thinking off turns it off", dsh_on, kimi_on]),
         ]
         for target, expected in cases:
             with self.subTest(f"{target.recipe.runtime} {target.recipe.id} {target.recipe.clients.default}"):
@@ -655,7 +676,7 @@ class UpClientsTest(unittest.TestCase):
         self.f.host.on(["dsh", "--version"], ok("0.2.3\n"))
         self.assertEqual(self.up(), 0)
         lines = self.out().splitlines()
-        index = lines.index("clients: opencode, hermes, pi, dsh")
+        index = lines.index("clients: opencode, hermes, pi, dsh, kimi")
         self.assertEqual(lines[index + 1],
                          "warning: dsh 0.2.3 is not 0.2.2-rc.3, the version llmctl's dsh rows were checked with; run "
                          "the dsh steps of the e2e before relying on them (docs/clients.md#maintenance)")
@@ -678,7 +699,7 @@ class UpClientsTest(unittest.TestCase):
         self.assertEqual(self.up("gemma-4-26b-a4b", dry_run=True, set_default=True), 0)
         lines = self.out().splitlines()
         self.assertIn("clients: dsh (opencode: left out by LLMCTL_CLIENTS) (hermes: left out by LLMCTL_CLIENTS) "
-                      "(pi: left out by LLMCTL_CLIENTS)", lines)
+                      "(pi: left out by LLMCTL_CLIENTS) (kimi: left out by LLMCTL_CLIENTS)", lines)
         self.assertEqual(lines[-3:], [f"would back up {path} to {backup}", f"would write {path}: {summary}",
                                       "dry run: nothing was written, and dsh has not checked llmctl's rows"])
         self.assertEqual(self.client_calls(), [])
@@ -707,6 +728,131 @@ class UpClientsTest(unittest.TestCase):
         after = self.c.snapshot()
         outside = {key: value for key, value in before.items() if not key.startswith(".dsh")}
         self.assertEqual({key: value for key, value in after.items() if not key.startswith(".dsh")}, outside)
+
+    def kimi_lines(self, lines, first):
+        index = lines.index(first)
+        return lines[index:]
+
+    def test_status_shows_the_kimi_line(self):
+        self.assertEqual(self.up(set_default=True), 0)
+        running_qwen(self.f)
+        self.f.host.on(("docker", "port"), ok("8080/tcp -> 127.0.0.1:8080\n"))
+        self.f.host.on(("docker", "stats"), ok("14.2GiB / 20GiB\n"))
+        self.f.host.out.truncate(0)
+        self.f.host.out.seek(0)
+        calls = len(self.f.host.calls)
+        self.assertEqual(ops.status(self.f.host, self.f.catalog), 0)
+        self.assertIn("  Kimi: llmctl/local for qwen3.6-35b-a3b on llama.cpp, the running model; default llmctl/local "
+                      f"({self.c.kimi_file})", self.out().splitlines())
+        self.assertEqual(self.client_calls(self.f.host.calls[calls:]), [])
+
+    def test_up_lines_kimi_not_default_and_effort(self):
+        other = '\n[models."other/m"]\nprovider = "other"\nmodel = "m"\nmax_context_size = 131072\n'
+        self.write_kimi(kimi_config.default_text(self.c.kimi_file, self.kimi_start, "other/m") + other)
+        self.f.place_files("qwen3.8-27b")
+        self.assertEqual(self.up("qwen3.8-27b"), 0)
+        lines = self.out().splitlines()
+        first = "Kimi: llmctl/local, not the default (./llmctl up qwen3.8-27b --set-default makes it one)"
+        self.assertEqual(self.kimi_lines(lines, first)[:4], [
+            first,
+            "  kimi -m llmctl/local, or pick qwen3.8-27b on llama.cpp (llmctl) with /model in kimi",
+            "  kimi -p needs Kimi's default even with -m, so for a single prompt run ./llmctl up qwen3.8-27b "
+            "--set-default first",
+            "  thinking: medium effort; /effort in kimi for another (off, low, medium)",
+        ])
+        self.assertEqual(kimi_config.read_state(self.f.host.env).default, "other/m")
+
+    def test_up_lines_kimi_default_unknown(self):
+        # config.toml became unreadable after llmctl wrote it: the first Kimi line says why llmctl cannot tell
+        self.assertEqual(self.up(), 0)
+        self.write_kimi(self.c.kimi_file.read_text(encoding="utf-8") + "[broken\n")
+        with self.assertRaises(ClientError) as caught:
+            kimi_config.read_state(self.f.host.env)
+        lines = clients.up_lines(self.f.host, self.qwen, clients.client_states(self.f.host),
+                                 up_command=ops.up_command(self.qwen.recipe), changed=frozenset({"kimi"}))
+        first = f"Kimi: llmctl/local, default unknown ({caught.exception})"
+        self.assertEqual(self.kimi_lines(lines, first)[1],
+                         "  kimi -m llmctl/local, or pick qwen3.6-35b-a3b on llama.cpp (llmctl) with /model in kimi")
+
+    def test_kimi_chat_only_lines(self):
+        self.f.place_files("deepseek-r1-0528-qwen3-8b")
+        self.assertEqual(self.up("deepseek-r1-0528-qwen3-8b"), 0)
+        lines = self.out().splitlines()
+        self.assertIn("  chat only: Kimi sends its tools with every request, also in its TUI; for a prompt without "
+                      f'them: kimi -p "your prompt" --agent-file {kimi_config.AGENT_FILE}', lines)
+        target = target_for("deepseek-r1-0528-qwen3-8b", "vllm", REPO / "recipes")
+        lines = clients.up_lines(self.f.host, target, clients.client_states(self.f.host),
+                                 up_command=ops.up_command(target.recipe), changed=frozenset())
+        self.assertIn("  chat only: vLLM rejects every Kimi request that carries tools for this recipe (HTTP 400), and "
+                      "Kimi's TUI always sends them; for a prompt without them, make it the default (./llmctl up "
+                      "deepseek-r1-0528-qwen3-8b --runtime vllm --set-default), then kimi -p \"your prompt\" "
+                      f"--agent-file {kimi_config.AGENT_FILE}", lines)
+
+    def test_kimi_thinking_warning_follows_the_kimi_lines(self):
+        self.write_kimi(self.kimi_start + "\n[thinking]\nenabled = false\n")
+        self.f.place_files("gpt-oss-20b", runtime="vllm")
+        self.f.host.on_http("GET", "http://127.0.0.1:8000/v1/models",
+                            http(200, b'{"data":[{"id":"gpt-oss-20b"}]}'))
+        self.assertEqual(self.up("gpt-oss-20b", "vllm"), 0)
+        lines = self.out().splitlines()
+        self.assertFalse([line for line in lines if line.startswith(f"wrote {self.c.kimi_file}")], lines)
+        self.assertEqual(self.kimi_lines(lines, "Kimi: llmctl/gpt-oss-20b, the default")[2:4], [
+            "  thinking: medium effort; /effort in kimi for another (low, medium, high)",
+            f"warning: [thinking] enabled = false in {self.c.kimi_file} makes Kimi refuse every prompt to "
+            "llmctl/gpt-oss-20b before sending it, because the model reasons by default and declares no off effort; "
+            "set enabled = true there, or choose an effort with /effort in kimi",
+        ])
+
+    def test_kimi_model_name_note(self):
+        self.f.host.env["KIMI_MODEL_NAME"] = "other/m"
+        self.assertEqual(self.up(), 0)
+        lines = self.out().splitlines()
+        self.assertEqual(self.kimi_lines(lines, "Kimi: llmctl/local, the default")[3],
+                         "note: KIMI_MODEL_NAME is set in this shell, so kimi uses that model instead of Kimi's "
+                         "default_model; unset it, or pass -m llmctl/local")
+
+    def test_kimi_refusal_starts_nothing(self):
+        self.write_kimi(self.kimi_start + "[broken\n")
+        before = self.c.snapshot()
+        with self.assertRaises(ClientError) as caught:
+            self.up()
+        self.assertEqual(caught.exception.exit_code, 3)
+        self.assertEqual(self.f.calls_starting("docker", "run"), [])
+        self.assertEqual([call for call in self.f.host.calls if call[0] == "kimi"], [])
+        self.assertEqual(self.c.snapshot(), before)
+
+    def test_kimi_write_failure_is_exit_6(self):
+        os.chmod(self.c.kimi_home, 0o500)
+        self.addCleanup(os.chmod, self.c.kimi_home, 0o700)
+        with self.assertRaises(ClientWriteError) as caught:
+            self.up()
+        self.assertEqual(caught.exception.exit_code, 6)
+        message = str(caught.exception)
+        self.assertTrue(message.startswith(
+            f"the model is running, but 1 client file(s) were not updated: {self.c.kimi_file}: "), message)
+        lines = self.out().splitlines()
+        self.assertIn("Kimi: not updated, see the error below", lines)
+        self.assertFalse([line for line in lines if line.startswith("Kimi: llmctl/")], lines)
+        self.assertFalse([line for line in lines if line.startswith("note: an open Kimi session")], lines)
+        self.assertEqual(self.c.kimi_file.read_text(encoding="utf-8"), self.kimi_start)
+        self.assertEqual(self.opencode_model(), "llamacpp-docker/qwen3.6-35b-a3b")
+        self.assertEqual(self.c.hermes_config.read_text(encoding="utf-8"), hermes_config.new_config_text(self.qwen))
+        self.assertEqual(self.c.models_path.read_text(encoding="utf-8"), pi_config.new_models_text(self.qwen))
+        self.assertEqual(self.c.home_patch.read_text(encoding="utf-8"),
+                         TELEMETRY + dsh_config.new_home_text(self.qwen, default=True))
+
+    def test_down_reports_a_relative_kimi_home_after_the_stop(self):
+        running_qwen(self.f)
+        self.f.host.on(("docker", "stop"), ok())
+        self.f.host.env["KIMI_CODE_HOME"] = "rel"
+        before = self.c.snapshot()
+        with self.assertRaises(UsageError) as caught:
+            ops.down(self.f.host, self.f.catalog, remove=False)
+        self.assertEqual(caught.exception.exit_code, 1)
+        self.assertTrue(str(caught.exception).startswith("KIMI_CODE_HOME is relative (rel)"), str(caught.exception))
+        self.assertEqual(self.f.calls_starting("docker", "stop"), [["docker", "stop", "-t", "60", "llamacpp"]])
+        self.assertEqual(self.out().splitlines(), ["stopped qwen3.6-35b-a3b in container 'llamacpp'"])
+        self.assertEqual(self.c.snapshot(), before)
 
 
 class DownStatusLogsTest(unittest.TestCase):
@@ -737,6 +883,7 @@ class DownStatusLogsTest(unittest.TestCase):
             "  Hermes: not installed (no hermes on PATH)",
             "  Pi: not installed (no pi on PATH)",
             "  dsh: not installed (no dsh on PATH)",
+            "  Kimi: not installed (no kimi on PATH)",
         ])
 
     def test_status_not_installed_client(self):
