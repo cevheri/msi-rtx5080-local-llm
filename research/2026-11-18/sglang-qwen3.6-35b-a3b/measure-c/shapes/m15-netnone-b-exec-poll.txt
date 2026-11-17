@@ -1,0 +1,8 @@
+at 0.23 s /ready URLError
+at 334.81 s /ready 503
+at 351.21 s /ready 200
+at 351.39 s served name listed in /v1/models
+free_mib_after_ready=687
+chat {"status": 200, "content": "OK", "reasoning_chars": 0, "finish_reason": "stop", "completion_tokens": 2}
+flush_cache 200
+free_mib_after_flush=969

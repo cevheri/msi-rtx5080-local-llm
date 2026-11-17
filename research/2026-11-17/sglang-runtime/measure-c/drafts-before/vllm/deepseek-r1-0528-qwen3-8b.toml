@@ -1,0 +1,49 @@
+# LD11 draft from measurement B ($SCRATCH/sglang/measure-b/vllm-deepseek-r1-0528-qwen3-8b/README.md, retry 2):
+# the shipped recipe plus "--tokenizer /llmctl/tokenizer", which counted: the three fixed prompts gave llama.cpp's
+# token counts (8, 8,078 and 30,254) and every reply read correctly.
+# It needs an llmctl change before it can ship: llmctl must build a tokenizer overlay for this recipe and mount it
+# read-only at /llmctl/tokenizer, as the design's D7 builds the SGLang model overlay. The folder holds links to the
+# snapshot's tokenizer.json and config.json at their container paths and a real tokenizer_config.json equal to the
+# snapshot's except "tokenizer_class": "PreTrainedTokenizerFast" (the snapshot says "LlamaTokenizerFast", which
+# transformers 5.20.2 builds as a Metaspace LlamaTokenizer). Without that mount vLLM finds no /llmctl/tokenizer.
+# The arguments-only alternative, measured as retry 1, is "--tokenizer-mode deepseek_v32" with
+# "--default-chat-template-kwargs" '{"thinking":true}': replies read correctly, but vLLM's DeepSeek V3.2 encoder
+# replaces the model's template, adding <think> after the last <|Assistant|> and </think> before every earlier
+# assistant reply, so a prompt is one or more tokens longer than llama.cpp's.
+schema = 1
+id = "deepseek-r1-0528-qwen3-8b"
+name = "DeepSeek-R1-0528-Qwen3-8B FP8 per tensor (chat only)"
+aliases = ["deepseek-r1"]
+doc = "vllm/models.md#deepseek-r1-0528-qwen3-8b-chat-only"
+opencode = false
+chat_only = true
+
+[model]
+repo = "deepseek-ai/DeepSeek-R1-0528-Qwen3-8B"
+revision = "6e8885a6ff5c1dc5201574c8fd700323f23c25fa"
+size_bytes = 16388927770
+served_name = "deepseek-r1-8b"
+
+[container]
+memory_gib = 32
+
+[server]
+context = 65536
+args = [
+  "--quantization", "fp8_per_tensor", "--max-num-seqs", "1", "--kv-cache-dtype", "fp8",
+  "--attention-backend", "TRITON_ATTN", "--reasoning-parser", "deepseek_r1",
+  "--override-generation-config", '{"temperature":0.6,"top_p":0.95}',
+  "--tokenizer", "/llmctl/tokenizer",
+]
+
+[clients]
+output = 16384
+thinking = "always"
+
+[evidence]
+kind = "measured"
+summary = "73.1 tok/s decode with 64k context and the default --gpu-memory-utilization 0.92 (warm compile cache), 69,936 KV tokens, 15,038 MiB GPU peak; with the tokenizer overlay the prompts count as on llama.cpp and replies read correctly; tools get HTTP 400 as a chat-only recipe should"
+decode_tok_s = 73.1
+date = "2026-11-17"
+hardware = "MSI Raider 18 Max HX A2WI, RTX 5080 Laptop GPU 16 GB, 61 GiB RAM"
+record = "$SCRATCH/sglang/measure-b/vllm-deepseek-r1-0528-qwen3-8b/"

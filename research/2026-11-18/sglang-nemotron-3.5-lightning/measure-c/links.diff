@@ -1,0 +1,20 @@
+--- $SCRATCH/sglang/measure-c/sglang-nemotron-3.5-lightning/README.md
++++ sglang-nemotron-3.5-lightning/measure-c/README.md
+@@ -6,7 +6,7 @@
+ The same prompts give tool calls on llama.cpp b12407 (the 2026-11-16 record's probe called `get_weather {"city":"Paris"}`, and its OpenCode session passed), the template renders correctly offline, and a start without the pinned-store setting failed identically, so the fault is in SGLang's serving of this checkpoint, not in the prompt or the setting (measured; where in SGLang is not known).
+ D14 requires the smoke requests (a tool call and its second turn), so no draft is written; the margin protocol, M12, M15 and the cap run were not run for it.
+ 
+-Every start used `lmsysorg/sglang:v0.5.23-runtime` with the lane's settings ([../sglang-qwen3.6-35b-a3b/README.md](../sglang-qwen3.6-35b-a3b/README.md)), C's overlay of the pinned snapshot `bee7596271d1495f6992ae224aefde4410e816b8` (temperature 1.0 and top_p 0.95, the llama.cpp twin's flags), Paged Experts with Marlin, BF16 KV (set: the checkpoint's ModelOpt config would choose FP8), 8 Mamba slots, 128k, parsers `qwen3_coder` and `nemotron_3` (the v0.5.23 names for the template's `<tool_call><function=...><parameter=...>` format and its `<think>` reasoning, [../offline/sglang-parser-names.txt](../offline/sglang-parser-names.txt)), and `--default-chat-template-kwargs '{"enable_thinking":false}'` ([cmds/](cmds/)).
++Every start used `lmsysorg/sglang:v0.5.23-runtime` with the lane's settings ([../sglang-qwen3.6-35b-a3b/README.md](../../sglang-qwen3.6-35b-a3b/measure-c/README.md)), C's overlay of the pinned snapshot `bee7596271d1495f6992ae224aefde4410e816b8` (temperature 1.0 and top_p 0.95, the llama.cpp twin's flags), Paged Experts with Marlin, BF16 KV (set: the checkpoint's ModelOpt config would choose FP8), 8 Mamba slots, 128k, parsers `qwen3_coder` and `nemotron_3` (the v0.5.23 names for the template's `<tool_call><function=...><parameter=...>` format and its `<think>` reasoning, [../offline/sglang-parser-names.txt](../../../2026-11-17/sglang-runtime/measure-c/offline/sglang-parser-names.txt)), and `--default-chat-template-kwargs '{"enable_thinking":false}'` ([cmds/](cmds/)).
+ 
+ ## M11: the K sweep (fraction 0.90, BF16 KV, 128k)
+ 
+@@ -39,7 +39,7 @@
+ - The checkpoint's template, rendered offline with transformers in the image, puts the tool list and the XML call format in the system message and ends with `<|im_start|>assistant\n<think></think>` for thinking off, as intended ([offline-out/template-render.txt](offline-out/template-render.txt), `$SCRATCH/sglang/measure-c/scripts/render_template.py`) (measured offline).
+ - The replies lose information that is in the prompt (the city, the question after long reasoning), which points at the model's computation in this engine rather than at the parsers; the Marlin MoE runner does support this model's non-gated ReLU² experts (`moe_runner/marlin.py`, lines 147 to 149), so which kernel is wrong is not established (inferred).
+ 
+-Store estimates before the first start: 21.9 GiB with the factor 1.096 and 33.3 GiB with B's 1.84, both at most 34 GiB; the measured stores were 16.07 and 26.02 GiB ([../estimates/README.md](../estimates/README.md)) (estimate; measured).
++Store estimates before the first start: 21.9 GiB with the factor 1.096 and 33.3 GiB with B's 1.84, both at most 34 GiB; the measured stores were 16.07 and 26.02 GiB ([../estimates/README.md](../../../2026-11-17/sglang-runtime/measure-c/estimates/README.md)) (estimate; measured).
+ For the matrix: "Failed: loads and holds 128k (K 72, 133 tok/s), but no tool call in any thinking mode and M13 10 of 20 at temperature 0, against tool calls on llama.cpp, measured 2026-11-18".
+ 
+ ## Files

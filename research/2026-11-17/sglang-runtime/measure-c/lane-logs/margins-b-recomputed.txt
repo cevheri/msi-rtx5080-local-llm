@@ -1,0 +1,11 @@
+| Start | Free right after ready | Near-full prompt (tokens, share) | After it | After the first grammar request | After the forced tool request | Lowest in the trace after ready | Drop |
+|---|---|---|---|---|---|---|---|
+| qwen3.5-9b m12-a3 | 911 | 124,499, 95.0% | 545 | 545 | 545 | 537 | 374 |
+| k2-horizon-7b b0-a2 | 865 | 62,257, 95.0% | 543 | 543 | 543 | 532 | 333 |
+| gpt-oss-20b b0-a4 | 1,329 | 124,463, 95.0% | 989 | 989 | 989 | 989 | 340 |
+| gpt-oss-20b ld19-mem28 | 1,328 | 124,458, 95.0% | 988 | 988 | 988 | 988 | 340 |
+| gemma-4-e4b m5-a4-swa | 1,407 | 62,244, 95.0% | 1,403 | 1,403 | 1,403 | 1,403 | 4 |
+| gemma-4-12b m2-fp8-b | 1,099 | 124,431, 94.9% | 839 | 839 | 839 | 839 | 260 |
+| gemma-4-12b m2-bf16 | 1,089 | 124,435, 94.9% | 847 | 847 | 847 | 831 | 258 |
+
+largest drop 374 MiB; D8 rule: MIN_FREE = next multiple of 64 above 374 + 256 = 640 MiB; ship gate F_ready >= 768 MiB

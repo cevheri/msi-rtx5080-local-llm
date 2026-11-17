@@ -1,0 +1,4 @@
+reply: ok ('OK')
+tool call: ok (get_weather {"city": "Paris"})
+decode: 190.4 tok/s (512 tokens)
+recipe evidence: Draft from the SGLang research report, section 4, with the args of the shipped groot-19b-a3b recipe less --reasoning off; not measured on this laptop

@@ -1,0 +1,235 @@
+{
+ "t0": 1794951259.2014987,
+ "kind": "sglang",
+ "exit": "container stopped",
+ "ready_seen_s": null,
+ "served_listed_s": null,
+ "endpoints": {
+  "/ready": {
+   "first_200_s": null,
+   "changes": [
+    {
+     "at_s": 0.04,
+     "status": "ConnectionRefusedError",
+     "call_s": 0.001
+    },
+    {
+     "at_s": 0.54,
+     "status": "ConnectionResetError",
+     "call_s": 0.001
+    },
+    {
+     "at_s": 16.54,
+     "status": "RemoteDisconnected",
+     "call_s": 0.0
+    },
+    {
+     "at_s": 17.04,
+     "status": "ConnectionResetError",
+     "call_s": 0.001
+    },
+    {
+     "at_s": 22.55,
+     "status": "RemoteDisconnected",
+     "call_s": 0.001
+    },
+    {
+     "at_s": 23.05,
+     "status": "ConnectionResetError",
+     "call_s": 0.001
+    },
+    {
+     "at_s": 24.05,
+     "status": "RemoteDisconnected",
+     "call_s": 0.001
+    },
+    {
+     "at_s": 24.55,
+     "status": "ConnectionResetError",
+     "call_s": 0.0
+    },
+    {
+     "at_s": 26.05,
+     "status": "RemoteDisconnected",
+     "call_s": 0.001
+    },
+    {
+     "at_s": 26.55,
+     "status": "ConnectionResetError",
+     "call_s": 0.001
+    },
+    {
+     "at_s": 27.55,
+     "status": "RemoteDisconnected",
+     "call_s": 0.0
+    },
+    {
+     "at_s": 29.05,
+     "status": "ConnectionResetError",
+     "call_s": 0.001
+    },
+    {
+     "at_s": 32.55,
+     "status": "RemoteDisconnected",
+     "call_s": 0.001
+    },
+    {
+     "at_s": 33.05,
+     "status": "ConnectionResetError",
+     "call_s": 0.001
+    },
+    {
+     "at_s": 34.55,
+     "status": "RemoteDisconnected",
+     "call_s": 0.001
+    },
+    {
+     "at_s": 35.05,
+     "status": "ConnectionResetError",
+     "call_s": 0.0
+    },
+    {
+     "at_s": 36.05,
+     "status": "ConnectionRefusedError",
+     "call_s": 0.0
+    }
+   ],
+   "polls": 73,
+   "last": "ConnectionRefusedError"
+  },
+  "/v1/models": {
+   "first_200_s": null,
+   "changes": [
+    {
+     "at_s": 0.04,
+     "status": "ConnectionRefusedError",
+     "call_s": 0.001
+    },
+    {
+     "at_s": 0.54,
+     "status": "RemoteDisconnected",
+     "call_s": 0.0
+    },
+    {
+     "at_s": 1.04,
+     "status": "ConnectionResetError",
+     "call_s": 0.0
+    },
+    {
+     "at_s": 13.54,
+     "status": "RemoteDisconnected",
+     "call_s": 0.0
+    },
+    {
+     "at_s": 14.04,
+     "status": "ConnectionResetError",
+     "call_s": 0.0
+    },
+    {
+     "at_s": 18.55,
+     "status": "RemoteDisconnected",
+     "call_s": 0.0
+    },
+    {
+     "at_s": 19.05,
+     "status": "ConnectionResetError",
+     "call_s": 0.0
+    },
+    {
+     "at_s": 22.55,
+     "status": "RemoteDisconnected",
+     "call_s": 0.0
+    },
+    {
+     "at_s": 23.05,
+     "status": "ConnectionResetError",
+     "call_s": 0.0
+    },
+    {
+     "at_s": 28.55,
+     "status": "RemoteDisconnected",
+     "call_s": 0.0
+    },
+    {
+     "at_s": 29.05,
+     "status": "ConnectionResetError",
+     "call_s": 0.0
+    },
+    {
+     "at_s": 36.05,
+     "status": "ConnectionRefusedError",
+     "call_s": 0.0
+    }
+   ],
+   "polls": 73,
+   "last": "ConnectionRefusedError"
+  },
+  "/server_info": {
+   "first_200_s": null,
+   "changes": [
+    {
+     "at_s": 0.04,
+     "status": "ConnectionRefusedError",
+     "call_s": 0.001
+    },
+    {
+     "at_s": 0.54,
+     "status": "RemoteDisconnected",
+     "call_s": 0.0
+    },
+    {
+     "at_s": 1.04,
+     "status": "ConnectionResetError",
+     "call_s": 0.0
+    },
+    {
+     "at_s": 21.55,
+     "status": "RemoteDisconnected",
+     "call_s": 0.001
+    },
+    {
+     "at_s": 22.55,
+     "status": "ConnectionResetError",
+     "call_s": 0.0
+    },
+    {
+     "at_s": 23.55,
+     "status": "RemoteDisconnected",
+     "call_s": 0.0
+    },
+    {
+     "at_s": 24.05,
+     "status": "ConnectionResetError",
+     "call_s": 0.001
+    },
+    {
+     "at_s": 24.55,
+     "status": "RemoteDisconnected",
+     "call_s": 0.0
+    },
+    {
+     "at_s": 25.05,
+     "status": "ConnectionResetError",
+     "call_s": 0.0
+    },
+    {
+     "at_s": 25.55,
+     "status": "RemoteDisconnected",
+     "call_s": 0.0
+    },
+    {
+     "at_s": 26.05,
+     "status": "ConnectionResetError",
+     "call_s": 0.001
+    },
+    {
+     "at_s": 36.05,
+     "status": "ConnectionRefusedError",
+     "call_s": 0.0
+    }
+   ],
+   "polls": 73,
+   "last": "ConnectionRefusedError"
+  }
+ }
+}

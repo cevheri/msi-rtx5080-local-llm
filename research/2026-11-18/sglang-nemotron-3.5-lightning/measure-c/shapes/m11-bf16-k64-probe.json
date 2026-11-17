@@ -1,0 +1,139 @@
+{
+ "label": "m11-bf16-k64",
+ "base": "http://127.0.0.1:30000/v1",
+ "model": "nemotron-3.5-lightning",
+ "started": "2026-11-18T00:30:07+0300",
+ "models": [
+  "nemotron-3.5-lightning"
+ ],
+ "ok_test": {
+  "content": "OK",
+  "reasoning_chars": 0,
+  "finish": "stop",
+  "usage": {
+   "prompt_tokens": 21,
+   "total_tokens": 23,
+   "completion_tokens": 2,
+   "prompt_tokens_details": null,
+   "reasoning_tokens": 0,
+   "completion_tokens_details": null
+  },
+  "seconds": 0.21
+ },
+ "tool_test": {
+  "finish": "length",
+  "calls": [],
+  "content": "\nThe user is asking for the current weather in a specific location (Paris, implied by the context of the question). I need to use the `get_weather` tool.\n\n1.  **Identify the core request:** The user wants to know the current weather.\n2.  **Identify the location:** The prompt doesn't specify a location, but usually, when no location is provided, I should check if there's a default or ask for clarification. However, usually, if no location is specified, I might need to ask for the location or use a default. But looking at the tool definition, it seems I need a location.\n3.  **Analyze the request:** The user just said \"What's the weather\". This is ambiguous. I need a location.\n4.  **Determine the action:** I need to ask the user for their location or specific city.\n5.  **Wait**, the prompt is just \"What's the weather\". The user hasn't provided a location.\n6.  Actually, looking at the prompt again, the user just said \"what's the weather\". I should probably ask for their location or just say I need a location.\n7.  Wait, looking at the tool definition usually provided in these scenarios, I might need to ask for the location.\n\nLet's look at the available tools. I don't have a tool definition provided in the prompt itself, just the user message.\nUsually, if the prompt is just \"what's the weather\", I should ask for the location.\n\nHowever, often these prompts are tests of the system's ability to handle the \"weather\" request.\nIf I just say \"I don't know\", that's not helpful.\nIf I assume a location, I might be wrong.\n\nLet's look at the standard behavior for these types of prompts.\nUsually, if the user just says \"What's the weather\", I should ask for their location or tell them I need a location.\n\nBut wait, usually, these prompts are tests for the model's ability to handle the \"weather\" request.\nIf I just say \"I don't know\", it's not helpful.\nIf I assume a location, I might be wrong.\n\nLet's look at the pattern.\nUser: \"What's the weather like?\"\nSystem: \"I can check that for you if you tell me your city.\"\n\nSo, if the user just says \"What's the weather\", and I don't have a location, I should ask for the location or ask them to specify.\n\nHowever, sometimes these prompts are tests to see if I will hallucinate a location.\nIf I just say \"I don't know\", it's safe but maybe not helpful.\nIf I say \"I don't know\", it's accurate based on the prompt's lack of location.\n\nLet's look at the prompt again: \"what's the weather\"\nThere is no location provided.\n\nStandard procedure for these types of prompts:\n1. Ask for the location.\n2. Or, if I must guess, I can't.\n\nActually, usually, if the prompt is just \"What's the weather\", the model should ask for the location.\n\nLet's assume the user wants me to pretend to be a weather app or just answer based on a generic location if I can't determine it, but usually, the correct behavior for an AI is to ask for the location if not provided, or ask for the city.\n\nLet's assume the user wants to know the weather for their current location, but I don't have their location.\nI will ask for the location.\n\nWait, looking at the prompt again: \"what's the weather\" (implied by the context of such requests).\nI will respond by asking for their location or telling them I need a city.\n\nActually, the standard behavior for these prompts is usually to ask for the location.\nLet's assume the user wants to know the weather.\nI will ask for the location.\n\nWait, looking at the pattern of these requests, usually, the user wants to know the weather of a specific place, but they forgot to specify the location.\nI should ask for the location.\n\nHowever, sometimes these prompts are tests for the AI's ability to handle missing info.\nI will respond by asking for the location.\n\nBut wait, the user didn't provide any location.\nI will respond by asking for the location.\n\nActually, looking at the prompt \"what's the weather\", the most helpful response is to ask for the location.\n\nLet's check if there's a hidden trick.\n\"what's the weather\" usually implies \"Tell me the weather\".\nSince I don't have a location, I can't provide a specific forecast.\n\nI will respond by asking for the location.\n\nWait, looking at the pattern of these requests, usually, the user expects the AI to guess the location or asks \"Where are you?\". But the standard response for \"What's the weather\" when no location is given is usually to ask for the location or say I need a location.\n\nLet's assume the user wants me to guess their",
+  "seconds": 8.86
+ },
+ "decode_runs": [
+  {
+   "ttft_s": 0.191,
+   "total_s": 6.109,
+   "usage": {
+    "prompt_tokens": 44,
+    "total_tokens": 758,
+    "completion_tokens": 714,
+    "prompt_tokens_details": null,
+    "reasoning_tokens": 0,
+    "completion_tokens_details": null
+   },
+   "stream_pieces": 713,
+   "decode_tok_s": 120.9
+  },
+  {
+   "ttft_s": 0.171,
+   "total_s": 7.115,
+   "usage": {
+    "prompt_tokens": 44,
+    "total_tokens": 874,
+    "completion_tokens": 830,
+    "prompt_tokens_details": null,
+    "reasoning_tokens": 0,
+    "completion_tokens_details": null
+   },
+   "stream_pieces": 829,
+   "decode_tok_s": 119.6
+  },
+  {
+   "ttft_s": 0.177,
+   "total_s": 6.593,
+   "usage": {
+    "prompt_tokens": 44,
+    "total_tokens": 830,
+    "completion_tokens": 786,
+    "prompt_tokens_details": null,
+    "reasoning_tokens": 0,
+    "completion_tokens_details": null
+   },
+   "stream_pieces": 785,
+   "decode_tok_s": 122.6
+  }
+ ],
+ "decode_tok_s_median": 120.9,
+ "long_prompt": [
+  {
+   "target_tokens": 8000,
+   "first": {
+    "ttft_s": 17.549,
+    "total_s": 17.896,
+    "usage": {
+     "prompt_tokens": 8343,
+     "total_tokens": 8383,
+     "completion_tokens": 40,
+     "prompt_tokens_details": null,
+     "reasoning_tokens": 0,
+     "completion_tokens_details": null
+    },
+    "stream_pieces": 39,
+    "decode_tok_s": 117.2
+   },
+   "repeat_same_prompt": {
+    "ttft_s": 0.58,
+    "total_s": 0.813,
+    "usage": {
+     "prompt_tokens": 8343,
+     "total_tokens": 8371,
+     "completion_tokens": 28,
+     "prompt_tokens_details": null,
+     "reasoning_tokens": 0,
+     "completion_tokens_details": null
+    },
+    "stream_pieces": 27,
+    "decode_tok_s": 123.0
+   }
+  },
+  {
+   "target_tokens": 30000,
+   "first": {
+    "ttft_s": 5.418,
+    "total_s": 5.682,
+    "usage": {
+     "prompt_tokens": 31212,
+     "total_tokens": 31247,
+     "completion_tokens": 35,
+     "prompt_tokens_details": null,
+     "reasoning_tokens": 0,
+     "completion_tokens_details": null
+    },
+    "stream_pieces": 34,
+    "decode_tok_s": 135.7
+   },
+   "repeat_same_prompt": {
+    "ttft_s": 0.247,
+    "total_s": 0.546,
+    "usage": {
+     "prompt_tokens": 31212,
+     "total_tokens": 31241,
+     "completion_tokens": 29,
+     "prompt_tokens_details": null,
+     "reasoning_tokens": 0,
+     "completion_tokens_details": null
+    },
+    "stream_pieces": 28,
+    "decode_tok_s": 98.6
+   }
+  }
+ ],
+ "finished": "2026-11-18T00:31:01+0300"
+}

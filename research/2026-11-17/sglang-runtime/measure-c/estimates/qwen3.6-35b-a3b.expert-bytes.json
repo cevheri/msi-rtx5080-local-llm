@@ -1,0 +1,105 @@
+{
+ "snapshot_shards": 3,
+ "moe_layers": 40,
+ "expert_bytes": 18119639040,
+ "expert_gib": 16.875,
+ "other_bytes": 5287941816,
+ "other_gib": 4.925,
+ "per_layer_mib": [
+  432.01
+ ],
+ "by_tensor_kind_mib": {
+  ".N.down_proj.input_scale": 0.0,
+  ".N.down_proj.weight": 5120.0,
+  ".N.down_proj.weight_scale": 640.0,
+  ".N.down_proj.weight_scale_N": 0.0,
+  ".N.gate_proj.input_scale": 0.0,
+  ".N.gate_proj.weight": 5120.0,
+  ".N.gate_proj.weight_scale": 640.0,
+  ".N.gate_proj.weight_scale_N": 0.0,
+  ".N.up_proj.input_scale": 0.0,
+  ".N.up_proj.weight": 5120.0,
+  ".N.up_proj.weight_scale": 640.0,
+  ".N.up_proj.weight_scale_N": 0.0
+ },
+ "examples": {
+  ".N.down_proj.input_scale": [
+   "model.language_model.layers.0.mlp.experts.0.down_proj.input_scale",
+   "F32",
+   []
+  ],
+  ".N.down_proj.weight_scale_N": [
+   "model.language_model.layers.0.mlp.experts.0.down_proj.weight_scale_2",
+   "F32",
+   []
+  ],
+  ".N.gate_proj.input_scale": [
+   "model.language_model.layers.0.mlp.experts.0.gate_proj.input_scale",
+   "F32",
+   []
+  ],
+  ".N.gate_proj.weight_scale_N": [
+   "model.language_model.layers.0.mlp.experts.0.gate_proj.weight_scale_2",
+   "F32",
+   []
+  ],
+  ".N.up_proj.input_scale": [
+   "model.language_model.layers.0.mlp.experts.0.up_proj.input_scale",
+   "F32",
+   []
+  ],
+  ".N.up_proj.weight_scale_N": [
+   "model.language_model.layers.0.mlp.experts.0.up_proj.weight_scale_2",
+   "F32",
+   []
+  ],
+  ".N.down_proj.weight_scale": [
+   "model.language_model.layers.0.mlp.experts.0.down_proj.weight_scale",
+   "F8_E4M3",
+   [
+    2048,
+    32
+   ]
+  ],
+  ".N.gate_proj.weight_scale": [
+   "model.language_model.layers.0.mlp.experts.0.gate_proj.weight_scale",
+   "F8_E4M3",
+   [
+    512,
+    128
+   ]
+  ],
+  ".N.up_proj.weight_scale": [
+   "model.language_model.layers.0.mlp.experts.0.up_proj.weight_scale",
+   "F8_E4M3",
+   [
+    512,
+    128
+   ]
+  ],
+  ".N.down_proj.weight": [
+   "model.language_model.layers.0.mlp.experts.0.down_proj.weight",
+   "U8",
+   [
+    2048,
+    256
+   ]
+  ],
+  ".N.gate_proj.weight": [
+   "model.language_model.layers.0.mlp.experts.0.gate_proj.weight",
+   "U8",
+   [
+    512,
+    1024
+   ]
+  ],
+  ".N.up_proj.weight": [
+   "model.language_model.layers.0.mlp.experts.0.up_proj.weight",
+   "U8",
+   [
+    512,
+    1024
+   ]
+  ]
+ }
+}

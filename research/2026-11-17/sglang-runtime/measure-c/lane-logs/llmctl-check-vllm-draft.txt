@@ -1,0 +1,14 @@
+2026-11-18T01:03:06+03:00
+ok: 19 recipes (llamacpp 11, vllm 8); overrides: $SCRATCH/sglang/measure-c/check-overrides
+exit=0
+deepseek-r1-0528-qwen3-8b (DeepSeek-R1-0528-Qwen3-8B FP8 per tensor (chat only)) on vllm
+aliases: deepseek-r1
+recipe file: $SCRATCH/sglang/measure-c/check-overrides/vllm/deepseek-r1-0528-qwen3-8b.toml (override), sha256 f3bed6b6b49191f4ad1e9096e21e7a4f070d6a951d5b894649cdf314575b907f
+runtime file: $SCRATCH/llmctl-main/recipes/vllm/_runtime.toml (shipped), image vllm/vllm-openai:v0.33.0
+evidence: measured: 72.5 tok/s decode with 64k context, cold and warm starts with a 4.8 GiB KV cache (69,904 tokens) set by --kv-cache-memory-bytes, 15,036 MiB GPU peak, 1,105 MiB free after ready; with the tokenizer folder the prompts count as on llama.cpp and replies read correctly; tools get HTTP 400 as a chat-only recipe should
+model: deepseek-ai/DeepSeek-R1-0528-Qwen3-8B at 6e8885a6ff5c1dc5201574c8fd700323f23c25fa, 16.4 GB
+container memory cap: 32 GiB, context 65536, GPU need 92%
+OpenCode: no entry
+documented in: vllm/models.md#deepseek-r1-0528-qwen3-8b-chat-only
+command:
+docker run -d --name vllm --label io.llmctl.managed=true --label io.llmctl.runtime=vllm --label io.llmctl.recipe=deepseek-r1-0528-qwen3-8b --label io.llmctl.source=override --label io.llmctl.sha256=f3bed6b6b49191f4ad1e9096e21e7a4f070d6a951d5b894649cdf314575b907f --label io.llmctl.evidence=measured --label io.llmctl.runtime-source=shipped --label io.llmctl.runtime-sha256=c9e263554217598141b28a954099bb9e40cfda03b1a27da32032663fa09e8586 --device nvidia.com/gpu=all --memory 32g --memory-swap 32g -p 127.0.0.1:8000:8000 -e HF_HUB_OFFLINE=1 -e VLLM_NO_USAGE_STATS=1 -e MAX_JOBS=2 -e HF_MODULES_CACHE=/tmp/hf_modules -v $HOME/.cache/huggingface:/root/.cache/huggingface:ro -v vllm-cache:/root/.cache/vllm -v flashinfer-cache:/root/.cache/flashinfer --ipc=host vllm/vllm-openai:v0.33.0 /root/.cache/huggingface/hub/models--deepseek-ai--DeepSeek-R1-0528-Qwen3-8B/snapshots/6e8885a6ff5c1dc5201574c8fd700323f23c25fa --served-model-name deepseek-r1-8b --max-model-len 65536 --quantization fp8_per_tensor --max-num-seqs 1 --kv-cache-dtype fp8 --attention-backend TRITON_ATTN --reasoning-parser deepseek_r1 --override-generation-config '{"temperature":0.6,"top_p":0.95}' --kv-cache-memory-bytes 5153960755

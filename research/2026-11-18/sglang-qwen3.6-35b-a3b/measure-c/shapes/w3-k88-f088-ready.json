@@ -1,0 +1,233 @@
+{
+ "t0": 1794949546.0512292,
+ "kind": "sglang",
+ "exit": "ready",
+ "ready_seen_s": 58.16,
+ "served_listed_s": 56.06,
+ "gpu_right_after_ready": {
+  "t": 1794949604.224,
+  "used_mib": 14892,
+  "free_mib": 951,
+  "total_mib": 16303
+ },
+ "server_info_call": {
+  "status": 200,
+  "t": 1794949604.224,
+  "seconds": 0.006
+ },
+ "memory_usage": {
+  "weight": 9.48,
+  "kvcache": 3.085,
+  "startup_available": 1.392,
+  "token_capacity": 161736,
+  "token_capacity_swa": null,
+  "graph": {
+   "prefill": 0.0,
+   "decode": 0.061,
+   "target_verify": 0.0,
+   "draft_prefill": 0.0,
+   "draft_decode": 0.0,
+   "draft_extend": 0.0
+  }
+ },
+ "max_total_num_tokens": 161736,
+ "status": "ready",
+ "selected": {
+  "decode_cuda_graph_bs": [
+   1
+  ],
+  "decode_cuda_graph_memory_gb": 0.061,
+  "effective_max_running_requests_per_dp": 1,
+  "kv_cache_dtype": "bf16",
+  "mem_fraction_static": 0.88,
+  "context_length": 131072,
+  "attention_backend": "flashinfer",
+  "swa_full_tokens_ratio": 0.8,
+  "max_mamba_cache_size": 8,
+  "enable_paged_experts": true,
+  "paged_experts_num_resident": 88,
+  "moe_runner_backend": "marlin",
+  "fp4_gemm_runner_backend": "auto",
+  "quantization": null,
+  "chunked_prefill_size": 2048,
+  "disable_prefill_cuda_graph": true,
+  "tool_call_parser": "qwen3_coder",
+  "reasoning_parser": "qwen3"
+ },
+ "cgroup_right_after_ready": {
+  "anon_gib": 5.397,
+  "file_gib": 25.033,
+  "kernel_gib": 0.189,
+  "shmem_gib": 16.973,
+  "file_mapped_gib": 17.033,
+  "inactive_file_gib": 7.948,
+  "active_file_gib": 0.112,
+  "unevictable_gib": 0.0,
+  "current_gib": 30.622,
+  "peak_gib": 30.622
+ },
+ "gpu_after_reads": {
+  "t": 1794949604.258,
+  "used_mib": 14892,
+  "free_mib": 951,
+  "total_mib": 16303
+ },
+ "endpoints": {
+  "/ready": {
+   "first_200_s": 58.06,
+   "changes": [
+    {
+     "at_s": 0.04,
+     "status": "ConnectionRefusedError",
+     "call_s": 0.001
+    },
+    {
+     "at_s": 0.54,
+     "status": "ConnectionResetError",
+     "call_s": 0.001
+    },
+    {
+     "at_s": 21.05,
+     "status": "RemoteDisconnected",
+     "call_s": 0.0
+    },
+    {
+     "at_s": 22.05,
+     "status": "ConnectionResetError",
+     "call_s": 0.001
+    },
+    {
+     "at_s": 24.05,
+     "status": "RemoteDisconnected",
+     "call_s": 0.0
+    },
+    {
+     "at_s": 24.55,
+     "status": "ConnectionResetError",
+     "call_s": 0.0
+    },
+    {
+     "at_s": 27.55,
+     "status": "RemoteDisconnected",
+     "call_s": 0.001
+    },
+    {
+     "at_s": 28.05,
+     "status": "ConnectionResetError",
+     "call_s": 0.0
+    },
+    {
+     "at_s": 29.05,
+     "status": "RemoteDisconnected",
+     "call_s": 0.001
+    },
+    {
+     "at_s": 30.05,
+     "status": "ConnectionResetError",
+     "call_s": 0.0
+    },
+    {
+     "at_s": 32.55,
+     "status": "RemoteDisconnected",
+     "call_s": 0.001
+    },
+    {
+     "at_s": 33.05,
+     "status": "ConnectionResetError",
+     "call_s": 0.0
+    },
+    {
+     "at_s": 56.06,
+     "status": 503,
+     "call_s": 0.014
+    },
+    {
+     "at_s": 58.06,
+     "status": 200,
+     "call_s": 0.002
+    }
+   ],
+   "polls": 117,
+   "last": 200
+  },
+  "/v1/models": {
+   "first_200_s": 56.06,
+   "changes": [
+    {
+     "at_s": 0.04,
+     "status": "ConnectionRefusedError",
+     "call_s": 0.0
+    },
+    {
+     "at_s": 0.54,
+     "status": "ConnectionResetError",
+     "call_s": 0.0
+    },
+    {
+     "at_s": 2.04,
+     "status": "RemoteDisconnected",
+     "call_s": 0.0
+    },
+    {
+     "at_s": 2.54,
+     "status": "ConnectionResetError",
+     "call_s": 0.0
+    },
+    {
+     "at_s": 31.55,
+     "status": "RemoteDisconnected",
+     "call_s": 0.0
+    },
+    {
+     "at_s": 32.05,
+     "status": "ConnectionResetError",
+     "call_s": 0.001
+    },
+    {
+     "at_s": 53.06,
+     "status": "RemoteDisconnected",
+     "call_s": 0.0
+    },
+    {
+     "at_s": 53.56,
+     "status": "ConnectionResetError",
+     "call_s": 0.0
+    },
+    {
+     "at_s": 56.06,
+     "status": 200,
+     "call_s": 0.014
+    }
+   ],
+   "polls": 117,
+   "last": 200
+  },
+  "/server_info": {
+   "first_200_s": 56.06,
+   "changes": [
+    {
+     "at_s": 0.04,
+     "status": "ConnectionRefusedError",
+     "call_s": 0.0
+    },
+    {
+     "at_s": 0.54,
+     "status": "ConnectionResetError",
+     "call_s": 0.0
+    },
+    {
+     "at_s": 55.56,
+     "status": "RemoteDisconnected",
+     "call_s": 0.0
+    },
+    {
+     "at_s": 56.06,
+     "status": 200,
+     "call_s": 0.018
+    }
+   ],
+   "polls": 116,
+   "last": 200
+  }
+ }
+}

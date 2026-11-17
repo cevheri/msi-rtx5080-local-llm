@@ -1,0 +1,5 @@
+gpu_used_before_mib=112
+enforced_power_limit=140.00W
+cmd=m11-fp8-k64.sh
+docker_run_exit=0
+poller_exit=2

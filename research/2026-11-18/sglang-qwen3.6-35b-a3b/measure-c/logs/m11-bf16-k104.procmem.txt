@@ -1,0 +1,46 @@
+== at ready 21:05:10
+pid=1722050 name=python3 VmRSS_kB=1884488 RssAnon_kB=1217876 RssFile_kB=579152 RssShmem_kB=87460 VmLck_kB=16 VmPin_kB=0
+pid=1723296 name=sglang::schedul VmRSS_kB=21795680 RssAnon_kB=3160248 RssFile_kB=787540 RssShmem_kB=17847892 VmLck_kB=16 VmPin_kB=0
+pid=1723297 name=sglang::detoken VmRSS_kB=1451184 RssAnon_kB=992224 RssFile_kB=458960 RssShmem_kB=0 VmLck_kB=16 VmPin_kB=0
+pid=1727043 name=python3 VmRSS_kB=698328 RssAnon_kB=393920 RssFile_kB=304408 RssShmem_kB=0 VmLck_kB=0 VmPin_kB=0
+cgroup anon=5.502 GiB
+cgroup file=22.446 GiB
+cgroup shmem=16.973 GiB
+cgroup file_mapped=16.977 GiB
+cgroup unevictable=0.000 GiB
+cgroup memory.current=28.149 GiB memory.peak=28.149 GiB
+== at the end 21:05:38
+pid=1722050 name=python3 VmRSS_kB=1919720 RssAnon_kB=1253108 RssFile_kB=579152 RssShmem_kB=87460 VmLck_kB=16 VmPin_kB=0
+pid=1723296 name=sglang::schedul VmRSS_kB=21858228 RssAnon_kB=3218320 RssFile_kB=792016 RssShmem_kB=17847892 VmLck_kB=16 VmPin_kB=0
+pid=1723297 name=sglang::detoken VmRSS_kB=1451332 RssAnon_kB=992372 RssFile_kB=458960 RssShmem_kB=0 VmLck_kB=16 VmPin_kB=0
+pid=1727043 name=python3 VmRSS_kB=698552 RssAnon_kB=394040 RssFile_kB=304496 RssShmem_kB=16 VmLck_kB=0 VmPin_kB=0
+pid=1727298 name=python3 VmRSS_kB=402188 RssAnon_kB=393964 RssFile_kB=8204 RssShmem_kB=20 VmLck_kB=0 VmPin_kB=0
+pid=1727300 name=python3 VmRSS_kB=401860 RssAnon_kB=393964 RssFile_kB=7884 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1727302 name=python3 VmRSS_kB=401860 RssAnon_kB=393964 RssFile_kB=7884 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1727304 name=python3 VmRSS_kB=401860 RssAnon_kB=393964 RssFile_kB=7884 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1727306 name=python3 VmRSS_kB=401864 RssAnon_kB=393968 RssFile_kB=7884 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1727308 name=python3 VmRSS_kB=401864 RssAnon_kB=393968 RssFile_kB=7884 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1727310 name=python3 VmRSS_kB=401864 RssAnon_kB=393968 RssFile_kB=7884 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1727312 name=python3 VmRSS_kB=401864 RssAnon_kB=393968 RssFile_kB=7884 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1727314 name=python3 VmRSS_kB=401864 RssAnon_kB=393968 RssFile_kB=7884 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1727316 name=python3 VmRSS_kB=401864 RssAnon_kB=393968 RssFile_kB=7884 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1727318 name=python3 VmRSS_kB=401864 RssAnon_kB=393968 RssFile_kB=7884 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1727320 name=python3 VmRSS_kB=401868 RssAnon_kB=393972 RssFile_kB=7884 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1727322 name=python3 VmRSS_kB=401868 RssAnon_kB=393972 RssFile_kB=7884 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1727324 name=python3 VmRSS_kB=401868 RssAnon_kB=393972 RssFile_kB=7884 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1727326 name=python3 VmRSS_kB=401868 RssAnon_kB=393972 RssFile_kB=7884 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1727328 name=python3 VmRSS_kB=401868 RssAnon_kB=393972 RssFile_kB=7884 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1727330 name=python3 VmRSS_kB=401868 RssAnon_kB=393972 RssFile_kB=7884 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1727332 name=python3 VmRSS_kB=401868 RssAnon_kB=393972 RssFile_kB=7884 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1727334 name=python3 VmRSS_kB=401868 RssAnon_kB=393972 RssFile_kB=7884 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1727336 name=python3 VmRSS_kB=401868 RssAnon_kB=393972 RssFile_kB=7884 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1727338 name=python3 VmRSS_kB=401868 RssAnon_kB=393972 RssFile_kB=7884 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1727340 name=python3 VmRSS_kB=401868 RssAnon_kB=393972 RssFile_kB=7884 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1727342 name=python3 VmRSS_kB=401868 RssAnon_kB=393972 RssFile_kB=7884 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1727344 name=python3 VmRSS_kB=401868 RssAnon_kB=393972 RssFile_kB=7884 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+cgroup anon=5.651 GiB
+cgroup file=22.454 GiB
+cgroup shmem=16.973 GiB
+cgroup file_mapped=16.981 GiB
+cgroup unevictable=0.000 GiB
+cgroup memory.current=28.337 GiB memory.peak=28.399 GiB

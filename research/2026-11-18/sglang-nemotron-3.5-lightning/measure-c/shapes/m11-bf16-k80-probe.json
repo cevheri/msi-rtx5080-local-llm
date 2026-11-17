@@ -1,0 +1,139 @@
+{
+ "label": "m11-bf16-k80",
+ "base": "http://127.0.0.1:30000/v1",
+ "model": "nemotron-3.5-lightning",
+ "started": "2026-11-18T00:33:44+0300",
+ "models": [
+  "nemotron-3.5-lightning"
+ ],
+ "ok_test": {
+  "content": "OK",
+  "reasoning_chars": 0,
+  "finish": "stop",
+  "usage": {
+   "prompt_tokens": 21,
+   "total_tokens": 23,
+   "completion_tokens": 2,
+   "prompt_tokens_details": null,
+   "reasoning_tokens": 0,
+   "completion_tokens_details": null
+  },
+  "seconds": 0.17
+ },
+ "tool_test": {
+  "finish": "stop",
+  "calls": [],
+  "content": "\nWe need to answer: user asks \"what's the weather in Paris?\" Actually they gave a prompt: \"What's the weather like in Paris?\" So we need to respond with current weather. We don't have external API, but we can simulate? The instruction says we must use tools. But we have no external data. We can perhaps answer with typical weather? But must be accurate. Possibly we should call a weather API? Not possible. We could respond that we cannot get real-time weather without external API. But we can provide approximate. However policy: we must not hallucinate weather. We should say we cannot provide real-time weather. But we can give general info. The user asks \"What's the weather like in Paris?\" We can respond that we don't have real-time data, but can provide typical climate. Or we could say we cannot fetch live data. Probably best to say we cannot provide real-time weather. However the system says we must use tools. But we have no external tool. Maybe we can respond that we cannot provide current weather. Could say we don't have real-time data. So answer: cannot provide current weather. Apologize and suggest checking a weather website.\n\nThus respond: apologize, explain limitation.</think>I\u2019m sorry, but I don\u2019t have access to live weather data, so I can\u2019t give you the current conditions in Paris. If you\u2019d like, I can tell you about the typical climate for Paris at this time of year or help you with something else!",
+  "seconds": 2.17
+ },
+ "decode_runs": [
+  {
+   "ttft_s": 0.186,
+   "total_s": 5.638,
+   "usage": {
+    "prompt_tokens": 44,
+    "total_tokens": 856,
+    "completion_tokens": 812,
+    "prompt_tokens_details": null,
+    "reasoning_tokens": 0,
+    "completion_tokens_details": null
+   },
+   "stream_pieces": 811,
+   "decode_tok_s": 149.0
+  },
+  {
+   "ttft_s": 0.146,
+   "total_s": 5.907,
+   "usage": {
+    "prompt_tokens": 44,
+    "total_tokens": 894,
+    "completion_tokens": 850,
+    "prompt_tokens_details": null,
+    "reasoning_tokens": 0,
+    "completion_tokens_details": null
+   },
+   "stream_pieces": 849,
+   "decode_tok_s": 147.6
+  },
+  {
+   "ttft_s": 0.145,
+   "total_s": 5.793,
+   "usage": {
+    "prompt_tokens": 44,
+    "total_tokens": 877,
+    "completion_tokens": 833,
+    "prompt_tokens_details": null,
+    "reasoning_tokens": 0,
+    "completion_tokens_details": null
+   },
+   "stream_pieces": 832,
+   "decode_tok_s": 147.6
+  }
+ ],
+ "decode_tok_s_median": 147.6,
+ "long_prompt": [
+  {
+   "target_tokens": 8000,
+   "first": {
+    "ttft_s": 1.985,
+    "total_s": 2.229,
+    "usage": {
+     "prompt_tokens": 8343,
+     "total_tokens": 8375,
+     "completion_tokens": 32,
+     "prompt_tokens_details": null,
+     "reasoning_tokens": 0,
+     "completion_tokens_details": null
+    },
+    "stream_pieces": 31,
+    "decode_tok_s": 133.9
+   },
+   "repeat_same_prompt": {
+    "ttft_s": 0.129,
+    "total_s": 0.318,
+    "usage": {
+     "prompt_tokens": 8343,
+     "total_tokens": 8373,
+     "completion_tokens": 30,
+     "prompt_tokens_details": null,
+     "reasoning_tokens": 0,
+     "completion_tokens_details": null
+    },
+    "stream_pieces": 29,
+    "decode_tok_s": 160.6
+   }
+  },
+  {
+   "target_tokens": 30000,
+   "first": {
+    "ttft_s": 4.889,
+    "total_s": 5.094,
+    "usage": {
+     "prompt_tokens": 31212,
+     "total_tokens": 31241,
+     "completion_tokens": 29,
+     "prompt_tokens_details": null,
+     "reasoning_tokens": 0,
+     "completion_tokens_details": null
+    },
+    "stream_pieces": 28,
+    "decode_tok_s": 143.1
+   },
+   "repeat_same_prompt": {
+    "ttft_s": 0.202,
+    "total_s": 0.524,
+    "usage": {
+     "prompt_tokens": 31212,
+     "total_tokens": 31255,
+     "completion_tokens": 43,
+     "prompt_tokens_details": null,
+     "reasoning_tokens": 0,
+     "completion_tokens_details": null
+    },
+    "stream_pieces": 42,
+    "decode_tok_s": 136.4
+   }
+  }
+ ],
+ "finished": "2026-11-18T00:34:11+0300"
+}

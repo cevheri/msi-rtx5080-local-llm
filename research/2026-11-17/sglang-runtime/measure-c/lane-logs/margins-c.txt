@@ -1,0 +1,8 @@
+| Start | Free right after ready | Near-full prompt (tokens, share) | After it | After the first grammar request | After the forced tool request | Lowest in the trace after ready | Drop |
+|---|---|---|---|---|---|---|---|
+| gpt-oss-20b pe-round1 | 1,346 | 124,457, 95.0% | 1,036 | 1,036 | 1,036 | 1,022 | 324 |
+| gpt-oss-20b pe-round2-mem20 | 1,347 | 124,459, 95.0% | 1,006 | 1,006 | 1,006 | 1,006 | 341 |
+| qwen3.6-35b-a3b w3-k88-f088 | 951 | 124,498, 95.0% | 503 | 503 | 503 | 465 | 486 |
+| qwen3.6-35b-a3b w3-k88-f088-mem27 | 951 | 124,498, 95.0% | 503 | 503 | 503 | 501 | 450 |
+
+largest drop 486 MiB; D8 rule: MIN_FREE = next multiple of 64 above 486 + 256 = 768 MiB; ship gate F_ready >= 896 MiB

@@ -1,0 +1,16 @@
+== at ready 20:30:27
+pid=1636540 name=llama-server VmRSS_kB=3494224 RssAnon_kB=314164 RssFile_kB=2919324 RssShmem_kB=260736 VmLck_kB=0 VmPin_kB=0
+cgroup anon=0.300 GiB
+cgroup file=4.984 GiB
+cgroup shmem=0.178 GiB
+cgroup file_mapped=2.814 GiB
+cgroup unevictable=0.000 GiB
+cgroup memory.current=5.296 GiB memory.peak=5.296 GiB
+== at the end 20:31:42
+pid=1636540 name=llama-server VmRSS_kB=6171264 RssAnon_kB=2976056 RssFile_kB=2934472 RssShmem_kB=260736 VmLck_kB=0 VmPin_kB=0
+cgroup anon=2.838 GiB
+cgroup file=5.003 GiB
+cgroup shmem=0.178 GiB
+cgroup file_mapped=2.824 GiB
+cgroup unevictable=0.000 GiB
+cgroup memory.current=7.858 GiB memory.peak=7.859 GiB

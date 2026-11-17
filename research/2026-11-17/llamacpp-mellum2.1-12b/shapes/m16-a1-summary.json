@@ -1,0 +1,191 @@
+{
+ "run": "m16-a1",
+ "ok": {
+  "content": "OK",
+  "reasoning_chars": 66,
+  "finish": "stop"
+ },
+ "tool": {
+  "finish": "tool_calls",
+  "calls": [
+   {
+    "name": "get_weather",
+    "arguments": "{\"city\": \"Paris\"}"
+   }
+  ]
+ },
+ "decode_median": 188.2,
+ "decode_runs": [
+  [
+   187.6,
+   1387,
+   187.2
+  ],
+  [
+   189.6,
+   1167,
+   189.1
+  ],
+  [
+   188.2,
+   1237,
+   187.7
+  ]
+ ],
+ "long": [
+  {
+   "target": 8000,
+   "prompt_tokens": 9932,
+   "new": 9932,
+   "cached": 0,
+   "pp_tok_s": 6594,
+   "ttft_s": 1.553,
+   "tg_tok_s": 172.1,
+   "repeat_ttft_s": 0.039
+  },
+  {
+   "target": 30000,
+   "prompt_tokens": 37190,
+   "new": 27275,
+   "cached": 9915,
+   "pp_tok_s": 5422,
+   "ttft_s": 5.073,
+   "tg_tok_s": 162.8,
+   "repeat_ttft_s": 0.061
+  },
+  {
+   "target": 100000,
+   "prompt_tokens": 124156,
+   "new": 86983,
+   "cached": 37173,
+   "pp_tok_s": 3204,
+   "ttft_s": 27.247,
+   "tg_tok_s": 121.1,
+   "repeat_ttft_s": 0.123
+  }
+ ],
+ "test": [
+  "reply: ok ('OK')",
+  "tool call: ok (get_weather {\"city\": \"Paris\"})",
+  "decode: 190.4 tok/s (512 tokens)",
+  "recipe evidence: Draft from the SGLang research report, section 4, with the args of the shipped groot-19b-a3b recipe less --reasoning off; not measured on this laptop"
+ ],
+ "grammar_requests": [
+  {
+   "step": "title_first_grammar",
+   "status": 200,
+   "finish_reason": "stop",
+   "content": "{\n  \"title\": \"Adding Two Numbers in Python\"\n}",
+   "tool_calls": [],
+   "title_parses": true,
+   "reasoning_content_chars": 0
+  },
+  {
+   "step": "forced_tool",
+   "status": 200,
+   "finish_reason": "tool_calls",
+   "content": "",
+   "tool_calls": [
+    {
+     "name": "get_weather",
+     "arguments": "{\"city\": \"Paris\"}"
+    }
+   ],
+   "title_parses": null,
+   "reasoning_content_chars": 377
+  }
+ ],
+ "tool_second_turn": {
+  "status": 200,
+  "content": "The current weather in Paris is 18°C and sunny.",
+  "mentions_18": true
+ },
+ "tool_auto_stream": {
+  "status": 200,
+  "tool_calls": [
+   {
+    "id": "0iKnrJPiBSFhgS1hiBBVBx4smkCE3okJ",
+    "type": "function",
+    "name": "get_weather",
+    "arguments": "{\"city\": \"Paris\"}",
+    "fragments": 7,
+    "index": 0
+   }
+  ],
+  "finish_reasons": [
+   "tool_calls"
+  ]
+ },
+ "thinking": {
+  "enable_thinking_true": [
+   200,
+   "391",
+   128
+  ],
+  "enable_thinking_false": [
+   200,
+   "391",
+   "absent"
+  ],
+  "no_field_server_default": [
+   200,
+   "391",
+   116
+  ],
+  "reasoning_effort_none": [
+   200,
+   "391",
+   "absent"
+  ],
+  "reasoning_effort_low": [
+   200,
+   "391",
+   179
+  ],
+  "reasoning_effort_high": [
+   200,
+   "391",
+   117
+  ]
+ },
+ "json_schema": {
+  "tool_choice_required": [
+   200,
+   "length",
+   "OK. The user wants me to reply with exactly \"OK\". I should not add any extra tex... (668 chars)"
+  ],
+  "response_format_json_schema": [
+   200,
+   "stop",
+   "{\n  \"capital\": \"Paris\"\n}"
+  ]
+ },
+ "code_decode": {
+  "tokens": 3000,
+  "tok_s": 180.4,
+  "finish": "length",
+  "reasoning_chars": 10449,
+  "content_chars": 0
+ },
+ "gpu_peak_mib": 12674,
+ "power_max_w": 145.09,
+ "temp_max_c": 70.0,
+ "cgroup_peak_gib": 13.17,
+ "anon_peak_gib": 2.83,
+ "shmem_peak_gib": 0.16,
+ "file_peak_gib": 10.32,
+ "current_minus_inactive_file_peak_gib": 13.16,
+ "docker_stats_peak_gib": 13.16,
+ "meta": [
+  "gpu_used_before_mib=112",
+  "enforced_power_limit=140.00W",
+  "download_running=1",
+  "up_exit=0",
+  "up_seconds=4.464763102",
+  "gpu_right_after_ready=12620MiB,3223MiB",
+  "probe_exit=0",
+  "test_exit=0",
+  "seq_exit=0",
+  "down_exit=0"
+ ]
+}

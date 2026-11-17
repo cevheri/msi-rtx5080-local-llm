@@ -1,0 +1,47 @@
+# Draft llama.cpp recipe for the SGLang work (2026-11-17), an estimate that a measurement lane finalizes.
+# [model] is exact, read from the Hugging Face API on 2026-11-17.
+# The args are those of recipes/llamacpp/groot-19b-a3b.toml unchanged: Groot is the Qwen3.5-family hybrid
+# (qwen35moe) held whole on the GPU, with thinking off by default and the same temperature 0.6, top_p 0.95 and
+# top_k 20 as the vLLM qwen3.5-9b recipe; they equal recipes/llamacpp/qwen3.6-35b-a3b.toml less its
+# expert-offload flags. f16 KV stays: q8_0 KV lost decode speed at depth on 256-wide heads (project notes).
+# memory_gib is copied from that recipe; gpu_mib is an estimate (see [needs]).
+schema = 1
+id = "qwen3.5-9b"
+name = "Qwen3.5-9B Q8_0"
+aliases = ["qwen3.5"]
+doc = "docs/superpowers/research/2026-11-17-sglang/research-report.md#4-per-model-and-engine"
+opencode = false
+
+[model]
+repo = "unsloth/Qwen3.5-9B-GGUF"
+revision = "3885219b6810b007914f3a7950a8d1b469d598a5"
+# Qwen3.5-9B-Q8_0.gguf: SHA-256 809626574d0cb43d4becfa56169980da2bb448f2299270f7be443cb89d0a6ae4, 9,527,502,048 bytes
+files = ["Qwen3.5-9B-Q8_0.gguf"]
+size_bytes = 9527502048
+
+[container]
+memory_gib = 16
+
+[server]
+context = 131072
+args = [
+  "-ngl", "all", "-fa", "on", "-np", "1", "--jinja", "--reasoning", "off", "--temp", "0.6",
+  "--top-p", "0.95", "--top-k", "20", "--min-p", "0", "--presence-penalty", "0",
+]
+
+[clients]
+output = 16384
+thinking = "toggle"
+default = "off"
+
+[needs]
+# Estimate: 7.9 GiB of weights on the GPU (the 8.87 GiB file less the 1.0 GiB untied input embedding, which
+# llama.cpp keeps in RAM), 4.00 GiB of f16 KV at 128k on the 8 full-attention layers
+# (8 x 4 KV heads x (256 + 256) x 2 B), about 0.05 GiB of Gated DeltaNet state and about 0.8 GiB of context
+# and buffers. Replace it with the measured peak minus the desktop's 112 MiB, and add ram_gib from the measurement.
+gpu_mib = 13312
+
+[evidence]
+kind = "estimate"
+summary = "Draft from the SGLang research report, section 4, with the args of the shipped groot-19b-a3b recipe; not measured on this laptop"
+doc = "docs/superpowers/research/2026-11-17-sglang/research-report.md#4-per-model-and-engine"

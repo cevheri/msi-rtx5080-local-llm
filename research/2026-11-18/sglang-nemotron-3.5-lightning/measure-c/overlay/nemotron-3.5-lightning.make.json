@@ -1,0 +1,30 @@
+{
+ "links": 69,
+ "generation_config_source_exists": true,
+ "before": {
+  "_from_model_config": true,
+  "bos_token_id": 1,
+  "do_sample": true,
+  "eos_token_id": [
+   2,
+   11
+  ],
+  "pad_token_id": 0,
+  "temperature": 1.0,
+  "top_p": 0.95,
+  "transformers_version": "5.8.1"
+ },
+ "after": {
+  "_from_model_config": true,
+  "bos_token_id": 1,
+  "do_sample": true,
+  "eos_token_id": [
+   2,
+   11
+  ],
+  "pad_token_id": 0,
+  "temperature": 1.0,
+  "top_p": 0.95,
+  "transformers_version": "5.8.1"
+ }
+}

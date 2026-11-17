@@ -1,0 +1,2 @@
+stopped gemma-4-e4b in container 'llamacpp'
+removed container 'llamacpp'

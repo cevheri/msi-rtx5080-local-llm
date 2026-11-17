@@ -1,0 +1,21 @@
+pid=1 name=python3 VmRSS=1843 MiB
+  [anon]: Rss 595 MiB, shared 0 MiB, private 595 MiB, locked 0 MiB, 540 mappings, perms ['---p', 'rw-p'], first VmFlags [rd wr mr mw me ac sd]
+  [heap]: Rss 546 MiB, shared 0 MiB, private 546 MiB, locked 0 MiB, 1 mappings, perms ['rw-p'], first VmFlags [rd wr mr mw me ac sd]
+  /opt/sglang/lib/python3.12/site-packages/triton/_C/libtriton.so: Rss 70 MiB, shared 68 MiB, private 1 MiB, locked 0 MiB, 4 mappings, perms ['r--p', 'r-xp', 'rw-p'], first VmFlags [rd mr mw me sd]
+pid=137 name=sglang::schedul VmRSS=21221 MiB
+  /dev/zero (deleted): Rss 17334 MiB, shared 0 MiB, private 17334 MiB, locked 0 MiB, 172 mappings, perms ['rw-s'], first VmFlags [rd wr sh mr mw me ms sd]
+  [heap]: Rss 1820 MiB, shared 0 MiB, private 1820 MiB, locked 0 MiB, 1 mappings, perms ['rw-p'], first VmFlags [rd wr mr mw me ac sd]
+  [anon]: Rss 1150 MiB, shared 0 MiB, private 1150 MiB, locked 0 MiB, 617 mappings, perms ['---p', 'r--p', 'r-xp', 'rw-p'], first VmFlags [rd wr mr mw me ac sd]
+  /opt/sglang/lib/python3.12/site-packages/nvidia_cutlass_dsl/dsl_packages/cutlass/_mlir/_mlir_libs/_cutlass_ir.cu13.cpython-312-x86_64-linux-gnu.so: Rss 127 MiB, shared 53 MiB, private 74 MiB, locked 0 MiB, 4 mappings, perms ['---p', 'r--p', 'r-xp', 'rw-p'], first VmFlags [rd ex mr mw me sd]
+  /opt/sglang/lib/python3.12/site-packages/nvidia/cu13/lib/libcublasLt.so.13: Rss 76 MiB, shared 56 MiB, private 19 MiB, locked 0 MiB, 8 mappings, perms ['---p', 'r--p', 'r-xp', 'rw-p'], first VmFlags [rd ex mr mw me sd]
+  /opt/sglang/lib/python3.12/site-packages/triton/_C/libtriton.so: Rss 66 MiB, shared 64 MiB, private 2 MiB, locked 0 MiB, 4 mappings, perms ['r--p', 'r-xp', 'rw-p'], first VmFlags [rd mr mw me sd]
+pid=138 name=sglang::detoken VmRSS=1413 MiB
+  [anon]: Rss 488 MiB, shared 0 MiB, private 488 MiB, locked 0 MiB, 312 mappings, perms ['---p', 'rw-p'], first VmFlags [rd wr mr mw me ac sd]
+  [heap]: Rss 439 MiB, shared 0 MiB, private 439 MiB, locked 0 MiB, 1 mappings, perms ['rw-p'], first VmFlags [rd wr mr mw me ac sd]
+  /opt/sglang/lib/python3.12/site-packages/triton/_C/libtriton.so: Rss 66 MiB, shared 64 MiB, private 1 MiB, locked 0 MiB, 4 mappings, perms ['r--p', 'r-xp', 'rw-p'], first VmFlags [rd mr mw me sd]
+pid=376 name=python3 VmRSS=682 MiB
+  [anon]: Rss 222 MiB, shared 0 MiB, private 222 MiB, locked 0 MiB, 109 mappings, perms ['---p', 'rw-p'], first VmFlags [rd wr mr mw me ac sd]
+  [heap]: Rss 139 MiB, shared 0 MiB, private 139 MiB, locked 0 MiB, 1 mappings, perms ['rw-p'], first VmFlags [rd wr mr mw me ac sd]
+  /opt/sglang/lib/python3.12/site-packages/triton/_C/libtriton.so: Rss 71 MiB, shared 63 MiB, private 8 MiB, locked 0 MiB, 4 mappings, perms ['r--p', 'r-xp', 'rw-p'], first VmFlags [rd mr mw me sd]
+mounts:
+  tmpfs /dev/shm tmpfs rw,nosuid,nodev,inode64,usrquota 0 0

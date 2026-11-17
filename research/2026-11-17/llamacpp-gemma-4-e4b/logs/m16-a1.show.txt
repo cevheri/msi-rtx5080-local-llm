@@ -1,0 +1,11 @@
+gemma-4-e4b (Gemma 4 E4B IT QAT Q4_0) on llamacpp
+aliases: gemma4-e4b
+recipe file: $SCRATCH/sglang/measure-c/overrides/llamacpp/gemma-4-e4b.toml (override), sha256 e5e6194485397b34404f7421b83fbdc95328fdf35bb8a73a0e21b906393101ab
+runtime file: $SCRATCH/llmctl-main/recipes/llamacpp/_runtime.toml (shipped), image ghcr.io/ggml-org/llama.cpp:server-cuda-b12407
+evidence: estimate: Draft from the SGLang research report, section 4, with the args of the shipped gemma-4-26b-a4b recipe less its expert offload; not measured on this laptop
+model: google/gemma-4-E4B-it-qat-q4_0-gguf at 4b4a2c1d584be7264f87aac328a1bc739ce81b6c, 5.2 GB
+container memory cap: 20 GiB, context 131072, GPU need 9216 MiB
+OpenCode: no entry
+documented in: docs/superpowers/research/2026-11-17-sglang/research-report.md#4-per-model-and-engine
+command:
+docker run -d --name llamacpp --label io.llmctl.managed=true --label io.llmctl.runtime=llamacpp --label io.llmctl.recipe=gemma-4-e4b --label io.llmctl.source=override --label io.llmctl.sha256=e5e6194485397b34404f7421b83fbdc95328fdf35bb8a73a0e21b906393101ab --label io.llmctl.evidence=estimate --label io.llmctl.runtime-source=shipped --label io.llmctl.runtime-sha256=d71778c0de02a271dc13ff951d3ed4a5792f398c84b0907e465aaf3cadc24e62 --device nvidia.com/gpu=all --memory 20g --memory-swap 20g -p 127.0.0.1:8080:8080 --user 1000:1000 -e GGML_CUDA_DISABLE_GRAPHS=1 -e HF_HOME=/hf -v $HOME/.cache/huggingface:/hf ghcr.io/ggml-org/llama.cpp:server-cuda-b12407 -m /hf/hub/models--google--gemma-4-E4B-it-qat-q4_0-gguf/snapshots/4b4a2c1d584be7264f87aac328a1bc739ce81b6c/gemma-4-E4B_q4_0-it.gguf --alias local -c 131072 -ngl all -fa on -np 1 --jinja -ctxcp 16 --reasoning off --temp 1.0 --top-p 0.95 --top-k 64

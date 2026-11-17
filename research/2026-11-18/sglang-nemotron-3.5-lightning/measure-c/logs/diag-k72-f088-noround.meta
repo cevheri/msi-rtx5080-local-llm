@@ -1,0 +1,6 @@
+gpu_used_before_mib=112
+enforced_power_limit=140.00W
+cmd=diag-k72-f088-noround.sh
+docker_run_exit=0
+poller_exit=0
+seq_exit=0

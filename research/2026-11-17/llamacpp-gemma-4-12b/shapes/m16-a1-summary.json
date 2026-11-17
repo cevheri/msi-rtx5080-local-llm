@@ -1,0 +1,191 @@
+{
+ "run": "m16-a1",
+ "ok": {
+  "content": "OK",
+  "reasoning_chars": 0,
+  "finish": "stop"
+ },
+ "tool": {
+  "finish": "tool_calls",
+  "calls": [
+   {
+    "name": "get_weather",
+    "arguments": "{\"city\":\"Paris\"}"
+   }
+  ]
+ },
+ "decode_median": 77.1,
+ "decode_runs": [
+  [
+   77.3,
+   894,
+   77.2
+  ],
+  [
+   77.1,
+   854,
+   77.0
+  ],
+  [
+   76.5,
+   952,
+   76.4
+  ]
+ ],
+ "long": [
+  {
+   "target": 8000,
+   "prompt_tokens": 9936,
+   "new": 9935,
+   "cached": 1,
+   "pp_tok_s": 2986,
+   "ttft_s": 3.416,
+   "tg_tok_s": 73.6,
+   "repeat_ttft_s": 0.092
+  },
+  {
+   "target": 30000,
+   "prompt_tokens": 37194,
+   "new": 27279,
+   "cached": 9915,
+   "pp_tok_s": 2355,
+   "ttft_s": 11.617,
+   "tg_tok_s": 69.1,
+   "repeat_ttft_s": 0.113
+  },
+  {
+   "target": 100000,
+   "prompt_tokens": 124160,
+   "new": 86987,
+   "cached": 37173,
+   "pp_tok_s": 1312,
+   "ttft_s": 66.394,
+   "tg_tok_s": 58.6,
+   "repeat_ttft_s": 0.191
+  }
+ ],
+ "test": [
+  "reply: ok ('OK')",
+  "tool call: ok (get_weather {\"city\":\"Paris\"})",
+  "decode: 75.9 tok/s (360 tokens)",
+  "recipe evidence: Draft from the SGLang research report, section 4, with the args of the shipped gemma-4-26b-a4b recipe less its expert offload; not measured on this laptop"
+ ],
+ "grammar_requests": [
+  {
+   "step": "title_first_grammar",
+   "status": 200,
+   "finish_reason": "stop",
+   "content": "{\n  \"title\": \"Python Addition Tutorial\"\n}",
+   "tool_calls": [],
+   "title_parses": true,
+   "reasoning_content_chars": 0
+  },
+  {
+   "step": "forced_tool",
+   "status": 200,
+   "finish_reason": "tool_calls",
+   "content": "",
+   "tool_calls": [
+    {
+     "name": "get_weather",
+     "arguments": "{\"city\":\"Paris\"}"
+    }
+   ],
+   "title_parses": null,
+   "reasoning_content_chars": 0
+  }
+ ],
+ "tool_second_turn": {
+  "status": 200,
+  "content": "The weather in Paris is currently sunny with a temperature of 18°C.",
+  "mentions_18": true
+ },
+ "tool_auto_stream": {
+  "status": 200,
+  "tool_calls": [
+   {
+    "id": "9ygS703Dqr5A8ct5cOy2VJWJ4RJLhLMw",
+    "type": "function",
+    "name": "get_weather",
+    "arguments": "{\"city\":\"Paris\"}",
+    "fragments": 7,
+    "index": 0
+   }
+  ],
+  "finish_reasons": [
+   "tool_calls"
+  ]
+ },
+ "thinking": {
+  "enable_thinking_true": [
+   200,
+   "391",
+   233
+  ],
+  "enable_thinking_false": [
+   200,
+   "391",
+   "absent"
+  ],
+  "no_field_server_default": [
+   200,
+   "391",
+   "absent"
+  ],
+  "reasoning_effort_none": [
+   200,
+   "391",
+   "absent"
+  ],
+  "reasoning_effort_low": [
+   200,
+   "391",
+   "absent"
+  ],
+  "reasoning_effort_high": [
+   200,
+   "391",
+   "absent"
+  ]
+ },
+ "json_schema": {
+  "tool_choice_required": [
+   200,
+   "tool_calls",
+   ""
+  ],
+  "response_format_json_schema": [
+   200,
+   "stop",
+   "{\n  \"capital\": \"Paris\"\n}"
+  ]
+ },
+ "code_decode": {
+  "tokens": 1628,
+  "tok_s": 72.9,
+  "finish": "stop",
+  "reasoning_chars": 0,
+  "content_chars": 5495
+ },
+ "gpu_peak_mib": 9772,
+ "power_max_w": 146.07,
+ "temp_max_c": 71.0,
+ "cgroup_peak_gib": 12.95,
+ "anon_peak_gib": 6.25,
+ "shmem_peak_gib": 0.17,
+ "file_peak_gib": 6.68,
+ "current_minus_inactive_file_peak_gib": 12.94,
+ "docker_stats_peak_gib": 12.94,
+ "meta": [
+  "gpu_used_before_mib=112",
+  "enforced_power_limit=140.00W",
+  "download_running=1",
+  "up_exit=0",
+  "up_seconds=3.494462842",
+  "gpu_right_after_ready=9758MiB,6085MiB",
+  "probe_exit=0",
+  "test_exit=0",
+  "seq_exit=0",
+  "down_exit=0"
+ ]
+}

@@ -1,0 +1,93 @@
+pid=1 name=python3 VmRSS=1842 MiB
+  [anon]: Rss 595 MiB, shared 0 MiB, private 595 MiB, locked 0 MiB, 543 mappings, perms ['---p', 'rw-p'], first VmFlags [rd wr mr mw me ac sd]
+  [heap]: Rss 546 MiB, shared 0 MiB, private 546 MiB, locked 0 MiB, 1 mappings, perms ['rw-p'], first VmFlags [rd wr mr mw me ac sd]
+  /opt/sglang/lib/python3.12/site-packages/triton/_C/libtriton.so: Rss 70 MiB, shared 68 MiB, private 1 MiB, locked 0 MiB, 4 mappings, perms ['r--p', 'r-xp', 'rw-p'], first VmFlags [rd mr mw me sd]
+pid=140 name=sglang::schedul VmRSS=21278 MiB
+  /dev/zero (deleted): Rss 17334 MiB, shared 0 MiB, private 17334 MiB, locked 0 MiB, 172 mappings, perms ['rw-s'], first VmFlags [rd wr sh mr mw me ms sd]
+  [heap]: Rss 1856 MiB, shared 0 MiB, private 1856 MiB, locked 0 MiB, 1 mappings, perms ['rw-p'], first VmFlags [rd wr mr mw me ac sd]
+  [anon]: Rss 1126 MiB, shared 0 MiB, private 1126 MiB, locked 0 MiB, 614 mappings, perms ['---p', 'r--p', 'r-xp', 'rw-p'], first VmFlags [rd wr mr mw me ac sd]
+  /opt/sglang/lib/python3.12/site-packages/nvidia_cutlass_dsl/dsl_packages/cutlass/_mlir/_mlir_libs/_cutlass_ir.cu13.cpython-312-x86_64-linux-gnu.so: Rss 127 MiB, shared 53 MiB, private 74 MiB, locked 0 MiB, 4 mappings, perms ['---p', 'r--p', 'r-xp', 'rw-p'], first VmFlags [rd ex mr mw me sd]
+  /opt/sglang/lib/python3.12/site-packages/triton/_C/libtriton.so: Rss 112 MiB, shared 73 MiB, private 39 MiB, locked 0 MiB, 4 mappings, perms ['r--p', 'r-xp', 'rw-p'], first VmFlags [rd mr mw me sd]
+  /opt/sglang/lib/python3.12/site-packages/nvidia/cu13/lib/libcublasLt.so.13: Rss 76 MiB, shared 56 MiB, private 20 MiB, locked 0 MiB, 8 mappings, perms ['---p', 'r--p', 'r-xp', 'rw-p'], first VmFlags [rd ex mr mw me sd]
+pid=141 name=sglang::detoken VmRSS=1417 MiB
+  [anon]: Rss 488 MiB, shared 0 MiB, private 488 MiB, locked 0 MiB, 305 mappings, perms ['---p', 'rw-p'], first VmFlags [rd wr mr mw me ac sd]
+  [heap]: Rss 439 MiB, shared 0 MiB, private 439 MiB, locked 0 MiB, 1 mappings, perms ['rw-p'], first VmFlags [rd wr mr mw me ac sd]
+  /opt/sglang/lib/python3.12/site-packages/triton/_C/libtriton.so: Rss 70 MiB, shared 68 MiB, private 1 MiB, locked 0 MiB, 4 mappings, perms ['r--p', 'r-xp', 'rw-p'], first VmFlags [rd mr mw me sd]
+pid=379 name=python3 VmRSS=682 MiB
+  [anon]: Rss 222 MiB, shared 220 MiB, private 2 MiB, locked 0 MiB, 83 mappings, perms ['---p', 'rw-p'], first VmFlags [rd wr mr mw me ac sd]
+  [heap]: Rss 139 MiB, shared 138 MiB, private 0 MiB, locked 0 MiB, 1 mappings, perms ['rw-p'], first VmFlags [rd wr mr mw me ac sd]
+  /opt/sglang/lib/python3.12/site-packages/triton/_C/libtriton.so: Rss 71 MiB, shared 69 MiB, private 2 MiB, locked 0 MiB, 4 mappings, perms ['r--p', 'r-xp', 'rw-p'], first VmFlags [rd mr mw me sd]
+pid=415 name=python3 VmRSS=392 MiB
+  [anon]: Rss 222 MiB, shared 220 MiB, private 2 MiB, locked 0 MiB, 75 mappings, perms ['---p', 'rw-p'], first VmFlags [rd wr mr mw me ac sd]
+  [heap]: Rss 139 MiB, shared 138 MiB, private 0 MiB, locked 0 MiB, 1 mappings, perms ['rw-p'], first VmFlags [rd wr mr mw me ac sd]
+pid=417 name=python3 VmRSS=392 MiB
+  [anon]: Rss 222 MiB, shared 221 MiB, private 1 MiB, locked 0 MiB, 75 mappings, perms ['---p', 'rw-p'], first VmFlags [rd wr mr mw me ac sd]
+  [heap]: Rss 139 MiB, shared 138 MiB, private 0 MiB, locked 0 MiB, 1 mappings, perms ['rw-p'], first VmFlags [rd wr mr mw me ac sd]
+pid=419 name=python3 VmRSS=392 MiB
+  [anon]: Rss 222 MiB, shared 221 MiB, private 1 MiB, locked 0 MiB, 75 mappings, perms ['---p', 'rw-p'], first VmFlags [rd wr mr mw me ac sd]
+  [heap]: Rss 139 MiB, shared 138 MiB, private 0 MiB, locked 0 MiB, 1 mappings, perms ['rw-p'], first VmFlags [rd wr mr mw me ac sd]
+pid=421 name=python3 VmRSS=392 MiB
+  [anon]: Rss 222 MiB, shared 221 MiB, private 1 MiB, locked 0 MiB, 75 mappings, perms ['---p', 'rw-p'], first VmFlags [rd wr mr mw me ac sd]
+  [heap]: Rss 139 MiB, shared 138 MiB, private 0 MiB, locked 0 MiB, 1 mappings, perms ['rw-p'], first VmFlags [rd wr mr mw me ac sd]
+pid=423 name=python3 VmRSS=392 MiB
+  [anon]: Rss 222 MiB, shared 221 MiB, private 1 MiB, locked 0 MiB, 75 mappings, perms ['---p', 'rw-p'], first VmFlags [rd wr mr mw me ac sd]
+  [heap]: Rss 139 MiB, shared 138 MiB, private 0 MiB, locked 0 MiB, 1 mappings, perms ['rw-p'], first VmFlags [rd wr mr mw me ac sd]
+pid=425 name=python3 VmRSS=392 MiB
+  [anon]: Rss 222 MiB, shared 221 MiB, private 1 MiB, locked 0 MiB, 75 mappings, perms ['---p', 'rw-p'], first VmFlags [rd wr mr mw me ac sd]
+  [heap]: Rss 139 MiB, shared 138 MiB, private 0 MiB, locked 0 MiB, 1 mappings, perms ['rw-p'], first VmFlags [rd wr mr mw me ac sd]
+pid=427 name=python3 VmRSS=392 MiB
+  [anon]: Rss 222 MiB, shared 221 MiB, private 1 MiB, locked 0 MiB, 75 mappings, perms ['---p', 'rw-p'], first VmFlags [rd wr mr mw me ac sd]
+  [heap]: Rss 139 MiB, shared 138 MiB, private 0 MiB, locked 0 MiB, 1 mappings, perms ['rw-p'], first VmFlags [rd wr mr mw me ac sd]
+pid=429 name=python3 VmRSS=392 MiB
+  [anon]: Rss 222 MiB, shared 221 MiB, private 1 MiB, locked 0 MiB, 75 mappings, perms ['---p', 'rw-p'], first VmFlags [rd wr mr mw me ac sd]
+  [heap]: Rss 139 MiB, shared 138 MiB, private 0 MiB, locked 0 MiB, 1 mappings, perms ['rw-p'], first VmFlags [rd wr mr mw me ac sd]
+pid=431 name=python3 VmRSS=392 MiB
+  [anon]: Rss 222 MiB, shared 221 MiB, private 1 MiB, locked 0 MiB, 75 mappings, perms ['---p', 'rw-p'], first VmFlags [rd wr mr mw me ac sd]
+  [heap]: Rss 139 MiB, shared 138 MiB, private 0 MiB, locked 0 MiB, 1 mappings, perms ['rw-p'], first VmFlags [rd wr mr mw me ac sd]
+pid=433 name=python3 VmRSS=392 MiB
+  [anon]: Rss 222 MiB, shared 221 MiB, private 1 MiB, locked 0 MiB, 75 mappings, perms ['---p', 'rw-p'], first VmFlags [rd wr mr mw me ac sd]
+  [heap]: Rss 139 MiB, shared 138 MiB, private 0 MiB, locked 0 MiB, 1 mappings, perms ['rw-p'], first VmFlags [rd wr mr mw me ac sd]
+pid=435 name=python3 VmRSS=392 MiB
+  [anon]: Rss 222 MiB, shared 221 MiB, private 1 MiB, locked 0 MiB, 75 mappings, perms ['---p', 'rw-p'], first VmFlags [rd wr mr mw me ac sd]
+  [heap]: Rss 139 MiB, shared 138 MiB, private 0 MiB, locked 0 MiB, 1 mappings, perms ['rw-p'], first VmFlags [rd wr mr mw me ac sd]
+pid=437 name=python3 VmRSS=392 MiB
+  [anon]: Rss 222 MiB, shared 221 MiB, private 1 MiB, locked 0 MiB, 75 mappings, perms ['---p', 'rw-p'], first VmFlags [rd wr mr mw me ac sd]
+  [heap]: Rss 139 MiB, shared 138 MiB, private 0 MiB, locked 0 MiB, 1 mappings, perms ['rw-p'], first VmFlags [rd wr mr mw me ac sd]
+pid=439 name=python3 VmRSS=392 MiB
+  [anon]: Rss 222 MiB, shared 221 MiB, private 1 MiB, locked 0 MiB, 75 mappings, perms ['---p', 'rw-p'], first VmFlags [rd wr mr mw me ac sd]
+  [heap]: Rss 139 MiB, shared 138 MiB, private 0 MiB, locked 0 MiB, 1 mappings, perms ['rw-p'], first VmFlags [rd wr mr mw me ac sd]
+pid=441 name=python3 VmRSS=392 MiB
+  [anon]: Rss 222 MiB, shared 221 MiB, private 1 MiB, locked 0 MiB, 75 mappings, perms ['---p', 'rw-p'], first VmFlags [rd wr mr mw me ac sd]
+  [heap]: Rss 139 MiB, shared 138 MiB, private 0 MiB, locked 0 MiB, 1 mappings, perms ['rw-p'], first VmFlags [rd wr mr mw me ac sd]
+pid=443 name=python3 VmRSS=392 MiB
+  [anon]: Rss 222 MiB, shared 221 MiB, private 1 MiB, locked 0 MiB, 75 mappings, perms ['---p', 'rw-p'], first VmFlags [rd wr mr mw me ac sd]
+  [heap]: Rss 139 MiB, shared 138 MiB, private 0 MiB, locked 0 MiB, 1 mappings, perms ['rw-p'], first VmFlags [rd wr mr mw me ac sd]
+pid=445 name=python3 VmRSS=392 MiB
+  [anon]: Rss 222 MiB, shared 221 MiB, private 1 MiB, locked 0 MiB, 75 mappings, perms ['---p', 'rw-p'], first VmFlags [rd wr mr mw me ac sd]
+  [heap]: Rss 139 MiB, shared 138 MiB, private 0 MiB, locked 0 MiB, 1 mappings, perms ['rw-p'], first VmFlags [rd wr mr mw me ac sd]
+pid=447 name=python3 VmRSS=392 MiB
+  [anon]: Rss 222 MiB, shared 221 MiB, private 1 MiB, locked 0 MiB, 75 mappings, perms ['---p', 'rw-p'], first VmFlags [rd wr mr mw me ac sd]
+  [heap]: Rss 139 MiB, shared 138 MiB, private 0 MiB, locked 0 MiB, 1 mappings, perms ['rw-p'], first VmFlags [rd wr mr mw me ac sd]
+pid=449 name=python3 VmRSS=392 MiB
+  [anon]: Rss 222 MiB, shared 221 MiB, private 1 MiB, locked 0 MiB, 75 mappings, perms ['---p', 'rw-p'], first VmFlags [rd wr mr mw me ac sd]
+  [heap]: Rss 139 MiB, shared 138 MiB, private 0 MiB, locked 0 MiB, 1 mappings, perms ['rw-p'], first VmFlags [rd wr mr mw me ac sd]
+pid=451 name=python3 VmRSS=392 MiB
+  [anon]: Rss 222 MiB, shared 221 MiB, private 1 MiB, locked 0 MiB, 75 mappings, perms ['---p', 'rw-p'], first VmFlags [rd wr mr mw me ac sd]
+  [heap]: Rss 139 MiB, shared 138 MiB, private 0 MiB, locked 0 MiB, 1 mappings, perms ['rw-p'], first VmFlags [rd wr mr mw me ac sd]
+pid=453 name=python3 VmRSS=392 MiB
+  [anon]: Rss 222 MiB, shared 221 MiB, private 1 MiB, locked 0 MiB, 75 mappings, perms ['---p', 'rw-p'], first VmFlags [rd wr mr mw me ac sd]
+  [heap]: Rss 139 MiB, shared 138 MiB, private 0 MiB, locked 0 MiB, 1 mappings, perms ['rw-p'], first VmFlags [rd wr mr mw me ac sd]
+pid=455 name=python3 VmRSS=392 MiB
+  [anon]: Rss 222 MiB, shared 221 MiB, private 1 MiB, locked 0 MiB, 75 mappings, perms ['---p', 'rw-p'], first VmFlags [rd wr mr mw me ac sd]
+  [heap]: Rss 139 MiB, shared 138 MiB, private 0 MiB, locked 0 MiB, 1 mappings, perms ['rw-p'], first VmFlags [rd wr mr mw me ac sd]
+pid=457 name=python3 VmRSS=392 MiB
+  [anon]: Rss 222 MiB, shared 221 MiB, private 1 MiB, locked 0 MiB, 75 mappings, perms ['---p', 'rw-p'], first VmFlags [rd wr mr mw me ac sd]
+  [heap]: Rss 139 MiB, shared 138 MiB, private 0 MiB, locked 0 MiB, 1 mappings, perms ['rw-p'], first VmFlags [rd wr mr mw me ac sd]
+pid=459 name=python3 VmRSS=392 MiB
+  [anon]: Rss 222 MiB, shared 221 MiB, private 1 MiB, locked 0 MiB, 75 mappings, perms ['---p', 'rw-p'], first VmFlags [rd wr mr mw me ac sd]
+  [heap]: Rss 139 MiB, shared 138 MiB, private 0 MiB, locked 0 MiB, 1 mappings, perms ['rw-p'], first VmFlags [rd wr mr mw me ac sd]
+pid=461 name=python3 VmRSS=392 MiB
+  [anon]: Rss 222 MiB, shared 221 MiB, private 1 MiB, locked 0 MiB, 75 mappings, perms ['---p', 'rw-p'], first VmFlags [rd wr mr mw me ac sd]
+  [heap]: Rss 139 MiB, shared 138 MiB, private 0 MiB, locked 0 MiB, 1 mappings, perms ['rw-p'], first VmFlags [rd wr mr mw me ac sd]
+mounts:
+  tmpfs /dev/shm tmpfs rw,nosuid,nodev,inode64,usrquota 0 0

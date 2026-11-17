@@ -1,0 +1,8 @@
+{"exit": "container stopped", "ready_seen_s": null, "served_listed_s": null, "memory_usage": null, "gpu_right_after_ready": null}
+comm: file 1 is not in sorted order
+comm: file 2 is not in sorted order
+comm: input is not in sorted order
+logs/mova-a2.log 102 -> 37 lines
+[2026-11-17 21:46:02] Auto-detected template features: reasoning_config=ReasoningToggleConfig(toggle_param=None, default_enabled=None, special_case='always', effort_kwarg=None), reasoning_parser=k2_horizon, tool_call_parser=k2_horizon
+ValueError: K2 Horizon MoVA supports unquantized bf16/fp16 weights only
+exited exit=0 oom=false started=2026-11-17T21:45:45.473669801Z finished=2026-11-17T21:46:11.394179937Z

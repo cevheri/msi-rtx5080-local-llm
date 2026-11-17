@@ -1,0 +1,910 @@
+{
+ "model": "deepseek-r1-8b",
+ "started": "2026-11-18T00:53:33+0300",
+ "models": {
+  "status": 200,
+  "seconds": 0.002,
+  "data": [
+   {
+    "keys": [
+     "created",
+     "id",
+     "max_model_len",
+     "object",
+     "owned_by",
+     "parent",
+     "permission",
+     "root"
+    ],
+    "id": "deepseek-r1-8b",
+    "max_model_len": 65536,
+    "owned_by": "vllm",
+    "root": "/root/.cache/huggingface/hub/models--deepseek-ai--DeepSeek-R... (126 chars)"
+   }
+  ]
+ },
+ "/health": {
+  "status": 200,
+  "seconds": 0.001,
+  "body_text": ""
+ },
+ "/ready": {
+  "status": 404,
+  "seconds": 0.001
+ },
+ "/health_generate": {
+  "status": 404,
+  "seconds": 0.001
+ },
+ "server_info": {
+  "internal_states": null,
+  "key_count": 1
+ },
+ "plain": {
+  "status": 200,
+  "seconds": 2.985,
+  "top_keys": [
+   "choices",
+   "created",
+   "ec_transfer_params",
+   "id",
+   "kv_transfer_params",
+   "metrics",
+   "model",
+   "object",
+   "prompt_logprobs",
+   "prompt_text",
+   "prompt_token_ids",
+   "service_tier",
+   "system_fingerprint",
+   "usage"
+  ],
+  "choice_keys": [
+   "finish_reason",
+   "index",
+   "logprobs",
+   "message",
+   "routed_experts",
+   "stop_reason",
+   "token_ids",
+   "weight_versions"
+  ],
+  "message_keys": [
+   "annotations",
+   "audio",
+   "content",
+   "function_call",
+   "reasoning",
+   "refusal",
+   "role"
+  ],
+  "content": "\nOK",
+  "content_chars": 3,
+  "reasoning_content_chars": "absent",
+  "reasoning_chars": 989,
+  "reasoning_preview": "\nHmm, the user just said \"Reply with exactly: OK\". That's an... (989 chars)",
+  "tool_calls": [],
+  "finish_reason": "stop",
+  "matched_stop": null,
+  "usage": {
+   "prompt_tokens": 8,
+   "total_tokens": 225,
+   "completion_tokens": 217,
+   "prompt_tokens_details": null,
+   "completion_tokens_details": {
+    "reasoning_tokens": 212
+   }
+  },
+  "model": "deepseek-r1-8b"
+ },
+ "plain_stream_usage": {
+  "chunks": 259,
+  "delta_keys": [
+   "content",
+   "reasoning",
+   "role"
+  ],
+  "chunk_keys": [
+   "choices",
+   "created",
+   "id",
+   "kv_transfer_params",
+   "model",
+   "object",
+   "prompt_text",
+   "prompt_token_ids",
+   "system_fingerprint",
+   "usage"
+  ],
+  "finish_reasons": [
+   "stop"
+  ],
+  "usage_chunks": [
+   {
+    "choices_len": 0,
+    "usage": {
+     "prompt_tokens": 8,
+     "total_tokens": 267,
+     "completion_tokens": 259,
+     "completion_tokens_details": {
+      "reasoning_tokens": 254
+     }
+    }
+   }
+  ],
+  "content_chars": 3,
+  "reasoning_content_chars": 0,
+  "reasoning_chars": 1168,
+  "done_marker": true,
+  "status": 200,
+  "content_type": "text/event-stream; charset=utf-8",
+  "content": "\nOK",
+  "tool_calls": [],
+  "ttft_s": 0.043,
+  "total_s": 3.575,
+  "decode_tok_s": 73.3
+ },
+ "plain_stream_no_usage": {
+  "chunks": 184,
+  "delta_keys": [
+   "content",
+   "reasoning",
+   "role"
+  ],
+  "chunk_keys": [
+   "choices",
+   "created",
+   "id",
+   "kv_transfer_params",
+   "model",
+   "object",
+   "prompt_text",
+   "prompt_token_ids",
+   "system_fingerprint"
+  ],
+  "finish_reasons": [
+   "stop"
+  ],
+  "usage_chunks": [],
+  "content_chars": 3,
+  "reasoning_content_chars": 0,
+  "reasoning_chars": 871,
+  "done_marker": true,
+  "status": 200,
+  "content_type": "text/event-stream; charset=utf-8",
+  "content": "\nOK",
+  "tool_calls": [],
+  "ttft_s": 0.042,
+  "total_s": 2.559
+ },
+ "tool_auto": {
+  "status": 400,
+  "seconds": 0.001,
+  "error_body": {
+   "error": "{'message': '\"auto\" tool choice requires --enable-auto-tool-choice and --tool-call-parser to be set', 'type': 'BadRequestError', 'param': None, 'code': 400}"
+  }
+ },
+ "tool_auto_stream": {
+  "status": 400,
+  "error_body": "{\"error\":{\"message\":\"\\\"auto\\\" tool choice requires --enable-auto-tool-choice and --tool-call-parser to be set\",\"type\":\"BadRequestError\",\"param\":null,\"code\":400}}"
+ },
+ "tool_no_tool_choice": {
+  "status": 400,
+  "seconds": 0.001,
+  "error_body": {
+   "error": "{'message': '\"auto\" tool choice requires --enable-auto-tool-choice and --tool-call-parser to be set', 'type': 'BadRequestError', 'param': None, 'code': 400}"
+  }
+ },
+ "tool_second_turn": "skipped: no parsed tool call in tool_auto",
+ "thinking": {
+  "no_field": {
+   "status": 200,
+   "seconds": 11.742,
+   "top_keys": [
+    "choices",
+    "created",
+    "ec_transfer_params",
+    "id",
+    "kv_transfer_params",
+    "metrics",
+    "model",
+    "object",
+    "prompt_logprobs",
+    "prompt_text",
+    "prompt_token_ids",
+    "service_tier",
+    "system_fingerprint",
+    "usage"
+   ],
+   "choice_keys": [
+    "finish_reason",
+    "index",
+    "logprobs",
+    "message",
+    "routed_experts",
+    "stop_reason",
+    "token_ids",
+    "weight_versions"
+   ],
+   "message_keys": [
+    "annotations",
+    "audio",
+    "content",
+    "function_call",
+    "reasoning",
+    "refusal",
+    "role"
+   ],
+   "content": "\n391",
+   "content_chars": 4,
+   "reasoning_content_chars": "absent",
+   "reasoning_chars": 2127,
+   "reasoning_preview": "\nFirst, the user asked for 17 multiplied by 23, and to answe... (2127 chars)",
+   "tool_calls": [],
+   "finish_reason": "stop",
+   "matched_stop": null,
+   "usage": {
+    "prompt_tokens": 19,
+    "total_tokens": 870,
+    "completion_tokens": 851,
+    "prompt_tokens_details": null,
+    "completion_tokens_details": {
+     "reasoning_tokens": 844
+    }
+   },
+   "model": "deepseek-r1-8b"
+  },
+  "reasoning_effort_low": {
+   "status": 200,
+   "seconds": 10.382,
+   "top_keys": [
+    "choices",
+    "created",
+    "ec_transfer_params",
+    "id",
+    "kv_transfer_params",
+    "metrics",
+    "model",
+    "object",
+    "prompt_logprobs",
+    "prompt_text",
+    "prompt_token_ids",
+    "service_tier",
+    "system_fingerprint",
+    "usage"
+   ],
+   "choice_keys": [
+    "finish_reason",
+    "index",
+    "logprobs",
+    "message",
+    "routed_experts",
+    "stop_reason",
+    "token_ids",
+    "weight_versions"
+   ],
+   "message_keys": [
+    "annotations",
+    "audio",
+    "content",
+    "function_call",
+    "reasoning",
+    "refusal",
+    "role"
+   ],
+   "content": "\n391",
+   "content_chars": 4,
+   "reasoning_content_chars": "absent",
+   "reasoning_chars": 1868,
+   "reasoning_preview": "\nFirst, the user asked for 17 multiplied by 23, and they wan... (1868 chars)",
+   "tool_calls": [],
+   "finish_reason": "stop",
+   "matched_stop": null,
+   "usage": {
+    "prompt_tokens": 19,
+    "total_tokens": 771,
+    "completion_tokens": 752,
+    "prompt_tokens_details": null,
+    "completion_tokens_details": {
+     "reasoning_tokens": 745
+    }
+   },
+   "model": "deepseek-r1-8b"
+  },
+  "reasoning_effort_medium": {
+   "status": 200,
+   "seconds": 12.18,
+   "top_keys": [
+    "choices",
+    "created",
+    "ec_transfer_params",
+    "id",
+    "kv_transfer_params",
+    "metrics",
+    "model",
+    "object",
+    "prompt_logprobs",
+    "prompt_text",
+    "prompt_token_ids",
+    "service_tier",
+    "system_fingerprint",
+    "usage"
+   ],
+   "choice_keys": [
+    "finish_reason",
+    "index",
+    "logprobs",
+    "message",
+    "routed_experts",
+    "stop_reason",
+    "token_ids",
+    "weight_versions"
+   ],
+   "message_keys": [
+    "annotations",
+    "audio",
+    "content",
+    "function_call",
+    "reasoning",
+    "refusal",
+    "role"
+   ],
+   "content": "\n391",
+   "content_chars": 4,
+   "reasoning_content_chars": "absent",
+   "reasoning_chars": 2180,
+   "reasoning_preview": "\nFirst, the user asked for 17 multiplied by 23, and I need t... (2180 chars)",
+   "tool_calls": [],
+   "finish_reason": "stop",
+   "matched_stop": null,
+   "usage": {
+    "prompt_tokens": 19,
+    "total_tokens": 901,
+    "completion_tokens": 882,
+    "prompt_tokens_details": null,
+    "completion_tokens_details": {
+     "reasoning_tokens": 875
+    }
+   },
+   "model": "deepseek-r1-8b"
+  },
+  "reasoning_effort_high": {
+   "status": 200,
+   "seconds": 12.14,
+   "top_keys": [
+    "choices",
+    "created",
+    "ec_transfer_params",
+    "id",
+    "kv_transfer_params",
+    "metrics",
+    "model",
+    "object",
+    "prompt_logprobs",
+    "prompt_text",
+    "prompt_token_ids",
+    "service_tier",
+    "system_fingerprint",
+    "usage"
+   ],
+   "choice_keys": [
+    "finish_reason",
+    "index",
+    "logprobs",
+    "message",
+    "routed_experts",
+    "stop_reason",
+    "token_ids",
+    "weight_versions"
+   ],
+   "message_keys": [
+    "annotations",
+    "audio",
+    "content",
+    "function_call",
+    "reasoning",
+    "refusal",
+    "role"
+   ],
+   "content": "\n391",
+   "content_chars": 4,
+   "reasoning_content_chars": "absent",
+   "reasoning_chars": 2185,
+   "reasoning_preview": "\nFirst, the user asked: \"What is 17 * 23? Answer with the nu... (2185 chars)",
+   "tool_calls": [],
+   "finish_reason": "stop",
+   "matched_stop": null,
+   "usage": {
+    "prompt_tokens": 19,
+    "total_tokens": 898,
+    "completion_tokens": 879,
+    "prompt_tokens_details": null,
+    "completion_tokens_details": {
+     "reasoning_tokens": 872
+    }
+   },
+   "model": "deepseek-r1-8b"
+  },
+  "reasoning_effort_none": {
+   "status": 200,
+   "seconds": 30.705,
+   "top_keys": [
+    "choices",
+    "created",
+    "ec_transfer_params",
+    "id",
+    "kv_transfer_params",
+    "metrics",
+    "model",
+    "object",
+    "prompt_logprobs",
+    "prompt_text",
+    "prompt_token_ids",
+    "service_tier",
+    "system_fingerprint",
+    "usage"
+   ],
+   "choice_keys": [
+    "finish_reason",
+    "index",
+    "logprobs",
+    "message",
+    "routed_experts",
+    "stop_reason",
+    "token_ids",
+    "weight_versions"
+   ],
+   "message_keys": [
+    "annotations",
+    "audio",
+    "content",
+    "function_call",
+    "reasoning",
+    "refusal",
+    "role"
+   ],
+   "content": "\n391",
+   "content_chars": 4,
+   "reasoning_content_chars": "absent",
+   "reasoning_chars": 5279,
+   "reasoning_preview": "\nI need to multiply 17 by 23 and give the answer as just the... (5279 chars)",
+   "tool_calls": [],
+   "finish_reason": "stop",
+   "matched_stop": null,
+   "usage": {
+    "prompt_tokens": 19,
+    "total_tokens": 2231,
+    "completion_tokens": 2212,
+    "prompt_tokens_details": null,
+    "completion_tokens_details": {
+     "reasoning_tokens": 2205
+    }
+   },
+   "model": "deepseek-r1-8b"
+  },
+  "reasoning_effort_minimal": {
+   "status": 200,
+   "seconds": 15.769,
+   "top_keys": [
+    "choices",
+    "created",
+    "ec_transfer_params",
+    "id",
+    "kv_transfer_params",
+    "metrics",
+    "model",
+    "object",
+    "prompt_logprobs",
+    "prompt_text",
+    "prompt_token_ids",
+    "service_tier",
+    "system_fingerprint",
+    "usage"
+   ],
+   "choice_keys": [
+    "finish_reason",
+    "index",
+    "logprobs",
+    "message",
+    "routed_experts",
+    "stop_reason",
+    "token_ids",
+    "weight_versions"
+   ],
+   "message_keys": [
+    "annotations",
+    "audio",
+    "content",
+    "function_call",
+    "reasoning",
+    "refusal",
+    "role"
+   ],
+   "content": "\n391",
+   "content_chars": 4,
+   "reasoning_content_chars": "absent",
+   "reasoning_chars": 2376,
+   "reasoning_preview": "\nFirst, the user asked for 17 multiplied by 23, and they wan... (2376 chars)",
+   "tool_calls": [],
+   "finish_reason": "stop",
+   "matched_stop": null,
+   "usage": {
+    "prompt_tokens": 19,
+    "total_tokens": 1160,
+    "completion_tokens": 1141,
+    "prompt_tokens_details": null,
+    "completion_tokens_details": {
+     "reasoning_tokens": 1134
+    }
+   },
+   "model": "deepseek-r1-8b"
+  },
+  "reasoning_effort_xhigh": {
+   "status": 200,
+   "seconds": 8.279,
+   "top_keys": [
+    "choices",
+    "created",
+    "ec_transfer_params",
+    "id",
+    "kv_transfer_params",
+    "metrics",
+    "model",
+    "object",
+    "prompt_logprobs",
+    "prompt_text",
+    "prompt_token_ids",
+    "service_tier",
+    "system_fingerprint",
+    "usage"
+   ],
+   "choice_keys": [
+    "finish_reason",
+    "index",
+    "logprobs",
+    "message",
+    "routed_experts",
+    "stop_reason",
+    "token_ids",
+    "weight_versions"
+   ],
+   "message_keys": [
+    "annotations",
+    "audio",
+    "content",
+    "function_call",
+    "reasoning",
+    "refusal",
+    "role"
+   ],
+   "content": "\n391",
+   "content_chars": 4,
+   "reasoning_content_chars": "absent",
+   "reasoning_chars": 1375,
+   "reasoning_preview": "\nFirst, the user asked: \"What is 17 * 23? Answer with the nu... (1375 chars)",
+   "tool_calls": [],
+   "finish_reason": "stop",
+   "matched_stop": null,
+   "usage": {
+    "prompt_tokens": 19,
+    "total_tokens": 619,
+    "completion_tokens": 600,
+    "prompt_tokens_details": null,
+    "completion_tokens_details": {
+     "reasoning_tokens": 593
+    }
+   },
+   "model": "deepseek-r1-8b"
+  },
+  "enable_thinking_false": {
+   "status": 200,
+   "seconds": 20.459,
+   "top_keys": [
+    "choices",
+    "created",
+    "ec_transfer_params",
+    "id",
+    "kv_transfer_params",
+    "metrics",
+    "model",
+    "object",
+    "prompt_logprobs",
+    "prompt_text",
+    "prompt_token_ids",
+    "service_tier",
+    "system_fingerprint",
+    "usage"
+   ],
+   "choice_keys": [
+    "finish_reason",
+    "index",
+    "logprobs",
+    "message",
+    "routed_experts",
+    "stop_reason",
+    "token_ids",
+    "weight_versions"
+   ],
+   "message_keys": [
+    "annotations",
+    "audio",
+    "content",
+    "function_call",
+    "reasoning",
+    "refusal",
+    "role"
+   ],
+   "content": "\n391",
+   "content_chars": 4,
+   "reasoning_content_chars": "absent",
+   "reasoning_chars": 3256,
+   "reasoning_preview": "\nFirst, the user asked: \"What is 17 * 23? Answer with the nu... (3256 chars)",
+   "tool_calls": [],
+   "finish_reason": "stop",
+   "matched_stop": null,
+   "usage": {
+    "prompt_tokens": 19,
+    "total_tokens": 1497,
+    "completion_tokens": 1478,
+    "prompt_tokens_details": null,
+    "completion_tokens_details": {
+     "reasoning_tokens": 1471
+    }
+   },
+   "model": "deepseek-r1-8b"
+  }
+ },
+ "thinking_stream_on": {
+  "chunks": 1461,
+  "delta_keys": [
+   "content",
+   "reasoning",
+   "role"
+  ],
+  "chunk_keys": [
+   "choices",
+   "created",
+   "id",
+   "kv_transfer_params",
+   "model",
+   "object",
+   "prompt_text",
+   "prompt_token_ids",
+   "system_fingerprint",
+   "usage"
+  ],
+  "finish_reasons": [
+   "stop"
+  ],
+  "usage_chunks": [
+   {
+    "choices_len": 0,
+    "usage": {
+     "prompt_tokens": 19,
+     "total_tokens": 1480,
+     "completion_tokens": 1461,
+     "completion_tokens_details": {
+      "reasoning_tokens": 1454
+     }
+    }
+   }
+  ],
+  "content_chars": 4,
+  "reasoning_content_chars": 0,
+  "reasoning_chars": 3077,
+  "done_marker": true,
+  "status": 200,
+  "content_type": "text/event-stream; charset=utf-8",
+  "content": "\n391",
+  "tool_calls": [],
+  "ttft_s": 0.043,
+  "total_s": 20.253,
+  "decode_tok_s": 72.3
+ },
+ "compat": {
+  "tools_empty_list": {
+   "status": 400,
+   "error_body": {
+    "error": "{'message': '`tools` must not be an empty array. Either provide at least one tool or omit the field entirely. (parameter=tools)', 'type': 'BadRequestError', 'param': 'tools', 'code': 400}"
+   }
+  },
+  "prompt_cache_key": {
+   "status": 200,
+   "finish_reason": "stop",
+   "content": "\nOK",
+   "tool_calls": [],
+   "usage": {
+    "prompt_tokens": 8,
+    "total_tokens": 242,
+    "completion_tokens": 234,
+    "prompt_tokens_details": null,
+    "completion_tokens_details": {
+     "reasoning_tokens": 229
+    }
+   },
+   "reasoning_content_chars": "absent"
+  },
+  "max_completion_tokens": {
+   "status": 200,
+   "finish_reason": "stop",
+   "content": "\nOK",
+   "tool_calls": [],
+   "usage": {
+    "prompt_tokens": 8,
+    "total_tokens": 270,
+    "completion_tokens": 262,
+    "prompt_tokens_details": null,
+    "completion_tokens_details": {
+     "reasoning_tokens": 257
+    }
+   },
+   "reasoning_content_chars": "absent"
+  },
+  "tool_choice_auto_without_tools": {
+   "status": 400,
+   "error_body": {
+    "error": "{'message': 'When using `tool_choice`, `tools` must be set. (parameter=tool_choice)', 'type': 'BadRequestError', 'param': 'tool_choice', 'code': 400}"
+   }
+  },
+  "tool_choice_none_with_tools": {
+   "status": 200,
+   "finish_reason": "stop",
+   "content": "\nOK",
+   "tool_calls": [],
+   "usage": {
+    "prompt_tokens": 8,
+    "total_tokens": 377,
+    "completion_tokens": 369,
+    "prompt_tokens_details": null,
+    "completion_tokens_details": {
+     "reasoning_tokens": 364
+    }
+   },
+   "reasoning_content_chars": "absent"
+  },
+  "wrong_model_name": {
+   "status": 404,
+   "error_body": {
+    "error": "{'message': 'The model `not-the-served-name` does not exist. Valid aliases: deepseek-r1-8b.', 'type': 'NotFoundError', 'param': 'model', 'code': 404}"
+   }
+  },
+  "max_tokens_above_context": {
+   "status": 400,
+   "error_body": {
+    "error": "{'message': 'max_tokens=131072 cannot be greater than max_model_len=65536. Please request fewer output tokens. (parameter=max_tokens, value=131072)', 'type': 'BadRequestError', 'param': 'max_tokens', 'code': 400}"
+   }
+  },
+  "history_reasoning_field": {
+   "status": 200,
+   "finish_reason": "stop",
+   "content": "\nOK",
+   "tool_calls": [],
+   "usage": {
+    "prompt_tokens": 14,
+    "total_tokens": 271,
+    "completion_tokens": 257,
+    "prompt_tokens_details": null,
+    "completion_tokens_details": {
+     "reasoning_tokens": 252
+    }
+   },
+   "reasoning_content_chars": "absent"
+  },
+  "history_reasoning_content_field": {
+   "status": 200,
+   "finish_reason": "stop",
+   "content": "\nOK",
+   "tool_calls": [],
+   "usage": {
+    "prompt_tokens": 14,
+    "total_tokens": 299,
+    "completion_tokens": 285,
+    "prompt_tokens_details": null,
+    "completion_tokens_details": {
+     "reasoning_tokens": 280
+    }
+   },
+   "reasoning_content_chars": "absent"
+  }
+ },
+ "decode_512": [
+  {
+   "status": 200,
+   "ttft_s": 0.044,
+   "total_s": 7.117,
+   "decode_tok_s": 72.2,
+   "finish_reasons": [
+    "length"
+   ],
+   "usage_chunks": [
+    {
+     "choices_len": 0,
+     "usage": {
+      "prompt_tokens": 36,
+      "total_tokens": 548,
+      "completion_tokens": 512,
+      "completion_tokens_details": {
+       "reasoning_tokens": 511
+      }
+     }
+    }
+   ],
+   "reasoning_content_chars": 0,
+   "content_chars": 0
+  },
+  {
+   "status": 200,
+   "ttft_s": 0.035,
+   "total_s": 7.11,
+   "decode_tok_s": 72.2,
+   "finish_reasons": [
+    "length"
+   ],
+   "usage_chunks": [
+    {
+     "choices_len": 0,
+     "usage": {
+      "prompt_tokens": 36,
+      "total_tokens": 548,
+      "completion_tokens": 512,
+      "completion_tokens_details": {
+       "reasoning_tokens": 511
+      }
+     }
+    }
+   ],
+   "reasoning_content_chars": 0,
+   "content_chars": 0
+  },
+  {
+   "status": 200,
+   "ttft_s": 0.035,
+   "total_s": 7.108,
+   "decode_tok_s": 72.2,
+   "finish_reasons": [
+    "length"
+   ],
+   "usage_chunks": [
+    {
+     "choices_len": 0,
+     "usage": {
+      "prompt_tokens": 36,
+      "total_tokens": 548,
+      "completion_tokens": 512,
+      "completion_tokens_details": {
+       "reasoning_tokens": 511
+      }
+     }
+    }
+   ],
+   "reasoning_content_chars": 0,
+   "content_chars": 0
+  }
+ ],
+ "decode_512_median_tok_s": 72.2,
+ "grammar": {
+  "tool_choice_required": {
+   "status": 400,
+   "error_body": {
+    "error": "{'message': 'tool_choice=\"required\" requires --tool-call-parser to be set', 'type': 'BadRequestError', 'param': None, 'code': 400}"
+   }
+  },
+  "response_format_json_schema": {
+   "status": 200,
+   "finish_reason": "stop",
+   "content": "{\"capital\": \"Paris\"}",
+   "tool_calls": [],
+   "usage": {
+    "prompt_tokens": 11,
+    "total_tokens": 261,
+    "completion_tokens": 250,
+    "prompt_tokens_details": null,
+    "completion_tokens_details": {
+     "reasoning_tokens": 241
+    }
+   },
+   "reasoning_content_chars": "absent"
+  }
+ },
+ "finished": "2026-11-18T00:56:49+0300"
+}

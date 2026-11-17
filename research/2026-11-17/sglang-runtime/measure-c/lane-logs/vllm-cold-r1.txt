@@ -1,0 +1,19 @@
+{"exit": "container stopped", "ready_seen_s": null, "served_listed_s": null, "memory_usage": null, "gpu_right_after_ready": null}
+comm: file 1 is not in sorted order
+comm: file 2 is not in sorted order
+comm: input is not in sorted order
+(APIServer pid=1) INFO 11-17 21:47:01 [startup.py:96] non-default args: {'model_tag': '/root/.cache/huggingface/hub/models--deepseek-ai--DeepSeek-R1-0528-Qwen3-8B/snapshots/6e8885a6ff5c1dc5201574c8fd700323f23c25fa', 'model': '/root/.cache/huggingface/hub/models--deepseek-ai--DeepSeek-R1-0528-Qwen3-8
+(EngineCore pid=243) INFO 11-17 21:47:13 [core.py:139] Initializing a V1 LLM engine (v0.33.0) with config: model='/root/.cache/huggingface/hub/models--deepseek-ai--DeepSeek-R1-0528-Qwen3-8B/snapshots/6e8885a6ff5c1dc5201574c8fd700323f23c25fa', speculative_config=None, tokenizer='/llmctl/tokenizer', s
+(EngineCore pid=243) INFO 11-17 21:47:19 [model_runner.py:428] Model loading took 9.12 GiB memory and 5.300970 seconds
+(EngineCore pid=243) INFO 11-17 21:47:42 [gpu_worker.py:772] Available KV cache memory: 3.83 GiB
+(EngineCore pid=243) ERROR 11-17 21:47:42 [core.py:1584]     raise ValueError(
+(EngineCore pid=243) ERROR 11-17 21:47:42 [core.py:1584] ValueError: To serve at least one request with the model's max seq len (65536), (4.5 GiB KV cache is needed, which is larger than the available KV cache memory (3.83 GiB). Based on the available memory, the estimated maximum model length is 55
+    raise ValueError(
+ValueError: To serve at least one request with the model's max seq len (65536), (4.5 GiB KV cache is needed, which is larger than the available KV cache memory (3.83 GiB). Based on the available memory, the estimated maximum model length is 55744. Try increasing `gpu_memory_utilization` (which also 
+    raise RuntimeError(
+RuntimeError: Engine core initialization failed. See root cause above. Failed core proc(s): {}
+exited exit=1 oom=false started=2026-11-17T21:46:55.2772965Z finished=2026-11-17T21:47:46.09238675Z
+files: 355
+47M	/v
+8.0K	/v/modelinfos
+47M	/v/torch_compile_cache

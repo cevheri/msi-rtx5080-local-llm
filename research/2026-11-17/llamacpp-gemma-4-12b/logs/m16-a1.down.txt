@@ -1,0 +1,3 @@
+stopped gemma-4-12b in container 'llamacpp'
+removed container 'llamacpp'
+removed container 'vllm'

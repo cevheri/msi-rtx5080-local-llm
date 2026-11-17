@@ -1,0 +1,53 @@
+/sgl-workspace/sglang/python/sglang/launch_server.py:71: UserWarning: 'python -m sglang.launch_server' is still supported, but 'sglang serve' is the recommended entrypoint.
+[2026-11-17 21:37:01] Hybrid SWA model detected. architectures=['Gemma4ForConditionalGeneration']
+[2026-11-17 21:37:01] Use triton as default attention backend for Gemma4
+[2026-11-17 21:37:03] server_args={'model_path': '/llmctl/model', 'tokenizer_path': '/llmctl/model', 'tokenizer_mode': 'auto', 'tokenizer_backend': 'huggingface', 'tokenizer_worker_num': 1, 'detokenizer_worker_num': 1, 'skip_tokenizer_init': False, 'load_format': 'auto', 'model_loader_extra_config': '{}', 'trust_remote_code': False, 'context_length': 131072, 'is_embedding': False, 'enable_multimodal': None, 'revision': None, 'model_impl': 'auto', 'model_config_parser': 'auto', 'json_model_override_args': '{"quantization_config":{"config_groups":{"group_0":{"format":"pack-quantized","input_activations":null,"output_activations":null,"targets":["Linear"],"weights":{"actorder":null,"block_structure":null,"dynamic":false,"group_size":32,"num_bits":4,"observer":"mse","observer_kwargs":{},"scale_dtype":null,"strategy":"group","symmetric":true,"type":"int","zp_dtype":null}}},"format":"pack-quantized","global_compression_ratio":null,"ignore":["lm_head","re:.*vision_tower.*","re:.*embed_vision.*","re:.*\\\\.mlp\\\\.(gate|up|down)_proj$","re:.*\\\\.router\\\\.proj$"],"kv_cache_scheme":null,"quant_method":"compressed-tensors","quantization_status":"compressed","sparsity_config":{},"transform_config":{},"version":"0.1.dev489+g6d69620"}}', 'dtype': 'auto', 'quantization': None, 'quantization_param_path': None, 'kv_cache_dtype': 'fp8_e4m3', 'enable_fp32_lm_head': False, 'modelopt_quant': None, 'modelopt_checkpoint_restore_path': None, 'modelopt_checkpoint_save_path': None, 'modelopt_export_path': None, 'quantize_and_serve': False, 'rl_quant_profile': None, 'enable_tf32_matmul': False, 'mem_fraction_static': 0.9, 'max_running_requests': 1, 'max_queued_requests': None, 'max_total_tokens': None, 'chunked_prefill_size': 2048, 'prefill_decode_interval': 0, 'enable_dynamic_chunking': False, 'max_prefill_tokens': 16384, 'prefill_max_requests': None, 'schedule_policy': 'fcfs', 'enable_priority_scheduling': False, 'disable_priority_preemption': False, 'default_priority_value': None, 'abor
+[2026-11-17 21:37:07] Using default HuggingFace chat template with detected content format: openai
+[2026-11-17 21:37:07] Auto-detected template features: reasoning_config=ReasoningToggleConfig(toggle_param='enable_thinking', default_enabled=False, special_case=None, effort_kwarg=None), reasoning_parser=gemma4, tool_call_parser=gemma4
+[2026-11-17 21:37:08] Init parallel begin.
+[2026-11-17 21:37:08] Init parallel ends. elapsed=0.18 s
+[2026-11-17 21:37:10] Memory baseline taken. mem usage=0.00 GB
+[2026-11-17 21:37:10] Load weight begin. avail mem=15.06 GB
+[2026-11-17 21:37:26] Using FP8 KV cache but no scaling factors provided. Defaulting to scaling factors of 1.0.
+[2026-11-17 21:37:26] Load weight end. elapsed=16.02 s, type=Gemma4ForConditionalGeneration, quant=compressed-tensors, avail mem=4.68 GB, mem usage=10.38 GB.
+[2026-11-17 21:37:28] Reserving 0.10 GB of the KV budget for post-sizing multimodal allocations (feature-transport pools + embedding cache).
+[2026-11-17 21:37:28] Full KV Cache is allocated. dtype: torch.float8_e4m3fn, #tokens: 160936, K size: 0.77 GB, V size: 0.77 GB
+[2026-11-17 21:37:28] SWA KV Cache is allocated. dtype: torch.float8_e4m3fn, #tokens: 16093, K size: 0.77 GB, V size: 0.77 GB
+[2026-11-17 21:37:28] SWAKVPool mem usage: 3.07 GB, swa size: 16093, full size: 160936
+[2026-11-17 21:37:28] Memory pool end. avail mem=1.57 GB
+[2026-11-17 21:37:28] Disable prefill CUDA graph because cuda_graph_config resolved prefill.backend='disabled' (e.g. via --cuda-graph-backend-prefill=disabled or auto-disable rules).
+[2026-11-17 21:37:28] Capture target decode CUDA graph begin. backend=full, num_tokens_per_req=1, avail mem=1.53 GB
+[2026-11-17 21:38:57] Scheduler hit an exception: Traceback (most recent call last):
+  File managers/scheduler.py:6362 in run_scheduler_process
+  File managers/scheduler.py:568 in __init__
+  File managers/scheduler.py:1146 in init_model_worker
+  File managers/scheduler.py:1124 in init_all_cuda_graphs
+  File managers/tp_worker.py:435 in init_cuda_graphs
+  File model_executor/model_runner.py:1192 in init_cuda_graphs
+  File model_executor/model_runner_components/cuda_graph_setup.py:437 in capture_cuda_graphs
+  File model_executor/model_runner_components/cuda_graph_setup.py:780 in capture_decode_graph
+  File model_executor/runner/decode_cuda_graph_runner.py:600 in __init__
+  File model_executor/runner/decode_cuda_graph_runner.py:1251 in capture
+  File model_executor/runner/decode_cuda_graph_runner.py:1303 in _capture
+  File model_executor/runner/decode_cuda_graph_runner.py:1359 in _capture_one_stream
+  File model_executor/runner/decode_cuda_graph_runner.py:1499 in capture_one_shape
+  File model_executor/runner_backend/full_cuda_graph_backend.py:166 in capture_one
+  File model_executor/runner/decode_cuda_graph_runner.py:1458 in run_once
+  File models/gemma4_mm.py:699 in forward
+  File managers/mm_utils.py:885 in general_mm_embed_routine
+  File models/gemma4_causal.py:1067 in forward
+  File models/gemma4_causal.py:737 in forward
+  File models/gemma4_causal.py:767 in _next_stream
+  File models/gemma4_causal.py:305 in forward
+  File layers/moe/fused_moe_triton/layer.py:1705 in forward
+  File layers/moe/fused_moe_triton/layer.py:1726 in forward_impl
+  File layers/moe/fused_moe_triton/layer.py:1791 in run_moe_core
+  File layers/moe/paged_experts/method.py:210 in apply
+  File layers/moe/paged_experts/executor.py:130 in run
+  File layers/moe/paged_experts/runners.py:30 in run_on_slots
+  File layers/moe/paged_experts/formats.py:318 in apply
+  File layers/moe/moe_runner/runner.py:199 in run
+  File layers/moe/moe_runner/marlin.py:143 in fused_experts_none_to_marlin
+AssertionError: Only gated SiLU/SiTU is supported, got gelu.
+[2026-11-17 21:38:57] kill_process_tree called: parent_pid=1, include_parent=True, pid=1
+[2026-11-17 21:38:57] kill_process_tree called: parent_pid=1, include_parent=False, pid=1

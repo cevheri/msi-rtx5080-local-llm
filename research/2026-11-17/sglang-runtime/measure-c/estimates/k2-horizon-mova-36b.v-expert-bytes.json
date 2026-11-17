@@ -1,0 +1,50 @@
+{
+ "snapshot_shards": 7,
+ "moe_layers": 45,
+ "expert_bytes": 4364743680,
+ "expert_gib": 4.065,
+ "other_bytes": 19870282920,
+ "other_gib": 18.506,
+ "per_layer_mib": [
+  92.5
+ ],
+ "by_tensor_kind_mib": {
+  ".N.weight_packed": 3600.0,
+  ".N.weight_scale": 450.0,
+  ".N.weight_shape": 0.0,
+  ".N.weight_zero_point": 112.5
+ },
+ "examples": {
+  ".N.weight_shape": [
+   "model.layers.3.self_attn.v_experts.0.weight_shape",
+   "I64",
+   [
+    2
+   ]
+  ],
+  ".N.weight_packed": [
+   "model.layers.3.self_attn.v_experts.0.weight_packed",
+   "I32",
+   [
+    1024,
+    320
+   ]
+  ],
+  ".N.weight_zero_point": [
+   "model.layers.3.self_attn.v_experts.0.weight_zero_point",
+   "I32",
+   [
+    128,
+    80
+   ]
+  ],
+  ".N.weight_scale": [
+   "model.layers.3.self_attn.v_experts.0.weight_scale",
+   "BF16",
+   [
+    1024,
+    80
+   ]
+  ]
+ }
+}
