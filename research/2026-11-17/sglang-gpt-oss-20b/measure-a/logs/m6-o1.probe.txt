@@ -1,0 +1,12 @@
+{"event": "start", "model": "gpt-oss-20b", "order": 1, "paragraphs": 335, "then_long": 0, "container": "running exit=0 oom=false", "t": 1794936765.007, "used_mib": 14436, "free_mib": 1406, "total_mib": 16303, "utc": "17:32:45"}
+{"event": "flush_cache", "step": "p1", "status": 200, "t": 1794936765.01, "utc": "17:32:45"}
+{"event": "gpu_before", "step": "long_prompt_p1", "t": 1794936765.027, "used_mib": 14416, "free_mib": 1426, "total_mib": 16303, "utc": "17:32:45"}
+{"event": "request", "step": "long_prompt_p1", "status": 200, "t": 1794936765.027, "seconds": 7.118, "finish_reason": "length", "content": "", "reasoning_content_chars": 139, "tool_calls": [], "usage": {"prompt_tokens": 31929, "completion_tokens": 32}, "utc": "17:32:45"}
+{"event": "gpu_after", "step": "long_prompt_p1", "t": 1794936772.163, "used_mib": 14772, "free_mib": 1070, "total_mib": 16303, "utc": "17:32:52"}
+{"event": "gpu_before", "step": "title_p1", "t": 1794936772.18, "used_mib": 14772, "free_mib": 1070, "total_mib": 16303, "utc": "17:32:52"}
+{"event": "request", "step": "title_p1", "status": 200, "t": 1794936772.18, "seconds": 0.6, "finish_reason": "stop", "content": "{\"title\":\"Adding Two Numbers in Python\"}", "reasoning_content_chars": 69, "tool_calls": [], "usage": {"prompt_tokens": 101, "completion_tokens": 29}, "title_parses": true, "utc": "17:32:52"}
+{"event": "gpu_after", "step": "title_p1", "t": 1794936772.797, "used_mib": 15374, "free_mib": 468, "total_mib": 16303, "utc": "17:32:52"}
+{"event": "gpu_before", "step": "forced_tool_p1", "t": 1794936772.814, "used_mib": 15374, "free_mib": 468, "total_mib": 16303, "utc": "17:32:52"}
+{"event": "request", "step": "forced_tool_p1", "status": 200, "t": 1794936772.814, "seconds": 0.42, "finish_reason": "stop", "content": "<|channel|>commentary to=functions.get_weather<|constrain|>json<|message|>{\"city... (98 chars)", "reasoning_content_chars": 40, "tool_calls": [], "usage": {"prompt_tokens": 132, "completion_tokens": 40}, "utc": "17:32:52"}
+{"event": "gpu_after", "step": "forced_tool_p1", "t": 1794936773.25, "used_mib": 15374, "free_mib": 468, "total_mib": 16303, "utc": "17:32:53"}
+{"event": "end", "result": "all requests answered 200 and the server stayed up", "t": 1794936773.272, "used_mib": 15374, "free_mib": 468, "total_mib": 16303, "utc": "17:32:53"}

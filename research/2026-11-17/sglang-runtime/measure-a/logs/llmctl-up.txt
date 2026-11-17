@@ -1,0 +1,26 @@
+2026-11-17T20:48:06+03:00
+gemma-4-26b-a4b on llamacpp: shipped recipe, measured
+clients: opencode, hermes, pi, dsh, kimi
+removing the stopped container 'llamacpp' from an earlier llmctl run
+waiting for gemma-4-26b-a4b to load (up to 300 s)
+ready: http://127.0.0.1:8080/v1, served as 'local', context 131072, output 16384
+OpenCode: llamacpp-docker/gemma-4-26b-a4b, the default
+  in the OpenCode screen: type /models (or press ctrl+x m) and pick it
+  for a single prompt: opencode run --model llamacpp-docker/gemma-4-26b-a4b "your prompt"
+  thinking: off; add #thinking to the model to turn it on
+Hermes: profile llmctl, the default
+  hermes -p llmctl
+  thinking: off, as the server sets it
+Pi: llmctl/local, the default
+  pi --model llmctl/local
+  thinking: off; --thinking medium turns it on
+dsh: llmctl/local, the default in every dsh profile
+  dsh web, or for a single prompt: dsh --profile headless "your prompt"
+  thinking: off; choose Medium under Effort in dsh's model picker to turn it on
+Kimi: llmctl/local, the default
+  kimi, or for a single prompt: kimi -p "your prompt"
+  thinking: off, as the server sets it
+evidence: 148.2 tok/s decode with 128k context, 15,064 MiB GPU peak, OpenCode session passed (2026-11-16, research/2026-11-16/llamacpp-gemma-4-26b-a4b/)
+stop with ./llmctl down
+exit=0
+2026-11-17T20:48:16+03:00

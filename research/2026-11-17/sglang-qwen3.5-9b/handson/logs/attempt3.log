@@ -1,0 +1,51 @@
+/sgl-workspace/sglang/python/sglang/launch_server.py:71: UserWarning: 'python -m sglang.launch_server' is still supported, but 'sglang serve' is the recommended entrypoint.
+[2026-11-17 15:37:20] Attention backend not specified. Use flashinfer backend by default.
+[2026-11-17 15:37:22] server_args={'model_path': '/root/.cache/huggingface/hub/models--RedHatAI--Qwen3.5-9B-NVFP4/snapshots/a4df85a20fb7e54740f564f15af0c2f5d9c6616c', 'tokenizer_path': '/root/.cache/huggingface/hub/models--RedHatAI--Qwen3.5-9B-NVFP4/snapshots/a4df85a20fb7e54740f564f15af0c2f5d9c6616c', 'tokenizer_mode': 'auto', 'tokenizer_backend': 'huggingface', 'tokenizer_worker_num': 1, 'detokenizer_worker_num': 1, 'skip_tokenizer_init': False, 'load_format': 'auto', 'model_loader_extra_config': '{}', 'trust_remote_code': False, 'context_length': 131072, 'is_embedding': False, 'enable_multimodal': None, 'revision': None, 'model_impl': 'auto', 'model_config_parser': 'auto', 'json_model_override_args': '{}', 'dtype': 'auto', 'quantization': None, 'quantization_param_path': None, 'kv_cache_dtype': 'auto', 'enable_fp32_lm_head': False, 'modelopt_quant': None, 'modelopt_checkpoint_restore_path': None, 'modelopt_checkpoint_save_path': None, 'modelopt_export_path': None, 'quantize_and_serve': False, 'rl_quant_profile': None, 'enable_tf32_matmul': False, 'mem_fraction_static': 0.88, 'max_running_requests': 1, 'max_queued_requests': None, 'max_total_tokens': None, 'chunked_prefill_size': 2048, 'prefill_decode_interval': 0, 'enable_dynamic_chunking': False, 'max_prefill_tokens': 16384, 'prefill_max_requests': None, 'schedule_policy': 'fcfs', 'enable_priority_scheduling': False, 'disable_priority_preemption': False, 'default_priority_value': None, 'abort_on_priority_when_disabled': False, 'schedule_low_priority_values_first': False, 'priority_scheduling_preemption_threshold': 10, 'retraction_policy': 'length', 'schedule_conservativeness': 1.0, 'page_size': 1, 'c128_page_size': 16, 'swa_full_tokens_ratio': 0.8, 'disable_hybrid_swa_memory': False, 'radix_eviction_policy': 'lru', 'radix_eviction_policy_config': None, 'prefill_only_disable_kv_cache': False, 'disable_radix_cache': False, 'enable_page_major_kv_layout': False, 'enable_unified_memory': False, 'disable_chunked_prefix
+[2026-11-17 15:37:25] Multimodal data loading enabled with 16 worker threads (auto).
+[2026-11-17 15:37:25] Using default HuggingFace chat template with detected content format: openai
+[2026-11-17 15:37:26] Auto-detected template features: reasoning_config=ReasoningToggleConfig(toggle_param='enable_thinking', default_enabled=True, special_case=None, effort_kwarg=None), reasoning_parser=qwen3, tool_call_parser=qwen3_coder
+[2026-11-17 15:37:27] Init parallel begin.
+[2026-11-17 15:37:27] Init parallel ends. elapsed=0.19 s
+[2026-11-17 15:37:29] Multimodal data loading enabled with 16 worker threads (auto).
+[2026-11-17 15:37:29] Memory baseline taken. mem usage=0.00 GB
+[2026-11-17 15:37:29] Load weight begin. avail mem=15.06 GB
+[2026-11-17 15:37:29] Multimodal attention backend not set. Use triton_attn.
+[2026-11-17 15:37:29] Using triton_attn as multimodal attention backend.
+[2026-11-17 15:37:30] Load weight end. elapsed=0.82 s, type=Qwen3_5ForConditionalGeneration, quant=compressed-tensors, avail mem=6.67 GB, mem usage=8.39 GB.
+[2026-11-17 15:37:31] Reserving 0.10 GB of the KV budget for post-sizing multimodal allocations (feature-transport pools + embedding cache).
+[2026-11-17 15:37:31] Mamba Cache is allocated. max_mamba_cache_size: 8, conv_state size: 0.01GB, ssm_state size: 0.42GB 
+[2026-11-17 15:37:31] KV Cache is allocated. dtype: torch.bfloat16, #tokens: 140976, K size: 2.15 GB, V size: 2.15 GB
+[2026-11-17 15:37:31] Memory pool end. avail mem=1.90 GB
+[2026-11-17 15:37:31] Linear attention kernel backend: decode=triton, prefill=triton, verify=triton
+[2026-11-17 15:37:31] Using hybrid linear attention backend for hybrid GDN models.
+[2026-11-17 15:37:31] GDN kernel dispatcher: decode=TritonGDNKernel, extend=TritonGDNKernel, verify=TritonGDNKernel packed_decode=True
+[2026-11-17 15:37:31] Disable prefill CUDA graph because cuda_graph_config resolved prefill.backend='disabled' (e.g. via --cuda-graph-backend-prefill=disabled or auto-disable rules).
+[2026-11-17 15:37:31] Capture target decode CUDA graph begin. backend=full, num_tokens_per_req=1, avail mem=1.45 GB
+[2026-11-17 15:37:33] Capture target decode CUDA graph end. bs=[1], elapsed=2.22 s, mem usage=0.10 GB, avail mem=1.35 GB.
+[2026-11-17 15:37:33] max_total_num_tokens=140976, chunked_prefill_size=2048, max_prefill_tokens=16384, max_running_requests=1, context_len=131072, available_gpu_mem=1.35 GB
+[2026-11-17 15:37:33] Init Unified Radix Cache. Components: (<ComponentType.FULL: 0>, <ComponentType.MAMBA: 2>). Tree Core: RustUnifiedTreeCore
+[2026-11-17 15:37:33] Tree cache initialized: source=default impl=UnifiedRadixCache hybrid_swa=False hybrid_ssm=True hicache_attached=False
+[2026-11-17 15:37:34] Engine startup timings (s): load_weight=0.82, kv_cache_allocation=0.42, scheduler_e2e=6.65, cuda_graph={prefill=0.00, decode=2.22, target_verify=0.00, draft_prefill=0.00, draft_decode=0.00, draft_extend=0.00}, tokenizer_e2e=11.54
+[2026-11-17 15:37:34] INFO:     Uvicorn running on http://0.0.0.0:30000 (Press CTRL+C to quit)
+[2026-11-17 15:37:36] The server is fired up and ready to roll!
+[2026-11-17 15:37:36] Triton kernel '_small_copy_kernel' device-loaded after serving started (free device mem: 0.99 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-11-17 15:37:37] Triton kernel '_causal_conv1d_fwd_kernel' device-loaded after serving started (free device mem: 0.99 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-11-17 15:37:37] Triton kernel 'fused_qkv_split_gdn_prefill_kernel' device-loaded after serving started (free device mem: 0.99 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-11-17 15:37:37] Triton kernel 'chunk_fwd_kernel_o' device-loaded after serving started (free device mem: 0.99 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-11-17 15:37:37] Triton kernel '_layer_norm_fwd_1pass_kernel' device-loaded after serving started (free device mem: 0.99 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-11-17 15:37:45] Triton kernel 'chunk_fwd_kernel_o' device-loaded after serving started (free device mem: 0.99 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-11-17 15:37:45] Triton kernel '_small_copy_kernel' device-loaded after serving started (free device mem: 0.99 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-11-17 15:37:45] Triton kernel '_causal_conv1d_fwd_kernel' device-loaded after serving started (free device mem: 0.99 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-11-17 15:38:01] Triton kernel 'apply_token_bitmask_inplace_kernel' device-loaded after serving started (free device mem: 0.92 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-11-17 15:38:19] Triton kernel '_fused_sigmoid_mul_kernel' device-loaded after serving started (free device mem: 0.04 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[cut] 257 batch lines; first 3 and last 6:
+[2026-11-17 15:37:36] Prefill batch, #new-seq: 1, #new-token: 82, #cached-token: 0, full token usage: 0.00, mamba usage: 0.50, #running-req: 0, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 31.68
+[2026-11-17 15:37:37] Prefill batch, #new-seq: 1, #new-token: 1, #cached-token: 0, full token usage: 0.00, mamba usage: 0.00, #running-req: 0, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 1.45
+[2026-11-17 15:37:43] Prefill batch, #new-seq: 1, #new-token: 1, #cached-token: 0, full token usage: 0.00, mamba usage: 0.00, #running-req: 0, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 0.16
+...
+[2026-11-17 15:39:20] Prefill batch, #new-seq: 1, #new-token: 2048, #cached-token: 0, full token usage: 0.22, mamba usage: 0.50, #running-req: 0, #queue-req: 0, #pending-token: 3481, cuda graph: False, input throughput (token/s): 8324.72
+[2026-11-17 15:39:20] Prefill batch, #new-seq: 1, #new-token: 2048, #cached-token: 0, full token usage: 0.23, mamba usage: 0.50, #running-req: 0, #queue-req: 0, #pending-token: 1433, cuda graph: False, input throughput (token/s): 8714.60
+[2026-11-17 15:39:20] Prefill batch, #new-seq: 1, #new-token: 1433, #cached-token: 0, full token usage: 0.23, mamba usage: 0.50, #running-req: 0, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 10655.33
+[2026-11-17 15:39:21] Decode batch, #running-req: 1, #full token: 0, full token usage: 0.00, mamba num: 0, mamba usage: 0.00, cuda graph: True, gen throughput (token/s): 13.98, #queue-req: 0
+[2026-11-17 15:39:21] Prefill batch, #new-seq: 1, #new-token: 25, #cached-token: 32128, full token usage: 0.23, mamba usage: 0.50, #running-req: 0, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 61.56
+[2026-11-17 15:39:21] Decode batch, #running-req: 1, #full token: 32194, full token usage: 0.23, mamba num: 4, mamba usage: 0.50, cuda graph: True, gen throughput (token/s): 75.98, #queue-req: 0

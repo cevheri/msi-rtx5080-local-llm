@@ -1,0 +1,3 @@
+stopped gemma-4-26b-a4b in container 'llamacpp'
+OpenCode, Hermes, Pi and dsh still point at gemma-4-26b-a4b and get no answer until the next ./llmctl up
+  switch back: OpenCode /models; hermes profile use default; Pi /model; dsh: delete the agent-default-model and acp lines in $HOME/.dsh/cordis.patch.yml

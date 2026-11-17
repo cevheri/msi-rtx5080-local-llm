@@ -1,0 +1,2 @@
+{"event": "k2_chat", "status": 200, "t": 1794936405.128, "seconds": 5.3, "finish_reason": "stop", "content": "391", "reasoning_content_chars": 1395, "tool_calls": [], "usage": {"prompt_tokens": 24, "completion_tokens": 477}, "utc": "17:26:45"}
+{"event": "k2_tool_call", "status": 200, "t": 1794936410.428, "seconds": 0.599, "finish_reason": "tool_calls", "content": "", "reasoning_content_chars": 133, "tool_calls": [{"name": "get_weather", "arguments": "{\"city\": \"Paris\"}"}], "usage": {"prompt_tokens": 176, "completion_tokens": 49}, "utc": "17:26:50"}

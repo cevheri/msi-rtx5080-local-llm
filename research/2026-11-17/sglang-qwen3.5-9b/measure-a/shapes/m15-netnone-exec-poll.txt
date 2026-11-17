@@ -1,0 +1,7 @@
+at 0.20 s /health URLError
+at 35.21 s /health 503
+at 47.26 s /health 200
+/ready 200
+/v1/models 200
+/get_server_info 200
+chat {"status": 200, "content": "OK", "finish_reason": "stop", "usage": 2}

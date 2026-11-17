@@ -1,0 +1,3 @@
+        Current Power Limit                            : 140.00 W
+        Default Power Limit                            : 80.00 W
+        Max Power Limit                                : 175.00 W

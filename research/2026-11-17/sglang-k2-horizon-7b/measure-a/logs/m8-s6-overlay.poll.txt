@@ -1,0 +1,1 @@
+{"exit": "all four answered 200", "elapsed_s": 38.05, "first_200_s": {"/health": 36.05, "/ready": 36.05, "/v1/models": 34.55, "/get_server_info": 34.55, "/server_info": 34.55}}

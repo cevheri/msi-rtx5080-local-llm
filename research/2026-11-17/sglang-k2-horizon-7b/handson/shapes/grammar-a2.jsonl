@@ -1,0 +1,2 @@
+{"finish":"tool_calls","content":"","calls":[{"name":"get_weather","arguments":"{\"city\": \"New York\"}"}],"err":null}
+{"finish":"stop","content":"{\"capital\":\"Paris\"}","calls":[],"err":null}

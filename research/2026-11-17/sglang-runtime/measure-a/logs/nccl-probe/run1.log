@@ -1,0 +1,318 @@
+===== variant baseline exit=0
+PROBE-RESULT {"variant": "baseline", "env": {"NCCL_VERSION": "2.28.3-1", "NCCL_CUMEM_ENABLE": "0", "NCCL_NVLS_ENABLE": "0"}, "free_after_context_mib": 15485.9, "free_after_init_process_group_mib": 15485.9, "free_after_new_group_mib": 15485.9, "first_all_reduce": "ok", "first_all_reduce_s": 0.23, "free_after_first_all_reduce_mib": 14813.9, "free_after_second_all_reduce_mib": 14813.9, "torch_reserved_mib": 2.0, "nccl_version": "2.30.7", "taken_by_first_all_reduce_mib": 672.0}
+
+
+===== variant debug exit=0
+0b79dbe2b84d:92:92 [0] NCCL INFO ncclOsDlopen(libnccl-env.so) failed: libnccl-env.so: cannot open shared object file: No such file or directory
+0b79dbe2b84d:92:92 [0] NCCL INFO ENV/Plugin: Could not find: libnccl-env.so
+0b79dbe2b84d:92:92 [0] NCCL INFO cudaDriverVersion 13020
+0b79dbe2b84d:92:92 [0] NCCL INFO NCCL version 2.30.7+cuda13.3
+0b79dbe2b84d:92:92 [0] NCCL INFO NCCL git version HEAD a5187fa2e
+0b79dbe2b84d:92:92 [0] NCCL INFO ncclOsDlopen(libnccl-net.so) failed: libnccl-net.so: cannot open shared object file: No such file or directory
+0b79dbe2b84d:92:92 [0] NCCL INFO NET/Plugin: Could not find: libnccl-net.so
+0b79dbe2b84d:92:92 [0] NCCL INFO Count not open libibverbs.so
+0b79dbe2b84d:92:92 [0] NCCL INFO NET/IB : No device found.
+0b79dbe2b84d:92:92 [0] NCCL INFO NET/IB : Using [RO]; OOB lo:127.0.0.1<0>
+0b79dbe2b84d:92:92 [0] NCCL INFO Failed to initialize NET plugin IB
+0b79dbe2b84d:92:92 [0] NCCL INFO NET/Socket : Using [0]lo:127.0.0.1<0>
+0b79dbe2b84d:92:92 [0] NCCL INFO Initialized NET plugin Socket
+0b79dbe2b84d:92:92 [0] NCCL INFO Assigned NET plugin Socket to comm
+0b79dbe2b84d:92:92 [0] NCCL INFO ncclOsDlopen(libnccl-rma.so) failed: libnccl-rma.so: cannot open shared object file: No such file or directory
+0b79dbe2b84d:92:92 [0] NCCL INFO RMA/Plugin: Could not find: libnccl-rma.so
+0b79dbe2b84d:92:92 [0] NCCL INFO RMA/Plugin: Failed to load external plugin libnccl-rma.so, dlHandle: (nil), ncclRma: (nil)
+0b79dbe2b84d:92:92 [0] NCCL INFO RMA/Plugin: Failed to initialize any plugin
+0b79dbe2b84d:92:92 [0] NCCL INFO ncclOsDlopen(libnccl-gin.so) failed: libnccl-gin.so: cannot open shared object file: No such file or directory
+0b79dbe2b84d:92:92 [0] NCCL INFO GIN/Plugin: Could not find: libnccl-gin.so
+0b79dbe2b84d:92:92 [0] NCCL INFO GIN/Plugin: Failed to load external plugin libnccl-gin.so, dlHandle: (nil), ncclGin: (nil)
+0b79dbe2b84d:92:92 [0] NCCL INFO GIN/Plugin: Failed to initialize any GIN plugin
+0b79dbe2b84d:92:92 [0] NCCL INFO Using network Socket
+0b79dbe2b84d:92:92 [0] NCCL INFO MemManager: Initialized for device 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Loaded NVML from libnvidia-ml.so.1
+0b79dbe2b84d:92:92 [0] NCCL INFO [Rank 0] ncclCommInitRankConfig comm 0xb7995d0 rank 0 nranks 1 cudaDev 0 nvmlDev 0 busId 2000 commId 0x293b0262c40bffe8 - Init START
+0b79dbe2b84d:92:92 [0] NCCL INFO RAS client listening socket at ::1<28028>
+0b79dbe2b84d:92:92 [0] NCCL INFO ncclTopoGetCpuAffinity: Affinity for GPU 0 is empty, ignoring. (GPU affinity =  ; CPU affinity = 0-23).
+0b79dbe2b84d:92:92 [0] NCCL INFO Rank 0: 1 Net devices
+0b79dbe2b84d:92:92 [0] NCCL INFO Rank 0: 0 CollNet devices
+0b79dbe2b84d:92:92 [0] NCCL INFO Local Net device counts across ranks: min 1 max 1
+0b79dbe2b84d:92:92 [0] NCCL INFO Local CollNet device counts across ranks: min 0 max 0
+0b79dbe2b84d:92:92 [0] NCCL INFO comm 0xb7995d0 rank 0 nRanks 1 nNodes 1 localRanks 1 localRank 0 MNNVL 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 00/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 01/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 02/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 03/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 04/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 05/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 06/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 07/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 08/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 09/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 10/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 11/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 12/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 13/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 14/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 15/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 16/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 17/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 18/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 19/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 20/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 21/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 22/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 23/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 24/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 25/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 26/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 27/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 28/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 29/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 30/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 31/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 32/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 33/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 34/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 35/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 36/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 37/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 38/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 39/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 40/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 41/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 42/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 43/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 44/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 45/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 46/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 47/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 48/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 49/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 50/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 51/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 52/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 53/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 54/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 55/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 56/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 57/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 58/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 59/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 60/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 61/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 62/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Channel 63/64 : 0
+0b79dbe2b84d:92:92 [0] NCCL INFO Trees [0] -1/-1/-1->0->-1 [1] -1/-1/-1->0->-1 [2] -1/-1/-1->0->-1 [3] -1/-1/-1->0->-1 [4] -1/-1/-1->0->-1 [5] -1/-1/-1->0->-1 [6] -1/-1/-1->0->-1 [7] -1/-1/-1->0->-1 [8] -1/-1/-1->0->-1 [9] -1/-1/-1->0->-1 [10] -1/-1/-1->0->-1 [11] -1/-1/-1->0->-1 [12] -1/-1/-1->0->-1 [13] -1/-1/-1->0->-1 [14] -1/-1/-1->0->-1 [15] -1/-1/-1->0->-1 [16] -1/-1/-1->0->-1 [17] -1/-1/-1->0->-1 [18] -1/-1/-1->0->-1 [19] -1/-1/-1->0->-1 [20] -1/-1/-1->0->-1 [21] -1/-1/-1->0->-1 [22] -1/-1/-1->0->-1 [23] -1/-1/-1->0->-1 [24] -1/-1/-1->0->-1 [25] -1/-1/-1->0->-1 [26] -1/-1/-1->0->-1 [27] -1/-1/-1->0->-1 [28] -1/-1/-1->0->-1 [29] -1/-1/-1->0->-1 [30] -1/-1/-1->0->-1 [31] -1/-1/-1->0->-1 [32] -1/-1/-1->0->-1 [33] -1/-1/-1->0->-1 [34] -1/-1/-1->0->-1 [35] -1/-1/-1->0->-1 [36] -1/-1/-1->0->-1 [37] -1/-1/-1->0->-1 [38] -1/-1/-1->0->-1 [39] -1/-1/-1->0->-1 [40] -1/-1/-1->0->-1 [41] -1/-1/-1->0->-1 [42] -1/-1/-1->0->-1 [43] -1/-1/-1->0->-1 [44] -1/-1/-1->0->-1 [45] -1/-1/-1->0->-1 [46] -1/-1/-1->0->-1 [47] -1/-1/-1->0->-1 [48] -1/-1/-1->0->-1 [4
+0b79dbe2b84d:92:92 [0] NCCL INFO P2P Chunksize set to 524288
+0b79dbe2b84d:92:92 [0] NCCL INFO ncclOsDlopen(libnccl-profiler.so) failed: libnccl-profiler.so: cannot open shared object file: No such file or directory
+0b79dbe2b84d:92:92 [0] NCCL INFO PROFILER/Plugin: Could not find: libnccl-profiler.so
+0b79dbe2b84d:92:92 [0] NCCL INFO Check P2P Type isAllDirectP2p 1 directMode 0 isAllCudaP2p 1
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d40400000 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d40400400 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d40400600 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d40400800 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d40400c00 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d40400e00 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d40401000 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d40401400 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d40401600 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d40401800 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d40401c00 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d40401e00 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d40402000 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d40402400 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d40402600 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d40402800 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d40402c00 memType 2
+0b79dbe2b84d:92:127 [0] NCCL INFO [Proxy Service] Device 0 CPU core 15
+0b79dbe2b84d:92:127 [0] NCCL INFO proxy listening socket at 127.0.0.1<43101>
+0b79dbe2b84d:92:128 [0] NCCL INFO [Proxy Service UDS] Device 0 CPU core 20
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d40402e00 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d40403000 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d40403400 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d40403600 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d40403800 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d40403c00 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d40403e00 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d40404000 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d40404400 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d40404600 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d40404800 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d40404c00 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d40404e00 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d40405000 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d40405400 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d40405600 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d40405800 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d40405c00 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d40405e00 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d40406000 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d40406400 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d40406600 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d40406800 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d40406c00 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d40406e00 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d40407000 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d40407400 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d40407600 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d40407800 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d40407c00 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d40407e00 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d40408000 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d40408400 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d40408600 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d40408800 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d40408c00 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d40408e00 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d40409000 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d40409400 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d40409600 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d40409800 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d40409c00 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d40409e00 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d4040a000 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d4040a400 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d4040a600 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d4040a800 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d4040ac00 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d4040ae00 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d4040b000 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d4040b400 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d4040b600 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d4040b800 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d4040bc00 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d4040be00 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d4040c000 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d4040c400 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d4040c600 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d4040c800 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d4040cc00 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d4040ce00 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d4040d000 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d4040d400 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d4040d600 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d4040d800 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d4040dc00 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d4040de00 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d4040e000 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d4040e400 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d4040e600 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d4040e800 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d4040ec00 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d4040ee00 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d4040f000 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d4040f400 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d4040f600 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d4040f800 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d4040fc00 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d4040fe00 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d40410000 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d40410400 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d40410600 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d40410800 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d40410c00 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d40410e00 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d40411000 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d40411400 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d40411600 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d40411800 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d40411c00 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d40411e00 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d40412000 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d40412400 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d40412600 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d40412800 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d40412c00 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d40412e00 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d40413000 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d40413400 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d40413600 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d40413800 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d40413c00 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d40413e00 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d40414000 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d40414400 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d40414600 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d40414800 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d40414c00 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d40414e00 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d40415000 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d40415400 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d40415600 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d40415800 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d40415c00 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d40415e00 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d40416000 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d40416400 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d40416600 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d40416800 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d40416c00 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d40416e00 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d40417000 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d40417400 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d40417600 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d40417800 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d40417c00 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d40417e00 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d40418000 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d40418400 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d40418600 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d40418800 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d40418c00 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d40418e00 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d40419000 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d40419400 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d40419600 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d40419800 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d40419c00 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d40419e00 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d4041a000 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d4041a400 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d4041a600 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d4041a800 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d4041ac00 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d4041ae00 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d4041b000 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d4041b400 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d4041b600 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d4041b800 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d4041bc00 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d4041be00 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d4041c000 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d4041c400 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d4041c600 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d4041c800 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d4041cc00 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d4041ce00 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d4041d000 memType 2
+0b79dbe2bPROBE-RESULT {"variant": "debug", "env": {"NCCL_VERSION": "2.28.3-1", "NCCL_CUMEM_ENABLE": "0", "NCCL_NVLS_ENABLE": "0", "NCCL_DEBUG": "INFO", "NCCL_DEBUG_SUBSYS": "INIT,ALLOC"}, "free_after_context_mib": 15485.9, "free_after_init_process_group_mib": 15485.9, "free_after_new_group_mib": 15485.9, "first_all_reduce": "ok", "first_all_reduce_s": 0.22, "free_after_first_all_reduce_mib": 14813.9, "free_after_second_all_reduce_mib": 14813.9, "torch_reserved_mib": 2.0, "nccl_version": "2.30.7", "taken_by_first_all_reduce_mib": 672.0}
+84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d4041d400 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d4041d600 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d4041d800 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d4041dc00 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d4041de00 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d4041e000 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d4041e400 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d4041e600 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d4041e800 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d4041ec00 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d4041ee00 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d4041f000 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d4041f400 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d4041f600 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:45 (initChannel) Cuda CallocAsync Size 608 pointer 0x724d4041f800 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:48 (initChannel) Cuda CallocAsync Size 24 pointer 0x724d4041fc00 memType 2
+0b79dbe2b84d:92:92 [0] NCCL INFO channel.cc:60 (initChannel) Cuda CallocAsync Size 4 pointer 0x724d4041fe00 memType 2
+0b79dbe2b84d:92:129 [0] NCCL INFO [Proxy Progress] Device 0 CPU core 15
+0b79dbe2b84d:92:127 [0] NCCL INFO transport/net.cc:675 (sharedNetBuffersInit) Cuda Calloc Size 536870912 pointer 0x724ccc000000 memType 0
+0b79dbe2b84d:92:92 [0] NCCL INFO ncclOsDlopen(libnccl-tuner.so) failed: libnccl-tuner.so: cannot open shared object file: No such file or directory
+0b79dbe2b84d:92:92 [0] NCCL INFO TUNER/Plugin: Could not find: libnccl-tuner.so
+0b79dbe2b84d:92:92 [0] NCCL INFO 64 coll channels, 64 collnet channels, 0 nvls channels, 64 p2p channels, 64 p2p channels per peer
+0b79dbe2b84d:92:92 [0] NCCL INFO Symmetric memory is not supported. cuMemEnable 0, globalGinSupport 0, cuMemGdrSupport 0
+0b79dbe2b84d:92:92 [0] NCCL INFO init.cc:587 (devCommSetup) Cuda CallocAsync Size 23648 pointer 0x724d40420000 memType 0
+0b79dbe2b84d:92:92 [0] NCCL INFO init.cc:591 (devCommSetup) Cuda CallocAsync Size 4 pointer 0x724d40425e00 memType 0
+0b79dbe2b84d:92:92 [0] NCCL INFO CC Off, workFifoBytes 1048576
+0b79dbe2b84d:92:92 [0] NCCL INFO ncclCommInitRankConfig comm 0xb7995d0 rank 0 nranks 1 cudaDev 0 nvmlDev 0 busId 2000 commId 0x293b0262c40bffe8 - Init COMPLETE
+0b79dbe2b84d:92:92 [0] NCCL INFO Init timings - ncclCommInitRankConfig: rank 0 nranks 1 total 0.22 (kernels 0.18, alloc 0.01, bootstrap 0.00, allgathers 0.00, topo 0.00, graphs 0.00, connections 0.02, rest 0.00)
+0b79dbe2b84d:92:92 [0] NCCL INFO MemManager: Destroying (refCount=0)
+0b79dbe2b84d:92:92 [0] NCCL INFO MemManager: Destroyed
+
+

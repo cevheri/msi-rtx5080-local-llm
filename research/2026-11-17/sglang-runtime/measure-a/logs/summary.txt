@@ -1,0 +1,84 @@
+M7: seconds after the docker run call (poll every 0.5 s); ready = the 'fired up' log line (1 s resolution)
+  gpt-oss-20b    m6-o1                  ready_line=106.2 first_200={'/health': 107.06, '/ready': 107.07, '/v1/models': 106.06, '/get_server_info': 106.07, '/server_info': 106.07}
+                                        statuses before 200: {'/health': ['503', 'ConnectionRefusedError', 'ConnectionResetError', 'RemoteDisconnected'], '/ready': ['503', 'ConnectionRefusedError', 'ConnectionResetError', 'RemoteDisconnected'], '/v1/models': ['ConnectionRefusedError', 'ConnectionResetError', 'RemoteDisconnected'], '/get_server_info': ['ConnectionRefusedError', 'ConnectionResetError', 'RemoteDisconnected'], '/server_info': ['ConnectionRefusedError', 'ConnectionResetError', 'RemoteDisconnected']}
+  gpt-oss-20b    m6-o2                  ready_line=115.8 first_200={'/health': 116.57, '/ready': 116.57, '/v1/models': 115.07, '/get_server_info': 115.07, '/server_info': 115.07}
+  k2-horizon-7b  m6-o1                  ready_line=33.9 first_200={'/health': 34.55, '/ready': 34.55, '/v1/models': 33.55, '/get_server_info': 33.55, '/server_info': 33.55}
+                                        statuses before 200: {'/health': ['503', 'ConnectionRefusedError', 'ConnectionResetError', 'RemoteDisconnected'], '/ready': ['503', 'ConnectionRefusedError', 'ConnectionResetError', 'RemoteDisconnected'], '/v1/models': ['ConnectionRefusedError', 'ConnectionResetError', 'RemoteDisconnected'], '/get_server_info': ['ConnectionRefusedError', 'ConnectionResetError', 'RemoteDisconnected'], '/server_info': ['ConnectionRefusedError', 'ConnectionResetError', 'RemoteDisconnected']}
+  k2-horizon-7b  m6-o2                  ready_line=35.8 first_200={'/health': 36.55, '/ready': 36.55, '/v1/models': 35.05, '/get_server_info': 35.05, '/server_info': 35.05}
+  k2-horizon-7b  m8-s6-overlay          ready_line=35.0 first_200={'/health': 36.05, '/ready': 36.05, '/v1/models': 34.55, '/get_server_info': 34.55, '/server_info': 34.55}
+  qwen3.5-9b     m15-cold               ready_line=46.2 first_200={'/health': 47.55, '/ready': 47.55, '/v1/models': 34.55, '/get_server_info': 34.55, '/server_info': 34.55}
+  qwen3.5-9b     m15-netnone            ready_line=46.6 first_200={}
+  qwen3.5-9b     m6-e1-sync             ready_line=28.7 first_200={'/health': 29.55, '/ready': 29.55, '/v1/models': 27.55, '/get_server_info': 27.55, '/server_info': 27.55}
+  qwen3.5-9b     m6-e2-sync-p2p1        ready_line=28.1 first_200={'/health': 28.55, '/ready': 28.55, '/v1/models': 26.55, '/get_server_info': 26.55, '/server_info': 26.55}
+  qwen3.5-9b     m6-o1                  ready_line=26.9 first_200={'/health': 28.05, '/ready': 28.05, '/v1/models': 26.05, '/get_server_info': 26.05, '/server_info': 26.05}
+                                        statuses before 200: {'/health': ['503', 'ConnectionRefusedError', 'ConnectionResetError', 'RemoteDisconnected'], '/ready': ['503', 'ConnectionRefusedError', 'ConnectionResetError'], '/v1/models': ['ConnectionRefusedError', 'ConnectionResetError', 'RemoteDisconnected'], '/get_server_info': ['ConnectionRefusedError', 'ConnectionResetError', 'RemoteDisconnected'], '/server_info': ['ConnectionRefusedError', 'ConnectionResetError', 'RemoteDisconnected']}
+  qwen3.5-9b     m6-o2                  ready_line=26.8 first_200={'/health': 27.55, '/ready': 27.55, '/v1/models': 25.55, '/get_server_info': 25.55, '/server_info': 25.55}
+  qwen3.5-9b     m8-s1-logreq           ready_line=28.3 first_200={'/health': 29.55, '/ready': 29.55, '/v1/models': 27.55, '/get_server_info': 27.55, '/server_info': 27.55}
+  qwen3.5-9b     m8-s2-preferred        ready_line=27.6 first_200={'/health': 28.05, '/ready': 28.05, '/v1/models': 26.05, '/get_server_info': 26.05, '/server_info': 26.05}
+  qwen3.5-9b     m8-s3-preferred-topk1  ready_line=27.4 first_200={'/health': 28.05, '/ready': 28.05, '/v1/models': 26.05, '/get_server_info': 26.05, '/server_info': 26.05}
+  qwen3.5-9b     m8-s4-overlay          ready_line=33.3 first_200={'/health': 34.55, '/ready': 34.55, '/v1/models': 32.55, '/get_server_info': 32.55, '/server_info': 32.55}
+  qwen3.5-9b     m8-s5-overlay-topk1    ready_line=26.8 first_200={'/health': 28.05, '/ready': 28.05, '/v1/models': 26.05, '/get_server_info': 26.05, '/server_info': 26.05}
+
+M6: nvidia-smi free MiB before -> after each request, and the outcome
+  gpt-oss-20b m6-o1:
+      start 1406
+      long_prompt_p1(31929 tok) 1426->1070 200
+      title_p1(101 tok) 1070->468 200 title_parses=True
+      forced_tool_p1(132 tok) 468->468 200 finish=stop no tool_calls
+      end: all requests answered 200 and the server stayed up
+  gpt-oss-20b m6-o2:
+      start 1406
+      warmup(73 tok) 1406->800 200
+      long_prompt_p1(31933 tok) 822->518 200
+      title_p1(101 tok) 518->518 200 title_parses=True
+      forced_tool_p1(132 tok) 518->518 200 finish=stop no tool_calls
+      end: all requests answered 200 and the server stayed up
+  k2-horizon-7b m6-o1:
+      start 962
+      long_prompt_p1(32016 tok) 960->636 200
+      title_p1(41 tok) 636->34 200 title_parses=True
+      forced_tool_p1(176 tok) 34->34 200 tool=get_weather
+      end: all requests answered 200 and the server stayed up
+  k2-horizon-7b m6-o2:
+      start 962
+      warmup(16 tok) 962->358 200
+      long_prompt_p1(32021 tok) 360->34 200
+      title_p1(41 tok) 34->34 200 title_parses=True
+      forced_tool_p1(176 tok) 34->34 200 tool=get_weather
+      end: all requests answered 200 and the server stayed up
+  qwen3.5-9b m15-cold-m6-o1-120k:
+      start 709
+      long_prompt_p1(119911 tok) 1039->653 200
+      title_p1(44 tok) 653->45 200 title_parses=True
+      forced_tool_p1(288 tok) 45->45 200 tool=get_weather
+      end: all requests answered 200 and the server stayed up
+  qwen3.5-9b m6-e1-sync:
+      start 407
+      long_prompt_p1(119911 tok) 433->47 200
+      title_p1(44 tok) 47->45 200 title_parses=True
+      forced_tool_p1(288 tok) 45->45 200 tool=get_weather
+      decode 92.9 tok/s
+      end: all requests answered 200 and the server stayed up
+  qwen3.5-9b m6-e2-sync-p2p1:
+      start 911
+      long_prompt_p1(119912 tok) 937->551 200
+      title_p1(44 tok) 551->549 200 title_parses=True
+      forced_tool_p1(288 tok) 549->549 200 tool=get_weather
+      decode 92.8 tok/s
+      end: all requests answered 200 and the server stayed up
+  qwen3.5-9b m6-o1:
+      start 1013
+      long_prompt_p1(32087 tok) 1039->655 200
+      title_p1(44 tok) 655->47 200 title_parses=True
+      forced_tool_p1(288 tok) 47->47 200 tool=get_weather
+      end: all requests answered 200 and the server stayed up
+  qwen3.5-9b m6-o2:
+      start 1013
+      warmup(18 tok) 1013->407 200
+      long_prompt_p1(32087 tok) 433->49 200
+      title_p1(44 tok) 49->47 200 title_parses=True
+      forced_tool_p1(288 tok) 47->47 200 tool=get_weather
+      long_prompt_p2(119913 tok) 433->45 200
+      title_p2(44 tok) 45->45 200 title_parses=True
+      forced_tool_p2(288 tok) 45->45 200 tool=get_weather
+      end: all requests answered 200 and the server stayed up

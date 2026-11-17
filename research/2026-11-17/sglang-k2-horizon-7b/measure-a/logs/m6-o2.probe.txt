@@ -1,0 +1,15 @@
+{"event": "start", "model": "k2-horizon-7b", "order": 2, "paragraphs": 333, "then_long": 0, "container": "running exit=0 oom=false", "t": 1794936935.865, "used_mib": 14880, "free_mib": 962, "total_mib": 16303, "utc": "17:35:35"}
+{"event": "gpu_before", "step": "warmup", "t": 1794936935.88, "used_mib": 14880, "free_mib": 962, "total_mib": 16303, "utc": "17:35:35"}
+{"event": "request", "step": "warmup", "status": 200, "t": 1794936935.88, "seconds": 0.351, "finish_reason": "length", "content": "", "reasoning_content_chars": 32, "tool_calls": [], "usage": {"prompt_tokens": 16, "completion_tokens": 8}, "utc": "17:35:35"}
+{"event": "gpu_after", "step": "warmup", "t": 1794936936.247, "used_mib": 15484, "free_mib": 358, "total_mib": 16303, "utc": "17:35:36"}
+{"event": "flush_cache", "step": "p1", "status": 200, "t": 1794936936.25, "utc": "17:35:36"}
+{"event": "gpu_before", "step": "long_prompt_p1", "t": 1794936936.267, "used_mib": 15482, "free_mib": 360, "total_mib": 16303, "utc": "17:35:36"}
+{"event": "request", "step": "long_prompt_p1", "status": 200, "t": 1794936936.267, "seconds": 12.815, "finish_reason": "length", "content": "", "reasoning_content_chars": 178, "tool_calls": [], "usage": {"prompt_tokens": 32021, "completion_tokens": 32}, "utc": "17:35:36"}
+{"event": "gpu_after", "step": "long_prompt_p1", "t": 1794936949.099, "used_mib": 15808, "free_mib": 34, "total_mib": 16303, "utc": "17:35:49"}
+{"event": "gpu_before", "step": "title_p1", "t": 1794936949.116, "used_mib": 15808, "free_mib": 34, "total_mib": 16303, "utc": "17:35:49"}
+{"event": "request", "step": "title_p1", "status": 200, "t": 1794936949.116, "seconds": 0.753, "finish_reason": "stop", "content": "{\"title\": \"Adding Two Numbers in Python\"}", "reasoning_content_chars": 257, "tool_calls": [], "usage": {"prompt_tokens": 41, "completion_tokens": 67}, "title_parses": true, "utc": "17:35:49"}
+{"event": "gpu_after", "step": "title_p1", "t": 1794936949.888, "used_mib": 15808, "free_mib": 34, "total_mib": 16303, "utc": "17:35:49"}
+{"event": "gpu_before", "step": "forced_tool_p1", "t": 1794936949.904, "used_mib": 15808, "free_mib": 34, "total_mib": 16303, "utc": "17:35:49"}
+{"event": "request", "step": "forced_tool_p1", "status": 200, "t": 1794936949.904, "seconds": 0.48, "finish_reason": "tool_calls", "content": "", "reasoning_content_chars": 67, "tool_calls": [{"name": "get_weather", "arguments": "{\"city\": \"Paris\"}"}], "usage": {"prompt_tokens": 176, "completion_tokens": 39}, "utc": "17:35:49"}
+{"event": "gpu_after", "step": "forced_tool_p1", "t": 1794936950.401, "used_mib": 15808, "free_mib": 34, "total_mib": 16303, "utc": "17:35:50"}
+{"event": "end", "result": "all requests answered 200 and the server stayed up", "t": 1794936950.419, "used_mib": 15808, "free_mib": 34, "total_mib": 16303, "utc": "17:35:50"}

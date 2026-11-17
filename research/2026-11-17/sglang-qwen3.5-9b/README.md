@@ -1,0 +1,41 @@
+# Qwen3.5-9B NVFP4 on SGLang, 2026-11-17
+
+Last verified: 2026-11-17.
+
+Result: measured in the hands-on run (a2 and a3 ran, a1 was refused) and in measurement A (M6, M7, M8 and M15 at the a3 settings), all started by hand before llmctl had an SGLang recipe.
+
+Image: `lmsysorg/sglang:v0.5.23-runtime`.
+Model: `RedHatAI/Qwen3.5-9B-NVFP4` at revision `a4df85a20fb7e54740f564f15af0c2f5d9c6616c`, served as `qwen3.5-9b`.
+Working settings (a3, [handson/cmds/qwen3.5-9b-a3.sh](handson/cmds/qwen3.5-9b-a3.sh)): `--context-length 131072 --mem-fraction-static 0.88 --max-running-requests 1 --max-mamba-cache-size 8 --disable-prefill-cuda-graph --tool-call-parser qwen3_coder --reasoning-parser qwen3 --default-chat-template-kwargs {"enable_thinking":false}`, with `--device nvidia.com/gpu=all --ipc=host --memory 32g --memory-swap 32g`, the Hugging Face cache mounted read-only and `HF_HUB_OFFLINE=1`.
+The cross-model reports are [the hands-on README](../sglang-runtime/handson/README.md) and [measurement A's README](../sglang-runtime/measure-a/README.md), where every figure below comes from.
+
+## Hands-on run
+
+- a1 with `--language-model-only` was refused at argument resolution, because v0.5.23 supports that flag for four other architectures only, so the vision tower always loads: weights take 8.39 GB (measured on the MSI Raider 18 Max HX, SGLang v0.5.23, 2026-11-17), against 7.48 GiB language-only on vLLM (measured on the MSI Raider 18 Max HX, vLLM v0.33.0, 2026-11-17; [research/2026-11-17/vllm-qwen3.5-9b/](../vllm-qwen3.5-9b/README.md)).
+- a2 at `--mem-fraction-static 0.85` ran with a KV pool of 74,233 tokens, short of the 131,072-token context, because the auto-sized mamba pool spent about 2 GB on 41 state slots (measured on the MSI Raider 18 Max HX, SGLang v0.5.23, 2026-11-17).
+- a3 with 8 mamba slots and no prefill CUDA graph held 140,976 BF16 tokens and left 1.35 GB free after start, and reached its ready line 28 s after `docker run` (measured on the MSI Raider 18 Max HX, SGLang v0.5.23, 2026-11-17).
+- GPU peak by `nvidia-smi`: 15,806 MiB (a2) and 15,810 MiB (a3) (measured on the MSI Raider 18 Max HX, SGLang v0.5.23, 2026-11-17), against 13,726 MiB for vLLM (measured on the MSI Raider 18 Max HX, vLLM v0.33.0, 2026-11-17; [research/2026-11-17/vllm-qwen3.5-9b/](../vllm-qwen3.5-9b/README.md)); host anonymous memory peaked at 5.61 GiB (measured on the MSI Raider 18 Max HX, SGLang v0.5.23, 2026-11-17).
+- Decode: 92.9 tok/s on 512-token answers (a3), and a median of 92.8 tok/s in the repository probe over answers of 643 to 813 tokens (measured on the MSI Raider 18 Max HX, SGLang v0.5.23, 2026-11-17), against 90.8 tok/s on vLLM (measured on the MSI Raider 18 Max HX, vLLM v0.33.0, 2026-11-17; [research/2026-11-17/vllm-qwen3.5-9b/](../vllm-qwen3.5-9b/README.md)).
+- First-token time after `/flush_cache` at a3: 0.566 s for 8,591 tokens and 2.394 s for 32,153 tokens; 124,667 tokens took 23.13 s (5,390 tok/s) and 0.057 s again, and decode at that depth ran at 56.8 tok/s (measured on the MSI Raider 18 Max HX, SGLang v0.5.23, 2026-11-17).
+- Sustained load with both CUDA graph types on (run 4, the a2 configuration): 66 requests in 300 s with fresh prompts of up to 13,448 tokens, no error, median decode 91.3 tok/s, at most 70 C and 144.5 W (measured on the MSI Raider 18 Max HX, SGLang v0.5.23, 2026-11-17).
+- Thinking: `chat_template_kwargs.enable_thinking` true and false work and the server default off holds, but `reasoning_effort` `low` and `high` turn thinking on despite that default (measured on the MSI Raider 18 Max HX, SGLang v0.5.23, 2026-11-17).
+
+## Measurement A
+
+- Sampling (M8): `--preferred-sampling-params` left field-less chat requests at temperature 1.0, top_p 1.0 and top_k -1, while the overlay with `{"temperature": 0.6, "top_p": 0.95, "top_k": 20}` in its `generation_config.json` was logged at start and applied to every field-less request, and with `top_k` 1 gave five identical replies (measured on the MSI Raider 18 Max HX, SGLang v0.5.23, 2026-11-17).
+- Grammar (M6): free memory was 1,013 MiB after ready and 1,039 MiB after `/flush_cache`; the first grammar request took 608 MiB and left 47 MiB after a 32k-token prompt and 45 MiB after a 120k-token prompt, and every request passed (measured on the MSI Raider 18 Max HX, SGLang v0.5.23, 2026-11-17).
+- With `SYNC_TOKEN_IDS_ACROSS_TP=1` alone, 407 MiB were free after ready; with `NCCL_MAX_P2P_NCHANNELS=1` as well, 911 MiB, and both grammar requests after a 119,912-token prompt left 549 MiB, at 92.8 tok/s decode (measured on the MSI Raider 18 Max HX, SGLang v0.5.23, 2026-11-17).
+- Readiness (M7): the ready line came 26.9 s after `docker run`, `/v1/models` and `/server_info` answered 200 at 26.05 s and `/ready` at 28.05 s; `startup_available` read 1.35 GiB, 0.34 GiB more than was free after ready and a flush (measured on the MSI Raider 18 Max HX, SGLang v0.5.23, 2026-11-17).
+- Cold start and network (M15): from an empty cache volume with `FLASHINFER_NO_DOWNLOAD=1` the server was ready in 46.2 s, and with `--network none` in 46.6 s, with no download line in either log; 709 MiB were free right after the cold start and 1,039 MiB after a flush (measured on the MSI Raider 18 Max HX, SGLang v0.5.23, 2026-11-17).
+
+## Files
+
+| Path | Holds |
+|---|---|
+| [handson/cmds/](handson/cmds/) | The `docker run` of each hands-on start: a1, a2, a3 and the sustained run 4 |
+| [handson/logs/](handson/logs/) | Cut container logs (`attemptN.log`, `run4-sustained.log`), container arguments (`*.cmd.json`), socket tables (`*.proc-net-tcp.txt`), start times (`start-*.epoch`) and the 1 s GPU and cgroup traces (`trace-*.csv`) |
+| [handson/shapes/](handson/shapes/) | Request and reply shapes from `api_probe.py`, the repository probe and `sustained.py` |
+| [measure-a/cmds/](measure-a/cmds/) | The `docker run` of each measurement A start: M8 s1 to s5, M6 o1, o2, e1 and e2, M15 cold and network-none |
+| [measure-a/logs/](measure-a/logs/) | Per run the cut log, the full log of the M6 and M15 runs, the request-log extract of the M8 runs, the trace, the poller and probe output, the container state and the cache volume listings of M15 |
+| [measure-a/shapes/](measure-a/shapes/) | M6 and M8 records (`*.jsonl`), M7 poll records (`*-m7.json`), one full `/get_server_info` body and `/model_info` of two M8 starts |
+| [measure-a/overlay/](measure-a/overlay/) | The generation config before and after, and the link count, of the two overlays (`top_k` 20 and `top_k` 1) |

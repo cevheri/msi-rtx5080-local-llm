@@ -1,0 +1,15 @@
+{"event": "start", "model": "gpt-oss-20b", "order": 2, "paragraphs": 335, "then_long": 0, "container": "running exit=0 oom=false", "t": 1794937081.928, "used_mib": 14436, "free_mib": 1406, "total_mib": 16303, "utc": "17:38:01"}
+{"event": "gpu_before", "step": "warmup", "t": 1794937081.943, "used_mib": 14436, "free_mib": 1406, "total_mib": 16303, "utc": "17:38:01"}
+{"event": "request", "step": "warmup", "status": 200, "t": 1794937081.943, "seconds": 0.427, "finish_reason": "length", "content": "", "reasoning_content_chars": 23, "tool_calls": [], "usage": {"prompt_tokens": 73, "completion_tokens": 8}, "utc": "17:38:01"}
+{"event": "gpu_after", "step": "warmup", "t": 1794937082.386, "used_mib": 15042, "free_mib": 800, "total_mib": 16303, "utc": "17:38:02"}
+{"event": "flush_cache", "step": "p1", "status": 200, "t": 1794937082.39, "utc": "17:38:02"}
+{"event": "gpu_before", "step": "long_prompt_p1", "t": 1794937082.405, "used_mib": 15020, "free_mib": 822, "total_mib": 16303, "utc": "17:38:02"}
+{"event": "request", "step": "long_prompt_p1", "status": 200, "t": 1794937082.405, "seconds": 7.1, "finish_reason": "length", "content": "", "reasoning_content_chars": 158, "tool_calls": [], "usage": {"prompt_tokens": 31933, "completion_tokens": 32}, "utc": "17:38:02"}
+{"event": "gpu_after", "step": "long_prompt_p1", "t": 1794937089.521, "used_mib": 15324, "free_mib": 518, "total_mib": 16303, "utc": "17:38:09"}
+{"event": "gpu_before", "step": "title_p1", "t": 1794937089.538, "used_mib": 15324, "free_mib": 518, "total_mib": 16303, "utc": "17:38:09"}
+{"event": "request", "step": "title_p1", "status": 200, "t": 1794937089.538, "seconds": 0.795, "finish_reason": "stop", "content": "{\n  \"title\": \"Adding two numbers in Python\"\n}", "reasoning_content_chars": 315, "tool_calls": [], "usage": {"prompt_tokens": 101, "completion_tokens": 85}, "title_parses": true, "utc": "17:38:09"}
+{"event": "gpu_after", "step": "title_p1", "t": 1794937090.349, "used_mib": 15324, "free_mib": 518, "total_mib": 16303, "utc": "17:38:10"}
+{"event": "gpu_before", "step": "forced_tool_p1", "t": 1794937090.366, "used_mib": 15324, "free_mib": 518, "total_mib": 16303, "utc": "17:38:10"}
+{"event": "request", "step": "forced_tool_p1", "status": 200, "t": 1794937090.366, "seconds": 0.53, "finish_reason": "stop", "content": "<|channel|>commentary to=functions.get_weather<|constrain|>json<|message|>{\"city... (98 chars)", "reasoning_content_chars": 96, "tool_calls": [], "usage": {"prompt_tokens": 132, "completion_tokens": 53}, "utc": "17:38:10"}
+{"event": "gpu_after", "step": "forced_tool_p1", "t": 1794937090.913, "used_mib": 15324, "free_mib": 518, "total_mib": 16303, "utc": "17:38:10"}
+{"event": "end", "result": "all requests answered 200 and the server stayed up", "t": 1794937090.931, "used_mib": 15324, "free_mib": 518, "total_mib": 16303, "utc": "17:38:10"}

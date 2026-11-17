@@ -1,0 +1,12 @@
+{"event": "start", "model": "qwen3.5-9b", "order": 1, "paragraphs": 314, "then_long": 0, "container": "running exit=0 oom=false", "t": 1794936464.281, "used_mib": 14830, "free_mib": 1013, "total_mib": 16303, "utc": "17:27:44"}
+{"event": "flush_cache", "step": "p1", "status": 200, "t": 1794936464.284, "utc": "17:27:44"}
+{"event": "gpu_before", "step": "long_prompt_p1", "t": 1794936464.299, "used_mib": 14804, "free_mib": 1039, "total_mib": 16303, "utc": "17:27:44"}
+{"event": "request", "step": "long_prompt_p1", "status": 200, "t": 1794936464.299, "seconds": 3.475, "finish_reason": "stop", "content": "The function computes the average of scaled and offset values for each unique co... (143 chars)", "reasoning_content_chars": 0, "tool_calls": [], "usage": {"prompt_tokens": 32087, "completion_tokens": 30}, "utc": "17:27:44"}
+{"event": "gpu_after", "step": "long_prompt_p1", "t": 1794936467.791, "used_mib": 15188, "free_mib": 655, "total_mib": 16303, "utc": "17:27:47"}
+{"event": "gpu_before", "step": "title_p1", "t": 1794936467.807, "used_mib": 15188, "free_mib": 655, "total_mib": 16303, "utc": "17:27:47"}
+{"event": "request", "step": "title_p1", "status": 200, "t": 1794936467.807, "seconds": 0.415, "finish_reason": "stop", "content": "{\"title\": \"Python: Adding Numbers\"}", "reasoning_content_chars": 0, "tool_calls": [], "usage": {"prompt_tokens": 44, "completion_tokens": 10}, "title_parses": true, "utc": "17:27:47"}
+{"event": "gpu_after", "step": "title_p1", "t": 1794936468.243, "used_mib": 15796, "free_mib": 47, "total_mib": 16303, "utc": "17:27:48"}
+{"event": "gpu_before", "step": "forced_tool_p1", "t": 1794936468.26, "used_mib": 15796, "free_mib": 47, "total_mib": 16303, "utc": "17:27:48"}
+{"event": "request", "step": "forced_tool_p1", "status": 200, "t": 1794936468.26, "seconds": 0.319, "finish_reason": "tool_calls", "content": "", "reasoning_content_chars": 0, "tool_calls": [{"name": "get_weather", "arguments": "{\"city\": \"Paris\"}"}], "usage": {"prompt_tokens": 288, "completion_tokens": 26}, "utc": "17:27:48"}
+{"event": "gpu_after", "step": "forced_tool_p1", "t": 1794936468.596, "used_mib": 15796, "free_mib": 47, "total_mib": 16303, "utc": "17:27:48"}
+{"event": "end", "result": "all requests answered 200 and the server stayed up", "t": 1794936468.631, "used_mib": 15796, "free_mib": 47, "total_mib": 16303, "utc": "17:27:48"}

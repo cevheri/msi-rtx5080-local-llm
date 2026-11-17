@@ -1,0 +1,96 @@
+{
+  "name": "SGLang (Docker)",
+  "package": "@opencode/ai/providers/openai-compatible",
+  "settings": {
+    "baseURL": "http://127.0.0.1:30000/v1",
+    "headerTimeout": 600000
+  },
+  "compatibility": {
+    "reasoningField": "reasoning_content"
+  },
+  "models": {
+    "qwen3.5-9b": {
+      "modelID": "qwen3.5-9b",
+      "name": "Qwen3.5-9B NVFP4 (SGLang)",
+      "capabilities": {
+        "tools": true,
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ],
+        "reasoning": {
+          "supported": true
+        }
+      },
+      "limit": {
+        "context": 131072,
+        "output": 16384
+      },
+      "variants": [
+        {
+          "id": "thinking",
+          "body": {
+            "chat_template_kwargs": {
+              "enable_thinking": true
+            }
+          }
+        },
+        {
+          "id": "none",
+          "body": {
+            "chat_template_kwargs": {
+              "enable_thinking": false
+            }
+          }
+        }
+      ]
+    },
+    "k2-horizon-7b": {
+      "modelID": "k2-horizon-7b",
+      "name": "K2 Horizon 7B AWQ-INT4 (SGLang)",
+      "capabilities": {
+        "tools": true,
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ],
+        "reasoning": {
+          "supported": true
+        }
+      },
+      "limit": {
+        "context": 65536,
+        "output": 16384
+      }
+    },
+    "gpt-oss-20b": {
+      "modelID": "gpt-oss-20b",
+      "name": "gpt-oss-20b MXFP4, Paged Experts (SGLang)",
+      "capabilities": {
+        "tools": true,
+        "input": [
+          "text"
+        ],
+        "output": [
+          "text"
+        ],
+        "reasoning": {
+          "supported": true,
+          "effort": [
+            "low",
+            "medium",
+            "high"
+          ]
+        }
+      },
+      "limit": {
+        "context": 131072,
+        "output": 16384
+      }
+    }
+  }
+}

@@ -1,0 +1,110 @@
+v0.5.23-runtime: Pulling from lmsysorg/sglang
+4f4fb700ef54: Pulling fs layer
+a227d555e318: Pulling fs layer
+6f077cad93ff: Pulling fs layer
+13280da651d5: Pulling fs layer
+689b91d88a0f: Pulling fs layer
+f1bdf792abfa: Pulling fs layer
+ccf9c70a85fc: Pulling fs layer
+e5af1715a2a9: Pulling fs layer
+f19679cb54b5: Pulling fs layer
+a30da298bda6: Pulling fs layer
+24a638635113: Pulling fs layer
+586370c36ae2: Pulling fs layer
+21e0ed254c8b: Pulling fs layer
+cb3db0ad5ae0: Pulling fs layer
+3cf8773e3931: Pulling fs layer
+8aa25b1eecaf: Pulling fs layer
+d25e59797c94: Pulling fs layer
+9ef6679d5aba: Pulling fs layer
+a348bf8e0fb3: Pulling fs layer
+730c8029606b: Pulling fs layer
+adebc1576f3c: Pulling fs layer
+5e25946ba40d: Pulling fs layer
+f0af354daeda: Pulling fs layer
+4f4fb700ef54: Pulling fs layer
+aa6e1a47a405: Pulling fs layer
+68cfc7523020: Pulling fs layer
+9a8ceb204ea5: Pulling fs layer
+7d101accd5a8: Pulling fs layer
+95e35692d3cc: Pulling fs layer
+4c815cf0c650: Pulling fs layer
+b533a7368b7d: Pulling fs layer
+8bd080c2e4b2: Pulling fs layer
+cc689184d8c0: Pulling fs layer
+400821fd86ee: Pulling fs layer
+4f4fb700ef54: Already exists
+4f4fb700ef54: Pull complete
+a227d555e318: Download complete
+13280da651d5: Download complete
+6f077cad93ff: Download complete
+f1bdf792abfa: Download complete
+ccf9c70a85fc: Download complete
+f19679cb54b5: Download complete
+689b91d88a0f: Download complete
+24a638635113: Download complete
+21e0ed254c8b: Download complete
+586370c36ae2: Download complete
+a30da298bda6: Download complete
+cb3db0ad5ae0: Download complete
+730c8029606b: Download complete
+3cf8773e3931: Download complete
+adebc1576f3c: Download complete
+a348bf8e0fb3: Download complete
+5e25946ba40d: Download complete
+e5af1715a2a9: Download complete
+f0af354daeda: Download complete
+d25e59797c94: Download complete
+aa6e1a47a405: Download complete
+68cfc7523020: Download complete
+9a8ceb204ea5: Download complete
+7d101accd5a8: Download complete
+95e35692d3cc: Download complete
+cc689184d8c0: Download complete
+4c815cf0c650: Download complete
+8aa25b1eecaf: Download complete
+8bd080c2e4b2: Download complete
+400821fd86ee: Download complete
+44136fa355b3: Already exists
+689b91d88a0f: Pull complete
+5e25946ba40d: Pull complete
+95e35692d3cc: Pull complete
+85176de50b72: Download complete
+f0af354daeda: Pull complete
+ccf9c70a85fc: Pull complete
+730c8029606b: Pull complete
+21e0ed254c8b: Pull complete
+a30da298bda6: Pull complete
+cb3db0ad5ae0: Pull complete
+8bd080c2e4b2: Pull complete
+b533a7368b7d: Download complete
+cc689184d8c0: Pull complete
+400821fd86ee: Pull complete
+b533a7368b7d: Pull complete
+adebc1576f3c: Pull complete
+8aa25b1eecaf: Pull complete
+a227d555e318: Pull complete
+6f077cad93ff: Pull complete
+13280da651d5: Pull complete
+e5af1715a2a9: Pull complete
+d25e59797c94: Pull complete
+9ef6679d5aba: Download complete
+9ef6679d5aba: Pull complete
+68cfc7523020: Pull complete
+a348bf8e0fb3: Pull complete
+f1bdf792abfa: Pull complete
+24a638635113: Pull complete
+9a8ceb204ea5: Pull complete
+7d101accd5a8: Pull complete
+4c815cf0c650: Pull complete
+f19679cb54b5: Pull complete
+586370c36ae2: Pull complete
+f19679cb54b5: Pull complete
+586370c36ae2: Pull complete
+3cf8773e3931: Pull complete
+aa6e1a47a405: Pull complete
+Digest: sha256:3ce6da3e5ea0fee2dac6a23b528cb294fedd31ca74a55a4511f709c5e01e8652
+Status: Downloaded newer image for lmsysorg/sglang:v0.5.23-runtime
+docker.io/lmsysorg/sglang:v0.5.23-runtime
+docker pull lmsysorg/sglang:v0.5.23-runtime  1.11s user 0.34s system 0% cpu 22:44.74 total
+exit=0
