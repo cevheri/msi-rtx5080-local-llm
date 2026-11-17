@@ -22,13 +22,17 @@ Each Kimi command runs with a private Kimi home under that folder, an empty HOME
 run and the three switches; a recipe's session gets a copy of the real config.toml with llmctl's default edit when
 its default_model does not name the recipe, and the round trip's session a pure byte copy.
 Probe G, the OK request at reasoning_effort low, runs for every recipe and is recorded without judging.
+Every SGLang recipe gets the long-grammar step right after its status step: a long prompt, then grammar requests,
+then the readiness check (SGLang design D15); a server that stopped answering skips the recipe's remaining steps.
 Importing this module has no side effects; everything runs inside main and the functions below.
 """
 
 import argparse
 import json
+import math
 import os
 import re
+import secrets
 import shlex
 import signal
 import socket
@@ -43,7 +47,17 @@ from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 from pathlib import Path
 
-from launcher import clients, docker_state, dsh_config, files, hermes_config, kimi_config, opencode_config, pi_config
+from launcher import (
+    clients,
+    docker_state,
+    dsh_config,
+    files,
+    gpu,
+    hermes_config,
+    kimi_config,
+    opencode_config,
+    pi_config,
+)
 from launcher.catalog import load_catalog, override_dir
 from launcher.command import LABEL_PREFIX
 from launcher.errors import ClientError, LlmctlError, UsageError
@@ -51,6 +65,7 @@ from launcher.host import RealHost
 from launcher.model import Target
 from launcher.ops import client_target
 from launcher.runtimes import ADAPTERS
+from launcher.smoke import WEATHER_TOOL
 
 REPO = Path(__file__).resolve().parents[2]
 TASK = ("Create a file named hello.py containing a function add(a, b) that returns a + b, and a main block that "
@@ -91,6 +106,21 @@ _REASONING = "I will write the file."
 DROPPED_EVENTS = {"hermes-chat": ("text",), "pi": ("message_update",)}
 WITHHELD = "[withheld: the output named a private value after redaction]"
 WITHHELD_REASON = "record withheld: the output named a private value after redaction"
+SERVER_STOPPED = "the server stopped answering after the long-prompt-then-grammar requests"
+# The fixed code paragraph that the long-grammar step repeats to fill the context (SGLang design D15)
+LONG_PARAGRAPH = ("def merge_sorted(left, right):\n"
+                  "    # merge two sorted lists into one sorted list\n"
+                  "    result, i, j = [], 0, 0\n"
+                  "    while i < len(left) and j < len(right):\n"
+                  "        if left[i] <= right[j]:\n"
+                  "            result.append(left[i])\n"
+                  "            i += 1\n"
+                  "        else:\n"
+                  "            result.append(right[j])\n"
+                  "            j += 1\n"
+                  "    return result + left[i:] + right[j:]\n"
+                  "\n")
+_FORCED_TOOL_PROMPT = "What is the weather in Paris? Use the get_weather tool."
 
 
 @dataclass(frozen=True)
@@ -534,15 +564,21 @@ def plan_steps(catalog, matrix: Sequence[tuple[str, str]], *, round_trip: bool, 
     driver runs in-process."""
     steps = []
 
-    def add(name: str, argv: tuple[str, ...], cwd: str = ".") -> None:
-        steps.append(Step(name, argv, cwd, STEP_TIMEOUT_S))
+    def add(name: str, argv: tuple[str, ...], cwd: str = ".", timeout_s: int = STEP_TIMEOUT_S) -> None:
+        steps.append(Step(name, argv, cwd, timeout_s))
+
+    def up_timeout(target: Target) -> int:
+        # llmctl's own start timeout, which prints the log tail, fires before the driver's (SGLang design D15)
+        return max(STEP_TIMEOUT_S, target.runtime.start_timeout_s + 120)
 
     for number, (recipe_id, runtime) in enumerate(matrix, 1):
         target = _target(catalog, recipe_id, runtime)
         prefix = f"{number:02d}-{recipe_id}-{runtime}"
         tools = not target.recipe.chat_only
-        add(f"{prefix} up", up_argv(target, "--replace"))
+        add(f"{prefix} up", up_argv(target, "--replace"), timeout_s=up_timeout(target))
         add(f"{prefix} status", ("./llmctl", "status"))
+        if target.recipe.runtime == "sglang":
+            add(f"{prefix} long-grammar", IN_PROCESS)
         add(f"{prefix} config", IN_PROCESS)
         for key in hermes_config.block_values(target):
             get = ("hermes", "-p", hermes_config.PROFILE, "config", "get", key, "--json")
@@ -561,7 +597,7 @@ def plan_steps(catalog, matrix: Sequence[tuple[str, str]], *, round_trip: bool, 
         add(f"{prefix} probes", IN_PROCESS)
     if round_trip:
         target = _target(catalog, ROUND_TRIP_MODEL, "llamacpp")
-        add(f"{ROUND_TRIP} up", up_argv(target, "--set-default"))
+        add(f"{ROUND_TRIP} up", up_argv(target, "--set-default"), timeout_s=up_timeout(target))
         for kind, argv in _session_argv(target, TASK, True, pinned=False).items():
             add(f"{ROUND_TRIP} {kind}", argv, f"{ROUND_TRIP}-{kind}")
         if dsh:
@@ -604,15 +640,17 @@ def probe_bodies(target: Target) -> dict[str, dict]:
             {"role": "tool", "tool_call_id": "call_1", "content": "ok"},
         ], "tools": [_write_tool()], "max_tokens": 256},
     }
-    if recipe.chat_only:  # no e2e session sends it tools, and vLLM refuses them without --enable-auto-tool-choice
+    # no e2e session sends a chat-only recipe tools; vLLM answers them with HTTP 400, and llama.cpp and SGLang
+    # leave a call as text
+    if recipe.chat_only:
         del bodies["B"]
     plain = {"model": served, "messages": [{"role": "user", "content": _OK_PROMPT}], "max_tokens": 256}
     if recipe.id in PROBE_C:
         bodies["C"] = {"model": served, "messages": plain["messages"], "reasoning_effort": "none", "max_tokens": 256}
-    if recipe.runtime == "llamacpp":
+    if recipe.runtime in ("llamacpp", "sglang"):
         bodies["D"] = dict(plain, model=recipe.id)
-        if recipe.id == "k2-horizon-7b":
-            bodies["E"] = dict(plain, chat_template_kwargs={"tool_call_format": "xml"})
+    if recipe.runtime == "llamacpp" and recipe.id == "k2-horizon-7b":
+        bodies["E"] = dict(plain, chat_template_kwargs={"tool_call_format": "xml"})
     if recipe.id == PROBE_F:
         bodies["F"] = dict(plain, chat_template_kwargs={"enable_thinking": True, "medium_effort": 1})
     bodies["G"] = dict(plain, reasoning_effort="low")  # recorded, never judged (Kimi plan ruling 1)
@@ -639,6 +677,16 @@ def probe_record(name: str, status: int, body: bytes) -> dict:
             title = None
         record["title_ok"] = _non_empty(title.strip() if isinstance(title, str) else None)
     return record
+
+
+def long_grammar_copies(context: int, calibration_tokens: int) -> int:
+    """The paragraph copies of the long request: 90% of the context at the calibration's tokens per copy."""
+    return math.floor(0.9 * context / (calibration_tokens / 20))
+
+
+def long_prompt(line: str, copies: int) -> str:
+    """A session line, a newline, then copies of the fixed code paragraph."""
+    return line + "\n" + LONG_PARAGRAPH * copies
 
 
 # Environment and records
@@ -1041,6 +1089,8 @@ class _Run:
             return self.config_check(target), time.monotonic() - start
         if kind == "probes":
             return self.probes(step, target), time.monotonic() - start
+        if kind == "long-grammar":
+            return self.long_grammar(step, target), time.monotonic() - start
         if kind == "dsh-config":
             return self.dsh_config_check(step, target), time.monotonic() - start
         if kind == "kimi-config":
@@ -1264,6 +1314,80 @@ class _Run:
                 reasons.append(f"probe {name}: status {status}")
         return reasons
 
+    def free_mib(self) -> tuple[int | None, str | None]:
+        """nvidia-smi's free MiB, or None with the error text; a failure fails nothing."""
+        try:
+            return gpu.gpu_info(self.host).free_mib, None
+        except (OSError, LlmctlError) as exc:
+            return None, str(exc)
+
+    def grammar_request(self, step: Step, name: str, method: str, url: str, body: dict | None,
+                        timeout_s: float) -> tuple[int, dict]:
+        """One request of the long-grammar step, recorded without its prompt text; (status, parsed reply)."""
+        before, before_error = self.free_mib()
+        start = time.monotonic()
+        error = None
+        try:
+            response = self.host.http(method, url, headers={"Content-Type": "application/json"} if body else None,
+                                      body=json.dumps(body).encode("utf-8") if body else None, timeout=timeout_s)
+            status, reply = response.status, response.body
+        except (OSError, LlmctlError) as exc:
+            status, reply, error = 0, b"", str(exc)
+        seconds = time.monotonic() - start
+        after, after_error = self.free_mib()
+        try:
+            parsed = _dict(json.loads(reply))
+        except ValueError:
+            parsed = {}
+        tokens = _dict(parsed.get("usage")).get("prompt_tokens")
+        record = {"status": status, "prompt_tokens": tokens if type(tokens) is int else None,
+                  "seconds": round(seconds, 1), "free_mib_before": before, "free_mib_after": after}
+        for key, text in (("free_mib_before_error", before_error), ("free_mib_after_error", after_error),
+                          ("error", error)):
+            if text is not None:
+                record[key] = text
+        self.record(f"{step.name} {name}", json.dumps(record, indent=2, ensure_ascii=False) + "\n")
+        return status, parsed
+
+    def long_grammar(self, step: Step, target: Target) -> list[str]:
+        """SGLang design D15: a calibration, a long prompt near the context, then the grammar requests (the title and,
+        for a recipe with tools, the forced tool call), then the readiness check; a forced call answered as text
+        passes, because gpt-oss does that."""
+        recipe, served = target.recipe, target.served
+        base = f"http://127.0.0.1:{target.runtime.host_port}"
+        url = f"{base}/v1/chat/completions"
+        reasons = []
+
+        def chat(name: str, body: dict) -> tuple[int, dict]:
+            status, parsed = self.grammar_request(step, name, "POST", url, body, step.timeout_s)
+            if status != 200:
+                reasons.append(f"long-grammar {name}: status {status}")
+            return status, parsed
+
+        def user(content: str) -> list[dict]:
+            return [{"role": "user", "content": content}]
+
+        status, parsed = chat("calibration", {"model": served, "messages": user(long_prompt(secrets.token_hex(16), 20)),
+                                              "max_tokens": 1})
+        tokens = _dict(parsed.get("usage")).get("prompt_tokens")
+        if type(tokens) is not int or tokens <= 0:
+            if status == 200:
+                reasons.append("long-grammar calibration: no usage.prompt_tokens")
+        else:
+            copies = long_grammar_copies(recipe.context, tokens)
+            chat("long", {"model": served, "messages": user(long_prompt(secrets.token_hex(16), copies)),
+                          "max_tokens": 32})
+            status, parsed = chat("title", probe_bodies(target)["A"])
+            if status == 200 and not probe_record("A", status, json.dumps(parsed).encode("utf-8"))["title_ok"]:
+                reasons.append("long-grammar title: title_ok False")
+            if not recipe.chat_only:
+                chat("forced-tool", {"model": served, "messages": user(_FORCED_TOOL_PROMPT), "tools": [WEATHER_TOOL],
+                                     "tool_choice": "required", "max_tokens": 256})
+        status, _ = self.grammar_request(step, "ready", "GET", f"{base}{target.runtime.ready_path}", None, 2.0)
+        if status != 200:
+            reasons.append(SERVER_STOPPED)
+        return reasons
+
     def logs_since(self, since: str, target: Target, *, record: str = f"{ROUND_TRIP} docker-logs",
                    session: str = "the OpenCode run") -> list[str]:
         # docker logs replays the container's stderr on stderr, and llama.cpp writes its log there
@@ -1329,6 +1453,8 @@ def _run_matrix(run: _Run, steps: list[Step], catalog, matrix) -> None:
                 run.add(prefix, "gateway", [found] if found else [], 0.0)
             if kind == "up" and reasons:
                 break  # no server, so the client steps would only wait for their timeouts
+            if kind == "long-grammar" and SERVER_STOPPED in reasons:
+                break  # the server stopped after the grammar requests, so the client steps would only time out
     if gateway_pending:
         run.add("-", "gateway", [f"no up created the profile llmctl ({profile}), so the gateway check did not run"],
                 0.0)
