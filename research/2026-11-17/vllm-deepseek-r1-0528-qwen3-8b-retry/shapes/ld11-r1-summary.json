@@ -1,0 +1,367 @@
+{
+ "run": "ld11-r1",
+ "ready": {
+  "exit": "ready",
+  "ready_seen_s": 24.73,
+  "served_listed_s": 24.55,
+  "memory_usage": null,
+  "max_total_num_tokens": null,
+  "free_mib_right_after_ready": 1103,
+  "cgroup_at_ready": {
+   "anon_gib": 2.54,
+   "file_gib": 16.309,
+   "kernel_gib": 0.074,
+   "shmem_gib": 0.014,
+   "file_mapped_gib": 0.286,
+   "inactive_file_gib": 8.178,
+   "active_file_gib": 8.117,
+   "unevictable_gib": 0.0,
+   "current_gib": 18.925,
+   "peak_gib": 18.925
+  },
+  "first_200_s": {
+   "/health": 24.55,
+   "/v1/models": 24.55
+  }
+ },
+ "log_lines": [],
+ "events": [
+  {
+   "event": "tokcheck_counts",
+   "chat_counts": {
+    "ok": 9,
+    "probe_8k": 8079,
+    "probe_30k": 30255
+   },
+   "llamacpp_chat_counts": {
+    "ok": 8,
+    "probe_8k": 8078,
+    "probe_30k": 30254
+   },
+   "chat_diff": {
+    "ok": 1,
+    "probe_8k": 1,
+    "probe_30k": 1
+   },
+   "raw_text_counts": {
+    "ok": 5,
+    "probe_8k": 8075,
+    "probe_30k": 30251
+   },
+   "llamacpp_text_counts_implied": {
+    "ok": 5,
+    "probe_8k": 8075,
+    "probe_30k": 30251
+   },
+   "note": "llama.cpp's chat count is BOS + <|User|> + text + <|Assistant|>, so its text count is the chat count minus 3"
+  },
+  {
+   "event": "tokcheck_reply",
+   "step": "say_hello",
+   "content_head": "\nHere's a simple \"Hello, World!\" program in Python:\n\n```python\nprint(\"Hello, World!\")\n```\n\nThis code will output:\n**Hello, World!**\n\nIf you need other programming languages, let me know which one!",
+   "reasoning_head": "\nWe are simply going to output the string \"Hello, World!\" to the console.\n Since the instruction is straightforward, we don't need any complex logic.\n Let's wri",
+   "content_has_byte_markers": false,
+   "reasoning_has_byte_markers": false,
+   "reasoning_field": [
+    "reasoning"
+   ]
+  },
+  {
+   "event": "tokcheck_reply",
+   "step": "sum",
+   "content_head": "\n\\[ \\boxed{42} \\]",
+   "reasoning_head": "\nFirst, the user asked: \"What is 17 + 25? Answer briefly.\"\n\nI need to calculate 17 plus 25. That's straightforward arithmetic. 17 + 25.\n\nLet me add them: 17 + 2",
+   "content_has_byte_markers": false,
+   "reasoning_has_byte_markers": false,
+   "reasoning_field": [
+    "reasoning"
+   ]
+  },
+  {
+   "event": "end",
+   "result": "completed",
+   "container": "running exit=0 oom=false",
+   "cgroup": {
+    "anon_gib": 2.631,
+    "file_gib": 16.31,
+    "shmem_gib": 0.014,
+    "unevictable_gib": 0.0,
+    "peak_gib": 19.02
+   },
+   "memory_usage": {},
+   "used_mib": 15038,
+   "free_mib": 805,
+   "total_mib": 16303
+  }
+ ],
+ "phases": [
+  {
+   "step": "probe",
+   "rc": 0,
+   "seconds": 67.9,
+   "free_mib_after": 805,
+   "cgroup": {
+    "anon_gib": 2.564,
+    "file_gib": 16.309,
+    "shmem_gib": 0.014,
+    "unevictable_gib": 0.0,
+    "peak_gib": 18.95
+   }
+  },
+  {
+   "step": "smoke",
+   "rc": 0,
+   "seconds": 192.0,
+   "free_mib_after": 805,
+   "cgroup": {
+    "anon_gib": 2.631,
+    "file_gib": 16.31,
+    "shmem_gib": 0.014,
+    "unevictable_gib": 0.0,
+    "peak_gib": 19.02
+   }
+  }
+ ],
+ "requests": [
+  {
+   "step": "tokcheck_say_hello",
+   "status": 200,
+   "seconds": 1.273,
+   "prompt_tokens": 8,
+   "finish": "stop",
+   "content": "\nHere's a simple \"Hello, World!\" program in Python:\n\n```python\nprint(\"Hello, Wor... (196 chars)",
+   "tool_calls": [],
+   "title_parses": null,
+   "free_before_mib": 1103,
+   "free_after_mib": 1101,
+   "cgroup_after": {
+    "anon_gib": 2.561,
+    "file_gib": 16.309,
+    "shmem_gib": 0.014,
+    "unevictable_gib": 0.0,
+    "peak_gib": 18.947
+   }
+  },
+  {
+   "step": "tokcheck_sum",
+   "status": 200,
+   "seconds": 16.775,
+   "prompt_tokens": 17,
+   "finish": "stop",
+   "content": "\n\\[ \\boxed{42} \\]",
+   "tool_calls": [],
+   "title_parses": null,
+   "free_before_mib": 1101,
+   "free_after_mib": 1101,
+   "cgroup_after": {
+    "anon_gib": 2.562,
+    "file_gib": 16.309,
+    "shmem_gib": 0.014,
+    "unevictable_gib": 0.0,
+    "peak_gib": 18.948
+   }
+  },
+  {
+   "step": "m9_tools",
+   "status": 400,
+   "seconds": 0.002,
+   "prompt_tokens": null,
+   "finish": null,
+   "content": null,
+   "tool_calls": null,
+   "title_parses": null,
+   "free_before_mib": 1101
+  }
+ ],
+ "probe": {
+  "decode_tok_s_median": 73.1,
+  "decode_runs": [
+   {
+    "tok_s": 73.2,
+    "completion_tokens": 1014
+   },
+   {
+    "tok_s": 72.8,
+    "completion_tokens": 1500
+   },
+   {
+    "tok_s": 73.1,
+    "completion_tokens": 986
+   }
+  ],
+  "long": [
+   {
+    "prompt_tokens": 8079,
+    "ttft_first_s": 1.393,
+    "ttft_repeat_s": 0.036
+   },
+   {
+    "prompt_tokens": 30255,
+    "ttft_first_s": 8.521,
+    "ttft_repeat_s": 0.085
+   }
+  ],
+  "ok_test": {
+   "content": "\nOK",
+   "reasoning_chars": 1630,
+   "finish": "stop",
+   "usage": {
+    "prompt_tokens": 9,
+    "total_tokens": 377,
+    "completion_tokens": 368,
+    "prompt_tokens_details": null,
+    "completion_tokens_details": {
+     "reasoning_tokens": 0
+    }
+   },
+   "seconds": 5.83
+  },
+  "tool_test": {
+   "http_status": 400,
+   "error": "{\"error\":{\"message\":\"\\\"auto\\\" tool choice requires --enable-auto-tool-choice and --tool-call-parser to be set\",\"type\":\"BadRequestError\",\"param\":null,\"code\":400}}"
+  }
+ },
+ "smoke": {
+  "plain": {
+   "status": 200,
+   "content": "\nOK",
+   "finish_reason": "stop",
+   "reasoning_content_chars": "absent",
+   "tool_calls": []
+  },
+  "plain_stream_usage": {
+   "status": 200,
+   "content": "\nOK",
+   "reasoning_content_chars": 0,
+   "tool_calls": [],
+   "decode_tok_s": 73.8,
+   "delta_keys": [
+    "content",
+    "reasoning",
+    "role"
+   ],
+   "done_marker": true
+  },
+  "tool_auto": {
+   "status": 400,
+   "error_body": {
+    "error": "{'message': '\"auto\" tool choice requires --enable-auto-tool-choice and --tool-call-parser to be set', 'type': 'BadRequestError', 'param': None, 'code': 400}"
+   }
+  },
+  "tool_auto_stream": {
+   "status": 400,
+   "error_body": "{\"error\":{\"message\":\"\\\"auto\\\" tool choice requires --enable-auto-tool-choice and --tool-call-parser to be set\",\"type\":\"BadRequestError\",\"param\":null,\"code\":400}}"
+  },
+  "tool_second_turn": "skipped: no parsed tool call in tool_auto",
+  "tool_second_turn_stream": null,
+  "thinking": {
+   "no_field": {
+    "status": 200,
+    "content": "\n391",
+    "reasoning_content_chars": "absent"
+   },
+   "reasoning_effort_low": {
+    "status": 200,
+    "content": "\n391",
+    "reasoning_content_chars": "absent"
+   },
+   "reasoning_effort_medium": {
+    "status": 200,
+    "content": "\n391",
+    "reasoning_content_chars": "absent"
+   },
+   "reasoning_effort_high": {
+    "status": 200,
+    "content": "\n391",
+    "reasoning_content_chars": "absent"
+   },
+   "reasoning_effort_none": {
+    "status": 200,
+    "content": "\n391",
+    "reasoning_content_chars": "absent"
+   },
+   "reasoning_effort_minimal": {
+    "status": 200,
+    "content": "\n391",
+    "reasoning_content_chars": "absent"
+   },
+   "reasoning_effort_xhigh": {
+    "status": 200,
+    "content": "\n391",
+    "reasoning_content_chars": "absent"
+   },
+   "enable_thinking_false": {
+    "status": 200,
+    "content": "\n391",
+    "reasoning_content_chars": "absent"
+   }
+  },
+  "grammar": {
+   "tool_choice_required": {
+    "status": 400,
+    "error_body": {
+     "error": "{'message': 'tool_choice=\"required\" requires --tool-call-parser to be set', 'type': 'BadRequestError', 'param': None, 'code': 400}"
+    }
+   },
+   "response_format_json_schema": {
+    "status": 200,
+    "finish_reason": "stop",
+    "content": "{ \n  \"capital\": \"Paris\" \n}",
+    "tool_calls": [],
+    "usage": {
+     "prompt_tokens": 12,
+     "total_tokens": 234,
+     "completion_tokens": 222,
+     "prompt_tokens_details": null,
+     "completion_tokens_details": {
+      "reasoning_tokens": 0
+     }
+    },
+    "reasoning_content_chars": "absent"
+   }
+  },
+  "decode_512_median_tok_s": 72.7
+ },
+ "trace": {
+  "gpu_used_peak_mib": 15038.0,
+  "gpu_free_min_mib": 805.0,
+  "power_max_w": 145.42,
+  "temp_max_c": 71.0,
+  "cg_anon_peak_gib": 2.683,
+  "cg_shmem_peak_gib": 0.014,
+  "cg_file_peak_gib": 16.31,
+  "cg_peak_gib": 19.02,
+  "cg_unevictable_peak_gib": 0.0,
+  "samples": 293
+ },
+ "state.txt": [
+  "running exit=0 oom=false started=2026-11-17T19:03:19.143259082Z finished=0001-01-01T00:00:00Z"
+ ],
+ "meta": [
+  "gpu_used_before_mib=112",
+  "cmd=ld11-r1.sh",
+  "docker_run_exit=0",
+  "poller_exit=0",
+  "seq_exit=0"
+ ],
+ "procmem.txt": [
+  "== at ready 19:03:43",
+  "pid=1464927 name=vllm VmRSS_kB=1331448 RssAnon_kB=901228 RssFile_kB=430220 RssShmem_kB=0 VmLck_kB=16 VmPin_kB=0",
+  "pid=1465735 name=VLLM::EngineCor VmRSS_kB=2480904 RssAnon_kB=1756300 RssFile_kB=635092 RssShmem_kB=89512 VmLck_kB=16 VmPin_kB=0",
+  "cgroup anon=2.540 GiB",
+  "cgroup file=16.309 GiB",
+  "cgroup shmem=0.014 GiB",
+  "cgroup file_mapped=0.286 GiB",
+  "cgroup unevictable=0.000 GiB",
+  "cgroup memory.current=18.925 GiB memory.peak=18.925 GiB",
+  "== at the end 19:08:22",
+  "pid=1464927 name=vllm VmRSS_kB=1355484 RssAnon_kB=924824 RssFile_kB=430660 RssShmem_kB=0 VmLck_kB=16 VmPin_kB=0",
+  "pid=1465735 name=VLLM::EngineCor VmRSS_kB=2553988 RssAnon_kB=1828600 RssFile_kB=635876 RssShmem_kB=89512 VmLck_kB=16 VmPin_kB=0",
+  "cgroup anon=2.631 GiB",
+  "cgroup file=16.310 GiB",
+  "cgroup shmem=0.014 GiB",
+  "cgroup file_mapped=0.287 GiB",
+  "cgroup unevictable=0.000 GiB",
+  "cgroup memory.current=19.019 GiB memory.peak=19.020 GiB"
+ ]
+}

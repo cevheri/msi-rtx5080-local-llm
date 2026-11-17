@@ -1,0 +1,52 @@
+chain5 start 19:18:10
+{"exit": "ready", "ready_seen_s": 25.29, "served_listed_s": 25.05, "memory_usage": null, "gpu_right_after_ready": {"t": 1794943115.383, "used_mib": 14740, "free_mib": 1103, "total_mib": 16303}}
+{"event": "phase_end", "step": "probe", "rc": 0, "seconds": 70.6, "output_tail": "{\n \"label\": \"ld11-r2\",\n \"models\": [\n  \"deepseek-r1-8b\"\n ],\n \"ok\": {\n  \"content\": \"\\nOK\",\n  \"reasoning_chars\": 1100,\n  \"finish\": \"stop\",\n  \"usage\": {\n   \"prompt_tokens\": 8,\n   \"total_tokens\": 251,\n   \"completion_tokens\": 243,\n   \"prompt_tokens_details\": null,\n   \"completio
+{"event": "phase_start", "step": "smoke", "argv": ["/usr/bin/python3", "-I", "$SCRATCH/sglang/measure-b/scripts/api_probe.py", "--base", "http://127.0.0.1:8000", "--model", "deepseek-r1-8b", "--thinking", "always", "--context", "65536", "--skip-long", "--out", "$SCRATCH
+{"event": "phase_end", "step": "smoke", "rc": 0, "seconds": 194.6, "output_tail": "{\n \"plain\": {\n  \"status\": 200,\n  \"content\": \"\\nOK\",\n  \"finish_reason\": \"stop\",\n  \"reasoning_content_chars\": \"absent\"\n },\n \"tool_auto\": {\n  \"status\": 400,\n  \"finish_reason\": null,\n  \"tool_calls\": null\n },\n \"decode_512_median_tok_s\": 72.9,\n \"long\": {\n  \"paragraphs\": null,\n
+{"event": "end", "result": "completed", "container": "running exit=0 oom=false", "cgroup": {"anon_gib": 2.822, "file_gib": 8.917, "shmem_gib": 0.014, "unevictable_gib": 0.0, "peak_gib": 11.815}, "memory_usage": {}, "t": 1794943393.001, "used_mib": 15038, "free_mib": 805, "total_mib": 16303, "utc": "19:23:13"}
+(APIServer pid=1) INFO 11-17 19:18:16 [startup.py:96] non-default args: {'model_tag': '/root/.cache/huggingface/hub/models--deepseek-ai--DeepSeek-R1-0528-Qwen3-8B/snapshots/6e8885a6ff5c1dc5201574c8fd700323f23c25fa', 'model': '/root/.cache/huggingface/hub/models--deepseek-ai--DeepSeek-R1-0528-Qwen3-8
+(EngineCore pid=193) INFO 11-17 19:18:23 [core.py:139] Initializing a V1 LLM engine (v0.33.0) with config: model='/root/.cache/huggingface/hub/models--deepseek-ai--DeepSeek-R1-0528-Qwen3-8B/snapshots/6e8885a6ff5c1dc5201574c8fd700323f23c25fa', speculative_config=None, tokenizer='/llmctl/tokenizer', s
+(EngineCore pid=193) INFO 11-17 19:18:28 [model_runner.py:428] Model loading took 9.12 GiB memory and 4.218606 seconds
+(EngineCore pid=193) INFO 11-17 19:18:31 [gpu_worker.py:772] Available KV cache memory: 4.8 GiB
+(EngineCore pid=193) INFO 11-17 19:18:31 [kv_cache_utils.py:1147] GPU KV cache size: 69,936 tokens, Maximum concurrency for 65,536 tokens per request: 1.07x
+INFO:     Application startup complete.
+(APIServer pid=1) ERROR 11-17 19:22:40 [serving.py:280] Error with model error=ErrorInfo(message='The model `not-the-served-name` does not exist. Valid aliases: deepseek-r1-8b.', type='NotFoundError', param='model', code=404)
+running exit=0 oom=false started=2026-11-17T19:18:10.142321903Z finished=0001-01-01T00:00:00Z
+ld11 r2 done 19:23:15
+{"exit": "ready", "ready_seen_s": 33.65, "served_listed_s": 29.55, "memory_usage": {"weight": 8.773, "kvcache": 4.673, "startup_available": 1.52, "token_capacity": 204181, "token_capacity_swa": 20418, "graph": {"prefill": 0.0, "decode": 0.035, "target_verify": 0.0, "draft_prefill": 0.0, "draft_decode": 0.0, "draft_extend": 0.0}}, "gpu_right_after_ready": {"t": 1794943429.255, "used_mib": 14743, "free_mib": 1099, "total_mib": 16303}}
+{"event": "m13", "i": 18, "kind": "tool", "status": 200, "finish": "tool_calls", "content": "", "reasoning_chars": 0, "completion_tokens": 31, "answer": [{"name": "convert_currency", "arguments": {"amount": 250, "from_currency": "EUR", "to_currency": "JPY"}}], "correct": true, "t": 1794944048.273, "utc": "19:34:08"}
+{"event": "m13", "i": 19, "kind": "tool", "status": 200, "finish": "tool_calls", "content": "", "reasoning_chars": 0, "completion_tokens": 15, "answer": [{"name": "get_time", "arguments": {"city": "London"}}], "correct": true, "t": 1794944048.505, "utc": "19:34:08"}
+{"event": "m13_summary", "correct": 19, "total": 20, "t": 1794944048.505, "utc": "19:34:08"}
+{"event": "end", "result": "completed", "container": "running exit=0 oom=false", "cgroup": {"anon_gib": 5.742, "file_gib": 7.958, "shmem_gib": 0.067, "unevictable_gib": 0.0, "peak_gib": 14.626}, "memory_usage": {"weight": 8.773, "kvcache": 4.673, "startup_available": 1.52, "token_capacity": 204181, "token_capacity_swa": 20418, "graph": {"prefill": 0.0, "decode": 0.035, "target_verify": 0.0, "draft
+logs/m2-fp8-b.log 1064 -> 54 lines
+[2026-11-17 19:23:27] Hybrid SWA model detected. architectures=['Gemma4UnifiedForConditionalGeneration']
+[2026-11-17 19:23:34] Auto-detected template features: reasoning_config=ReasoningToggleConfig(toggle_param='enable_thinking', default_enabled=False, special_case=None, effort_kwarg=None), reasoning_parser=gemma4, tool_call_parser=gemma4
+[2026-11-17 19:23:39] Load weight end. elapsed=2.13 s, type=Gemma4UnifiedForConditionalGeneration, quant=compressed-tensors, avail mem=6.28 GB, mem usage=8.77 GB.
+[2026-11-17 19:23:41] Full KV Cache is allocated. dtype: torch.float8_e4m3fn, #tokens: 204181, K size: 0.78 GB, V size: 0.78 GB
+[2026-11-17 19:23:41] SWA KV Cache is allocated. dtype: torch.float8_e4m3fn, #tokens: 20418, K size: 1.56 GB, V size: 1.56 GB
+[2026-11-17 19:23:41] SWAKVPool mem usage: 4.67 GB, swa size: 20418, full size: 204181
+[2026-11-17 19:23:44] max_total_num_tokens=204181, chunked_prefill_size=2048, max_prefill_tokens=16384, max_running_requests=1, context_len=131072, available_gpu_mem=1.52 GB
+[2026-11-17 19:23:44] Init Unified Radix Cache. Components: (<ComponentType.FULL: 0>, <ComponentType.SWA: 1>). Tree Core: RustUnifiedTreeCore
+[2026-11-17 19:23:44] Using default chat sampling params from model generation config: {'temperature': 1.0, 'top_k': 64, 'top_p': 0.95}
+[2026-11-17 19:23:49] The server is fired up and ready to roll!
+running exit=0 oom=false started=2026-11-17T19:23:15.654873646Z finished=0001-01-01T00:00:00Z
+m2 fp8 b done 19:34:11
+{"exit": "ready", "ready_seen_s": 55.19, "served_listed_s": 54.06, "memory_usage": {"weight": 11.779, "kvcache": 1.796, "startup_available": 1.445, "token_capacity": 142701, "token_capacity_swa": 14270, "graph": {"prefill": 0.0, "decode": 0.059, "target_verify": 0.0, "draft_prefill": 0.0, "draft_decode": 0.0, "draft_extend": 0.0}}, "gpu_right_after_ready": {"t": 1794944106.563, "used_mib": 14516, "free_mib": 1327, "total_mib": 16303}}
+{"event": "flush_cache", "status": 200, "t": 1794944106.733, "used_mib": 14516, "free_mib": 1327, "total_mib": 16303, "utc": "19:35:06"}
+{"event": "phase_start", "step": "probe", "argv": ["/usr/bin/python3", "-I", "$SCRATCH/sglang/measure-b/scripts/llm_probe.py", "--base", "http://127.0.0.1:30000/v1", "--model", "gpt-oss-20b", "--label", "m10-k25", "--out", "$SCRATCH/s
+{"event": "phase_end", "step": "probe", "rc": 0, "seconds": 44.7, "output_tail": "{\n \"label\": \"m10-k25\",\n \"models\": [\n  \"gpt-oss-20b\"\n ],\n \"ok\": {\n  \"content\": \"OK\",\n  \"reasoning_chars\": 218,\n  \"finish\": \"stop\",\n  \"usage\": {\n   \"prompt_tokens\": 72,\n   \"total_tokens\": 133,\n   \"completion_tokens\": 61,\n   \"prompt_tokens_details\": null,\n   \"reasoning_tokens
+{"event": "end", "result": "completed", "container": "running exit=0 oom=false", "cgroup": {"anon_gib": 4.946, "file_gib": 26.798, "shmem_gib": 19.189, "unevictable_gib": 0.0, "peak_gib": 32.0}, "memory_usage": {"weight": 11.779, "kvcache": 1.796, "startup_available": 1.445, "token_capacity": 142701, "token_capacity_swa": 14270, "graph": {"prefill": 0.0, "decode": 0.059, "target_verify": 0.0, "dra
+logs/m10-k25.log 255 -> 45 lines
+[2026-11-17 19:34:23] Hybrid SWA model detected. architectures=['GptOssForCausalLM']
+[2026-11-17 19:34:29] Auto-detected template features: reasoning_config=ReasoningToggleConfig(toggle_param=None, default_enabled=None, special_case='always', effort_kwarg=None), reasoning_parser=gpt-oss, tool_call_parser=gpt-oss
+[2026-11-17 19:34:58] Load weight end. elapsed=22.18 s, type=GptOssForCausalLM, quant=mxfp4, avail mem=3.28 GB, mem usage=11.78 GB.
+[2026-11-17 19:35:02] Full KV Cache is allocated. dtype: torch.float8_e4m3fn, #tokens: 142701, K size: 0.82 GB, V size: 0.82 GB
+[2026-11-17 19:35:02] SWA KV Cache is allocated. dtype: torch.float8_e4m3fn, #tokens: 14270, K size: 0.08 GB, V size: 0.08 GB
+[2026-11-17 19:35:02] SWAKVPool mem usage: 1.80 GB, swa size: 14270, full size: 142701
+[2026-11-17 19:35:04] max_total_num_tokens=142701, chunked_prefill_size=1024, max_prefill_tokens=16384, max_running_requests=1, context_len=131072, available_gpu_mem=1.45 GB
+[2026-11-17 19:35:04] Init Unified Radix Cache. Components: (<ComponentType.FULL: 0>, <ComponentType.SWA: 1>). Tree Core: RustUnifiedTreeCore
+[2026-11-17 19:35:04] Using default chat sampling params from model generation config: {'temperature': 1.0, 'top_p': 1.0}
+[2026-11-17 19:35:06] The server is fired up and ready to roll!
+running exit=0 oom=false started=2026-11-17T19:34:11.428920007Z finished=0001-01-01T00:00:00Z
+m10 k25 done 19:35:55
+chain5 end 19:35:55

@@ -1,0 +1,20 @@
+--- $SCRATCH/sglang/measure-b/sglang-deepseek-r1-0528-qwen3-8b/README.md
++++ sglang-deepseek-r1-0528-qwen3-8b/measure-b/README.md
+@@ -19,7 +19,7 @@
+ 
+ ## The arithmetic that explains it
+ 
+-- For a checkpoint that is not FP8 already, SGLang's FP8 linear method creates the weight in the model's dtype: `weight_dtype = (torch.float8_e4m3fn if is_checkpoint_fp8_serialized else params_dtype)` ([../offline/sglang-src/fp8.py](../offline/sglang-src/fp8.py), lines 653 to 656), and quantizes it only after loading (inferred from the source).
++- For a checkpoint that is not FP8 already, SGLang's FP8 linear method creates the weight in the model's dtype: `weight_dtype = (torch.float8_e4m3fn if is_checkpoint_fp8_serialized else params_dtype)` (`../offline/sglang-src/fp8.py`, lines 653 to 656), and quantizes it only after loading (inferred from the source).
+ - The BF16 model is 16,388,927,770 bytes, 15.26 GiB, by the vLLM recipe's `size_bytes`; the 14.16 GiB allocated before the `lm_head` are the 36 decoder layers and the embedding, and the `lm_head` is 151,936 x 4,096 x 2 bytes = 1,245,708,288 bytes, exactly the failed allocation (arithmetic from `config.json`, checked against the log).
+ - 14.16 + 1.16 = 15.32 GiB exceeds the 15.06 GiB free before loading at any `--mem-fraction-static`, so 0.905 cannot help, and no smaller context or KV setting changes a failure that happens before the pool is sized (inferred).
+ - The way around it in SGLang, `--load-format layered` ("loads weights layer by layer so that one can quantize a layer before loading another"), needs a `load_weights_to_module` method, which in the v0.5.23 image only `models/torch_native_llama.py` has, not `models/qwen3.py` (inferred from an offline search of the image; not run).
+@@ -27,7 +27,7 @@
+ 
+ ## What stays open
+ 
+-- The token-count comparison with llama.cpp and the garbled-reply check of M4 were not reached on SGLang; the vLLM retry in [../vllm-deepseek-r1-0528-qwen3-8b/](../vllm-deepseek-r1-0528-qwen3-8b/README.md) measured both on vLLM.
++- The token-count comparison with llama.cpp and the garbled-reply check of M4 were not reached on SGLang; the vLLM retry in [../vllm-deepseek-r1-0528-qwen3-8b/](../../vllm-deepseek-r1-0528-qwen3-8b-retry/measure-b.md) measured both on vLLM.
+ - An FP8 checkpoint of this model, which SGLang would load at about 9 GiB, is not cached, and this lane downloads nothing; the cached Q8_0 GGUF of the llama.cpp recipe was not tried, because the brief names the BF16 checkpoint.
+ - M9: SGLang's behaviour for tools sent to a server without `--tool-call-parser` (report section 6.4 infers HTTP 200 with any call left in `content`) stays unmeasured; it matters only once an SGLang chat-only recipe exists.
+ 

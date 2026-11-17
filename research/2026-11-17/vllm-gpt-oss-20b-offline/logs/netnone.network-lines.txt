@@ -1,0 +1,4 @@
+11:(APIServer pid=1) INFO 11-17 18:45:59 [model.py:744] Resolved architecture: GptOssForCausalLM
+25:(EngineCore pid=309) INFO 11-17 18:46:08 [core.py:139] Initializing a V1 LLM engine (v0.33.0) with config: model='/root/.cache/huggingface/hub/models--openai--gpt-oss-20b/snapshots/6cee5e81ee83917806bbde320786a8fb61efebee', speculative_config=None, tokenizer='/root/.cache/huggingface/hub/models--
+27:[rank0]:[W1117 18:46:08.725071408 ProcessGroupGloo.cpp:527] Warning: Unable to resolve hostname to a (local) address. Using the loopback address as fallback. Manually set the network interface to bind to with GLOO_SOCKET_IFNAME. (function operator())
+39:(EngineCore pid=309) INFO 11-17 18:46:10 [weight_utils.py:1167] Auto-prefetch is disabled because the filesystem (EXT4) is not a recognized network FS (NFS/Lustre). If you want to force prefetching, start vLLM with --safetensors-load-strategy=prefetch.

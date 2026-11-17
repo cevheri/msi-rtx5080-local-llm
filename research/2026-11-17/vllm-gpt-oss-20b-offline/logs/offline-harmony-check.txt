@@ -1,0 +1,10 @@
+loaded offline in 0.14 s HarmonyEncoding
+Name: oss-harmony
+Version: 0.0.12
+Summary: Response format library for the gpt-oss open-weight model series (fork of openai-harmony)
+Home-page: 
+Author: 
+Author-email: 
+License: 
+Location: /usr/local/lib/python3.12/dist-packages
+['__init__.py', '__pycache__', 'openai_harmony.abi3.so']

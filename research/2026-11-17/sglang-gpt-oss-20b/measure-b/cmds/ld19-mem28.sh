@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# LD19: as b0-a4 (K 24) with --memory 28g --memory-swap 28g, the proposed memory_gib, to check that the non-reclaimable 24.35 GiB plus page cache fits under the cap.
+set -euo pipefail
+docker run -d --name sglang-measure \
+  --device nvidia.com/gpu=all \
+  --ipc=host \
+  --memory 28g --memory-swap 28g \
+  -p 127.0.0.1:30000:30000 \
+  -v sglang-research-cache:/root/.cache/sglang \
+  -v "$SCRATCH/sglang/measure-b/overlay/gpt-oss-20b:/llmctl/model:ro" \
+  -e HF_HUB_OFFLINE=1 \
+  -e HF_MODULES_CACHE=/tmp/hf_modules \
+  -e MAX_JOBS=2 \
+  -e SYNC_TOKEN_IDS_ACROSS_TP=1 \
+  -e NCCL_MAX_P2P_NCHANNELS=1 \
+  -e FLASHINFER_NO_DOWNLOAD=1 \
+  -e TIKTOKEN_ENCODINGS_BASE=/opt/sglang/lib/python3.12/site-packages/tml_renderers/data \
+  -v "$HOME/.cache/huggingface:/root/.cache/huggingface:ro" \
+  lmsysorg/sglang:v0.5.23-runtime \
+  python3 -m sglang.launch_server \
+    --model-path /llmctl/model \
+    --served-model-name gpt-oss-20b \
+    --context-length 131072 \
+    --host 0.0.0.0 --port 30000 \
+    --mem-fraction-static 0.90 \
+    --max-running-requests 1 \
+    --kv-cache-dtype fp8_e4m3 \
+    --swa-full-tokens-ratio 0.1 \
+    --chunked-prefill-size 1024 \
+    --disable-prefill-cuda-graph \
+    --moe-runner-backend marlin \
+    --enable-paged-experts \
+    --paged-experts-num-resident 24 \
+    --tool-call-parser gpt-oss \
+    --reasoning-parser gpt-oss

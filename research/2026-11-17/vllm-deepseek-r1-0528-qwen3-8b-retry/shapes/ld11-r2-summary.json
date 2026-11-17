@@ -1,0 +1,367 @@
+{
+ "run": "ld11-r2",
+ "ready": {
+  "exit": "ready",
+  "ready_seen_s": 25.29,
+  "served_listed_s": 25.05,
+  "memory_usage": null,
+  "max_total_num_tokens": null,
+  "free_mib_right_after_ready": 1103,
+  "cgroup_at_ready": {
+   "anon_gib": 2.731,
+   "file_gib": 8.916,
+   "kernel_gib": 0.073,
+   "shmem_gib": 0.014,
+   "file_mapped_gib": 0.287,
+   "inactive_file_gib": 6.694,
+   "active_file_gib": 2.207,
+   "unevictable_gib": 0.0,
+   "current_gib": 11.723,
+   "peak_gib": 11.745
+  },
+  "first_200_s": {
+   "/health": 25.05,
+   "/v1/models": 25.05
+  }
+ },
+ "log_lines": [],
+ "events": [
+  {
+   "event": "tokcheck_counts",
+   "chat_counts": {
+    "ok": 8,
+    "probe_8k": 8078,
+    "probe_30k": 30254
+   },
+   "llamacpp_chat_counts": {
+    "ok": 8,
+    "probe_8k": 8078,
+    "probe_30k": 30254
+   },
+   "chat_diff": {
+    "ok": 0,
+    "probe_8k": 0,
+    "probe_30k": 0
+   },
+   "raw_text_counts": {
+    "ok": 5,
+    "probe_8k": 8075,
+    "probe_30k": 30251
+   },
+   "llamacpp_text_counts_implied": {
+    "ok": 5,
+    "probe_8k": 8075,
+    "probe_30k": 30251
+   },
+   "note": "llama.cpp's chat count is BOS + <|User|> + text + <|Assistant|>, so its text count is the chat count minus 3"
+  },
+  {
+   "event": "tokcheck_reply",
+   "step": "say_hello",
+   "content_head": "\nHello, World! This is a simple program that demonstrates the basics of outputting text. If you're learning to code, this is often the first thing you write in many languages. Let me know if you'd lik",
+   "reasoning_head": "\nWe are going to write a simple program that prints \"Hello, World!\" to the console.\n Since the user's request is in English and the example is classic, we'll ou",
+   "content_has_byte_markers": false,
+   "reasoning_has_byte_markers": false,
+   "reasoning_field": [
+    "reasoning"
+   ]
+  },
+  {
+   "event": "tokcheck_reply",
+   "step": "sum",
+   "content_head": "\n17 + 25 = 42",
+   "reasoning_head": "\nFirst, the user asked: \"What is 17 + 25? Answer briefly.\"\n\nI need to calculate 17 + 25. That's a simple addition problem.\n\n17 plus 25: 17 + 25. I can add them ",
+   "content_has_byte_markers": false,
+   "reasoning_has_byte_markers": false,
+   "reasoning_field": [
+    "reasoning"
+   ]
+  },
+  {
+   "event": "end",
+   "result": "completed",
+   "container": "running exit=0 oom=false",
+   "cgroup": {
+    "anon_gib": 2.822,
+    "file_gib": 8.917,
+    "shmem_gib": 0.014,
+    "unevictable_gib": 0.0,
+    "peak_gib": 11.815
+   },
+   "memory_usage": {},
+   "used_mib": 15038,
+   "free_mib": 805,
+   "total_mib": 16303
+  }
+ ],
+ "phases": [
+  {
+   "step": "probe",
+   "rc": 0,
+   "seconds": 70.6,
+   "free_mib_after": 805,
+   "cgroup": {
+    "anon_gib": 2.756,
+    "file_gib": 8.916,
+    "shmem_gib": 0.014,
+    "unevictable_gib": 0.0,
+    "peak_gib": 11.748
+   }
+  },
+  {
+   "step": "smoke",
+   "rc": 0,
+   "seconds": 194.6,
+   "free_mib_after": 805,
+   "cgroup": {
+    "anon_gib": 2.822,
+    "file_gib": 8.917,
+    "shmem_gib": 0.014,
+    "unevictable_gib": 0.0,
+    "peak_gib": 11.815
+   }
+  }
+ ],
+ "requests": [
+  {
+   "step": "tokcheck_say_hello",
+   "status": 200,
+   "seconds": 1.957,
+   "prompt_tokens": 7,
+   "finish": "stop",
+   "content": "\nHello, World! This is a simple program that demonstrates the basics of outputti... (255 chars)",
+   "tool_calls": [],
+   "title_parses": null,
+   "free_before_mib": 1103,
+   "free_after_mib": 1101,
+   "cgroup_after": {
+    "anon_gib": 2.752,
+    "file_gib": 8.916,
+    "shmem_gib": 0.014,
+    "unevictable_gib": 0.0,
+    "peak_gib": 11.745
+   }
+  },
+  {
+   "step": "tokcheck_sum",
+   "status": 200,
+   "seconds": 9.944,
+   "prompt_tokens": 16,
+   "finish": "stop",
+   "content": "\n17 + 25 = 42",
+   "tool_calls": [],
+   "title_parses": null,
+   "free_before_mib": 1101,
+   "free_after_mib": 1101,
+   "cgroup_after": {
+    "anon_gib": 2.752,
+    "file_gib": 8.916,
+    "shmem_gib": 0.014,
+    "unevictable_gib": 0.0,
+    "peak_gib": 11.745
+   }
+  },
+  {
+   "step": "m9_tools",
+   "status": 400,
+   "seconds": 0.002,
+   "prompt_tokens": null,
+   "finish": null,
+   "content": null,
+   "tool_calls": null,
+   "title_parses": null,
+   "free_before_mib": 1101
+  }
+ ],
+ "probe": {
+  "decode_tok_s_median": 73.1,
+  "decode_runs": [
+   {
+    "tok_s": 68.5,
+    "completion_tokens": 1500
+   },
+   {
+    "tok_s": 73.2,
+    "completion_tokens": 1030
+   },
+   {
+    "tok_s": 73.1,
+    "completion_tokens": 1145
+   }
+  ],
+  "long": [
+   {
+    "prompt_tokens": 8078,
+    "ttft_first_s": 1.404,
+    "ttft_repeat_s": 0.048
+   },
+   {
+    "prompt_tokens": 30254,
+    "ttft_first_s": 8.54,
+    "ttft_repeat_s": 0.102
+   }
+  ],
+  "ok_test": {
+   "content": "\nOK",
+   "reasoning_chars": 1100,
+   "finish": "stop",
+   "usage": {
+    "prompt_tokens": 8,
+    "total_tokens": 251,
+    "completion_tokens": 243,
+    "prompt_tokens_details": null,
+    "completion_tokens_details": {
+     "reasoning_tokens": 238
+    }
+   },
+   "seconds": 4.77
+  },
+  "tool_test": {
+   "http_status": 400,
+   "error": "{\"error\":{\"message\":\"\\\"auto\\\" tool choice requires --enable-auto-tool-choice and --tool-call-parser to be set\",\"type\":\"BadRequestError\",\"param\":null,\"code\":400}}"
+  }
+ },
+ "smoke": {
+  "plain": {
+   "status": 200,
+   "content": "\nOK",
+   "finish_reason": "stop",
+   "reasoning_content_chars": "absent",
+   "tool_calls": []
+  },
+  "plain_stream_usage": {
+   "status": 200,
+   "content": "\nOK",
+   "reasoning_content_chars": 0,
+   "tool_calls": [],
+   "decode_tok_s": 73.9,
+   "delta_keys": [
+    "content",
+    "reasoning",
+    "role"
+   ],
+   "done_marker": true
+  },
+  "tool_auto": {
+   "status": 400,
+   "error_body": {
+    "error": "{'message': '\"auto\" tool choice requires --enable-auto-tool-choice and --tool-call-parser to be set', 'type': 'BadRequestError', 'param': None, 'code': 400}"
+   }
+  },
+  "tool_auto_stream": {
+   "status": 400,
+   "error_body": "{\"error\":{\"message\":\"\\\"auto\\\" tool choice requires --enable-auto-tool-choice and --tool-call-parser to be set\",\"type\":\"BadRequestError\",\"param\":null,\"code\":400}}"
+  },
+  "tool_second_turn": "skipped: no parsed tool call in tool_auto",
+  "tool_second_turn_stream": null,
+  "thinking": {
+   "no_field": {
+    "status": 200,
+    "content": "\n391",
+    "reasoning_content_chars": "absent"
+   },
+   "reasoning_effort_low": {
+    "status": 200,
+    "content": "\n391",
+    "reasoning_content_chars": "absent"
+   },
+   "reasoning_effort_medium": {
+    "status": 200,
+    "content": "\n391",
+    "reasoning_content_chars": "absent"
+   },
+   "reasoning_effort_high": {
+    "status": 200,
+    "content": "\n391",
+    "reasoning_content_chars": "absent"
+   },
+   "reasoning_effort_none": {
+    "status": 200,
+    "content": "\n391",
+    "reasoning_content_chars": "absent"
+   },
+   "reasoning_effort_minimal": {
+    "status": 200,
+    "content": "\n391",
+    "reasoning_content_chars": "absent"
+   },
+   "reasoning_effort_xhigh": {
+    "status": 200,
+    "content": "\n391",
+    "reasoning_content_chars": "absent"
+   },
+   "enable_thinking_false": {
+    "status": 200,
+    "content": "\n391",
+    "reasoning_content_chars": "absent"
+   }
+  },
+  "grammar": {
+   "tool_choice_required": {
+    "status": 400,
+    "error_body": {
+     "error": "{'message': 'tool_choice=\"required\" requires --tool-call-parser to be set', 'type': 'BadRequestError', 'param': None, 'code': 400}"
+    }
+   },
+   "response_format_json_schema": {
+    "status": 200,
+    "finish_reason": "stop",
+    "content": "{\"capital\": \"Paris\"}",
+    "tool_calls": [],
+    "usage": {
+     "prompt_tokens": 11,
+     "total_tokens": 261,
+     "completion_tokens": 250,
+     "prompt_tokens_details": null,
+     "completion_tokens_details": {
+      "reasoning_tokens": 241
+     }
+    },
+    "reasoning_content_chars": "absent"
+   }
+  },
+  "decode_512_median_tok_s": 72.9
+ },
+ "trace": {
+  "gpu_used_peak_mib": 15038.0,
+  "gpu_free_min_mib": 805.0,
+  "power_max_w": 144.96,
+  "temp_max_c": 71.0,
+  "cg_anon_peak_gib": 2.822,
+  "cg_shmem_peak_gib": 0.014,
+  "cg_file_peak_gib": 8.917,
+  "cg_peak_gib": 11.815,
+  "cg_unevictable_peak_gib": 0.0,
+  "samples": 293
+ },
+ "state.txt": [
+  "running exit=0 oom=false started=2026-11-17T19:18:10.142321903Z finished=0001-01-01T00:00:00Z"
+ ],
+ "meta": [
+  "gpu_used_before_mib=112",
+  "cmd=ld11-r2.sh",
+  "docker_run_exit=0",
+  "poller_exit=0",
+  "seq_exit=0"
+ ],
+ "procmem.txt": [
+  "== at ready 19:18:35",
+  "pid=1492017 name=vllm VmRSS_kB=1508400 RssAnon_kB=1093184 RssFile_kB=415216 RssShmem_kB=0 VmLck_kB=16 VmPin_kB=0",
+  "pid=1493039 name=VLLM::EngineCor VmRSS_kB=2487376 RssAnon_kB=1764944 RssFile_kB=632920 RssShmem_kB=89512 VmLck_kB=16 VmPin_kB=0",
+  "cgroup anon=2.731 GiB",
+  "cgroup file=8.916 GiB",
+  "cgroup shmem=0.014 GiB",
+  "cgroup file_mapped=0.287 GiB",
+  "cgroup unevictable=0.000 GiB",
+  "cgroup memory.current=11.723 GiB memory.peak=11.745 GiB",
+  "== at the end 19:23:13",
+  "pid=1492017 name=vllm VmRSS_kB=1532408 RssAnon_kB=1116264 RssFile_kB=416144 RssShmem_kB=0 VmLck_kB=16 VmPin_kB=0",
+  "pid=1493039 name=VLLM::EngineCor VmRSS_kB=2560340 RssAnon_kB=1836756 RssFile_kB=634072 RssShmem_kB=89512 VmLck_kB=16 VmPin_kB=0",
+  "cgroup anon=2.822 GiB",
+  "cgroup file=8.917 GiB",
+  "cgroup shmem=0.014 GiB",
+  "cgroup file_mapped=0.288 GiB",
+  "cgroup unevictable=0.000 GiB",
+  "cgroup memory.current=11.815 GiB memory.peak=11.815 GiB"
+ ]
+}

@@ -1,0 +1,40 @@
+0.33.0 5.20.2 0.23.3
+ModuleNotFoundError: No module named 'fastokens'
+== tokenizer_mode literal
+/usr/local/lib/python3.12/dist-packages/vllm/config/model.py:89:TokenizerMode = Literal[
+89:TokenizerMode = Literal[
+90-    "auto",
+91-    "hf",
+92-    "alpamayo2_super",
+93-    "mistral",
+94-    "deepseek_v32",
+95-    "deepseek_v4",
+96-    "inkling",
+97-    "kimi_k3",
+98-    "cohere",
+99-]
+100-ModelDType = Literal["auto", "half", "float16", "bfloat16", "float", "float32"]
+101-LogprobsMode = Literal[
+== tokenizer registry
+__init__.py
+__pycache__
+alpamayo2_super.py
+deepseek_v32.py
+deepseek_v32_encoding.py
+deepseek_v4.py
+deepseek_v41.py
+deepseek_v41_encoding.py
+deepseek_v4_encoding.py
+detokenizer_utils.py
+fastokens.py
+hf.py
+kimi_audio.py
+mistral.py
+protocol.py
+registry.py
+/usr/local/lib/python3.12/dist-packages/vllm/tokenizers/registry.py:71:        if tokenizer_mode in self.tokenizers:
+/usr/local/lib/python3.12/dist-packages/vllm/tokenizers/registry.py:147:        tokenizer_mode == "auto"
+/usr/local/lib/python3.12/dist-packages/vllm/tokenizers/registry.py:163:    if tokenizer_mode == "auto":
+/usr/local/lib/python3.12/dist-packages/vllm/tokenizers/registry.py:166:    if tokenizer_mode == "hf":
+/usr/local/lib/python3.12/dist-packages/vllm/tokenizers/registry.py:180:    if tokenizer_mode == "mistral":
+/usr/local/lib/python3.12/dist-packages/vllm/tokenizers/registry.py:280:    if tokenizer_mode == "hf" and not envs.VLLM_USE_MODELSCOPE:

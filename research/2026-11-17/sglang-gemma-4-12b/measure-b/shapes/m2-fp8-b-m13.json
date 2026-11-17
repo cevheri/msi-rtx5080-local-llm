@@ -1,0 +1,268 @@
+[
+ {
+  "i": 0,
+  "kind": "arith",
+  "status": 200,
+  "finish": "stop",
+  "content": "391",
+  "reasoning_chars": 0,
+  "completion_tokens": 4,
+  "answer": "391",
+  "correct": true
+ },
+ {
+  "i": 1,
+  "kind": "arith",
+  "status": 200,
+  "finish": "stop",
+  "content": "6912",
+  "reasoning_chars": 0,
+  "completion_tokens": 5,
+  "answer": "6912",
+  "correct": true
+ },
+ {
+  "i": 2,
+  "kind": "arith",
+  "status": 200,
+  "finish": "stop",
+  "content": "12",
+  "reasoning_chars": 0,
+  "completion_tokens": 3,
+  "answer": "12",
+  "correct": true
+ },
+ {
+  "i": 3,
+  "kind": "arith",
+  "status": 200,
+  "finish": "stop",
+  "content": "1024",
+  "reasoning_chars": 0,
+  "completion_tokens": 5,
+  "answer": "1024",
+  "correct": true
+ },
+ {
+  "i": 4,
+  "kind": "arith",
+  "status": 200,
+  "finish": "stop",
+  "content": "542",
+  "reasoning_chars": 0,
+  "completion_tokens": 4,
+  "answer": "542",
+  "correct": true
+ },
+ {
+  "i": 5,
+  "kind": "arith",
+  "status": 200,
+  "finish": "stop",
+  "content": "36",
+  "reasoning_chars": 0,
+  "completion_tokens": 3,
+  "answer": "36",
+  "correct": true
+ },
+ {
+  "i": 6,
+  "kind": "arith",
+  "status": 200,
+  "finish": "stop",
+  "content": "210",
+  "reasoning_chars": 0,
+  "completion_tokens": 4,
+  "answer": "210",
+  "correct": true
+ },
+ {
+  "i": 7,
+  "kind": "arith",
+  "status": 200,
+  "finish": "stop",
+  "content": "1517",
+  "reasoning_chars": 0,
+  "completion_tokens": 5,
+  "answer": "1517",
+  "correct": true
+ },
+ {
+  "i": 8,
+  "kind": "code",
+  "status": 200,
+  "finish": "stop",
+  "content": "[9, 5, 2, 1]",
+  "reasoning_chars": 0,
+  "completion_tokens": 13,
+  "answer": "[9, 5, 2, 1]",
+  "correct": true
+ },
+ {
+  "i": 9,
+  "kind": "code",
+  "status": 200,
+  "finish": "stop",
+  "content": "2",
+  "reasoning_chars": 0,
+  "completion_tokens": 2,
+  "answer": "2",
+  "correct": true
+ },
+ {
+  "i": 10,
+  "kind": "code",
+  "status": 200,
+  "finish": "stop",
+  "content": "3",
+  "reasoning_chars": 0,
+  "completion_tokens": 2,
+  "answer": "3",
+  "correct": true
+ },
+ {
+  "i": 11,
+  "kind": "code",
+  "status": 200,
+  "finish": "stop",
+  "content": "30",
+  "reasoning_chars": 0,
+  "completion_tokens": 3,
+  "answer": "30",
+  "correct": false
+ },
+ {
+  "i": 12,
+  "kind": "code",
+  "status": 200,
+  "finish": "stop",
+  "content": "ABC5",
+  "reasoning_chars": 0,
+  "completion_tokens": 3,
+  "answer": "ABC5",
+  "correct": true
+ },
+ {
+  "i": 13,
+  "kind": "code",
+  "status": 200,
+  "finish": "stop",
+  "content": "[0, 3, 6, 9]",
+  "reasoning_chars": 0,
+  "completion_tokens": 13,
+  "answer": "[0, 3, 6, 9]",
+  "correct": true
+ },
+ {
+  "i": 14,
+  "kind": "tool",
+  "status": 200,
+  "finish": "tool_calls",
+  "content": "",
+  "reasoning_chars": 0,
+  "completion_tokens": 15,
+  "answer": [
+   {
+    "name": "get_weather",
+    "arguments": {
+     "city": "Paris"
+    }
+   }
+  ],
+  "correct": true
+ },
+ {
+  "i": 15,
+  "kind": "tool",
+  "status": 200,
+  "finish": "tool_calls",
+  "content": "",
+  "reasoning_chars": 0,
+  "completion_tokens": 31,
+  "answer": [
+   {
+    "name": "convert_currency",
+    "arguments": {
+     "amount": 100,
+     "from_currency": "USD",
+     "to_currency": "EUR"
+    }
+   }
+  ],
+  "correct": true
+ },
+ {
+  "i": 16,
+  "kind": "tool",
+  "status": 200,
+  "finish": "tool_calls",
+  "content": "",
+  "reasoning_chars": 0,
+  "completion_tokens": 15,
+  "answer": [
+   {
+    "name": "get_time",
+    "arguments": {
+     "city": "Tokyo"
+    }
+   }
+  ],
+  "correct": true
+ },
+ {
+  "i": 17,
+  "kind": "tool",
+  "status": 200,
+  "finish": "tool_calls",
+  "content": "",
+  "reasoning_chars": 0,
+  "completion_tokens": 15,
+  "answer": [
+   {
+    "name": "get_weather",
+    "arguments": {
+     "city": "Berlin"
+    }
+   }
+  ],
+  "correct": true
+ },
+ {
+  "i": 18,
+  "kind": "tool",
+  "status": 200,
+  "finish": "tool_calls",
+  "content": "",
+  "reasoning_chars": 0,
+  "completion_tokens": 31,
+  "answer": [
+   {
+    "name": "convert_currency",
+    "arguments": {
+     "amount": 250,
+     "from_currency": "EUR",
+     "to_currency": "JPY"
+    }
+   }
+  ],
+  "correct": true
+ },
+ {
+  "i": 19,
+  "kind": "tool",
+  "status": 200,
+  "finish": "tool_calls",
+  "content": "",
+  "reasoning_chars": 0,
+  "completion_tokens": 15,
+  "answer": [
+   {
+    "name": "get_time",
+    "arguments": {
+     "city": "London"
+    }
+   }
+  ],
+  "correct": true
+ }
+]

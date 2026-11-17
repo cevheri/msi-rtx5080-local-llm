@@ -1,0 +1,340 @@
+{
+ "run": "ld19-mem28",
+ "ready": {
+  "exit": "ready",
+  "ready_seen_s": 53.66,
+  "served_listed_s": 52.55,
+  "memory_usage": {
+   "weight": 11.455,
+   "kvcache": 2.12,
+   "startup_available": 1.447,
+   "token_capacity": 168439,
+   "token_capacity_swa": 16843,
+   "graph": {
+    "prefill": 0.0,
+    "decode": 0.059,
+    "target_verify": 0.0,
+    "draft_prefill": 0.0,
+    "draft_decode": 0.0,
+    "draft_extend": 0.0
+   }
+  },
+  "max_total_num_tokens": 168439,
+  "free_mib_right_after_ready": 1328,
+  "cgroup_at_ready": {
+   "anon_gib": 4.774,
+   "file_gib": 23.033,
+   "kernel_gib": 0.189,
+   "shmem_gib": 19.189,
+   "file_mapped_gib": 19.199,
+   "inactive_file_gib": 3.828,
+   "active_file_gib": 0.017,
+   "unevictable_gib": 0.0,
+   "current_gib": 28.0,
+   "peak_gib": 28.0
+  },
+  "first_200_s": {
+   "/ready": 53.56,
+   "/v1/models": 52.55,
+   "/server_info": 52.55
+  }
+ },
+ "ready_line_s": 53.3,
+ "log_lines": [
+  "[2026-11-17 19:55:11] mxfp4 quantization is not fully optimized yet. The speed can be slower than non-quantized models.",
+  "[2026-11-17 19:55:13] mxfp4 quantization is not fully optimized yet. The speed can be slower than non-quantized models.",
+  "[2026-11-17 19:55:17] Using default HuggingFace chat template with detected content format: string",
+  "[2026-11-17 19:55:17] Auto-detected template features: reasoning_config=ReasoningToggleConfig(toggle_param=None, default_enabled=None, special_case='always', effort_kwarg=None), reasoning_parser=gpt-oss, tool_call_parser=gpt-oss",
+  "[2026-11-17 19:55:18] mxfp4 quantization is not fully optimized yet. The speed can be slower than non-quantized models.",
+  "[2026-11-17 19:55:22] mxfp4 quantization is not fully optimized yet. The speed can be slower than non-quantized models.",
+  "[2026-11-17 19:55:45] Load weight end. elapsed=20.92 s, type=GptOssForCausalLM, quant=mxfp4, avail mem=3.60 GB, mem usage=11.46 GB.",
+  "[2026-11-17 19:55:48] Full KV Cache is allocated. dtype: torch.float8_e4m3fn, #tokens: 168439, K size: 0.96 GB, V size: 0.96 GB",
+  "[2026-11-17 19:55:48] SWA KV Cache is allocated. dtype: torch.float8_e4m3fn, #tokens: 16843, K size: 0.10 GB, V size: 0.10 GB",
+  "[2026-11-17 19:55:48] SWAKVPool mem usage: 2.12 GB, swa size: 16843, full size: 168439",
+  "[2026-11-17 19:55:48] Memory pool end. avail mem=1.55 GB",
+  "[2026-11-17 19:55:48] Capture target decode CUDA graph begin. backend=full, num_tokens_per_req=1, avail mem=1.51 GB",
+  "[2026-11-17 19:55:50] Capture target decode CUDA graph end. bs=[1], elapsed=1.51 s, mem usage=0.06 GB, avail mem=1.45 GB.",
+  "[2026-11-17 19:55:50] max_total_num_tokens=168439, chunked_prefill_size=1024, max_prefill_tokens=16384, max_running_requests=1, context_len=131072, available_gpu_mem=1.45 GB",
+  "[2026-11-17 19:55:50] Using default chat sampling params from model generation config: {'temperature': 1.0, 'top_p': 1.0}",
+  "[2026-11-17 19:55:52] The server is fired up and ready to roll!"
+ ],
+ "events": [
+  {
+   "event": "nearfull_plan",
+   "step": "p1",
+   "per_paragraph": 95.0,
+   "overhead": 103.0,
+   "paragraphs": 1309,
+   "prompt_tokens": 124458,
+   "context": 131072,
+   "token_capacity": 168439,
+   "share_of_context": 0.9495
+  },
+  {
+   "event": "flush_cache",
+   "status": 200,
+   "used_mib": 14516,
+   "free_mib": 1326,
+   "total_mib": 16303
+  },
+  {
+   "event": "nearfull_plan",
+   "step": "p2",
+   "per_paragraph": 95.0,
+   "overhead": 103.0,
+   "paragraphs": 1309,
+   "prompt_tokens": 124458,
+   "context": 131072,
+   "token_capacity": 168439,
+   "share_of_context": 0.9495
+  },
+  {
+   "event": "end",
+   "result": "completed",
+   "container": "running exit=0 oom=false",
+   "cgroup": {
+    "anon_gib": 4.955,
+    "file_gib": 21.474,
+    "shmem_gib": 19.189,
+    "unevictable_gib": 0.0,
+    "peak_gib": 28.0
+   },
+   "memory_usage": {
+    "weight": 11.455,
+    "kvcache": 2.12,
+    "startup_available": 1.447,
+    "token_capacity": 168439,
+    "token_capacity_swa": 16843,
+    "graph": {
+     "prefill": 0.0,
+     "decode": 0.059,
+     "target_verify": 0.0,
+     "draft_prefill": 0.0,
+     "draft_decode": 0.0,
+     "draft_extend": 0.0
+    }
+   },
+   "used_mib": 14792,
+   "free_mib": 1050,
+   "total_mib": 16303
+  }
+ ],
+ "phases": [
+  {
+   "step": "probe",
+   "rc": 0,
+   "seconds": 45.6,
+   "free_mib_after": 1056,
+   "cgroup": {
+    "anon_gib": 4.953,
+    "file_gib": 22.854,
+    "shmem_gib": 19.189,
+    "unevictable_gib": 0.0,
+    "peak_gib": 28.0
+   }
+  },
+  {
+   "step": "sustained",
+   "rc": 0,
+   "seconds": 300.5,
+   "free_mib_after": 1052,
+   "cgroup": {
+    "anon_gib": 4.953,
+    "file_gib": 21.474,
+    "shmem_gib": 19.189,
+    "unevictable_gib": 0.0,
+    "peak_gib": 28.0
+   }
+  }
+ ],
+ "requests": [
+  {
+   "step": "nearfull_p1",
+   "status": 200,
+   "seconds": 44.103,
+   "prompt_tokens": 124458,
+   "finish": "length",
+   "content": "",
+   "tool_calls": [],
+   "title_parses": null,
+   "free_before_mib": 1328,
+   "free_after_mib": 988,
+   "cgroup_after": {
+    "anon_gib": 4.95,
+    "file_gib": 22.858,
+    "shmem_gib": 19.189,
+    "unevictable_gib": 0.0,
+    "peak_gib": 28.0
+   }
+  },
+  {
+   "step": "title_first_grammar",
+   "status": 200,
+   "seconds": 0.426,
+   "prompt_tokens": 101,
+   "finish": "stop",
+   "content": "{\"title\":\"Adding Two Numbers in Python\"}",
+   "tool_calls": [],
+   "title_parses": true,
+   "free_before_mib": 988,
+   "free_after_mib": 988,
+   "cgroup_after": {
+    "anon_gib": 4.952,
+    "file_gib": 22.855,
+    "shmem_gib": 19.189,
+    "unevictable_gib": 0.0,
+    "peak_gib": 28.0
+   }
+  },
+  {
+   "step": "forced_tool",
+   "status": 200,
+   "seconds": 0.58,
+   "prompt_tokens": 132,
+   "finish": "stop",
+   "content": "<|channel|>commentary to=functions.get_weather<|constrain|>json<|message|>{\"city... (98 chars)",
+   "tool_calls": [],
+   "title_parses": null,
+   "free_before_mib": 988,
+   "free_after_mib": 988,
+   "cgroup_after": {
+    "anon_gib": 4.952,
+    "file_gib": 22.855,
+    "shmem_gib": 19.189,
+    "unevictable_gib": 0.0,
+    "peak_gib": 28.0
+   }
+  },
+  {
+   "step": "nearfull_p2",
+   "status": 200,
+   "seconds": 44.634,
+   "prompt_tokens": 124458,
+   "finish": "length",
+   "content": "",
+   "tool_calls": [],
+   "title_parses": null,
+   "free_before_mib": 1052,
+   "free_after_mib": 1050,
+   "cgroup_after": {
+    "anon_gib": 4.955,
+    "file_gib": 21.474,
+    "shmem_gib": 19.189,
+    "unevictable_gib": 0.0,
+    "peak_gib": 28.0
+   }
+  }
+ ],
+ "probe": {
+  "decode_tok_s_median": 125.6,
+  "decode_runs": [
+   {
+    "tok_s": 125.2,
+    "completion_tokens": 1500
+   },
+   {
+    "tok_s": 126.2,
+    "completion_tokens": 1500
+   },
+   {
+    "tok_s": 125.6,
+    "completion_tokens": 1500
+   }
+  ],
+  "long": [
+   {
+    "prompt_tokens": 8058,
+    "ttft_first_s": 1.48,
+    "ttft_repeat_s": 0.056
+   },
+   {
+    "prompt_tokens": 30003,
+    "ttft_first_s": 4.871,
+    "ttft_repeat_s": 0.088
+   }
+  ],
+  "ok_test": {
+   "content": "OK",
+   "reasoning_chars": 90,
+   "finish": "stop",
+   "usage": {
+    "prompt_tokens": 72,
+    "total_tokens": 107,
+    "completion_tokens": 35,
+    "prompt_tokens_details": null,
+    "reasoning_tokens": 28,
+    "completion_tokens_details": {
+     "reasoning_tokens": 28
+    }
+   },
+   "seconds": 0.37
+  },
+  "tool_test": {
+   "finish": "tool_calls",
+   "calls": [
+    {
+     "name": "get_weather",
+     "arguments": "{\"city\": \"Paris\"}"
+    }
+   ],
+   "content": "",
+   "seconds": 0.38
+  }
+ },
+ "sustained": {
+  "requests": 73,
+  "errors": [],
+  "decode_tok_s": {
+   "min": 117.2,
+   "median": 127.1,
+   "max": 131.1
+  },
+  "prompt_tokens_max": 13820,
+  "first_half_median": 128.45,
+  "second_half_median": 125.1
+ },
+ "trace": {
+  "gpu_used_peak_mib": 14854.0,
+  "gpu_free_min_mib": 988.0,
+  "power_max_w": 145.83,
+  "temp_max_c": 71.0,
+  "cg_anon_peak_gib": 14.111,
+  "cg_shmem_peak_gib": 19.189,
+  "cg_file_peak_gib": 23.365,
+  "cg_peak_gib": 28.0,
+  "cg_unevictable_peak_gib": 0.0,
+  "samples": 478
+ },
+ "state.txt": [
+  "running exit=0 oom=false started=2026-11-17T19:54:58.748111934Z finished=0001-01-01T00:00:00Z"
+ ],
+ "meta": [
+  "gpu_used_before_mib=112",
+  "cmd=ld19-mem28.sh",
+  "docker_run_exit=0",
+  "poller_exit=0",
+  "seq_exit=0"
+ ],
+ "procmem.txt": [
+  "== at ready 19:55:52",
+  "pid=1580161 name=python3 VmRSS_kB=1741592 RssAnon_kB=1256692 RssFile_kB=465940 RssShmem_kB=18960 VmLck_kB=16 VmPin_kB=0",
+  "pid=1581486 name=sglang::schedul VmRSS_kB=23443368 RssAnon_kB=2569072 RssFile_kB=689636 RssShmem_kB=20184660 VmLck_kB=16 VmPin_kB=0",
+  "pid=1581487 name=sglang::detoken VmRSS_kB=1631664 RssAnon_kB=1173016 RssFile_kB=458648 RssShmem_kB=0 VmLck_kB=16 VmPin_kB=0",
+  "cgroup anon=4.774 GiB",
+  "cgroup file=23.033 GiB",
+  "cgroup shmem=19.189 GiB",
+  "cgroup file_mapped=19.199 GiB",
+  "cgroup unevictable=0.000 GiB",
+  "cgroup memory.current=28.000 GiB memory.peak=28.000 GiB",
+  "== at the end 20:03:09",
+  "pid=1580161 name=python3 VmRSS_kB=1810660 RssAnon_kB=1326440 RssFile_kB=465260 RssShmem_kB=18960 VmLck_kB=16 VmPin_kB=0",
+  "pid=1581486 name=sglang::schedul VmRSS_kB=23568220 RssAnon_kB=2690048 RssFile_kB=693512 RssShmem_kB=20184660 VmLck_kB=16 VmPin_kB=0",
+  "pid=1581487 name=sglang::detoken VmRSS_kB=1631172 RssAnon_kB=1173236 RssFile_kB=457936 RssShmem_kB=0 VmLck_kB=16 VmPin_kB=0",
+  "cgroup anon=4.955 GiB",
+  "cgroup file=21.474 GiB",
+  "cgroup shmem=19.189 GiB",
+  "cgroup file_mapped=19.203 GiB",
+  "cgroup unevictable=0.000 GiB",
+  "cgroup memory.current=26.595 GiB memory.peak=28.000 GiB"
+ ]
+}

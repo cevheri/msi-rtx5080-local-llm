@@ -1,0 +1,13 @@
+{"exit": "ready", "ready_seen_s": 37.6, "served_listed_s": 36.05, "memory_usage": {"weight": 7.887, "kvcache": 5.658, "startup_available": 0.977, "token_capacity": 82397, "token_capacity_swa": null, "graph": {"prefill": 0.0, "decode": 0.061, "target_verify": 0.0, "draft_prefill": 0.0, "draft_decode": 0.0, "draft_extend": 0.0}}, "gpu_right_after_ready": {"t": 1794939418.484, "used_mib": 14978, "free_mib": 865, "total_mib": 16303}}
+{"event": "m13", "i": 18, "kind": "tool", "status": 200, "finish": "tool_calls", "content": "", "reasoning_chars": 149, "completion_tokens": 72, "answer": [{"name": "convert_currency", "arguments": {"amount": 250, "from_currency": "EUR", "to_currency": "JPY"}}], "correct": true, "t": 1794939933.809, "utc": "18:25:33"}
+{"event": "m13", "i": 19, "kind": "tool", "status": 200, "finish": "tool_calls", "content": "", "reasoning_chars": 101, "completion_tokens": 42, "answer": [{"name": "get_time", "arguments": {"city": "London"}}], "correct": true, "t": 1794939934.285, "utc": "18:25:34"}
+{"event": "m13_summary", "correct": 20, "total": 20, "t": 1794939934.285, "utc": "18:25:34"}
+{"event": "end", "result": "completed", "container": "running exit=0 oom=false", "cgroup": {"anon_gib": 4.775, "file_gib": 3.259, "shmem_gib": 0.085, "unevictable_gib": 0.0, "peak_gib": 13.276}, "memory_usage": {"weight": 7.887, "kvcache": 5.658, "startup_available": 0.977, "token_capacity": 82397, "token_capacity_swa": null, "graph": {"prefill": 0.0, "decode": 0.061, "target_verify": 0.0, "draft_
+logs/b0-a2.log 1309 -> 49 lines
+[2026-11-17 18:16:39] Auto-detected template features: reasoning_config=ReasoningToggleConfig(toggle_param=None, default_enabled=None, special_case='always', effort_kwarg=None), reasoning_parser=k2_horizon, tool_call_parser=k2_horizon
+[2026-11-17 18:16:49] Load weight end. elapsed=2.81 s, type=K2HorizonForCausalLM, quant=compressed-tensors, avail mem=7.17 GB, mem usage=7.89 GB.
+[2026-11-17 18:16:54] KV Cache is allocated. dtype: torch.float8_e4m3fn, #tokens: 82397, K size: 2.83 GB, V size: 2.83 GB
+[2026-11-17 18:16:55] max_total_num_tokens=82397, chunked_prefill_size=2048, max_prefill_tokens=16384, max_running_requests=1, context_len=65536, available_gpu_mem=0.98 GB
+[2026-11-17 18:16:56] Using default chat sampling params from model generation config: {'temperature': 1.0, 'top_p': 0.95}
+[2026-11-17 18:16:58] The server is fired up and ready to roll!
+running exit=0 oom=false started=2026-11-17T18:16:20.936667022Z finished=0001-01-01T00:00:00Z

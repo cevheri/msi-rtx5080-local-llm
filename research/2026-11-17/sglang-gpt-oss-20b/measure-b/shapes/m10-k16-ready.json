@@ -1,0 +1,198 @@
+{
+ "t0": 1794941185.599882,
+ "kind": "sglang",
+ "exit": "ready",
+ "ready_seen_s": 50.76,
+ "served_listed_s": 49.06,
+ "gpu_right_after_ready": {
+  "t": 1794941236.376,
+  "used_mib": 14574,
+  "free_mib": 1269,
+  "total_mib": 16303
+ },
+ "server_info_call": {
+  "status": 200,
+  "t": 1794941236.376,
+  "seconds": 0.006
+ },
+ "memory_usage": {
+  "weight": 8.842,
+  "kvcache": 4.734,
+  "startup_available": 1.389,
+  "token_capacity": 376049,
+  "token_capacity_swa": 37604,
+  "graph": {
+   "prefill": 0.0,
+   "decode": 0.059,
+   "target_verify": 0.0,
+   "draft_prefill": 0.0,
+   "draft_decode": 0.0,
+   "draft_extend": 0.0
+  }
+ },
+ "max_total_num_tokens": 376049,
+ "status": "ready",
+ "selected": {
+  "decode_cuda_graph_bs": [
+   1
+  ],
+  "decode_cuda_graph_memory_gb": 0.059,
+  "effective_max_running_requests_per_dp": 1,
+  "kv_cache_dtype": "fp8_e4m3",
+  "mem_fraction_static": 0.9,
+  "context_length": 131072,
+  "attention_backend": "triton",
+  "swa_full_tokens_ratio": 0.1,
+  "max_mamba_cache_size": null,
+  "enable_paged_experts": true,
+  "paged_experts_num_resident": 16,
+  "moe_runner_backend": "marlin",
+  "fp4_gemm_runner_backend": "auto",
+  "quantization": null,
+  "chunked_prefill_size": 1024,
+  "disable_prefill_cuda_graph": true,
+  "tool_call_parser": "gpt-oss",
+  "reasoning_parser": "gpt-oss"
+ },
+ "cgroup_right_after_ready": {
+  "anon_gib": 4.881,
+  "file_gib": 19.676,
+  "kernel_gib": 0.191,
+  "shmem_gib": 19.189,
+  "file_mapped_gib": 19.202,
+  "inactive_file_gib": 0.382,
+  "active_file_gib": 0.105,
+  "unevictable_gib": 0.0,
+  "current_gib": 24.751,
+  "peak_gib": 24.751
+ },
+ "gpu_after_reads": {
+  "t": 1794941236.41,
+  "used_mib": 14574,
+  "free_mib": 1269,
+  "total_mib": 16303
+ },
+ "endpoints": {
+  "/ready": {
+   "first_200_s": 50.55,
+   "changes": [
+    {
+     "at_s": 0.04,
+     "status": "ConnectionRefusedError",
+     "call_s": 0.001
+    },
+    {
+     "at_s": 0.54,
+     "status": "ConnectionResetError",
+     "call_s": 0.001
+    },
+    {
+     "at_s": 2.04,
+     "status": "RemoteDisconnected",
+     "call_s": 0.0
+    },
+    {
+     "at_s": 2.54,
+     "status": "ConnectionResetError",
+     "call_s": 0.001
+    },
+    {
+     "at_s": 49.05,
+     "status": 503,
+     "call_s": 0.003
+    },
+    {
+     "at_s": 50.55,
+     "status": 200,
+     "call_s": 0.001
+    }
+   ],
+   "polls": 102,
+   "last": 200
+  },
+  "/v1/models": {
+   "first_200_s": 49.06,
+   "changes": [
+    {
+     "at_s": 0.04,
+     "status": "ConnectionRefusedError",
+     "call_s": 0.001
+    },
+    {
+     "at_s": 0.54,
+     "status": "ConnectionResetError",
+     "call_s": 0.0
+    },
+    {
+     "at_s": 1.54,
+     "status": "RemoteDisconnected",
+     "call_s": 0.0
+    },
+    {
+     "at_s": 2.04,
+     "status": "ConnectionResetError",
+     "call_s": 0.0
+    },
+    {
+     "at_s": 49.06,
+     "status": 200,
+     "call_s": 0.002
+    }
+   ],
+   "polls": 102,
+   "last": 200
+  },
+  "/server_info": {
+   "first_200_s": 49.06,
+   "changes": [
+    {
+     "at_s": 0.04,
+     "status": "ConnectionRefusedError",
+     "call_s": 0.0
+    },
+    {
+     "at_s": 0.54,
+     "status": "ConnectionResetError",
+     "call_s": 0.0
+    },
+    {
+     "at_s": 27.05,
+     "status": "RemoteDisconnected",
+     "call_s": 0.0
+    },
+    {
+     "at_s": 27.55,
+     "status": "ConnectionResetError",
+     "call_s": 0.0
+    },
+    {
+     "at_s": 29.05,
+     "status": "RemoteDisconnected",
+     "call_s": 0.0
+    },
+    {
+     "at_s": 29.55,
+     "status": "ConnectionResetError",
+     "call_s": 0.0
+    },
+    {
+     "at_s": 46.55,
+     "status": "RemoteDisconnected",
+     "call_s": 0.0
+    },
+    {
+     "at_s": 47.05,
+     "status": "ConnectionResetError",
+     "call_s": 0.0
+    },
+    {
+     "at_s": 49.06,
+     "status": 200,
+     "call_s": 0.006
+    }
+   ],
+   "polls": 102,
+   "last": 200
+  }
+ }
+}

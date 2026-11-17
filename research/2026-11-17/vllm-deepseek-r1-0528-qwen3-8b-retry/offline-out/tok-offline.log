@@ -1,0 +1,26 @@
+W1117 18:09:59.240000 1 torch/_opaque_base.py:6] torch._opaque_base is deprecated, use torch._custom_class_base instead
+W1117 18:09:59.241000 1 torch/_library/opaque_object.py:288] register_opaque_type is deprecated, use register_custom_class instead
+W1117 18:09:59.241000 1 torch/_library/opaque_object.py:211] typ='value' is deprecated, use typ='constant' instead
+[transformers] Unrecognized keys in `rope_parameters` for 'rope_type'='yarn': {'attn_factor'}
+[transformers] Unrecognized keys in `rope_parameters` for 'rope_type'='yarn': {'attn_factor'}
+[transformers] Unrecognized keys in `rope_parameters` for 'rope_type'='yarn': {'attn_factor'}
+{"label": "auto", "class": "CachedLlamaTokenizer", "pre_tokenizer": "Metaspace", "decode_say_hello": "Sayhelloworld.", "load_error": null}
+    ok {"tokens": 9, "llamacpp": 8, "diff": 1, "rendered_head": "<\uff5cbegin\u2581of\u2581sentence\uff5c><\uff5cUser\uff5c>Reply with exactly: OK<\uff5cAssista", "rendered_tail": "ser\uff5c>Reply with exactly: OK<\uff5cAssistant\uff5c>"}
+    probe_8k {"tokens": 6903, "llamacpp": 8078, "diff": -1175, "rendered_head": "<\uff5cbegin\u2581of\u2581sentence\uff5c><\uff5cUser\uff5c>def process_batch(items, config", "rendered_tail": "the function above compute?<\uff5cAssistant\uff5c>"}
+    probe_30k {"tokens": 25845, "llamacpp": 30254, "diff": -4409, "rendered_head": "<\uff5cbegin\u2581of\u2581sentence\uff5c><\uff5cUser\uff5c>def process_batch(items, config", "rendered_tail": "the function above compute?<\uff5cAssistant\uff5c>"}
+W1117 18:10:00.167000 1 torch/utils/cpp_extension.py:183] No CUDA runtime is found, using CUDA_HOME='/usr/local/cuda'
+[transformers] Unrecognized keys in `rope_parameters` for 'rope_type'='yarn': {'attn_factor'}
+[transformers] Unrecognized keys in `rope_parameters` for 'rope_type'='yarn': {'attn_factor'}
+[transformers] Unrecognized keys in `rope_parameters` for 'rope_type'='yarn': {'attn_factor'}
+{"label": "deepseek_v32", "class": "CachedDSV32TokenizersBackend", "pre_tokenizer": "Sequence", "decode_say_hello": "Say hello world.", "load_error": null}
+    ok {"tokens": 9, "llamacpp": 8, "diff": 1, "rendered_head": "<\uff5cbegin\u2581of\u2581sentence\uff5c><\uff5cUser\uff5c>Reply with exactly: OK<\uff5cAssista", "rendered_tail": "ly with exactly: OK<\uff5cAssistant\uff5c></think>"}
+    probe_8k {"tokens": 8079, "llamacpp": 8078, "diff": 1, "rendered_head": "<\uff5cbegin\u2581of\u2581sentence\uff5c><\uff5cUser\uff5c>def process_batch(items, config", "rendered_tail": "tion above compute?<\uff5cAssistant\uff5c></think>"}
+    probe_30k {"tokens": 30255, "llamacpp": 30254, "diff": 1, "rendered_head": "<\uff5cbegin\u2581of\u2581sentence\uff5c><\uff5cUser\uff5c>def process_batch(items, config", "rendered_tail": "tion above compute?<\uff5cAssistant\uff5c></think>"}
+[transformers] Unrecognized keys in `rope_parameters` for 'rope_type'='yarn': {'attn_factor'}
+[transformers] Unrecognized keys in `rope_parameters` for 'rope_type'='yarn': {'attn_factor'}
+[transformers] Unrecognized keys in `rope_parameters` for 'rope_type'='yarn': {'attn_factor'}
+{"label": "deepseek_v4", "class": "CachedDSV4TokenizersBackend", "pre_tokenizer": "Sequence", "decode_say_hello": "Say hello world.", "load_error": null}
+    ok {"tokens": 91, "llamacpp": 8, "diff": 83, "rendered_head": "<\uff5cbegin\u2581of\u2581sentence\uff5c>Reasoning Effort: Absolute maximum with", "rendered_tail": "ply with exactly: OK<\uff5cAssistant\uff5c><think>"}
+    probe_8k {"tokens": 8161, "llamacpp": 8078, "diff": 83, "rendered_head": "<\uff5cbegin\u2581of\u2581sentence\uff5c>Reasoning Effort: Absolute maximum with", "rendered_tail": "ction above compute?<\uff5cAssistant\uff5c><think>"}
+    probe_30k {"tokens": 30337, "llamacpp": 30254, "diff": 83, "rendered_head": "<\uff5cbegin\u2581of\u2581sentence\uff5c>Reasoning Effort: Absolute maximum with", "rendered_tail": "ction above compute?<\uff5cAssistant\uff5c><think>"}
+{"label": "slow", "class": null, "pre_tokenizer": null, "decode_say_hello": null, "load_error": "ValueError: No tokenizer registered for tokenizer_mode='slow'."}

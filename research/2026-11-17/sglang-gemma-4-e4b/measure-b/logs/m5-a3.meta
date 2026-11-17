@@ -1,0 +1,6 @@
+gpu_used_before_mib=112
+cmd=m5-a3.sh
+docker_run_exit=0
+poller_exit=0
+seq_exit=0
+note=the sustained phase was stopped by hand after 1.6 s (rc -15), because these settings hold 42,413 tokens, short of the 64k context; M12 runs at the shipping settings in m5-a4-swa

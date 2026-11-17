@@ -1,0 +1,5 @@
+at 0.29 s /health URLError
+at 33.26 s /health 200
+at 33.44 s served name listed in /v1/models
+free_mib_after_ready=145
+chat {"status": 200, "content": "OK", "reasoning_chars": 81, "finish_reason": "stop", "completion_tokens": 31}

@@ -1,0 +1,1 @@
+{"exit": "ready", "ready_seen_s": 25.29, "served_listed_s": 25.05, "memory_usage": null, "gpu_right_after_ready": {"t": 1794943115.383, "used_mib": 14740, "free_mib": 1103, "total_mib": 16303}}

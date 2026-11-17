@@ -1,0 +1,31 @@
+{
+ "class": "CachedTokenizersBackend",
+ "pre_tokenizer": "Sequence",
+ "say_hello": {
+  "ids": [
+   45764,
+   23811,
+   1879,
+   13
+  ],
+  "decode": "Say hello world."
+ },
+ "chat_counts": {
+  "ok": {
+   "tokens": 8,
+   "llamacpp": 8,
+   "diff": 0
+  },
+  "probe_8k": {
+   "tokens": 8078,
+   "llamacpp": 8078,
+   "diff": 0
+  },
+  "probe_30k": {
+   "tokens": 30254,
+   "llamacpp": 30254,
+   "diff": 0
+  }
+ },
+ "rendered_ok": "<\uff5cbegin\u2581of\u2581sentence\uff5c><\uff5cUser\uff5c>Reply with exactly: OK<\uff5cAssistant\uff5c>"
+}

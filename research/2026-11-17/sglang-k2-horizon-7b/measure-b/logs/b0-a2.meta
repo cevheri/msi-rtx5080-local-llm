@@ -1,0 +1,5 @@
+gpu_used_before_mib=111
+cmd=b0-a2.sh
+docker_run_exit=0
+poller_exit=0
+seq_exit=0

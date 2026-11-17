@@ -1,0 +1,75 @@
+{
+ "t0": 1794942174.0122054,
+ "kind": "sglang",
+ "exit": "container stopped",
+ "ready_seen_s": null,
+ "served_listed_s": null,
+ "endpoints": {
+  "/ready": {
+   "first_200_s": null,
+   "changes": [
+    {
+     "at_s": 0.04,
+     "status": "ConnectionRefusedError",
+     "call_s": 0.001
+    },
+    {
+     "at_s": 0.54,
+     "status": "RemoteDisconnected",
+     "call_s": 0.001
+    },
+    {
+     "at_s": 1.04,
+     "status": "ConnectionResetError",
+     "call_s": 0.0
+    }
+   ],
+   "polls": 46,
+   "last": "ConnectionResetError"
+  },
+  "/v1/models": {
+   "first_200_s": null,
+   "changes": [
+    {
+     "at_s": 0.04,
+     "status": "ConnectionRefusedError",
+     "call_s": 0.001
+    },
+    {
+     "at_s": 0.54,
+     "status": "ConnectionResetError",
+     "call_s": 0.001
+    }
+   ],
+   "polls": 46,
+   "last": "ConnectionResetError"
+  },
+  "/server_info": {
+   "first_200_s": null,
+   "changes": [
+    {
+     "at_s": 0.04,
+     "status": "ConnectionRefusedError",
+     "call_s": 0.001
+    },
+    {
+     "at_s": 0.54,
+     "status": "ConnectionResetError",
+     "call_s": 0.002
+    },
+    {
+     "at_s": 16.05,
+     "status": "RemoteDisconnected",
+     "call_s": 0.002
+    },
+    {
+     "at_s": 16.55,
+     "status": "ConnectionResetError",
+     "call_s": 0.0
+    }
+   ],
+   "polls": 46,
+   "last": "ConnectionResetError"
+  }
+ }
+}

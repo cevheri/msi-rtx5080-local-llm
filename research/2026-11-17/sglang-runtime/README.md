@@ -2,10 +2,11 @@
 
 Last verified: 2026-11-17.
 
-This folder holds the records behind the SGLang runtime of llmctl that apply to more than one model: the hands-on lane's first run of SGLang on this laptop, measurement A (M6, M7, M8 and M15), and the design's offline probes P1 and P2.
-The per-model records of the same runs are in [sglang-qwen3.5-9b/](../sglang-qwen3.5-9b/README.md), [sglang-k2-horizon-7b/](../sglang-k2-horizon-7b/README.md), [sglang-gpt-oss-20b/](../sglang-gpt-oss-20b/README.md) and [sglang-gemma-4-e4b/](../sglang-gemma-4-e4b/README.md).
-Every model server and P1 ran in `lmsysorg/sglang:v0.5.23-runtime` (index digest `sha256:3ce6da3e5ea0fee2dac6a23b528cb294fedd31ca74a55a4511f709c5e01e8652`), started by hand with `docker run`, one container at a time, before llmctl had an SGLang adapter.
+This folder holds the records behind the SGLang runtime of llmctl that apply to more than one model: the hands-on lane's first run of SGLang on this laptop, measurement A (M6, M7, M8 and M15), the design's offline probes P1 and P2, and measurement B (wave 1 at its shipped settings, wave 2, M10, M12, M13, M15 and the vLLM DeepSeek-R1 tokenizer retry).
+The per-model records of the same runs are in [sglang-qwen3.5-9b/](../sglang-qwen3.5-9b/README.md), [sglang-k2-horizon-7b/](../sglang-k2-horizon-7b/README.md), [sglang-gpt-oss-20b/](../sglang-gpt-oss-20b/README.md), [sglang-gemma-4-e4b/](../sglang-gemma-4-e4b/README.md), [sglang-gemma-4-12b/](../sglang-gemma-4-12b/README.md), [sglang-mellum2.1-12b/](../sglang-mellum2.1-12b/README.md), [sglang-groot-19b-a3b/](../sglang-groot-19b-a3b/README.md) and [sglang-deepseek-r1-0528-qwen3-8b/](../sglang-deepseek-r1-0528-qwen3-8b/README.md), and measurement B's two vLLM records in [vllm-gpt-oss-20b-offline/](../vllm-gpt-oss-20b-offline/README.md) and [vllm-deepseek-r1-0528-qwen3-8b-retry/](../vllm-deepseek-r1-0528-qwen3-8b-retry/README.md).
+Every SGLang model server and P1 ran in `lmsysorg/sglang:v0.5.23-runtime` (index digest `sha256:3ce6da3e5ea0fee2dac6a23b528cb294fedd31ca74a55a4511f709c5e01e8652`), started by hand with `docker run`, one container at a time, before llmctl had an SGLang adapter.
 P2 ran on the host with Python and `jsonschema`, without the image.
+Measurement B's two vLLM starts ran in `vllm/vllm-openai:v0.33.0`, started by hand as `launcher/runtimes/vllm.py` `container_spec` builds the shipped recipes, with the changes their records name.
 Do not edit these records by hand.
 
 ## What each lane measured
@@ -20,9 +21,13 @@ Do not edit these records by hand.
 | Cold and warm free memory (measurement A) | Is the free memory right after ready repeatable? | Qwen3.5-9B a3: 1,013 MiB free after a warm start and 1,039 after `POST /flush_cache`; 709 MiB after a cold start and 1,039 after the flush | (measured on the MSI Raider 18 Max HX, SGLang v0.5.23, 2026-11-17); [measure-a/README.md](measure-a/README.md), the M6 tables |
 | P1 (design probe) | Does the image's Hugging Face CLI run as the host user for `pull`? | `docker run --rm --network none --memory 2g --memory-swap 2g --user <uid>:<gid> -e HOME=/tmp -e HF_HOME=/hf --entrypoint python3 lmsysorg/sglang:v0.5.23-runtime -m huggingface_hub.cli.hf download --help` exited 0 and lists `--revision`, `--include` and `--exclude`; `hf version` reports 1.33.0; `python3` is `/opt/sglang/bin/python3`; no `hf` is on `PATH`; `/opt/sglang/lib/python3.12/site-packages/tml_renderers/data` holds `o200k_base.tiktoken` | (measured on the MSI Raider 18 Max HX, offline probe of the image, 2026-11-17); [spec-probes/offline-image-probe.txt](spec-probes/offline-image-probe.txt) |
 | P2 (design probe) | Is the `sglang-docker` OpenCode provider of the design valid config? | docs/opencode.md's validated config with that provider added: 0 errors for 21 models against https://opencode.ai/config.json fetched 2026-11-17 with Python `jsonschema` 4.19.2 (Draft 2020-12); a V1 `npm` key and a string `tools` value in the new provider are rejected | (measured on the MSI Raider 18 Max HX, Python 3 jsonschema, 2026-11-17); [spec-probes/validate-result.json](spec-probes/validate-result.json), [spec-probes/validate-result-provider.json](spec-probes/validate-result-provider.json), [spec-probes/validate_opencode.py](spec-probes/validate_opencode.py) |
+| Measurement B: the grammar fix at the shipped settings | Do `SYNC_TOKEN_IDS_ACROSS_TP=1` and `NCCL_MAX_P2P_NCHANNELS=1` hold on every recipe, and what post-ready threshold follows? | On every recipe that runs, the first grammar request after a fresh prompt of about 95% of the context moved no visible memory and every server stayed up; the largest drop from ready to the lowest point of the whole protocol was 374 MiB (Qwen3.5-9B), so the design's D8 rule gives 640 MiB, and K2 Horizon 7B's 865 MiB free after ready is the lowest; decode on K2 Horizon 7B and gpt-oss-20b was unchanged | (measured on the MSI Raider 18 Max HX, SGLang v0.5.23, 2026-11-17); [measure-b/README.md](measure-b/README.md), the margin table |
+| Measurement B: wave 2 (M1 to M5) | Which further cached checkpoints run on SGLang? | Gemma 4 E4B and Gemma 4 12B run with `--json-model-override-args '{"audio_config": null}'` and `--swa-full-tokens-ratio 0.1`; Mellum2.1 fails while loading its expert zero points, Groot-19B-A3B in the FP4 Marlin preparation, and DeepSeek-R1-0528-Qwen3-8B runs out of memory while building the BF16 model for online FP8; M9 was not run, because no SGLang chat-only recipe loads | (measured on the MSI Raider 18 Max HX, SGLang v0.5.23, 2026-11-17); [measure-b/README.md](measure-b/README.md), the per-model table |
+| Measurement B: M10, M12, M13, M15 | Paged Experts K, stability, FP8 against BF16 KV, cold starts without a network | gpt-oss-20b K 24 holds 128k at 125.5 tok/s and its expert store is 19.19 GiB of shared memory; every shipped setting passed 300 s of load without error; FP8 and BF16 KV gave the same final answers on K2 Horizon 7B and Gemma 4 12B; every recipe reached ready offline from an empty cache volume in 48.3 to 253.6 s, gpt-oss-20b with `TIKTOKEN_ENCODINGS_BASE` | (measured on the MSI Raider 18 Max HX, SGLang v0.5.23, 2026-11-17); [measure-b/README.md](measure-b/README.md), sections M10 to M15 |
+| Measurement B: vLLM | Does the vLLM gpt-oss-20b recipe start without a network, and can vLLM DeepSeek-R1 tokenize correctly (LD11)? | gpt-oss-20b reached ready offline in 33.3 s with no extra variable; a tokenizer folder naming `PreTrainedTokenizerFast` gave llama.cpp's token counts and correct replies at 73.1 tok/s | (measured on the MSI Raider 18 Max HX, vLLM v0.33.0, 2026-11-17); [vllm-gpt-oss-20b-offline/](../vllm-gpt-oss-20b-offline/README.md), [vllm-deepseek-r1-0528-qwen3-8b-retry/](../vllm-deepseek-r1-0528-qwen3-8b-retry/README.md) |
 
-The hands-on runs took place between 18:31 and 19:08 (+03:00) and measurement A between 20:15 and 20:48 (+03:00), both on 2026-11-17, with the owner's `gemma-4-26b-a4b` on llama.cpp stopped before and started again after; the `llmctl` outputs of both lanes record that.
-The GPU power limit read 140 W after the hands-on runs and 145 W before measurement A.
+The hands-on runs took place between 18:31 and 19:08 (+03:00), measurement A between 20:15 and 20:48 (+03:00) and measurement B between 21:16 and 23:05 (+03:00), all on 2026-11-17, with the owner's `gemma-4-26b-a4b` on llama.cpp stopped before and started again after; the `llmctl` outputs of the three lanes record that.
+The GPU power limit read 140 W after the hands-on runs, 145 W before measurement A and 145 W during measurement B.
 
 ## Layout
 
@@ -38,16 +43,23 @@ The GPU power limit read 140 W after the hands-on runs and 145 W before measurem
 | [measure-a/cmds/nccl-probe.sh](measure-a/cmds/nccl-probe.sh) | The one-rank NCCL probe's `docker run` | `$SCRATCH/sglang/measure-a/cmds/` |
 | [measure-a/links.diff](measure-a/links.diff) | The link rewrite of the README against the scratch copy | `diff -u` |
 | `spec-probes/` | P1's [offline-image-probe.txt](spec-probes/offline-image-probe.txt), in which the archive removed the `hf` CLI's four ANSI colour escapes and wrote its check-mark character as the word OK, under the repository's no-emoji rule, P2's two results and its validator | `$SCRATCH/sglang-spec/` |
+| [measure-b/README.md](measure-b/README.md) | Measurement B's report: the named inputs, the per-model outcomes, the margin table, the starts, M10, M12, M13, M15 and the vLLM DeepSeek-R1 retry | `$SCRATCH/sglang/measure-b/README.md`, links rewritten |
+| [measure-b/lane-logs/](measure-b/lane-logs/) | The `llmctl` outputs before and after the lane and the logs of the nine start chains | `$SCRATCH/sglang/measure-b/lane-logs/` |
+| [measure-b/scripts/](measure-b/scripts/) | Measurement B's helpers (`run_b.sh`, `run_netnone_b.sh`, `poll_b.py`, `seq_b.py`, `margins.py`, `m13_compare.py` and others), cited by the README | `$SCRATCH/sglang/measure-b/scripts/` |
+| `measure-b/offline/` | The parser names and the transformers and vLLM tokenizer texts read from the two images offline | The text files of `$SCRATCH/sglang/measure-b/offline/` |
+| [measure-b/links.diff](measure-b/links.diff) | The link rewrite of the README against the scratch copy | `diff -u` |
 
-The per-model files of both lanes (`cmds/<id>-*.sh`, `logs/<id>/`, `shapes/<id>/` and A's `overlay/<id>*.make.json`) are in the `handson/` and `measure-a/` folders of each `sglang-<id>/` folder, under `cmds/`, `logs/`, `shapes/` and `overlay/` without the model folder level.
+The per-model files of the hands-on lane and measurement A (`cmds/<id>-*.sh`, `logs/<id>/`, `shapes/<id>/` and A's `overlay/<id>*.make.json`) are in the `handson/` and `measure-a/` folders of each `sglang-<id>/` folder, under `cmds/`, `logs/`, `shapes/` and `overlay/` without the model folder level.
+Measurement B already kept one folder per model: each `sglang-<id>/` folder of B is the `measure-b/` folder of the archive's `sglang-<id>/`, with B's `overlay/<id>.make.json` added under `overlay/`, and B's `vllm-gpt-oss-20b/` and `vllm-deepseek-r1-0528-qwen3-8b/` are the archive's `vllm-gpt-oss-20b-offline/` and `vllm-deepseek-r1-0528-qwen3-8b-retry/`, where B's README is `measure-b.md` beside a README written for the archive.
 
 ## Links and the rewrite
 
-The two lane READMEs keep their text as the lanes wrote it, with their relative links rewritten to this layout by a script outside the repository, so that every link still resolves.
+The three lane READMEs keep their text as the lanes wrote it, with their relative links rewritten to this layout by a script outside the repository, so that every link still resolves.
 A link to `cmds/<id>-...`, `logs/<id>/...` or `shapes/<id>/...` of the four models now points to `../../sglang-<id>/<lane>/cmds/...`, `.../logs/...` or `.../shapes/...`.
 Links within the kept files stay as they were.
 A link to a folder that is not archived here as a whole (`cmds/`, `shapes/`, `logs/`, `overlay/`, `src/`, `data-gh/` and the overlay folders) became its link text in backticks.
-Each lane's `links.diff` is `diff -u` of the scratch copy against the archived copy at that point and shows only link changes.
+In measurement B's lane README, a link into `sglang-<id>/` now points to `../../sglang-<id>/measure-b/`, and a link into `vllm-gpt-oss-20b/` or `vllm-deepseek-r1-0528-qwen3-8b/` to the two vLLM folders above; in B's per-model READMEs, a link into `../offline/`, `../scripts/` or `../lane-logs/` now points into `../../sglang-runtime/measure-b/`, and links to the source copies of `offline/sglang-src/`, `offline/vllm-src/` and `$SCRATCH/sglang/data/src/` became code spans.
+Each lane's `links.diff` is `diff -u` of the scratch copy against the archived copy at that point and shows only link changes; B's per-model READMEs have one beside them where a link changed (none for Qwen3.5-9B, Gemma 4 E4B and vLLM gpt-oss-20b).
 After that, a script put the sentences of the hands-on README on lines of their own, which its diff does not show; measurement A's README already had one sentence per line and was not changed.
 
 ## Left out
@@ -59,12 +71,15 @@ After that, a script put the sentences of the hands-on README on lines of their 
 - `$SCRATCH/sglang-spec/schema/`: the saved copy of https://opencode.ai/config.json that P2 validated against, which is OpenCode's file; it was fetched at 2026-11-17T18:26:39Z and its sha256 is `828719e5c07c6806c002e764a98a4ee9d3904b0d2b084a8d984b714b25d44c62`.
 - `$SCRATCH/sglang-spec/bin/gen_sglang.py`: probe P3's generator, which imports the repository's launcher at 5ad8883 to render the files of `gen/` below from recipe values written into the script; like its output, it was rendered rather than measured on the GPU.
 - `$SCRATCH/sglang-spec/gen/`: probe P3's docker arguments and client entries for three recipes, rendered from the repository's code at 5ad8883 rather than measured on the GPU.
+- Measurement B's `offline/sglang-src/` and `offline/vllm-src/`: source files copied from the two images offline, vendor code that B's READMEs cite by path and line; the text files of `offline/` are kept.
+- Measurement B's overlay folders and the two links of `vllm-deepseek-r1-0528-qwen3-8b/tokenizer-overlay/`, which point into `/root/.cache/huggingface` and resolve only inside a container; the `*.make.json` files and the edited `tokenizer_config.json` are kept.
 - Every `__pycache__/` folder.
 
 ## Rerunning
 
 The scripts and command files read `$HOME` and `$SCRATCH` from the environment, where `$SCRATCH` was the session's scratch folder and `$HOME` the owner's home folder.
 Measurement A's `run.sh` and `run_netnone.sh` also need `M`, the lane folder they write `logs/<model>/` and `shapes/<model>/` into, and call the hands-on `trace.sh` from `$SCRATCH/sglang/handson/scripts/`, so a rerun rebuilds the lanes' scratch layout first, with the per-model command files copied back from the `sglang-<id>/` folders.
+Measurement B's `run_b.sh`, `run_netnone_b.sh` and `chain*.sh` likewise expect its scratch layout, `$SCRATCH/sglang/measure-b/` with `scripts/`, `overlay/` and one folder per runtime and model.
 Every start needs the Hugging Face cache with the pinned snapshots, the image above and a free GPU; stop any other model server first, and run the Python helpers with `python3 -I`.
 P2's validator runs as `python3 -I spec-probes/validate_opencode.py <saved config.json> docs/opencode.md <result.json>` with Python `jsonschema` installed, against a fresh copy of the schema whose sha256 may differ from the one above.
 
