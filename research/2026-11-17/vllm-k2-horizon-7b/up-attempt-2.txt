@@ -1,0 +1,10 @@
+k2-horizon-7b on vllm: override recipe, estimate
+recipe file: $SCRATCH/vllm-overrides/vllm/k2-horizon-7b.toml
+warning: this recipe was never run on the reference laptop; it may not start or fit
+clients: none (LLMCTL_CLIENTS is empty)
+removing the stopped container 'vllm' from an earlier llmctl run
+waiting for k2-horizon-7b to load (up to 900 s)
+ready: http://127.0.0.1:8000/v1, served as 'k2-horizon-7b', context 65536, output 16384
+evidence: Copied from the shipped recipe k2-horizon-7b; not measured on this machine (vllm/models.md#k2-horizon-7b-awq-int4)
+stop with ./llmctl down
+exit 0

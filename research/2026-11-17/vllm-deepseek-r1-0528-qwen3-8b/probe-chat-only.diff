@@ -1,0 +1,42 @@
+--- research/2026-11-16/llm_probe.py	2026-11-16 21:40:35.000000000 +0300
++++ $SCRATCH/vllm/work-deepseek-r1-0528-qwen3-8b/llm_probe_chat_only.py	2026-11-17 02:46:55.271221445 +0300
+@@ -12,6 +12,7 @@
+ import statistics
+ import time
+ import urllib.request
++import urllib.error
+ 
+ PARAGRAPH = (
+     "def process_batch(items, config):\n"
+@@ -114,16 +115,21 @@
+ 
+     tool = {"type": "function", "function": {"name": "get_weather", "description": "Get the weather for a city",
+             "parameters": {"type": "object", "properties": {"city": {"type": "string"}}, "required": ["city"]}}}
+-    body, dt = chat(base, dict({"model": a.model, "messages": [{"role": "user", "content": "What is the weather in Paris? Use the tool."}],
+-                                "tools": [tool], "max_tokens": 1024}, **extra))
+-    ch = body["choices"][0]
+-    calls = ch["message"].get("tool_calls") or []
+-    res["tool_test"] = {
+-        "finish": ch.get("finish_reason"),
+-        "calls": [{"name": c["function"]["name"], "arguments": c["function"]["arguments"]} for c in calls],
+-        "content": ch["message"].get("content"),
+-        "seconds": round(dt, 2),
+-    }
++    # Chat-only copy: the server has no tool parser, so record the tool step's HTTP error and go on.
++    try:
++        body, dt = chat(base, dict({"model": a.model, "messages": [{"role": "user", "content": "What is the weather in Paris? Use the tool."}],
++                                    "tools": [tool], "max_tokens": 1024}, **extra))
++    except urllib.error.HTTPError as e:
++        res["tool_test"] = {"http_status": e.code, "error": e.read().decode(errors="replace")[:500]}
++    else:
++        ch = body["choices"][0]
++        calls = ch["message"].get("tool_calls") or []
++        res["tool_test"] = {
++            "finish": ch.get("finish_reason"),
++            "calls": [{"name": c["function"]["name"], "arguments": c["function"]["arguments"]} for c in calls],
++            "content": ch["message"].get("content"),
++            "seconds": round(dt, 2),
++        }
+ 
+     decode = []
+     for i in range(a.runs):

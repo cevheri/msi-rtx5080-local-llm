@@ -1,0 +1,3 @@
+probe A: 200 content: '{\n  "title": "Adding Two Numbers in Python"\n}' reasoning chars: 0 title parses: True
+default request: 200 content: '391' reasoning chars: 1451
+effort high: 200 content: '391' reasoning chars: 377

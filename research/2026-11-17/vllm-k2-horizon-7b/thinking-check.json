@@ -1,0 +1,25 @@
+{
+  "thinking_type": "always",
+  "model": "k2-horizon-7b",
+  "results": [
+    {
+      "level": "always (default request)",
+      "request_fields": {},
+      "http_status": 200,
+      "reasoning_present": true,
+      "reasoning_chars": 164,
+      "content_non_empty": true,
+      "content": "391",
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 23,
+        "total_tokens": 85,
+        "completion_tokens": 62,
+        "prompt_tokens_details": null,
+        "completion_tokens_details": {
+          "reasoning_tokens": 0
+        }
+      }
+    }
+  ]
+}

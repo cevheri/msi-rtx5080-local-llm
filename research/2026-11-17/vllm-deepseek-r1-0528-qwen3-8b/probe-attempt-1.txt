@@ -1,0 +1,4 @@
+Command: python3 -I research/2026-11-16/llm_probe.py --base http://127.0.0.1:8000/v1 --model deepseek-r1-8b --label vllm-deepseek-r1-0528-qwen3-8b --runs 3 --long-tokens 8000,30000 --extra '{}' --out probe-results.json
+Started 02:46:18, ended 02:46:27 local time, exit 1, no output file written.
+The OK step passed; the tool step raised the last line below and ended the script.
+urllib.error.HTTPError: HTTP Error 400: Bad Request

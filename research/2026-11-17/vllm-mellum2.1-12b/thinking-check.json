@@ -1,0 +1,39 @@
+{
+  "model": "mellum2.1",
+  "thinking_type": "toggle",
+  "default": "on",
+  "results": [
+    {
+      "level": "off",
+      "request_fields": {
+        "chat_template_kwargs": {
+          "enable_thinking": false
+        }
+      },
+      "max_tokens": 2048,
+      "http_status": 200,
+      "reasoning_returned": false,
+      "reasoning_chars": 0,
+      "content_non_empty": true,
+      "content": "42",
+      "finish_reason": "stop",
+      "completion_tokens": 3
+    },
+    {
+      "level": "on",
+      "request_fields": {
+        "chat_template_kwargs": {
+          "enable_thinking": true
+        }
+      },
+      "max_tokens": 2048,
+      "http_status": 200,
+      "reasoning_returned": true,
+      "reasoning_chars": 173,
+      "content_non_empty": true,
+      "content": "\n\n42",
+      "finish_reason": "stop",
+      "completion_tokens": 75
+    }
+  ]
+}

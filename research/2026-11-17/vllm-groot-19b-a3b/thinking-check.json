@@ -1,0 +1,51 @@
+{
+  "model": "groot-19b-a3b",
+  "thinking_type": "toggle",
+  "default": "off",
+  "results": [
+    {
+      "level": "off",
+      "request_fields": {
+        "chat_template_kwargs": {
+          "enable_thinking": false
+        }
+      },
+      "max_tokens": 1024,
+      "http_status": 200,
+      "reasoning_returned": false,
+      "reasoning_chars": 0,
+      "content_non_empty": true,
+      "content": "42",
+      "finish_reason": "stop",
+      "completion_tokens": 3
+    },
+    {
+      "level": "on",
+      "request_fields": {
+        "chat_template_kwargs": {
+          "enable_thinking": true
+        }
+      },
+      "max_tokens": 1024,
+      "http_status": 200,
+      "reasoning_returned": true,
+      "reasoning_chars": 228,
+      "content_non_empty": true,
+      "content": "42",
+      "finish_reason": "stop",
+      "completion_tokens": 82
+    },
+    {
+      "level": "server default (no thinking field)",
+      "request_fields": {},
+      "max_tokens": 1024,
+      "http_status": 200,
+      "reasoning_returned": false,
+      "reasoning_chars": 0,
+      "content_non_empty": true,
+      "content": "42",
+      "finish_reason": "stop",
+      "completion_tokens": 3
+    }
+  ]
+}

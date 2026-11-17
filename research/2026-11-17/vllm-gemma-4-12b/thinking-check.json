@@ -1,0 +1,75 @@
+{
+ "model": "gemma-4-12b",
+ "thinking_type": "toggle",
+ "prompt": "What is 17 times 23? Answer with the number only.",
+ "levels": [
+  {
+   "level": "off",
+   "request_fields": {
+    "chat_template_kwargs": {
+     "enable_thinking": false
+    }
+   },
+   "http_status": 200,
+   "reasoning_returned": false,
+   "reasoning_chars": 0,
+   "content_non_empty": true,
+   "content": "391",
+   "finish_reason": "stop",
+   "usage": {
+    "prompt_tokens": 29,
+    "total_tokens": 33,
+    "completion_tokens": 4,
+    "prompt_tokens_details": null,
+    "completion_tokens_details": {
+     "reasoning_tokens": 0
+    }
+   },
+   "seconds": 0.06
+  },
+  {
+   "level": "on",
+   "request_fields": {
+    "chat_template_kwargs": {
+     "enable_thinking": true
+    }
+   },
+   "http_status": 200,
+   "reasoning_returned": true,
+   "reasoning_chars": 260,
+   "content_non_empty": true,
+   "content": "391",
+   "finish_reason": "stop",
+   "usage": {
+    "prompt_tokens": 32,
+    "total_tokens": 182,
+    "completion_tokens": 150,
+    "prompt_tokens_details": null,
+    "completion_tokens_details": {
+     "reasoning_tokens": 144
+    }
+   },
+   "seconds": 2.16
+  },
+  {
+   "level": "server default, no thinking field",
+   "request_fields": {},
+   "http_status": 200,
+   "reasoning_returned": false,
+   "reasoning_chars": 0,
+   "content_non_empty": true,
+   "content": "391",
+   "finish_reason": "stop",
+   "usage": {
+    "prompt_tokens": 29,
+    "total_tokens": 33,
+    "completion_tokens": 4,
+    "prompt_tokens_details": null,
+    "completion_tokens_details": {
+     "reasoning_tokens": 0
+    }
+   },
+   "seconds": 0.08
+  }
+ ]
+}

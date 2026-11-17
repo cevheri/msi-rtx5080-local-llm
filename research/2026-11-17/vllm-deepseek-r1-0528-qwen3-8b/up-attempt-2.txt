@@ -1,0 +1,10 @@
+deepseek-r1-0528-qwen3-8b on vllm: override recipe, estimate
+recipe file: $SCRATCH/vllm-overrides/vllm/deepseek-r1-0528-qwen3-8b.toml
+warning: this recipe was never run on the reference laptop; it may not start or fit
+clients: none (LLMCTL_CLIENTS is empty)
+removing the stopped container 'vllm' from an earlier llmctl run
+waiting for deepseek-r1-0528-qwen3-8b to load (up to 900 s)
+ready: http://127.0.0.1:8000/v1, served as 'deepseek-r1-8b', context 65536, output 16384
+note: chat only, no tool calling
+evidence: Copied from the shipped recipe deepseek-r1-0528-qwen3-8b; not measured on this machine (vllm/models.md#deepseek-r1-0528-qwen3-8b-chat-only)
+stop with ./llmctl down
