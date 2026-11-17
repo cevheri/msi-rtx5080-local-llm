@@ -1,0 +1,45 @@
+{
+ "case": "llamacpp-gemma-4-26b-a4b",
+ "exit": 0,
+ "seconds": 1.0,
+ "final": "pong",
+ "stderr": "",
+ "requests": [
+  {
+   "kind": "main",
+   "model": "local",
+   "max_tokens": 16384,
+   "max_completion_tokens": null,
+   "chat_template_kwargs": {
+    "enable_thinking": false
+   },
+   "reasoning_effort": "<absent>",
+   "store": "<absent>",
+   "first_role": "system",
+   "tools": 23,
+   "stream": true,
+   "stream_options": {
+    "include_usage": true
+   },
+   "authorization_scheme": "Bearer"
+  },
+  {
+   "kind": "title",
+   "model": "local",
+   "max_tokens": 4096,
+   "max_completion_tokens": null,
+   "chat_template_kwargs": {
+    "enable_thinking": false
+   },
+   "reasoning_effort": "<absent>",
+   "store": "<absent>",
+   "first_role": "system",
+   "tools": 0,
+   "stream": true,
+   "stream_options": {
+    "include_usage": true
+   },
+   "authorization_scheme": "Bearer"
+  }
+ ]
+}

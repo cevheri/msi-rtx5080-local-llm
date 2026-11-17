@@ -1,0 +1,5 @@
+# llmctl: provider and default for the model llmctl runs (docs/llmctl.md#clients).
+# >>> llmctl managed block: rewritten by llmctl on every start; edits here are lost >>>
+- {"id": "llm-pi-ai", "config": {"providers": {"llmctl": {"displayName": "llmctl", "api": "openai-completions", "baseURL": "http://127.0.0.1:8000/v1", "headers": {"Authorization": "Bearer no-key-required"}, "compat": {"supportsStore": false, "supportsDeveloperRole": false, "maxTokensField": "max_tokens"}, "models": [{"id": "gpt-oss-20b", "name": "gpt-oss-20b on vLLM (llmctl)", "contextWindow": 65536, "maxTokens": 16384, "input": ["text"], "reasoningEfforts": {"low": "low", "medium": "medium", "high": "high"}, "compat": {"thinkingFormat": "openai", "supportsReasoningEffort": true}}]}}}}
+- {"id": "agent-default-model", "config": {"provider": "llmctl", "model": "local", "reasoningEffort": "off"}}
+# <<< llmctl managed block <<<

@@ -1,0 +1,9 @@
+# dsh rows for the model llmctl runs (docs/llmctl.md#clients).
+# llmctl rewrites the lines between the two markers on every ./llmctl up and keeps everything else in this file.
+# While the block holds the agent-default-model line, the running model is dsh's default in every profile;
+# delete that line and the acp line to give the default back to dsh's model picker.
+# >>> llmctl managed block: rewritten by llmctl on every start; edits here are lost >>>
+- {"id": "llm-pi-ai", "config": {"providers": {"llmctl": {"displayName": "llmctl", "api": "openai-completions", "baseURL": "http://127.0.0.1:18090/v1", "headers": {"Authorization": "Bearer no-key-required"}, "compat": {"supportsStore": false, "supportsDeveloperRole": false, "maxTokensField": "max_tokens"}, "reasoning": "off", "streamIdleTimeoutMs": 900000, "retryPolicy": {"mode": "normal", "maxRetries": 5, "retryableCodes": ["EMPTY_RESPONSE", "RATE_LIMIT", "SERVER", "TRANSPORT"]}, "models": [{"id": "local", "name": "groot-19b-a3b on llama.cpp (llmctl)", "contextWindow": 131072, "maxTokens": 16384, "input": ["text"], "reasoningEfforts": {"off": null, "medium": "medium"}, "compat": {"thinkingFormat": "chat-template", "chatTemplateKwargs": {"enable_thinking": {"$var": "thinking.enabled"}}}}]}}}}
+- {"id": "agent-default-model", "config": {"provider": "llmctl", "model": "local"}}
+- {"id": "acp", "config": {"provider": "llmctl", "model": "local"}}
+# <<< llmctl managed block <<<

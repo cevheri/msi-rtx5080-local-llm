@@ -1,0 +1,174 @@
+[
+  {
+    "id": "configuration-0",
+    "claim": "The Linux path is the npm package @deepseek-ai/dsh (bin dsh, engines node >=24.9.0); dist-tag latest is 0.2.2-rc.1 and next is 0.2.2-rc.3; neither tarball has an npm-shrinkwrap.json.",
+    "verdict": "confirmed",
+    "sources": [
+      "https://registry.npmjs.org/@deepseek-ai/dsh/-/dsh-0.2.2-rc.1.tgz",
+      "https://registry.npmjs.org/@deepseek-ai/dsh/-/dsh-0.2.2-rc.3.tgz"
+    ]
+  },
+  {
+    "id": "configuration-4",
+    "claim": "A custom OpenAI-compatible endpoint is supported as a 'Custom model API' provider (Provider ID, base URL, protocol, credential, at least one model). Four wire protocols exist: openai-completions, openai-responses, anthropic-messages, google-generative-ai; the code table for hand-declared routes has exactly these four.",
+    "verdict": "confirmed",
+    "sources": [
+      "https://github.com/deepseek-ai/deepseek-harness/blob/38a6a5c965aa99ab525161efb7cc5cf1fe62fced/docs/user/guide/providers.md#L27-L29",
+      "https://github.com/deepseek-ai/deepseek-harness/blob/38a6a5c965aa99ab525161efb7cc5cf1fe62fced/packages/llm/llm-pi-ai/src/provider.ts#L48-L53"
+    ]
+  },
+  {
+    "id": "configuration-7",
+    "claim": "A keyless local server still needs a placeholder: pi-ai's Chat Completions client throws 'No API key for provider' unless it gets an API key or an Authorization header. Either set headers.Authorization on the route or point apiKeyEnv at a variable that is set; an apiKeyEnv that resolves to nothing fails with MISSING_CREDENTIAL.",
+    "verdict": "confirmed",
+    "sources": [
+      "https://github.com/deepseek-ai/deepseek-harness/blob/38a6a5c965aa99ab525161efb7cc5cf1fe62fced/packages/llm/llm-pi-ai/README.md#L269",
+      "https://github.com/deepseek-ai/deepseek-harness/blob/38a6a5c965aa99ab525161efb7cc5cf1fe62fced/packages/llm/llm-pi-ai/src/index.ts#L209-L231",
+      "npm @earendil-works/pi-ai@1.3.0 package/dist/api/openai-completions.js"
+    ]
+  },
+  {
+    "id": "configuration-23",
+    "claim": "Automatic pressure compaction needs contextWindow - reserved output - headroomTokens > 0, with headroomTokens defaulting to 65,536; otherwise it logs 'step compaction failed ... leaving no pressure budget' once per target and continues without compacting. With maxTokens 16384 a 131072 window compacts at 49,152 tokens, while 64k recipes (gpt-oss-20b on vLLM, Qwen3.8-27B at 64k) get no automatic compaction.",
+    "verdict": "partly",
+    "correction": "Only proactive pressure compaction is lost. Context-overflow recovery (index.ts L213-L257, L302-L308) does not call resolveCompactSpec and still compacts after a CONTEXT_WINDOW_EXCEEDED failure; llm/src/error.ts L126-L146 matches vLLM 'maximum context length' and llama.cpp 'request (N tokens) exceeds the available context size' (server-context.cpp L4104). Lowering headroomTokens restores proactive compaction.",
+    "sources": [
+      "https://github.com/deepseek-ai/deepseek-harness/blob/38a6a5c965aa99ab525161efb7cc5cf1fe62fced/packages/compaction/compaction-basic/src/config.ts#L75",
+      "https://github.com/deepseek-ai/deepseek-harness/blob/38a6a5c965aa99ab525161efb7cc5cf1fe62fced/packages/compaction/compaction-basic/src/config.ts#L172-L194",
+      "https://github.com/deepseek-ai/deepseek-harness/blob/38a6a5c965aa99ab525161efb7cc5cf1fe62fced/packages/compaction/compaction-basic/src/index.ts#L157-L172",
+      "https://github.com/deepseek-ai/deepseek-harness/blob/38a6a5c965aa99ab525161efb7cc5cf1fe62fced/packages/compaction/compaction-basic/src/index.ts#L213-L257",
+      "https://github.com/deepseek-ai/deepseek-harness/blob/38a6a5c965aa99ab525161efb7cc5cf1fe62fced/packages/llm/llm/src/error.ts#L126-L146"
+    ]
+  },
+  {
+    "id": "configuration-25",
+    "claim": "There is no per-model or per-route switch to turn tool calling off: tools come from the agent preset's plugin rows (even the minimal preset keeps a shell, read_image and working_directory), so chat-only llmctl recipes are a poor fit. A zero-tool preset was not verified.",
+    "verdict": "confirmed",
+    "sources": [
+      "https://github.com/deepseek-ai/deepseek-harness/blob/38a6a5c965aa99ab525161efb7cc5cf1fe62fced/packages/llm/llm-pi-ai/src/config.ts#L332-L350",
+      "https://github.com/deepseek-ai/deepseek-harness/blob/38a6a5c965aa99ab525161efb7cc5cf1fe62fced/packages/preset/agent-preset-registry/src/definition.ts#L5-L11",
+      "https://github.com/deepseek-ai/deepseek-harness/blob/38a6a5c965aa99ab525161efb7cc5cf1fe62fced/apps/cli/reference/README.md#L135"
+    ]
+  },
+  {
+    "id": "runtime-1",
+    "claim": "Every release is a prerelease, and the README says the project is a developer preview with compatibility-breaking changes. The npm dist-tag `latest` is 0.2.2-rc.1 and `next` is 0.2.2-rc.3, so a bare `npx @deepseek-ai/dsh` installs rc.1, not the newest rc. The engines field requires node >=24.9.0.",
+    "verdict": "confirmed",
+    "sources": [
+      "https://registry.npmjs.org/@deepseek-ai/dsh",
+      "https://github.com/deepseek-ai/deepseek-harness/releases",
+      "https://github.com/deepseek-ai/deepseek-harness/blob/dsh-v0.2.2-rc.3/README.md"
+    ]
+  },
+  {
+    "id": "runtime-13",
+    "claim": "In the default mode, non-empty reasoning deltas stream to stderr under a `dsh: reasoning:` heading, and only the final answer is printed to stdout. Exit code 0 means the final turn completed; aborts and errors exit 1 and print `dsh: <code>: <message>` on stderr. A run without an assistant message prints an empty line and exits 1. The launcher exits 130 on SIGINT and 0 on SIGTERM. Headless opens no listening port and disables HMR.",
+    "verdict": "confirmed",
+    "sources": [
+      "npm @deepseek-ai/dsh-headless@0.2.2-rc.3 README.md",
+      "npm @deepseek-ai/dsh-headless@0.2.2-rc.3 cordis.patch.yml",
+      "npm @deepseek-ai/dsh@0.2.2-rc.3 src/profile-boot.ts",
+      "https://github.com/deepseek-ai/deepseek-harness/blob/38a6a5c965aa99ab525161efb7cc5cf1fe62fced/packages/bundle/headless/README.md",
+      "https://github.com/deepseek-ai/deepseek-harness/blob/38a6a5c965aa99ab525161efb7cc5cf1fe62fced/apps/cli/src/profile-boot.ts"
+    ]
+  },
+  {
+    "id": "runtime-14",
+    "claim": "--json writes NDJSON to stdout. The event types are: {type:'session',sessionId,cwd}; {type:'status',phase:'turn_start'|'step_start'|'step_end'|'turn_end',turn,step?,usage?,reason?}; {type:'thinking',text}; {type:'text',text}; {type:'tool_call',callId,tool,input}; {type:'tool_result',callId,status:'completed'|'error',result,error?}; and the closing {type:'final',sessionId,reason,text}. 'final' is never truncated. Other strings are capped at 8 KiB and lines at 32 KiB. text and thinking events arrive when a step commits, not per token. A failure outside a turn writes an 'error' event and no 'final'.",
+    "verdict": "confirmed",
+    "sources": [
+      "npm @deepseek-ai/dsh-headless@0.2.2-rc.3 src/json-stream.ts",
+      "npm @deepseek-ai/dsh-headless@0.2.2-rc.3 README.md"
+    ]
+  },
+  {
+    "id": "runtime-17",
+    "claim": "Feedback-triggered session upload is on by default in every base-backed profile: web, headless, sdk and acp. The settings are mode = DSH_TELEMETRY_MODE || 'FEEDBACK_ONLY', exporter url = DSH_TELEMETRY_OTLP_URL ?? 'https://dsh-otel-collector.deepseeksvc.com/v1/logs', and gzip compression. Each export carries the anonymous user.id from $DSH_HOME/.anonymous-user-id, a random UUID.",
+    "verdict": "confirmed",
+    "sources": [
+      "npm @deepseek-ai/dsh-base@0.2.2-rc.3 cordis.patch.yml",
+      "npm @deepseek-ai/dsh-session-telemetry-otel@0.2.2-rc.3 src/index.ts",
+      "https://github.com/deepseek-ai/deepseek-harness/blob/38a6a5c965aa99ab525161efb7cc5cf1fe62fced/packages/bundle/base/cordis.patch.yml"
+    ]
+  },
+  {
+    "id": "runtime-18",
+    "claim": "Any of these feedback actions triggers the upload: creating or editing a Like/Dislike rating, editing a note, withdrawing a rating, or sending /feedback. The upload is the complete unhanded canonical session prefix including history, for every provider including local ones. That prefix can include the system prompt, user and assistant content, tool arguments and results, and cwd. The /feedback acknowledgement does not report the telemetry policy or delivery.",
+    "verdict": "confirmed",
+    "sources": [
+      "npm @deepseek-ai/dsh-session-telemetry-otel@0.2.2-rc.3 README.md",
+      "npm @deepseek-ai/dsh-session-telemetry-otel@0.2.2-rc.3 src/index.ts",
+      "https://github.com/deepseek-ai/deepseek-harness/blob/dsh-v0.2.2-rc.3/docs/subsystems/feedback.md",
+      "https://github.com/deepseek-ai/deepseek-harness/blob/38a6a5c965aa99ab525161efb7cc5cf1fe62fced/packages/session/session-telemetry-otel/README.md"
+    ]
+  },
+  {
+    "id": "runtime-19",
+    "claim": "There are three ways to turn the upload off. (1) Export DSH_TELEMETRY_DISABLED with any non-empty value, '0' and 'false' included, in the launching environment; the launcher then patches the session-telemetry-otel row to disabled. (2) Export DSH_TELEMETRY_MODE=DISABLED. (3) Add a patch row `- id: session-telemetry-otel` with `disabled: true`. DSH_TELEMETRY_OTLP_URL redirects the endpoint instead of disabling it. DSH_* names cannot come from any .env file: putting them there aborts startup.",
+    "verdict": "confirmed",
+    "sources": [
+      "npm @deepseek-ai/dsh-app-boot@0.2.2-rc.3 src/profile-context.ts",
+      "npm @deepseek-ai/dsh-app-boot@0.2.2-rc.3 src/index.ts",
+      "npm @deepseek-ai/dsh@0.2.2-rc.3 src/profile-boot.ts",
+      "npm @deepseek-ai/dsh-base@0.2.2-rc.3 cordis.patch.yml"
+    ]
+  },
+  {
+    "id": "runtime-26",
+    "claim": "web_search defaults to the DeepSeek Search API using the session's DeepSeek credentials, and the tool is left out of requests when no DeepSeek key exists. web_fetch uses an anonymous local fetcher limited to public HTTP(S) destinations. So a DEEPSEEK_API_KEY in the environment or in a .env would send model-written search queries to DeepSeek (inferred).",
+    "verdict": "partly",
+    "correction": "web_fetch is NOT limited to public destinations. The base bundle comment (L477-L479) and policy.ts L45 'Public-address resolution and connection pinning' are stale; no such check exists.",
+    "sources": [
+      "npm @deepseek-ai/dsh-base@0.2.2-rc.3 cordis.patch.yml",
+      "npm @deepseek-ai/dsh-headless@0.2.2-rc.3 README.md",
+      "https://github.com/deepseek-ai/deepseek-harness/blob/38a6a5c965aa99ab525161efb7cc5cf1fe62fced/packages/web/web-fetch-http/README.md",
+      "https://github.com/deepseek-ai/deepseek-harness/blob/38a6a5c965aa99ab525161efb7cc5cf1fe62fced/packages/web/web-fetch-http/src/provider.ts",
+      "https://github.com/deepseek-ai/deepseek-harness/blob/38a6a5c965aa99ab525161efb7cc5cf1fe62fced/packages/web/tool-web/README.md"
+    ]
+  },
+  {
+    "id": "runtime-29",
+    "claim": "Suppose DSH_TELEMETRY_DISABLED is exported, no DeepSeek key or sign-in exists, and the only provider is a pi-ai route on 127.0.0.1. Then I found no built-in path that sends prompts or code off the machine. The remaining egress is model-driven: web_fetch to public URLs, and bash commands, whose network access is not confined. Installation and plugin operations also reach the npm registry.",
+    "verdict": "partly",
+    "correction": "web_fetch reaches any HTTP(S) URL, including 127.0.0.1 (the llama.cpp :8080 and vLLM :8000 servers), private networks and cloud metadata, without approval, and can carry data out in URLs; it is not limited to public URLs.",
+    "sources": []
+  },
+  {
+    "id": "extra-0",
+    "claim": "web_fetch is an unapproved egress path to any URL, including 127.0.0.1 and private networks: packages/web/web-fetch-http/README.md L12 and L135, packages/web/tool-web/README.md L279, src/provider.ts L111-L120 (plain undici fetch, no address check). Reads are unconfined too (fs-sandbox README L52; reference L133). So a prompt-injected model can read files such as ~/.dsh/.credentials.yaml and send them out in a URL query, whatever the telemetry settings. The base bundle comment (packages/bundle/base/cordis.patch.yml L477-L479) and web-fetch-http/src/policy.ts L45 wrongly claim public-only fetching. The same holds in npm rc.1. Mitigation needs a tools/pre-execute policy, disabling fetch in the preset, or network confinement. direct-observation.",
+    "verdict": "the verifier's own finding, not a lane claim",
+    "sources": [
+      "https://github.com/deepseek-ai/deepseek-harness/blob/38a6a5c965aa99ab525161efb7cc5cf1fe62fced/packages/web/web-fetch-http/README.md",
+      "https://github.com/deepseek-ai/deepseek-harness/blob/38a6a5c965aa99ab525161efb7cc5cf1fe62fced/packages/web/web-fetch-http/src/provider.ts",
+      "https://github.com/deepseek-ai/deepseek-harness/blob/38a6a5c965aa99ab525161efb7cc5cf1fe62fced/packages/web/web-fetch-http/src/policy.ts",
+      "https://github.com/deepseek-ai/deepseek-harness/blob/38a6a5c965aa99ab525161efb7cc5cf1fe62fced/packages/web/tool-web/README.md",
+      "https://github.com/deepseek-ai/deepseek-harness/blob/38a6a5c965aa99ab525161efb7cc5cf1fe62fced/packages/bundle/base/cordis.patch.yml"
+    ]
+  },
+  {
+    "id": "extra-1",
+    "claim": "The DeepSeek Harness Privacy Policy (https://www.deepseek.com/en/harness/privacy/, 'Last Update: September 20th, 2026') says that with custom model services 'DeepSeek Harness does not store or process your Input and Output on the server side'. The shipped default contradicts this: a FEEDBACK_ONLY OTel export uploads the complete session prefix for every provider, including local routes, to dsh-otel-collector.deepseeksvc.com on any rating, note or /feedback. That prefix holds prompts, outputs, tool arguments and results, and workspace paths. The same policy says collected data is stored in the People's Republic of China and may be used for model training, with opt-out by email. No Web UI switch controls this upload: product-analytics README L24 and ui-settings-session-log README L28 cover other switches only. source-backed.",
+    "verdict": "the verifier's own finding, not a lane claim",
+    "sources": [
+      "https://www.deepseek.com/en/harness/privacy/",
+      "https://github.com/deepseek-ai/deepseek-harness/blob/38a6a5c965aa99ab525161efb7cc5cf1fe62fced/packages/session/session-telemetry-otel/README.md"
+    ]
+  },
+  {
+    "id": "extra-5",
+    "claim": "Compaction on 64k recipes: with the default 65,536 headroom, proactive compaction is off, but reactive context-overflow recovery still runs (compaction-basic src/index.ts L213-L257, L302-L308). The error classifier (llm/src/error.ts L126-L146) matches vLLM's 'maximum context length' and llama.cpp b12407's 'request (N tokens) exceeds the available context size' (server-context.cpp L4104). Lowering headroomTokens in preset-standard's compaction-basic row restores proactive compaction. direct-observation.",
+    "verdict": "the verifier's own finding, not a lane claim",
+    "sources": [
+      "https://github.com/deepseek-ai/deepseek-harness/blob/38a6a5c965aa99ab525161efb7cc5cf1fe62fced/packages/compaction/compaction-basic/src/index.ts#L213-L257",
+      "https://github.com/deepseek-ai/deepseek-harness/blob/38a6a5c965aa99ab525161efb7cc5cf1fe62fced/packages/llm/llm/src/error.ts#L126-L146"
+    ]
+  },
+  {
+    "id": "extra-8",
+    "claim": "'dsh web' starts a server, so the KB rules route it through heavy. But every command dsh runs is placed by 'systemd-run --user --scope' in the user manager's root slice, outside heavy.slice and its 32 GB cap (subprocess-local src/linux-scope.ts L129-L146; man systemd-run --slice). Only the Node host process stays capped. source-backed, not measured.",
+    "verdict": "the verifier's own finding, not a lane claim",
+    "sources": [
+      "https://github.com/deepseek-ai/deepseek-harness/blob/38a6a5c965aa99ab525161efb7cc5cf1fe62fced/packages/subprocess/subprocess-local/src/linux-scope.ts"
+    ]
+  }
+]

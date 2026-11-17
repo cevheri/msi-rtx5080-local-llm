@@ -1,0 +1,7 @@
+442708 mkdir("$SCRATCH/specdsh/home-s1.iKuxzc/profiles/acp", 0777) = -1 ENOENT (No such file or directory)
+442708 mkdir("$SCRATCH/specdsh/home-s1.iKuxzc/profiles", 0777) = 0
+442708 mkdir("$SCRATCH/specdsh/home-s1.iKuxzc/profiles/acp", 0777) = 0
+442708 openat(AT_FDCWD, "$SCRATCH/specdsh/home-s1.iKuxzc/profiles/acp/package.json", O_WRONLY|O_CREAT|O_TRUNC|O_CLOEXEC, 0666) = 20
+442708 openat(AT_FDCWD, "$SCRATCH/specdsh/home-s1.iKuxzc/profiles/acp/cordis.patch.yml", O_WRONLY|O_CREAT|O_TRUNC|O_CLOEXEC, 0666) = 20
+442708 openat(AT_FDCWD, "$SCRATCH/specdsh/home-s1.iKuxzc/profiles/acp/pnpm-workspace.yaml", O_WRONLY|O_CREAT|O_TRUNC|O_CLOEXEC, 0666) = 20
+442708 openat(AT_FDCWD, "$SCRATCH/specdsh/home-s1.iKuxzc/profiles/acp/cordis.yml", O_WRONLY|O_CREAT|O_TRUNC|O_CLOEXEC, 0666) = 20

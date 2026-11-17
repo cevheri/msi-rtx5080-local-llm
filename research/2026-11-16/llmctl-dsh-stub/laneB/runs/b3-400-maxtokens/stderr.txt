@@ -1,0 +1,1 @@
+dsh: INVALID_REQUEST: 400: {"message":"max_tokens=128000 cannot be greater than max_model_len=65536. Please request fewer output tokens.","type":"BadRequestError","param":"max_tokens","code":400}

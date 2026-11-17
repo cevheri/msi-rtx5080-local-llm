@@ -1,0 +1,52 @@
+# Your patch layer for this dsh profile, applied after every bundle layer:
+# a top-level YAML array of loader patch entries (id-targeted config
+# overrides, disables, and insert lists; `!!js` expressions allowed).
+# >>> llmctl managed block: rewritten by llmctl on every start; edits here are lost >>>
+- {
+    "id": "llm-pi-ai",
+    "config":
+      {
+        "providers":
+          {
+            "llmctl":
+              {
+                "displayName": "llmctl",
+                "api": "openai-completions",
+                "baseURL": "http://127.0.0.1:8080/v1",
+                "headers": { "Authorization": "Bearer no-key-required" },
+                "compat":
+                  {
+                    "supportsStore": false,
+                    "supportsDeveloperRole": false,
+                    "maxTokensField": "max_tokens"
+                  },
+                "models":
+                  [
+                    {
+                        "id": "local",
+                        "name": "gemma-4-26b-a4b on llama.cpp (llmctl)",
+                        "contextWindow": 131072,
+                        "maxTokens": 16384,
+                        "input": [ "text" ],
+                        "reasoningEfforts": { "off": null, "medium": "medium" },
+                        "compat":
+                          {
+                            "thinkingFormat": "chat-template",
+                            "chatTemplateKwargs": { "enable_thinking": { "$var": "thinking.enabled" } }
+                          }
+                      }
+                  ]
+              }
+          }
+      }
+  }
+- {
+    "id": "agent-default-model",
+    "config": { "provider": "llmctl", "model": "local", "reasoningEffort": "off" }
+  }
+- id: ui-settings-general
+  name: "@deepseek-ai/dsh-client-ui-settings-general"
+  config:
+    welcomeNoticeVersion: 2026-09-28.1
+
+# <<< llmctl managed block <<<

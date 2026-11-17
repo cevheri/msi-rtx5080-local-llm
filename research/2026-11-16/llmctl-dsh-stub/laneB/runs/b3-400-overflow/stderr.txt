@@ -1,0 +1,1 @@
+dsh: CONTEXT_WINDOW_EXCEEDED: 400: {"message":"This model's maximum context length is 65536 tokens. However, your prompt contains 70001 input tokens, which exceeds this limit even without any output tokens. Please reduce the length of the input prompt.","type":"BadRequestError","param":"input_tokens","code":400}

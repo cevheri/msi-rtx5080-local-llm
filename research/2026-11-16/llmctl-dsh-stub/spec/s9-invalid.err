@@ -1,0 +1,13 @@
+dsh: warning: 1 entry did not activate
+llm-pi-ai (@deepseek-ai/dsh-llm-pi-ai): ValidationError: invalid config:
+  - $.providers.llmctl.models[0].contextWindow expected number but got big (at providers.llmctl.models.0.contextWindow)
+    at resolveConfig (file://$HOME/.nvm/versions/node/v24.22.1/lib/node_modules/@deepseek-ai/dsh/node_modules/@deepseek-ai/cordis/lib/index.js:248:27)
+    at file://$HOME/.nvm/versions/node/v24.22.1/lib/node_modules/@deepseek-ai/dsh/node_modules/@deepseek-ai/cordis/lib/index.js:826:27
+    at Object.apply (file://$HOME/.nvm/versions/node/v24.22.1/lib/node_modules/@deepseek-ai/dsh/node_modules/@deepseek-ai/cordis/lib/index.js:1508:20)
+    at dispatch (file://$HOME/.nvm/versions/node/v24.22.1/lib/node_modules/@deepseek-ai/dsh/node_modules/@deepseek-ai/cordis/lib/index.js:915:19)
+    at Proxy.waterfall (file://$HOME/.nvm/versions/node/v24.22.1/lib/node_modules/@deepseek-ai/dsh/node_modules/@deepseek-ai/cordis/lib/index.js:917:10)
+    at Fiber.resolveConfig (file://$HOME/.nvm/versions/node/v24.22.1/lib/node_modules/@deepseek-ai/dsh/node_modules/@deepseek-ai/cordis/lib/index.js:666:24)
+    at Fiber.execute (file://$HOME/.nvm/versions/node/v24.22.1/lib/node_modules/@deepseek-ai/dsh/node_modules/@deepseek-ai/cordis/lib/index.js:359:26)
+    at file://$HOME/.nvm/versions/node/v24.22.1/lib/node_modules/@deepseek-ai/dsh/node_modules/@deepseek-ai/cordis/lib/index.js:436:34
+    at file://$SCRATCH/specdsh/home-s9invalid.1jI5NS/profiles/sdk/#llm-pi-ai
+    at file://$SCRATCH/specdsh/home-s9invalid.1jI5NS/profiles/sdk/#include

@@ -1,0 +1,1 @@
+dsh: SERVER: 500: {"code":500,"message":"Unsupported reasoning_effort: xhigh","type":"server_error"}
