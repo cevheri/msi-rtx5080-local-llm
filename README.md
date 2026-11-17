@@ -13,14 +13,67 @@ Figures for every other model and runtime are still estimates or third-party num
 
 ## Quick start
 
-Start a measured model by name with [llmctl](docs/llmctl.md), which applies the rules below for you and points OpenCode, Hermes Agent, Pi, DeepSeek Harness (dsh) and Kimi Code CLI at it; `--set-default` also makes it each installed client's default:
+`./llmctl` starts one measured recipe by name in Docker: it checks the machine first, applies the rules below, waits until the server answers, and points the installed clients at it.
+It runs one model server at a time, published on 127.0.0.1 only: llama.cpp answers on http://127.0.0.1:8080/v1 and vLLM on http://127.0.0.1:8000/v1.
+`up` refuses while another server runs, and `up --replace` stops that one first.
+
+Each recipe belongs to llama.cpp or vLLM.
+Without `--runtime`, a name that has a llama.cpp recipe starts on llama.cpp, otherwise on vLLM; for the four models that ship on both, `--runtime vllm` (or `--runtime llamacpp`) chooses.
+
+A model is named by its ID or an alias.
+Decode speeds are measured on this laptop (measured on the RTX 5080 Laptop, llama.cpp `server-cuda-b12407` or vLLM v0.33.0), a "-" after "Yes" marks a recipe with no measured speed, and "No | - | -" means the model has no recipe for that engine.
+
+| Model ID | Aliases | llama.cpp | Context | Decode tok/s | vLLM | Context | Decode tok/s |
+|---|---|---|---|---|---|---|---|
+| `deepseek-r1-0528-qwen3-8b` | `deepseek-r1` | Yes | 64k | 70.6 | Yes | 64k | - |
+| `gemma-4-12b` | `gemma4-12b` | No | - | - | Yes | 128k | 69.5 |
+| `gemma-4-26b-a4b` | `gemma4-26b` | Yes | 128k | 148.2 | No | - | - |
+| `gemma-4-e4b` | `gemma4-e4b` | No | - | - | Yes | 64k | 45.2 |
+| `gpt-oss-20b` | `gpt-oss` | Yes | 128k | 166.2 | Yes | 64k | 83.5 |
+| `groot-19b-a3b` | `groot` | Yes | 128k | 169.8 | Yes | 128k | 193.4 |
+| `k2-horizon-7b` | `k2-7b` | Yes | 80k | 66.9 | Yes | 64k | 94.8 |
+| `k2-horizon-mova-36b` | `mova`, `k2-mova` | Yes | 64k | 37.2 | No | - | - |
+| `mellum2.1-12b` | `mellum` | No | - | - | Yes | 128k | 257.2 |
+| `nemotron-3.5-bolt` | `bolt` | Yes | 128k | 73.5 | No | - | - |
+| `nemotron-3.5-lightning` | `lightning` | Yes | 128k | 143.6 | No | - | - |
+| `qwen3-coder-next` | `coder-next` | Yes | 128k | 71.5 | No | - | - |
+| `qwen3.5-9b` | `qwen3.5` | No | - | - | Yes | 128k | 90.8 |
+| `qwen3.6-35b-a3b` | `qwen3.6` | Yes | 128k | 122.5 | No | - | - |
+| `qwen3.8-27b` | `qwen3.8` | Yes | 64k | 36.4 | No | - | - |
+
+The vLLM recipe of `deepseek-r1-0528-qwen3-8b` failed on this laptop on 2026-11-17: vLLM v0.33.0 loads its tokenizer as a Metaspace LlamaTokenizer, so prompts lose their spaces and replies come back garbled; use its llama.cpp recipe ([vllm/models.md](vllm/models.md#deepseek-r1-0528-qwen3-8b-chat-only)).
 
 ```bash
-./llmctl list
-./llmctl pull qwen3.6
-./llmctl up qwen3.6 --set-default
-./llmctl down
+./llmctl list                                # every recipe, its evidence, what is downloaded, and what runs
+./llmctl show qwen3.6                        # the effective recipe and the docker command up would run
+./llmctl pull qwen3.6                        # asks, then downloads the model files and the image if missing
+./llmctl up qwen3.6                          # starts on llama.cpp, the default engine for this name
+./llmctl up gpt-oss --runtime vllm --replace # stops the running server, then starts gpt-oss-20b on vLLM
+./llmctl up qwen3.8 --set-default            # also takes over client defaults that point elsewhere
+./llmctl up groot --runtime vllm --dry-run   # prints the docker command and the client changes, starts nothing
+./llmctl status                              # the running server, its health and each client's entry
+./llmctl test                                # a reply, a tool call and a decode speed against the server
+./llmctl logs -f                             # follows the server's log
+./llmctl down                                # stops the server; the client entries stay
+LLMCTL_CLIENTS=opencode,pi ./llmctl up qwen3.6  # updates only OpenCode and Pi
 ```
+
+Every `up` moves a client default that already points at llmctl to the running model, and leaves any other default as it is; `--set-default` also takes over those other defaults and runs `hermes profile use llmctl` ([docs/llmctl.md](docs/llmctl.md#defaults-and-the-follow-rule)).
+
+After `./llmctl up`, run the model from a client; `up` prints these lines for the running recipe, where `<served name>` is `local` on llama.cpp and the vLLM recipe's served name, such as `gpt-oss-20b`, on vLLM.
+
+| Client | What to run |
+|---|---|
+| OpenCode | `/models` (or `ctrl+x m`) in the OpenCode screen, or `opencode run --model llamacpp-docker/qwen3.6-35b-a3b "your prompt"` (`vllm-docker/<id>` on vLLM, where DeepSeek-R1 has no OpenCode entry) |
+| Hermes Agent | `hermes -p llmctl` |
+| Pi | `pi --model llmctl/<served name>`, with `--no-tools` for the chat-only DeepSeek-R1 |
+| DeepSeek Harness (dsh) | `dsh web`, then pick `<id> on <engine> (llmctl)` in its model picker; while llmctl holds dsh's default, `dsh web` alone or `dsh --profile headless "your prompt"` |
+| Kimi Code CLI | `kimi -m llmctl/<served name>`, or `kimi` and `kimi -p "your prompt"` when it is Kimi's default; `kimi -p` needs Kimi's default model even with `-m`, which `--set-default` sets; for the chat-only DeepSeek-R1, only `kimi -p` with the agent file that `up` names |
+
+OpenCode needs the provider config from [docs/opencode.md](docs/opencode.md#the-validated-config) installed once; llmctl then changes only its default model line, while it writes the Hermes, Pi, dsh and Kimi entries itself.
+For the chat-only DeepSeek-R1, `up` prints a tool-free route per client instead: Pi with `--no-tools`, Kimi `kimi -p` with `--agent-file` once it is Kimi's default, and dsh a `--patch` with the rows in [docs/clients.md](docs/clients.md#chat-only-recipes).
+
+[docs/llmctl.md](docs/llmctl.md) has every command, flag and check, and [docs/clients.md](docs/clients.md) the entries llmctl writes for each client.
 
 ## Machine
 

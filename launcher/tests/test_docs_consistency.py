@@ -308,6 +308,42 @@ class DocsConsistencyTest(unittest.TestCase):
             with self.subTest(recipe=recipe_id):
                 self.assertIn(recipe_id, text)
 
+    def test_readme_recipe_table_matches_the_catalog(self):
+        header = "| Model ID | Aliases | llama.cpp | Context | Decode tok/s | vLLM | Context | Decode tok/s |"
+        lines = section("README.md#quick-start")
+        self.assertIn(header, lines, "README.md#quick-start has no recipe table")
+        start = lines.index(header) + 2
+        rows = {}
+        for line in lines[start:]:
+            if not line.startswith("|"):
+                break
+            cells = [cell.strip() for cell in line.strip("|").split("|")]
+            self.assertEqual(len(cells), 8, line)
+            recipe_id = cells[0].strip("`")
+            self.assertNotIn(recipe_id, rows, f"{recipe_id} has more than one row")
+            rows[recipe_id] = cells
+        shipped = {recipe_id for entry in self.catalog.runtimes.values() for recipe_id in entry.recipes}
+        self.assertEqual(set(rows), shipped)
+        for recipe_id, cells in rows.items():
+            with self.subTest(recipe=recipe_id):
+                aliases = []
+                for column, name in ((2, "llamacpp"), (5, "vllm")):
+                    recipe = self.catalog.runtimes[name].recipes.get(recipe_id)
+                    if recipe is None:
+                        self.assertEqual(cells[column:column + 3], ["No", "-", "-"], name)
+                        continue
+                    self.assertEqual(recipe.context % 1024, 0, f"{name}: context {recipe.context} is not whole k")
+                    speed = f"{recipe.evidence.decode_tok_s:g}" if recipe.evidence.decode_tok_s else "-"
+                    self.assertEqual(cells[column:column + 3], ["Yes", f"{recipe.context // 1024}k", speed], name)
+                    aliases += [alias for alias in recipe.aliases if alias not in aliases]
+                self.assertEqual(cells[1], ", ".join(f"`{alias}`" for alias in aliases) or "-")
+        prose = "\n".join(line for line in lines if not line.startswith("|"))
+        for name, entry in self.catalog.runtimes.items():
+            for recipe_id, recipe in entry.recipes.items():
+                if not recipe.evidence.decode_tok_s:
+                    with self.subTest(unmeasured=f"{recipe_id} on {name}"):
+                        self.assertIn(f"`{recipe_id}`", prose, "an unmeasured recipe needs a note outside the table")
+
     def test_doc_anchors_in_messages_resolve(self):
         pattern = re.compile(r"\b((?:docs|llamacpp|vllm)/[A-Za-z0-9_.-]+\.md)#([A-Za-z0-9_-]+)")
         found = 0
