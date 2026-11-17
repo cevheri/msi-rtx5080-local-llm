@@ -1,8 +1,10 @@
-"""The clients llmctl configures: OpenCode, Hermes Agent, Pi and DeepSeek Harness (dsh).
+"""The clients llmctl configures: OpenCode, Hermes Agent, Pi, DeepSeek Harness (dsh) and Kimi Code CLI.
 
-A client is installed when its binary is on the host's PATH and its config root exists (for dsh, <dsh home>/profiles);
-LLMCTL_CLIENTS picks which installed clients llmctl touches (docs/superpowers/specs/2026-11-16-llmctl-clients-design.md,
-section D9, and docs/superpowers/specs/2026-11-16-llmctl-dsh-design.md, sections D1 and D7).
+A client is installed when its binary is on the host's PATH and its config root exists (for dsh, <dsh home>/profiles;
+for Kimi, its home folder itself, which llmctl never creates); LLMCTL_CLIENTS picks which installed clients llmctl
+touches (docs/superpowers/specs/2026-11-16-llmctl-clients-design.md, section D9,
+docs/superpowers/specs/2026-11-16-llmctl-dsh-design.md, sections D1 and D7, and
+docs/superpowers/specs/2026-11-17-llmctl-kimi-design.md, sections D1 and D10).
 """
 
 import json
@@ -11,7 +13,7 @@ from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
-from launcher import dsh_config, hermes_config, opencode_config, pi_config
+from launcher import dsh_config, hermes_config, kimi_config, opencode_config, pi_config
 from launcher.errors import ClientError, ClientWriteError, LlmctlError, UsageError
 from launcher.files import FileChange, backup_once, backup_path, load_json_object, make_dirs, write_atomic
 from launcher.host import Host
@@ -21,8 +23,8 @@ __all__ = ["NAMES", "LABELS", "ClientState", "ClientPlan", "ApplyResult", "FileC
            "clients_line", "require_listed", "llmctl_providers", "plan", "dry_run_lines", "apply",
            "failure_message", "thinking_texts", "up_lines", "report", "down_lines"]
 
-NAMES = ("opencode", "hermes", "pi", "dsh")
-LABELS = {"opencode": "OpenCode", "hermes": "Hermes", "pi": "Pi", "dsh": "dsh"}
+NAMES = ("opencode", "hermes", "pi", "dsh", "kimi")
+LABELS = {"opencode": "OpenCode", "hermes": "Hermes", "pi": "Pi", "dsh": "dsh", "kimi": "Kimi"}
 ENV_VAR = "LLMCTL_CLIENTS"
 LEFT_OUT = f"left out by {ENV_VAR}"
 
@@ -33,6 +35,7 @@ def _root(name: str, env: Mapping[str, str]) -> Path:
         "hermes": hermes_config.hermes_root,
         "pi": pi_config.agent_dir,
         "dsh": dsh_config.dsh_home,
+        "kimi": kimi_config.kimi_home,
     }
     return roots[name](env)
 
@@ -59,8 +62,8 @@ def _listed(env: Mapping[str, str]) -> list[str] | None:
     names = [item for item in names if item]
     for name in names:
         if name not in NAMES:
-            raise UsageError(f"{ENV_VAR}: unknown client '{name}'; use opencode, hermes, pi or dsh, comma-separated, "
-                             "or an empty value for none")
+            raise UsageError(f"{ENV_VAR}: unknown client '{name}'; use opencode, hermes, pi, dsh or kimi, "
+                             "comma-separated, or an empty value for none")
     return names
 
 
@@ -126,6 +129,8 @@ class ClientPlan:
     dsh_active: bool = False
     dsh_checked: str | None = None  # the home patch text the plan's dsh check accepted
     warnings: tuple[str, ...] = ()  # printed right after the clients line
+    kimi_active: bool = False
+    kimi_checked: str | None = None  # the config.toml text the plan's Kimi check accepted
 
 
 @dataclass(frozen=True)
@@ -136,6 +141,7 @@ class ApplyResult:
     failed: frozenset[str]
     default_failed: frozenset[str] = frozenset()  # written, but making it the default failed (hermes profile use)
     dsh_old: dsh_config.Block | None = None  # the block read just before the dsh write
+    kimi_old: kimi_config.State | None = None  # Kimi's config.toml read just before the Kimi write
 
 
 def _pi_candidate(host: Host, change: FileChange | None) -> str:
@@ -174,8 +180,19 @@ def _check_dsh(host: Host, target: Target, candidate: str) -> None:
     dsh_config.check_home(host, candidate, target, path=path, written=written)
 
 
+def _kimi_candidate(host: Host, change: FileChange | None) -> str:
+    """The config.toml text Kimi checks: the planned text, or the file as it is when llmctl's entry is unchanged."""
+    if change is not None:
+        return change.new_text
+    path = kimi_config.config_path(host.env)
+    text = kimi_config.read_text(path)
+    if text is None:
+        raise ClientError(f"cannot read {path}: it does not exist")
+    return text
+
+
 def plan(host: Host, catalog, target: Target, *, set_default: bool, check: bool) -> ClientPlan:
-    """Plan every client change and raise any refusal; nothing is written, and only `check` runs pi and dsh."""
+    """Plan every client change and raise any refusal; nothing is written, and only `check` runs pi, dsh and kimi."""
     states = client_states(host)
     require_listed(host, states)
     providers = llmctl_providers(catalog)
@@ -204,8 +221,17 @@ def plan(host: Host, catalog, target: Target, *, set_default: bool, check: bool)
             dsh_checked = _dsh_candidate(host, home)
             _check_dsh(host, target, dsh_checked)
         changes.append(home)
+    kimi_checked = None
+    if "kimi" in active:
+        config = kimi_config.plan_config(host.env, target, set_default=set_default)
+        if check:
+            kimi_checked = _kimi_candidate(host, config)
+            warning = kimi_config.check_config(host, kimi_checked, target, path=kimi_config.config_path(host.env))
+            if warning is not None:
+                warnings.append(warning)
+        changes.append(config)
     return ClientPlan(tuple(states), tuple(change for change in changes if change is not None), hermes_use,
-                      "pi" in active, "dsh" in active, dsh_checked, tuple(warnings))
+                      "pi" in active, "dsh" in active, dsh_checked, tuple(warnings), "kimi" in active, kimi_checked)
 
 
 def dry_run_lines(planned: ClientPlan) -> list[str]:
@@ -217,14 +243,21 @@ def dry_run_lines(planned: ClientPlan) -> list[str]:
         lines.append(change.preview)
     if planned.hermes_use:
         lines.append("would run hermes profile use llmctl")
-    if planned.pi_active and planned.dsh_active:
-        lines.append("dry run: nothing was written, and neither Pi nor dsh has checked llmctl's entries")
-    elif planned.pi_active:
-        lines.append("dry run: nothing was written, and Pi has not checked the entry")
-    elif planned.dsh_active:
-        lines.append("dry run: nothing was written, and dsh has not checked llmctl's rows")
-    else:
+    checking = [label for active, label in ((planned.pi_active, "Pi"), (planned.dsh_active, "dsh"),
+                                            (planned.kimi_active, "Kimi")) if active]
+    if not checking:
         lines.append("dry run: nothing was written")
+    elif checking == ["Pi"]:
+        lines.append("dry run: nothing was written, and Pi has not checked the entry")
+    elif checking == ["dsh"]:
+        lines.append("dry run: nothing was written, and dsh has not checked llmctl's rows")
+    elif checking == ["Kimi"]:
+        lines.append("dry run: nothing was written, and Kimi has not checked llmctl's entry")
+    elif len(checking) == 2:
+        lines.append(f"dry run: nothing was written, and neither {checking[0]} nor {checking[1]} has checked "
+                     "llmctl's entries")
+    else:
+        lines.append("dry run: nothing was written, and none of Pi, dsh and Kimi has checked llmctl's entries")
     return lines
 
 
@@ -241,6 +274,7 @@ class _Applier:
         self.failed: set[str] = set()
         self.default_failed: set[str] = set()
         self.dsh_old: dsh_config.Block | None = None
+        self.kimi_old: kimi_config.State | None = None
 
     def write(self, change: FileChange) -> None:
         try:
@@ -333,6 +367,25 @@ class _Applier:
         self.changed.add("dsh")
         self.dsh_old = old
 
+    def kimi(self, host: Host, target: Target, set_default: bool, checked: str | None) -> None:
+        # Kimi takes no lock on its config.toml, so llmctl takes none either: re-read, re-plan, let Kimi check the
+        # candidate again only when it differs from the text the plan's check accepted, and refuse to write over a
+        # save made since the re-plan (plan ruling 9); the read-back catches a save right after the rename.
+        path = kimi_config.config_path(host.env)
+        old = kimi_config.read_state(host.env)
+        change = kimi_config.plan_config(host.env, target, set_default=set_default)
+        candidate = _kimi_candidate(host, change)
+        if candidate != checked:
+            kimi_config.check_config(host, candidate, target, path=path)  # the plan printed its version warning
+        if change is None:
+            return
+        kimi_config.unchanged_since_plan(change)
+        self.write(change)
+        kimi_config.read_back(change)
+        self.writes.append(f"wrote {change.path}: {change.summary}")
+        self.changed.add("kimi")
+        self.kimi_old = old
+
 
 def _holds(change: FileChange) -> bool:
     """True when the file already holds the change's new text, so its write landed before the failure."""
@@ -366,7 +419,8 @@ def _put_back_message(models: FileChange, failure: ClientWriteError | None, prob
             "settings.json now disagree about the llmctl model; fix them by hand or run up again")
 
 
-def apply(host: Host, catalog, target: Target, *, set_default: bool, dsh_checked: str | None = None) -> ApplyResult:
+def apply(host: Host, catalog, target: Target, *, set_default: bool, dsh_checked: str | None = None,
+          kimi_checked: str | None = None) -> ApplyResult:
     """Re-read and write each active client on its own after readiness, collecting failures (spec D8)."""
     states = client_states(host)
     providers = llmctl_providers(catalog)
@@ -376,6 +430,7 @@ def apply(host: Host, catalog, target: Target, *, set_default: bool, dsh_checked
         "hermes": lambda: applier.hermes(host, target, set_default),
         "pi": lambda: applier.pi(host, target, set_default),
         "dsh": lambda: applier.dsh(host, target, set_default, dsh_checked),
+        "kimi": lambda: applier.kimi(host, target, set_default, kimi_checked),
     }
     for state in states:
         if not state.active:
@@ -387,16 +442,18 @@ def apply(host: Host, catalog, target: Target, *, set_default: bool, dsh_checked
             applier.failed.add(state.name)
     return ApplyResult(tuple(applier.backups + applier.writes + applier.after), tuple(applier.failures),
                        frozenset(applier.changed), frozenset(applier.failed), frozenset(applier.default_failed),
-                       applier.dsh_old)
+                       applier.dsh_old, applier.kimi_old)
 
 
 def failure_message(failures: Sequence[str]) -> str:
     return f"the model is running, but {len(failures)} client file(s) were not updated: {'; '.join(failures)}"
 
 
-def thinking_texts(target: Target) -> tuple[str, str, str, str]:
-    """How OpenCode, Hermes, Pi and dsh choose this recipe's thinking (spec D8 line templates, dsh design D7)."""
-    return (*_thinking_texts(target), dsh_config.thinking_text(target.recipe.clients))
+def thinking_texts(target: Target) -> tuple[str, str, str, str, str]:
+    """How OpenCode, Hermes, Pi, dsh and Kimi choose this recipe's thinking (spec D8 line templates, dsh design D7,
+    Kimi design D6)."""
+    meta = target.recipe.clients
+    return (*_thinking_texts(target), dsh_config.thinking_text(meta), kimi_config.thinking_text(meta))
 
 
 def _thinking_texts(target: Target) -> tuple[str, str, str]:
@@ -513,15 +570,31 @@ def _dsh_notes(host: Host, target: Target, up_command: str, old: dsh_config.Bloc
                             up_command=up_command) + problems
 
 
+def _kimi_lines(host: Host, target: Target, up_command: str) -> list[str]:
+    """The Kimi section of up (Kimi design D10); a config.toml llmctl cannot read makes the default unknown."""
+    env = host.env
+    try:
+        state = kimi_config.read_state(env)
+    except ClientError as exc:
+        lines = kimi_config.usage_lines(target, is_default=False, up_command=up_command)
+        lines[0] = f"Kimi: {kimi_config.alias(target)}, default unknown ({exc})"
+        return lines + kimi_config.state_lines(None, target, env, up_command=up_command)
+    is_default = state is not None and state.default == kimi_config.alias(target)
+    return (kimi_config.usage_lines(target, is_default=is_default, up_command=up_command)
+            + kimi_config.state_lines(state, target, env, up_command=up_command))
+
+
 def up_lines(host: Host, target: Target, states: Sequence[ClientState], *, up_command: str,
              changed: frozenset[str], failed: frozenset[str] = frozenset(),
-             default_failed: frozenset[str] = frozenset(), dsh_old: dsh_config.Block | None = None) -> list[str]:
+             default_failed: frozenset[str] = frozenset(), dsh_old: dsh_config.Block | None = None,
+             kimi_old: kimi_config.State | None = None) -> list[str]:
     """What up prints about each active client once the server is ready (spec D8); a failed client gets one line,
     and a client whose file was written but whose default failed keeps its block."""
     texts = dict(zip(NAMES, thinking_texts(target)))
     sections: dict[str, Callable[[Host, Target, str, str], list[str]]] = {
         "opencode": _opencode_lines, "hermes": _hermes_lines, "pi": _pi_lines,
-        "dsh": lambda host, target, up_command, thinking: _dsh_lines(host, target, up_command)}
+        "dsh": lambda host, target, up_command, thinking: _dsh_lines(host, target, up_command),
+        "kimi": lambda host, target, up_command, thinking: _kimi_lines(host, target, up_command)}
     lines = []
     for state in states:
         if not state.active:
@@ -538,6 +611,10 @@ def up_lines(host: Host, target: Target, states: Sequence[ClientState], *, up_co
                      "start a new session")
     if "dsh" in changed and "dsh" not in failed:
         lines += _dsh_notes(host, target, up_command, dsh_old)
+    if "kimi" in changed and "kimi" not in failed and kimi_old is not None:
+        note = kimi_config.session_note(kimi_old, target)
+        if note is not None:
+            lines.append(note)
     return lines
 
 
@@ -671,6 +748,29 @@ def _dsh_report(host: Host, target: Target | None, running_known: bool):
     return f"{dsh_config.PROVIDER}/{block.served or '?'} for {described}{middle}; {default}", path, warnings
 
 
+def _kimi_report(host: Host, target: Target | None, running_known: bool):
+    """(text, path, warnings) of Kimi's status line (Kimi design D10); no kimi command runs."""
+    env = host.env
+    path = kimi_config.config_path(env)
+    try:
+        state = kimi_config.read_state(env)
+    except ClientError as exc:
+        return _problem(path, exc), None, []
+    warnings = []
+    if target is None and running_known and kimi_config.points_at_llmctl(state):
+        warnings.append(f"warning: Kimi's default {state.default} {NOT_RUNNING}")
+    warnings += kimi_config.state_lines(state, target, env, up_command="./llmctl up <model>")
+    if state is None or state.provider is None or not state.aliases:
+        return "no llmctl entry yet (the next ./llmctl up writes it)", path, warnings
+    default = "default not set" if state.default is kimi_config.MISSING else f"default {_show_model(state.default)}"
+    if target is not None and kimi_config.entry_matches(state, target):
+        return (f"{kimi_config.alias(target)} for {target.recipe.id} on {target.label}, the running model; "
+                f"{default}", path, warnings)
+    described = state.description or "an unknown model"
+    middle = ", not the running model (run ./llmctl up again)" if target is not None else ""
+    return f"{state.aliases[0][0]} for {described}{middle}; {default}", path, warnings
+
+
 def report(host: Host, catalog, target: Target | None, *, with_paths: bool, running_known: bool = True) -> list[str]:
     """The clients: section of status and list (spec D8, D2, L5); None as target means no model is running."""
     sections: dict[str, Callable[[], tuple[str, Path | None, list[str]]]] = {
@@ -678,6 +778,7 @@ def report(host: Host, catalog, target: Target | None, *, with_paths: bool, runn
         "hermes": lambda: _hermes_report(host, target, running_known),
         "pi": lambda: _pi_report(host, target, running_known),
         "dsh": lambda: _dsh_report(host, target, running_known),
+        "kimi": lambda: _kimi_report(host, target, running_known),
     }
     lines = ["clients:"]
     warnings: list[str] = []
@@ -700,6 +801,7 @@ SWITCH_BACK: dict[str, Callable[[Mapping[str, str]], str]] = {
     "hermes": lambda env: "hermes profile use default",
     "pi": lambda env: "Pi /model",
     "dsh": dsh_config.switch_back,
+    "kimi": kimi_config.switch_back,
 }
 
 
@@ -714,6 +816,8 @@ def _points_at_llmctl(name: str, host: Host, providers: frozenset[str]) -> bool:
             return hermes_config.sticky_profile(env) == hermes_config.PROFILE
         if name == "dsh":
             return dsh_config.holds_default(env)
+        if name == "kimi":
+            return kimi_config.points_at_llmctl(kimi_config.read_state(env))
         return pi_config.pi_default(env)[0] == pi_config.PROVIDER
     except ClientError:
         return False
@@ -733,5 +837,8 @@ def down_lines(host: Host, catalog, recipe_id: str) -> list[str]:
     names = _join([state.label for state in pointing])
     verb = "points" if len(pointing) == 1 else "point"
     gets = "gets" if len(pointing) == 1 else "get"
-    return [f"{names} still {verb} at {recipe_id} and {gets} no answer until the next ./llmctl up",
-            "  switch back: " + "; ".join(SWITCH_BACK[state.name](host.env) for state in pointing)]
+    lines = [f"{names} still {verb} at {recipe_id} and {gets} no answer until the next ./llmctl up",
+             "  switch back: " + "; ".join(SWITCH_BACK[state.name](host.env) for state in pointing)]
+    if any(state.name == "kimi" for state in pointing):
+        lines.append(kimi_config.RETRY_NOTE)
+    return lines

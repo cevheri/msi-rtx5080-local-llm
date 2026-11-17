@@ -15,12 +15,13 @@ import unittest
 import unittest.mock
 from pathlib import Path
 
-from launcher import clients, dsh_config, hermes_config, opencode_config, pi_config
+from launcher import clients, dsh_config, hermes_config, kimi_config, opencode_config, pi_config
 from launcher.catalog import load_catalog
 from launcher.e2e import clients as e2e
 from launcher.errors import UsageError
 from launcher.tests.client_fixture import ClientFixture
 from launcher.tests.fakes import REPO, FakeHost, fail, http, ok
+from launcher.tests.test_kimi_config import OWNER_TEXT
 from launcher.tests.ops_fixture import managed_line
 from launcher.tests.regen_golden import target_for
 
@@ -239,6 +240,62 @@ class ParserTest(unittest.TestCase):
         no_text = [item for item in items if item["type"] != "text"]
         self.assertEqual(e2e.opencode_outcome(dump(no_text), tools=False).reasons, ("no text answer",))
         self.assertFalse(e2e.opencode_outcome(dump(items) + ['{"type": "error"}'], tools=False).passed)
+
+    def test_kimi_outcome_built_session_passes(self):
+        outcome = e2e.kimi_outcome(fixture_lines("kimi-built-write-read.jsonl"))
+        self.assertEqual(outcome, e2e.Outcome(True, (), ()))
+
+    def test_kimi_outcome_bash_and_no_read(self):
+        self.assertEqual(e2e.kimi_outcome(fixture_lines("kimi-handson-b1.jsonl")).reasons,
+                         ("a Bash tool call, which the task forbids", "no Read tool call"))
+
+    def test_kimi_outcome_retries(self):
+        retried = "Kimi retried a request 9 times (APIConnectionError: Connection error.)"
+        lines = fixture_lines("kimi-e7-refused.jsonl")
+        self.assertEqual(e2e.kimi_outcome(lines).reasons,
+                         (retried, "no Write tool call", "no Read tool call", "no assistant message"))
+        self.assertEqual(e2e.kimi_outcome(lines, tools=False).reasons, (retried, "no assistant message"))
+        last = json.loads(lines[-1])
+        del last["error_message"]
+        self.assertEqual(e2e.kimi_outcome(lines[:-1] + [json.dumps(last)], tools=False).reasons[0],
+                         "Kimi retried a request 9 times (APIConnectionError: ?)")
+
+    def test_kimi_outcome_chat_only(self):
+        e3 = fixture_lines("kimi-e3-vllm-deepseek-agent.jsonl")
+        a1 = fixture_lines("kimi-handson-a1.jsonl")
+        self.assertEqual(e2e.kimi_outcome(e3, tools=False), e2e.Outcome(True, (), ()))
+        self.assertEqual(e2e.kimi_outcome(a1, tools=False), e2e.Outcome(True, (), ()))
+        call = fixture_lines("kimi-built-write-read.jsonl")[1]
+        self.assertEqual(e2e.kimi_outcome(e3[:1] + [call] + e3[1:], tools=False).reasons,
+                         ("a tool call in a chat-only session",))
+        self.assertEqual(e2e.kimi_outcome(a1).reasons, ("no Write tool call", "no Read tool call"))
+        self.assertEqual(e2e.kimi_outcome(fixture_lines("kimi-e2r-qwen3.8-27b.jsonl")).reasons,
+                         ("no Read tool call",))
+
+    def test_kimi_outcome_needs_answers_and_json(self):
+        built = fixture_lines("kimi-built-write-read.jsonl")
+        self.assertEqual(e2e.kimi_outcome(built[:4] + built[5:]).reasons,
+                         ("tool call Read (call_built_2) has no tool line",))
+        last = json.loads(built[5])
+        last["content"] = ""
+        self.assertEqual(e2e.kimi_outcome(built[:5] + [json.dumps(last)] + built[6:]).reasons,
+                         ("the last assistant message has no text",))
+        outcome = e2e.kimi_outcome(built + ["not json"])
+        self.assertEqual(outcome.reasons, ("line 8 is not JSON: not json",))
+        self.assertFalse(outcome.passed)
+
+    def test_status_reasons_kimi(self):
+        text = ("clients:\n"
+                "  OpenCode: default llamacpp-docker/qwen3.6-35b-a3b, the running model\n"
+                "  Hermes: profile llmctl for qwen3.6-35b-a3b on llama.cpp, the running model; default profile: x\n"
+                "  Pi: llmctl/local for qwen3.6-35b-a3b on llama.cpp, the running model; default x, thinking off\n")
+        line = "  Kimi: llmctl/local for qwen3.6-35b-a3b on llama.cpp, the running model; default llmctl/local\n"
+        self.assertEqual(e2e.status_reasons(text + line, opencode=True, kimi=True), [])
+        self.assertEqual(e2e.status_reasons(text, opencode=True, kimi=True), ["no Kimi line in status"])
+        self.assertEqual(e2e.status_reasons(text, opencode=True, kimi=False), [])
+        stale = ("Kimi: llmctl/local for gemma-4-26b-a4b on llama.cpp, not the running model (run ./llmctl up again); "
+                 "default llmctl/local")
+        self.assertEqual(e2e.status_reasons(text + "  " + stale + "\n", opencode=True, kimi=True), [stale])
 
 
 class ConfigValueTest(unittest.TestCase):
@@ -599,7 +656,7 @@ class PlanTest(unittest.TestCase):
 
     def test_probe_bodies(self):
         qwen = e2e.probe_bodies(target_for("qwen3.6-35b-a3b", "llamacpp", REPO / "recipes"))
-        self.assertEqual(sorted(qwen), ["A", "B", "C", "D"])
+        self.assertEqual(sorted(qwen), ["A", "B", "C", "D", "G"])
         a = qwen["A"]
         self.assertEqual(a["reasoning_effort"], "none")
         self.assertEqual(a["response_format"]["json_schema"]["name"], "session_title")
@@ -621,10 +678,10 @@ class PlanTest(unittest.TestCase):
         self.assertEqual(b["tools"][0]["function"]["name"], "write")
         self.assertEqual(b["max_tokens"], 256)
         gpt = e2e.probe_bodies(target_for("gpt-oss-20b", "vllm", REPO / "recipes"))
-        self.assertEqual(sorted(gpt), ["A", "B"])
+        self.assertEqual(sorted(gpt), ["A", "B", "G"])
         self.assertEqual(gpt["A"]["model"], "gpt-oss-20b")
         k2 = e2e.probe_bodies(target_for("k2-horizon-7b", "llamacpp", REPO / "recipes"))
-        self.assertEqual(sorted(k2), ["A", "B", "C", "D", "E"])
+        self.assertEqual(sorted(k2), ["A", "B", "C", "D", "E", "G"])
         self.assertEqual(k2["A"]["max_tokens"], 32768)
         self.assertEqual(k2["E"]["model"], "local")
         self.assertEqual(k2["E"]["chat_template_kwargs"], {"tool_call_format": "xml"})
@@ -652,8 +709,19 @@ class PlanTest(unittest.TestCase):
         self.assertEqual(e2e.probe_record("B", 400, b"bad request"),
                          {"probe": "B", "status": 400, "content": False, "reasoning": False})
 
-    def test_driver_env_and_redact(self):
-        self.assertEqual(e2e.driver_env({"LLMCTL_SET_DEFAULT": "1", "PATH": "/bin"}), {"PATH": "/bin"})
+    def test_driver_env(self):
+        environ = {"HOME": "/h", "PATH": "/bin", "LLMCTL_SET_DEFAULT": "1"}
+        self.assertEqual(e2e.driver_env(environ), {"HOME": "/h", "PATH": "/h/.kimi-code/bin:/bin"})
+        self.assertEqual(e2e.driver_env(environ, skip_dsh=True),
+                         {"HOME": "/h", "PATH": "/h/.kimi-code/bin:/bin", "LLMCTL_CLIENTS": "opencode,hermes,pi,kimi"})
+        self.assertEqual(e2e.driver_env(environ, skip_kimi=True),
+                         {"HOME": "/h", "PATH": "/bin", "LLMCTL_CLIENTS": "opencode,hermes,pi,dsh"})
+        self.assertEqual(e2e.driver_env(environ, skip_dsh=True, skip_kimi=True),
+                         {"HOME": "/h", "PATH": "/bin", "LLMCTL_CLIENTS": "opencode,hermes,pi"})
+        self.assertEqual(e2e.driver_env({"HOME": "/h"}), {"HOME": "/h", "PATH": "/h/.kimi-code/bin"})
+        with self.assertRaises(UsageError) as caught:
+            e2e.driver_env({"PATH": "/bin"})
+        self.assertTrue(str(caught.exception).startswith("HOME is not set"), caught.exception)
         self.assertEqual(e2e.redact("/home/x/a", "/home/x"), "$HOME/a")
         self.assertEqual(e2e.redact("/home/xy/a /home/x", "/home/x"), "/home/xy/a $HOME")
         self.assertEqual(e2e.redact("/tmp/llmctl-e2e-ab/01-x/usage.json /home/x/a /tmp/llmctl-e2e-abc",
@@ -726,7 +794,7 @@ class PlanTest(unittest.TestCase):
 
     def test_probe_f_for_bolt(self):
         bolt = e2e.probe_bodies(target_for("nemotron-3.5-bolt", "llamacpp", REPO / "recipes"))
-        self.assertEqual(sorted(bolt), ["A", "B", "D", "F"])
+        self.assertEqual(sorted(bolt), ["A", "B", "D", "F", "G"])
         self.assertEqual(bolt["F"], {"model": "local",
                                      "messages": [{"role": "user", "content": "Reply with exactly the word OK."}],
                                      "chat_template_kwargs": {"enable_thinking": True, "medium_effort": 1},
@@ -751,11 +819,7 @@ class PlanTest(unittest.TestCase):
         step = e2e.Step("03-nemotron-3.5-bolt-llamacpp probes", e2e.IN_PROCESS, ".", 900)
         self.assertEqual(run.probes(step, target), ["probe F: status 400"])
         names = sorted(path.name.rsplit("-", 1)[1] for path in (out / "records").iterdir())
-        self.assertEqual(names, ["A", "B", "D", "F"])
-
-    def test_driver_env_skip_dsh(self):
-        self.assertEqual(e2e.driver_env({"PATH": "/bin", "LLMCTL_SET_DEFAULT": "1"}, skip_dsh=True),
-                         {"PATH": "/bin", "LLMCTL_CLIENTS": "opencode,hermes,pi"})
+        self.assertEqual(names, ["A", "B", "D", "F", "G"])
 
     def test_all_matrix_runs_every_recipe(self):
         matrix = e2e.ALL_MATRIX
@@ -783,12 +847,102 @@ class PlanTest(unittest.TestCase):
         unlisted = dataclasses.replace(target, recipe=dataclasses.replace(target.recipe, opencode=False))
         self.assertNotIn("opencode", e2e._session_argv(unlisted, e2e.CHAT, False, pinned=True))
 
+    KIMI_TASK = ("kimi", "-p", e2e.TASK, "--output-format", "stream-json")
+
+    def test_kimi_steps_follow_dsh_or_pi(self):
+        prefix = "04-qwen3.6-35b-a3b-llamacpp"
+        for kwargs, before in (({"dsh": True, "kimi": True}, "dsh-web"), ({"kimi": True}, "pi")):
+            with self.subTest(**kwargs):
+                steps = [step for step in self.plan(**kwargs) if step.name.startswith(prefix + " ")]
+                self.assertEqual([step.name.split(" ", 1)[1] for step in steps[-4:]],
+                                 [before, "kimi-config", "kimi", "probes"])
+                config, kimi = steps[-3:-1]
+                self.assertEqual((config.argv, config.cwd), (e2e.IN_PROCESS, "."))
+                self.assertEqual((kimi.argv, kimi.cwd), (self.KIMI_TASK + ("-m", "llmctl/local"), f"{prefix}-kimi"))
+
+    def test_kimi_chat_only_steps(self):
+        for runtime, served in (("llamacpp", "local"), ("vllm", "deepseek-r1-8b")):
+            with self.subTest(runtime=runtime):
+                steps = self.plan((("deepseek-r1-0528-qwen3-8b", runtime),), kimi=True)
+                self.assertEqual([step.argv for step in steps if step.argv[:1] == ("kimi",)], [
+                    ("kimi", "-p", e2e.CHAT, "--output-format", "stream-json", "-m", f"llmctl/{served}",
+                     "--agent-file", str(kimi_config.AGENT_FILE))])
+
+    def test_round_trip_runs_kimi_unpinned(self):
+        for kwargs in ({"kimi": True}, {"dsh": True, "kimi": True}):
+            with self.subTest(**kwargs):
+                steps = self.plan(round_trip=True, **kwargs)
+                argvs = [step.argv for step in steps]
+                up = argvs.index(("./llmctl", "up", "qwen3.6-35b-a3b", "--set-default"))
+                after = argvs[up + 1:]
+                self.assertEqual(after[-2:], [self.KIMI_TASK, ("./llmctl", "down")])
+                self.assertTrue([argv for argv in after[:-2] if argv[:3] == ("pi", "--mode", "json")])
+                self.assertEqual(bool([argv for argv in after[:-2] if argv[:1] == ("dsh",)]), "dsh" in kwargs)
+                self.assertEqual([(step.name, step.cwd) for step in steps if step.argv == self.KIMI_TASK],
+                                 [("round-trip kimi", "round-trip-kimi")])
+
+    def test_no_kimi_steps_by_default(self):
+        for kwargs in ({}, {"round_trip": True}, {"round_trip": True, "dsh": True}):
+            with self.subTest(**kwargs):
+                steps = self.plan(e2e.ALL_MATRIX, **kwargs)
+                self.assertFalse([step for step in steps if step.argv[:1] == ("kimi",)])
+                self.assertFalse([step for step in steps if " kimi" in step.name])
+
+    def test_kimi_steps_respect_safety_rules(self):
+        steps = self.plan(e2e.ALL_MATRIX, round_trip=True, dsh=True, kimi=True)
+        kimi_steps = [step for step in steps if step.argv[:1] == ("kimi",)]
+        self.assertEqual(len(kimi_steps), len(e2e.ALL_MATRIX) + 1)
+        folders = [step.cwd for step in kimi_steps]
+        self.assertNotIn(".", folders)
+        self.assertEqual(len(folders), len(set(folders)))
+        forbidden = {"--set-default", "-c", "--continue", "-r", "--resume", "-S", "--session", "-y", "--yolo",
+                     "--auto"}
+        for step in kimi_steps:
+            with self.subTest(step=step.name):
+                self.assertEqual(step.cwd, step.name.replace(" ", "-"))
+                self.assertEqual(step.timeout_s, 900)
+                self.assertFalse(forbidden & set(step.argv))
+        self.assertEqual(steps[-1].argv, ("./llmctl", "down"))
+
+    def test_probe_g_for_every_recipe(self):
+        for runtime, entry in self.catalog.runtimes.items():
+            for recipe_id in entry.recipes:
+                with self.subTest(recipe=recipe_id, runtime=runtime):
+                    target = target_for(recipe_id, runtime, REPO / "recipes")
+                    self.assertEqual(e2e.probe_bodies(target)["G"], {
+                        "model": target.served,
+                        "messages": [{"role": "user", "content": "Reply with exactly the word OK."}],
+                        "max_tokens": 256, "reasoning_effort": "low"})
+
+    def test_probe_g_is_recorded_not_judged(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        out = Path(tmp.name)
+        (out / "records").mkdir()
+        host = FakeHost(env={})
+        title = json.dumps({"choices": [{"message": {"content": json.dumps({"title": "Adding numbers"})}}]}).encode()
+
+        def answer(method, url, headers, body):
+            return http(400, b"bad") if b'"reasoning_effort": "low"' in body else http(200, title)
+
+        host.on_http("POST", "http://127.0.0.1:8080/v1/chat/completions", answer)
+        run = e2e._Run(out, None, host, {"HOME": str(out)}, out)
+        target = target_for("qwen3.6-35b-a3b", "llamacpp", REPO / "recipes")
+        step = e2e.Step("04-qwen3.6-35b-a3b-llamacpp probes", e2e.IN_PROCESS, ".", 900)
+        self.assertEqual(run.probes(step, target), [])
+        records = [path for path in (out / "records").iterdir() if path.name.endswith("-G")]
+        self.assertEqual(len(records), 1)
+        record = json.loads(records[0].read_text(encoding="utf-8"))
+        self.assertEqual((record["status"], record["record"]["status"]), (400, 400))
+        self.assertEqual(record["request"]["reasoning_effort"], "low")
+
     def test_main_refuses_llmctl_clients(self):
         with unittest.mock.patch.dict("os.environ", {"LLMCTL_CLIENTS": "pi"}):
             with unittest.mock.patch("sys.stderr") as err:
                 self.assertEqual(e2e.main(["--out", "/nonexistent/never-created"]), 1)
         written = "".join(call.args[0] for call in err.write.call_args_list)
-        self.assertIn("unset LLMCTL_CLIENTS: the e2e checks all four clients, or three with --skip-dsh", written)
+        self.assertIn("unset LLMCTL_CLIENTS: the e2e checks all five clients, or fewer with --skip-dsh and "
+                      "--skip-kimi", written)
         self.assertFalse(Path("/nonexistent/never-created").exists())
 
 
@@ -968,6 +1122,81 @@ class RestoreTest(unittest.TestCase):
         self.assertFalse(dsh_config.holds_default(self.host.env))
         self.assertEqual(self.host.err.getvalue(), "")
 
+    def install_kimi(self, default: str | None = None) -> str:
+        """Kimi installed, with a config.toml holding the owner's text and llmctl's tables for qwen3.6 and, when
+        given, default as its default_model; returns its text."""
+        self.fx.install("kimi")
+        path = self.fx.kimi_file
+        text = kimi_config.config_text(path, OWNER_TEXT, self.target, set_default=False)
+        if default is not None:
+            text = kimi_config.default_text(path, text, default)
+        self.write_kimi(text)
+        return text
+
+    def write_kimi(self, text: str) -> None:
+        with open(self.fx.kimi_file, "w", encoding="utf-8", newline="") as handle:
+            handle.write(text)
+
+    def kimi_text(self) -> str:
+        with open(self.fx.kimi_file, encoding="utf-8", newline="") as handle:
+            return handle.read()
+
+    def test_snapshot_reads_the_kimi_default(self):
+        self.install_kimi()
+        snapshot = e2e.snapshot_defaults(self.host.env, kimi=True)
+        self.assertEqual((snapshot.kimi_default, snapshot.kimi_read), (None, True))
+        self.install_kimi("other/m")
+        snapshot = e2e.snapshot_defaults(self.host.env, kimi=True)
+        self.assertEqual((snapshot.kimi_default, snapshot.kimi_read), ("other/m", True))
+        snapshot = e2e.snapshot_defaults(self.host.env)
+        self.assertEqual((snapshot.kimi_default, snapshot.kimi_read), (None, False))
+
+    def test_snapshot_refuses_a_kimi_default_that_is_not_a_string(self):
+        text = self.install_kimi()
+        self.write_kimi("default_model = 5\n" + text)
+        with self.assertRaises(UsageError) as caught:
+            e2e.snapshot_defaults(self.host.env, kimi=True)
+        self.assertEqual(str(caught.exception),
+                         f"Kimi's default_model in {self.fx.kimi_file} is 5, not a string, so the round trip could "
+                         "not write it back; fix it, or run without --set-default-round-trip")
+
+    def test_restore_removes_a_kimi_default_the_owner_never_had(self):
+        before = self.install_kimi()
+        snapshot = e2e.snapshot_defaults(self.host.env, kimi=True)
+        self.set_default()
+        self.assertIn('default_model = "llmctl/local"', self.kimi_text())
+        self.assertEqual(e2e.restore_defaults(self.host, snapshot), [])
+        self.assertEqual(self.kimi_text(), before)
+
+    def test_restore_writes_back_a_string_kimi_default(self):
+        before = self.install_kimi("other/m")
+        snapshot = e2e.snapshot_defaults(self.host.env, kimi=True)
+        self.set_default()
+        self.assertIn('default_model = "llmctl/local"', self.kimi_text())
+        self.assertEqual(e2e.restore_defaults(self.host, snapshot), [])
+        self.assertEqual(self.kimi_text(), before)
+
+    def test_restore_reports_a_kimi_default_that_reads_back_different(self):
+        self.install_kimi()
+        snapshot = e2e.snapshot_defaults(self.host.env, kimi=True)
+        self.set_default()
+        with unittest.mock.patch("launcher.kimi_config.plan_default", return_value=None):
+            self.assertEqual(e2e.restore_defaults(self.host, snapshot),
+                             ["Kimi: default_model reads llmctl/local, expected unset"])
+
+    def test_round_trip_restores_kimi_after_a_failed_check(self):
+        before = self.install_kimi()
+
+        def check():
+            self.set_default()
+            raise RuntimeError("boom")
+
+        with self.assertRaises(RuntimeError) as caught:
+            e2e.round_trip(self.host, check, kimi=True)
+        self.assertEqual(str(caught.exception), "boom")
+        self.assertEqual(self.kimi_text(), before)
+        self.assertEqual(self.host.err.getvalue(), "")
+
     def test_gateway_check(self):
         state = self.fx.hermes_root / "gateway_state.json"
         self.assertIsNone(e2e.gateway_check(self.host, created=True))
@@ -1019,6 +1248,11 @@ class RunnerTest(unittest.TestCase):
         self.output = None  # argv -> the session's stdout, or None for ""
         self.dsh_installed = False
         self.up_edit = ""  # appended outside the block of the dsh home patch by each fake up
+        self.kimi_installed = False
+        self.kimi_edit = ""  # appended to Kimi's config.toml by each fake up
+        self.kimi_exit = 0
+        self.kimi_stderr = ""  # formatted with the kimi command's environment
+        self.kimi_session = None  # cwd, env -> None, run by each fake kimi -p before it answers
         ready = "dsh web: http://127.0.0.1:3182/"
         self.web_boot = e2e.WebBoot(ready, ready + "\n", "", 0)  # a passing boot, which a test may replace
         self.web_calls: list[tuple[tuple[str, ...], Path, dict]] = []
@@ -1047,8 +1281,9 @@ class RunnerTest(unittest.TestCase):
         self.host.env = env
         return self.host
 
-    def main(self, *args, matrix=RUNNER_MATRIX, skip_dsh=True):
+    def main(self, *args, matrix=RUNNER_MATRIX, skip_dsh=True, skip_kimi=True):
         flags = [*args, "--skip-dsh"] if skip_dsh else list(args)
+        flags += ["--skip-kimi"] if skip_kimi else []
         with unittest.mock.patch.dict(e2e.MATRICES, {"default": matrix}):
             return e2e.main(["--out", "records-out", *flags], make_host=self.make_host)
 
@@ -1080,6 +1315,8 @@ class RunnerTest(unittest.TestCase):
                 self.write_profile(argv[2], runtime)
                 if self.dsh_installed:
                     self.write_home_patch(argv[2], runtime)
+                if self.kimi_installed:
+                    self.write_kimi_up(target_for(argv[2], runtime, REPO / "recipes"), "--set-default" in argv)
                 if self.gateway_after_up is not None:
                     (hermes_config.hermes_root(self.environ) / "gateway_state.json").write_text(
                         json.dumps(self.gateway_after_up), encoding="utf-8")
@@ -1098,9 +1335,43 @@ class RunnerTest(unittest.TestCase):
             (Path(cwd) / "hello.py").write_text("def add(a, b):\n    return a + b\n\nprint(add(2, 3))\n",
                                                 encoding="utf-8")
             stdout = "".join(line + "\n" for line in dump(PASSING_S11))
-        elif argv[:2] == ("docker", "logs") and self.dsh_installed:
+        elif argv == ("kimi", "--version"):
+            stdout = "2.5.3\n"
+        elif argv[:2] == ("kimi", "-p"):
+            (Path(cwd) / "hello.py").write_text("def add(a, b):\n    return a + b\n\nprint(add(2, 3))\n",
+                                                encoding="utf-8")
+            if self.kimi_session is not None:
+                self.kimi_session(Path(cwd), env)
+            name = "kimi-e3-vllm-deepseek-agent.jsonl" if "--agent-file" in argv else "kimi-built-write-read.jsonl"
+            stdout = "".join(line + "\n" for line in fixture_lines(name))
+            return subprocess.CompletedProcess(list(argv), self.kimi_exit, stdout, self.kimi_stderr.format(**env))
+        elif argv[:2] == ("docker", "logs") and (self.dsh_installed or self.kimi_installed):
             stdout = "POST /v1/chat/completions 200\n"
         return subprocess.CompletedProcess(list(argv), code, stdout, "")
+
+    @property
+    def kimi_file(self) -> Path:
+        return self.home / ".kimi-code" / "config.toml"
+
+    def kimi_text(self) -> str:
+        with open(self.kimi_file, encoding="utf-8", newline="") as handle:
+            return handle.read()
+
+    def write_kimi(self, text: str) -> None:
+        with open(self.kimi_file, "w", encoding="utf-8", newline="") as handle:
+            handle.write(text)
+
+    def write_kimi_up(self, target, set_default: bool) -> None:
+        """What up writes into Kimi's config.toml: llmctl's tables, and the default with --set-default."""
+        text = kimi_config.config_text(self.kimi_file, self.kimi_text(), target, set_default=set_default)
+        self.write_kimi(text + self.kimi_edit)
+
+    def install_kimi(self) -> None:
+        self.kimi_installed = True
+        for name in ("kimi", "rg", "fd"):
+            self.host.installed[name] = f"/usr/bin/{name}"
+        (self.home / ".kimi-code").mkdir()
+        self.write_kimi(OWNER_TEXT)
 
     @property
     def home_patch(self) -> Path:
@@ -1122,6 +1393,14 @@ class RunnerTest(unittest.TestCase):
         self.host.open_ports = set()
         self.host.installed.pop("dsh", None)
         self.dsh_installed = False
+        for folder in (self.home / ".kimi-code", self.home / ".config", self.home / ".pi"):
+            if folder.exists():
+                shutil.rmtree(folder)
+        for name in ("kimi", "rg", "fd", "fdfind"):
+            self.host.installed.pop(name, None)
+        for name in [name for name in os.environ if name.startswith("KIMI_MODEL_")]:
+            del os.environ[name]
+        self.kimi_installed = False
         for log in (self.calls, self.mkdtemp_calls, self.web_calls):
             log.clear()
         self.stderr.seek(0)
@@ -1182,7 +1461,7 @@ class RunnerTest(unittest.TestCase):
         self.on_call = inject
         self.main()
         self.assertGreater(len(self.calls), 5)
-        wanted = e2e.driver_env(self.environ, skip_dsh=True)
+        wanted = e2e.driver_env(self.environ, skip_dsh=True, skip_kimi=True)
         self.assertNotIn("LLMCTL_SET_DEFAULT", wanted)
         for argv, cwd, env in self.calls:
             with self.subTest(argv=argv):
@@ -1511,6 +1790,196 @@ class RunnerTest(unittest.TestCase):
         for path in (path for path in self.out.rglob("*") if path.is_file()):
             self.assertNotIn(TOKEN, path.read_text(encoding="utf-8"), path)
 
+
+    def test_kimi_preflight_refusals(self):
+        cases = {
+            "not installed": "Kimi is not installed here (no kimi on PATH); install it, or run with --skip-kimi",
+            "model variables": "KIMI_MODEL_ variables are set in this shell (KIMI_MODEL_BASE_URL, KIMI_MODEL_NAME), "
+                               "and they change which model Kimi uses and what it sends; unset them for the e2e, or "
+                               "run with --skip-kimi",
+            "no rg": "no rg on PATH, so Kimi's Grep tool would download ripgrep from Kimi's CDN into the private "
+                     "home; install ripgrep (sudo apt install ripgrep), or run with --skip-kimi",
+            "no fd": "neither fd nor fdfind is on PATH, so Kimi's Glob tool would download fd from Kimi's CDN into "
+                     "the private home; install fd-find (sudo apt install fd-find), or run with --skip-kimi",
+            "invalid": "{path} is not valid TOML (Invalid value (at line 1, column 5)); fix it, or leave Kimi out "
+                       "with LLMCTL_CLIENTS",
+            "default": "Kimi's default_model in {path} is 5, not a string, so the round trip could not write it "
+                       "back; fix it, or run without --set-default-round-trip",
+        }
+        for case, message in cases.items():
+            with self.subTest(case=case):
+                self.reset()
+                args = ()
+                if case != "not installed":
+                    self.install_kimi()
+                if case == "model variables":
+                    os.environ.update(KIMI_MODEL_NAME="x", KIMI_MODEL_BASE_URL="y")
+                elif case == "no rg":
+                    del self.host.installed["rg"]
+                elif case == "no fd":
+                    del self.host.installed["fd"]
+                elif case == "invalid":
+                    self.write_kimi("a = \n")
+                elif case == "default":
+                    self.round_trip_home()
+                    self.write_kimi("default_model = 5\n")
+                    args = ("--set-default-round-trip",)
+                self.assert_refused(self.main(*args, skip_kimi=False), message.format(path=self.kimi_file))
+        self.reset()
+        self.install_kimi()
+        del self.host.installed["fd"]
+        self.host.installed["fdfind"] = "/usr/bin/fdfind"
+        self.main(skip_kimi=False)
+        self.assertIn(("kimi", "--version"), self.argvs())
+
+    def test_kimi_preflight_refuses_a_default_the_edit_cannot_change(self):
+        # Every matrix Kimi session gets llmctl's default edit on its private copy, so a default_model that the
+        # edit cannot change refuses before anything starts, with or without the round trip.
+        message = ("Kimi's default_model in {path} is written in a form that llmctl's default edit cannot change, "
+                   "and every Kimi session of the e2e needs that edit; fix default_model, or run with --skip-kimi")
+        cases = {"integer": "default_model = 5\n", "one-line multi-line string": 'default_model = """llmctl/x"""\n',
+                 "table": "[default_model]\nname = \"llmctl/x\"\n"}
+        for case, text in cases.items():
+            with self.subTest(case=case):
+                self.reset()
+                self.install_kimi()
+                self.write_kimi(OWNER_TEXT + text if text.startswith("[") else text + OWNER_TEXT)
+                self.assert_refused(self.main(skip_kimi=False), message.format(path=self.kimi_file))
+
+    def test_skip_kimi_leaves_kimi_out(self):
+        for skip_dsh, clients_ in ((True, "opencode,hermes,pi"), (False, "opencode,hermes,pi,dsh")):
+            with self.subTest(skip_dsh=skip_dsh):
+                self.reset()
+                self.install_kimi()
+                if not skip_dsh:
+                    self.install_dsh()
+                self.main(skip_dsh=skip_dsh)
+                self.assertTrue(self.calls)
+                self.assertFalse([argv for argv in self.argvs() if argv[0] == "kimi"])
+                self.assertFalse([step for _, step, _, _ in self.rows() if step.startswith("kimi")])
+                for argv, _, env in self.calls:
+                    with self.subTest(argv=argv):
+                        self.assertEqual(env["LLMCTL_CLIENTS"], clients_)
+                        self.assertEqual(env["PATH"], self.environ["PATH"])
+
+    def kimi_call(self, cwd_name: str) -> tuple[tuple[str, ...], Path, dict]:
+        found = [(argv, cwd, env) for argv, cwd, env in self.calls if argv[:2] == ("kimi", "-p")
+                 and cwd.name == cwd_name]
+        self.assertEqual(len(found), 1, self.argvs())
+        return found[0]
+
+    def test_kimi_steps_run_privately(self):
+        self.install_kimi()
+        self.main(skip_kimi=False)
+        work = self.work_root()
+        argv, cwd, env = self.kimi_call("01-qwen3.6-35b-a3b-llamacpp-kimi")
+        self.assertEqual(argv, ("kimi", "-p", e2e.TASK, "--output-format", "stream-json", "-m", "llmctl/local"))
+        self.assertEqual(cwd, work / "01-qwen3.6-35b-a3b-llamacpp-kimi")
+        for name in ("KIMI_CODE_HOME", "TMPDIR", "HOME"):
+            with self.subTest(name=name):
+                self.assertTrue(Path(env[name]).is_relative_to(work), env[name])
+                self.assertTrue(Path(env[name]).is_dir(), env[name])
+        self.assertEqual(env["KIMI_CODE_CACHE_DIR"], str(work / "kimi-cache"))
+        for name, value in kimi_config.SWITCHES:
+            self.assertEqual(env[name], value)
+        self.assertEqual(env["PWD"], str(cwd))
+        self.assertTrue(env["PATH"].startswith(f"{self.home}/.kimi-code/bin:"), env["PATH"])
+        private = Path(env["KIMI_CODE_HOME"])
+        self.assertEqual(stat.S_IMODE(private.stat().st_mode), 0o700)
+        copy = private / "config.toml"
+        self.assertEqual(stat.S_IMODE(copy.stat().st_mode), 0o600)
+        qwen36 = target_for("qwen3.6-35b-a3b", "llamacpp", REPO / "recipes")
+        with open(copy, encoding="utf-8", newline="") as handle:
+            self.assertEqual(handle.read(), kimi_config.config_text(copy, self.kimi_text(), qwen36, set_default=True))
+        self.assertEqual(list(Path(env["HOME"]).iterdir()), [])
+        for step in ("kimi-config", "kimi"):
+            with self.subTest(step=step):
+                self.assertEqual(self.row("01-qwen3.6-35b-a3b-llamacpp", step), ("Yes", ""))
+        (version_cwd, version_env), = [(c, e) for a, c, e in self.calls if a == ("kimi", "--version")]
+        self.assertEqual(version_cwd, work / "kimi-version")
+        self.assertEqual(version_env["KIMI_CODE_HOME"], str(work / "kimi-version.kimi"))
+        self.assertEqual(version_env["KIMI_CODE_CACHE_DIR"], str(work / "kimi-cache"))
+        self.assertLess(self.argvs().index(("kimi", "--version")),
+                        self.argvs().index(("nvidia-smi", "--query-gpu=power.limit", "--format=csv,noheader")))
+
+    def test_kimi_round_trip_uses_a_pure_byte_copy(self):
+        self.install_kimi()
+        self.round_trip_home()
+        seen = {}
+
+        def session(cwd, env):
+            if cwd.name == "round-trip-kimi":
+                seen["copy"] = (Path(env["KIMI_CODE_HOME"]) / "config.toml").read_bytes()
+                seen["real"] = self.kimi_file.read_bytes()
+        self.kimi_session = session
+        self.main("--set-default-round-trip", skip_kimi=False)
+        argv, _, _ = self.kimi_call("round-trip-kimi")
+        self.assertEqual(argv, ("kimi", "-p", e2e.TASK, "--output-format", "stream-json"))
+        self.assertEqual(seen["copy"], seen["real"])
+        self.assertIn(b'default_model = "llmctl/local"', seen["copy"])
+        self.assertEqual(self.row(e2e.ROUND_TRIP, "kimi"), ("Yes", ""))
+        self.assertEqual(self.row(e2e.ROUND_TRIP, "restore"), ("Yes", ""))
+        qwen36 = target_for("qwen3.6-35b-a3b", "llamacpp", REPO / "recipes")
+        self.assertEqual(self.kimi_text(),
+                         kimi_config.config_text(self.kimi_file, OWNER_TEXT, qwen36, set_default=False))
+
+    def test_kimi_session_must_leave_the_private_config_unchanged(self):
+        self.install_kimi()
+
+        def session(cwd, env):
+            with open(Path(env["KIMI_CODE_HOME"]) / "config.toml", "a", encoding="utf-8") as handle:
+                handle.write("[thinking]\nenabled = true\n")
+        self.kimi_session = session
+        self.main(skip_kimi=False)
+        self.assertEqual(self.row("01-qwen3.6-35b-a3b-llamacpp", "kimi"),
+                         ("No", "the private config.toml changed during the Kimi session"))
+
+    def test_kimi_config_step_compares_with_the_snapshot(self):
+        self.install_kimi()
+        self.kimi_edit = "# edited\n"
+        self.main(skip_kimi=False)
+        self.assertEqual(self.row("01-qwen3.6-35b-a3b-llamacpp", "kimi-config"),
+                         ("No", "the lines outside llmctl's tables changed since the run started"))
+        record = self.record("kimi-config")
+        self.assertEqual(set(record), {"provider", "models", "default_model", "failed"})
+        for key in ("provider", "models", "default_model"):
+            self.assertEqual(set(record[key]), {"found", "wanted"})
+        self.assertEqual(record["provider"]["found"], record["provider"]["wanted"])
+        self.assertEqual(record["failed"], ["the lines outside llmctl's tables changed since the run started"])
+        self.assertNotIn("# edited", json.dumps(record))
+
+    def test_kimi_config_record_withholds_a_foreign_api_key(self):
+        self.install_kimi()
+
+        def edit(argv):
+            if argv == ("./llmctl", "status"):  # after the up wrote llmctl's tables
+                self.write_kimi(self.kimi_text().replace('api_key = "no-key-required"', 'api_key = "sk-s3cr3t"'))
+        self.on_call = edit
+        self.main(skip_kimi=False)
+        self.assertEqual(self.row("01-qwen3.6-35b-a3b-llamacpp", "kimi-config"),
+                         ("No", "llmctl's provider table differs from the generator"))
+        record = self.record("kimi-config")
+        self.assertEqual(record["provider"]["found"]["api_key"], "<withheld>")
+        self.assertEqual(record["provider"]["wanted"]["api_key"], "no-key-required")
+        self.assertEqual(record["default_model"], {"found": None, "wanted": None})
+        for path in (path for path in self.out.rglob("*") if path.is_file()):
+            self.assertNotIn("sk-s3cr3t", path.read_text(encoding="utf-8"), path)
+
+    def test_kimi_record_redacts_the_log_path(self):
+        self.install_kimi()
+        self.kimi_exit = 1
+        self.kimi_stderr = ("error: failed to run prompt: provider.connection_error: Connection error.\n"
+                            "See log: {KIMI_CODE_HOME}/logs/kimi-code.log\n")
+        self.main(skip_kimi=False)
+        passed, reasons = self.row("01-qwen3.6-35b-a3b-llamacpp", "kimi")
+        self.assertEqual(passed, "No")
+        self.assertTrue(reasons.startswith("exit status 1"), reasons)
+        self.assertNotIn(WITHHELD, reasons)
+        record = self.record("kimi")
+        self.assertEqual(record["stderr"], "error: failed to run prompt: provider.connection_error: Connection "
+                                           "error.\nSee log: $WORK/01-qwen3.6-35b-a3b-llamacpp-kimi.kimi/logs/"
+                                           "kimi-code.log\n")
+        self.assertNotIn("dropped_events", record)
 
     def session_output(self, kind: str, lines: list[str]):
         """An output for one session step: hermes-chat, pi or opencode."""

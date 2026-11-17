@@ -1,0 +1,20 @@
+default_model = "llmctl/gpt-oss-20b"
+
+[providers.llmctl]
+type = "openai"
+base_url = "http://127.0.0.1:8000/v1"
+api_key = "no-key-required"
+model_source = "static"
+
+[models."llmctl/gpt-oss-20b"]
+provider = "llmctl"
+model = "gpt-oss-20b"
+display_name = "gpt-oss-20b on vLLM (llmctl)"
+max_context_size = 65536
+max_output_size = 16384
+capabilities = ["tool_use", "thinking"]
+support_efforts = ["low", "medium", "high"]
+default_effort = "medium"
+
+[thinking]
+enabled = false

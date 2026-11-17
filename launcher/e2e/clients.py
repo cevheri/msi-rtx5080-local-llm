@@ -1,17 +1,27 @@
-"""The opt-in e2e of llmctl's clients (spec D10, L3, L9, dsh design D9): real servers, real clients, real config files.
+"""The opt-in e2e of llmctl's clients (spec D10, L3, L9, dsh design D9, Kimi design D11): real servers, real clients,
+real config files.
 
 Only the lead runs it, alone and through heavy, after the full unit suite passes:
 heavy python3 -m launcher.e2e.clients --out research/<date>/llmctl-clients-e2e [--matrix default|extended|all]
-[--keep-running] [--set-default-round-trip] [--skip-dsh]
-It checks four clients, OpenCode, Hermes, Pi and dsh, or the first three with --skip-dsh, which also sets
-LLMCTL_CLIENTS=opencode,hermes,pi for every command.
+[--keep-running] [--set-default-round-trip] [--skip-dsh] [--skip-kimi]
+It checks five clients, OpenCode, Hermes, Pi, dsh and Kimi; --skip-dsh and --skip-kimi leave one out each, and with
+either LLMCTL_CLIENTS names the clients that stay for every command.
+Without --skip-kimi it puts <HOME>/.kimi-code/bin first on PATH for itself and every command.
 Without --skip-dsh it refuses before anything starts when dsh is not installed, a dsh profile patch sets the
 llm-pi-ai row, DEEPSEEK_API_KEY is set, 127.0.0.1:3182 is in use, or the dsh home patch is unreadable or has damaged
 markers; it opens no .env or credential file.
+Without --skip-kimi it refuses when Kimi is not installed, a KIMI_MODEL_ variable is set, rg or both fd and fdfind
+are missing from PATH, Kimi's config.toml is unreadable or not valid TOML, or its default_model is in a form that
+llmctl's default edit cannot change, and with --set-default-round-trip when its default_model is not a string; it
+reads only config.toml in the Kimi home.
 --out holds only the records; the clients run in fresh work folders under one private temporary folder per run
 (llmctl-e2e-*), outside the repository, which the run leaves in place for inspection.
 Each recipe's dsh steps run with telemetry off, TMPDIR under that folder and a private dsh home there that holds a
 byte copy of the real home patch; the round trip's dsh session runs in the real dsh home.
+Each Kimi command runs with a private Kimi home under that folder, an empty HOME, TMPDIR there, one Kimi cache per
+run and the three switches; a recipe's session gets a copy of the real config.toml with llmctl's default edit when
+its default_model does not name the recipe, and the round trip's session a pure byte copy.
+Probe G, the OK request at reasoning_effort low, runs for every recipe and is recorded without judging.
 Importing this module has no side effects; everything runs inside main and the functions below.
 """
 
@@ -33,10 +43,10 @@ from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 from pathlib import Path
 
-from launcher import clients, docker_state, dsh_config, files, hermes_config, opencode_config, pi_config
+from launcher import clients, docker_state, dsh_config, files, hermes_config, kimi_config, opencode_config, pi_config
 from launcher.catalog import load_catalog, override_dir
 from launcher.command import LABEL_PREFIX
-from launcher.errors import LlmctlError, UsageError
+from launcher.errors import ClientError, LlmctlError, UsageError
 from launcher.host import RealHost
 from launcher.model import Target
 from launcher.ops import client_target
@@ -69,7 +79,7 @@ DSH_PORT = 3182  # dsh web's port in the e2e; 3080 is the owner's
 WEB_READY_S = 30
 WEB_TAIL_S = 3
 WEB_KILL_S = 15
-SKIP_DSH_CLIENTS = "opencode,hermes,pi"
+BASE_CLIENTS = "opencode,hermes,pi"  # the clients every run checks; dsh and Kimi follow unless skipped
 WORK = "{work}"  # replaced by the step's work folder when the step runs
 ROUND_TRIP = "round-trip"
 IN_PROCESS = ()  # the argv of a step the driver runs itself: the config check and the probes
@@ -105,6 +115,8 @@ class Defaults:
     pi_model: str | None
     hermes_profile: str
     dsh_default: bool | None = None  # None when the round trip leaves dsh out
+    kimi_default: str | None = None  # None when Kimi has no default_model, or the round trip leaves Kimi out
+    kimi_read: bool = False  # whether the snapshot read Kimi's default_model
 
 
 @dataclass(frozen=True)
@@ -287,6 +299,48 @@ def dsh_outcome(lines: Iterable[str], *, tools: bool = True) -> Outcome:
     return _outcome(reasons, [])
 
 
+def kimi_outcome(lines: Iterable[str], *, tools: bool = True) -> Outcome:
+    """`kimi -p ... --output-format stream-json` (Kimi design D11): no retried request, with tools a Write and a Read
+    call, each answered by a tool line, and no Bash call, without tools no tool call, and a last assistant message
+    with text; Kimi's lines do not name the model, and a tool line carries no error flag."""
+    events, reasons = _events(lines)
+    retried = None
+    calls: list[tuple[object, object]] = []
+    answered = set()
+    assistants = []
+    for event in events:
+        role = event.get("role")
+        if role == "meta" and event.get("type") == "turn.step.retrying":
+            retried = event
+        elif role == "assistant":
+            assistants.append(event)
+            tool_calls = event.get("tool_calls")
+            for call in tool_calls if isinstance(tool_calls, list) else ():
+                call = _dict(call)
+                calls.append((_dict(call.get("function")).get("name"), call.get("id")))
+        elif role == "tool":
+            answered.add(event.get("tool_call_id"))
+    if retried is not None:
+        reasons.append(f"Kimi retried a request {retried.get('failed_attempt', '?')} times "
+                       f"({retried.get('error_name', '?')}: {retried.get('error_message', '?')})")
+    names = [name for name, _ in calls]
+    if tools:
+        if "Bash" in names:
+            reasons.append("a Bash tool call, which the task forbids")
+        reasons += [f"tool call {name} ({call_id}) has no tool line" for name, call_id in calls
+                    if call_id not in answered]
+        for tool in ("Write", "Read"):
+            if tool not in names:
+                reasons.append(f"no {tool} tool call")
+    elif any(event.get("tool_calls") for event in assistants):
+        reasons.append("a tool call in a chat-only session")
+    if not assistants:
+        reasons.append("no assistant message")
+    elif not _non_empty(assistants[-1].get("content")):
+        reasons.append("the last assistant message has no text")
+    return _outcome(reasons, [])
+
+
 WEB_LINE = "dsh web:"
 WEB_SHOWN = "dsh web: <address withheld>"
 
@@ -399,7 +453,7 @@ def gateway_serves_llmctl(text: str) -> bool:
 GATEWAY_WARNING = "warning: Hermes' gateway serves the profile llmctl"
 
 
-def status_reasons(text: str, *, opencode: bool, dsh: bool = False) -> list[str]:
+def status_reasons(text: str, *, opencode: bool, dsh: bool = False, kimi: bool = False) -> list[str]:
     """One reason per client line of ./llmctl status that does not say the running model (spec D10 step 1), and
     the gateway warning (spec L3)."""
     lines = {}
@@ -409,7 +463,8 @@ def status_reasons(text: str, *, opencode: bool, dsh: bool = False) -> list[str]
                 label, rest = line.strip().split(": ", 1)
                 lines[label] = rest
     reasons = []
-    for label in (("OpenCode",) if opencode else ()) + ("Hermes", "Pi") + (("dsh",) if dsh else ()):
+    for label in (("OpenCode",) if opencode else ()) + ("Hermes", "Pi") + (("dsh",) if dsh else ()) + (
+            ("Kimi",) if kimi else ()):
         if label not in lines:
             reasons.append(f"no {label} line in status")
         elif "the running model" not in lines[label] or "not the running model" in lines[label]:
@@ -466,10 +521,17 @@ def _dsh_headless(prompt: str, chat_only: bool, *, pinned: bool) -> tuple[str, .
     return ("dsh", "--profile", "headless", *patches, "--json", prompt)
 
 
+def _kimi_session(target: Target, prompt: str, chat_only: bool, *, pinned: bool) -> tuple[str, ...]:
+    """Kimi's print-mode session in E3's order: -m when pinned, then --agent-file for a chat-only recipe (D11, L-k)."""
+    model = ("-m", kimi_config.alias(target)) if pinned else ()
+    agent = ("--agent-file", str(kimi_config.AGENT_FILE)) if chat_only else ()
+    return ("kimi", "-p", prompt, "--output-format", "stream-json", *model, *agent)
+
+
 def plan_steps(catalog, matrix: Sequence[tuple[str, str]], *, round_trip: bool, keep_running: bool,
-               dsh: bool = False) -> list[Step]:
-    """Every step of a run, in order (spec D10, L3, L9, dsh design D9); argv () marks a step the driver runs
-    in-process."""
+               dsh: bool = False, kimi: bool = False) -> list[Step]:
+    """Every step of a run, in order (spec D10, L3, L9, dsh design D9, Kimi design D11); argv () marks a step the
+    driver runs in-process."""
     steps = []
 
     def add(name: str, argv: tuple[str, ...], cwd: str = ".") -> None:
@@ -492,6 +554,10 @@ def plan_steps(catalog, matrix: Sequence[tuple[str, str]], *, round_trip: bool, 
             add(f"{prefix} dsh-headless", _dsh_headless(TASK if tools else CHAT, not tools, pinned=True),
                 f"{prefix}-dsh-headless")
             add(f"{prefix} dsh-web", ("dsh", "web", "--port", str(DSH_PORT), "--no-open"), f"{prefix}-dsh-web")
+        if kimi:
+            add(f"{prefix} kimi-config", IN_PROCESS)
+            add(f"{prefix} kimi", _kimi_session(target, TASK if tools else CHAT, not tools, pinned=True),
+                f"{prefix}-kimi")
         add(f"{prefix} probes", IN_PROCESS)
     if round_trip:
         target = _target(catalog, ROUND_TRIP_MODEL, "llamacpp")
@@ -500,6 +566,8 @@ def plan_steps(catalog, matrix: Sequence[tuple[str, str]], *, round_trip: bool, 
             add(f"{ROUND_TRIP} {kind}", argv, f"{ROUND_TRIP}-{kind}")
         if dsh:
             add(f"{ROUND_TRIP} dsh-headless", _dsh_headless(TASK, False, pinned=False), f"{ROUND_TRIP}-dsh-headless")
+        if kimi:
+            add(f"{ROUND_TRIP} kimi", _kimi_session(target, TASK, False, pinned=False), f"{ROUND_TRIP}-kimi")
     if not keep_running:
         add("down", ("./llmctl", "down"))
     return steps
@@ -519,7 +587,7 @@ def _write_tool() -> dict:
 
 def probe_bodies(target: Target) -> dict[str, dict]:
     """The probe requests for one recipe by name: A and B always, except that a chat-only recipe gets no B, then C,
-    D, E and F where they apply."""
+    D, E and F where they apply, and G, the OK request at Kimi's effort low, always (Kimi design LR3)."""
     served, recipe = target.served, target.recipe
     title_schema = {"type": "object", "properties": {"title": {"type": "string"}}, "required": ["title"],
                     "additionalProperties": False}
@@ -547,6 +615,7 @@ def probe_bodies(target: Target) -> dict[str, dict]:
             bodies["E"] = dict(plain, chat_template_kwargs={"tool_call_format": "xml"})
     if recipe.id == PROBE_F:
         bodies["F"] = dict(plain, chat_template_kwargs={"enable_thinking": True, "medium_effort": 1})
+    bodies["G"] = dict(plain, reasoning_effort="low")  # recorded, never judged (Kimi plan ruling 1)
     return bodies
 
 
@@ -584,12 +653,17 @@ def _contains(value: object, wanted: object) -> bool:
     return type(value) is type(wanted) and value == wanted
 
 
-def driver_env(environ: Mapping[str, str], *, skip_dsh: bool = False) -> dict[str, str]:
-    """The environment of every command the driver runs: LLMCTL_SET_DEFAULT removed (spec D10), and with skip_dsh
-    LLMCTL_CLIENTS naming the other three clients (dsh design D9)."""
+def driver_env(environ: Mapping[str, str], *, skip_dsh: bool = False, skip_kimi: bool = False) -> dict[str, str]:
+    """The environment of every command the driver runs: LLMCTL_SET_DEFAULT removed (spec D10), unless skip_kimi
+    <HOME>/.kimi-code/bin first on PATH, and with skip_dsh or skip_kimi LLMCTL_CLIENTS naming the clients that stay
+    (dsh design D9, Kimi design D11)."""
     env = {name: value for name, value in environ.items() if name != "LLMCTL_SET_DEFAULT"}
-    if skip_dsh:
-        env["LLMCTL_CLIENTS"] = SKIP_DSH_CLIENTS
+    if not skip_kimi:
+        kimi_bin = str(files.home_dir(environ) / ".kimi-code" / "bin")
+        env["PATH"] = kimi_bin + os.pathsep + env["PATH"] if "PATH" in env else kimi_bin
+    if skip_dsh or skip_kimi:
+        env["LLMCTL_CLIENTS"] = ",".join([BASE_CLIENTS] + ([] if skip_dsh else ["dsh"]) +
+                                         ([] if skip_kimi else ["kimi"]))
     return env
 
 
@@ -665,7 +739,7 @@ def names_private(text: str, values: Sequence[str]) -> bool:
 # Defaults, their restore and the gateway check (spec L3, L9)
 
 
-def snapshot_defaults(env: Mapping[str, str], *, dsh: bool = False) -> Defaults:
+def snapshot_defaults(env: Mapping[str, str], *, dsh: bool = False, kimi: bool = False) -> Defaults:
     path, model, problem = opencode_config.current_default(env)
     if not isinstance(model, str):
         detail = problem or f"its model is {json.dumps(model)}"
@@ -673,8 +747,17 @@ def snapshot_defaults(env: Mapping[str, str], *, dsh: bool = False) -> Defaults:
                          "line edit can set that value but not remove it; set it, "
                          "or run without --set-default-round-trip")
     provider, pi_model = pi_config.pi_default(env)
+    kimi_default = None
+    if kimi:
+        state = kimi_config.read_state(env)
+        value = kimi_config.MISSING if state is None else state.default
+        if value is not kimi_config.MISSING and not isinstance(value, str):
+            raise UsageError(f"Kimi's default_model in {kimi_config.config_path(env)} is "
+                             f"{json.dumps(value, default=str)}, not a string, so the round trip could not write it "
+                             "back; fix it, or run without --set-default-round-trip")
+        kimi_default = None if value is kimi_config.MISSING else value
     return Defaults(model, provider, pi_model, hermes_config.sticky_profile(env),
-                    dsh_config.holds_default(env) if dsh else None)
+                    dsh_config.holds_default(env) if dsh else None, kimi_default, kimi)
 
 
 def _write(change: files.FileChange | None) -> None:
@@ -732,13 +815,52 @@ def _restore_dsh(host, snapshot: Defaults, target: Target | None) -> list[str]:
     return ["dsh: the llmctl block still holds dsh's default"] if dsh_config.holds_default(host.env) else []
 
 
+def _kimi_shown(value: object) -> str:
+    return "unset" if value is kimi_config.MISSING else str(value)
+
+
+def _kimi_recorded(value: object) -> object:
+    """A default_model value as a record holds it: null when the file has none."""
+    return None if value is kimi_config.MISSING else value
+
+
+def _same_default(found: object, wanted: object) -> bool:
+    if found is kimi_config.MISSING or wanted is kimi_config.MISSING:
+        return found is wanted
+    return type(found) is type(wanted) and found == wanted
+
+
+def _withhold_key(table: object) -> object:
+    """A table as a record may show it: an api_key other than llmctl's own is written <withheld>."""
+    if isinstance(table, dict) and "api_key" in table and table["api_key"] != kimi_config.API_KEY:
+        return dict(table, api_key="<withheld>")
+    return table
+
+
+def _restore_kimi(host, snapshot: Defaults) -> list[str]:
+    """Put Kimi's default_model back, or remove it when the owner had none, then read it back (Kimi design D11)."""
+    change = kimi_config.plan_default(host.env, snapshot.kimi_default)
+    _write(change)
+    if change is not None:
+        kimi_config.read_back(change)
+    state = kimi_config.read_state(host.env)
+    found = kimi_config.MISSING if state is None else state.default
+    wanted = kimi_config.MISSING if snapshot.kimi_default is None else snapshot.kimi_default
+    if found is wanted or (found is not kimi_config.MISSING and wanted is not kimi_config.MISSING
+                           and found == wanted):
+        return []
+    return [f"Kimi: default_model reads {_kimi_shown(found)}, expected {_kimi_shown(wanted)}"]
+
+
 def restore_defaults(host, snapshot: Defaults, *, target: Target | None = None) -> list[str]:
-    """Put each client's default back on its own, Pi, Hermes, OpenCode, then dsh when the snapshot read it; one line
-    per value not restored (L9, dsh design D9)."""
+    """Put each client's default back on its own, Pi, Hermes, OpenCode, then dsh and Kimi when the snapshot read
+    them; one line per value not restored (L9, dsh design D9, Kimi design D11)."""
     problems = []
     steps = [("Pi", _restore_pi), ("Hermes", _restore_hermes), ("OpenCode", _restore_opencode)]
     if snapshot.dsh_default is not None:
         steps.append(("dsh", lambda host_, snapshot_: _restore_dsh(host_, snapshot_, target)))
+    if snapshot.kimi_read:
+        steps.append(("Kimi", _restore_kimi))
     for label, restore in steps:
         try:
             problems += restore(host, snapshot)
@@ -748,12 +870,12 @@ def restore_defaults(host, snapshot: Defaults, *, target: Target | None = None) 
 
 
 def round_trip(host, check: Callable[[], None], report: Callable[[list[str]], None] | None = None, *,
-               dsh: bool = False, target: Target | None = None) -> list[str]:
+               dsh: bool = False, kimi: bool = False, target: Target | None = None) -> list[str]:
     """Snapshot the defaults, run check, and restore them even when check raises (spec L9).
 
     report, when given, gets the restore's problem lines on both paths, so a caller can record them although check
     raised."""
-    snapshot = snapshot_defaults(host.env, dsh=dsh)
+    snapshot = snapshot_defaults(host.env, dsh=dsh, kimi=kimi)
     try:
         check()
     except BaseException:
@@ -799,7 +921,7 @@ class _Run:
     """Runs the planned steps against the real clients and writes every record under --out."""
 
     def __init__(self, out: Path, catalog, host: RealHost, env: dict[str, str], work_root: Path, *,
-                 dsh_snapshot: tuple[str | None, bool] | None = None):
+                 dsh_snapshot: tuple[str | None, bool] | None = None, kimi_snapshot: "KimiSnapshot | None" = None):
         self.out = out
         self.work_root = work_root
         self.catalog = catalog
@@ -811,6 +933,8 @@ class _Run:
         self.count = 0
         self.dsh_snapshot = dsh_snapshot  # the home patch text (None when missing) and holds_default at the start
         self.dsh = dsh_snapshot is not None
+        self.kimi_snapshot = kimi_snapshot  # Kimi's config.toml at the start (Kimi design D11)
+        self.kimi = kimi_snapshot is not None
 
     def record(self, name: str, text: str) -> None:
         self.count += 1
@@ -893,6 +1017,22 @@ class _Run:
                 (folder / "llmctl-no-tools.patch.yml").write_text(dsh_config.no_tools_patch(), encoding="utf-8")
         return extra
 
+    def kimi_env(self, step: Step, folder: Path, target: Target) -> dict[str, str]:
+        """The extra environment of a Kimi session (Kimi design D11, O6): a private Kimi home holding a copy of the
+        real config.toml with mode 0600, which a matrix step gets with llmctl's default edit when its default_model
+        does not name the recipe, and the round trip as a pure byte copy."""
+        extra = _kimi_extra(self.work_root, step.cwd)
+        with open(kimi_config.config_path(self.env), encoding="utf-8", newline="") as handle:
+            text = handle.read()
+        copy = Path(extra["KIMI_CODE_HOME"]) / "config.toml"
+        if not step.name.startswith(ROUND_TRIP + " "):
+            if kimi_config.parse_state(copy, text).default != kimi_config.alias(target):
+                text = kimi_config.config_text(copy, text, target, set_default=True)
+        handle = os.open(copy, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        with os.fdopen(handle, "w", encoding="utf-8", newline="") as stream:
+            stream.write(text)
+        return extra
+
     def run_step(self, step: Step, target: Target) -> tuple[list[str], float]:
         """Run one planned step; (its failure reasons, seconds)."""
         kind = step.name.split(" ", 1)[1]
@@ -903,6 +1043,8 @@ class _Run:
             return self.probes(step, target), time.monotonic() - start
         if kind == "dsh-config":
             return self.dsh_config_check(step, target), time.monotonic() - start
+        if kind == "kimi-config":
+            return self.kimi_config_check(step, target), time.monotonic() - start
         folder = self.work(step)
         argv = [part.replace(WORK, str(folder)) for part in step.argv]
         tools = not target.recipe.chat_only
@@ -914,6 +1056,14 @@ class _Run:
                 return [f"cannot prepare the dsh folders: {exc}"], time.monotonic() - start
         if kind == "dsh-web":
             return self.web(step, argv, folder, extra_env), time.monotonic() - start
+        private, kept = None, None
+        if kind == "kimi":
+            try:
+                extra_env = self.kimi_env(step, folder, target)
+                private = Path(extra_env["KIMI_CODE_HOME"]) / "config.toml"
+                kept = private.read_bytes()
+            except (OSError, UnicodeDecodeError, LlmctlError) as exc:
+                return [f"cannot prepare the Kimi folders: {exc}"], time.monotonic() - start
         since = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         code, stdout, seconds, withheld = self.command(step.name, argv, folder, step.timeout_s,
                                                        drop=DROPPED_EVENTS.get(kind, ()), extra_env=extra_env)
@@ -921,7 +1071,19 @@ class _Run:
         if withheld:  # the other reasons may quote the output that the record withheld
             return reasons + [WITHHELD_REASON], seconds
         if kind == "status":
-            reasons += status_reasons(stdout, opencode=target.recipe.opencode, dsh=self.dsh)
+            reasons += status_reasons(stdout, opencode=target.recipe.opencode, dsh=self.dsh, kimi=self.kimi)
+        elif kind == "kimi":
+            reasons += list(kimi_outcome(stdout.splitlines(), tools=tools).reasons)
+            if tools and not hello_valid(folder / "hello.py"):
+                reasons.append("hello.py is missing or lacks def add and add(2, 3)")
+            try:
+                changed = private.read_bytes() != kept
+            except OSError as exc:
+                reasons.append(f"cannot read the private config.toml after the Kimi session: {exc}")
+            else:
+                if changed:
+                    reasons.append("the private config.toml changed during the Kimi session")
+            reasons += self.logs_since(since, target, record=f"{step.name} docker-logs", session="the Kimi session")
         elif kind == "dsh-headless":
             reasons += list(dsh_outcome(stdout.splitlines(), tools=tools).reasons)
             if tools and not hello_valid(folder / "hello.py"):
@@ -1000,6 +1162,43 @@ class _Run:
             return reasons + [f"the dsh profile patches: {exc}"]
         reasons += [f"{finding.path} line {finding.line} sets the llm-pi-ai row" for finding in findings
                     if finding.row_id == "llm-pi-ai"]
+        return reasons
+
+    def kimi_config_check(self, step: Step, target: Target) -> list[str]:
+        """Kimi design D11 step 1: llmctl's tables in the real config.toml equal the generator's by value, its
+        default_model is what D5 gives from the snapshot without --set-default, and the lines outside llmctl's tables
+        are the snapshot's; a mismatch records only llmctl's tables and default_model, never the rest of the file."""
+        snapshot = self.kimi_snapshot
+        try:
+            state = kimi_config.read_state(self.env)
+            foreign = () if state is None else tuple(kimi_config.foreign_lines(state.path, state.text))
+        except LlmctlError as exc:
+            return [f"the Kimi config.toml: {exc}"]
+        provider = None if state is None else state.provider
+        aliases = () if state is None else state.aliases
+        default = kimi_config.MISSING if state is None else state.default
+        wanted_provider = kimi_config.provider_table(target)
+        wanted_aliases = ((kimi_config.alias(target), kimi_config.model_table(target)),)
+        held = snapshot.default
+        wanted_default = (kimi_config.alias(target) if isinstance(held, str)
+                          and held.startswith(kimi_config.ALIAS_PREFIX) else held)
+        reasons = []
+        if provider != wanted_provider:
+            reasons.append("llmctl's provider table differs from the generator")
+        if aliases != wanted_aliases:
+            reasons.append("llmctl's model table differs from the generator")
+        if not _same_default(default, wanted_default):
+            reasons.append(f"default_model reads {_kimi_shown(default)}, expected {_kimi_shown(wanted_default)}")
+        if foreign != snapshot.foreign:
+            reasons.append("the lines outside llmctl's tables changed since the run started")
+        if reasons:
+            shown = {"provider": {"found": _withhold_key(provider), "wanted": wanted_provider},
+                     "models": {"found": [[name, _withhold_key(table)] for name, table in aliases],
+                                "wanted": [[name, table] for name, table in wanted_aliases]},
+                     "default_model": {"found": _kimi_recorded(default), "wanted": _kimi_recorded(wanted_default)},
+                     "failed": reasons}
+            (text,), _ = self.guarded(json.dumps(shown, indent=2, ensure_ascii=False, default=str) + "\n")
+            self.record(step.name, text)
         return reasons
 
     def web(self, step: Step, argv: list[str], folder: Path, extra_env: Mapping[str, str]) -> list[str]:
@@ -1105,7 +1304,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--set-default-round-trip", action="store_true",
                         help="after the matrix, run up --set-default, check every client, then restore the defaults")
     parser.add_argument("--skip-dsh", action="store_true",
-                        help=f"leave dsh out: no dsh steps, and LLMCTL_CLIENTS={SKIP_DSH_CLIENTS} for every command")
+                        help="leave dsh out: no dsh steps, and LLMCTL_CLIENTS without dsh for every command")
+    parser.add_argument("--skip-kimi", action="store_true",
+                        help="leave Kimi out: no Kimi steps, and LLMCTL_CLIENTS without kimi for every command")
     return parser
 
 
@@ -1149,7 +1350,7 @@ def _run_round_trip(run: _Run, steps: list[Step], catalog) -> None:
 
     restored: list[list[str]] = []
     try:
-        round_trip(run.host, check, report=restored.append, dsh=run.dsh, target=target)
+        round_trip(run.host, check, report=restored.append, dsh=run.dsh, kimi=run.kimi, target=target)
     except (LlmctlError, OSError) as exc:
         run.add(ROUND_TRIP, "check", [f"{type(exc).__name__}: {exc}"], 0.0)
     run.add(ROUND_TRIP, "restore", restored[0] if restored else ["the restore did not run"], 0.0)
@@ -1213,19 +1414,84 @@ def _home_snapshot(env: Mapping[str, str]) -> tuple[str | None, bool]:
     return text, dsh_config.holds_default(env)
 
 
+@dataclass(frozen=True)
+class KimiSnapshot:
+    text: str | None  # Kimi's config.toml at the start, None when it is missing
+    foreign: tuple[str, ...]  # its lines outside llmctl's tables
+    default: object  # its default_model, kimi_config.MISSING when it has none
+
+
+def _kimi_snapshot(env: Mapping[str, str]) -> KimiSnapshot:
+    """Kimi's config.toml at the start (Kimi design D11); an unreadable or invalid file raises ClientError."""
+    state = kimi_config.read_state(env)
+    if state is None:
+        return KimiSnapshot(None, (), kimi_config.MISSING)
+    return KimiSnapshot(state.text, tuple(kimi_config.foreign_lines(state.path, state.text)), state.default)
+
+
+def kimi_refusal(host, env: Mapping[str, str]) -> str | None:
+    """Why the Kimi steps cannot run here, else None (Kimi design D11 refusals 1 to 3); it runs no command and
+    opens no credential file."""
+    state = next(state for state in clients.client_states(host) if state.name == "kimi")
+    if not state.active:
+        return f"Kimi is not installed here ({state.reason}); install it, or run with --skip-kimi"
+    names = sorted(name for name in env if name.startswith("KIMI_MODEL_"))
+    if names:
+        return (f"KIMI_MODEL_ variables are set in this shell ({', '.join(names)}), and they change which model Kimi "
+                "uses and what it sends; unset them for the e2e, or run with --skip-kimi")
+    if host.which("rg") is None:
+        return ("no rg on PATH, so Kimi's Grep tool would download ripgrep from Kimi's CDN into the private home; "
+                "install ripgrep (sudo apt install ripgrep), or run with --skip-kimi")
+    if host.which("fd") is None and host.which("fdfind") is None:
+        return ("neither fd nor fdfind is on PATH, so Kimi's Glob tool would download fd from Kimi's CDN into the "
+                "private home; install fd-find (sudo apt install fd-find), or run with --skip-kimi")
+    return None
+
+
+def kimi_default_refusal(env: Mapping[str, str], snapshot: KimiSnapshot) -> str | None:
+    """Why llmctl's default edit, which every matrix Kimi session applies to its private copy, cannot change the
+    file's default_model, else None (Kimi design D11)."""
+    if snapshot.text is None:
+        return None
+    path = kimi_config.config_path(env)
+    try:
+        kimi_config.default_text(path, snapshot.text, "llmctl/local")
+    except ClientError:
+        return (f"Kimi's default_model in {path} is written in a form that llmctl's default edit cannot change, and "
+                "every Kimi session of the e2e needs that edit; fix default_model, or run with --skip-kimi")
+    return None
+
+
+def _kimi_extra(work_root: Path, name: str) -> dict[str, str]:
+    """The private folders of one Kimi command (Kimi design D11, O2): its Kimi home (mode 0700), TMPDIR and an
+    empty HOME under the work root, the run's one Kimi cache (mode 0700), and the three switches."""
+    home, tmp, user_home = (work_root / f"{name}{suffix}" for suffix in (".kimi", ".tmp", ".home"))
+    home.mkdir(mode=0o700)
+    os.chmod(home, 0o700)
+    tmp.mkdir()
+    user_home.mkdir()
+    cache = work_root / "kimi-cache"
+    if not cache.is_dir():
+        cache.mkdir(mode=0o700)
+        os.chmod(cache, 0o700)
+    return {"KIMI_CODE_HOME": str(home), "KIMI_CODE_CACHE_DIR": str(cache), "TMPDIR": str(tmp),
+            "HOME": str(user_home), **dict(kimi_config.SWITCHES)}
+
+
 def main(argv: list[str] | None = None, *, make_host: Callable[[dict[str, str]], RealHost] = RealHost) -> int:
     args = build_parser().parse_args(argv)
-    dsh_snapshot = None
+    dsh_snapshot = kimi_snapshot = None
     try:
         if "LLMCTL_CLIENTS" in os.environ:
-            raise UsageError("unset LLMCTL_CLIENTS: the e2e checks all four clients, or three with --skip-dsh")
-        env = driver_env(os.environ, skip_dsh=args.skip_dsh)
+            raise UsageError("unset LLMCTL_CLIENTS: the e2e checks all five clients, or fewer with --skip-dsh and "
+                             "--skip-kimi")
+        env = driver_env(os.environ, skip_dsh=args.skip_dsh, skip_kimi=args.skip_kimi)
         os.environ.pop("LLMCTL_SET_DEFAULT", None)  # RealHost.run passes os.environ to hermes profile use
         host = make_host(env)
         catalog = load_catalog(REPO / "recipes", override_dir(env))
         matrix = MATRICES[args.matrix]
         steps = plan_steps(catalog, matrix, round_trip=args.set_default_round_trip, keep_running=args.keep_running,
-                           dsh=not args.skip_dsh)
+                           dsh=not args.skip_dsh, kimi=not args.skip_kimi)
         running = running_servers(host)
         if running is not None:  # the first up --replace would stop the owner's server
             raise UsageError(f"an llmctl model server is running ({running}); stop it with ./llmctl down, "
@@ -1235,9 +1501,20 @@ def main(argv: list[str] | None = None, *, make_host: Callable[[dict[str, str]],
             if refusal is not None:
                 raise UsageError(refusal)
             dsh_snapshot = _home_snapshot(env)  # damaged markers or an unreadable file refuse here, too
+        if not args.skip_kimi:
+            refusal = kimi_refusal(host, env)
+            if refusal is not None:
+                raise UsageError(refusal)
+            kimi_snapshot = _kimi_snapshot(env)  # an unreadable or invalid config.toml refuses here (D11 item 4)
         if args.set_default_round_trip:
-            snapshot_defaults(env)  # refuse before the first server starts when OpenCode has no model to restore
+            # refuse before the first server starts when OpenCode has no model to restore, or Kimi's default_model
+            # is not a string (D11 item 5)
+            snapshot_defaults(env, kimi=not args.skip_kimi)
             refusal = round_trip_refusal(catalog, env)
+            if refusal is not None:
+                raise UsageError(refusal)
+        if kimi_snapshot is not None:
+            refusal = kimi_default_refusal(env, kimi_snapshot)
             if refusal is not None:
                 raise UsageError(refusal)
         out = Path(args.out).resolve()  # the clients run in other folders, so a relative path would move
@@ -1250,9 +1527,10 @@ def main(argv: list[str] | None = None, *, make_host: Callable[[dict[str, str]],
         return 1
     sys.stdout.write(f"records in {out}; work folders in {work_root}, left in place after the run\n")
     sys.stdout.flush()
-    run = _Run(out, catalog, host, env, work_root, dsh_snapshot=dsh_snapshot)
+    run = _Run(out, catalog, host, env, work_root, dsh_snapshot=dsh_snapshot, kimi_snapshot=kimi_snapshot)
     versions = [["hermes", "--version"], ["pi", "--version"], ["opencode", "--version"]]
     versions += [["dsh", "--version"]] if run.dsh else []
+    versions += [["kimi", "--version"]] if run.kimi else []
     for argv_ in versions + [["nvidia-smi", "--query-gpu=power.limit", "--format=csv,noheader"]]:
         extra_env, cwd = None, REPO
         if argv_[0] == "dsh":  # dsh design D9: every dsh command of the e2e runs in a fresh work folder, with
@@ -1261,6 +1539,10 @@ def main(argv: list[str] | None = None, *, make_host: Callable[[dict[str, str]],
             cwd.mkdir()
             tmp.mkdir()
             extra_env = {"DSH_TELEMETRY_DISABLED": "1", "TMPDIR": str(tmp)}
+        if argv_[0] == "kimi":  # Kimi design D11: in a fresh work folder with its own private Kimi home
+            cwd = work_root / "kimi-version"
+            cwd.mkdir()
+            extra_env = _kimi_extra(work_root, "kimi-version")
         if run.command(argv_[0] + " version", argv_, cwd, 60, extra_env=extra_env)[3]:
             sys.stderr.write(f"{argv_[0]} version: {WITHHELD_REASON}\n")
     try:

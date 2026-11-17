@@ -32,7 +32,7 @@ Start a measured model by name with [llmctl](docs/llmctl.md), which applies the 
 | CPU | Intel Core Ultra 9 290HX Plus, 24 cores |
 | RAM | 61 GiB usable, about 40 GiB free with the desktop running |
 | Disk | 2 TB NVMe; the model cache lives under /home |
-| Software | Ubuntu 26.04.1, Docker 29.9.3, Compose v5.7.1, OpenCode v2.3.0, Hermes Agent v0.23.1, Pi 1.5.2, DeepSeek Harness 0.2.2-rc.3 |
+| Software | Ubuntu 26.04.1, Docker 29.9.3, Compose v5.7.1, OpenCode v2.3.0, Hermes Agent v0.23.1, Pi 1.5.2, DeepSeek Harness 0.2.2-rc.3, Kimi Code CLI 2.5.3 |
 | NVIDIA Container Toolkit | 1.20.1, installed 2026-11-15; CDI, the `nvidia` Docker runtime and a CUDA kernel in a container verified ([install record](research/2026-11-15/probes/toolkit-install.md)) |
 | Not installed | Ollama and llama.cpp on the host (both run as containers instead) |
 
@@ -45,7 +45,7 @@ The bandwidth figure is NVIDIA's laptop specification ([NVIDIA](https://www.nvid
 | Path | What it covers |
 |---|---|
 | [docs/llmctl.md](docs/llmctl.md) | `./llmctl`: start a measured recipe by name, the client entries it writes, the rules it enforces, the recipe format, overrides for another machine |
-| [docs/clients.md](docs/clients.md) | Hermes Agent v0.23.1, Pi 1.5.2 and DeepSeek Harness 0.2.2-rc.3 with the local servers: the entries llmctl writes, thinking per type, the gateway and sticky-profile side effects, dsh's home patch and default, silent fallbacks |
+| [docs/clients.md](docs/clients.md) | Hermes Agent v0.23.1, Pi 1.5.2, DeepSeek Harness 0.2.2-rc.3 and Kimi Code CLI 2.5.3 with the local servers: the entries llmctl writes, thinking per type, the gateway and sticky-profile side effects, dsh's home patch and default, Kimi's `[providers.llmctl]` and `[models."llmctl/<served name>"]` tables and `default_model`, silent fallbacks |
 | [docs/model-selection.md](docs/model-selection.md) | Ranked picks with evidence, capability lists, new candidates, exclusions and what to measure first |
 | [docs/host-setup.md](docs/host-setup.md) | NVIDIA Container Toolkit, CDI, Compose GPU syntax, localhost-only ports, memory caps, laptop power, model cache |
 | [docs/opencode.md](docs/opencode.md) | OpenCode v2.3.0 provider config (schema-validated), thinking variants, context budget, known issues, remote trials |
@@ -60,7 +60,7 @@ The bandwidth figure is NVIDIA's laptop specification ([NVIDIA](https://www.nvid
 | [docs/agent-harness-evidence.md](docs/agent-harness-evidence.md) | First-hand tool-loop results from the user's LibreDB Studio harness (measured on the M5 Max), what transfers to this laptop, and which models to try first |
 | [research/2026-11-15/](research/2026-11-15/README.md) | Raw research records behind these documents (discovery, verification, source reviews, ranking, writer and reviewer reports, the no-toolkit GPU probe) |
 | [research/2026-11-16/](research/2026-11-16/README.md) | Measurement records from this laptop: gpt-oss-20b on llama.cpp and vLLM, Qwen3.8-27B, Qwen3.6-35B-A3B and Gemma 4 26B-A4B with their tuning variants, K2 Horizon 7B with an f16 KV check, K2 Horizon MoVA, Qwen3-Coder-Next with offload and KV variants, Nemotron 3.5 Bolt, Groot-19B-A3B, DeepSeek-R1-0528-Qwen3-8B, Nemotron 3.5 Lightning, five Ollama 0.40.16 cross-checks of LibreDB Studio models, the launch plans for the next eight models, and the LibreDB Studio review |
-| [research/2026-11-17/](research/2026-11-17/README.md) | vLLM measurement records from this laptop: Mellum2.1, K2 Horizon 7B, Qwen3.5-9B, Gemma 4 12B, Gemma 4 E4B and Groot-19B-A3B measured, and DeepSeek-R1-0528-Qwen3-8B failed on its tokenizer; the llmctl clients e2e over every recipe with Hermes, Pi and dsh, and with OpenCode for every recipe that has an OpenCode entry (`llmctl-dsh-e2e/`), the first e2e run's summary and cited records (`llmctl-dsh-e2e-run1/`), and the dsh Web UI checklist (`llmctl-dsh-web/`) |
+| [research/2026-11-17/](research/2026-11-17/README.md) | vLLM measurement records from this laptop: Mellum2.1, K2 Horizon 7B, Qwen3.5-9B, Gemma 4 12B, Gemma 4 E4B and Groot-19B-A3B measured, and DeepSeek-R1-0528-Qwen3-8B failed on its tokenizer; the llmctl clients e2e over every recipe with Hermes, Pi and dsh, and with OpenCode for every recipe that has an OpenCode entry (`llmctl-dsh-e2e/`), the first e2e run's summary and cited records (`llmctl-dsh-e2e-run1/`), the dsh Web UI checklist (`llmctl-dsh-web/`), and the Kimi Code CLI stub evidence behind the Kimi entry (`llmctl-kimi-stub/`) |
 
 ## Current picks
 

@@ -1,0 +1,19 @@
+default_model = "llmctl/deepseek-r1-8b"
+[providers.llmctl]
+type = "openai"
+base_url = "http://127.0.0.1:8000/v1"
+api_key = "no-key-required"
+model_source = "static"
+
+
+
+[models."llmctl/deepseek-r1-8b"]
+provider = "llmctl"
+model = "deepseek-r1-8b"
+display_name = "deepseek-r1-0528-qwen3-8b on vLLM (llmctl)"
+max_context_size = 65536
+max_output_size = 16384
+capabilities = []
+
+
+

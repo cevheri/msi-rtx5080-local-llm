@@ -8,15 +8,16 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from launcher import dsh_config, hermes_config, pi_config
+from launcher import dsh_config, hermes_config, kimi_config, pi_config
 from launcher.catalog import load_catalog
 from launcher.tests.fakes import REPO
 from launcher.tests.regen_golden import CLIENT_GOLDEN, GOLDEN, golden_argv, target_for
 
-CLIENT_MODULES = ["files.py", "hermes_config.py", "pi_config.py", "opencode_config.py", "clients.py", "dsh_config.py"]
+CLIENT_MODULES = ["files.py", "hermes_config.py", "pi_config.py", "opencode_config.py", "clients.py", "dsh_config.py",
+                  "kimi_config.py"]
 ADAPTERS = ["runtimes/llamacpp.py", "runtimes/vllm.py"]
 CLIENT_IMPORTS = {"launcher.files", "launcher.clients", "launcher.hermes_config", "launcher.pi_config",
-                  "launcher.opencode_config", "launcher.dsh_config"}
+                  "launcher.opencode_config", "launcher.dsh_config", "launcher.kimi_config"}
 
 
 def edit_runtime(directory: Path, port: int, extra_arg: str) -> None:
@@ -66,6 +67,8 @@ class IsolationTest(unittest.TestCase):
                                 f"the edit did not reach the Pi entry of {edited}/{recipe_id}")
             self.assertNotEqual(texts[2], (CLIENT_GOLDEN / edited / f"{recipe_id}.dsh.yml").read_text(),
                                 f"the edit did not reach the dsh block of {edited}/{recipe_id}")
+            self.assertNotEqual(texts[3], (CLIENT_GOLDEN / edited / f"{recipe_id}.kimi.toml").read_text(),
+                                f"the edit did not reach the Kimi tables of {edited}/{recipe_id}")
         for recipe_id in catalog.runtimes[untouched].recipes:
             texts = self.client_texts(recipe_id, untouched)
             self.assertEqual(texts[0], (CLIENT_GOLDEN / untouched / f"{recipe_id}.hermes.yaml").read_text(),
@@ -74,11 +77,13 @@ class IsolationTest(unittest.TestCase):
                              f"{untouched}/{recipe_id}.pi.json")
             self.assertEqual(texts[2], (CLIENT_GOLDEN / untouched / f"{recipe_id}.dsh.yml").read_text(),
                              f"{untouched}/{recipe_id}.dsh.yml")
+            self.assertEqual(texts[3], (CLIENT_GOLDEN / untouched / f"{recipe_id}.kimi.toml").read_text(),
+                             f"{untouched}/{recipe_id}.kimi.toml")
 
-    def client_texts(self, recipe_id: str, runtime: str) -> tuple[str, str, str]:
+    def client_texts(self, recipe_id: str, runtime: str) -> tuple[str, str, str, str]:
         target = target_for(recipe_id, runtime, self.recipes)
         return (hermes_config.render_block(target), pi_config.new_models_text(target),
-                dsh_config.render_block(target, default=True))
+                dsh_config.render_block(target, default=True), kimi_config.render_tables(target))
 
     def test_llamacpp_edits_leave_vllm_alone(self):
         edit_runtime(self.recipes / "llamacpp", 8090, "--metrics")
@@ -138,6 +143,13 @@ class ClientBoundaryTest(unittest.TestCase):
     def test_dsh_config_imports_no_other_client_module(self):
         others = {"launcher.clients", "launcher.hermes_config", "launcher.pi_config", "launcher.opencode_config"}
         bad = [m for m in imported_modules(parse_module("dsh_config.py"))
+               if m in others or m == "launcher.runtimes" or m.startswith("launcher.runtimes.")]
+        self.assertEqual(bad, [])
+
+    def test_kimi_config_imports_no_other_client_module(self):
+        others = {"launcher.clients", "launcher.hermes_config", "launcher.pi_config", "launcher.opencode_config",
+                  "launcher.dsh_config"}
+        bad = [m for m in imported_modules(parse_module("kimi_config.py"))
                if m in others or m == "launcher.runtimes" or m.startswith("launcher.runtimes.")]
         self.assertEqual(bad, [])
 

@@ -134,11 +134,13 @@ def up(host, catalog, name: str, runtime_name: str | None, *, replace: bool, dry
             return 130
         out.write(f"ready: http://127.0.0.1:{runtime.host_port}/v1, served as '{target.served}', "
                   f"context {recipe.context}, output {recipe.clients.output}\n")
-        result = clients.apply(host, catalog, target, set_default=set_default, dsh_checked=plan.dsh_checked)
+        result = clients.apply(host, catalog, target, set_default=set_default, dsh_checked=plan.dsh_checked,
+                               kimi_checked=plan.kimi_checked)
         for line in result.lines:
             out.write(line + "\n")
     for line in clients.up_lines(host, target, plan.states, up_command=up_command(recipe), changed=result.changed,
-                                 failed=result.failed, default_failed=result.default_failed, dsh_old=result.dsh_old):
+                                 failed=result.failed, default_failed=result.default_failed, dsh_old=result.dsh_old,
+                                 kimi_old=result.kimi_old):
         out.write(line + "\n")
     if recipe.chat_only:
         out.write("note: chat only, no tool calling\n")

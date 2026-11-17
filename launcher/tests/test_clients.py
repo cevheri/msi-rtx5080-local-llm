@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from launcher import clients, dsh_config, hermes_config, pi_config
+from launcher import clients, dsh_config, hermes_config, kimi_config, pi_config
 from launcher.catalog import load_catalog
 from launcher.errors import ClientError, UsageError
 from launcher.host import Result
@@ -13,16 +13,17 @@ from launcher.tests.client_fixture import LIST_HEADER, ClientFixture
 from launcher.tests.fakes import REPO, FakeHost, fail, ok
 from launcher.tests.regen_golden import target_for
 from launcher.tests.test_dsh_config import dsh_fixture
+from launcher.tests.test_kimi_config import DESIGN_OWNER_FIRST_WRITE, EMPTY_MESSAGE, OWNER_TEXT
 
 ALL_BINARIES = {"opencode": "/usr/bin/opencode", "hermes": "/usr/bin/hermes", "pi": "/usr/bin/pi",
-                "dsh": "/usr/bin/dsh"}
+                "dsh": "/usr/bin/dsh", "kimi": "/usr/bin/kimi"}
 
 
 class DetectionTest(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.home = Path(self.tmp.name)
-        for folder in (".config/opencode", ".hermes", ".pi/agent", ".dsh/profiles"):
+        for folder in (".config/opencode", ".hermes", ".pi/agent", ".dsh/profiles", ".kimi-code"):
             (self.home / folder).mkdir(parents=True)
 
     def tearDown(self):
@@ -39,13 +40,14 @@ class DetectionTest(unittest.TestCase):
     def test_all_installed(self):
         host = self.host(ALL_BINARIES)
         states = clients.client_states(host)
-        self.assertEqual([s.name for s in states], ["opencode", "hermes", "pi", "dsh"])
-        self.assertEqual([s.active for s in states], [True, True, True, True])
-        self.assertEqual([s.reason for s in states], [None, None, None, None])
-        self.assertEqual([s.label for s in states], ["OpenCode", "Hermes", "Pi", "dsh"])
+        self.assertEqual([s.name for s in states], ["opencode", "hermes", "pi", "dsh", "kimi"])
+        self.assertEqual([s.active for s in states], [True, True, True, True, True])
+        self.assertEqual([s.reason for s in states], [None, None, None, None, None])
+        self.assertEqual([s.label for s in states], ["OpenCode", "Hermes", "Pi", "dsh", "Kimi"])
         self.assertEqual(self.by_name(states)["pi"].root, self.home / ".pi/agent")
         self.assertEqual(self.by_name(states)["dsh"].root, self.home / ".dsh")
-        self.assertEqual(clients.clients_line(host, states), "clients: opencode, hermes, pi, dsh")
+        self.assertEqual(self.by_name(states)["kimi"].root, self.home / ".kimi-code")
+        self.assertEqual(clients.clients_line(host, states), "clients: opencode, hermes, pi, dsh, kimi")
 
     def test_binary_missing_but_root_present(self):
         host = self.host({k: v for k, v in ALL_BINARIES.items() if k != "pi"})
@@ -56,7 +58,7 @@ class DetectionTest(unittest.TestCase):
         self.assertFalse(pi.active)
         self.assertEqual(pi.reason, "no pi on PATH")
         line = clients.clients_line(host, states)
-        self.assertEqual(line, "clients: opencode, hermes, dsh (pi: not installed, no pi on PATH)")
+        self.assertEqual(line, "clients: opencode, hermes, dsh, kimi (pi: not installed, no pi on PATH)")
 
     def test_root_missing(self):
         (self.home / ".hermes").rmdir()
@@ -66,7 +68,7 @@ class DetectionTest(unittest.TestCase):
         self.assertFalse(hermes.installed)
         self.assertEqual(hermes.reason, f"no {self.home}/.hermes")
         self.assertEqual(clients.clients_line(host, states),
-                         f"clients: opencode, pi, dsh (hermes: not installed, no {self.home}/.hermes)")
+                         f"clients: opencode, pi, dsh, kimi (hermes: not installed, no {self.home}/.hermes)")
 
     def test_llmctl_clients_subset(self):
         host = self.host(ALL_BINARIES, LLMCTL_CLIENTS=" pi , opencode")
@@ -78,7 +80,7 @@ class DetectionTest(unittest.TestCase):
         self.assertEqual(hermes.reason, "left out by LLMCTL_CLIENTS")
         self.assertEqual(clients.clients_line(host, states),
                          "clients: opencode, pi (hermes: left out by LLMCTL_CLIENTS) "
-                         "(dsh: left out by LLMCTL_CLIENTS)")
+                         "(dsh: left out by LLMCTL_CLIENTS) (kimi: left out by LLMCTL_CLIENTS)")
 
     def test_disabled_client_binary_is_not_looked_up(self):
         host = self.host(ALL_BINARIES, LLMCTL_CLIENTS="opencode")
@@ -90,7 +92,7 @@ class DetectionTest(unittest.TestCase):
     def test_llmctl_clients_empty(self):
         host = self.host(ALL_BINARIES, LLMCTL_CLIENTS="")
         states = clients.client_states(host)
-        self.assertEqual([s.active for s in states], [False, False, False, False])
+        self.assertEqual([s.active for s in states], [False, False, False, False, False])
         self.assertEqual(clients.clients_line(host, states), "clients: none (LLMCTL_CLIENTS is empty)")
 
     def test_llmctl_clients_unknown_name(self):
@@ -99,7 +101,7 @@ class DetectionTest(unittest.TestCase):
             clients.client_states(host)
         self.assertEqual(caught.exception.exit_code, 1)
         self.assertEqual(str(caught.exception),
-                         "LLMCTL_CLIENTS: unknown client 'claude'; use opencode, hermes, pi or dsh, comma-separated, "
+                         "LLMCTL_CLIENTS: unknown client 'claude'; use opencode, hermes, pi, dsh or kimi, comma-separated, "
                          "or an empty value for none")
 
     def test_listed_client_missing_refuses(self):
@@ -117,7 +119,7 @@ class DetectionTest(unittest.TestCase):
         self.assertEqual(clients.clients_line(host, states),
                          "clients: none (opencode: not installed, no opencode on PATH)"
                          " (hermes: not installed, no hermes on PATH) (pi: not installed, no pi on PATH)"
-                         " (dsh: not installed, no dsh on PATH)")
+                         " (dsh: not installed, no dsh on PATH) (kimi: not installed, no kimi on PATH)")
 
     def test_dsh_needs_its_profiles_folder(self):
         (self.home / ".dsh/profiles").rmdir()
@@ -127,7 +129,7 @@ class DetectionTest(unittest.TestCase):
         self.assertFalse(dsh.installed)
         self.assertEqual(dsh.reason, f"no {self.home}/.dsh/profiles")
         self.assertEqual(clients.clients_line(host, states),
-                         f"clients: opencode, hermes, pi (dsh: not installed, no {self.home}/.dsh/profiles)")
+                         f"clients: opencode, hermes, pi, kimi (dsh: not installed, no {self.home}/.dsh/profiles)")
 
     def test_dsh_home_comes_from_the_mapping(self):
         (self.home / "dh/profiles").mkdir(parents=True)
@@ -144,7 +146,7 @@ class DetectionTest(unittest.TestCase):
         self.assertEqual(str(caught.exception), "DSH_HOME is relative (rel), and dsh resolves it against each "
                                                 "command's working folder; set it to an absolute path, ~ or ~/...")
         host = self.host(ALL_BINARIES, DSH_HOME="rel", LLMCTL_CLIENTS="pi")
-        self.assertEqual([s.active for s in clients.client_states(host)], [False, False, True, False])
+        self.assertEqual([s.active for s in clients.client_states(host)], [False, False, True, False, False])
 
     def test_listed_dsh_missing_refuses(self):
         host = self.host({}, LLMCTL_CLIENTS="dsh")
@@ -154,6 +156,48 @@ class DetectionTest(unittest.TestCase):
         self.assertEqual(caught.exception.exit_code, 3)
         self.assertEqual(str(caught.exception),
                          "LLMCTL_CLIENTS names dsh, but dsh is not installed here: no dsh on PATH")
+
+    def test_kimi_needs_its_home_folder(self):
+        (self.home / ".kimi-code").rmdir()
+        host = self.host(ALL_BINARIES)
+        states = clients.client_states(host)
+        kimi = self.by_name(states)["kimi"]
+        self.assertFalse(kimi.installed)
+        self.assertEqual(kimi.reason, f"no {self.home}/.kimi-code")
+        self.assertEqual(clients.clients_line(host, states),
+                         f"clients: opencode, hermes, pi, dsh (kimi: not installed, no {self.home}/.kimi-code)")
+
+    def test_kimi_home_comes_from_the_mapping(self):
+        (self.home / "kh").mkdir()
+        host = self.host(ALL_BINARIES, KIMI_CODE_HOME=str(self.home / "kh"))
+        kimi = self.by_name(clients.client_states(host))["kimi"]
+        self.assertTrue(kimi.active)
+        self.assertEqual(kimi.root, self.home / "kh")
+        (self.home / "kh").rmdir()
+        kimi = self.by_name(clients.client_states(host))["kimi"]
+        self.assertEqual(kimi.reason, f"no {self.home}/kh")
+
+    def test_empty_and_relative_kimi_home_are_usage_errors(self):
+        relative = ("KIMI_CODE_HOME is relative (rel), and Kimi uses it as given, against each command's working "
+                    "folder; set it to an absolute path, or unset it for ~/.kimi-code")
+        for value, message in (("", EMPTY_MESSAGE), ("rel", relative)):
+            with self.subTest(value=value):
+                host = self.host(ALL_BINARIES, KIMI_CODE_HOME=value)
+                with self.assertRaises(UsageError) as caught:
+                    clients.client_states(host)
+                self.assertEqual(caught.exception.exit_code, 1)
+                self.assertEqual(str(caught.exception), message)
+                host = self.host(ALL_BINARIES, KIMI_CODE_HOME=value, LLMCTL_CLIENTS="pi")
+                self.assertEqual([s.active for s in clients.client_states(host)], [False, False, True, False, False])
+
+    def test_listed_kimi_missing_refuses(self):
+        host = self.host({}, LLMCTL_CLIENTS="kimi")
+        states = clients.client_states(host)
+        with self.assertRaises(ClientError) as caught:
+            clients.require_listed(host, states)
+        self.assertEqual(caught.exception.exit_code, 3)
+        self.assertEqual(str(caught.exception),
+                         "LLMCTL_CLIENTS names kimi, but Kimi is not installed here: no kimi on PATH")
 
     def test_llmctl_providers(self):
         catalog = load_catalog(REPO / "recipes", None)
@@ -211,7 +255,7 @@ class PlanApplyTest(unittest.TestCase):
         self.assertEqual(self.fx.snapshot(), before)
         self.assertEqual([change.path for change in result.changes],
                          [self.fx.opencode_path, self.fx.hermes_config, self.fx.models_path, self.fx.settings_path])
-        self.assertEqual([state.name for state in result.states], ["opencode", "hermes", "pi", "dsh"])
+        self.assertEqual([state.name for state in result.states], ["opencode", "hermes", "pi", "dsh", "kimi"])
         self.assertFalse(result.hermes_use)
         self.assertTrue(result.pi_active)
 
@@ -707,6 +751,7 @@ class ReportTest(unittest.TestCase):
             "  Pi: llmctl/local for qwen3.6-35b-a3b on llama.cpp, the running model; default llmctl/local, "
             f"thinking off ({agent})",
             "  dsh: not installed (no dsh on PATH)",
+            "  Kimi: not installed (no kimi on PATH)",
         ])
 
     def test_status_other_states(self):
@@ -762,9 +807,9 @@ class ReportTest(unittest.TestCase):
         ]
         lines = self.report(None)
         self.assertEqual(lines[-3:], warnings)
-        self.assertEqual(len(lines), 8)
+        self.assertEqual(len(lines), 9)
         quiet = self.report(None, running_known=False)
-        self.assertEqual(len(quiet), 5)
+        self.assertEqual(len(quiet), 6)
         self.assertFalse([line for line in quiet if "but no model is running" in line])
 
     def test_no_warning_for_a_default_elsewhere(self):
@@ -1100,6 +1145,356 @@ class DshClientTest(unittest.TestCase):
         ])
         self.write_patch(TELEMETRY + dsh_config.new_home_text(self.old_target, default=False))
         self.assertEqual(self.down_lines(), [])
+
+
+KIMI_VERSION = ["kimi", "--version"]
+KIMI_LIST = ["kimi", "provider", "list", "--json"]
+KIMI_CALLS = [KIMI_VERSION, KIMI_LIST]
+READ_BACK = "the file changed while llmctl wrote it, probably through Kimi; check it, then run ./llmctl up again"
+
+
+class KimiClientTest(unittest.TestCase):
+    """Kimi as the fifth client: the D10 starting file, with Kimi alone unless a test says otherwise."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.catalog = load_catalog(REPO / "recipes", None)
+        cls.target = target_for("qwen3.6-35b-a3b", "llamacpp", REPO / "recipes")
+        cls.old_target = target_for("gpt-oss-20b", "vllm", REPO / "recipes")
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.host = FakeHost(env={"HOME": "/nonexistent", "PATH": "/usr/bin", "LLMCTL_CLIENTS": "kimi"})
+        self.fx = ClientFixture(self.host, Path(self.tmp.name))
+        self.fx.install("opencode", "hermes", "pi", "dsh", "kimi")
+        self.fx.route_clients()
+        self.fx.write_opencode("vllm-docker/gpt-oss-20b")
+        self.fx.hermes_config.parent.mkdir(parents=True)
+        self.fx.hermes_config.write_text(hermes_config.new_config_text(self.old_target), encoding="utf-8")
+        self.fx.models_path.write_text(pi_config.new_models_text(self.old_target), encoding="utf-8")
+        self.fx.settings_path.write_text(json.dumps(START_SETTINGS, indent=2) + "\n", encoding="utf-8")
+        with open(self.fx.home_patch, "w", encoding="utf-8", newline="") as handle:
+            handle.write(TELEMETRY + dsh_config.new_home_text(self.old_target, default=True))
+        Path(str(self.fx.home_patch) + ".llmctl-backup").write_text(TELEMETRY, encoding="utf-8")
+        self.path = self.fx.kimi_file
+        self.start = kimi_config.config_text(self.path, OWNER_TEXT, self.old_target, set_default=True)
+        self.write_config(self.start)
+        self.backup = Path(str(self.path) + ".llmctl-backup")
+        self.backup.write_text(OWNER_TEXT, encoding="utf-8")
+
+    def write_config(self, text):
+        with open(self.path, "w", encoding="utf-8", newline="") as handle:
+            handle.write(text)
+
+    def read_config(self):
+        with open(self.path, encoding="utf-8", newline="") as handle:
+            return handle.read()
+
+    def append_config(self, text):
+        with open(self.path, "a", encoding="utf-8", newline="") as handle:
+            handle.write(text)
+
+    def plan(self, *, set_default=False, check=True, target=None):
+        return clients.plan(self.host, self.catalog, target or self.target, set_default=set_default, check=check)
+
+    def apply(self, *, set_default=False, kimi_checked=None, target=None):
+        return clients.apply(self.host, self.catalog, target or self.target, set_default=set_default,
+                             kimi_checked=kimi_checked)
+
+    def report(self, target="running", *, with_paths=True, running_known=True):
+        target = self.target if target == "running" else target
+        return clients.report(self.host, self.catalog, target, with_paths=with_paths, running_known=running_known)
+
+    def kimi_change(self, planned):
+        found = [change for change in planned.changes if change.path == self.path]
+        self.assertEqual(len(found), 1, planned.changes)
+        return found[0]
+
+    def kimi_calls(self):
+        return [call for call in self.host.calls if call[0] == "kimi"]
+
+    def assert_others_written(self):
+        self.assertEqual(json.loads(self.fx.opencode_path.read_text(encoding="utf-8"))["model"],
+                         "llamacpp-docker/qwen3.6-35b-a3b")
+        self.assertEqual(self.fx.hermes_config.read_text(encoding="utf-8"), hermes_config.new_config_text(self.target))
+        self.assertEqual(self.fx.models_path.read_text(encoding="utf-8"), pi_config.new_models_text(self.target))
+        self.assertEqual(self.fx.home_patch.read_text(encoding="utf-8"),
+                         TELEMETRY + dsh_config.new_home_text(self.target, default=True))
+
+    def test_plan_checks_once(self):
+        planned = self.plan(check=True)
+        self.assertEqual(self.host.calls, KIMI_CALLS)
+        self.assertTrue(planned.kimi_active)
+        change = self.kimi_change(planned)
+        self.assertEqual(planned.kimi_checked, change.new_text)
+        self.assertEqual(planned.warnings, ())
+        self.assertEqual(change.summary, "provider llmctl and model llmctl/local for qwen3.6-35b-a3b on llama.cpp "
+                                         "(was gpt-oss-20b on vLLM); default_model llmctl/local "
+                                         "(was llmctl/gpt-oss-20b)")
+
+    def test_plan_without_check_runs_no_kimi(self):
+        with mock.patch("launcher.kimi_config.tempfile.mkdtemp", side_effect=AssertionError):
+            planned = self.plan(check=False)
+        self.assertEqual(self.host.calls, [])
+        self.assertTrue(planned.kimi_active)
+        self.assertIsNone(planned.kimi_checked)
+
+    def test_version_warning_is_planned(self):
+        self.host.on(KIMI_VERSION, ok("2.6.2\n"))
+        planned = self.plan(check=True)
+        self.assertEqual(planned.warnings, (
+            "warning: Kimi 2.6.2 is not 2.5.3, the version llmctl's Kimi entry was checked with; run the Kimi steps "
+            "of the e2e before relying on it (docs/clients.md#maintenance)",))
+
+    def test_dry_run_lines(self):
+        self.backup.unlink()
+        path = self.path
+        summary = self.kimi_change(self.plan(check=False)).summary
+        self.assertEqual(clients.dry_run_lines(self.plan(check=False)), [
+            f"would back up {path} to {path}.llmctl-backup",
+            f"would write {path}: {summary}",
+            "dry run: nothing was written, and Kimi has not checked llmctl's entry",
+        ])
+        for listed, ending in (
+                ("pi,kimi", "dry run: nothing was written, and neither Pi nor Kimi has checked llmctl's entries"),
+                ("dsh,kimi", "dry run: nothing was written, and neither dsh nor Kimi has checked llmctl's entries"),
+                ("pi,dsh", "dry run: nothing was written, and neither Pi nor dsh has checked llmctl's entries"),
+                ("pi,dsh,kimi", "dry run: nothing was written, and none of Pi, dsh and Kimi has checked llmctl's "
+                                "entries")):
+            with self.subTest(listed):
+                self.host.env["LLMCTL_CLIENTS"] = listed
+                self.assertEqual(clients.dry_run_lines(self.plan(check=False))[-1], ending)
+        self.assertEqual(self.host.calls, [])
+
+    def test_apply_skips_an_unchanged_check(self):
+        planned = self.plan(check=True)
+        summary = self.kimi_change(planned).summary
+        self.host.calls.clear()
+        result = self.apply(kimi_checked=planned.kimi_checked)
+        self.assertEqual(self.host.calls, [])
+        self.assertEqual(result.failures, ())
+        self.assertEqual(result.lines, (f"wrote {self.path}: {summary}",))
+        self.assertEqual(result.changed, frozenset({"kimi"}))
+        self.assertEqual(result.kimi_old.served, "gpt-oss-20b")
+        self.assertEqual(self.read_config(), planned.kimi_checked)
+
+    def test_apply_rechecks_a_changed_candidate(self):
+        planned = self.plan(check=True)
+        self.host.calls.clear()
+        self.append_config("[thinking]\nenabled = true\n")
+        result = self.apply(kimi_checked=planned.kimi_checked)
+        self.assertEqual(result.failures, ())
+        self.assertEqual(self.host.calls, KIMI_CALLS)
+        self.assertTrue(self.read_config().endswith("[thinking]\nenabled = true\n"), self.read_config())
+        self.assertTrue(kimi_config.entry_matches(kimi_config.read_state(self.host.env), self.target))
+
+    def test_apply_check_failure_is_collected(self):
+        planned = self.plan(check=True)
+        self.append_config("[thinking]\nenabled = true\n")
+        changed = self.read_config()
+        self.host.on(KIMI_LIST, ok('{"providers": {}, "models": {}}'))
+        result = self.apply(kimi_checked=planned.kimi_checked)
+        self.assertEqual(len(result.failures), 1, result.failures)
+        self.assertTrue(result.failures[0].startswith(
+            "Kimi 2.5.3 does not read llmctl's entry for qwen3.6-35b-a3b from the new config.toml: no provider llmctl"),
+            result.failures[0])
+        self.assertEqual(result.failed, frozenset({"kimi"}))
+        self.assertNotIn("kimi", result.changed)
+        self.assertEqual(self.read_config(), changed)
+
+    def test_kimi_write_failure_keeps_the_others(self):
+        del self.host.env["LLMCTL_CLIENTS"]
+        os.chmod(self.fx.kimi_home, 0o500)
+        self.addCleanup(os.chmod, self.fx.kimi_home, 0o700)
+        result = self.apply(set_default=True)
+        self.assertEqual(len(result.failures), 1, result.failures)
+        self.assertTrue(result.failures[0].startswith(f"{self.path}: "), result.failures[0])
+        self.assertEqual(result.failed, frozenset({"kimi"}))
+        self.assertEqual(self.read_config(), self.start)
+        self.assert_others_written()
+
+    def test_kimi_save_during_the_check_is_kept(self):
+        # Review Focus 5: an open Kimi TUI saves config.toml while llmctl's Kimi check runs.
+        planned = self.plan(check=True)
+        self.append_config("[loop_control]\nmax_steps_per_turn = 100\n")  # a changed candidate is checked again
+        answer = self.fx._kimi_list
+
+        def save_then_answer(argv):
+            self.append_config("[thinking]\nenabled = true\n")
+            return answer(argv)
+
+        self.host.on(KIMI_LIST, save_then_answer)
+        result = self.apply(kimi_checked=planned.kimi_checked)
+        self.assertEqual(result.failures, (f"{self.path}: {READ_BACK}",))
+        self.assertEqual(result.failed, frozenset({"kimi"}))
+        self.assertNotIn("kimi", result.changed)
+        self.assertTrue(self.read_config().endswith("[thinking]\nenabled = true\n"), self.read_config())
+        self.assertTrue(self.read_config().startswith(self.start))
+
+    def test_kimi_save_after_the_rename_fails_the_read_back(self):
+        # Review Focus 5: an open Kimi TUI saves config.toml right after llmctl's rename.
+        real_write = clients.write_atomic
+
+        def write_then_save(path, text, **kwargs):
+            real_write(path, text, **kwargs)
+            if Path(path) == self.path:
+                self.append_config("[thinking]\nenabled = false\n")
+
+        del self.host.env["LLMCTL_CLIENTS"]
+        with mock.patch("launcher.clients.write_atomic", side_effect=write_then_save):
+            result = self.apply(set_default=True)
+        self.assertEqual(result.failures, (f"{self.path}: {READ_BACK}",))
+        self.assertEqual(result.failed, frozenset({"kimi"}))
+        self.assertTrue(self.read_config().endswith("[thinking]\nenabled = false\n"), self.read_config())
+        self.assert_others_written()
+
+    def test_unchanged_config_is_still_checked(self):
+        current = kimi_config.config_text(self.path, self.start, self.target, set_default=False)
+        self.write_config(current)
+        seen = []
+        answer = self.fx._kimi_list
+
+        def listing(argv):
+            with open(Path(self.host.env_extras[-1]["KIMI_CODE_HOME"]) / "config.toml", encoding="utf-8",
+                      newline="") as handle:
+                seen.append(handle.read())
+            return answer(argv)
+
+        self.host.on(KIMI_LIST, listing)
+        planned = self.plan(check=True)
+        self.assertEqual(planned.changes, ())
+        self.assertEqual(planned.kimi_checked, current)
+        self.assertEqual(self.host.calls, KIMI_CALLS)
+        self.assertEqual(seen, [current])
+        result = self.apply()
+        self.assertEqual(result.failures, ())
+        self.assertEqual(result.lines, ())
+        self.assertNotIn("kimi", result.changed)
+        self.assertEqual(seen, [current, current])
+
+    def test_first_write_into_the_owner_file(self):
+        self.backup.unlink()
+        self.write_config(OWNER_TEXT)
+        os.chmod(self.path, 0o600)
+        gemma = target_for("gemma-4-26b-a4b", "llamacpp", REPO / "recipes")
+        result = self.apply(target=gemma)
+        self.assertEqual(result.failures, ())
+        self.assertEqual(result.lines, (
+            f"backed up {self.path} to {self.path}.llmctl-backup before the first change",
+            f"wrote {self.path}: provider llmctl and model llmctl/local for gemma-4-26b-a4b on llama.cpp (was absent)",
+        ))
+        self.assertEqual(self.read_config(), DESIGN_OWNER_FIRST_WRITE)
+        self.assertEqual(self.backup.read_text(encoding="utf-8"), OWNER_TEXT)
+        self.assertEqual(os.stat(self.backup).st_mode & 0o7777, 0o600)
+
+    def test_symlinked_config(self):
+        dotfiles = self.fx.home / "dotfiles"
+        dotfiles.mkdir()
+        target_file = dotfiles / "kimi.toml"
+        target_file.write_text(OWNER_TEXT, encoding="utf-8")
+        os.chmod(target_file, 0o640)
+        self.path.unlink()
+        self.backup.unlink()
+        self.path.symlink_to(target_file)
+        result = self.apply()
+        self.assertEqual(result.failures, ())
+        self.assertTrue(self.path.is_symlink())
+        self.assertEqual(os.readlink(self.path), str(target_file))
+        self.assertEqual(target_file.read_text(encoding="utf-8"),
+                         kimi_config.config_text(self.path, OWNER_TEXT, self.target, set_default=False))
+        self.assertEqual(os.stat(target_file).st_mode & 0o7777, 0o640)
+        self.assertFalse(os.path.islink(self.backup))
+        self.assertEqual(self.backup.read_text(encoding="utf-8"), OWNER_TEXT)
+        self.assertEqual(os.stat(self.backup).st_mode & 0o7777, 0o640)
+
+    def kimi_line(self, lines):
+        found = [line for line in lines if line.startswith("  Kimi: ")]
+        self.assertEqual(len(found), 1, lines)
+        return found[0]
+
+    def test_status_lines(self):
+        path = self.path
+        result = self.apply(set_default=True)
+        self.assertEqual(result.failures, ())
+        self.host.calls.clear()
+        self.assertEqual(self.kimi_line(self.report()), "  Kimi: llmctl/local for qwen3.6-35b-a3b on llama.cpp, the "
+                                                        f"running model; default llmctl/local ({path})")
+        self.assertFalse([line for line in self.report() if line.startswith(("warning:", "note:"))])
+        with self.subTest("default not set"):
+            self.write_config(kimi_config.config_text(path, OWNER_TEXT, self.target, set_default=False))
+            self.assertEqual(self.kimi_line(self.report()), "  Kimi: llmctl/local for qwen3.6-35b-a3b on llama.cpp, "
+                                                            f"the running model; default not set ({path})")
+        with self.subTest("no llmctl entry"):
+            self.write_config(OWNER_TEXT)
+            self.assertEqual(self.kimi_line(self.report()),
+                             f"  Kimi: no llmctl entry yet (the next ./llmctl up writes it) ({path})")
+            self.path.unlink()
+            self.assertEqual(self.kimi_line(self.report()),
+                             f"  Kimi: no llmctl entry yet (the next ./llmctl up writes it) ({path})")
+        with self.subTest("the starting state"):
+            self.write_config(self.start)
+            lines = self.report()
+            self.assertEqual(self.kimi_line(lines), "  Kimi: llmctl/gpt-oss-20b for gpt-oss-20b on vLLM, not the "
+                                                    "running model (run ./llmctl up again); default llmctl/gpt-oss-20b "
+                                                    f"({path})")
+            self.assertFalse([line for line in lines if line.startswith("warning: Kimi")], lines)
+        with self.subTest("no model running"):
+            self.write_config(self.start)
+            lines = self.report(None)
+            self.assertEqual(self.kimi_line(lines), "  Kimi: llmctl/gpt-oss-20b for gpt-oss-20b on vLLM; default "
+                                                    f"llmctl/gpt-oss-20b ({path})")
+            self.assertIn("warning: Kimi's default llmctl/gpt-oss-20b points at llmctl, but no model is running",
+                          lines)
+            self.assertFalse([line for line in self.report(None, running_known=False)
+                              if line.startswith("warning:")])
+        with self.subTest("invalid file"):
+            self.write_config(self.start + "[broken\n")
+            line = self.kimi_line(self.report())
+            self.assertTrue(line.startswith(f"  Kimi: cannot read {path}: "), line)
+            self.assertFalse(line.endswith(f" ({path})"), line)
+        with self.subTest("missing alias"):
+            self.write_config(kimi_config.default_text(path, self.start, "llmctl/gone"))
+            self.assertIn(f"warning: Kimi's default_model llmctl/gone names no model in {path}, so every kimi -p fails "
+                          '(Model "llmctl/gone" is not configured in config.toml.); pick a model with /model in kimi, '
+                          "or run ./llmctl up <model> --set-default", self.report())
+        with self.subTest("without paths"):
+            self.write_config(self.start)
+            self.assertEqual(self.kimi_line(self.report(with_paths=False)),
+                             "  Kimi: llmctl/gpt-oss-20b for gpt-oss-20b on vLLM, not the running model (run "
+                             "./llmctl up again); default llmctl/gpt-oss-20b")
+        with self.subTest("disabled"):
+            self.host.env["LLMCTL_CLIENTS"] = "pi"
+            self.assertEqual(self.kimi_line(self.report()), "  Kimi: disabled by LLMCTL_CLIENTS")
+        with self.subTest("not installed"):
+            self.host.env["LLMCTL_CLIENTS"] = "kimi"
+            del self.host.installed["kimi"]
+            self.assertEqual(self.kimi_line(self.report()), "  Kimi: not installed (no kimi on PATH)")
+        self.assertEqual(self.host.calls, [])
+
+    def down_lines(self):
+        return clients.down_lines(self.host, self.catalog, "qwen3.6-35b-a3b")
+
+    def test_down_lines_name_kimi(self):
+        del self.host.env["LLMCTL_CLIENTS"]
+        (self.fx.hermes_root / "active_profile").write_text("llmctl\n", encoding="utf-8")
+        self.fx.write_opencode("llamacpp-docker/qwen3.6-35b-a3b")
+        self.assertEqual(self.down_lines(), [
+            "OpenCode, Hermes, Pi, dsh and Kimi still point at qwen3.6-35b-a3b and get no answer until the next "
+            "./llmctl up",
+            "  switch back: OpenCode /models; hermes profile use default; Pi /model; dsh: delete the "
+            f"agent-default-model and acp lines in {self.fx.home_patch}; Kimi /model",
+            "  Kimi retries a stopped server for about two and a half minutes before a prompt fails",
+        ])
+        self.host.env["LLMCTL_CLIENTS"] = "kimi"
+        self.assertEqual(self.down_lines(), [
+            "Kimi still points at qwen3.6-35b-a3b and gets no answer until the next ./llmctl up",
+            "  switch back: Kimi /model",
+            kimi_config.RETRY_NOTE,
+        ])
+        self.write_config(kimi_config.default_text(self.path, self.start, "other/m"))
+        self.assertEqual(self.down_lines(), [])
+        self.assertEqual(self.host.calls, [])
 
 
 if __name__ == "__main__":
