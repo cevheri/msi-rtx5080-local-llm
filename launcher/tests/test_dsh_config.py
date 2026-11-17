@@ -12,6 +12,7 @@ from launcher.errors import ClientError, UsageError
 from launcher.host import Result
 from launcher.tests.fakes import REPO, FakeHost, fail, ok
 from launcher.tests.regen_golden import target_for
+from launcher.tests.sglang_fixture import recipes_with_sglang, registered
 
 RECIPES = REPO / "recipes"
 DSH_FIXTURES = REPO / "launcher/tests/fixtures/dsh"
@@ -275,6 +276,24 @@ class GenerateTest(unittest.TestCase):
 
     def test_no_tools_patch(self):
         self.assertEqual(dsh_config.no_tools_patch(), DESIGN_NO_TOOLS)
+
+    def test_chat_only_wording_follows_the_runtime(self):
+        # Design D11: the runtime fact refuses_tools_without_parser picks the line, not the label.
+        rows = "use dsh --profile headless --patch <file> with the rows in docs/clients.md#chat-only-recipes"
+        with tempfile.TemporaryDirectory() as tmp, registered():
+            sglang = target_for("deepseek-r1-0528-qwen3-8b", "sglang", recipes_with_sglang(Path(tmp)))
+        refusing = dataclasses.replace(sglang, runtime=dataclasses.replace(sglang.runtime,
+                                                                           refuses_tools_without_parser=True))
+        cases = [("vLLM", target_for("deepseek-r1-0528-qwen3-8b", "vllm", RECIPES),
+                  f"  chat only: vLLM rejects every dsh request that carries tools for this recipe (HTTP 400); {rows}"),
+                 ("SGLang", sglang, f"  chat only: dsh still sends its tools; for a prompt without them {rows}"),
+                 ("SGLang refusing tools", refusing,
+                  f"  chat only: SGLang rejects every dsh request that carries tools for this recipe (HTTP 400); "
+                  f"{rows}")]
+        for name, target, line in cases:
+            with self.subTest(name):
+                lines = dsh_config.usage_lines(target, held=True, up_command="./llmctl up deepseek-r1")
+                self.assertEqual([item for item in lines if item.startswith("  chat only: ")], [line])
 
     def test_default_overlay(self):
         target = target_for("gpt-oss-20b", "vllm", RECIPES)

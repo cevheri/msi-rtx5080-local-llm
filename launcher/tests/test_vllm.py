@@ -41,6 +41,12 @@ class VllmRecipeTest(unittest.TestCase):
         self.assertEqual(runtime.volumes, ("vllm-cache:/root/.cache/vllm", "flashinfer-cache:/root/.cache/flashinfer"))
         self.assertEqual(runtime.default_gpu_memory_utilization, 0.92)
 
+    def test_runtime_facts(self):
+        # vLLM refuses a request with tools on a recipe without --tool-call-parser (HTTP 400); the effort fact is
+        # SGLang's only (design D11).
+        runtime = load_runtime()
+        self.assertEqual((runtime.refuses_tools_without_parser, runtime.effort_enables_toggle_thinking), (True, False))
+
     def test_runtime_rejects_host_path_volume(self):
         data, source = read_toml(RECIPES / "_runtime.toml", "shipped")
         data["volumes"] = ["/:/host"]

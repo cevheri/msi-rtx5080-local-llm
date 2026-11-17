@@ -530,9 +530,9 @@ def usage_lines(target: Target, *, held: bool, up_command: str) -> list[str]:
     lines.append(f"  thinking: {thinking_text(recipe.clients)}")
     if recipe.chat_only:
         rows_hint = "use dsh --profile headless --patch <file> with the rows in docs/clients.md#chat-only-recipes"
-        if target.label == "vLLM":
-            lines.append(f"  chat only: vLLM rejects every dsh request that carries tools for this recipe (HTTP 400); "
-                         f"{rows_hint}")
+        if target.runtime.refuses_tools_without_parser:
+            lines.append(f"  chat only: {target.label} rejects every dsh request that carries tools for this recipe "
+                         f"(HTTP 400); {rows_hint}")
         else:
             lines.append(f"  chat only: dsh still sends its tools; for a prompt without them {rows_hint}")
     output = recipe.clients.output

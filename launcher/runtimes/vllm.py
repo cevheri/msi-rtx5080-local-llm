@@ -89,6 +89,7 @@ def parse_runtime(data: dict, source: Source) -> RuntimeConfig:
         opencode_provider=get_str(data, "opencode_provider", where),
         served_name=None,
         source=source,
+        refuses_tools_without_parser=True,
         default_gpu_memory_utilization=get_float(data, "default_gpu_memory_utilization", where, lo=0.05, hi=1.0),
     )
 

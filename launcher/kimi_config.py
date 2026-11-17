@@ -803,9 +803,9 @@ def usage_lines(target: Target, *, is_default: bool, up_command: str) -> list[st
         lines.extend(usage)
     lines.append(f"  thinking: {thinking_text(recipe.clients)}")
     if recipe.chat_only:
-        if target.label == "vLLM":
-            start = ("  chat only: vLLM rejects every Kimi request that carries tools for this recipe (HTTP 400), and "
-                     "Kimi's TUI always sends them")
+        if target.runtime.refuses_tools_without_parser:
+            start = (f"  chat only: {target.label} rejects every Kimi request that carries tools for this recipe "
+                     "(HTTP 400), and Kimi's TUI always sends them")
         else:
             start = "  chat only: Kimi sends its tools with every request, also in its TUI"
         prompt = f'kimi -p "your prompt" --agent-file {AGENT_FILE}'
@@ -839,6 +839,10 @@ def _thinking_line(state: State, target: Target) -> str | None:
             return None
         return (f'note: [thinking] effort = "{effort}" in {state.path} makes Kimi use effort {effort} for {name} '
                 "instead of medium")
+    if meta.thinking == "toggle" and target.runtime.effort_enables_toggle_thinking and effort != "none":
+        return (f'warning: [thinking] effort = "{effort}" in {state.path} makes Kimi send reasoning_effort {effort} '
+                f"to {name}, which turns thinking on for {target.recipe.id}, because {target.label} reads every effort "
+                "except none as thinking on; remove that effort line, or choose another with /effort in kimi")
     if meta.thinking == "effort":
         which = "lists only " + ", ".join(level for level in meta.efforts if level != "none")
     else:
