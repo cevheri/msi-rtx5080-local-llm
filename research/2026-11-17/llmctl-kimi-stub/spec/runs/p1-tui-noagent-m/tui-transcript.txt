@@ -1,0 +1,125 @@
+ 
+
+  ⠋ Preparing Kimi Code…                                                                                                                   
+
+ 
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │                                                                                                                                        │
+
+ │  ▐█▛█▛█▌  Welcome to Kimi Code!                                                                                                        │
+
+ │  ▐█████▌  Send /help for help information.                                                                                             │
+
+ │                                                                                                                                        │
+
+ │  Directory: $SCRATCH/kimi/spec/work/p1-tui-noagent-m│
+
+ │  Session:                                                                                                                              │
+
+ │  Model:     deepseek-r1-0528-qwen3-8b on vLLM (llmctl)                                                                                 │
+
+ │  Version:   2.5.3                                                                                                                      │
+
+ │                                                                                                                                        │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ 
+
+   No session yet — one will be created on your first message.                                                                             
+
+ 
+
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ >                                                                                                                                      │
+
+ ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────���─────────╯
+
+ deepseek-r1-0528-qwen3-8b on vLLM (llmctl)  …/spec/work/p1-tui-noagent-m                                              /help: show commands
+
+                                                                                                                        context: 0% (0/64k)
+<<<MARK start>>>
+
+ │ > R                                                                                                                                    │
+ │ > Re                                                                                                                                   │
+ │ > Rep                                                                                                                                  │
+ │ > Repl                                                                                                                                 │
+ │ > Reply                                                                                                                                │
+ │ > Reply                                                                                                                                │
+ │ > Reply w                                                                                                                              │
+ │ > Reply wi                                                                                                                             │
+ │ > Reply wit                                                                                                                            │
+ │ > Reply with                                                                                                                           │
+ │ > Reply with                                                                                                                           │
+ │ > Reply with t                                                                                                                         │
+ │ > Reply with th                                                                                                                        │
+ │ > Reply with the                                                                                                                       │
+ │ > Reply with the                                                                                                                       │
+ │ > Reply with the s                                                                                                                     │
+ │ > Reply with the st                                                                                                                    │
+ │ > Reply with the stu                                                                                                                   │
+ │ > Reply with the stub                                                                                                                  │
+ │ > Reply with the stub                                                                                                                  │
+ │ > Reply with the stub w                                                                                                                │
+ │ > Reply with the stub wo                                                                                                               │
+ │ > Reply with the stub wor                                                                                                              │
+ │ > Reply with the stub word                                                                                                             │
+ │ > Reply with the stub word.                                                                                                            │
+ │ >                                                                                                                                      │
+ │  Session:   session_d5786136-63e9-4206-96ab-56231d882cff                                                                               │
+
+ │  Model:     deepseek-r1-0528-qwen3-8b on vLLM (llmctl)                                                                                 │
+
+ │  Version:   2.5.3                                                                                                                      │
+
+ │                                                                                                                                        │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ 
+
+   No session yet — one will be created on your first message.                                                                             
+
+ 
+
+ ❯ Reply with the stub word.                                                                                                               
+
+ 
+
+  🌑 · Tip: /goal next to queue follow-up work while the current goal keeps running                                                        
+
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ >                                                                                                                                      │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ deepseek-r1-0528-qwen3-8b on vLLM (llmctl)  …/spec/work/p1-tui-noagent-m                                              /help: show commands
+
+                                                                                                                        context: 0% (0/64k)
+   Error: [provider.api_error] "auto" tool choice requires --enable-auto-tool-choice and --tool-call-parser to be set                      
+
+   If this persists, run `/export-debug-zip` and share the file with us for diagnosis. Please don't share it publicly.                     
+
+ 
+
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ >                                                                                                                                      │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ deepseek-r1-0528-qwen3-8b on vLLM (llmctl)  …/spec/work/p1-tui-noagent-m                                              /help: show commands
+
+                                                                                                                       context: 1% (84/64k)
+<<<MARK answered-1>>>
+
+ Press Ctrl+C again to exit                                                                                            context: 1% (84/64k)
+                                                                                                                       context: 1% (84/64k)
+ Shutting down… (running shutdown hooks)                                                                               context: 1% (84/64k) 
+
+ Bye!
+
+ To resume this session: kimi -r session_d5786136-63e9-4206-96ab-56231d882cff

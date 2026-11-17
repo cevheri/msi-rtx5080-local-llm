@@ -1,0 +1,3 @@
+error: failed to run prompt: no default model configured
+See log: $SCRATCH/kimi/exp/homes/e5-nodefault-with-m/.kimi-code/logs/kimi-code.log
+2026/11/17 11:49:41 socat[930724] W exiting on signal 15

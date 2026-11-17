@@ -1,0 +1,1 @@
+{"record": "$SCRATCH/kimi/exp/runs/e2-vllm-mellum2.1-12b-p/records.jsonl", "canned_reasoning": "The user wants hello.txt with hello in it, so I will call Write once and then answer.", "rules": [], "default": {"type": "text", "text": "OK"}}

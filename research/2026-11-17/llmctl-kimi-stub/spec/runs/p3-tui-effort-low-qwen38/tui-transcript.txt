@@ -1,0 +1,253 @@
+ 
+
+  ⠋ Preparing Kimi Code…                                                                                                                   
+
+ 
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │                                                                                                                                        │
+
+ │  ▐█▛█▛█▌  Welcome to Kimi Code!                                                                                                        │
+
+ │  ▐█████▌  Send /help for help information.                                                                                             │
+
+ │                                                                                                                                        │
+
+ │  Directory: $SCRATCH/kimi/spec/work/p3-tui-effort-l…│
+
+ │  Session:                                                                                                                              │
+
+ │  Model:     qwen3.8-27b on llama.cpp (llmctl)                                                                                          │
+
+ │  Version:   2.5.3                                                                                                                      │
+
+ │                                                                                                                                        │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ 
+
+   No session yet — one will be created on your first message.                                                                             
+
+ 
+
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ >                                                                                                                                      │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ qwen3.8-27b on llama.cpp (llmctl) thinking: medium  …/spec/work/p3-tui-effort-low-qwen38
+
+                                                                                                                        context: 0% (0/64k)
+<<<MARK start>>>
+
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ > /                                                                                                                                    │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+ │   → yolo                   Ask When Needed mode: routine edits and commands run automatically; risky actions, questions, and plans     │
+
+ │                            still ask.                                                                                                  │
+
+ │     model                  Switch LLM model                                                                                            │
+
+ │     permission             Select permission mode                                                                                      │
+
+ │     plan                   Toggle plan mode                                                                                            │
+
+ │     settings               Open TUI settings                                                                                           │
+
+ │     (1/52)                                                                                                                             │
+
+ qwen3.8-27b on llama.cpp (llmctl) thinking: medium  …/spec/work/p3-tui-effort-low-qwen38
+
+                                                                                                                        context: 0% (0/64k)
+ │ > /e                                                                                                                                   │
+ │   → effort                 Switch thinking effort                                                                                      │
+
+ │     editor                 Set the external editor for Ctrl-G                                                                          │
+
+ │     experiments            Manage experimental features                                                                                │
+
+ │     export-debug-zip       Export current session as a debug ZIP archive                                                               │
+
+ │     export-md              Export current session as a Markdown file                                                                   │
+
+ │     (1/34)                                                                                                                             │
+
+ qwen3.8-27b on llama.cpp (llmctl) thinking: medium  …/spec/work/p3-tui-effort-low-qwen38
+
+                                                                                                                        context: 0% (0/64k)
+
+
+ │ > /ef                                                                                                                                  │
+ │   → effort         Switch thinking effort                                                                                              │
+
+ │     update-config  Inspect or edit kimi-code's own config — `config.toml` (model, provider, permission, hooks) and `tui.toml`          │
+
+ │                    (theme, editor, notifications, auto-update). Use when the user asks what a setting does, wants to change one,…      │
+
+ qwen3.8-27b on llama.cpp (llmctl) thinking: medium  …/spec/work/p3-tui-effort-low-qwen38
+
+                                                                                                                        context: 0% (0/64k)
+
+
+
+
+
+
+ │ > /eff                                                                                                                                 │
+ │   → effort      Switch thinking effort                                                                                                 │
+
+ qwen3.8-27b on llama.cpp (llmctl) thinking: medium  …/spec/work/p3-tui-effort-low-qwen38
+
+                                                                                                                        context: 0% (0/64k)
+
+
+
+
+ │ > /effo                                                                                                                                │
+ │ > /effor                                                                                                                               │
+ │ > /effort                                                                                                                              │
+ ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+  Select thinking effort
+
+  ←→ switch · Enter select · Alt+S session-only · Esc cancel
+
+ 
+
+     Off      Low    [ Medium ]
+
+ 
+
+ ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+ qwen3.8-27b on llama.cpp (llmctl) thinking: medium  …/spec/work/p3-tui-effort-low-qwen38
+
+                                                                                                                        context: 0% (0/64k)
+<<<MARK effort-selector>>>
+
+     Off    [ Low ]    Medium  
+<<<MARK after-left>>>
+
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ >                                                                                                                                      │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ qwen3.8-27b on llama.cpp (llmctl) thinking: medium  …/spec/work/p3-tui-effort-low-qwen38
+
+                                                                                                                        context: 0% (0/64k)
+
+
+
+
+
+
+
+
+ qwen3.8-27b on llama.cpp (llmctl) thinking: low  …/spec/work/p3-tui-effort-low-qwen38
+   Thinking set to low.                                                                                                                    
+
+ 
+
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ >                                                                                                                                      │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ qwen3.8-27b on llama.cpp (llmctl) thinking: low  …/spec/work/p3-tui-effort-low-qwen38
+
+                                                                                                                        context: 0% (0/64k)
+<<<MARK picked>>>
+
+ │ > R                                                                                                                                    │
+ │ > Re                                                                                                                                   │
+ │ > Rep                                                                                                                                  │
+ │ > Repl                                                                                                                                 │
+ │ > Reply                                                                                                                                │
+ │ > Reply                                                                                                                                │
+ │ > Reply w                                                                                                                              │
+ │ > Reply wi                                                                                                                             │
+ │ > Reply wit                                                                                                                            │
+ │ > Reply with                                                                                                                           │
+ │ > Reply with                                                                                                                           │
+ │ > Reply with t                                                                                                                         │
+ │ > Reply with th                                                                                                                        │
+ │ > Reply with the                                                                                                                       │
+ │ > Reply with the                                                                                                                       │
+ │ > Reply with the s                                                                                                                     │
+ │ > Reply with the st                                                                                                                    │
+ │ > Reply with the stu                                                                                                                   │
+ │ > Reply with the stub                                                                                                                  │
+ │ > Reply with the stub                                                                                                                  │
+ │ > Reply with the stub w                                                                                                                │
+ │ > Reply with the stub wo                                                                                                               │
+ │ > Reply with the stub wor                                                                                                              │
+ │ > Reply with the stub word                                                                                                             │
+ │ > Reply with the stub word.                                                                                                            │
+ │ >                                                                                                                                      │
+ │  Session:   session_89b57828-d9c1-48f7-b49e-018ffdb5afed                                                                               │
+
+ │  Model:     qwen3.8-27b on llama.cpp (llmctl)                                                                                          │
+
+ │  Version:   2.5.3                                                                                                                      │
+
+ │                                                                                                                                        │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ 
+
+   No session yet — one will be created on your first message.                                                                             
+
+   Thinking set to low.                                                                                                                    
+
+ 
+
+ ❯ Reply with the stub word.                                                                                                               
+
+ 
+
+  🌑 · Tip: /tasks to check progress and status for background tasks                                                                       
+
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ >                                                                                                                                      │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ qwen3.8-27b on llama.cpp (llmctl) thinking: low  …/spec/work/p3-tui-effort-low-qwen38
+
+                                                                                                                        context: 0% (0/64k)
+ 
+
+ ● PONG-ONE                                                                                                                                
+
+ 
+
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ >                                                                                                                                      │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ qwen3.8-27b on llama.cpp (llmctl) thinking: low  …/spec/work/p3-tui-effort-low-qwen38
+
+                                                                                                                       context: 1% (86/64k)
+<<<MARK answered-1>>>
+
+ qwen3.8-27b on llama.cpp (llmctl) thinking: low  …/spec/work/p3-tui-effort-low-qwen38                                 /model: switch model
+
+ Press Ctrl+C again to exit                                                                                            context: 1% (86/64k)
+                                                                                                                       context: 1% (86/64k)
+ Shutting down… (running shutdown hooks)                                                                               context: 1% (86/64k) 
+
+ Bye!
+
+ To resume this session: kimi -r session_89b57828-d9c1-48f7-b49e-018ffdb5afed

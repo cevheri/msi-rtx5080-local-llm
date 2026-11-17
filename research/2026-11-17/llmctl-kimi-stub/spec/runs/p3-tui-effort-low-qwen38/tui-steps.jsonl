@@ -1,0 +1,28 @@
+{"t": 0.0, "step": ["wait", "Welcome to Kimi Code", 20], "hit": true}
+{"t": 0.44, "step": ["sleep", 2]}
+{"t": 2.45, "step": ["mark", "start"]}
+{"t": 2.45, "step": ["copy", "$KIMI_CODE_HOME/config.toml", "c0-start.toml"], "ok": true}
+{"t": 2.45, "step": ["type", "/effort"]}
+{"t": 2.93, "step": ["sleep", 1.2]}
+{"t": 4.13, "step": ["send", "\r"]}
+{"t": 4.44, "step": ["sleep", 2.5]}
+{"t": 6.96, "step": ["mark", "effort-selector"]}
+{"t": 6.96, "step": ["send", "\u001b[D"]}
+{"t": 7.26, "step": ["sleep", 0.8]}
+{"t": 8.07, "step": ["mark", "after-left"]}
+{"t": 8.07, "step": ["send", "\r"]}
+{"t": 8.4, "step": ["sleep", 2.5]}
+{"t": 10.92, "step": ["mark", "picked"]}
+{"t": 10.92, "step": ["copy", "$KIMI_CODE_HOME/config.toml", "c1-after-effort.toml"], "ok": true}
+{"t": 10.92, "step": ["type", "Reply with the stub word."]}
+{"t": 12.21, "step": ["sleep", 0.5]}
+{"t": 12.71, "step": ["send", "\r"]}
+{"t": 13.04, "step": ["wait", "PONG-ONE|rror", 30], "hit": true}
+{"t": 13.24, "step": ["sleep", 1.5]}
+{"t": 14.76, "step": ["mark", "answered-1"]}
+{"t": 14.76, "step": ["copy", "$KIMI_CODE_HOME/config.toml", "c2-after-prompt.toml"], "ok": true}
+{"t": 14.76, "step": ["send", "\u0003"]}
+{"t": 15.06, "step": ["sleep", 0.6]}
+{"t": 15.66, "step": ["send", "\u0003"]}
+{"t": 15.74, "step": ["sleep", 3]}
+{"t": 15.74, "step": ["copy", "$KIMI_CODE_HOME/config.toml", "c3-after-exit.toml"], "ok": true}

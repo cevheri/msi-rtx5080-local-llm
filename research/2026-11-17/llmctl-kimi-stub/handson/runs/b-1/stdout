@@ -1,0 +1,7 @@
+{"role":"meta","type":"system.version","version":"2.5.3"}
+{"role":"assistant","tool_calls":[{"type":"function","id":"ATU7CTBNz6mW8Swba4nCKERqpIEMsIvG","function":{"name":"Write","arguments":"{\"content\":\"print(\\\"hello\\\")\\n\",\"path\":\"hello.py\"}"}}]}
+{"role":"tool","tool_call_id":"ATU7CTBNz6mW8Swba4nCKERqpIEMsIvG","content":"Wrote 15 bytes to hello.py"}
+{"role":"assistant","tool_calls":[{"type":"function","id":"bZAa6N7pEvIMX30HfCzmmT4pQTCWFE91","function":{"name":"Bash","arguments":"{\"command\":\"python3 hello.py\"}"}}]}
+{"role":"tool","tool_call_id":"bZAa6N7pEvIMX30HfCzmmT4pQTCWFE91","content":"hello\n"}
+{"role":"assistant","content":"I created `hello.py` and ran it using `python3`.\n\n**Output:**\n```\nhello\n```"}
+{"role":"meta","type":"session.resume_hint","session_id":"session_a29e6729-47a7-4c8d-bb0d-d96d4a307cc6","command":"kimi -r session_a29e6729-47a7-4c8d-bb0d-d96d4a307cc6","content":"To resume this session: kimi -r session_a29e6729-47a7-4c8d-bb0d-d96d4a307cc6"}

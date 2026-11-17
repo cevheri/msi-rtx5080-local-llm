@@ -1,0 +1,21 @@
+928894 +++ exited with 0 +++
+928887 connect(20, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+928887 connect(20, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+928899 connect(10, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+928899 connect(10, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+928899 +++ exited with 0 +++
+928887 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=928899, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+928887 connect(21, {sa_family=AF_INET, sin_port=htons(8000), sin_addr=inet_addr("127.0.0.1")}, 16) = -1 EINPROGRESS (Operation now in progress)
+928887 connect(23, {sa_family=AF_INET, sin_port=htons(8000), sin_addr=inet_addr("127.0.0.1")}, 16) = -1 EINPROGRESS (Operation now in progress)
+928892 +++ exited with 0 +++
+928889 +++ exited with 0 +++
+928891 +++ exited with 0 +++
+928888 +++ exited with 0 +++
+928890 +++ exited with 0 +++
+928897 +++ exited with 0 +++
+928896 +++ exited with 0 +++
+928895 +++ exited with 0 +++
+928898 +++ exited with 0 +++
+928893 +++ exited with 0 +++
+928887 +++ exited with 0 +++
+928886 +++ exited with 0 +++

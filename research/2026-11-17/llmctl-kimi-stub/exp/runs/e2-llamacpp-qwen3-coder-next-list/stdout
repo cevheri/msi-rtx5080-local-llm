@@ -1,0 +1,22 @@
+{
+  "providers": {
+    "llmctl": {
+      "modelSource": "static",
+      "baseUrl": "http://127.0.0.1:8080/v1",
+      "type": "openai",
+      "apiKey": "no-key-required"
+    }
+  },
+  "models": {
+    "llmctl/local": {
+      "provider": "llmctl",
+      "model": "local",
+      "maxContextSize": 131072,
+      "maxOutputSize": 16384,
+      "capabilities": [
+        "tool_use"
+      ],
+      "displayName": "qwen3-coder-next on llama.cpp (llmctl)"
+    }
+  }
+}

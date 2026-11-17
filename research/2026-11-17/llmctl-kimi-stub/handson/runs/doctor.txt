@@ -1,0 +1,5 @@
+Kimi doctor
+
+OK config.toml  $SCRATCH/kimi/handson/home/.kimi-code/config.toml
+
+All checked config files are valid.

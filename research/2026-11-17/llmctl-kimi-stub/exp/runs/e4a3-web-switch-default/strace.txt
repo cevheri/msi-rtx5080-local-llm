@@ -1,0 +1,95 @@
+932588 connect(3, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+932588 connect(3, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+932589 +++ exited with 0 +++
+932588 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=932589, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+932591 +++ exited with 0 +++
+932588 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=932591, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+932592 +++ exited with 1 +++
+932588 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=932592, si_uid=1000, si_status=1, si_utime=0, si_stime=0} ---
+932600 +++ exited with 0 +++
+932593 +++ exited with 0 +++
+932588 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=932593, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+932601 +++ exited with 1 +++
+932588 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=932601, si_uid=1000, si_status=1, si_utime=0, si_stime=0} ---
+932602 +++ exited with 0 +++
+932588 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=932602, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+932603 +++ exited with 1 +++
+932588 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=932603, si_uid=1000, si_status=1, si_utime=0, si_stime=0} ---
+932604 +++ exited with 0 +++
+932588 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=932604, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+932610 +++ exited with 1 +++
+932588 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=932610, si_uid=1000, si_status=1, si_utime=0, si_stime=0} ---
+932590 connect(20, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+932590 connect(20, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+932612 connect(10, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+932612 connect(10, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+932612 +++ exited with 0 +++
+932596 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=932612, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+932611 +++ exited with 0 +++
+932588 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=932611, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+932613 +++ exited with 1 +++
+932588 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=932613, si_uid=1000, si_status=1, si_utime=0, si_stime=0} ---
+932614 +++ exited with 0 +++
+932588 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=932614, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+932615 +++ exited with 1 +++
+932588 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=932615, si_uid=1000, si_status=1, si_utime=0, si_stime=0} ---
+932616 +++ exited with 0 +++
+932588 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=932616, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+932617 +++ exited with 1 +++
+932588 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=932617, si_uid=1000, si_status=1, si_utime=0, si_stime=0} ---
+932618 +++ exited with 0 +++
+932588 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=932618, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+932619 +++ exited with 0 +++
+932588 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=932619, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+932621 +++ exited with 0 +++
+932622 +++ exited with 0 +++
+932623 +++ exited with 0 +++
+932624 +++ exited with 0 +++
+932620 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=932621, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+932620 +++ exited with 0 +++
+932588 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=932620, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+932625 +++ exited with 0 +++
+932588 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=932625, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+932643 +++ exited with 0 +++
+932588 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=932643, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+932644 connect(3, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+932644 connect(3, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+932644 connect(4, {sa_family=AF_INET, sin_port=htons(58627), sin_addr=inet_addr("127.0.0.1")}, 16) = -1 EINPROGRESS (Operation now in progress)
+932644 sendto(4, "GET /api/v1/models HTTP/1.1\r\nHost: 127.0.0.1:58627\r\nUser-Agent: curl/8.18.0\r\nAccept: */*\r\nAuthorization: Bearer <redacted>\r\n\r\n", 159, MSG_NOSIGNAL, NULL, 0) = 159
+932644 +++ exited with 0 +++
+932588 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=932644, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+932645 connect(3, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+932645 connect(3, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+932645 connect(4, {sa_family=AF_INET, sin_port=htons(58627), sin_addr=inet_addr("127.0.0.1")}, 16) = -1 EINPROGRESS (Operation now in progress)
+932645 sendto(4, "POST /api/v1/models/other%2Fm:set_default HTTP/1.1\r\nHost: 127.0.0.1:58627\r\nUser-Agent: curl/8.18.0\r\nAccept: */*\r\nAuthorization: Bearer <redacted>\r\n\r\n", 182, MSG_NOSIGNAL, NULL, 0) = 182
+932645 +++ exited with 0 +++
+932588 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=932645, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+932646 +++ exited with 0 +++
+932588 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=932646, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+932663 +++ exited with 0 +++
+932588 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=932663, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+932664 connect(3, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+932664 connect(3, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+932664 connect(4, {sa_family=AF_INET, sin_port=htons(58627), sin_addr=inet_addr("127.0.0.1")}, 16) = -1 EINPROGRESS (Operation now in progress)
+932664 sendto(4, "POST /api/v1/shutdown HTTP/1.1\r\nHost: 127.0.0.1:58627\r\nUser-Agent: curl/8.18.0\r\nAccept: */*\r\nAuthorization: Bearer <redacted>\r\n\r\n", 162, MSG_NOSIGNAL, NULL, 0) = 162
+932664 +++ exited with 0 +++
+932588 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=932664, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+932665 +++ exited with 0 +++
+932588 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=932665, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+932595 +++ exited with 0 +++
+932598 +++ exited with 0 +++
+932597 +++ exited with 0 +++
+932596 +++ exited with 0 +++
+932594 +++ exited with 0 +++
+932608 +++ exited with 0 +++
+932606 +++ exited with 0 +++
+932607 +++ exited with 0 +++
+932609 +++ exited with 0 +++
+932599 +++ exited with 0 +++
+932590 +++ exited with 0 +++
+932666 +++ exited with 0 +++
+932588 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=932590, si_uid=1000, si_status=0, si_utime=92 /* 0.92 s */, si_stime=20 /* 0.20 s */} ---
+932667 +++ exited with 0 +++
+932588 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=932667, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+932588 +++ exited with 0 +++
+932587 +++ exited with 0 +++

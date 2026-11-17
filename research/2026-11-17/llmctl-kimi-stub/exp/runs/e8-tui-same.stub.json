@@ -1,0 +1,1 @@
+{"record": "$SCRATCH/kimi/exp/runs/e8-tui-same/records.jsonl", "canned_reasoning": "", "rules": [{"nth": 1, "action": {"type": "text", "text": "PONG-ONE"}}, {"nth": 2, "action": {"type": "text", "text": "PONG-TWO"}}], "default": {"type": "text", "text": "PONG-MORE"}}

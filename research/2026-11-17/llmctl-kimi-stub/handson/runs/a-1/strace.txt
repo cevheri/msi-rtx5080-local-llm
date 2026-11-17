@@ -1,0 +1,20 @@
+868876 +++ exited with 0 +++
+868869 connect(20, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+868869 connect(20, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+868881 connect(10, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+868881 connect(10, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+868881 +++ exited with 0 +++
+868869 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=868881, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+868869 connect(21, {sa_family=AF_INET, sin_port=htons(47303), sin_addr=inet_addr("127.0.0.1")}, 16) = -1 EINPROGRESS (Operation now in progress)
+868873 +++ exited with 0 +++
+868874 +++ exited with 0 +++
+868872 +++ exited with 0 +++
+868871 +++ exited with 0 +++
+868870 +++ exited with 0 +++
+868877 +++ exited with 0 +++
+868878 +++ exited with 0 +++
+868879 +++ exited with 0 +++
+868880 +++ exited with 0 +++
+868875 +++ exited with 0 +++
+868869 +++ exited with 0 +++
+868868 +++ exited with 0 +++

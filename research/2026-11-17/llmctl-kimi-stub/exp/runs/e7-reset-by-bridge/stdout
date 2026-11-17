@@ -1,0 +1,10 @@
+{"role":"meta","type":"system.version","version":"2.5.3"}
+{"role":"meta","type":"turn.step.retrying","failed_attempt":1,"next_attempt":2,"max_attempts":10,"delay_ms":611.7613098548679,"error_name":"APIConnectionError","error_message":"Connection error."}
+{"role":"meta","type":"turn.step.retrying","failed_attempt":2,"next_attempt":3,"max_attempts":10,"delay_ms":1068.225803737202,"error_name":"APIConnectionError","error_message":"Connection error."}
+{"role":"meta","type":"turn.step.retrying","failed_attempt":3,"next_attempt":4,"max_attempts":10,"delay_ms":2241.1725086608762,"error_name":"APIConnectionError","error_message":"Connection error."}
+{"role":"meta","type":"turn.step.retrying","failed_attempt":4,"next_attempt":5,"max_attempts":10,"delay_ms":4365.314628826225,"error_name":"APIConnectionError","error_message":"Connection error."}
+{"role":"meta","type":"turn.step.retrying","failed_attempt":5,"next_attempt":6,"max_attempts":10,"delay_ms":9683.168476327219,"error_name":"APIConnectionError","error_message":"Connection error."}
+{"role":"meta","type":"turn.step.retrying","failed_attempt":6,"next_attempt":7,"max_attempts":10,"delay_ms":16533.041231177933,"error_name":"APIConnectionError","error_message":"Connection error."}
+{"role":"meta","type":"turn.step.retrying","failed_attempt":7,"next_attempt":8,"max_attempts":10,"delay_ms":33868.21245404356,"error_name":"APIConnectionError","error_message":"Connection error."}
+{"role":"meta","type":"turn.step.retrying","failed_attempt":8,"next_attempt":9,"max_attempts":10,"delay_ms":38711.313006520715,"error_name":"APIConnectionError","error_message":"Connection error."}
+{"role":"meta","type":"turn.step.retrying","failed_attempt":9,"next_attempt":10,"max_attempts":10,"delay_ms":39959.81815095052,"error_name":"APIConnectionError","error_message":"Connection error."}

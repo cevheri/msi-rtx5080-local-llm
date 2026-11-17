@@ -1,0 +1,1 @@
+bash $SCRATCH/kimi/exp/bin/e4_registry.sh $SCRATCH/kimi/exp/registry/v2 bash $SCRATCH/kimi/exp/bin/e4_web.sh $SCRATCH/kimi/exp/runs/e4d-web-start-refresh - 

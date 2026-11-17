@@ -1,0 +1,19 @@
+869472 +++ exited with 0 +++
+869465 connect(20, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+869465 connect(20, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+869484 connect(10, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+869484 connect(10, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+869484 +++ exited with 0 +++
+869465 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=869484, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+869476 +++ exited with 0 +++
+869473 +++ exited with 0 +++
+869475 +++ exited with 0 +++
+869474 +++ exited with 0 +++
+869469 +++ exited with 0 +++
+869468 +++ exited with 0 +++
+869470 +++ exited with 0 +++
+869466 +++ exited with 0 +++
+869467 +++ exited with 0 +++
+869471 +++ exited with 1 +++
+869465 +++ exited with 1 +++
+869464 +++ exited with 1 +++

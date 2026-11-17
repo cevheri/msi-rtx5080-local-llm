@@ -1,0 +1,1 @@
+kimi -p Reply\ with\ exactly\ OK. --output-format stream-json -m llmctl/deepseek-r1-8b --agent-file $SCRATCH/kimi/exp/agents/chat-only-string.md 

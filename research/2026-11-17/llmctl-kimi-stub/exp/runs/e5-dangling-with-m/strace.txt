@@ -1,0 +1,19 @@
+930700 +++ exited with 0 +++
+930692 connect(20, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+930692 connect(20, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+930705 connect(10, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+930705 connect(10, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+930705 +++ exited with 0 +++
+930692 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=930705, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+930703 +++ exited with 0 +++
+930702 +++ exited with 0 +++
+930701 +++ exited with 0 +++
+930704 +++ exited with 0 +++
+930697 +++ exited with 0 +++
+930696 +++ exited with 0 +++
+930695 +++ exited with 0 +++
+930694 +++ exited with 0 +++
+930693 +++ exited with 0 +++
+930698 +++ exited with 1 +++
+930692 +++ exited with 1 +++
+930691 +++ exited with 1 +++

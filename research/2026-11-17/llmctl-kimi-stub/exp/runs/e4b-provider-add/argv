@@ -1,0 +1,1 @@
+bash $SCRATCH/kimi/exp/bin/e4_registry.sh $SCRATCH/kimi/exp/registry/v1 kimi provider add http://127.0.0.1:47400/api.json 

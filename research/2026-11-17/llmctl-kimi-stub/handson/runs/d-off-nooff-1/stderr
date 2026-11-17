@@ -1,0 +1,4 @@
+kimi version 2.5.3
+error: failed to run prompt: provider.api_error: Model 'local' reasons by default but declares no off effort, so thinking cannot be turned off. Declare offEffort (for example 'none') for this model in the model catalog configuration.
+See log: $SCRATCH/kimi/handson/home/.kimi-code/logs/kimi-code.log
+2026/11/17 08:54:14 socat[869456] W exiting on signal 15

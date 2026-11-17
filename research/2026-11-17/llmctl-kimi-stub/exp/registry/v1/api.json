@@ -1,0 +1,16 @@
+{
+  "dummy": {
+    "id": "dummy",
+    "name": "Dummy registry provider",
+    "api": "http://127.0.0.1:47401/v1",
+    "type": "openai",
+    "models": {
+      "dummy-model": {
+        "id": "dummy-model",
+        "name": "Dummy Model",
+        "limit": {"context": 32768, "output": 4096},
+        "tool_call": true
+      }
+    }
+  }
+}

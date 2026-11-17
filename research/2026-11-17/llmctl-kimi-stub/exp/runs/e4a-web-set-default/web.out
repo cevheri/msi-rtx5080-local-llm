@@ -1,0 +1,11 @@
+
+  ▐█▛█▛█▌  Kimi server ready  2.5.3
+  ▐█████▌  Local web UI is available from this machine.
+
+  Local:    http://127.0.0.1:58627/#token=<redacted>
+  Network:  off  use --host to enable
+
+  Token:    <redacted>
+
+  Logs:     off  use --log-level info to enable
+  Stop:     Ctrl+C

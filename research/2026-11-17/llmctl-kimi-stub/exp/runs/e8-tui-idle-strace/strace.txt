@@ -1,0 +1,71 @@
+934752 --- SIGWINCH {si_signo=SIGWINCH, si_code=SI_KERNEL} ---
+934766 +++ exited with 0 +++
+934752 connect(24, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+934752 connect(24, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+934771 connect(11, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+934771 connect(11, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+934771 +++ exited with 0 +++
+934752 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=934771, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+934772 +++ exited with 0 +++
+934752 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=934772, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+934773 +++ exited with 0 +++
+934752 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=934773, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+934769 sendto(24, [{nlmsg_len=20, nlmsg_type=RTM_GETADDR, nlmsg_flags=NLM_F_REQUEST|NLM_F_DUMP, nlmsg_seq=1794905821, nlmsg_pid=0}, {ifa_family=AF_UNSPEC, ...}], 20, 0, {sa_family=AF_NETLINK, nl_pid=0, nl_groups=00000000}, 12) = 20
+934769 connect(24, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+934769 connect(24, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+934769 connect(24, {sa_family=AF_INET, sin_port=htons(53), sin_addr=inet_addr("127.0.0.53")}, 16) = 0
+934769 sendto(24, "7 \1 \0\1\0\0\0\0\0\1\3api\4kimi\3com\0\0\34\0\1\0\0)\4\260\0\0\0\0\0\0", 41, MSG_NOSIGNAL, NULL, 0) = 41
+934769 connect(24, {sa_family=AF_INET, sin_port=htons(53), sin_addr=inet_addr("127.0.0.53")}, 16) = 0
+934769 sendto(24, "7 \1 \0\1\0\0\0\0\0\1\3api\4kimi\3com\0\0\34\0\1\0\0)\4\260\0\0\0\0\0\0", 41, MSG_NOSIGNAL, NULL, 0) = 41
+934769 connect(24, {sa_family=AF_INET, sin_port=htons(53), sin_addr=inet_addr("127.0.0.53")}, 16) = 0
+934769 sendto(24, "\323|\1 \0\1\0\0\0\0\0\1\3api\4kimi\3com\0\0\34\0\1\0\0)\4\260\0\0\0\0\0\0", 41, MSG_NOSIGNAL, NULL, 0) = 41
+934769 connect(24, {sa_family=AF_INET, sin_port=htons(53), sin_addr=inet_addr("127.0.0.53")}, 16) = 0
+934769 sendto(24, "\323|\1 \0\1\0\0\0\0\0\1\3api\4kimi\3com\0\0\34\0\1\0\0)\4\260\0\0\0\0\0\0", 41, MSG_NOSIGNAL, NULL, 0) = 41
+934752 --- SIGWINCH {si_signo=SIGWINCH, si_code=SI_USER, si_pid=934752, si_uid=1000} ---
+934768 sendto(24, [{nlmsg_len=20, nlmsg_type=RTM_GETADDR, nlmsg_flags=NLM_F_REQUEST|NLM_F_DUMP, nlmsg_seq=1794905821, nlmsg_pid=0}, {ifa_family=AF_UNSPEC, ...}], 20, 0, {sa_family=AF_NETLINK, nl_pid=0, nl_groups=00000000}, 12) = 20
+934768 connect(24, {sa_family=AF_INET, sin_port=htons(53), sin_addr=inet_addr("127.0.0.53")}, 16) = 0
+934768 sendto(24, "\350\312\1 \0\1\0\0\0\0\0\1\4code\4kimi\3com\0\0\34\0\1\0\0)\4\260\0\0\0\0\0\0", 42, MSG_NOSIGNAL, NULL, 0) = 42
+934768 connect(24, {sa_family=AF_INET, sin_port=htons(53), sin_addr=inet_addr("127.0.0.53")}, 16) = 0
+934768 sendto(24, "\350\312\1 \0\1\0\0\0\0\0\1\4code\4kimi\3com\0\0\34\0\1\0\0)\4\260\0\0\0\0\0\0", 42, MSG_NOSIGNAL, NULL, 0) = 42
+934768 connect(24, {sa_family=AF_INET, sin_port=htons(53), sin_addr=inet_addr("127.0.0.53")}, 16) = 0
+934768 sendto(24, "K)\1 \0\1\0\0\0\0\0\1\4code\4kimi\3com\0\0\34\0\1\0\0)\4\260\0\0\0\0\0\0", 42, MSG_NOSIGNAL, NULL, 0) = 42
+934768 connect(24, {sa_family=AF_INET, sin_port=htons(53), sin_addr=inet_addr("127.0.0.53")}, 16) = 0
+934768 sendto(24, "K)\1 \0\1\0\0\0\0\0\1\4code\4kimi\3com\0\0\34\0\1\0\0)\4\260\0\0\0\0\0\0", 42, MSG_NOSIGNAL, NULL, 0) = 42
+934767 sendto(24, [{nlmsg_len=20, nlmsg_type=RTM_GETADDR, nlmsg_flags=NLM_F_REQUEST|NLM_F_DUMP, nlmsg_seq=1794905821, nlmsg_pid=0}, {ifa_family=AF_UNSPEC, ...}], 20, 0, {sa_family=AF_NETLINK, nl_pid=0, nl_groups=00000000}, 12) = 20
+934767 connect(25, {sa_family=AF_INET, sin_port=htons(53), sin_addr=inet_addr("127.0.0.53")}, 16) = 0
+934767 sendto(25, "\3542\1 \0\1\0\0\0\0\0\1\3api\4kimi\3com\0\0\34\0\1\0\0)\4\260\0\0\0\0\0\0", 41, MSG_NOSIGNAL, NULL, 0) = 41
+934767 connect(25, {sa_family=AF_INET, sin_port=htons(53), sin_addr=inet_addr("127.0.0.53")}, 16) = 0
+934767 sendto(25, "\3542\1 \0\1\0\0\0\0\0\1\3api\4kimi\3com\0\0\34\0\1\0\0)\4\260\0\0\0\0\0\0", 41, MSG_NOSIGNAL, NULL, 0) = 41
+934767 connect(25, {sa_family=AF_INET, sin_port=htons(53), sin_addr=inet_addr("127.0.0.53")}, 16) = 0
+934767 sendto(25, "(B\1 \0\1\0\0\0\0\0\1\3api\4kimi\3com\0\0\34\0\1\0\0)\4\260\0\0\0\0\0\0", 41, MSG_NOSIGNAL, NULL, 0) = 41
+934767 connect(25, {sa_family=AF_INET, sin_port=htons(53), sin_addr=inet_addr("127.0.0.53")}, 16) = 0
+934767 sendto(25, "(B\1 \0\1\0\0\0\0\0\1\3api\4kimi\3com\0\0\34\0\1\0\0)\4\260\0\0\0\0\0\0", 41, MSG_NOSIGNAL, NULL, 0) = 41
+934767 sendto(25, [{nlmsg_len=20, nlmsg_type=RTM_GETADDR, nlmsg_flags=NLM_F_REQUEST|NLM_F_DUMP, nlmsg_seq=1794905821, nlmsg_pid=0}, {ifa_family=AF_UNSPEC, ...}], 20, 0, {sa_family=AF_NETLINK, nl_pid=0, nl_groups=00000000}, 12) = 20
+934767 connect(25, {sa_family=AF_INET, sin_port=htons(53), sin_addr=inet_addr("127.0.0.53")}, 16) = 0
+934767 sendto(25, "S\211\1 \0\1\0\0\0\0\0\1\3api\4kimi\3com\0\0\34\0\1\0\0)\4\260\0\0\0\0\0\0", 41, MSG_NOSIGNAL, NULL, 0) = 41
+934767 connect(25, {sa_family=AF_INET, sin_port=htons(53), sin_addr=inet_addr("127.0.0.53")}, 16) = 0
+934767 sendto(25, "S\211\1 \0\1\0\0\0\0\0\1\3api\4kimi\3com\0\0\34\0\1\0\0)\4\260\0\0\0\0\0\0", 41, MSG_NOSIGNAL, NULL, 0) = 41
+934767 connect(25, {sa_family=AF_INET, sin_port=htons(53), sin_addr=inet_addr("127.0.0.53")}, 16) = 0
+934767 sendto(25, "8~\1 \0\1\0\0\0\0\0\1\3api\4kimi\3com\0\0\34\0\1\0\0)\4\260\0\0\0\0\0\0", 41, MSG_NOSIGNAL, NULL, 0) = 41
+934767 connect(25, {sa_family=AF_INET, sin_port=htons(53), sin_addr=inet_addr("127.0.0.53")}, 16) = 0
+934767 sendto(25, "8~\1 \0\1\0\0\0\0\0\1\3api\4kimi\3com\0\0\34\0\1\0\0)\4\260\0\0\0\0\0\0", 41, MSG_NOSIGNAL, NULL, 0) = 41
+934774 +++ exited with 128 +++
+934752 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=934774, si_uid=1000, si_status=128, si_utime=0, si_stime=0} ---
+934775 +++ exited with 128 +++
+934752 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=934775, si_uid=1000, si_status=128, si_utime=0, si_stime=0} ---
+934844 +++ exited with 0 +++
+934752 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=934844, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+934768 +++ exited with 0 +++
+934770 +++ exited with 0 +++
+934769 +++ exited with 0 +++
+934767 +++ exited with 0 +++
+934756 +++ exited with 0 +++
+934757 +++ exited with 0 +++
+934755 +++ exited with 0 +++
+934753 +++ exited with 0 +++
+934754 +++ exited with 0 +++
+934758 +++ exited with 0 +++
+934752 +++ exited with 0 +++
+934751 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=934752, si_uid=1000, si_status=0, si_utime=56 /* 0.56 s */, si_stime=19 /* 0.19 s */} ---
+934751 +++ exited with 0 +++
+934750 +++ exited with 0 +++

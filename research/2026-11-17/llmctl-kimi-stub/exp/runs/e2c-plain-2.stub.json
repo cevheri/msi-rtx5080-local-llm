@@ -1,0 +1,1 @@
+{"record": "$SCRATCH/kimi/exp/runs/e2c-plain-2/records.jsonl", "canned_reasoning": "First answer, thinking briefly.", "rules": [], "default": {"type": "text", "text": "PONG-TWO", "reasoning": "Second.", "field": "reasoning"}}

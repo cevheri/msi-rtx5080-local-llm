@@ -1,0 +1,5 @@
+{"role":"meta","type":"system.version","version":"2.5.3"}
+{"role":"assistant","tool_calls":[{"type":"function","id":"aBR1d6U68hMiS3q1dfl2m1QpCm3PTqD1","function":{"name":"Bash","arguments":"{\"command\":\"cat /proc/self/cgroup\"}"}}]}
+{"role":"tool","tool_call_id":"aBR1d6U68hMiS3q1dfl2m1QpCm3PTqD1","content":"0::/user.slice/user-1000.slice/user@1000.service/heavy.slice/run-p869176-i5068800.scope\n"}
+{"role":"assistant","content":"0::/user.slice/user-1000.slice/user@1000.service/heavy.slice/run-p869176-i5068800.scope"}
+{"role":"meta","type":"session.resume_hint","session_id":"session_2c45826a-519c-485d-8ccf-bd75bcefc9de","command":"kimi -r session_2c45826a-519c-485d-8ccf-bd75bcefc9de","content":"To resume this session: kimi -r session_2c45826a-519c-485d-8ccf-bd75bcefc9de"}

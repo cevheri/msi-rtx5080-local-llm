@@ -1,0 +1,603 @@
+[
+ {
+  "id": "docs-K002",
+  "claim": "The legacy Python kimi-cli kept its data under ~/.kimi/; the new CLI offers to migrate it on first run and with `kimi migrate`.",
+  "verdict": "Holds; checked: the quote, backticks removed and whitespace collapsed, is on the kimi.com page and on its GitHub Pages copy, both fetched 2026-11-17, and both pages also say the migration can be run at any time with kimi migrate and that the CLI moved from Python/uv to Node.js",
+  "sources": [
+   "https://www.kimi.com/code/docs/en/kimi-code-cli/guides/migration.html"
+  ]
+ },
+ {
+  "id": "docs-K007",
+  "claim": "npm already publishes 2.6.2 as the latest release, so the kimi.com changelog lags behind.",
+  "verdict": "Holds; checked: the registry record and npm view @moonshot-ai/kimi-code time dist-tags --json, both 2026-11-17, give dist-tags latest 2.6.2 (canary 2.7.0-canary.20261113055733-391d9e7), and the fresh kimi.com changelog's newest section is 2.5.3 (2026-11-10) while its GitHub Pages copy starts at 2.6.2 (2026-11-14)",
+  "sources": [
+   "https://registry.npmjs.org/@moonshot-ai%2fkimi-code"
+  ]
+ },
+ {
+  "id": "docs-K008",
+  "claim": "2.6.2 was published to npm on 2026-11-13.",
+  "verdict": "Holds; checked: the registry record and npm view, both 2026-11-17, give time 2.6.2 = 2026-11-13T17:28:03.872Z (UTC; the GitHub Pages changelog dates the release 2026-11-14)",
+  "sources": [
+   "https://registry.npmjs.org/@moonshot-ai%2fkimi-code"
+  ]
+ },
+ {
+  "id": "docs-K012",
+  "claim": "KIMI_CODE_HOME moves everything, including sessions, logs and OAuth credentials, not only the config.",
+  "verdict": "Holds; checked: the quote, backticks removed and whitespace collapsed, is on the kimi.com page and on its GitHub Pages copy, both fetched 2026-11-17",
+  "sources": [
+   "https://www.kimi.com/code/docs/en/kimi-code-cli/configuration/env-vars.html"
+  ]
+ },
+ {
+  "id": "docs-K014",
+  "claim": "Generic ~/.agents resources (skills, AGENTS.md, agents) stay under the real home even when KIMI_CODE_HOME is set.",
+  "verdict": "Holds; checked: the quote, backticks removed and whitespace collapsed, is on the kimi.com page and on its GitHub Pages copy, both fetched 2026-11-17, in the note right after the KIMI_CODE_HOME example",
+  "sources": [
+   "https://www.kimi.com/code/docs/en/kimi-code-cli/configuration/data-locations.html"
+  ]
+ },
+ {
+  "id": "docs-K016",
+  "claim": "TOML keys containing a dot, such as a model alias, must be quoted.",
+  "verdict": "Holds; checked: the quote, backticks removed and whitespace collapsed, is on the kimi.com page and on its GitHub Pages copy, both fetched 2026-11-17",
+  "sources": [
+   "https://www.kimi.com/code/docs/en/kimi-code-cli/configuration/config-files.html"
+  ]
+ },
+ {
+  "id": "docs-K019",
+  "claim": "The docs recommend a separate KIMI_CODE_HOME to isolate configs; there is no project-level config.toml.",
+  "verdict": "Holds; checked: the quote, backticks removed and whitespace collapsed, is on the kimi.com page and on its GitHub Pages copy, both fetched 2026-11-17",
+  "sources": [
+   "https://www.kimi.com/code/docs/en/kimi-code-cli/configuration/overrides.html"
+  ]
+ },
+ {
+  "id": "docs-K021",
+  "claim": "(inferred) No documented flag points `kimi` at another config file; besides KIMI_CODE_HOME, only `kimi doctor` accepts an explicit config path, for validation.",
+  "verdict": "Holds; checked: the quote, backticks removed and whitespace collapsed, is on the kimi.com page and on its GitHub Pages copy, both fetched 2026-11-17, and the page's option list names no --config flag for kimi itself (local-K07 agrees)",
+  "sources": [
+   "https://www.kimi.com/code/docs/en/kimi-code-cli/reference/kimi-command.html"
+  ]
+ },
+ {
+  "id": "docs-K031",
+  "claim": "KIMI_MODEL_* outranks default_model, and -m outranks KIMI_MODEL_*.",
+  "verdict": "Holds; checked: the quote, backticks removed and whitespace collapsed, is on the kimi.com page and on its GitHub Pages copy, both fetched 2026-11-17",
+  "sources": [
+   "https://www.kimi.com/code/docs/en/kimi-code-cli/configuration/env-vars.html"
+  ]
+ },
+ {
+  "id": "docs-K036",
+  "claim": "The `openai` provider type speaks OpenAI Chat Completions and is the documented type for compatible third-party servers.",
+  "verdict": "Holds; checked: the quote, backticks removed and whitespace collapsed, is on the kimi.com page and on its GitHub Pages copy, both fetched 2026-11-17 (a table row)",
+  "sources": [
+   "https://www.kimi.com/code/docs/en/kimi-code-cli/configuration/providers.html"
+  ]
+ },
+ {
+  "id": "docs-K041",
+  "claim": "base_url is overridable for any Chat Completions compatible server.",
+  "verdict": "Holds; checked: the quote, backticks removed and whitespace collapsed, is on the kimi.com page and on its GitHub Pages copy, both fetched 2026-11-17",
+  "sources": [
+   "https://www.kimi.com/code/docs/en/kimi-code-cli/configuration/providers.html"
+  ]
+ },
+ {
+  "id": "docs-K043",
+  "claim": "The openai type defaults to the OpenAI endpoint, so base_url must be set for a local server.",
+  "verdict": "Holds; checked: the quote, backticks removed and whitespace collapsed, is on the kimi.com page and on its GitHub Pages copy, both fetched 2026-11-17",
+  "sources": [
+   "https://www.kimi.com/code/docs/en/kimi-code-cli/configuration/providers.html"
+  ]
+ },
+ {
+  "id": "docs-K055",
+  "claim": "LLM requests on the openai protocol wait at most 300 s for response headers unless KIMI_CODE_LLM_HEADERS_TIMEOUT_MS raises it.",
+  "verdict": "Holds; checked: the quote, backticks removed and whitespace collapsed, is on the kimi.com page and on its GitHub Pages copy, both fetched 2026-11-17",
+  "sources": [
+   "https://www.kimi.com/code/docs/en/kimi-code-cli/configuration/env-vars.html"
+  ]
+ },
+ {
+  "id": "docs-K056",
+  "claim": "Each attempt is also capped by the SDK total request timeout of 10 minutes.",
+  "verdict": "Holds; checked: the quote, backticks removed and whitespace collapsed, is on the kimi.com page and on its GitHub Pages copy, both fetched 2026-11-17",
+  "sources": [
+   "https://www.kimi.com/code/docs/en/kimi-code-cli/configuration/env-vars.html"
+  ]
+ },
+ {
+  "id": "docs-K065",
+  "claim": "max_context_size is required.",
+  "verdict": "Holds; checked: the quote, backticks removed and whitespace collapsed, is on the kimi.com page and on its GitHub Pages copy, both fetched 2026-11-17 (a table row)",
+  "sources": [
+   "https://www.kimi.com/code/docs/en/kimi-code-cli/configuration/config-files.html"
+  ]
+ },
+ {
+  "id": "docs-K067",
+  "claim": "The docs say max_output_size maps to max_tokens but only the anthropic provider reads it.",
+  "verdict": "Holds; checked: the quote, backticks removed and whitespace collapsed, is on the kimi.com page and on its GitHub Pages copy, both fetched 2026-11-17; the claim reports what the docs say, and local-K26 and E2 show that the openai wire sends max_output_size as max_tokens anyway",
+  "sources": [
+   "https://www.kimi.com/code/docs/en/kimi-code-cli/configuration/config-files.html"
+  ]
+ },
+ {
+  "id": "docs-K081",
+  "claim": "reserved_context_size sets the output reserve that triggers automatic compaction.",
+  "verdict": "Holds; checked: the quote, backticks removed and whitespace collapsed, is on the kimi.com page and on its GitHub Pages copy, both fetched 2026-11-17",
+  "sources": [
+   "https://www.kimi.com/code/docs/en/kimi-code-cli/configuration/config-files.html"
+  ]
+ },
+ {
+  "id": "docs-K100",
+  "claim": "-p never asks for approval; it runs under the auto policy while static deny rules still apply.",
+  "verdict": "Holds; checked: the quote is on the kimi.com page and on its GitHub Pages copy, both fetched 2026-11-17, with the pages' dash where the archived quote has a hyphen",
+  "sources": [
+   "https://www.kimi.com/code/docs/en/kimi-code-cli/reference/kimi-command.html"
+  ]
+ },
+ {
+  "id": "docs-K101",
+  "claim": "stream-json emits one JSON message per line, assistant messages with tool_calls followed by tool messages; thinking is not included.",
+  "verdict": "Holds; checked: the quote, backticks removed and whitespace collapsed, is on the kimi.com page and on its GitHub Pages copy, both fetched 2026-11-17",
+  "sources": [
+   "https://www.kimi.com/code/docs/en/kimi-code-cli/reference/kimi-command.html"
+  ]
+ },
+ {
+  "id": "docs-K111",
+  "claim": "(inferred) In 2.5.3, permission rules from config.toml may not apply at session start in print mode; 2.6.0 lists this as a fix.",
+  "verdict": "Holds; checked: the quote is under 2.6.0 (2026-11-12) Bug Fixes of the GitHub Pages changelog fetched 2026-11-17, the page the claim cites; the kimi.com changelog fetched the same day ends at 2.5.3 and so has no 2.6.0 section (docs-K007)",
+  "sources": [
+   "https://moonshotai.github.io/kimi-code/en/release-notes/changelog.html"
+  ]
+ },
+ {
+  "id": "docs-K114",
+  "claim": "Never Ask (auto) approves everything, sensitive files included.",
+  "verdict": "Holds; checked: the quote, backticks removed and whitespace collapsed, is on the kimi.com page and on its GitHub Pages copy, both fetched 2026-11-17",
+  "sources": [
+   "https://www.kimi.com/code/docs/en/kimi-code-cli/guides/interaction.html"
+  ]
+ },
+ {
+  "id": "docs-K123",
+  "claim": "[tools] enabled/disabled is a global allow/deny list for tools, for example to drop WebSearch and FetchURL.",
+  "verdict": "Holds; checked: the quote, backticks removed and whitespace collapsed, is on the kimi.com page and on its GitHub Pages copy, both fetched 2026-11-17, with the enabled and disabled fields and the example disabled = [\"WebSearch\", \"FetchURL\", \"mcp__github__*\"]",
+  "sources": [
+   "https://www.kimi.com/code/docs/en/kimi-code-cli/configuration/config-files.html"
+  ]
+ },
+ {
+  "id": "docs-K131",
+  "claim": "wire.jsonl records the request trace, including tool schemas and request parameters.",
+  "verdict": "Holds; checked: the quote is on the kimi.com page and on its GitHub Pages copy, both fetched 2026-11-17, with the pages' dashes where the archived quote has hyphens",
+  "sources": [
+   "https://www.kimi.com/code/docs/en/kimi-code-cli/guides/sessions.html"
+  ]
+ },
+ {
+  "id": "docs-K138",
+  "claim": "Session files may contain prompts, command output and traces of credentials.",
+  "verdict": "Holds; checked: the quote, backticks removed and whitespace collapsed, is on the kimi.com page and on its GitHub Pages copy, both fetched 2026-11-17",
+  "sources": [
+   "https://www.kimi.com/code/docs/en/kimi-code-cli/customization/agents.html"
+  ]
+ },
+ {
+  "id": "docs-K142",
+  "claim": "Anonymous telemetry is on by default and only off when telemetry = false is set explicitly.",
+  "verdict": "Holds; checked: the quote, backticks removed and whitespace collapsed, is on the kimi.com page and on its GitHub Pages copy, both fetched 2026-11-17",
+  "sources": [
+   "https://www.kimi.com/code/docs/en/kimi-code-cli/configuration/config-files.html"
+  ]
+ },
+ {
+  "id": "docs-K143",
+  "claim": "KIMI_DISABLE_TELEMETRY=1 (or true, yes, y) turns telemetry off.",
+  "verdict": "Holds; checked: the quote, backticks removed and whitespace collapsed, is on the kimi.com page and on its GitHub Pages copy, both fetched 2026-11-17; the bundle also accepts t (local-K40)",
+  "sources": [
+   "https://www.kimi.com/code/docs/en/kimi-code-cli/configuration/env-vars.html"
+  ]
+ },
+ {
+  "id": "docs-K144",
+  "claim": "The variable wins over telemetry = true.",
+  "verdict": "Holds; checked: the quote, backticks removed and whitespace collapsed, is on the kimi.com page and on its GitHub Pages copy, both fetched 2026-11-17",
+  "sources": [
+   "https://www.kimi.com/code/docs/en/kimi-code-cli/configuration/overrides.html"
+  ]
+ },
+ {
+  "id": "docs-K145",
+  "claim": "Print mode honors KIMI_DISABLE_TELEMETRY since 0.41.0.",
+  "verdict": "Holds; checked: the quote, backticks removed and whitespace collapsed, is on the kimi.com page and on its GitHub Pages copy, both fetched 2026-11-17, under 0.41.0 (2026-09-04) on both",
+  "sources": [
+   "https://www.kimi.com/code/docs/en/kimi-code-cli/changelog.html"
+  ]
+ },
+ {
+  "id": "docs-K152",
+  "claim": "/feedback uploads diagnostics and codebase context to Kimi.",
+  "verdict": "Holds with corrections: the page says the diagnostic logs and codebase context are optional (\"Submit feedback with optional diagnostic logs and codebase context\"), so /feedback can upload them rather than always does; checked: the quote, backticks removed and whitespace collapsed, is on the kimi.com page and on its GitHub Pages copy, both fetched 2026-11-17",
+  "sources": [
+   "https://www.kimi.com/code/docs/en/kimi-code-cli/reference/slash-commands.html"
+  ]
+ },
+ {
+  "id": "docs-K154",
+  "claim": "The server API generates session titles from the session prompts through the managed Kimi provider and needs an OAuth login. (inferred) TUI auto-titles take the same path, so a logged-in user would send prompts to Kimi even on a local model.",
+  "verdict": "Holds with corrections: only the kimi.com page has the quote, because the GitHub Pages copy of server-api.html fetched the same day lists POST /api/v1/sessions/{session_id}/title/generate in its route table without this text, and the inferred TUI part rests on the bundle, where sessionTitleService.ts returns when the managed Kimi provider is absent (local-K47, main.cjs:167757-167758); checked: both pages fetched 2026-11-17 and the bundle lines read with sed -n",
+  "sources": [
+   "https://www.kimi.com/code/docs/en/kimi-code-cli/reference/server-api.html"
+  ]
+ },
+ {
+  "id": "docs-K155",
+  "claim": "auto_session_title = false in config.toml disables automatic titles globally.",
+  "verdict": "Holds; checked: the quote, backticks removed and whitespace collapsed, is on the kimi.com page and on its GitHub Pages copy, both fetched 2026-11-17, as the auto_session_title row (boolean, default true)",
+  "sources": [
+   "https://www.kimi.com/code/docs/en/kimi-code-cli/configuration/config-files.html"
+  ]
+ },
+ {
+  "id": "docs-K156",
+  "claim": "FetchURL uses the managed Kimi fetch service for signed-in users unless an endpoint is configured.",
+  "verdict": "Holds; checked: the quote, backticks removed and whitespace collapsed, is on the kimi.com page and on its GitHub Pages copy, both fetched 2026-11-17",
+  "sources": [
+   "https://www.kimi.com/code/docs/en/kimi-code-cli/configuration/env-vars.html"
+  ]
+ },
+ {
+  "id": "docs-K161",
+  "claim": "tui.toml [upgrade] auto_install defaults to true.",
+  "verdict": "Holds; checked: the quote, backticks removed and whitespace collapsed, is on the kimi.com page and on its GitHub Pages copy, both fetched 2026-11-17, as the [upgrade].auto_install row with default true",
+  "sources": [
+   "https://www.kimi.com/code/docs/en/kimi-code-cli/configuration/config-files.html"
+  ]
+ },
+ {
+  "id": "docs-K162",
+  "claim": "auto_install can be turned off in /settings or tui.toml.",
+  "verdict": "Holds; checked: the quote, backticks removed and whitespace collapsed, is on the kimi.com page and on its GitHub Pages copy, both fetched 2026-11-17",
+  "sources": [
+   "https://www.kimi.com/code/docs/en/kimi-code-cli/configuration/data-locations.html"
+  ]
+ },
+ {
+  "id": "docs-K163",
+  "claim": "KIMI_CODE_NO_AUTO_UPDATE disables the update check itself, not only the install.",
+  "verdict": "Holds; checked: the quote, backticks removed and whitespace collapsed, is on the kimi.com page and on its GitHub Pages copy, both fetched 2026-11-17",
+  "sources": [
+   "https://www.kimi.com/code/docs/en/kimi-code-cli/configuration/env-vars.html"
+  ]
+ },
+ {
+  "id": "docs-K164",
+  "claim": "Background updates start as soon as the startup check finds a newer version.",
+  "verdict": "Holds; checked: the quote, backticks removed and whitespace collapsed, is on the kimi.com page and on its GitHub Pages copy, both fetched 2026-11-17, under 0.10.0 (2026-06-04) on both",
+  "sources": [
+   "https://www.kimi.com/code/docs/en/kimi-code-cli/changelog.html"
+  ]
+ },
+ {
+  "id": "docs-K168",
+  "claim": "KIMI_CODE_REGION_MARKER=off disables the install-channel marker and local region inference.",
+  "verdict": "Holds; checked: the quote, backticks removed and whitespace collapsed, is on the kimi.com page and on its GitHub Pages copy, both fetched 2026-11-17 (a table row)",
+  "sources": [
+   "https://www.kimi.com/code/docs/en/kimi-code-cli/configuration/env-vars.html"
+  ]
+ },
+ {
+  "id": "local-K01",
+  "claim": "The executable is a Node.js v24.15.0 single executable application: a dynamically linked x86-64 ELF whose 62,338,615-byte ELF note NODE_SEA_BLOB starts with Node's SEA magic 0x143da20 and flags 0x1d.",
+  "verdict": "Holds; checked: the xxd bytes quoted in its sources decode to namesz 14, descsz 62338615, name NODE_SEA_BLOB, magic 0x0143da20 and flags 0x1d, which bin/sea_extract.py reads at the same offsets; the binary itself was not read again, because the check reads nothing in the owner's ~/.kimi-code (LR7)",
+  "sources": [
+   "command `file $HOME/.kimi-code/bin/kimi`: 'ELF 64-bit LSB executable, x86-64, ... dynamically linked ... with debug_info, not stripped'; `readelf -S -W` section [47] NOTE size 0x3b7366c; `xxd -s 0x7540170 -l 48`: '0e00 0000 3736 b703 0000 0000 4e4f 4445 5f53 4541 5f42 4c4f 4200 0000 20da 4301 1d00 0000' (namesz 14, descsz 62338615, 'NODE_SEA_BLOB', magic, flags); `strings -n 8 ... | grep -m1 '^v24\\.'`: 'v24.15.0'; parser bin/sea_extract.py output 'magic 0x143da20 flags 0x1d exec_argv_ext 1'"
+  ]
+ },
+ {
+  "id": "local-K02",
+  "claim": "The SEA main script is a rolldown bundle main.cjs (23,705,892 bytes, not minified, 3,657 module markers) built from the pnpm monorepo kimi-code/apps/kimi-code, with a V8 code cache, 529 assets (520 web UI, 9 native) and exec argv --max-semi-space-size=16.",
+  "verdict": "Holds; checked: main.cjs sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57, its line 2 is the rolldown runtime marker, all 3,657 entries of $SCRATCH/kimi/work/modules.txt are module markers in the bundle (1,017 of them agent-core-v2), and the extracted assets folder holds 529 files",
+  "sources": [
+   "main.cjs is the bundle that bin/sea_extract.py extracts from the Kimi Code 2.5.3 binary: 23,705,892 bytes, sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57 (local-K02); it is not archived",
+   "sea_extract.py output: 'code_path /home/runner/work/kimi-code/kimi-code/apps/kimi-code/dist-native/intermediates/main.cjs', 'main code bytes 23705892 sha256 0fc8a727...', 'code cache bytes 13289792', 'assets 529', \"exec_argv ['--max-semi-space-size=16']\"; main.cjs:2 ('// \\0rolldown/runtime.js'); $SCRATCH/kimi/work/modules.txt (3,657 lines; agent-core-v2 1,017 modules, src 357)"
+  ]
+ },
+ {
+  "id": "local-K05",
+  "claim": "`kimi --version` prints 2.5.3; root options are -S/--session, -c/--continue, -y/--yolo, --auto, -m/--model <alias>, -p/--prompt, --output-format text|stream-json, --skills-dir, --agent, --agent-file, --add-dir, --plan, plus hidden -r/--resume, -C, --yes, --auto-approve, --environment, --environment-cwd and hidden commands __plugin_run_node, __update_download and the exec server.",
+  "verdict": "Holds; checked: the quote, backticks removed and whitespace collapsed, is on the kimi.com page and on its GitHub Pages copy, both fetched 2026-11-17: line 174 holds the version 2.5.3, the root options include -S, -c, -y, --auto, -m, -p, --output-format, --skills-dir, --agent, --agent-file and --add-dir, with -r, -C, --yes, --auto-approve, --environment and --environment-cwd hidden, and $SCRATCH/kimi/out/version.txt reads 2.5.3",
+  "sources": [
+   "main.cjs is the bundle that bin/sea_extract.py extracts from the Kimi Code 2.5.3 binary: 23,705,892 bytes, sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57 (local-K02); it is not archived",
+   "command (sandbox) `kimi --version` -> '2.5.3' ($SCRATCH/kimi/out/version.txt); $SCRATCH/kimi/out/help.txt; main.cjs:408790-408796 (src/cli/commands.ts options incl. .hideHelp()); main.cjs:408813-408821 (hidden commands); main.cjs:174 (version: optionalBuildString('2.5.3'))"
+  ]
+ },
+ {
+  "id": "local-K07",
+  "claim": "There is no --config, --base-url or --api-key flag; the config path is fixed to <home>/config.toml.",
+  "verdict": "Holds with corrections: the root command has no --config, --base-url or --api-key, while kimi provider add and kimi provider catalog add do take --base-url and --api-key; checked: main.cjs sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57, the cited lines read with sed -n, and help.txt and the subcommand help files searched with grep",
+  "sources": [
+   "main.cjs is the bundle that bin/sea_extract.py extracts from the Kimi Code 2.5.3 binary: 23,705,892 bytes, sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57 (local-K02); it is not archived",
+   "$SCRATCH/kimi/out/help.txt (no such options); `grep -n -- '--config' main.cjs` finds only migrate's --config-only (main.cjs:304389, 520713 (src/migration/command.ts, src/cli/main.ts)); main.cjs:61619 (bootstrap.ts: configPath: input.configPath ?? join(homeDir, 'config.toml'))"
+  ]
+ },
+ {
+  "id": "local-K09",
+  "claim": "The home is KIMI_CODE_HOME when set and non-empty, else os.homedir()/.kimi-code; config.toml lives in it.",
+  "verdict": "Holds with corrections: getDataDir (322789-322793) and the login code (16023-16027, 17479-17483) ignore an empty KIMI_CODE_HOME, but the engine's resolveKimiHome (61652-61654) uses ?? and so keeps an empty value; checked: main.cjs sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57, the cited lines read with sed -n",
+  "sources": [
+   "main.cjs is the bundle that bin/sea_extract.py extracts from the Kimi Code 2.5.3 binary: 23,705,892 bytes, sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57 (local-K02); it is not archived",
+   "main.cjs:61652-61654 (agent-core-v2/src/app/bootstrap/bootstrap.ts resolveKimiHome: homeDir ?? env['KIMI_CODE_HOME'] ?? join(osHomeDir, '.kimi-code')); main.cjs:322789-322793 (src/utils/paths.ts getDataDir); main.cjs:61619 (configPath)"
+  ]
+ },
+ {
+  "id": "local-K11",
+  "claim": "The native asset cache is KIMI_CODE_CACHE_DIR, else $XDG_CACHE_HOME/kimi-code, else ~/.cache/kimi-code, under native/<version>/<target>/<manifest sha256>/; nothing in first-party code reads XDG_CONFIG_HOME.",
+  "verdict": "Holds; checked: main.cjs sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57, the cited lines read with sed -n",
+  "sources": [
+   "main.cjs is the bundle that bin/sea_extract.py extracts from the Kimi Code 2.5.3 binary: 23,705,892 bytes, sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57 (local-K02); it is not archived",
+   "main.cjs:323850-323868 (src/native/native-assets.ts getNativeCacheBase/getNativeAssetCacheRoot); $SCRATCH/kimi/work/env_fp.tsv lists XDG_CACHE_HOME and XDG_SESSION_TYPE as the only XDG names"
+  ]
+ },
+ {
+  "id": "local-K12",
+  "claim": "Running only --version and the help of every subcommand wrote nothing under KIMI_CODE_HOME; it wrote the native asset tree (clipboard addon, pi-tui X11 addon, search and minidb workers) under KIMI_CODE_CACHE_DIR, with the same manifest hash as the owner's cache.",
+  "verdict": "Holds; checked: main.cjs sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57, the cited lines read with sed -n, and the research sandbox home ($SCRATCH/kimi/sandbox) holds only .cache/kimi-code/native/2.5.3/linux-x64/49c1a8f5.../, the same folder name as in ~/.cache/kimi-code/native/2.5.3/linux-x64/",
+  "sources": [
+   "main.cjs is the bundle that bin/sea_extract.py extracts from the Kimi Code 2.5.3 binary: 23,705,892 bytes, sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57 (local-K02); it is not archived",
+   "measured: `find $SCRATCH/kimi/sandbox` after the runs lists only home/.cache/kimi-code/native/2.5.3/linux-x64/49c1a8f5.../ (node_modules/@mariozechner/clipboard*, @moonshot-ai/pi-tui/..., runtime/kap-server/search-worker.mjs, runtime/minidb/text-build-worker.mjs) and an empty work/; `ls ~/.cache/kimi-code/native/2.5.3/linux-x64/` shows the same 49c1a8f5... directory; main.cjs:520769-520781 (src/cli/main.ts bootstrap(): installMinidbTextBuildWorker, installKapSearchWorker before parsing argv)"
+  ]
+ },
+ {
+  "id": "local-K13",
+  "claim": "config.toml is created only when missing (open with 'wx'), with mode 0600 and a 185-byte comment-only template.",
+  "verdict": "Holds; checked: main.cjs sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57, the cited lines read with sed -n, and the template text measures 185 bytes",
+  "sources": [
+   "main.cjs is the bundle that bin/sea_extract.py extracts from the Kimi Code 2.5.3 binary: 23,705,892 bytes, sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57 (local-K02); it is not archived",
+   "main.cjs:292383-292398 (node-sdk/src/config/toml.ts ensureConfigFile: open(filePath, 'wx', 384)); main.cjs:292814-292818 (DEFAULT_CONFIG_FILE_TEXT$1); python measurement of the template: 'template bytes: 185'"
+  ]
+ },
+ {
+  "id": "local-K16",
+  "claim": "default_model and default_provider are top-level keys; Kimi persists them to config.toml when the user changes the default model or provider, and persists the providers and models sections when they change in memory.",
+  "verdict": "Holds; checked: main.cjs sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57, the cited lines read with sed -n",
+  "sources": [
+   "main.cjs is the bundle that bin/sea_extract.py extracts from the Kimi Code 2.5.3 binary: 23,705,892 bytes, sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57 (local-K02); it is not archived",
+   "main.cjs:169370, 169435 (DEFAULT_PROVIDER_SECTION = 'defaultProvider', DEFAULT_MODEL_SECTION = 'defaultModel'); main.cjs:206441-206500 (kosongConfigService.ts onDidChangeDefaultModel -> enqueuePersistDefaultPointer(DEFAULT_MODEL_SECTION))"
+  ]
+ },
+ {
+  "id": "local-K17",
+  "claim": "[thinking] has enabled (bool), effort, forced_effort (bound to KIMI_MODEL_THINKING_EFFORT) and keep; [model_catalog] has refresh_interval_ms and refresh_on_start.",
+  "verdict": "Holds; checked: main.cjs sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57, the cited lines read with sed -n",
+  "sources": [
+   "main.cjs is the bundle that bin/sea_extract.py extracts from the Kimi Code 2.5.3 binary: 23,705,892 bytes, sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57 (local-K02); it is not archived",
+   "main.cjs:169516-169537 (ThinkingConfigSchema$1, thinkingEnvBindings { forcedEffort: 'KIMI_MODEL_THINKING_EFFORT' }, ModelCatalogConfigSchema$1)"
+  ]
+ },
+ {
+  "id": "local-K18",
+  "claim": "Other config sections are environments, mcp, workspace (require_trust), extra_skill_dirs, merge_all_available_skills, builtin product skills, extra_agent_dirs, experimental, default_plan_mode, cron, task and legacy background, read, database, watch, identity, hooks, loop_control, swarm, subagent, secondary_model, tools, default_permission_mode, services, token_counting, image, permission; a model alias with dots must be a quoted table name.",
+  "verdict": "Holds; checked: main.cjs sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57, the cited lines read with sed -n, and grep finds 31 registerConfigSection calls: the 27 sections named here plus providers, models, thinking and model_catalog",
+  "sources": [
+   "main.cjs is the bundle that bin/sea_extract.py extracts from the Kimi Code 2.5.3 binary: 23,705,892 bytes, sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57 (local-K02); it is not archived",
+   "`grep -n 'registerConfigSection(' main.cjs` (27 call sites, e.g. main.cjs:69085, 72650, 131573, 135005, 144432, 167914, 204458, 209503, 215180, 220515, 232196, 261205, 276027, 286098, 286446 (various configSection.ts)); main.cjs:169343-169348 (malformedModelMessage: 'quote the table name (e.g. [models.\"a.b\"])')"
+  ]
+ },
+ {
+  "id": "local-K20",
+  "claim": "A [models.<alias>] table needs a provider (provider or provider_id, else default_provider, else a model base_url), a wire name (model or name), a positive max_context_size and a resolvable protocol; otherwise building the model fails at runtime.",
+  "verdict": "Holds; checked: main.cjs sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57, the cited lines read with sed -n",
+  "sources": [
+   "main.cjs is the bundle that bin/sea_extract.py extracts from the Kimi Code 2.5.3 binary: 23,705,892 bytes, sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57 (local-K02); it is not archived",
+   "main.cjs:204927-204963 (model-auth.ts resolveModelForReady); main.cjs:206068-206136 (catalog-service.ts buildModel errors: 'must define a positive max_context_size in config.toml', 'Provider ... is not configured', 'must declare a wire protocol')"
+  ]
+ },
+ {
+  "id": "local-K22",
+  "claim": "Capabilities are image_in, video_in, audio_in, thinking, always_thinking, tool_use and dynamically_loaded_tools; for an unknown model name on the openai wire the detected capability is all false, so tool_use is false unless declared, and tool_use gates only the dynamic tool-select feature (tools are still sent: inferred).",
+  "verdict": "Holds; checked: main.cjs sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57, the cited lines read with sed -n, and grep finds tool_use gating only toolSelectService.ts (230935) and agentTool.ts (238182)",
+  "sources": [
+   "main.cjs is the bundle that bin/sea_extract.py extracts from the Kimi Code 2.5.3 binary: 23,705,892 bytes, sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57 (local-K02); it is not archived",
+   "main.cjs:205840-205851 (resolveModelCapabilities); main.cjs:164097-164102 (getOpenAILegacyModelCapability returns undefined for other names); main.cjs:144180-144188 (UNKNOWN_CAPABILITY$1 all false); `grep tool_use` shows only toolSelectService.ts:230935 and agentTool.ts:238182 consume it; main.cjs:155591 (pipeline.ts convert: tools from module.profile.tools, not filtered by capability)"
+  ]
+ },
+ {
+  "id": "local-K23",
+  "claim": "`kimi doctor config <path>` validates any file offline against the engine's section registry; it rejected model_source = 'manual' but accepted a config without max_context_size, with type = 'llamacpp' and with an unquoted dotted alias, and warned about an unknown top-level key.",
+  "verdict": "Holds; checked: main.cjs sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57, the cited lines read with sed -n, and $SCRATCH/kimi/out/doctor_probes.txt shows bad_source (model_source = \"manual\") exit 1 and ok, no_ctx, bad_type (type = \"llamacpp\"), dotted_alias ([models.llmctl.local]) exit 0, with the unknown-key warning",
+  "sources": [
+   "main.cjs is the bundle that bin/sea_extract.py extracts from the Kimi Code 2.5.3 binary: 23,705,892 bytes, sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57 (local-K02); it is not archived",
+   "main.cjs:338117-338149 (src/cli/v2/validate-config.ts validateConfigTomlV2); measured: $SCRATCH/kimi/out/doctor_probes.txt ('providers.llmctl.model_source: Invalid input'; 'Unknown top-level key ignored by the v2 engine: llmctl_marker.'; ok, no_ctx, bad_type, dotted_alias exit=0)"
+  ]
+ },
+ {
+  "id": "local-K25",
+  "claim": "For type openai, Kimi uses the official openai SDK with apiKey ?? 'unused', baseURL, defaultHeaders and maxRetries 0, and calls chat.completions.create (POST <base_url>/chat/completions) streaming with stream_options.include_usage; the body has model, messages (system first) and tools only when present, and no tool_choice or parallel_tool_calls.",
+  "verdict": "Holds; checked: main.cjs sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57, the cited lines read with sed -n, and the only tool_choice in the bundle is in the vendored openai 6.34.0 runner (158878)",
+  "sources": [
+   "main.cjs is the bundle that bin/sea_extract.py extracts from the Kimi Code 2.5.3 binary: 23,705,892 bytes, sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57 (local-K02); it is not archived",
+   "main.cjs:164868-164910 (openai/index.ts createClient, send, sendStream); main.cjs:164761-164791 (openai/lower.ts defaultTool$2, flatten$4); main.cjs:204405 (stream: params?.stream ?? true); command `grep -nE 'tool_choice|toolChoice|parallel_tool_calls'` over first-party code: only a skill text match at 72717"
+  ]
+ },
+ {
+  "id": "local-K26",
+  "claim": "The output cap is sent only when max_output_size (or KIMI_MODEL_MAX_COMPLETION_TOKENS) is set, as min(cap, max_context_size - used tokens), at most 131072, in max_tokens, or max_completion_tokens for model names o<digit>... and gpt-5...",
+  "verdict": "Holds; checked: main.cjs sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57, the cited lines read with sed -n",
+  "sources": [
+   "main.cjs is the bundle that bin/sea_extract.py extracts from the Kimi Code 2.5.3 binary: 23,705,892 bytes, sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57 (local-K02); it is not archived",
+   "main.cjs:164753-164760, 164806 (usesMaxCompletionTokens, encodeMaxTokens, CHAT_COMPLETIONS_MAX_OUTPUT_TOKENS_CEILING = 131072); main.cjs:155338-155348 (rules/model.ts legalOutputCap); main.cjs:204661-204667 (completion-budget.ts); main.cjs:279346-279366 (agent/loop/requester.ts resolveRequest)"
+  ]
+ },
+ {
+  "id": "local-K29",
+  "claim": "For non-kimi provider types the outbound headers are KIMI_CODE_CUSTOM_HEADERS ('Name: value' lines), the third-party User-Agent (kimi-code-cli/2.5.3, product token replaced by an identity slug when set) and custom_headers; the X-Msh-Platform/Version/Device-Name/Device-Model/Os-Version/Device-Id headers go only to provider definitions with hostHeaders 'full' (kimi).",
+  "verdict": "Holds; checked: main.cjs sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57, the cited lines read with sed -n",
+  "sources": [
+   "main.cjs is the bundle that bin/sea_extract.py extracts from the Kimi Code 2.5.3 binary: 23,705,892 bytes, sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57 (local-K02); it is not archived",
+   "main.cjs:205832-205839 (catalog-service.ts resolveOutboundHeaders); main.cjs:206583-206586 (hostRequestHeadersAdapter thirdPartyHeaders); main.cjs:15110-15118 (oauth/src/identity.ts createKimiDeviceHeaders); main.cjs:15155-15167 (parseKimiCodeCustomHeaders); main.cjs:18563-18573 (agentIdentity.ts thirdPartyUserAgent); main.cjs:15120-15126, 15147 (oauth/src/identity.ts createKimiUserAgent '${product}/${version}' used as User-Agent)"
+  ]
+ },
+ {
+  "id": "local-K30",
+  "claim": "If no credential is configured, the openai wire falls back to the process OPENAI_API_KEY (and the base URL to OPENAI_BASE_URL only when no base_url resolves), and otherwise sends 'Bearer unused'.",
+  "verdict": "Holds; checked: main.cjs sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57, the cited lines read with sed -n",
+  "sources": [
+   "main.cjs is the bundle that bin/sea_extract.py extracts from the Kimi Code 2.5.3 binary: 23,705,892 bytes, sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57 (local-K02); it is not archived",
+   "main.cjs:204002-204014 (llm-requester/connection.ts resolveModelConnection reads process.env[baseUrlEnv]/[apiKeyEnv]); main.cjs:204348-204361 (request(): resolveModelConnection called without apiKey); main.cjs:204385-204392 (credentials.resolve: credential?.apiKey ?? connection.apiKey); main.cjs:166195-166198 (openAIEndpoint { apiKeyEnv: 'OPENAI_API_KEY', baseUrlEnv: 'OPENAI_BASE_URL' }); main.cjs:164870 (apiKey: endpoint.apiKey ?? 'unused')"
+  ]
+ },
+ {
+  "id": "local-K31",
+  "claim": "On the openai wire thinking maps to reasoning_effort only: 'on' sends nothing, a named effort sends it, 'off' sends off_effort when declared or nothing, 'off' with support_efforts but no off_effort errors, an always_thinking model cannot turn off, and a non-off level without a named effort sends reasoning_effort 'medium' once earlier replies carried reasoning; the default level is default_effort, else the middle of support_efforts, else 'on', and 'off' without a thinking capability; no chat_template_kwargs or extra body can be configured.",
+  "verdict": "Holds; checked: main.cjs sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57, the cited lines read with sed -n",
+  "sources": [
+   "main.cjs is the bundle that bin/sea_extract.py extracts from the Kimi Code 2.5.3 binary: 23,705,892 bytes, sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57 (local-K02); it is not archived",
+   "main.cjs:164689-164740 (openai/lower.ts resolveThinkingEffort, encodeThinking$2); main.cjs:204798-204841 (llm-adapter/model/thinking.ts modelSupportsThinking, defaultThinkingEffortForModel, resolveThinkingEffortForModel); main.cjs:204221-204279 (routeFor options.extras = samplingExtraParams only)"
+  ]
+ },
+ {
+  "id": "local-K32",
+  "claim": "KIMI_MODEL_NAME activates an env-only alias __kimi_env_model__ on provider __kimi_env__ (type KIMI_MODEL_PROVIDER_TYPE, default kimi) and makes it default_model, with KIMI_MODEL_MAX_CONTEXT_SIZE default 262144 and KIMI_MODEL_CAPABILITIES default image_in,thinking; KIMI_MODEL_TEMPERATURE, TOP_P, THINKING_KEEP and MAX_COMPLETION_TOKENS/MAX_TOKENS apply as overrides even without KIMI_MODEL_NAME; the overlay is never written back.",
+  "verdict": "Holds; checked: main.cjs sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57, the cited lines read with sed -n, ENV_MODEL_PROVIDER_KEY being __kimi_env__ (169371)",
+  "sources": [
+   "main.cjs is the bundle that bin/sea_extract.py extracts from the Kimi Code 2.5.3 binary: 23,705,892 bytes, sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57 (local-K02); it is not archived",
+   "main.cjs:204561-204658 (agent-core-v2/src/app/kosongConfig/envOverlay.ts kimiModelEnvOverlay apply/strip); main.cjs:169397-169401 (providersEnvBindings KIMI_MODEL_API_KEY, KIMI_MODEL_PROVIDER_TYPE, KIMI_MODEL_BASE_URL)"
+  ]
+ },
+ {
+  "id": "local-K33",
+  "claim": "The node-sdk copy of the env overlay requires KIMI_MODEL_API_KEY, allows only kimi, anthropic and openai, and defaults the openai base URL to https://api.openai.com/v1; the engine copy falls back to the process OPENAI_BASE_URL for type openai when KIMI_MODEL_BASE_URL is unset.",
+  "verdict": "Holds; checked: main.cjs sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57, the cited lines read with sed -n",
+  "sources": [
+   "main.cjs is the bundle that bin/sea_extract.py extracts from the Kimi Code 2.5.3 binary: 23,705,892 bytes, sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57 (local-K02); it is not archived",
+   "main.cjs:292280-292328, 292364-292372 (node-sdk/src/config/env-model.ts applyEnvModelConfig, ALLOWED_TYPES, DEFAULT_BASE_URL); main.cjs:204619 (envOverlay.ts resolveProviderEndpoint(providerType, envBagOf(getEnv)).baseUrl)"
+  ]
+ },
+ {
+  "id": "local-K35",
+  "claim": "For type kimi the Chat Completions body carries thinking {type enabled|disabled, effort?, keep?}, max_completion_tokens filled to max_context_size - used tokens, Kimi's tool format, and the X-Msh device headers; the default base URL is https://api.moonshot.ai/v1.",
+  "verdict": "Holds; checked: main.cjs sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57, the cited lines read with sed -n",
+  "sources": [
+   "main.cjs is the bundle that bin/sea_extract.py extracts from the Kimi Code 2.5.3 binary: 23,705,892 bytes, sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57 (local-K02); it is not archived",
+   "main.cjs:166115-166166 (builtin/provider/kimi/protocol.ts kimiOpenAIProtocol, KIMI_DEFAULT_BASE_URL); main.cjs:166068-166079 (fillKimiMaxOutputTokens, kimiOpenAIThinkingParams); main.cjs:167604-167634 (kimi definitions hostHeaders: 'full')"
+  ]
+ },
+ {
+  "id": "local-K37",
+  "claim": "A response-headers timeout is applied only when KIMI_CODE_LLM_HEADERS_TIMEOUT_MS is set; otherwise the global fetch default applies (undici's 300 s headers timeout: inferred).",
+  "verdict": "Holds; checked: main.cjs sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57, the cited lines read with sed -n",
+  "sources": [
+   "main.cjs is the bundle that bin/sea_extract.py extracts from the Kimi Code 2.5.3 binary: 23,705,892 bytes, sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57 (local-K02); it is not archived",
+   "main.cjs:204018-204070 (llm-requester/timeout.ts resolveLlmHeadersTimeoutMs, createLlmHeadersTimeoutFetch returns plain fetch when unset)"
+  ]
+ },
+ {
+  "id": "local-K39",
+  "claim": "`kimi -p` runs one turn after the update preflight, creates and persists a new session unless -S or -c is given, prints text (assistant on stdout as bulleted blocks, 'kimi version 2.5.3' first and thinking and 'To resume this session: kimi -r <id>' on stderr) or stream-json lines (system.version meta, assistant with tool_calls, tool, turn.step.retrying meta, session.resume_hint meta; no thinking), sets unset loop and timeout limits to 0, and exits 0, 1, 4 (session occupied) or 129/130/143 on signals; without a model it fails with 'No model configured...'.",
+  "verdict": "Holds; checked: main.cjs sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57, the cited lines read with sed -n",
+  "sources": [
+   "main.cjs is the bundle that bin/sea_extract.py extracts from the Kimi Code 2.5.3 binary: 23,705,892 bytes, sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57 (local-K02); it is not archived",
+   "main.cjs:520683-520705 (src/cli/main.ts handleMainCommand: runUpdatePreflight then runPrompt); main.cjs:499447-499700 (src/cli/v2/run-v2-print.ts runV2Print, resolveNativeSession, sessions.create); main.cjs:499214-499372 (prompt-render.ts writeExperimentalVersion, writeResumeHint, PromptTranscriptWriter, PromptJsonWriter); main.cjs:231534-231540 (agent/task/printDefaults.ts applyPrintModeConfigDefaults); main.cjs:500184, 500211-500246 (PRINT_EXIT_SESSION_OCCUPIED = 4, requireConfiguredModel, signalExitCode); main.cjs:408951-408958 (KIMI_MODEL_OUTPUT_FORMAT)"
+  ]
+ },
+ {
+  "id": "local-K40",
+  "claim": "Telemetry POSTs events to the region profile's telemetryEndpoint with an optional Bearer token, writes failed batches to <home>/telemetry/failed_<hex>.jsonl and retries them at the next start; it is off when KIMI_DISABLE_TELEMETRY is 1, true, t, yes or y, or when config.toml has telemetry = false.",
+  "verdict": "Holds; checked: main.cjs sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57, the cited lines read with sed -n",
+  "sources": [
+   "main.cjs is the bundle that bin/sea_extract.py extracts from the Kimi Code 2.5.3 binary: 23,705,892 bytes, sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57 (local-K02); it is not archived",
+   "main.cjs:304083-304144 (telemetry/src/bootstrap.ts isTelemetryDisabledByEnv, shouldEnableTelemetry, TRUE_ENV_VALUES); main.cjs:303984-304068 (telemetry/src/transport.ts failed_*.jsonl, sendHttp, telemetryDir); main.cjs:324342-324360 (src/cli/telemetry.ts enabled: options.config.telemetry !== false, endpoint: currentKimiProfile().telemetryEndpoint); main.cjs:499475-499479 (print mode)"
+  ]
+ },
+ {
+  "id": "local-K41",
+  "claim": "Each interactive or -p start checks <cdn>/latest.json (fallback <cdn>/latest, canary <cdn>/channels/canary.json), may install in the background when interactive and stage a native binary in <exe dir>/.staging for a swap at the next start; KIMI_CODE_NO_AUTO_UPDATE or KIMI_CLI_NO_AUTO_UPDATE (1, true, yes, on) disables the check, install and swap, and tui.toml [upgrade] auto_install = false disables the background install and the automatic swap only; state lives in <home>/updates/.",
+  "verdict": "Holds; checked: main.cjs sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57, the cited lines read with sed -n",
+  "sources": [
+   "main.cjs is the bundle that bin/sea_extract.py extracts from the Kimi Code 2.5.3 binary: 23,705,892 bytes, sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57 (local-K02); it is not archived",
+   "main.cjs:519804-519824 (preflight.ts isAutoUpdateDisabledByEnv, shouldAutoInstallUpdates); main.cjs:519985-520020 (runUpdatePreflight); main.cjs:519041-519084 (update/cdn.ts fetchLatestFromCdn, fetchChannelFeed); main.cjs:304315-304323 (kimiCodeCdnLatestUrl, kimiCodeCdnLatestJsonUrl, kimiCodeCdnCanaryChannelUrl); main.cjs:520569-520599 (native-swap.ts maybeRelaunchWithStagedNativeUpdate); main.cjs:322815-322857 (paths.ts updates/latest.json, install.json, install.lock, rollout.log, plugin-notices.json, .staging/staged.json)"
+  ]
+ },
+ {
+  "id": "local-K42",
+  "claim": "Under the home Kimi writes device_id (0600), config.toml, tui.toml, logs/kimi-code.log (6 MiB x 5, KIMI_LOG_*), sessions/<workspace>/<session>/ (state.json, agents/<agent>/wire.jsonl, logs, plans, tasks) and sessions/.index-cache/scan.json, blobs/, store/, cache/query-store, projects.json with .projects-write-lock, workspace-trust/<key> ({root, trustedAt}), user-history/<md5(cwd)>.jsonl, cache/banner/state.json, recommended-effort-state.json, model-migrations.json and credentials/<name>.json after login; its file store makes directories 0700 and files 0600; `provider list --json` wrote device_id in a fresh home.",
+  "verdict": "Holds; checked: main.cjs sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57, the cited lines read with sed -n, and $SCRATCH/kimi/sandbox2 holds home/.kimi-code/device_id with mode 600 (its content not read)",
+  "sources": [
+   "main.cjs is the bundle that bin/sea_extract.py extracts from the Kimi Code 2.5.3 binary: 23,705,892 bytes, sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57 (local-K02); it is not archived",
+   "main.cjs:15082-15100 (oauth/src/identity.ts device_id); main.cjs:79958-79973 (log/logConfig.ts); main.cjs:134340-134354 (bootstrapService.ts sessions, blobs, store, cache, logs, credentials scopes); main.cjs:126915-126917, 127746 (state.json, .index-cache, scan.json, wire.jsonl); main.cjs:241237-241238 (projects.json, .projects-write-lock); main.cjs:69146-69151, 69191 (workspace trust record); main.cjs:322861-322877 (banner, recommended effort, model migrations, user-history md5); main.cjs:17523 (credentials dir); main.cjs:61641-61646 (FileStorageService(homeDir, 448, 384)); measured: `find $SCRATCH/kimi/sandbox2` after provider list: '-rw------- 36 ./home/.kimi-code/device_id'"
+  ]
+ },
+ {
+  "id": "local-K43",
+  "claim": "Without a managed login Kimi still POSTs <managed API base>/client_configs (survey_popup, recommended_effort, estimated_cache_duration; cached 24 h under cache/client-configs/<region>:/client_configs:<name>), and downloads ripgrep from <cdn>/rg/ripgrep-15.0.0-<target>.tar.gz when rg is not on PATH and fd from <cdn>/fd/ when fd/fdfind are missing; this laptop has no rg or fd on PATH.",
+  "verdict": "Holds; checked: main.cjs sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57, the cited lines read with sed -n, and neither rg nor fd nor fdfind is on PATH (bash type -P, 2026-11-17)",
+  "sources": [
+   "main.cjs is the bundle that bin/sea_extract.py extracts from the Kimi Code 2.5.3 binary: 23,705,892 bytes, sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57 (local-K02); it is not archived",
+   "main.cjs:299357-299440 (product/src/client-configs/node/client-configs.ts fetch POST, CONFIG_CACHE_TTL_MS = 864e5, cacheKeyFor); main.cjs:480934-480938 (src/utils/client-configs.ts baseUrlOverride KIMI_CODE_BASE_URL); main.cjs:500463-500470, 501015-501026 (recommended_effort, estimated_cache_duration); main.cjs:140374-140391 (rgLocator.ts PATH, share-bin-cached, share-bin-downloaded); rgBaseUrl '${cdnBase}/rg'; main.cjs:500523-500584 (fd-detect.ts ensureFdPath, downloadFd '${kimiCodeCdnBase()}/fd/'); command `ls -la /usr/bin/rg /usr/local/bin/rg /usr/bin/fdfind /usr/bin/fd`: 'No such file or directory' for all"
+  ]
+ },
+ {
+  "id": "local-K44",
+  "claim": "Region profiles: mainland-cn (kimi.com) uses auth.kimi.com, api.kimi.com/coding/v1, code.kimi.com/kimi-code, www.kimi.com, telemetry-logs.kimi.com/v1/event, code-rc.kimi.com; global (kimi.ai) uses the .ai equivalents; the region is resolved locally from KIMI_CODE_OAUTH_HOST/KIMI_OAUTH_HOST, the login, the <home>/region marker, <home>/region.json, time zone and locale, else mainland-cn; other endpoints include api.moonshot.ai/cn, cdn.kimi.com, models.dev, GitHub codeload and the plugin marketplace.",
+  "verdict": "Holds; checked: main.cjs sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57, the cited lines read with sed -n",
+  "sources": [
+   "main.cjs is the bundle that bin/sea_extract.py extracts from the Kimi Code 2.5.3 binary: 23,705,892 bytes, sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57 (local-K02); it is not archived",
+   "main.cjs:16111-16129 (oauth/src/region.ts KIMI_REGION_PROFILES, KIMI_REGION_MARKER_FILENAME = 'region'); main.cjs:16034-16061 (resolveKimiRegionFromParts); main.cjs:16259-16300 (region-resolver.ts 'env > login > marker > cache > local-signals > default'); main.cjs:16185-16228 (region-local.ts time zone and locale votes); main.cjs:16182 (KIMI_REGION_CACHE_FILENAME = 'region.json'); main.cjs:15215 (DEFAULT_KIMI_CODE_OAUTH_HOST); host list $SCRATCH/kimi/work/urls_fp.txt; $SCRATCH/kimi/out/help_login.txt: '\"mainland-cn\" (kimi.com) or \"global\" (kimi.ai)'"
+  ]
+ },
+ {
+  "id": "local-K45",
+  "claim": "Catalog refresh rewrites config.toml only for the managed Kimi Code provider, open platforms, managed-endpoint kimi providers and custom-registry providers (with source); providers with model_source = 'static' are excluded explicitly, and a hand-written openai provider matches no refresh branch (inferred).",
+  "verdict": "Holds; checked: main.cjs sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57, the cited lines read with sed -n",
+  "sources": [
+   "main.cjs is the bundle that bin/sea_extract.py extracts from the Kimi Code 2.5.3 binary: 23,705,892 bytes, sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57 (local-K02); it is not archived",
+   "main.cjs:17940-17958 (oauth/src/refreshProviderModels.ts doc comment listing the four provider kinds); main.cjs:18142-18163 (custom registry branch requires provider.source); main.cjs:206738-206761 (discoveryService.ts effectiveModelSource, computeStaticExclusion); main.cjs:206801-206816 (applyRefreshPatch -> config.replaceSections)"
+  ]
+ },
+ {
+  "id": "local-K46",
+  "claim": "Kimi's config writer re-reads the file, edits only the changed sections and keeps comments and other keys; it watches config.toml and reloads on change, while its built-in update-config skill tells users to run /reload or start a new session.",
+  "verdict": "Holds; checked: main.cjs sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57, the cited lines read with sed -n, and the update-config skill text (main.cjs:72837) says to run /reload or that the next new session picks the change up",
+  "sources": [
+   "main.cjs is the bundle that bin/sea_extract.py extracts from the Kimi Code 2.5.3 binary: 23,705,892 bytes, sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57 (local-K02); it is not archived",
+   "main.cjs:169229-169281 (configService.ts persistDomains with planConfigWriteback and setText); main.cjs:167954-168587 (app/config/tomlWriteback.ts); main.cjs:168816-168824 (watchCandidates(homeDir, [configFile]) -> reload()); $SCRATCH/kimi/work/skill_update_config.md lines 90-98 ('changed config.toml -> run /reload in the TUI'; 'the next new session picks it up automatically')"
+  ]
+ },
+ {
+  "id": "local-K47",
+  "claim": "FetchURL fetches directly from this machine when neither [services.moonshot_fetch] nor a managed Kimi login exists; WebSearch resolves only from [services.moonshot_search] or a managed login; session titles are requested only from the managed Kimi provider.",
+  "verdict": "Holds; checked: main.cjs sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57, the cited lines read with sed -n",
+  "sources": [
+   "main.cjs is the bundle that bin/sea_extract.py extracts from the Kimi Code 2.5.3 binary: 23,705,892 bytes, sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57 (local-K02); it is not archived",
+   "main.cjs:275349-275379 (app/web/webService.ts fromServicesConfig ?? fromManagedOAuth ?? localFetcher); main.cjs:261325-261360 (webSearchService.ts returns undefined without services or managed provider); main.cjs:167757-167758 (sessionTitleService.ts returns when the managed provider is absent)"
+  ]
+ },
+ {
+  "id": "local-K48",
+  "claim": "The Bash tool runs /bin/bash -c \"cd '<cwd>' && <command>\" (or /bin/sh) through Node child_process.spawn, detached on POSIX and killed by process group, with the process environment plus NO_COLOR=1, TERM=dumb, GIT_TERMINAL_PROMPT=0 and SHELL; foreground timeout 60 s by default (max 300 s), background 600 s; there is no sandbox or systemd scope; permission modes are manual, auto (--auto), yolo (-y) and plan, set by flags or default_permission_mode.",
+  "verdict": "Holds; checked: main.cjs sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57, the cited lines read with sed -n; buildEnv (2093) merges the process environment, and the background timeout of 600 s is a default with a 86400 s maximum",
+  "sources": [
+   "main.cjs is the bundle that bin/sea_extract.py extracts from the Kimi Code 2.5.3 binary: 23,705,892 bytes, sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57 (local-K02); it is not archived",
+   "main.cjs:135719-135732 (tools/os/bash/bashTool.ts spawn); main.cjs:234-261 (_base/execEnv/environmentProbe.ts /bin/bash candidates, /bin/sh fallback); main.cjs:2073-2091, 2200 (node-local/hostProcessService.ts detached ?? !isWindows, process.kill(-pid)); main.cjs:134563-134590 (bash.ts timeout schema); command `grep -nE 'bwrap|bubblewrap|landlock|seccomp|sandbox-exec|seatbelt|systemd-run|firejail|nsjail|unshare'` over first-party code: only a comment in pi-tui/src/terminal.ts:319288; main.cjs:232190-232196 (DefaultPermissionModeSchema manual|auto|yolo)"
+  ]
+ },
+ {
+  "id": "local-K49",
+  "claim": "Approval policies run in order: auto-mode AskUserQuestion deny, user deny, dangerous-command ask (left out in non-interactive runs), auto-mode approve, session approval history, user ask, user allow, sensitive file ask, git control path ask, yolo approve, default approve of read-only tools, git cwd write approve, fallback ask; -p runs the main agent in auto mode with nonInteractive true, where any remaining ask becomes a deny.",
+  "verdict": "Holds; checked: main.cjs sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57, the cited lines read with sed -n",
+  "sources": [
+   "main.cjs is the bundle that bin/sea_extract.py extracts from the Kimi Code 2.5.3 binary: 23,705,892 bytes, sha256 0fc8a727c50dda755dcc19105ccaae0d29c0626acf85f42ccb3d3700c8fffc57 (local-K02); it is not archived",
+   "main.cjs:287142-287156 (permissionPolicyService.ts policy list with bootstrap.args.nonInteractive ? [] : [DangerousCommandAsk...]); main.cjs:286279-286281 (auto-mode-approve); main.cjs:286785-286809 (DEFAULT_APPROVE_TOOLS); main.cjs:499463, 499692 (run-v2-print.ts nonInteractive: true, setMode('auto')); main.cjs:300857 (sdk-rpc-client-v2.ts passes nonInteractive into bootstrap args); main.cjs:214674-214678 (toolApprovalService.ts non-interactive ask -> deny)"
+  ]
+ }
+]

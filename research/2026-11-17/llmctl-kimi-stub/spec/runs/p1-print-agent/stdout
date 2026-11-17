@@ -1,0 +1,3 @@
+{"role":"meta","type":"system.version","version":"2.5.3"}
+{"role":"assistant","content":"PONG-ONE"}
+{"role":"meta","type":"session.resume_hint","session_id":"session_26f56e74-569f-4086-b524-095dec8e1592","command":"kimi -r session_26f56e74-569f-4086-b524-095dec8e1592","content":"To resume this session: kimi -r session_26f56e74-569f-4086-b524-095dec8e1592"}

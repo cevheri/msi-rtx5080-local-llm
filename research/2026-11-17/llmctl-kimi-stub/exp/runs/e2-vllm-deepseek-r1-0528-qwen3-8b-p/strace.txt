@@ -1,0 +1,20 @@
+927922 +++ exited with 0 +++
+927915 connect(20, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+927915 connect(20, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+927927 connect(10, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+927927 connect(10, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+927927 +++ exited with 0 +++
+927923 --- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=927927, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+927915 connect(21, {sa_family=AF_INET, sin_port=htons(8000), sin_addr=inet_addr("127.0.0.1")}, 16) = -1 EINPROGRESS (Operation now in progress)
+927918 +++ exited with 0 +++
+927919 +++ exited with 0 +++
+927920 +++ exited with 0 +++
+927917 +++ exited with 0 +++
+927916 +++ exited with 0 +++
+927926 +++ exited with 0 +++
+927924 +++ exited with 0 +++
+927925 +++ exited with 0 +++
+927923 +++ exited with 0 +++
+927921 +++ exited with 0 +++
+927915 +++ exited with 0 +++
+927914 +++ exited with 0 +++

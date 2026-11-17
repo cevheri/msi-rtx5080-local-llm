@@ -1,0 +1,51 @@
+ 
+
+  ⠋ Preparing Kimi Code…                                                                                                                   
+
+ 
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │                                                                                                                                        │
+
+ │  ▐█▛█▛█▌  Welcome to Kimi Code!                                                                                                        │
+
+ │  ▐█████▌  Send /help for help information.                                                                                             │
+
+ │                                                                                                                                        │
+
+ │  Directory: $SCRATCH/kimi/exp/work/e8-tui-idle-stra…│
+
+ │  Session:                                                                                                                              │
+
+ │  Model:     gemma-4-26b-a4b on llama.cpp (llmctl)                                                                                      │
+
+ │  Version:   2.5.3                                                                                                                      │
+
+ │                                                                                                                                        │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ 
+
+   No session yet — one will be created on your first message.                                                                             
+
+ 
+
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ >                                                                                                                                      │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ gemma-4-26b-a4b on llama.cpp (llmctl)  …/exp/work/e8-tui-idle-strace                       /sessions to browse and resume earlier sessions
+
+                                                                                                                       context: 0% (0/128k)
+<<<MARK idle 12 s>>>
+
+ gemma-4-26b-a4b on llama.cpp (llmctl)  …/exp/work/e8-tui-idle-strace
+
+ Press Ctrl+C again to exit                                                                                            context: 0% (0/128k)
+                                                                                                                       context: 0% (0/128k)
+ Shutting down… (running shutdown hooks)                                                                               context: 0% (0/128k) 
+
+ Bye!

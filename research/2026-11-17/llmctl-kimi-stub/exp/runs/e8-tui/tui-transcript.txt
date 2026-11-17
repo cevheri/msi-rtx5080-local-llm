@@ -1,0 +1,373 @@
+ 
+
+  ⠋ Preparing Kimi Code…                                                                                                                   
+
+ 
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │                                                                                                                                        │
+
+ │  ▐█▛█▛█▌  Welcome to Kimi Code!                                                                                                        │
+
+ │  ▐█████▌  Run /login or /provider to get started.                                                                                      │
+
+ │                                                                                                                                        │
+
+ │  Directory: $SCRATCH/kimi/exp/work/e8-tui           │
+
+ │  Session:                                                                                                                              │
+
+ │  Model:     not set, run /login or /provider                                                                                           │
+
+ │  Version:   2.5.3                                                                                                                      │
+
+ │                                                                                                                                        │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ 
+
+   No session yet — one will be created on your first message.                                                                             
+
+ 
+
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ >                                                                                                                                      │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ …/exp/work/e8-tui                 /plugins: manage plugins — try the "Kimi Datasource" for reliable financial, economic, and academic data
+
+                                                                                                                                context: 0%
+<<<MARK start>>>
+
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ > /                                                                                                                                    │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ …/exp/work/e8-tui                                                                      ask Kimi to schedule tasks, e.g. "remind me at 5pm"
+ │   → yolo                   Ask When Needed mode: routine edits and commands run automatically; risky actions, questions, and plans     │
+
+ │                            still ask.                                                                                                  │
+
+ │     model                  Switch LLM model                                                                                            │
+
+ │     permission             Select permission mode                                                                                      │
+
+ │     plan                   Toggle plan mode                                                                                            │
+
+ │     settings               Open TUI settings                                                                                           │
+
+ │     (1/52)                                                                                                                             │
+
+ …/exp/work/e8-tui                                                                      ask Kimi to schedule tasks, e.g. "remind me at 5pm"
+
+                                                                                                                                context: 0%
+ │ > /m                                                                                                                                   │
+ │   → model                 Switch LLM model                                                                                             │
+
+ │     mcp                   Show MCP server status                                                                                       │
+
+ │     mcp-config            Configure MCP servers and handle MCP OAuth login.                                                            │
+
+ │     export-md             Export current session as a Markdown file                                                                    │
+
+ │     secondary-model       Configure the secondary model for subagents                                                                  │
+
+ │     (1/17)                                                                                                                             │
+
+ …/exp/work/e8-tui                                                                      ask Kimi to schedule tasks, e.g. "remind me at 5pm"
+
+                                                                                                                                context: 0%
+
+
+ │ > /mo                                                                                                                                  │
+ │     secondary-model       Configure the secondary model for subagents                                                                  │
+
+ │     mcp-config            Configure MCP servers and handle MCP OAuth login.                                                            │
+
+ │     remote-control        Open the current session through Kimi Remote Control                                                         │
+
+ │     import-sessions       Import recent Claude Code and Codex sessions                                                                 │
+
+ │     (1/8)                                                                                                                              │
+ │ > /mod                                                                                                                                 │
+ │     check-kimi-code-docs  Answer questions about the Kimi Code product using the official documentation — CLI usage,                   │
+
+ │                           configuration, slash commands, features, membership and quota, API onboarding, third-party tool setup,…      │
+
+ │     import-from-cc-codex  Import Claude Code and Codex instructions, skills, and MCP settings into Kimi Code.                          │
+
+ …/exp/work/e8-tui                                                                      ask Kimi to schedule tasks, e.g. "remind me at 5pm"
+
+                                                                                                                                context: 0%
+
+
+ │ > /mode                                                                                                                                │
+ │ > /model                                                                                                                               │
+ │   → model            Switch LLM model                                                                                                  │
+
+ │     secondary-model  Configure the secondary model for subagents                                                                       │
+
+ …/exp/work/e8-tui                                                                      ask Kimi to schedule tasks, e.g. "remind me at 5pm"
+
+                                                                                                                                context: 0%
+
+
+
+
+
+
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ >                                                                                                                                      │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ …/exp/work/e8-tui                                                                      ask Kimi to schedule tasks, e.g. "remind me at 5pm"
+
+                                                                                                                                context: 0%
+
+
+
+
+ ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+  Select a model  (type to search)
+
+  Tab toggle provider · ↑↓ navigate · Enter select · Alt+S session-only · Esc cancel
+
+ 
+
+   All   llmctl 
+
+ 
+
+   ❯ gemma-4-26b-a4b on llama.cpp (llmctl)  llmctl
+
+ 
+
+  Thinking
+
+     On (Unsupported)   [ Off ]
+
+ 
+
+ ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+ …/exp/work/e8-tui                                                                      ask Kimi to schedule tasks, e.g. "remind me at 5pm"
+
+                                                                                                                                context: 0%
+<<<MARK selector>>>
+
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ >                                                                                                                                      │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ …/exp/work/e8-tui                                                                      ask Kimi to schedule tasks, e.g. "remind me at 5pm"
+
+                                                                                                                                context: 0%
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ │  ▐█████▌  Send /help for help information.                                                                                             │
+
+ │                                                                                                                                        │
+
+ │  Directory: $SCRATCH/kimi/exp/work/e8-tui           │
+
+ │  Session:                                                                                                                              │
+
+ │  Model:     gemma-4-26b-a4b on llama.cpp (llmctl)                                                                                      │
+
+ │  Version:   2.5.3                                                                                                                      │
+
+ │                                                                                                                                        │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ 
+
+   No session yet — one will be created on your first message.                                                                             
+
+ 
+
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ >                                                                                                                                      │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ gemma-4-26b-a4b on llama.cpp (llmctl)  …/exp/work/e8-tui                               ask Kimi to schedule tasks, e.g. "remind me at 5pm"
+   Switched to gemma-4-26b-a4b on llama.cpp (llmctl) with thinking off.                                                                    
+
+ 
+
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ >                                                                                                                                      │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ gemma-4-26b-a4b on llama.cpp (llmctl)  …/exp/work/e8-tui                               ask Kimi to schedule tasks, e.g. "remind me at 5pm"
+
+                                                                                                                                context: 0%
+<<<MARK picked>>>
+
+ │ > R                                                                                                                                    │
+ │ > Re                                                                                                                                   │
+ │ > Rep                                                                                                                                  │
+ │ > Repl                                                                                                                                 │
+ │ > Reply                                                                                                                                │
+ │ > Reply                                                                                                                                │
+ │ > Reply w                                                                                                                              │
+ │ > Reply wi                                                                                                                             │
+ │ > Reply wit                                                                                                                            │
+ │ > Reply with                                                                                                                           │
+ │ > Reply with                                                                                                                           │
+ │ > Reply with t                                                                                                                         │
+ │ > Reply with th                                                                                                                        │
+ │ > Reply with the                                                                                                                       │
+ │ > Reply with the                                                                                                                       │
+ │ > Reply with the s                                                                                                                     │
+ │ > Reply with the st                                                                                                                    │
+ │ > Reply with the stu                                                                                                                   │
+ │ > Reply with the stub                                                                                                                  │
+ │ > Reply with the stub                                                                                                                  │
+ │ > Reply with the stub w                                                                                                                │
+ │ > Reply with the stub wo                                                                                                               │
+ │ > Reply with the stub wor                                                                                                              │
+ │ > Reply with the stub word                                                                                                             │
+ │ > Reply with the stub word.                                                                                                            │
+ │ >                                                                                                                                      │
+ │  Session:   session_7028de38-cf43-4584-9407-b5a5ea7dd7d6                                                                               │
+
+ │  Model:     gemma-4-26b-a4b on llama.cpp (llmctl)                                                                                      │
+
+ │  Version:   2.5.3                                                                                                                      │
+
+ │                                                                                                                                        │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ 
+
+   No session yet — one will be created on your first message.                                                                             
+
+   Switched to gemma-4-26b-a4b on llama.cpp (llmctl) with thinking off.                                                                    
+
+ 
+
+ ❯ Reply with the stub word.                                                                                                               
+
+ 
+
+  🌑 · Tip: ! to run a shell command                                                                                                       
+
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ >                                                                                                                                      │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ gemma-4-26b-a4b on llama.cpp (llmctl)  …/exp/work/e8-tui                               ask Kimi to schedule tasks, e.g. "remind me at 5pm"
+
+                                                                                                                       context: 0% (0/128k)
+ 
+
+ ● PONG-ONE                                                                                                                                
+
+ 
+
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ >                                                                                                                                      │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ gemma-4-26b-a4b on llama.cpp (llmctl)  …/exp/work/e8-tui                               ask Kimi to schedule tasks, e.g. "remind me at 5pm"
+
+                                                                                                                      context: 1% (86/128k)
+<<<MARK answered-1>>>
+
+<<<MARK swapped>>>
+
+ │ > R                                                                                                                                    │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ gemma-4-26b-a4b on llama.cpp (llmctl)  …/exp/work/e8-tui
+ │ > Re                                                                                                                                   │
+ │ > Rep                                                                                                                                  │
+ │ > Repl                                                                                                                                 │
+ │ > Reply                                                                                                                                │
+ │ > Reply                                                                                                                                │
+ │ > Reply a                                                                                                                              │
+ │ > Reply ag                                                                                                                             │
+ │ > Reply aga                                                                                                                            │
+ │ > Reply agai                                                                                                                           │
+ │ > Reply again                                                                                                                          │
+ │ > Reply again.                                                                                                                         │
+ 
+
+ ❯ Reply again.                                                                                                                            
+
+ 
+
+  🌑 · Tip: @: mention files                                                                                                               
+
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ >                                                                                                                                      │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ gemma-4-26b-a4b on llama.cpp (llmctl)  …/exp/work/e8-tui
+
+                                                                                                                      context: 1% (86/128k)
+   Error: [config.invalid] Model "llmctl/local" is not configured in config.toml.                                                          
+
+   If this persists, run `/export-debug-zip` and share the file with us for diagnosis. Please don't share it publicly.                     
+
+ 
+
+ ╭────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+
+ │ >                                                                                                                                      │
+
+ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+ gemma-4-26b-a4b on llama.cpp (llmctl)  …/exp/work/e8-tui
+
+                                                                                                                                context: 0%
+<<<MARK answered-2>>>
+
+ gemma-4-26b-a4b on llama.cpp (llmctl)  …/exp/work/e8-tui                               ask Kimi to schedule tasks, e.g. "remind me at 5pm"
+
+ Press Ctrl+C again to exit                                                                                                     context: 0%
+                                                                                                                                context: 0%
+ Shutting down… (running shutdown hooks)                                                                                        context: 0% 
+
+ Bye!
+
+ To resume this session: kimi -r session_7028de38-cf43-4584-9407-b5a5ea7dd7d6

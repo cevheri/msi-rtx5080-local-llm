@@ -1,0 +1,4 @@
+kimi version 2.5.3
+error: failed to run prompt: Model "llmctl/missing" is not configured in config.toml.
+See log: $SCRATCH/kimi/exp/homes/e5-dangling-nom-text/.kimi-code/logs/kimi-code.log
+2026/11/17 11:49:40 socat[930645] W exiting on signal 15

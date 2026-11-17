@@ -1,0 +1,1 @@
+{"code":0,"msg":"success","data":{"items":[{"provider":"llmctl","model":"llmctl/local","display_name":"gemma-4-26b-a4b on llama.cpp (llmctl)","max_context_size":131072,"capabilities":["tool_use"]}]},"request_id":"01M7MBAR7XSRYJRBARTN5G297S"}
