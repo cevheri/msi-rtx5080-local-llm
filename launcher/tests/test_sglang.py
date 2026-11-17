@@ -16,7 +16,7 @@ from launcher.errors import DownloadError, PreflightError, RecipeError, UsageErr
 from launcher.hfcache import HfAuth, HfRepoModel, snapshot_dir
 from launcher.model import GpuInfo, HostEnv, RuntimeConfig, Source, StartCheck
 from launcher.runtimes import sglang
-from launcher.tests.fakes import FakeHost, fail, http as response, ok
+from launcher.tests.fakes import REPO, FakeHost, fail, http as response, ok
 from launcher.tests.sglang_fixture import (
     FIXTURES,
     QWEN_GENERATION_CONFIG,
@@ -394,14 +394,15 @@ class SglangRecipeTest(SglangTestCase):
                          "measure with it (sglang/README.md#memory-budget)")
 
     def test_fixture_catalog(self):
+        from launcher.runtimes import ADAPTERS
+        before = dict(ADAPTERS)
         with tempfile.TemporaryDirectory() as tmp, registered():
             catalog = fixture_catalog(Path(tmp))
             self.assertEqual(sorted(catalog.runtimes["sglang"].recipes),
                              ["deepseek-r1-0528-qwen3-8b", "gpt-oss-20b", "k2-horizon-7b", "qwen3.5-9b"])
             for name, entry in catalog.runtimes.items():
                 self.assertEqual([p.message for p in entry.problems], [], name)
-        from launcher.runtimes import ADAPTERS
-        self.assertNotIn("sglang", ADAPTERS)
+        self.assertEqual(ADAPTERS, before)
 
 
 QWEN_REV = "a4df85a20fb7e54740f564f15af0c2f5d9c6616c"
@@ -792,6 +793,46 @@ class SglangPullTest(OverlayTestCase):
                         str(ctx.exception))
         self.assertTrue(str(ctx.exception).endswith("; delete that file and its blob from the Hugging Face cache, "
                                                     "then pull again"), str(ctx.exception))
+
+
+SHIPPED = REPO / "recipes" / "sglang"
+# The runtime file's [env]: D4's seven variables plus the lead's eighth (ledger: PYTORCH_ALLOC_CONF, measurement C).
+SHIPPED_ENV = (
+    ("HF_HUB_OFFLINE", "1"),
+    ("HF_MODULES_CACHE", "/tmp/hf_modules"),
+    ("MAX_JOBS", "2"),
+    ("FLASHINFER_NO_DOWNLOAD", "1"),
+    ("SYNC_TOKEN_IDS_ACROSS_TP", "1"),
+    ("NCCL_MAX_P2P_NCHANNELS", "1"),
+    ("TIKTOKEN_ENCODINGS_BASE", "/opt/sglang/lib/python3.12/site-packages/tml_renderers/data"),
+    ("PYTORCH_ALLOC_CONF", "pinned_max_round_threshold_mb:1"),
+)
+# D8's rule over every SGLang recipe this pull request ships: 64 x ceil((486 + 256) / 64) (ledger, Task 11 ruling).
+MIN_FREE = 768
+
+
+class ShippedSglangTest(unittest.TestCase):
+    def test_runtime_file(self):
+        data, source = read_toml(SHIPPED / "_runtime.toml", "shipped")
+        runtime = sglang.parse_runtime(data, source)
+        self.assertEqual((runtime.name, runtime.image, runtime.container_name, runtime.host_port),
+                         ("sglang", "lmsysorg/sglang:v0.5.23-runtime", "sglang", 30000))
+        self.assertEqual((runtime.ready_path, runtime.start_timeout_s, runtime.opencode_provider),
+                         ("/ready", 900, "sglang-docker"))
+        self.assertEqual(runtime.volumes, ("sglang-cache:/root/.cache/sglang",))
+        self.assertEqual(runtime.env, SHIPPED_ENV)
+        self.assertEqual(runtime.min_free_at_ready_mib, MIN_FREE)
+        self.assertIs(runtime.refuses_tools_without_parser, False)
+        self.assertIs(runtime.effort_enables_toggle_thinking, True)
+
+    def test_recipes_parse(self):
+        found = sorted(path.stem for path in SHIPPED.glob("*.toml") if path.name != "_runtime.toml")
+        self.assertEqual(found, ["gpt-oss-20b", "k2-horizon-7b", "qwen3.5-9b"])
+        for stem in found:
+            with self.subTest(recipe=stem):
+                data, source = read_toml(SHIPPED / f"{stem}.toml", "shipped")
+                recipe = sglang.parse_recipe(data, source, stem)
+                self.assertEqual((recipe.id, recipe.runtime, recipe.evidence.kind), (stem, "sglang", "measured"))
 
 
 if __name__ == "__main__":

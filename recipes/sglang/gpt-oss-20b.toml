@@ -1,0 +1,45 @@
+# Measured launch from sglang/models.md#gpt-oss-20b.
+# Effective sampling: temperature 1.0 and top_p 1.0 from the overlay, which equal SGLang's defaults; top_k -1, min_p 0.0 and repetition_penalty 1.0 by SGLang's defaults.
+schema = 1
+id = "gpt-oss-20b"
+name = "gpt-oss-20b MXFP4 (SGLang, Paged Experts)"
+aliases = ["gpt-oss"]
+doc = "sglang/models.md#gpt-oss-20b"
+opencode = true
+
+[model]
+repo = "openai/gpt-oss-20b"
+revision = "6cee5e81ee83917806bbde320786a8fb61efebee"
+exclude = ["original/*", "metal/*"]
+size_bytes = 13789264674
+served_name = "gpt-oss-20b"
+
+[container]
+memory_gib = 20
+
+[server]
+context = 131072
+args = [
+  "--mem-fraction-static", "0.90", "--max-running-requests", "1", "--kv-cache-dtype", "fp8_e4m3",
+  "--swa-full-tokens-ratio", "0.1", "--chunked-prefill-size", "1024", "--disable-prefill-cuda-graph",
+  "--moe-runner-backend", "marlin", "--enable-paged-experts", "--paged-experts-num-resident", "24",
+  "--tool-call-parser", "gpt-oss", "--reasoning-parser", "gpt-oss",
+]
+sampling = { temperature = 1.0, top_p = 1.0 }
+
+[needs]
+gpu_mib = 14724
+ram_gib = 16
+
+[clients]
+output = 16384
+thinking = "effort"
+efforts = ["low", "medium", "high"]
+
+[evidence]
+kind = "measured"
+summary = "124.6 tok/s decode with 128k context through Paged Experts (24 of 32 experts resident), 169,853-token pool, 1,347 MiB free after ready and 1,006 MiB after a 124,459-token prompt and the first grammar request, 300 s of sustained load without error under a 20 GiB memory cap, 14,836 MiB GPU peak, 15.45 GiB of non-reclaimable host memory including the 10.37 GiB pinned expert store, smoke test and tool call passed; a forced tool_choice comes back as text (#41747)"
+decode_tok_s = 124.6
+date = "2026-11-17"
+hardware = "MSI Raider 18 Max HX A2WI, RTX 5080 Laptop GPU 16 GB, 61 GiB RAM"
+record = "research/2026-11-17/sglang-gpt-oss-20b/"

@@ -219,13 +219,16 @@ SHIPPED_CLIENTS = {
     ("vllm", "gemma-4-12b"): TOGGLE_OFF,
     ("vllm", "gemma-4-e4b"): TOGGLE_OFF,
     ("vllm", "qwen3.5-9b"): TOGGLE_OFF,
+    ("sglang", "qwen3.5-9b"): TOGGLE_OFF,
     ("llamacpp", "nemotron-3.5-bolt"): (16384, "toggle", "off", (), (("medium_effort", True),)),
     ("vllm", "mellum2.1-12b"): (16384, "toggle", "on", (), ()),
     ("llamacpp", "qwen3.8-27b"): (16384, "effort", None, ("none", "low", "medium"), ()),
     ("llamacpp", "gpt-oss-20b"): EFFORT_LMH,
     ("vllm", "gpt-oss-20b"): EFFORT_LMH,
+    ("sglang", "gpt-oss-20b"): EFFORT_LMH,
     ("llamacpp", "k2-horizon-mova-36b"): ALWAYS,
     ("vllm", "k2-horizon-7b"): ALWAYS,
+    ("sglang", "k2-horizon-7b"): ALWAYS,
     ("llamacpp", "deepseek-r1-0528-qwen3-8b"): ALWAYS,
     ("vllm", "deepseek-r1-0528-qwen3-8b"): ALWAYS,
     ("llamacpp", "k2-horizon-7b"): (32768, "always", None, (), ()),
@@ -242,7 +245,7 @@ class ClientMetadataTest(unittest.TestCase):
     def test_shipped_client_metadata(self):
         expected = {key: model.ClientMeta(*value) for key, value in SHIPPED_CLIENTS.items()}
         shipped = load_catalog(REPO / "recipes", None)
-        self.assertEqual(len(expected), 19)
+        self.assertEqual(len(expected), 22)
         self.assertEqual(self.clients_of(shipped), expected)
 
         with_example = load_catalog(REPO / "recipes", REPO / "recipes" / "examples")

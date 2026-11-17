@@ -1,8 +1,8 @@
 # OpenCode with the local servers
 
-Last verified: 2026-11-17.
+Last verified: 2026-11-18.
 
-Point OpenCode v2.3.0 at the local servers through custom `@opencode/ai/providers/openai-compatible` providers, one for llama.cpp on `127.0.0.1:8080` and one for vLLM on `127.0.0.1:8000`, with `capabilities.tools: true` and an explicit `limit.context` on every model.
+Point OpenCode v2.3.0 at the local servers through custom `@opencode/ai/providers/openai-compatible` providers, one for llama.cpp on `127.0.0.1:8080`, one for vLLM on `127.0.0.1:8000` and one for SGLang on `127.0.0.1:30000`, with `capabilities.tools: true` and an explicit `limit.context` on every model.
 Turn off the built-in vLLM discovery, because it registers every discovered model with tools disabled.
 Keep thinking off by default on the server for toggle models and opt in per session with a `#thinking` variant; Qwen3.8-27B runs at medium effort with `none`, `low` and `medium` choices instead, and the K2 Horizon models and gpt-oss-20b always think.
 Measured on 2026-11-16: the same OpenCode v2.3.0 write-and-read session passed against eleven local servers (gpt-oss-20b on llama.cpp and on vLLM, Qwen3.8-27B, Qwen3.6-35B-A3B, Gemma 4 26B-A4B, K2 Horizon 7B and MoVA, Qwen3-Coder-Next, Groot-19B-A3B, and Nemotron 3.5 Bolt and Lightning on llama.cpp), each with the entry's default variant ([records](../research/2026-11-16/README.md)).
@@ -39,7 +39,7 @@ A custom openai-compatible model with neither `variants` nor `capabilities.reaso
 
 ## The validated config
 
-This is the two-provider config with one entry for every recipe of [llmctl](llmctl.md) that is measured on this laptop: the eleven llama.cpp recipes, with Qwen3.6-35B-A3B as the default, and gpt-oss-20b, Groot-19B-A3B-261023 NVFP4, K2 Horizon 7B, Gemma 4 12B, Qwen3.5-9B, Mellum2.1 and Gemma 4 E4B on vLLM.
+This is the three-provider config with one entry for every recipe of [llmctl](llmctl.md) that is measured on this laptop: the eleven llama.cpp recipes, with Qwen3.6-35B-A3B as the default, gpt-oss-20b, Groot-19B-A3B-261023 NVFP4, K2 Horizon 7B, Gemma 4 12B, Qwen3.5-9B, Mellum2.1 and Gemma 4 E4B on vLLM, and Qwen3.5-9B, K2 Horizon 7B and gpt-oss-20b on SGLang.
 It extends the research-phase config with a `qwen3.8-27b` entry that uses `reasoning_effort` levels, as the audit asked.
 After the 2026-11-15 re-ranking, the default moved from Qwen3.6-35B-A3B to Qwen3.8-27B, the two K2 Horizon entries were added, and the Gemma 4 12B entry (now an honorable mention; its entry is in [vllm/models.md](../vllm/models.md)) was replaced by Groot, whose entry is copied from [vllm/models.md](../vllm/models.md).
 On 2026-11-16 the user made Qwen3.6-35B-A3B the default again, after it measured 122 tok/s with 128k context against 36 tok/s with 64k for Qwen3.8-27B ([model-selection.md](model-selection.md#decision-summary)).
@@ -49,6 +49,8 @@ Those measurements ran the reply and tool-call checks; the clients e2e of the sa
 The vLLM DeepSeek-R1-0528-Qwen3-8B recipe failed that measurement, because vLLM v0.33.0 loads its tokenizer with the wrong class and garbles every reply, so it has no entry ([vllm/models.md](../vllm/models.md#deepseek-r1-0528-qwen3-8b-chat-only)).
 I re-validated the result on 2026-11-16, after adding the Qwen3-Coder-Next entry, against a fresh copy of [https://opencode.ai/config.json](https://opencode.ai/config.json) (unchanged since 2026-11-15) with Python `jsonschema` 4.19.2 (Draft 2020-12): 0 errors, and negative tests with a V1 `npm` key and a string `tools` value are rejected.
 I re-validated it on 2026-11-17, after adding those seven entries, against a fresh copy of [https://opencode.ai/config.json](https://opencode.ai/config.json) (byte for byte the copy of 2026-11-15) with Python `jsonschema` 4.19.2 (Draft 2020-12): 0 errors for 18 models, and the same two negative tests are rejected.
+On 2026-11-18 the `sglang-docker` provider was added with the entries of the three SGLang recipes, whose model sections are in [sglang/models.md](../sglang/models.md): SGLang answers on `127.0.0.1:30000`, puts reasoning in `reasoning_content`, and keeps vLLM's served names, so the `qwen3.5-9b` and `k2-horizon-7b` entries equal their vLLM twins apart from the name, and the `gpt-oss-20b` entry also holds 131072 tokens of context against vLLM's 65536.
+I re-validated it on 2026-11-18, after adding that provider, against a fresh copy of [https://opencode.ai/config.json](https://opencode.ai/config.json) (sha256 `828719e5c07c6806c002e764a98a4ee9d3904b0d2b084a8d984b714b25d44c62`, byte for byte the copy of 2026-11-15) with Python `jsonschema` 4.19.2 (Draft 2020-12): 0 errors for 21 models, and the same two negative tests are rejected.
 On 2026-11-16 this config was installed as the global `~/.config/opencode/opencode.json` on this laptop, merged with the `mcp` block that file already held, and validated again with 0 errors against the live schema (unchanged).
 Measured the same day: `opencode run` without `-m` reached the default `qwen3.6-35b-a3b` entry and passed the write-and-read task in 9 s ([records](../research/2026-11-16/opencode-global-config/)).
 
@@ -220,6 +222,36 @@ Measured the same day: `opencode run` without `-m` reached the default `qwen3.6-
             { "id": "thinking", "body": { "chat_template_kwargs": { "enable_thinking": true } } },
             { "id": "none", "body": { "chat_template_kwargs": { "enable_thinking": false } } }
           ]
+        }
+      }
+    },
+    "sglang-docker": {
+      "name": "SGLang (Docker)",
+      "package": "@opencode/ai/providers/openai-compatible",
+      "settings": { "baseURL": "http://127.0.0.1:30000/v1", "headerTimeout": 600000 },
+      "compatibility": { "reasoningField": "reasoning_content" },
+      "models": {
+        "qwen3.5-9b": {
+          "modelID": "qwen3.5-9b",
+          "name": "Qwen3.5-9B NVFP4 (SGLang)",
+          "capabilities": { "tools": true, "input": ["text"], "output": ["text"], "reasoning": { "supported": true } },
+          "limit": { "context": 131072, "output": 16384 },
+          "variants": [
+            { "id": "thinking", "body": { "chat_template_kwargs": { "enable_thinking": true } } },
+            { "id": "none", "body": { "chat_template_kwargs": { "enable_thinking": false } } }
+          ]
+        },
+        "k2-horizon-7b": {
+          "modelID": "k2-horizon-7b",
+          "name": "K2 Horizon 7B AWQ-INT4 (SGLang)",
+          "capabilities": { "tools": true, "input": ["text"], "output": ["text"], "reasoning": { "supported": true } },
+          "limit": { "context": 65536, "output": 16384 }
+        },
+        "gpt-oss-20b": {
+          "modelID": "gpt-oss-20b",
+          "name": "gpt-oss-20b MXFP4, Paged Experts (SGLang)",
+          "capabilities": { "tools": true, "input": ["text"], "output": ["text"], "reasoning": { "supported": true, "effort": ["low", "medium", "high"] } },
+          "limit": { "context": 131072, "output": 16384 }
         }
       }
     }

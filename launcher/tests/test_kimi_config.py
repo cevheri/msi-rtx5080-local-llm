@@ -305,20 +305,21 @@ class GenerateTest(unittest.TestCase):
     def test_model_tables_of_the_other_kinds(self):
         for (runtime, recipe_id), model_text in DESIGN_MODEL_TABLES.items():
             with self.subTest(recipe=f"{runtime}/{recipe_id}"):
-                text = kimi_config.render_tables(target_for(recipe_id, runtime, RECIPES))
+                target = target_for(recipe_id, runtime, RECIPES)
+                text = kimi_config.render_tables(target)
                 before, after = text.split("\n\n")
-                port = 8080 if runtime == "llamacpp" else 8000
+                port = target.runtime.host_port
                 self.assertEqual(before + "\n", DESIGN_PROVIDER.format(port=port))
                 self.assertEqual(after, model_text)
 
     def test_every_recipe_describes_its_server(self):
         targets = all_targets()
-        self.assertEqual(len(targets), 19)
+        self.assertEqual(len(targets), 22)
         for target in targets:
             with self.subTest(recipe=f"{target.recipe.runtime}/{target.recipe.id}"):
                 provider = kimi_config.provider_table(target)
                 model = kimi_config.model_table(target)
-                port = 8080 if target.recipe.runtime == "llamacpp" else 8000
+                port = target.runtime.host_port
                 self.assertEqual(provider["base_url"], f"http://127.0.0.1:{port}/v1")
                 self.assertEqual(model["model"], target.served)
                 self.assertEqual(model["max_context_size"], target.recipe.context)
@@ -337,7 +338,7 @@ class GenerateTest(unittest.TestCase):
                 self.assertEqual("off_effort" in model, target.recipe.id == "qwen3.8-27b")
                 if target.recipe.id == "deepseek-r1-0528-qwen3-8b":
                     self.assertEqual(model["capabilities"], [])
-        self.assertEqual(kinds, {"toggle": 10, "effort": 3, "always": 5, "none": 1})
+        self.assertEqual(kinds, {"toggle": 11, "effort": 4, "always": 6, "none": 1})
 
     def test_tables_reparse(self):
         for target in all_targets():

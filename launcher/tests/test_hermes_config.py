@@ -117,7 +117,7 @@ class RenderTest(unittest.TestCase):
                 self.assertEqual(keys, owned if target.recipe.chat_only else owned[:-1])
                 self.assertEqual(dict(pairs), hermes_config.block_values(target))
                 checked += 1
-        self.assertEqual(checked, 19)
+        self.assertEqual(checked, 22)
 
     def test_odd_recipe_id_renders(self):
         target = target_for("qwen3.6-35b-a3b", "llamacpp", RECIPES)

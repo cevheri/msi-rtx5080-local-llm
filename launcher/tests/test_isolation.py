@@ -35,6 +35,7 @@ def edit_runtime(directory: Path, port: int, extra_arg: str) -> None:
         assert "args = [\n" in text, recipe
         text = text.replace("args = [\n", f'args = [\n  "{extra_arg}",\n', 1)
         text = re.sub(r"(?m)^memory_gib = \d+$", "memory_gib = 7", text)
+        text = re.sub(r"(?m)^ram_gib = [\d.]+$", "ram_gib = 1", text)
         text = re.sub(r"(?m)^output = \d+$", "output = 12288", text)
         recipe.write_text(text)
 
@@ -48,7 +49,7 @@ class IsolationTest(unittest.TestCase):
     def tearDown(self):
         self.tmp.cleanup()
 
-    def assert_runtime_untouched(self, edited: str, untouched: str) -> None:
+    def assert_runtime_untouched(self, edited: str, untouched: list[str]) -> None:
         catalog = load_catalog(self.recipes, None)
         self.assertEqual([p.message for p in catalog.runtimes[edited].problems], [])
         changed = 0
@@ -56,9 +57,11 @@ class IsolationTest(unittest.TestCase):
             expected = json.loads((GOLDEN / edited / f"{recipe_id}.json").read_text())
             changed += golden_argv(recipe_id, edited, self.recipes) != expected
         self.assertEqual(changed, len(catalog.runtimes[edited].recipes), "the edit did not reach every recipe")
-        for recipe_id in catalog.runtimes[untouched].recipes:
-            expected = json.loads((GOLDEN / untouched / f"{recipe_id}.json").read_text())
-            self.assertEqual(golden_argv(recipe_id, untouched, self.recipes), expected, f"{untouched}/{recipe_id}")
+        self.assertEqual(sorted(untouched), sorted(set(catalog.runtimes) - {edited}))
+        for other in untouched:
+            for recipe_id in catalog.runtimes[other].recipes:
+                expected = json.loads((GOLDEN / other / f"{recipe_id}.json").read_text())
+                self.assertEqual(golden_argv(recipe_id, other, self.recipes), expected, f"{other}/{recipe_id}")
         for recipe_id in catalog.runtimes[edited].recipes:
             texts = self.client_texts(recipe_id, edited)
             self.assertNotEqual(texts[0], (CLIENT_GOLDEN / edited / f"{recipe_id}.hermes.yaml").read_text(),
@@ -69,29 +72,34 @@ class IsolationTest(unittest.TestCase):
                                 f"the edit did not reach the dsh block of {edited}/{recipe_id}")
             self.assertNotEqual(texts[3], (CLIENT_GOLDEN / edited / f"{recipe_id}.kimi.toml").read_text(),
                                 f"the edit did not reach the Kimi tables of {edited}/{recipe_id}")
-        for recipe_id in catalog.runtimes[untouched].recipes:
-            texts = self.client_texts(recipe_id, untouched)
-            self.assertEqual(texts[0], (CLIENT_GOLDEN / untouched / f"{recipe_id}.hermes.yaml").read_text(),
-                             f"{untouched}/{recipe_id}.hermes.yaml")
-            self.assertEqual(texts[1], (CLIENT_GOLDEN / untouched / f"{recipe_id}.pi.json").read_text(),
-                             f"{untouched}/{recipe_id}.pi.json")
-            self.assertEqual(texts[2], (CLIENT_GOLDEN / untouched / f"{recipe_id}.dsh.yml").read_text(),
-                             f"{untouched}/{recipe_id}.dsh.yml")
-            self.assertEqual(texts[3], (CLIENT_GOLDEN / untouched / f"{recipe_id}.kimi.toml").read_text(),
-                             f"{untouched}/{recipe_id}.kimi.toml")
+        for other in untouched:
+            for recipe_id in catalog.runtimes[other].recipes:
+                texts = self.client_texts(recipe_id, other)
+                self.assertEqual(texts[0], (CLIENT_GOLDEN / other / f"{recipe_id}.hermes.yaml").read_text(),
+                                 f"{other}/{recipe_id}.hermes.yaml")
+                self.assertEqual(texts[1], (CLIENT_GOLDEN / other / f"{recipe_id}.pi.json").read_text(),
+                                 f"{other}/{recipe_id}.pi.json")
+                self.assertEqual(texts[2], (CLIENT_GOLDEN / other / f"{recipe_id}.dsh.yml").read_text(),
+                                 f"{other}/{recipe_id}.dsh.yml")
+                self.assertEqual(texts[3], (CLIENT_GOLDEN / other / f"{recipe_id}.kimi.toml").read_text(),
+                                 f"{other}/{recipe_id}.kimi.toml")
 
     def client_texts(self, recipe_id: str, runtime: str) -> tuple[str, str, str, str]:
         target = target_for(recipe_id, runtime, self.recipes)
         return (hermes_config.render_block(target), pi_config.new_models_text(target),
                 dsh_config.render_block(target, default=True), kimi_config.render_tables(target))
 
-    def test_llamacpp_edits_leave_vllm_alone(self):
+    def test_llamacpp_edits_leave_the_others_alone(self):
         edit_runtime(self.recipes / "llamacpp", 8090, "--metrics")
-        self.assert_runtime_untouched("llamacpp", "vllm")
+        self.assert_runtime_untouched("llamacpp", ["vllm", "sglang"])
 
-    def test_vllm_edits_leave_llamacpp_alone(self):
+    def test_vllm_edits_leave_the_others_alone(self):
         edit_runtime(self.recipes / "vllm", 8001, "--disable-log-requests")
-        self.assert_runtime_untouched("vllm", "llamacpp")
+        self.assert_runtime_untouched("vllm", ["llamacpp", "sglang"])
+
+    def test_sglang_edits_leave_the_others_alone(self):
+        edit_runtime(self.recipes / "sglang", 30001, "--enable-metrics")
+        self.assert_runtime_untouched("sglang", ["llamacpp", "vllm"])
 
 
 def parse_module(name: str) -> ast.Module:

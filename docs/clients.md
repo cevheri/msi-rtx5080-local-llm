@@ -1,6 +1,6 @@
 # Hermes Agent, Pi, DeepSeek Harness and Kimi Code CLI with the local servers
 
-Last verified: 2026-11-17.
+Last verified: 2026-11-18.
 
 `./llmctl up <model>` writes one llmctl entry into Hermes Agent, one into Pi, one block of rows into DeepSeek Harness (dsh), and two tables into Kimi Code CLI's `config.toml`, `[providers.llmctl]` and `[models."llmctl/<served name>"]`, with Kimi's `default_model` when you ask for it, so each reaches the model llmctl runs with its context, output cap and default thinking, without a manual config edit.
 This document shows those entries, how each client thinks with them, what llmctl checks, and what was measured; which files llmctl writes and when, `LLMCTL_CLIENTS`, `--set-default` and the refusals are in [llmctl.md](llmctl.md#clients), and OpenCode is in [opencode.md](opencode.md).
@@ -502,7 +502,7 @@ A value the installed dsh rejects makes the `llm-pi-ai` row fail to activate, wh
 
 dsh compacts a session before the window fills only above `min(0.8 x window, window - maxTokens - 65,536)` tokens, and never when that value is not positive, which dsh reports only once per model through its own logger and headless did not print at all (B3-2; [compaction-basic/src/config.ts:20](https://github.com/deepseek-ai/deepseek-harness/blob/38a6a5c965aa99ab525161efb7cc5cf1fe62fced/packages/compaction/compaction-basic/src/config.ts#L20), [75](https://github.com/deepseek-ai/deepseek-harness/blob/38a6a5c965aa99ab525161efb7cc5cf1fe62fced/packages/compaction/compaction-basic/src/config.ts#L75) and [172-194](https://github.com/deepseek-ai/deepseek-harness/blob/38a6a5c965aa99ab525161efb7cc5cf1fe62fced/packages/compaction/compaction-basic/src/config.ts#L172-L194), [src/index.ts:165-171](https://github.com/deepseek-ai/deepseek-harness/blob/38a6a5c965aa99ab525161efb7cc5cf1fe62fced/packages/compaction/compaction-basic/src/index.ts#L165-L171), [runs](../research/2026-11-16/llmctl-dsh-stub/laneB/runs/b3-comp-64k-60000/)) (measured on the MSI Raider 18 Max HX against a recording stub, dsh 0.2.2-rc.3).
 The 128k recipes compact at 49,152 tokens.
-8 of 19 recipes have a context minus output cap of 65,536 tokens or less and get no proactive compaction: on llama.cpp qwen3.8-27b, k2-horizon-7b, k2-horizon-mova-36b and deepseek-r1-0528-qwen3-8b, and on vLLM gemma-4-e4b, gpt-oss-20b, k2-horizon-7b and deepseek-r1-0528-qwen3-8b.
+9 of 22 recipes have a context minus output cap of 65,536 tokens or less and get no proactive compaction: on llama.cpp qwen3.8-27b, k2-horizon-7b, k2-horizon-mova-36b and deepseek-r1-0528-qwen3-8b, on vLLM gemma-4-e4b, gpt-oss-20b, k2-horizon-7b and deepseek-r1-0528-qwen3-8b, and on SGLang k2-horizon-7b.
 For them dsh still recovers after the server rejects an overlong prompt (`configuration-23`, `extra-5`), and `up` prints a compaction line; llmctl writes no compaction row.
 
 `streamIdleTimeoutMs` 900000 replaces dsh's default of 300,000 ([llm-pi-ai/src/config.ts:47](https://github.com/deepseek-ai/deepseek-harness/blob/38a6a5c965aa99ab525161efb7cc5cf1fe62fced/packages/llm/llm-pi-ai/src/config.ts#L47)), because time spent queued behind another request on a single-slot server counts as idle (B3-4), and 16,384 output tokens at Qwen3.8-27B's 36 tok/s take about 455 s (B3-8) (estimate).

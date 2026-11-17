@@ -10,6 +10,7 @@ import unittest
 
 from launcher import dsh_config, kimi_config, opencode_config
 from launcher.catalog import load_catalog
+from launcher.hfcache import repo_dirname
 from launcher.runtimes import ADAPTERS
 from launcher.tests.fakes import REPO
 
@@ -100,6 +101,18 @@ def vllm_launch(doc: str) -> dict:
     return {"memory": int(tokens[tokens.index("--memory") + 1].rstrip("g")), "repo": server.pop(0),
             "served": take(server, "--served-model-name"), "context": int(take(server, "--max-model-len")),
             "args": server}
+
+
+def sglang_launch(doc: str) -> dict:
+    tokens = last_run_block(section(doc))
+    server = tokens[next(i for i, t in enumerate(tokens) if t.startswith("lmsysorg/sglang:")) + 1:]
+    if server[:3] != ["python3", "-m", "sglang.launch_server"]:
+        raise AssertionError(f"{doc}: the image is not followed by python3 -m sglang.launch_server")
+    del server[:3]
+    return {"memory": int(tokens[tokens.index("--memory") + 1].rstrip("g")),
+            "model_path": take(server, "--model-path"), "served": take(server, "--served-model-name"),
+            "context": int(take(server, "--context-length")), "host": take(server, "--host"),
+            "port": int(take(server, "--port")), "args": server}
 
 
 def opencode_providers() -> dict:
@@ -199,6 +212,55 @@ class DocsConsistencyTest(unittest.TestCase):
                 self.assertEqual((launch["repo"], launch["served"]), (recipe.model.repo, recipe.model.served_name))
                 self.assertEqual((launch["memory"], launch["context"]), (recipe.memory_gib, recipe.context))
                 self.assertEqual(launch["args"], list(recipe.args))
+
+    def test_sglang_docs_match(self):
+        for recipe in self.catalog.runtimes["sglang"].recipes.values():
+            with self.subTest(recipe=recipe.id):
+                launch = sglang_launch(recipe.doc)
+                self.assertEqual((launch["memory"], launch["context"]), (recipe.memory_gib, recipe.context))
+                self.assertEqual(launch["served"], recipe.model.served_name)
+                self.assertEqual(launch["args"], list(recipe.args))
+                self.assertEqual((launch["host"], launch["port"]), ("0.0.0.0", 30000))
+                self.assertEqual(launch["model_path"], f"/root/.cache/huggingface/hub/{repo_dirname(recipe.model.repo)}"
+                                                       f"/snapshots/{recipe.model.revision}")
+
+    def test_sglang_sampling_lines_match(self):
+        for recipe in self.catalog.runtimes["sglang"].recipes.values():
+            with self.subTest(recipe=recipe.id):
+                lines = [line for line in section(recipe.doc) if line.startswith("Sampling: llmctl pins")]
+                self.assertEqual(len(lines), 1, "no single line starting 'Sampling: llmctl pins'")
+                shown = json.loads(re.search(r"`([^`]+)`", lines[0]).group(1))
+                self.assertEqual(shown, dict(recipe.model.sampling))
+
+    def test_sglang_recipes_follow_their_twins(self):
+        llamacpp_flags = {"--temp": "temperature", "--top-p": "top_p", "--top-k": "top_k", "--min-p": "min_p",
+                          "--repeat-penalty": "repetition_penalty"}
+        for recipe in self.catalog.runtimes["sglang"].recipes.values():
+            with self.subTest(recipe=recipe.id):
+                self.assertEqual(recipe.evidence.kind, "measured")
+                self.assertTrue((REPO / recipe.evidence.record).is_dir(), recipe.evidence.record)
+                # Plan ruling 18: the vLLM recipe of the same ID, else the llama.cpp one.
+                twin = (self.catalog.runtimes["vllm"].recipes.get(recipe.id)
+                        or self.catalog.runtimes["llamacpp"].recipes.get(recipe.id))
+                self.assertIsNotNone(twin, "no vLLM or llama.cpp recipe of the same ID")
+                if (twin.model.repo, getattr(twin.model, "revision", None)) == (recipe.model.repo,
+                                                                                 recipe.model.revision):
+                    for key in ("include", "exclude", "size_bytes"):
+                        self.assertEqual(getattr(recipe.model, key), getattr(twin.model, key), key)
+                args = list(twin.args)
+                if twin.runtime == "vllm":
+                    index = args.index("--override-generation-config")
+                    pinned = {key: value for key, value in json.loads(args[index + 1]).items()
+                              if key in ("temperature", "top_p", "top_k", "min_p", "repetition_penalty")}
+                else:
+                    pinned = {name: float(args[args.index(flag) + 1]) for flag, name in llamacpp_flags.items()
+                              if flag in args}
+                self.assertEqual(dict(recipe.model.sampling), pinned)
+
+    def test_opencode_providers_include_sglang(self):
+        provider = opencode_providers()["sglang-docker"]
+        self.assertEqual(provider["settings"]["baseURL"], "http://127.0.0.1:30000/v1")
+        self.assertEqual(provider["compatibility"]["reasoningField"], "reasoning_content")
 
     def test_opencode_entries_match_client_metadata(self):
         providers = opencode_providers()
@@ -303,7 +365,8 @@ class DocsConsistencyTest(unittest.TestCase):
         text = "\n".join(section("docs/clients.md#context-compaction-and-timeouts"))
         small = [recipe.id for entry in self.catalog.runtimes.values() for recipe in entry.recipes.values()
                  if recipe.context - recipe.clients.output <= dsh_config.COMPACTION_HEADROOM]
-        self.assertIn(f"{len(small)} of 19 recipes", text)
+        total = sum(len(entry.recipes) for entry in self.catalog.runtimes.values())
+        self.assertIn(f"{len(small)} of {total} recipes", text)
         for recipe_id in small:
             with self.subTest(recipe=recipe_id):
                 self.assertIn(recipe_id, text)

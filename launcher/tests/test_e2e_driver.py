@@ -566,17 +566,18 @@ class PlanTest(unittest.TestCase):
             ("./llmctl", "up", "qwen3.8-27b", "--replace"),
             ("./llmctl", "up", "k2-horizon-7b", "--replace"),
             ("./llmctl", "up", "gpt-oss-20b", "--runtime", "vllm", "--replace"),
+            ("./llmctl", "up", "qwen3.5-9b", "--runtime", "sglang", "--replace"),
             ("./llmctl", "up", "qwen3.6-35b-a3b", "--replace"),
         ])
 
     def test_extended_matrix_ends_on_default_model(self):
-        self.assertEqual(len(e2e.EXTENDED_MATRIX), 12)
-        self.assertEqual(e2e.EXTENDED_MATRIX[:3], e2e.DEFAULT_MATRIX[:3])
-        self.assertEqual(e2e.EXTENDED_MATRIX[3:11], tuple((name, "llamacpp") for name in (
+        self.assertEqual(len(e2e.EXTENDED_MATRIX), 13)
+        self.assertEqual(e2e.EXTENDED_MATRIX[:4], e2e.DEFAULT_MATRIX[:4])
+        self.assertEqual(e2e.EXTENDED_MATRIX[4:12], tuple((name, "llamacpp") for name in (
             "nemotron-3.5-bolt", "qwen3-coder-next", "deepseek-r1-0528-qwen3-8b", "gemma-4-26b-a4b",
             "nemotron-3.5-lightning", "groot-19b-a3b", "k2-horizon-mova-36b", "gpt-oss-20b")))
         ups = up_steps(self.plan(e2e.EXTENDED_MATRIX))
-        self.assertEqual(len(ups), 12)
+        self.assertEqual(len(ups), 13)
         self.assertEqual(ups[-1], ("./llmctl", "up", "qwen3.6-35b-a3b", "--replace"))
 
     def test_steps_respect_safety_rules(self):
@@ -615,7 +616,8 @@ class PlanTest(unittest.TestCase):
         self.assertEqual(argvs[-1], ("./llmctl", "down"))
 
     def test_session_steps(self):
-        steps = [step for step in self.plan() if step.name.startswith("04-qwen3.6-35b-a3b-llamacpp ")]
+        prefix = f"{len(e2e.DEFAULT_MATRIX):02d}-qwen3.6-35b-a3b-llamacpp"
+        steps = [step for step in self.plan() if step.name.startswith(prefix + " ")]
         argvs = [step.argv for step in steps]
         self.assertIn(("opencode", "run", "--standalone", "--archived", "--auto", "--format", "json",
                        "--model", "llamacpp-docker/qwen3.6-35b-a3b", e2e.TASK), argvs)
@@ -739,7 +741,7 @@ class PlanTest(unittest.TestCase):
     DSH_WEB = ("dsh", "web", "--port", "3182", "--no-open")
 
     def test_dsh_steps_follow_pi(self):
-        prefix = "04-qwen3.6-35b-a3b-llamacpp"
+        prefix = f"{len(e2e.DEFAULT_MATRIX):02d}-qwen3.6-35b-a3b-llamacpp"
         steps = [step for step in self.plan(dsh=True) if step.name.startswith(prefix + " ")]
         self.assertEqual([step.name.split(" ", 1)[1] for step in steps[-5:]],
                          ["pi", "dsh-config", "dsh-headless", "dsh-web", "probes"])
@@ -829,19 +831,29 @@ class PlanTest(unittest.TestCase):
 
     def test_all_matrix_runs_every_recipe(self):
         matrix = e2e.ALL_MATRIX
-        self.assertEqual(len(matrix), 19)
+        self.assertEqual(len(matrix), 22)
         shipped = {(recipe_id, runtime) for runtime, entry in self.catalog.runtimes.items()
                    for recipe_id in entry.recipes}
         self.assertEqual(set(matrix), shipped)
         self.assertEqual(len(set(matrix)), len(matrix))
         self.assertEqual(matrix[0], ("qwen3.8-27b", "llamacpp"))
-        self.assertEqual({runtime for _, runtime in matrix[:10]}, {"llamacpp"})
-        self.assertEqual(matrix[10], ("gpt-oss-20b", "vllm"))
-        self.assertEqual({runtime for _, runtime in matrix[10:18]}, {"vllm"})
         self.assertEqual(matrix[-1], ("qwen3.6-35b-a3b", "llamacpp"))
+        # One block per runtime in the catalog's order, sized from the catalog; the default model ends the matrix.
+        start = 0
+        for runtime, entry in self.catalog.runtimes.items():
+            size = len(entry.recipes) - (runtime == "llamacpp")
+            with self.subTest(runtime=runtime):
+                self.assertEqual({name for name, _ in matrix[start:start + size]}, set(entry.recipes) - (
+                    {"qwen3.6-35b-a3b"} if runtime == "llamacpp" else set()))
+                self.assertEqual({r for _, r in matrix[start:start + size]}, {runtime})
+            start += size
+        self.assertEqual(start, len(matrix) - 1)
+        self.assertEqual(matrix[10], ("gpt-oss-20b", "vllm"))
+        self.assertEqual(matrix[len(matrix) - 1 - len(self.catalog.runtimes["sglang"].recipes)],
+                         ("qwen3.5-9b", "sglang"))
         self.assertIs(e2e.MATRICES["all"], matrix)
         self.assertEqual(e2e.build_parser().parse_args(["--out", "x", "--matrix", "all"]).matrix, "all")
-        self.assertEqual(len(up_steps(self.plan(matrix))), 19)
+        self.assertEqual(len(up_steps(self.plan(matrix))), 22)
 
     def test_chat_only_opencode_step(self):
         target = target_for("deepseek-r1-0528-qwen3-8b", "llamacpp", REPO / "recipes")
@@ -856,7 +868,7 @@ class PlanTest(unittest.TestCase):
     KIMI_TASK = ("kimi", "-p", e2e.TASK, "--output-format", "stream-json")
 
     def test_kimi_steps_follow_dsh_or_pi(self):
-        prefix = "04-qwen3.6-35b-a3b-llamacpp"
+        prefix = f"{len(e2e.DEFAULT_MATRIX):02d}-qwen3.6-35b-a3b-llamacpp"
         for kwargs, before in (({"dsh": True, "kimi": True}, "dsh-web"), ({"kimi": True}, "pi")):
             with self.subTest(**kwargs):
                 steps = [step for step in self.plan(**kwargs) if step.name.startswith(prefix + " ")]

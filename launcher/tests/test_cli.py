@@ -116,6 +116,28 @@ class CliTest(unittest.TestCase):
         self.assertIn("  Hermes: not installed (no hermes on PATH)", lines)
         self.assertNotIn("OpenCode default:", out)
 
+    def test_list_shows_sglang_rows(self):
+        host = self.host()
+        rows, out = self.list_rows(host)
+        runtimes = [re.split(r"\s{2,}", line)[1] for line in out.splitlines()[1:]
+                    if len(re.split(r"\s{2,}", line)) > 2 and re.split(r"\s{2,}", line)[1] in ADAPTERS]
+        self.assertEqual(runtimes, sorted(runtimes, key=list(ADAPTERS).index))
+        self.assertEqual(runtimes[-3:], ["sglang"] * 3)
+        expected = {"qwen3.5-9b": ("15193 MiB", "6"), "k2-horizon-7b": ("14908 MiB", "5"),
+                    "gpt-oss-20b": ("14724 MiB", "16")}
+        for recipe_id, (gpu, ram) in expected.items():
+            with self.subTest(recipe=recipe_id):
+                row = rows[(recipe_id, "sglang")]
+                self.assertEqual((row["GPU"], row["RAM GiB"], row["EVIDENCE"]), (gpu, ram, "measured"))
+
+    def test_list_running_sglang_line(self):
+        host = self.host()
+        self.running(host, "qwen3.5-9b", runtime="sglang")
+        host.on_http("GET", "http://127.0.0.1:30000/v1/models", http(200, b'{"data": [{"id": "qwen3.5-9b"}]}'))
+        rows, out = self.list_rows(host)
+        self.assertEqual(rows[("qwen3.5-9b", "sglang")]["STATUS"], "running")
+        self.assertIn("running: qwen3.5-9b on sglang, http://127.0.0.1:30000/v1", out.splitlines())
+
     def test_list_status_starting_and_older_file(self):
         host = self.host()
         self.running(host, "qwen3.6-35b-a3b", health=503)
@@ -298,7 +320,7 @@ class CliTest(unittest.TestCase):
     def test_check_reports_problems(self):
         host = self.host()
         self.assertEqual(main(["check"], host), 0)
-        self.assertIn("ok: 19 recipes", host.out.getvalue())
+        self.assertIn("ok: 22 recipes (llamacpp 11, vllm 8, sglang 3)", host.out.getvalue())
         path = self.break_override()
         host = self.host()
         self.assertEqual(main(["check"], host), 2)

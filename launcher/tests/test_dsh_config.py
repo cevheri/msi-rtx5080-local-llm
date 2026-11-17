@@ -219,18 +219,17 @@ class GenerateTest(unittest.TestCase):
                         self.assertNotIn('"reasoningEffort"', text)
 
     def test_every_recipe_describes_its_server(self):
-        ports = {"llamacpp": 8080, "vllm": 8000}
         count = 0
         for runtime, recipe_id, target in all_targets():
             with self.subTest(recipe=f"{runtime}/{recipe_id}"):
                 route = dsh_config.route(target)
-                self.assertEqual(route["baseURL"], f"http://127.0.0.1:{ports[runtime]}/v1")
+                self.assertEqual(route["baseURL"], f"http://127.0.0.1:{target.runtime.host_port}/v1")
                 model = route["models"][0]
                 self.assertEqual(model["id"], target.served)
                 self.assertEqual(model["contextWindow"], target.recipe.context)
                 self.assertEqual(model["maxTokens"], target.recipe.clients.output)
             count += 1
-        self.assertEqual(count, 19)
+        self.assertEqual(count, 22)
 
     def test_lines_are_ascii_and_reparse(self):
         for runtime, recipe_id, target in all_targets():
