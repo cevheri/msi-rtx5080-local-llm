@@ -1,21 +1,26 @@
 """The opt-in e2e driver: its parsers, its step plan and its restore of the defaults, without running anything."""
 
+import dataclasses
 import io
 import json
 import os
+import shutil
+import signal
 import stat
 import subprocess
 import tempfile
+import threading
+import time
 import unittest
 import unittest.mock
 from pathlib import Path
 
-from launcher import clients, hermes_config, opencode_config, pi_config
+from launcher import clients, dsh_config, hermes_config, opencode_config, pi_config
 from launcher.catalog import load_catalog
 from launcher.e2e import clients as e2e
 from launcher.errors import UsageError
 from launcher.tests.client_fixture import ClientFixture
-from launcher.tests.fakes import REPO, FakeHost, fail, ok
+from launcher.tests.fakes import REPO, FakeHost, fail, http, ok
 from launcher.tests.ops_fixture import managed_line
 from launcher.tests.regen_golden import target_for
 
@@ -135,6 +140,106 @@ class ParserTest(unittest.TestCase):
         self.assertEqual(e2e.status_reasons(text, opencode=False), [])
         self.assertEqual(e2e.status_reasons(text + warning + "\n", opencode=False), [warning])
 
+    def test_dsh_outcome_completed(self):
+        outcome = e2e.dsh_outcome(fixture_lines("dsh-s10.jsonl"), tools=False)
+        self.assertTrue(outcome.passed, outcome.reasons)
+        self.assertEqual(outcome.models, ())
+        self.assertEqual(e2e.dsh_outcome(fixture_lines("dsh-s10.jsonl")).reasons,
+                         ("no completed write, apply_patch or edit tool_result", "no completed read tool_result"))
+
+    def test_dsh_outcome_with_tools(self):
+        failed = "Puq6P4OTKPRtO9gtc0FQJHF76VOCiNuv"
+        passing = [item for item in events("dsh-s11.jsonl") if item.get("callId") != failed]
+        outcome = e2e.dsh_outcome(dump(passing))
+        self.assertTrue(outcome.passed, outcome.reasons)
+        self.assertEqual(outcome.models, ())
+        self.assertEqual(e2e.dsh_outcome(fixture_lines("dsh-s11.jsonl")).reasons,
+                         ("tool_result write has status error (SANDBOX_ESCALATION_INVALID_ARGUMENT)",))
+
+    def test_dsh_outcome_error_final(self):
+        outcome = e2e.dsh_outcome(fixture_lines("dsh-error.jsonl"))
+        self.assertFalse(outcome.passed)
+        self.assertTrue([reason for reason in outcome.reasons
+                         if reason.startswith("final reason error (UNSUPPORTED_REASONING_EFFORT: ")], outcome.reasons)
+
+    def test_dsh_outcome_missing_read(self):
+        read = [item["callId"] for item in events("dsh-s11.jsonl") if item.get("tool") == "read"]
+        failed = "Puq6P4OTKPRtO9gtc0FQJHF76VOCiNuv"
+        items = [item for item in events("dsh-s11.jsonl") if item.get("callId") not in (failed, *read)]
+        self.assertEqual(e2e.dsh_outcome(dump(items)).reasons, ("no completed read tool_result",))
+
+    def test_dsh_outcome_needs_a_final_and_no_error_event(self):
+        error = '{"type":"error","message":"unknown option \'--patch\'"}'
+        without_final = [item for item in events("dsh-s10.jsonl") if item["type"] != "final"]
+        self.assertEqual(e2e.dsh_outcome(dump(without_final), tools=False).reasons, ("no final event",))
+        outcome = e2e.dsh_outcome(fixture_lines("dsh-s10.jsonl") + [error], tools=False)
+        self.assertFalse(outcome.passed)
+        self.assertEqual(len(outcome.reasons), 1)
+        self.assertTrue(outcome.reasons[0].startswith("error event: "), outcome.reasons)
+        reasons = e2e.dsh_outcome([error]).reasons
+        self.assertTrue([reason for reason in reasons if reason.startswith("error event: ")], reasons)
+        self.assertIn("no final event", reasons)
+
+    def test_dsh_outcome_chat_only(self):
+        call = {"type": "tool_call", "callId": "c1", "tool": "read"}
+        items = events("dsh-s10.jsonl")
+        self.assertEqual(e2e.dsh_outcome(dump(items[:-1] + [call] + items[-1:]), tools=False).reasons,
+                         ("a tool event in a chat-only session",))
+        items[-1] = dict(items[-1], text="")
+        self.assertEqual(e2e.dsh_outcome(dump(items), tools=False).reasons, ("the final text is empty",))
+
+    def test_dsh_outcome_names_an_unknown_call_with_a_question_mark(self):
+        orphan = {"type": "tool_result", "callId": "never-called", "status": "error",
+                  "error": {"code": "TOOL_FAILED"}}
+        items = events("dsh-s10.jsonl")
+        reasons = e2e.dsh_outcome(dump(items[:-1] + [orphan] + items[-1:]), tools=False).reasons
+        self.assertIn("tool_result ? has status error (TOOL_FAILED)", reasons)
+        self.assertFalse([reason for reason in reasons if "None" in reason], reasons)
+
+    def test_web_line(self):
+        self.assertEqual(e2e.web_line("dsh web: http://127.0.0.1:3182/?token=abc123"),
+                         ("dsh web: <address withheld>", "abc123"))
+        self.assertEqual(e2e.web_line("dsh web: http://127.0.0.1:3182/"), ("dsh web: <address withheld>", None))
+
+    def test_web_outcome(self):
+        self.assertEqual(e2e.web_outcome(e2e.WebBoot("dsh web: x", "", "", 0)), e2e.Outcome(True, (), ()))
+        self.assertEqual(e2e.web_outcome(e2e.WebBoot(None, "", "", -15)).reasons,
+                         ("no 'dsh web:' line within 30 s",))
+        outcome = e2e.web_outcome(e2e.WebBoot("dsh web: x", "", "dsh: warning: 1 entry did not activate\n", 0))
+        self.assertEqual(outcome.reasons, ("dsh: warning: 1 entry did not activate",))
+        self.assertEqual((e2e.DSH_PORT, e2e.WEB_READY_S, e2e.WEB_TAIL_S, e2e.WEB_KILL_S), (3182, 30, 3, 15))
+
+    def test_status_reasons_dsh(self):
+        text = ("clients:\n"
+                "  OpenCode: default llamacpp-docker/qwen3.6-35b-a3b, the running model\n"
+                "  Hermes: profile llmctl for qwen3.6-35b-a3b on llama.cpp, the running model; default profile: x\n"
+                "  Pi: llmctl/local for qwen3.6-35b-a3b on llama.cpp, the running model; default x, thinking off\n")
+        line = ("  dsh: llmctl/local for qwen3.6-35b-a3b on llama.cpp, the running model; default llmctl/local, "
+                "held by llmctl\n")
+        self.assertEqual(e2e.status_reasons(text + line, opencode=True, dsh=True), [])
+        self.assertEqual(e2e.status_reasons(text, opencode=True, dsh=True), ["no dsh line in status"])
+        self.assertEqual(e2e.status_reasons(text, opencode=True, dsh=False), [])
+        other = "  dsh: no llmctl block in /h/.dsh/cordis.patch.yml\n"
+        self.assertEqual(e2e.status_reasons(text + other, opencode=True, dsh=True),
+                         ["dsh: no llmctl block in /h/.dsh/cordis.patch.yml"])
+        stale = ("dsh: llmctl/local for gemma-4-26b-a4b on llama.cpp, not the running model (run ./llmctl up again); "
+                 "default llmctl/local, held by llmctl")
+        self.assertEqual(e2e.status_reasons(text + "  " + stale + "\n", opencode=True, dsh=True), [stale])
+        pi = ("Pi: llmctl/local for gemma-4-26b-a4b on llama.cpp, not the running model (run ./llmctl up again); "
+              "default x, thinking off")
+        stale_pi = text.replace(text.splitlines()[3], "  " + pi)
+        self.assertEqual(e2e.status_reasons(stale_pi + line, opencode=True, dsh=True), [pi])
+
+    def test_opencode_outcome_chat_only(self):
+        items = [item for item in events("opencode-events.jsonl") if item["type"] != "tool_use"]
+        outcome = e2e.opencode_outcome(dump(items), tools=False)
+        self.assertTrue(outcome.passed, outcome.reasons)
+        self.assertEqual(e2e.opencode_outcome(fixture_lines("opencode-events.jsonl"), tools=False).reasons,
+                         ("a tool_use event in a chat-only session",))
+        no_text = [item for item in items if item["type"] != "text"]
+        self.assertEqual(e2e.opencode_outcome(dump(no_text), tools=False).reasons, ("no text answer",))
+        self.assertFalse(e2e.opencode_outcome(dump(items) + ['{"type": "error"}'], tools=False).passed)
+
 
 class ConfigValueTest(unittest.TestCase):
     """hermes config get prints merged sections, so the block's value only has to be contained in it."""
@@ -216,6 +321,166 @@ class LogsSinceTest(unittest.TestCase):
         self.assertEqual(self.logs("main: server is listening\n", "srv  update_slots: all slots are idle\n"),
                          ["the llama.cpp log shows no request since the OpenCode run started"])
 
+    def test_logs_since_names_the_runtime_and_session(self):
+        done = subprocess.CompletedProcess([], 0, "main: server is listening\n", "")
+        with unittest.mock.patch("launcher.e2e.clients.subprocess.run", return_value=done):
+            reasons = self.run_.logs_since("2026-11-17T10:00:00", self.target, record="01-x dsh-headless docker-logs",
+                                           session="the dsh session")
+        self.assertEqual(reasons, ["the llama.cpp log shows no request since the dsh session started"])
+        names = [path.name for path in (self.run_.out / "records").iterdir()]
+        self.assertEqual(names, ["001-01-x-dsh-headless-docker-logs"])
+
+
+class FakeProcess:
+    """A dsh web process: its streams are StringIO objects, and wait(timeout) can time out."""
+
+    pid = 4242
+
+    def __init__(self, stdout, stderr="", *, hang=False):
+        self.stdout = stdout if not isinstance(stdout, str) else io.StringIO(stdout)
+        self.stderr = io.StringIO(stderr)
+        self.hang = hang
+        self.returncode = None
+        self.waits: list[float | None] = []
+
+    def poll(self):
+        return self.returncode
+
+    def wait(self, timeout=None):
+        self.waits.append(timeout)
+        if self.hang and timeout is not None:
+            raise subprocess.TimeoutExpired("dsh", timeout)
+        self.returncode = 0 if not self.hang else -9
+        return self.returncode
+
+
+class FakeTimer:
+    def __init__(self, log, interval, function):
+        self.log, self.interval, self.function = log, interval, function
+
+    def start(self):
+        self.log.append(("start", self.interval))
+
+    def cancel(self):
+        self.log.append(("cancel", self.interval))
+
+
+class InterruptedStream(io.StringIO):
+    def readline(self, *args):
+        raise KeyboardInterrupt
+
+
+class SilentProcess:
+    """A dsh web process that never prints its ready line and ignores SIGTERM: its stdout closes only on SIGKILL."""
+
+    pid = 4243
+
+    def __init__(self):
+        self.signals: list[int] = []
+        self.killed = threading.Event()
+        self.returncode = None
+        self.stderr = io.StringIO("")
+        self.stdout = self
+
+    def killpg(self, pid, sig):
+        self.signals.append(sig)
+        if sig == signal.SIGKILL:
+            self.returncode = -9
+            self.killed.set()
+
+    def readline(self, *args):
+        # A guard of 10 s keeps a broken web_boot from hanging the suite: stdout then ends without SIGKILL, and the
+        # test fails on the signals.
+        self.killed.wait(10)
+        return ""
+
+    def read(self):
+        return ""
+
+    def poll(self):
+        return self.returncode
+
+    def wait(self, timeout=None):
+        if self.returncode is None:
+            raise subprocess.TimeoutExpired("dsh", timeout)
+        return self.returncode
+
+
+class WebBootTest(unittest.TestCase):
+    def boot(self, process):
+        self.popen_calls, self.kills, self.sleeps, self.timers = [], [], [], []
+
+        def popen(argv, **kwargs):
+            self.popen_calls.append((argv, kwargs))
+            return process
+
+        return e2e.web_boot(["dsh", "web", "--port", "3182", "--no-open"], cwd=Path("/work/x"), env={"A": "1"},
+                            popen=popen, killpg=lambda pid, sig: self.kills.append((pid, sig)),
+                            sleep=self.sleeps.append,
+                            timer=lambda interval, function: FakeTimer(self.timers, interval, function))
+
+    def test_web_boot_ready_and_tail(self):
+        stdout = "starting\ndsh web: http://127.0.0.1:3182/?token=abc\n"
+        boot = self.boot(FakeProcess(stdout, "warn\n"))
+        self.assertEqual(boot, e2e.WebBoot("dsh web: http://127.0.0.1:3182/?token=abc", stdout, "warn\n", 0))
+        self.assertEqual(self.sleeps, [3])
+        self.assertEqual(self.kills, [(4242, signal.SIGTERM)])
+        self.assertEqual(self.timers[0], ("start", 30))
+        self.assertIn(("cancel", 30), self.timers)
+        (argv, kwargs), = self.popen_calls
+        self.assertEqual(argv, ["dsh", "web", "--port", "3182", "--no-open"])
+        self.assertIs(kwargs["start_new_session"], True)
+        self.assertEqual(kwargs["cwd"], Path("/work/x"))
+        self.assertEqual(kwargs["env"], {"A": "1"})
+
+    def test_web_boot_without_ready_line(self):
+        boot = self.boot(FakeProcess("x\n"))
+        self.assertIsNone(boot.line)
+        self.assertEqual(boot.stdout, "x\n")
+        self.assertEqual(self.sleeps, [])
+        self.assertEqual(self.kills, [(4242, signal.SIGTERM)])
+
+    def test_web_boot_kills_after_15_s(self):
+        process = FakeProcess("dsh web: http://127.0.0.1:3182/\n", hang=True)
+        boot = self.boot(process)
+        self.assertEqual(self.kills, [(4242, signal.SIGTERM), (4242, signal.SIGKILL)])
+        self.assertEqual(process.waits, [15, None])
+        self.assertEqual(boot.code, -9)
+
+    def test_web_boot_without_ready_line_kills_a_process_that_ignores_sigterm(self):
+        process = SilentProcess()
+        start = time.monotonic()
+        boot = e2e.web_boot(["dsh", "web"], cwd=Path("/work/x"), env={}, popen=lambda argv, **kwargs: process,
+                            killpg=process.killpg, sleep=lambda s: None, ready_s=0.05, tail_s=0, kill_s=0.1)
+        self.assertLess(time.monotonic() - start, 5)
+        self.assertEqual(process.signals, [signal.SIGTERM, signal.SIGKILL])
+        self.assertEqual(boot, e2e.WebBoot(None, "", "", -9))
+
+    def test_web_boot_stops_the_group_on_interrupt(self):
+        with self.assertRaises(KeyboardInterrupt):
+            self.boot(FakeProcess(InterruptedStream()))
+        self.assertEqual(self.kills, [(4242, signal.SIGTERM)])
+        self.assertIn(("cancel", 30), self.timers)
+
+    def test_web_boot_that_cannot_start_is_exit_127(self):
+        def popen(argv, **kwargs):
+            raise FileNotFoundError(2, "No such file or directory", "dsh")
+
+        boot = e2e.web_boot(["dsh", "web", "--port", "3182", "--no-open"], cwd=Path("/work/x"), env={},
+                            popen=popen, killpg=lambda pid, sig: None, sleep=lambda s: None,
+                            timer=lambda interval, function: FakeTimer([], interval, function))
+        self.assertEqual(boot, e2e.WebBoot(None, "", "dsh: [Errno 2] No such file or directory: 'dsh'", 127))
+
+    def test_web_boot_error_after_the_start_propagates(self):
+        def killpg(pid, sig):
+            raise PermissionError(1, "Operation not permitted")
+
+        with self.assertRaises(PermissionError):
+            e2e.web_boot(["dsh", "web"], cwd=Path("/work/x"), env={},
+                         popen=lambda argv, **kwargs: FakeProcess("dsh web: http://127.0.0.1:3182/\n"),
+                         killpg=killpg, sleep=lambda s: None,
+                         timer=lambda interval, function: FakeTimer([], interval, function))
+
 
 def up_steps(steps):
     return [step.argv for step in steps if step.argv[:2] == ("./llmctl", "up")]
@@ -226,8 +491,8 @@ class PlanTest(unittest.TestCase):
     def setUpClass(cls):
         cls.catalog = load_catalog(REPO / "recipes", None)
 
-    def plan(self, matrix=e2e.DEFAULT_MATRIX, *, round_trip=False, keep_running=False):
-        return e2e.plan_steps(self.catalog, matrix, round_trip=round_trip, keep_running=keep_running)
+    def plan(self, matrix=e2e.DEFAULT_MATRIX, *, round_trip=False, keep_running=False, **dsh):
+        return e2e.plan_steps(self.catalog, matrix, round_trip=round_trip, keep_running=keep_running, **dsh)
 
     def test_constants(self):
         self.assertTrue(e2e.TASK.startswith("Create a file named hello.py containing a function add(a, b)"))
@@ -306,7 +571,9 @@ class PlanTest(unittest.TestCase):
     def test_chat_only_steps(self):
         steps = self.plan((("deepseek-r1-0528-qwen3-8b", "llamacpp"),))
         argvs = [step.argv for step in steps]
-        self.assertFalse([argv for argv in argvs if argv[:1] == ("opencode",)])
+        self.assertEqual([argv for argv in argvs if argv[:1] == ("opencode",)], [
+            ("opencode", "run", "--standalone", "--archived", "--auto", "--format", "json",
+             "--model", "llamacpp-docker/deepseek-r1-0528-qwen3-8b", e2e.CHAT)])
         pi = [argv for argv in argvs if argv[:1] == ("pi",)]
         self.assertEqual(len(pi), 1)
         self.assertIn("--no-tools", pi[0])
@@ -321,8 +588,10 @@ class PlanTest(unittest.TestCase):
         self.assertIn("platform_toolsets", [argv[5] for argv in argvs if argv[3:5] == ("config", "get")])
 
     def test_no_opencode_step_without_entry(self):
-        argvs = [step.argv for step in self.plan((("gpt-oss-20b", "llamacpp"),))]
-        self.assertFalse([argv for argv in argvs if argv[:1] == ("opencode",)])
+        target = target_for("gpt-oss-20b", "llamacpp", REPO / "recipes")
+        unlisted = dataclasses.replace(target, recipe=dataclasses.replace(target.recipe, opencode=False))
+        self.assertNotIn("opencode", e2e._session_argv(unlisted, e2e.TASK, True, pinned=True))
+        self.assertNotIn("opencode", e2e._session_argv(unlisted, e2e.TASK, True, pinned=False))
 
     def test_unknown_recipe_is_a_usage_error(self):
         with self.assertRaises(UsageError):
@@ -361,6 +630,16 @@ class PlanTest(unittest.TestCase):
         self.assertEqual(k2["E"]["chat_template_kwargs"], {"tool_call_format": "xml"})
         self.assertNotIn("reasoning_effort", k2["E"])
 
+    def test_chat_only_recipe_gets_no_probe_b(self):
+        # no e2e session sends it tools, and vLLM refuses tools without --enable-auto-tool-choice (run 1 of 2026-11-17)
+        for runtime in ("llamacpp", "vllm"):
+            with self.subTest(runtime=runtime):
+                target = target_for("deepseek-r1-0528-qwen3-8b", runtime, REPO / "recipes")
+                self.assertTrue(target.recipe.chat_only)
+                bodies = e2e.probe_bodies(target)
+                self.assertNotIn("B", bodies)
+                self.assertIn("A", bodies)
+
     def test_probe_record(self):
         reply = {"choices": [{"message": {"content": json.dumps({"title": "Adding numbers"}),
                                           "reasoning_content": "think"}}]}
@@ -382,12 +661,134 @@ class PlanTest(unittest.TestCase):
                          "$WORK/01-x/usage.json $HOME/a /tmp/llmctl-e2e-abc")
         self.assertEqual(e2e.redact("/home/x/tmp/llmctl-e2e-1/a", "/home/x", "/home/x/tmp/llmctl-e2e-1"), "$WORK/a")
 
+    DSH_HEADLESS = ("dsh", "--profile", "headless", "--patch", "{work}/llmctl-default.patch.yml", "--json", e2e.TASK)
+    DSH_WEB = ("dsh", "web", "--port", "3182", "--no-open")
+
+    def test_dsh_steps_follow_pi(self):
+        prefix = "04-qwen3.6-35b-a3b-llamacpp"
+        steps = [step for step in self.plan(dsh=True) if step.name.startswith(prefix + " ")]
+        self.assertEqual([step.name.split(" ", 1)[1] for step in steps[-5:]],
+                         ["pi", "dsh-config", "dsh-headless", "dsh-web", "probes"])
+        config, headless, web = steps[-4:-1]
+        self.assertEqual((config.argv, config.cwd), (e2e.IN_PROCESS, "."))
+        self.assertEqual((headless.argv, headless.cwd), (self.DSH_HEADLESS, f"{prefix}-dsh-headless"))
+        self.assertEqual((web.argv, web.cwd), (self.DSH_WEB, f"{prefix}-dsh-web"))
+
+    def test_dsh_chat_only_steps(self):
+        steps = self.plan((("deepseek-r1-0528-qwen3-8b", "llamacpp"),), dsh=True)
+        headless = [step.argv for step in steps if step.name.endswith(" dsh-headless")]
+        self.assertEqual(headless, [("dsh", "--profile", "headless", "--patch", "{work}/llmctl-default.patch.yml",
+                                     "--patch", "{work}/llmctl-no-tools.patch.yml", "--json", e2e.CHAT)])
+        self.assertNotIn(e2e.TASK, headless[0])
+
+    def test_dsh_launcher_flags_come_first(self):
+        steps = self.plan(e2e.ALL_MATRIX, round_trip=True, dsh=True)
+        argvs = [step.argv for step in steps if step.argv[:1] == ("dsh",)]
+        self.assertTrue([argv for argv in argvs if "--json" in argv])
+        for argv in argvs:
+            with self.subTest(argv=argv):
+                after = argv[argv.index("--json"):] if "--json" in argv else ()
+                self.assertNotIn("--profile", after)
+                self.assertNotIn("--patch", after)
+
+    def test_no_dsh_steps_by_default(self):
+        for kwargs in ({}, {"round_trip": True}):
+            with self.subTest(**kwargs):
+                steps = self.plan(e2e.ALL_MATRIX, **kwargs)
+                self.assertFalse([step for step in steps if step.argv[:1] == ("dsh",)])
+                self.assertFalse([step for step in steps if " dsh-" in step.name])
+
+    def test_dsh_steps_respect_safety_rules(self):
+        steps = self.plan(e2e.ALL_MATRIX, round_trip=True, dsh=True)
+        dsh_steps = [step for step in steps if step.argv[:1] == ("dsh",)]
+        self.assertEqual(len(dsh_steps), 2 * len(e2e.ALL_MATRIX) + 1)
+        folders = [step.cwd for step in dsh_steps]
+        self.assertNotIn(".", folders)
+        self.assertEqual(len(folders), len(set(folders)))
+        for step in dsh_steps:
+            with self.subTest(step=step.name):
+                self.assertEqual(step.cwd, step.name.replace(" ", "-"))
+                self.assertEqual(step.timeout_s, 900)
+                self.assertNotIn("--set-default", step.argv)
+                self.assertFalse([part for part in step.argv if "3080" in part])
+
+    def test_round_trip_runs_dsh_unpinned(self):
+        argvs = [step.argv for step in self.plan(round_trip=True, dsh=True)]
+        up = argvs.index(("./llmctl", "up", "qwen3.6-35b-a3b", "--set-default"))
+        unpinned = ("dsh", "--profile", "headless", "--json", e2e.TASK)
+        self.assertIn(unpinned, argvs[up + 1:])
+        self.assertNotIn("--patch", unpinned)
+        self.assertEqual(argvs[up + 1:][-2:], [unpinned, ("./llmctl", "down")])
+        steps = self.plan(round_trip=True, dsh=True)
+        self.assertEqual([(step.name, step.cwd) for step in steps if step.argv == unpinned],
+                         [("round-trip dsh-headless", "round-trip-dsh-headless")])
+        self.assertEqual(argvs[-1], ("./llmctl", "down"))
+
+    def test_probe_f_for_bolt(self):
+        bolt = e2e.probe_bodies(target_for("nemotron-3.5-bolt", "llamacpp", REPO / "recipes"))
+        self.assertEqual(sorted(bolt), ["A", "B", "D", "F"])
+        self.assertEqual(bolt["F"], {"model": "local",
+                                     "messages": [{"role": "user", "content": "Reply with exactly the word OK."}],
+                                     "chat_template_kwargs": {"enable_thinking": True, "medium_effort": 1},
+                                     "max_tokens": 256})
+        qwen = e2e.probe_bodies(target_for("qwen3.6-35b-a3b", "llamacpp", REPO / "recipes"))
+        self.assertNotIn("F", qwen)
+
+    def test_probe_f_needs_status_200(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        out = Path(tmp.name)
+        (out / "records").mkdir()
+        host = FakeHost(env={})
+        title = json.dumps({"choices": [{"message": {"content": json.dumps({"title": "Adding numbers"})}}]}).encode()
+
+        def answer(method, url, headers, body):
+            return http(400, b"bad") if b"medium_effort" in body else http(200, title)
+
+        host.on_http("POST", "http://127.0.0.1:8080/v1/chat/completions", answer)
+        run = e2e._Run(out, None, host, {"HOME": str(out)}, out)
+        target = target_for("nemotron-3.5-bolt", "llamacpp", REPO / "recipes")
+        step = e2e.Step("03-nemotron-3.5-bolt-llamacpp probes", e2e.IN_PROCESS, ".", 900)
+        self.assertEqual(run.probes(step, target), ["probe F: status 400"])
+        names = sorted(path.name.rsplit("-", 1)[1] for path in (out / "records").iterdir())
+        self.assertEqual(names, ["A", "B", "D", "F"])
+
+    def test_driver_env_skip_dsh(self):
+        self.assertEqual(e2e.driver_env({"PATH": "/bin", "LLMCTL_SET_DEFAULT": "1"}, skip_dsh=True),
+                         {"PATH": "/bin", "LLMCTL_CLIENTS": "opencode,hermes,pi"})
+
+    def test_all_matrix_runs_every_recipe(self):
+        matrix = e2e.ALL_MATRIX
+        self.assertEqual(len(matrix), 19)
+        shipped = {(recipe_id, runtime) for runtime, entry in self.catalog.runtimes.items()
+                   for recipe_id in entry.recipes}
+        self.assertEqual(set(matrix), shipped)
+        self.assertEqual(len(set(matrix)), len(matrix))
+        self.assertEqual(matrix[0], ("qwen3.8-27b", "llamacpp"))
+        self.assertEqual({runtime for _, runtime in matrix[:10]}, {"llamacpp"})
+        self.assertEqual(matrix[10], ("gpt-oss-20b", "vllm"))
+        self.assertEqual({runtime for _, runtime in matrix[10:18]}, {"vllm"})
+        self.assertEqual(matrix[-1], ("qwen3.6-35b-a3b", "llamacpp"))
+        self.assertIs(e2e.MATRICES["all"], matrix)
+        self.assertEqual(e2e.build_parser().parse_args(["--out", "x", "--matrix", "all"]).matrix, "all")
+        self.assertEqual(len(up_steps(self.plan(matrix))), 19)
+
+    def test_chat_only_opencode_step(self):
+        target = target_for("deepseek-r1-0528-qwen3-8b", "llamacpp", REPO / "recipes")
+        listed = dataclasses.replace(target, recipe=dataclasses.replace(target.recipe, opencode=True))
+        sessions = e2e._session_argv(listed, e2e.CHAT, False, pinned=True)
+        self.assertEqual(sessions["opencode"], ("opencode", "run", "--standalone", "--archived", "--auto", "--format",
+                                                "json", "--model", "llamacpp-docker/deepseek-r1-0528-qwen3-8b",
+                                                e2e.CHAT))
+        unlisted = dataclasses.replace(target, recipe=dataclasses.replace(target.recipe, opencode=False))
+        self.assertNotIn("opencode", e2e._session_argv(unlisted, e2e.CHAT, False, pinned=True))
+
     def test_main_refuses_llmctl_clients(self):
         with unittest.mock.patch.dict("os.environ", {"LLMCTL_CLIENTS": "pi"}):
             with unittest.mock.patch("sys.stderr") as err:
                 self.assertEqual(e2e.main(["--out", "/nonexistent/never-created"]), 1)
         written = "".join(call.args[0] for call in err.write.call_args_list)
-        self.assertIn("unset LLMCTL_CLIENTS: the e2e checks all three clients", written)
+        self.assertIn("unset LLMCTL_CLIENTS: the e2e checks all four clients, or three with --skip-dsh", written)
         self.assertFalse(Path("/nonexistent/never-created").exists())
 
 
@@ -513,6 +914,60 @@ class RestoreTest(unittest.TestCase):
         self.assertEqual(e2e.round_trip(self.host, self.set_default),
                          ["Hermes: hermes profile use work exited 1: boom"])
 
+    def install_dsh(self, *, default=False) -> str:
+        """dsh installed, with a home patch that holds llmctl's block for qwen3.6; returns its text."""
+        self.fx.install("dsh")
+        text = dsh_config.new_home_text(self.target, default=default)
+        self.fx.home_patch.write_text(text, encoding="utf-8")
+        return text
+
+    def test_snapshot_reads_the_dsh_default(self):
+        self.install_dsh()
+        self.assertIs(e2e.snapshot_defaults(self.host.env, dsh=True).dsh_default, False)
+        self.assertIsNone(e2e.snapshot_defaults(self.host.env).dsh_default)
+        self.install_dsh(default=True)
+        self.assertIs(e2e.snapshot_defaults(self.host.env, dsh=True).dsh_default, True)
+
+    def test_restore_releases_a_dsh_default_llmctl_took(self):
+        before = self.install_dsh()
+        snapshot = e2e.snapshot_defaults(self.host.env, dsh=True)
+        self.set_default()
+        self.assertTrue(dsh_config.holds_default(self.host.env))
+        self.assertEqual(e2e.restore_defaults(self.host, snapshot, target=self.target), [])
+        self.assertEqual(self.fx.home_patch.read_text(encoding="utf-8"), before)
+
+    def test_restore_keeps_a_dsh_default_held_before(self):
+        before = self.install_dsh(default=True)
+        snapshot = e2e.snapshot_defaults(self.host.env, dsh=True)
+        self.set_default()
+        self.assertEqual(e2e.restore_defaults(self.host, snapshot, target=self.target), [])
+        self.assertEqual(self.fx.home_patch.read_text(encoding="utf-8"), before)
+
+    def test_restore_reports_a_dsh_default_it_cannot_release(self):
+        self.install_dsh()
+        snapshot = e2e.snapshot_defaults(self.host.env, dsh=True)
+        self.set_default()
+        self.assertEqual(e2e.restore_defaults(self.host, snapshot), ["dsh: no target to release the default"])
+        self.assertTrue(dsh_config.holds_default(self.host.env))
+        held = e2e.Defaults(snapshot.opencode_model, snapshot.pi_provider, snapshot.pi_model, snapshot.hermes_profile,
+                            dsh_default=True)
+        self.fx.home_patch.write_text(dsh_config.new_home_text(self.target, default=False), encoding="utf-8")
+        self.assertEqual(e2e.restore_defaults(self.host, held, target=self.target),
+                         ["dsh: the llmctl block no longer holds dsh's default"])
+
+    def test_round_trip_restores_dsh_after_a_failed_check(self):
+        self.install_dsh()
+
+        def check():
+            self.set_default()
+            raise RuntimeError("boom")
+
+        with self.assertRaises(RuntimeError) as caught:
+            e2e.round_trip(self.host, check, dsh=True, target=self.target)
+        self.assertEqual(str(caught.exception), "boom")
+        self.assertFalse(dsh_config.holds_default(self.host.env))
+        self.assertEqual(self.host.err.getvalue(), "")
+
     def test_gateway_check(self):
         state = self.fx.hermes_root / "gateway_state.json"
         self.assertIsNone(e2e.gateway_check(self.host, created=True))
@@ -531,6 +986,9 @@ class RestoreTest(unittest.TestCase):
 
 
 RUNNER_MATRIX = (("qwen3.6-35b-a3b", "llamacpp"),)
+FAILED_S11 = "Puq6P4OTKPRtO9gtc0FQJHF76VOCiNuv"
+PASSING_S11 = [item for item in events("dsh-s11.jsonl") if item.get("callId") != FAILED_S11]
+TOKEN = "s3cr3tt0ken"
 TWO_RECIPES = (("k2-horizon-7b", "llamacpp"), ("qwen3.6-35b-a3b", "llamacpp"))
 HOST_NAME = "e2e-test-host"
 WITHHELD = "record withheld: the output named a private value after redaction"
@@ -559,6 +1017,11 @@ class RunnerTest(unittest.TestCase):
         self.gateway_after_up: dict | None = None
         self.on_call = None
         self.output = None  # argv -> the session's stdout, or None for ""
+        self.dsh_installed = False
+        self.up_edit = ""  # appended outside the block of the dsh home patch by each fake up
+        ready = "dsh web: http://127.0.0.1:3182/"
+        self.web_boot = e2e.WebBoot(ready, ready + "\n", "", 0)  # a passing boot, which a test may replace
+        self.web_calls: list[tuple[tuple[str, ...], Path, dict]] = []
         self.stdout, self.stderr = io.StringIO(), io.StringIO()
         real_mkdtemp = tempfile.mkdtemp
         self.mkdtemp_calls = []
@@ -570,6 +1033,7 @@ class RunnerTest(unittest.TestCase):
         for patcher in (unittest.mock.patch.dict("os.environ", self.environ, clear=True),
                         unittest.mock.patch("launcher.e2e.clients.subprocess.run", side_effect=self.fake_run),
                         unittest.mock.patch("launcher.e2e.clients.tempfile.mkdtemp", side_effect=mkdtemp),
+                        unittest.mock.patch("launcher.e2e.clients.web_boot", side_effect=self.fake_web_boot),
                         unittest.mock.patch("socket.gethostname", return_value=HOST_NAME),
                         unittest.mock.patch("sys.stdout", self.stdout),
                         unittest.mock.patch("sys.stderr", self.stderr)):
@@ -583,9 +1047,14 @@ class RunnerTest(unittest.TestCase):
         self.host.env = env
         return self.host
 
-    def main(self, *args, matrix=RUNNER_MATRIX):
+    def main(self, *args, matrix=RUNNER_MATRIX, skip_dsh=True):
+        flags = [*args, "--skip-dsh"] if skip_dsh else list(args)
         with unittest.mock.patch.dict(e2e.MATRICES, {"default": matrix}):
-            return e2e.main(["--out", "records-out", *args], make_host=self.make_host)
+            return e2e.main(["--out", "records-out", *flags], make_host=self.make_host)
+
+    def fake_web_boot(self, argv, *, cwd, env, **kwargs):
+        self.web_calls.append((tuple(argv), Path(cwd), dict(env)))
+        return self.web_boot
 
     @property
     def out(self) -> Path:
@@ -609,6 +1078,8 @@ class RunnerTest(unittest.TestCase):
             elif self.ups_create_profile:
                 runtime = argv[argv.index("--runtime") + 1] if "--runtime" in argv else "llamacpp"
                 self.write_profile(argv[2], runtime)
+                if self.dsh_installed:
+                    self.write_home_patch(argv[2], runtime)
                 if self.gateway_after_up is not None:
                     (hermes_config.hermes_root(self.environ) / "gateway_state.json").write_text(
                         json.dumps(self.gateway_after_up), encoding="utf-8")
@@ -621,7 +1092,47 @@ class RunnerTest(unittest.TestCase):
                                  encoding="utf-8")
             if self.output is not None:
                 stdout = self.output(argv) or ""
+        elif argv == ("dsh", "--version"):
+            stdout = "0.2.2-rc.3\n"
+        elif argv[:3] == ("dsh", "--profile", "headless"):
+            (Path(cwd) / "hello.py").write_text("def add(a, b):\n    return a + b\n\nprint(add(2, 3))\n",
+                                                encoding="utf-8")
+            stdout = "".join(line + "\n" for line in dump(PASSING_S11))
+        elif argv[:2] == ("docker", "logs") and self.dsh_installed:
+            stdout = "POST /v1/chat/completions 200\n"
         return subprocess.CompletedProcess(list(argv), code, stdout, "")
+
+    @property
+    def home_patch(self) -> Path:
+        return dsh_config.home_patch(self.environ)
+
+    def write_home_patch(self, recipe_id: str, runtime: str) -> None:
+        """What up writes into the dsh home patch: the block for the recipe, the default kept (the follow rule)."""
+        old = self.home_patch.read_text(encoding="utf-8") if self.home_patch.exists() else None
+        target = target_for(recipe_id, runtime, REPO / "recipes")
+        text = dsh_config.home_text(self.home_patch, old, target, default=dsh_config.holds_default(self.environ))
+        self.home_patch.write_text(text + self.up_edit, encoding="utf-8")
+
+    def reset(self) -> None:
+        """Back to the state setUp left, for a second run inside one test."""
+        for folder in (self.home / ".dsh", self.out, *(self.root / "tmp").iterdir()):
+            if folder.exists():
+                shutil.rmtree(folder)
+        os.environ.pop("DEEPSEEK_API_KEY", None)
+        self.host.open_ports = set()
+        self.host.installed.pop("dsh", None)
+        self.dsh_installed = False
+        for log in (self.calls, self.mkdtemp_calls, self.web_calls):
+            log.clear()
+        self.stderr.seek(0)
+        self.stderr.truncate()
+
+    def install_dsh(self) -> None:
+        self.dsh_installed = True
+        self.host.installed["dsh"] = "/usr/bin/dsh"
+        (self.home / ".dsh" / "profiles").mkdir(parents=True)
+        qwen36 = target_for("qwen3.6-35b-a3b", "llamacpp", REPO / "recipes")
+        self.home_patch.write_text(dsh_config.new_home_text(qwen36, default=True), encoding="utf-8")
 
     def rows(self) -> list[tuple[str, str, str, str]]:
         rows = []
@@ -671,7 +1182,7 @@ class RunnerTest(unittest.TestCase):
         self.on_call = inject
         self.main()
         self.assertGreater(len(self.calls), 5)
-        wanted = e2e.driver_env(self.environ)
+        wanted = e2e.driver_env(self.environ, skip_dsh=True)
         self.assertNotIn("LLMCTL_SET_DEFAULT", wanted)
         for argv, cwd, env in self.calls:
             with self.subTest(argv=argv):
@@ -832,6 +1343,174 @@ class RunnerTest(unittest.TestCase):
                             "the round trip runs pi without --model, but Pi's enabledModels would start it with "
                             "anthropic/claude-x instead of llmctl/local; add llmctl/local to enabledModels or clear "
                             "it, or run without --set-default-round-trip")
+
+    def test_dsh_preflight_refusals(self):
+        profile = "a dsh profile patch sets the llm-pi-ai row ({path} line 2); move it as " \
+                  "docs/clients.md#moving-a-hand-made-setup says, or run with --skip-dsh"
+        cases = {
+            "not installed": "dsh is not installed here (no dsh on PATH); install it, or run with --skip-dsh",
+            "profile row": profile,
+            "api key": "DEEPSEEK_API_KEY is set, so dsh's web_search could send model-written queries to DeepSeek; "
+                       "unset it for the e2e, or run with --skip-dsh",
+            "port": "127.0.0.1:3182 is in use, and the dsh web step needs it; stop what listens there, or run with "
+                    "--skip-dsh",
+            "markers": "{home_patch}: the llmctl block markers are damaged (1 begin marker, 0 end markers); restore "
+                       "the two marker lines exactly",
+        }
+        for case, message in cases.items():
+            with self.subTest(case=case):
+                self.reset()
+                if case != "not installed":
+                    self.install_dsh()
+                web = self.home / ".dsh" / "profiles" / "web" / "cordis.patch.yml"
+                if case == "profile row":
+                    web.parent.mkdir()
+                    web.write_text("[]\n- id: llm-pi-ai\n", encoding="utf-8")
+                elif case == "api key":
+                    os.environ["DEEPSEEK_API_KEY"] = "x"
+                elif case == "port":
+                    self.host.open_ports = {3182}
+                elif case == "markers":
+                    self.home_patch.write_text(dsh_config.BEGIN + "\n", encoding="utf-8")
+                self.assert_refused(self.main(skip_dsh=False),
+                                    message.format(path=web, home_patch=self.home_patch))
+
+    def test_skip_dsh_leaves_dsh_out(self):
+        self.main()
+        self.assertTrue(self.calls)
+        self.assertFalse([argv for argv in self.argvs() if argv[0] == "dsh"])
+        self.assertEqual(self.web_calls, [])
+        for argv, _, env in self.calls:
+            with self.subTest(argv=argv):
+                self.assertEqual(env["LLMCTL_CLIENTS"], "opencode,hermes,pi")
+        self.assertFalse([step for _, step, _, _ in self.rows() if step.startswith("dsh")])
+
+    def test_dsh_steps_run_privately(self):
+        self.install_dsh()
+        self.main(skip_dsh=False)
+        work = self.work_root()
+        headless = [(argv, cwd, env) for argv, cwd, env in self.calls if argv[:3] == ("dsh", "--profile", "headless")]
+        self.assertEqual(len(headless), 1)
+        argv, cwd, env = headless[0]
+        self.assertEqual(cwd, work / "01-qwen3.6-35b-a3b-llamacpp-dsh-headless")
+        self.assertEqual(env["DSH_TELEMETRY_DISABLED"], "1")
+        self.assertEqual(env["PWD"], str(cwd))
+        for name in ("TMPDIR", "DSH_HOME", "DSH_AGENTS_HOME"):
+            with self.subTest(name=name):
+                self.assertTrue(Path(env[name]).is_relative_to(work), env[name])
+                self.assertTrue(Path(env[name]).is_dir(), env[name])
+        private = Path(env["DSH_HOME"])
+        self.assertEqual(stat.S_IMODE(private.stat().st_mode), 0o700)
+        self.assertEqual((private / "cordis.patch.yml").read_bytes(), self.home_patch.read_bytes())
+        self.assertEqual(list(Path(env["DSH_AGENTS_HOME"]).iterdir()), [])
+        qwen36 = target_for("qwen3.6-35b-a3b", "llamacpp", REPO / "recipes")
+        self.assertEqual((cwd / "llmctl-default.patch.yml").read_text(encoding="utf-8"),
+                         dsh_config.default_overlay(qwen36))
+        self.assertFalse((cwd / "llmctl-no-tools.patch.yml").exists())
+        self.assertEqual(len(self.web_calls), 1)
+        web_argv, web_cwd, web_env = self.web_calls[0]
+        self.assertEqual(web_argv, ("dsh", "web", "--port", "3182", "--no-open"))
+        self.assertEqual(web_cwd, work / "01-qwen3.6-35b-a3b-llamacpp-dsh-web")
+        self.assertEqual(web_env["PWD"], str(web_cwd))
+        self.assertEqual(web_env["DSH_TELEMETRY_DISABLED"], "1")
+        self.assertNotEqual(web_env["DSH_HOME"], env["DSH_HOME"])
+        for name in ("TMPDIR", "DSH_HOME", "DSH_AGENTS_HOME"):
+            self.assertTrue(Path(web_env[name]).is_relative_to(work), web_env[name])
+        for step in ("dsh-config", "dsh-headless", "dsh-web"):
+            with self.subTest(step=step):
+                self.assertEqual(self.row("01-qwen3.6-35b-a3b-llamacpp", step), ("Yes", ""))
+        self.assertIn(("dsh", "--version"), self.argvs())
+        self.assertLess(self.argvs().index(("dsh", "--version")),
+                        self.argvs().index(("nvidia-smi", "--query-gpu=power.limit", "--format=csv,noheader")))
+
+    def test_dsh_version_runs_in_a_fresh_folder_with_telemetry_off_and_a_private_tmpdir(self):
+        self.install_dsh()
+        self.main(skip_dsh=False)
+        work = self.work_root()
+        (cwd, env), = [(cwd, env) for argv, cwd, env in self.calls if argv == ("dsh", "--version")]
+        self.assertEqual(cwd.parent, work)  # design D9: a fresh work folder, not the repository
+        self.assertTrue(cwd.is_dir(), cwd)
+        self.assertEqual(env["PWD"], str(cwd.resolve()))
+        self.assertNotEqual(cwd, Path(env["TMPDIR"]))
+        self.assertEqual([c for argv, c, _ in self.calls if c == cwd], [cwd])  # no other command shares it
+        self.assertEqual(env["DSH_TELEMETRY_DISABLED"], "1")
+        self.assertTrue(Path(env["TMPDIR"]).is_relative_to(work), env["TMPDIR"])
+        self.assertTrue(Path(env["TMPDIR"]).is_dir(), env["TMPDIR"])
+        for argv, _, env in self.calls:
+            if argv[0] != "dsh" and argv[1:] == ("--version",):
+                with self.subTest(argv=argv):
+                    self.assertNotIn("DSH_TELEMETRY_DISABLED", env)
+
+    def test_home_snapshot_wraps_every_read_error(self):
+        self.home_patch.mkdir(parents=True)  # a folder in the file's place: IsADirectoryError, an OSError
+        with self.assertRaises(UsageError) as caught:
+            e2e._home_snapshot(self.environ)
+        self.assertTrue(str(caught.exception).startswith(f"cannot read {self.home_patch}: "), caught.exception)
+        self.home_patch.rmdir()
+        self.assertEqual(e2e._home_snapshot(self.environ), (None, False))
+
+    def test_web_error_after_the_start_propagates(self):
+        self.install_dsh()
+        with unittest.mock.patch("launcher.e2e.clients.web_boot",
+                                 side_effect=PermissionError(1, "Operation not permitted")):
+            with self.assertRaises(PermissionError):
+                self.main(skip_dsh=False)
+
+    def test_dsh_config_step_compares_with_the_snapshot(self):
+        self.install_dsh()
+        self.up_edit = "# edited\n"
+        self.main(skip_dsh=False)
+        passed, reasons = self.row("01-qwen3.6-35b-a3b-llamacpp", "dsh-config")
+        self.assertEqual(passed, "No")
+        self.assertEqual(reasons, "the dsh home patch is not what llmctl writes for qwen3.6-35b-a3b from the text it "
+                                  "held when the run started")
+        record = self.record("dsh-config")
+        self.assertTrue(record["found"].endswith("# edited\n"), record)
+        self.assertFalse(record["wanted"].endswith("# edited\n"), record)
+
+    def test_round_trip_runs_dsh_in_the_real_home(self):
+        self.install_dsh()
+        self.round_trip_home()
+        self.main("--set-default-round-trip", matrix=(("k2-horizon-7b", "llamacpp"),), skip_dsh=False)
+        work = self.work_root()
+        calls = [(cwd, env) for argv, cwd, env in self.calls if argv == ("dsh", "--profile", "headless", "--json",
+                                                                         e2e.TASK)]
+        self.assertEqual(len(calls), 1)
+        cwd, env = calls[0]
+        self.assertEqual(cwd, work / "round-trip-dsh-headless")
+        self.assertNotIn("DSH_HOME", env)
+        self.assertNotIn("DSH_AGENTS_HOME", env)
+        self.assertEqual((env["DSH_TELEMETRY_DISABLED"], env["TMPDIR"]),
+                         ("1", str(work / "round-trip-dsh-headless.tmp")))
+        self.assertEqual(self.row(e2e.ROUND_TRIP, "dsh-headless"), ("Yes", ""))
+        self.assertTrue(dsh_config.holds_default(self.environ))  # held before the run, so the restore keeps it
+
+    def test_web_step_never_records_the_token(self):
+        self.install_dsh()
+        line = f"dsh web: http://127.0.0.1:3182/?token={TOKEN}"
+        self.web_boot = e2e.WebBoot(line, f"{line}\n", "", 0)
+        self.main(skip_dsh=False)
+        self.assertEqual(self.row("01-qwen3.6-35b-a3b-llamacpp", "dsh-web"), ("Yes", ""))
+        record = self.record("dsh-web")
+        self.assertEqual(record["stdout"], "dsh web: <address withheld>\n")
+        self.assertEqual(record["stderr"], "")
+        first = self.out
+        files_ = [path for path in first.rglob("*") if path.is_file()]
+        self.assertTrue(files_)
+        for path in files_:
+            self.assertNotIn(TOKEN, path.read_text(encoding="utf-8"), path)
+
+        self.reset()
+        self.install_dsh()
+        self.web_boot = e2e.WebBoot(line, f"{line}\n", f"dsh: warning: token={TOKEN} did not activate\n", 0)
+        self.main(skip_dsh=False)
+        self.assertEqual(self.row("01-qwen3.6-35b-a3b-llamacpp", "dsh-web"), ("No", WITHHELD))
+        record = self.record("dsh-web")
+        marker = "[withheld: the output named a private value after redaction]"
+        self.assertEqual((record["stdout"], record["stderr"]), (marker, marker))
+        for path in (path for path in self.out.rglob("*") if path.is_file()):
+            self.assertNotIn(TOKEN, path.read_text(encoding="utf-8"), path)
+
 
     def session_output(self, kind: str, lines: list[str]):
         """An output for one session step: hermes-chat, pi or opencode."""

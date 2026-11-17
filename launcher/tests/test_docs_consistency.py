@@ -8,7 +8,7 @@ import re
 import shlex
 import unittest
 
-from launcher import opencode_config
+from launcher import dsh_config, opencode_config
 from launcher.catalog import load_catalog
 from launcher.runtimes import ADAPTERS
 from launcher.tests.fakes import REPO
@@ -124,6 +124,39 @@ def opencode_snippet(doc: str) -> dict | None:
     return next(iter(snippet.values()))
 
 
+def fenced_blocks(lines: list[str]) -> list[str]:
+    """The text of every fenced block in the lines, each ending with a newline."""
+    blocks, current, inside = [], [], False
+    for line in lines:
+        if line.startswith("```"):
+            if inside:
+                blocks.append("".join(f"{text}\n" for text in current))
+                current = []
+            inside = not inside
+            continue
+        if inside:
+            current.append(line)
+    return blocks
+
+
+# The first cells of the dsh rows in docs/llmctl.md "When up refuses" (dsh design, Failure modes).
+DSH_REFUSALS = (
+    "`DSH_HOME is relative`",
+    "`... line N: the llmctl block holds a line llmctl did not write`",
+    "`... line N: dsh reads this file as one YAML list`",
+    "`... line N: the llm-pi-ai row is set outside the llmctl block`",
+    "`... line N: the ... row is set outside the llmctl block while llmctl holds or sets dsh's default`",
+    "`dsh's profile patches set the llm-pi-ai row`",
+    "`dsh cannot send ... per level`",
+    "`dsh --version failed` or `dsh --dump-config failed`",
+    "`dsh rejects the home patch llmctl would write for ...`",
+    "`dsh ... has no ... row, so llmctl's row would not apply`",
+    "`dsh did not apply llmctl's ... row`",
+    "`cannot check ... with dsh`",
+    "`of the new home patch failed`",
+)
+
+
 class DocsConsistencyTest(unittest.TestCase):
     catalog = load_catalog(REPO / "recipes", None)
 
@@ -172,6 +205,15 @@ class DocsConsistencyTest(unittest.TestCase):
             started = {recipe.id for recipe in entry.recipes.values() if recipe.opencode}
             self.assertEqual(set(models), started, f"{entry.runtime.opencode_provider} lists a model without a recipe")
 
+    def test_measured_recipes_have_opencode_entries(self):
+        # Lead review L8 item 4: every measured recipe gets its entry in the validated config.
+        for name, entry in self.catalog.runtimes.items():
+            for recipe in entry.recipes.values():
+                if recipe.evidence.kind != "measured":
+                    continue
+                with self.subTest(runtime=name, recipe=recipe.id):
+                    self.assertTrue(recipe.opencode, "a measured recipe needs opencode = true and its entry")
+
     def test_clients_doc_examples_match_golden(self):
         lines = (REPO / "docs/clients.md").read_text().splitlines()
         named = []
@@ -193,8 +235,32 @@ class DocsConsistencyTest(unittest.TestCase):
                 # Compared as text, so the document shows the layout llmctl writes, not only the same values.
                 self.assertEqual(shown, golden)
         for required in ("llamacpp/qwen3.6-35b-a3b.hermes.yaml", "llamacpp/qwen3.6-35b-a3b.pi.json",
-                         "vllm/gpt-oss-20b.hermes.yaml", "vllm/gpt-oss-20b.pi.json"):
+                         "llamacpp/qwen3.6-35b-a3b.dsh.yml", "vllm/gpt-oss-20b.hermes.yaml",
+                         "vllm/gpt-oss-20b.pi.json", "vllm/gpt-oss-20b.dsh.yml"):
             self.assertIn(required, named)
+
+    def test_no_tools_block_matches(self):
+        blocks = fenced_blocks(section("docs/clients.md#chat-only-recipes"))
+        self.assertTrue(blocks, "docs/clients.md#chat-only-recipes has no fenced block")
+        # Compared as text, so a reader can copy the block into a --patch file as it is.
+        self.assertEqual(blocks[0], dsh_config.no_tools_patch())
+
+    def test_every_dsh_refusal_has_a_row(self):
+        first_cells = [line.split("|")[1].strip() for line in section("docs/llmctl.md#when-up-refuses")
+                       if line.startswith("|")]
+        for start in DSH_REFUSALS:
+            with self.subTest(start=start):
+                self.assertTrue(any(start in cell for cell in first_cells),
+                                f"no row of docs/llmctl.md#when-up-refuses starts with {start}")
+
+    def test_compaction_list_matches_recipes(self):
+        text = "\n".join(section("docs/clients.md#context-compaction-and-timeouts"))
+        small = [recipe.id for entry in self.catalog.runtimes.values() for recipe in entry.recipes.values()
+                 if recipe.context - recipe.clients.output <= dsh_config.COMPACTION_HEADROOM]
+        self.assertIn(f"{len(small)} of 19 recipes", text)
+        for recipe_id in small:
+            with self.subTest(recipe=recipe_id):
+                self.assertIn(recipe_id, text)
 
     def test_doc_anchors_in_messages_resolve(self):
         pattern = re.compile(r"\b((?:docs|llamacpp|vllm)/[A-Za-z0-9_.-]+\.md)#([A-Za-z0-9_-]+)")

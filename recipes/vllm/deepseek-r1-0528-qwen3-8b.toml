@@ -1,4 +1,4 @@
-# Recipe from vllm/models.md#deepseek-r1-0528-qwen3-8b-chat-only; never run on the reference laptop.
+# Recipe from vllm/models.md#deepseek-r1-0528-qwen3-8b-chat-only; it failed on the reference laptop on 2026-11-17.
 schema = 1
 id = "deepseek-r1-0528-qwen3-8b"
 name = "DeepSeek-R1-0528-Qwen3-8B FP8 per tensor (chat only)"
@@ -30,5 +30,5 @@ thinking = "always"
 
 [evidence]
 kind = "estimate"
-summary = "The documented vLLM recipe, not run on the reference laptop yet"
+summary = "The first start, with an empty torch.compile cache, failed at the default --gpu-memory-utilization 0.92 (3.83 GiB of the 4.5 GiB KV cache needed), later starts with the cache warm worked at 0.92, and either way vLLM v0.33.0 loads the tokenizer as a Metaspace LlamaTokenizer, so prompts lose their spaces and replies come back garbled (research/2026-11-17/vllm-deepseek-r1-0528-qwen3-8b/, research/2026-11-17/llmctl-dsh-e2e/)"
 doc = "vllm/models.md#deepseek-r1-0528-qwen3-8b-chat-only"

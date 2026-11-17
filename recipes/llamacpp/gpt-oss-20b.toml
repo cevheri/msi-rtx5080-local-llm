@@ -4,7 +4,7 @@ id = "gpt-oss-20b"
 name = "gpt-oss-20b MXFP4"
 aliases = ["gpt-oss"]
 doc = "llamacpp/models.md#9-gpt-oss-20b"
-opencode = false
+opencode = true
 
 [model]
 repo = "ggml-org/gpt-oss-20b-GGUF"

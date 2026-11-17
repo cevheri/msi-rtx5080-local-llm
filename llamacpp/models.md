@@ -1,6 +1,6 @@
 # llama.cpp model recipes for the RTX 5080 Laptop
 
-Last verified: 2026-11-16 (all ten ranked picks and Nemotron 3.5 Lightning measured on this laptop; the other recipes are 2026-11-15 estimates).
+Last verified: 2026-11-17 (all ten ranked picks and Nemotron 3.5 Lightning measured on this laptop on 2026-11-16, and every measured recipe's OpenCode entry in the validated config since 2026-11-17; the other recipes are 2026-11-15 estimates).
 
 All ten ranked picks run on llama.cpp `ghcr.io/ggml-org/llama.cpp:server-cuda-b12407`, each with the exact GGUF file, `--n-cpu-moe` value, context, KV type, memory cap and thinking control below.
 The default is Qwen3.6-35B-A3B Q4_K_M (MoE, experts of blocks 0-24 in pinned RAM with a 3,200 MiB GPU cache for the most-used ones, 128k); use Qwen3.8-27B UD-Q3_K_XL (dense, all on the GPU, 64k) when a task needs the strongest model.
@@ -561,10 +561,10 @@ docker run -d --name llamacpp \
   Whether it hits the 20b GGUF with OpenCode's tool schemas is inferred, not tested.
 - **Speed reference:** 204.85 tok/s tg128 on a desktop RTX 5080 (measured on a desktop RTX 5080, llama.cpp build 6210, [ggml-org guide](https://github.com/ggml-org/llama.cpp/discussions/15396)); the bandwidth-scaled estimate for this laptop was about 190 tok/s, and the measured 166 tok/s above is about 87% of it, with CUDA graphs disabled and the 140 W limit.
 - **Ollama alternative:** `gpt-oss:20b` (14 GB) with `OLLAMA_CONTEXT_LENGTH=65536` ([Ollama tags](https://ollama.com/library/gpt-oss/tags)).
-- **vLLM:** a 64k option with `--gpu-memory-utilization 0.95`, FP8 KV and `TRITON_ATTN` is in [../vllm/models.md](../vllm/models.md).
+- **vLLM:** a 64k option with `--gpu-memory-utilization 0.965`, `--enforce-eager`, FP8 KV and `TRITON_ATTN` is in [../vllm/models.md](../vllm/models.md).
 - **Evidence:** Artificial Analysis TB2.1 13.9 ([AA](https://artificialanalysis.ai/models/gpt-oss-20b)) and NVIDIA same-harness SWE-bench Verified 52.44, TB2.1 15.17 ([Lightning card](https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/raw/main/README.md)).
 
-OpenCode entry (llmctl checks it against the recipe; it is not in the validated config, which carries the vLLM gpt-oss-20b entry):
+OpenCode entry (llmctl checks it against the recipe; the validated config carries it under `llamacpp-docker` beside the vLLM gpt-oss-20b entry):
 
 ```json
 "gpt-oss-20b": {

@@ -4,7 +4,7 @@ id = "deepseek-r1-0528-qwen3-8b"
 name = "DeepSeek-R1-0528-Qwen3-8B Q8_0 (chat only)"
 aliases = ["deepseek-r1"]
 doc = "llamacpp/models.md#10-deepseek-r1-0528-qwen3-8b-chat-and-reasoning-only"
-opencode = false
+opencode = true
 chat_only = true
 
 [model]

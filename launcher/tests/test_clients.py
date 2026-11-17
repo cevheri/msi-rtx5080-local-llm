@@ -5,22 +5,24 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from launcher import clients, hermes_config, pi_config
+from launcher import clients, dsh_config, hermes_config, pi_config
 from launcher.catalog import load_catalog
 from launcher.errors import ClientError, UsageError
 from launcher.host import Result
 from launcher.tests.client_fixture import LIST_HEADER, ClientFixture
 from launcher.tests.fakes import REPO, FakeHost, fail, ok
 from launcher.tests.regen_golden import target_for
+from launcher.tests.test_dsh_config import dsh_fixture
 
-ALL_BINARIES = {"opencode": "/usr/bin/opencode", "hermes": "/usr/bin/hermes", "pi": "/usr/bin/pi"}
+ALL_BINARIES = {"opencode": "/usr/bin/opencode", "hermes": "/usr/bin/hermes", "pi": "/usr/bin/pi",
+                "dsh": "/usr/bin/dsh"}
 
 
 class DetectionTest(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.home = Path(self.tmp.name)
-        for folder in (".config/opencode", ".hermes", ".pi/agent"):
+        for folder in (".config/opencode", ".hermes", ".pi/agent", ".dsh/profiles"):
             (self.home / folder).mkdir(parents=True)
 
     def tearDown(self):
@@ -37,12 +39,13 @@ class DetectionTest(unittest.TestCase):
     def test_all_installed(self):
         host = self.host(ALL_BINARIES)
         states = clients.client_states(host)
-        self.assertEqual([s.name for s in states], ["opencode", "hermes", "pi"])
-        self.assertEqual([s.active for s in states], [True, True, True])
-        self.assertEqual([s.reason for s in states], [None, None, None])
-        self.assertEqual([s.label for s in states], ["OpenCode", "Hermes", "Pi"])
+        self.assertEqual([s.name for s in states], ["opencode", "hermes", "pi", "dsh"])
+        self.assertEqual([s.active for s in states], [True, True, True, True])
+        self.assertEqual([s.reason for s in states], [None, None, None, None])
+        self.assertEqual([s.label for s in states], ["OpenCode", "Hermes", "Pi", "dsh"])
         self.assertEqual(self.by_name(states)["pi"].root, self.home / ".pi/agent")
-        self.assertEqual(clients.clients_line(host, states), "clients: opencode, hermes, pi")
+        self.assertEqual(self.by_name(states)["dsh"].root, self.home / ".dsh")
+        self.assertEqual(clients.clients_line(host, states), "clients: opencode, hermes, pi, dsh")
 
     def test_binary_missing_but_root_present(self):
         host = self.host({k: v for k, v in ALL_BINARIES.items() if k != "pi"})
@@ -53,7 +56,7 @@ class DetectionTest(unittest.TestCase):
         self.assertFalse(pi.active)
         self.assertEqual(pi.reason, "no pi on PATH")
         line = clients.clients_line(host, states)
-        self.assertEqual(line, "clients: opencode, hermes (pi: not installed, no pi on PATH)")
+        self.assertEqual(line, "clients: opencode, hermes, dsh (pi: not installed, no pi on PATH)")
 
     def test_root_missing(self):
         (self.home / ".hermes").rmdir()
@@ -63,7 +66,7 @@ class DetectionTest(unittest.TestCase):
         self.assertFalse(hermes.installed)
         self.assertEqual(hermes.reason, f"no {self.home}/.hermes")
         self.assertEqual(clients.clients_line(host, states),
-                         f"clients: opencode, pi (hermes: not installed, no {self.home}/.hermes)")
+                         f"clients: opencode, pi, dsh (hermes: not installed, no {self.home}/.hermes)")
 
     def test_llmctl_clients_subset(self):
         host = self.host(ALL_BINARIES, LLMCTL_CLIENTS=" pi , opencode")
@@ -74,7 +77,8 @@ class DetectionTest(unittest.TestCase):
         self.assertFalse(hermes.active)
         self.assertEqual(hermes.reason, "left out by LLMCTL_CLIENTS")
         self.assertEqual(clients.clients_line(host, states),
-                         "clients: opencode, pi (hermes: left out by LLMCTL_CLIENTS)")
+                         "clients: opencode, pi (hermes: left out by LLMCTL_CLIENTS) "
+                         "(dsh: left out by LLMCTL_CLIENTS)")
 
     def test_disabled_client_binary_is_not_looked_up(self):
         host = self.host(ALL_BINARIES, LLMCTL_CLIENTS="opencode")
@@ -86,7 +90,7 @@ class DetectionTest(unittest.TestCase):
     def test_llmctl_clients_empty(self):
         host = self.host(ALL_BINARIES, LLMCTL_CLIENTS="")
         states = clients.client_states(host)
-        self.assertEqual([s.active for s in states], [False, False, False])
+        self.assertEqual([s.active for s in states], [False, False, False, False])
         self.assertEqual(clients.clients_line(host, states), "clients: none (LLMCTL_CLIENTS is empty)")
 
     def test_llmctl_clients_unknown_name(self):
@@ -95,7 +99,7 @@ class DetectionTest(unittest.TestCase):
             clients.client_states(host)
         self.assertEqual(caught.exception.exit_code, 1)
         self.assertEqual(str(caught.exception),
-                         "LLMCTL_CLIENTS: unknown client 'claude'; use opencode, hermes or pi, comma-separated, "
+                         "LLMCTL_CLIENTS: unknown client 'claude'; use opencode, hermes, pi or dsh, comma-separated, "
                          "or an empty value for none")
 
     def test_listed_client_missing_refuses(self):
@@ -112,7 +116,44 @@ class DetectionTest(unittest.TestCase):
         self.assertIsNone(clients.require_listed(host, states))
         self.assertEqual(clients.clients_line(host, states),
                          "clients: none (opencode: not installed, no opencode on PATH)"
-                         " (hermes: not installed, no hermes on PATH) (pi: not installed, no pi on PATH)")
+                         " (hermes: not installed, no hermes on PATH) (pi: not installed, no pi on PATH)"
+                         " (dsh: not installed, no dsh on PATH)")
+
+    def test_dsh_needs_its_profiles_folder(self):
+        (self.home / ".dsh/profiles").rmdir()
+        host = self.host(ALL_BINARIES)
+        states = clients.client_states(host)
+        dsh = self.by_name(states)["dsh"]
+        self.assertFalse(dsh.installed)
+        self.assertEqual(dsh.reason, f"no {self.home}/.dsh/profiles")
+        self.assertEqual(clients.clients_line(host, states),
+                         f"clients: opencode, hermes, pi (dsh: not installed, no {self.home}/.dsh/profiles)")
+
+    def test_dsh_home_comes_from_the_mapping(self):
+        (self.home / "dh/profiles").mkdir(parents=True)
+        host = self.host(ALL_BINARIES, DSH_HOME=str(self.home / "dh"))
+        dsh = self.by_name(clients.client_states(host))["dsh"]
+        self.assertTrue(dsh.active)
+        self.assertEqual(dsh.root, Path(self.home / "dh"))
+
+    def test_relative_dsh_home_is_a_usage_error(self):
+        host = self.host(ALL_BINARIES, DSH_HOME="rel")
+        with self.assertRaises(UsageError) as caught:
+            clients.client_states(host)
+        self.assertEqual(caught.exception.exit_code, 1)
+        self.assertEqual(str(caught.exception), "DSH_HOME is relative (rel), and dsh resolves it against each "
+                                                "command's working folder; set it to an absolute path, ~ or ~/...")
+        host = self.host(ALL_BINARIES, DSH_HOME="rel", LLMCTL_CLIENTS="pi")
+        self.assertEqual([s.active for s in clients.client_states(host)], [False, False, True, False])
+
+    def test_listed_dsh_missing_refuses(self):
+        host = self.host({}, LLMCTL_CLIENTS="dsh")
+        states = clients.client_states(host)
+        with self.assertRaises(ClientError) as caught:
+            clients.require_listed(host, states)
+        self.assertEqual(caught.exception.exit_code, 3)
+        self.assertEqual(str(caught.exception),
+                         "LLMCTL_CLIENTS names dsh, but dsh is not installed here: no dsh on PATH")
 
     def test_llmctl_providers(self):
         catalog = load_catalog(REPO / "recipes", None)
@@ -170,7 +211,7 @@ class PlanApplyTest(unittest.TestCase):
         self.assertEqual(self.fx.snapshot(), before)
         self.assertEqual([change.path for change in result.changes],
                          [self.fx.opencode_path, self.fx.hermes_config, self.fx.models_path, self.fx.settings_path])
-        self.assertEqual([state.name for state in result.states], ["opencode", "hermes", "pi"])
+        self.assertEqual([state.name for state in result.states], ["opencode", "hermes", "pi", "dsh"])
         self.assertFalse(result.hermes_use)
         self.assertTrue(result.pi_active)
 
@@ -665,6 +706,7 @@ class ReportTest(unittest.TestCase):
             f"({self.fx.hermes_config})",
             "  Pi: llmctl/local for qwen3.6-35b-a3b on llama.cpp, the running model; default llmctl/local, "
             f"thinking off ({agent})",
+            "  dsh: not installed (no dsh on PATH)",
         ])
 
     def test_status_other_states(self):
@@ -720,9 +762,9 @@ class ReportTest(unittest.TestCase):
         ]
         lines = self.report(None)
         self.assertEqual(lines[-3:], warnings)
-        self.assertEqual(len(lines), 7)
+        self.assertEqual(len(lines), 8)
         quiet = self.report(None, running_known=False)
-        self.assertEqual(len(quiet), 4)
+        self.assertEqual(len(quiet), 5)
         self.assertFalse([line for line in quiet if "but no model is running" in line])
 
     def test_no_warning_for_a_default_elsewhere(self):
@@ -807,6 +849,257 @@ class ReportTest(unittest.TestCase):
             "Hermes still points at qwen3.6-35b-a3b and gets no answer until the next ./llmctl up",
             "  switch back: hermes profile use default",
         ])
+
+
+TELEMETRY = "- id: session-telemetry-otel\n  disabled: true\n"
+DSH_DUMP = ["dsh", "--profile", "acp", "--dump-config"]
+
+
+class DshClientTest(unittest.TestCase):
+    """dsh as the fourth client: the D7 sample state, with dsh alone unless a test says otherwise."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.catalog = load_catalog(REPO / "recipes", None)
+        cls.target = target_for("qwen3.6-35b-a3b", "llamacpp", REPO / "recipes")
+        cls.old_target = target_for("gpt-oss-20b", "vllm", REPO / "recipes")
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.host = FakeHost(env={"HOME": "/nonexistent", "PATH": "/usr/bin", "LLMCTL_CLIENTS": "dsh"})
+        self.fx = ClientFixture(self.host, Path(self.tmp.name))
+        self.fx.install("opencode", "hermes", "pi", "dsh")
+        self.fx.route_clients()
+        self.fx.write_opencode("vllm-docker/gpt-oss-20b")
+        self.fx.hermes_config.parent.mkdir(parents=True)
+        self.fx.hermes_config.write_text(hermes_config.new_config_text(self.old_target), encoding="utf-8")
+        self.fx.models_path.write_text(pi_config.new_models_text(self.old_target), encoding="utf-8")
+        self.fx.settings_path.write_text(json.dumps(START_SETTINGS, indent=2) + "\n", encoding="utf-8")
+        self.path = self.fx.home_patch
+        self.start = TELEMETRY + dsh_config.new_home_text(self.old_target, default=True)
+        self.write_patch(self.start)
+        self.backup = Path(str(self.path) + ".llmctl-backup")
+        self.backup.write_text(TELEMETRY, encoding="utf-8")
+
+    def write_patch(self, text):
+        with open(self.path, "w", encoding="utf-8", newline="") as handle:
+            handle.write(text)
+
+    def read_patch(self):
+        with open(self.path, encoding="utf-8", newline="") as handle:
+            return handle.read()
+
+    def plan(self, *, set_default=False, check=True):
+        return clients.plan(self.host, self.catalog, self.target, set_default=set_default, check=check)
+
+    def apply(self, *, set_default=False, dsh_checked=None):
+        return clients.apply(self.host, self.catalog, self.target, set_default=set_default, dsh_checked=dsh_checked)
+
+    def report(self, target="running", *, with_paths=True, running_known=True):
+        target = self.target if target == "running" else target
+        return clients.report(self.host, self.catalog, target, with_paths=with_paths, running_known=running_known)
+
+    def dsh_change(self, planned):
+        found = [change for change in planned.changes if change.path == self.path]
+        self.assertEqual(len(found), 1, planned.changes)
+        return found[0]
+
+    def test_plan_checks_once(self):
+        planned = self.plan(check=True)
+        self.assertEqual(self.host.calls, [["dsh", "--version"], DSH_DUMP])
+        self.assertTrue(planned.dsh_active)
+        change = self.dsh_change(planned)
+        self.assertEqual(planned.dsh_checked, change.new_text)
+        self.assertEqual(planned.warnings, ())
+        self.assertEqual(change.summary, "llmctl rows for qwen3.6-35b-a3b on llama.cpp (was gpt-oss-20b on vLLM); "
+                                         "dsh's default llmctl/local in every profile (was llmctl/gpt-oss-20b)")
+
+    def test_plan_without_check_runs_no_dsh(self):
+        with mock.patch("launcher.dsh_config.tempfile.mkdtemp", side_effect=AssertionError):
+            planned = self.plan(check=False)
+        self.assertEqual(self.host.calls, [])
+        self.assertTrue(planned.dsh_active)
+        self.assertIsNone(planned.dsh_checked)
+
+    def test_version_warning_is_planned(self):
+        self.host.on(["dsh", "--version"], ok("0.2.3\n"))
+        planned = self.plan(check=True)
+        self.assertEqual(planned.warnings, (
+            "warning: dsh 0.2.3 is not 0.2.2-rc.3, the version llmctl's dsh rows were checked with; run the dsh "
+            "steps of the e2e before relying on them (docs/clients.md#maintenance)",))
+
+    def test_dry_run_lines(self):
+        self.backup.unlink()
+        path = self.path
+        self.assertEqual(clients.dry_run_lines(self.plan(check=False)), [
+            f"would back up {path} to {path}.llmctl-backup",
+            f"would write {path}: llmctl rows for qwen3.6-35b-a3b on llama.cpp (was gpt-oss-20b on vLLM); "
+            "dsh's default llmctl/local in every profile (was llmctl/gpt-oss-20b)",
+            "dry run: nothing was written, and dsh has not checked llmctl's rows",
+        ])
+        self.host.env["LLMCTL_CLIENTS"] = "pi,dsh"
+        self.assertEqual(clients.dry_run_lines(self.plan(check=False))[-1],
+                         "dry run: nothing was written, and neither Pi nor dsh has checked llmctl's entries")
+
+    def test_apply_skips_an_unchanged_check(self):
+        planned = self.plan(check=True)
+        summary = self.dsh_change(planned).summary
+        self.host.calls.clear()
+        result = self.apply(dsh_checked=planned.dsh_checked)
+        self.assertEqual(self.host.calls, [])
+        self.assertEqual(result.failures, ())
+        self.assertEqual(result.lines, (f"wrote {self.path}: {summary}",))
+        self.assertEqual(result.changed, frozenset({"dsh"}))
+        self.assertEqual(result.dsh_old.served, "gpt-oss-20b")
+        self.assertEqual(self.read_patch(), TELEMETRY + dsh_config.new_home_text(self.target, default=True))
+
+    def test_apply_rechecks_a_changed_candidate(self):
+        planned = self.plan(check=True)
+        self.host.calls.clear()
+        user_row = "- id: tool-web\n  disabled: true\n"
+        self.write_patch(self.start + user_row)
+        result = self.apply(dsh_checked=planned.dsh_checked)
+        self.assertEqual(result.failures, ())
+        self.assertEqual(self.host.calls.count(DSH_DUMP), 1)
+        self.assertEqual(self.read_patch(),
+                         TELEMETRY + dsh_config.new_home_text(self.target, default=True) + user_row)
+
+    def test_apply_check_failure_is_collected(self):
+        planned = self.plan(check=True)
+        changed = self.start + "- id: tool-web\n  disabled: true\n"
+        self.write_patch(changed)
+
+        def rejected(argv):
+            patch = self.host.env_extras[-1]["DSH_HOME"] + "/cordis.patch.yml"
+            return Result(1, "", dsh_fixture("s3.stderr", patch))
+
+        self.host.on(DSH_DUMP, rejected)
+        result = self.apply(dsh_checked=planned.dsh_checked)
+        self.assertEqual(len(result.failures), 1, result.failures)
+        self.assertTrue(result.failures[0].startswith(
+            "dsh rejects the home patch llmctl would write for qwen3.6-35b-a3b: "), result.failures[0])
+        self.assertEqual(result.failed, frozenset({"dsh"}))
+        self.assertNotIn("dsh", result.changed)
+        self.assertEqual(self.read_patch(), changed)
+
+    def test_dsh_write_failure_keeps_the_others(self):
+        del self.host.env["LLMCTL_CLIENTS"]
+        os.chmod(self.fx.dsh_home, 0o500)
+        self.addCleanup(os.chmod, self.fx.dsh_home, 0o700)
+        result = self.apply()
+        self.assertEqual(len(result.failures), 1, result.failures)
+        self.assertTrue(result.failures[0].startswith(f"{self.path}: "), result.failures[0])
+        self.assertEqual(result.failed, frozenset({"dsh"}))
+        self.assertEqual(self.read_patch(), self.start)
+        self.assertEqual(json.loads(self.fx.opencode_path.read_text(encoding="utf-8"))["model"],
+                         "llamacpp-docker/qwen3.6-35b-a3b")
+        self.assertEqual(self.fx.hermes_config.read_text(encoding="utf-8"), hermes_config.new_config_text(self.target))
+        self.assertEqual(self.fx.models_path.read_text(encoding="utf-8"), pi_config.new_models_text(self.target))
+        self.assertEqual(json.loads(self.fx.settings_path.read_text(encoding="utf-8"))["defaultModel"], "local")
+
+    def test_unchanged_home_patch_is_still_checked(self):
+        current = TELEMETRY + dsh_config.new_home_text(self.target, default=True)
+        self.write_patch(current)
+        seen = []
+
+        def dump(argv):
+            patch = self.host.env_extras[-1]["DSH_HOME"] + "/cordis.patch.yml"
+            with open(patch, encoding="utf-8", newline="") as handle:
+                seen.append(handle.read())
+            return ok(dsh_fixture("s1-dump.txt", patch))
+
+        self.host.on(DSH_DUMP, dump)
+        planned = self.plan(check=True)
+        self.assertEqual(planned.changes, ())
+        self.assertEqual(planned.dsh_checked, current)
+        self.assertEqual(seen, [current])
+        result = self.apply()
+        self.assertEqual(result.failures, ())
+        self.assertEqual(result.lines, ())
+        self.assertNotIn("dsh", result.changed)
+        self.assertEqual(seen, [current, current])
+
+    def test_symlinked_home_patch(self):
+        dotfiles = self.fx.home / "dotfiles"
+        dotfiles.mkdir()
+        target_file = dotfiles / "dsh.yml"
+        target_file.write_text(TELEMETRY, encoding="utf-8")
+        os.chmod(target_file, 0o640)
+        self.path.unlink()
+        self.backup.unlink()
+        self.path.symlink_to(target_file)
+        result = self.apply()
+        self.assertEqual(result.failures, ())
+        self.assertTrue(self.path.is_symlink())
+        self.assertEqual(os.readlink(self.path), str(target_file))
+        self.assertEqual(target_file.read_text(encoding="utf-8"),
+                         TELEMETRY + dsh_config.new_home_text(self.target, default=False))
+        self.assertEqual(os.stat(target_file).st_mode & 0o7777, 0o640)
+        self.assertFalse(os.path.islink(self.backup))
+        self.assertEqual(self.backup.read_text(encoding="utf-8"), TELEMETRY)
+        self.assertEqual(os.stat(self.backup).st_mode & 0o7777, 0o640)
+
+    def test_status_lines(self):
+        path = self.path
+        result = self.apply(set_default=True)
+        self.assertEqual(result.failures, ())
+        self.assertIn(f"  dsh: llmctl/local for qwen3.6-35b-a3b on llama.cpp, the running model; default llmctl/local, "
+                      f"held by llmctl ({path})", self.report())
+        with self.subTest("no default lines"):
+            self.write_patch(TELEMETRY + dsh_config.new_home_text(self.target, default=False))
+            self.assertIn(f"  dsh: llmctl/local for qwen3.6-35b-a3b on llama.cpp, the running model; default left "
+                          f"to dsh's model picker ({path})", self.report())
+        with self.subTest("telemetry row only"):
+            self.write_patch(TELEMETRY)
+            self.assertIn(f"  dsh: no llmctl rows yet (the next ./llmctl up writes them) ({path})", self.report())
+        with self.subTest("the starting state"):
+            self.write_patch(self.start)
+            self.assertIn("  dsh: llmctl/gpt-oss-20b for gpt-oss-20b on vLLM, not the running model (run ./llmctl up "
+                          f"again); default llmctl/gpt-oss-20b, held by llmctl ({path})", self.report())
+            self.assertFalse([line for line in self.report() if line.startswith("warning: dsh")])
+        with self.subTest("no model running"):
+            self.write_patch(self.start)
+            lines = self.report(None)
+            self.assertIn("  dsh: llmctl/gpt-oss-20b for gpt-oss-20b on vLLM; default llmctl/gpt-oss-20b, held by "
+                          f"llmctl ({path})", lines)
+            self.assertIn("warning: dsh's default llmctl/gpt-oss-20b points at llmctl, but no model is running", lines)
+            self.assertFalse([line for line in self.report(None, running_known=False) if line.startswith("warning:")])
+        with self.subTest("damaged markers"):
+            self.write_patch(self.start + dsh_config.BEGIN + "\n")
+            line = next(line for line in self.report() if line.startswith("  dsh: "))
+            self.assertTrue(line.startswith(f"  dsh: cannot read {path}: "), line)
+        with self.subTest("without paths"):
+            self.write_patch(self.start)
+            self.assertIn("  dsh: llmctl/gpt-oss-20b for gpt-oss-20b on vLLM, not the running model (run ./llmctl up "
+                          "again); default llmctl/gpt-oss-20b, held by llmctl", self.report(with_paths=False))
+        with self.subTest("disabled"):
+            self.host.env["LLMCTL_CLIENTS"] = "pi"
+            self.assertIn("  dsh: disabled by LLMCTL_CLIENTS", self.report())
+        with self.subTest("not installed"):
+            self.host.env["LLMCTL_CLIENTS"] = "dsh"
+            del self.host.installed["dsh"]
+            self.assertIn("  dsh: not installed (no dsh on PATH)", self.report())
+
+    def down_lines(self):
+        return clients.down_lines(self.host, self.catalog, "qwen3.6-35b-a3b")
+
+    def test_down_lines_name_dsh(self):
+        path = self.path
+        del self.host.env["LLMCTL_CLIENTS"]
+        (self.fx.hermes_root / "active_profile").write_text("llmctl\n", encoding="utf-8")
+        self.assertEqual(self.down_lines(), [
+            "OpenCode, Hermes, Pi and dsh still point at qwen3.6-35b-a3b and get no answer until the next ./llmctl up",
+            "  switch back: OpenCode /models; hermes profile use default; Pi /model; dsh: delete the "
+            f"agent-default-model and acp lines in {path}",
+        ])
+        self.host.env["LLMCTL_CLIENTS"] = "dsh"
+        self.assertEqual(self.down_lines(), [
+            "dsh still points at qwen3.6-35b-a3b and gets no answer until the next ./llmctl up",
+            f"  switch back: dsh: delete the agent-default-model and acp lines in {path}",
+        ])
+        self.write_patch(TELEMETRY + dsh_config.new_home_text(self.old_target, default=False))
+        self.assertEqual(self.down_lines(), [])
 
 
 if __name__ == "__main__":

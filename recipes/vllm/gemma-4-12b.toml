@@ -1,10 +1,10 @@
-# Recipe from vllm/models.md#gemma-4-12b-it-qat-w4a16; never run on the reference laptop.
+# Measured launch from vllm/models.md#gemma-4-12b-it-qat-w4a16.
 schema = 1
 id = "gemma-4-12b"
 name = "Gemma 4 12B IT QAT W4A16"
 aliases = ["gemma4-12b"]
 doc = "vllm/models.md#gemma-4-12b-it-qat-w4a16"
-opencode = false
+opencode = true
 
 [model]
 repo = "google/gemma-4-12B-it-qat-w4a16-ct"
@@ -30,6 +30,9 @@ thinking = "toggle"
 default = "off"
 
 [evidence]
-kind = "estimate"
-summary = "The documented vLLM recipe, not run on the reference laptop yet"
-doc = "vllm/models.md#gemma-4-12b-it-qat-w4a16"
+kind = "measured"
+summary = "69.5 tok/s decode with thinking off and 128k context over runs of 885 to 933 tokens, 15,822 MiB GPU peak during startup profiling, smoke test and tool call passed"
+decode_tok_s = 69.5
+date = "2026-11-17"
+hardware = "MSI Raider 18 Max HX A2WI, RTX 5080 Laptop GPU 16 GB, 61 GiB RAM"
+record = "research/2026-11-17/vllm-gemma-4-12b/"

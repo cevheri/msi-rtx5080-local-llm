@@ -323,6 +323,15 @@ class RefusalTest(HermesHomeCase):
         self.refused(f"{self.path} has no llmctl block, so the Hermes profile llmctl was not created by llmctl; "
                      "rename it with hermes profile rename llmctl <name>, or leave Hermes out with LLMCTL_CLIENTS")
 
+    def test_byte_order_mark_before_the_begin_marker(self):
+        text = "\ufeff" + hermes_config.BEGIN + "\n" + hermes_config.render_block(qwen36()) + hermes_config.END + "\n"
+        self.write_profile(text + "_config_version: 53\n")
+        self.assertIsNone(hermes_config.plan_profile(self.env, qwen36()))
+        self.assertEqual(hermes_config.profile_block(self.env), hermes_config.render_block(qwen36()))
+        change = hermes_config.plan_profile(self.env, gptoss_vllm())
+        self.assertTrue(change.new_text.startswith("\ufeff" + hermes_config.BEGIN + "\n"))
+        self.assertTrue(change.new_text.endswith(hermes_config.END + "\n_config_version: 53\n"))
+
     def test_damaged_markers(self):
         text = hermes_config.new_config_text(qwen36())
         begin, end = hermes_config.BEGIN + "\n", hermes_config.END + "\n"

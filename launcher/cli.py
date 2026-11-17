@@ -43,8 +43,8 @@ def build_parser() -> argparse.ArgumentParser:
     up.add_argument("--replace", action="store_true", help="stop the model server that is running first")
     up.add_argument("--dry-run", action="store_true", help="print the docker command and start nothing")
     up.add_argument("--set-default", action="store_true",
-                    help="once the server is ready, make it the default of every installed client "
-                         "(or set LLMCTL_SET_DEFAULT=1)")
+                    help="once the server is ready, make it the default of every installed client: "
+                         "OpenCode, Hermes, Pi and dsh (or set LLMCTL_SET_DEFAULT=1)")
     sub.add_parser("status", help="the model server llmctl started, and its health")
     logs = sub.add_parser("logs", help="the model server's log")
     logs.add_argument("-f", "--follow", action="store_true")

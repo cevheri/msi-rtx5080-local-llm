@@ -13,9 +13,9 @@
  "--label",
  "io.llmctl.source=shipped",
  "--label",
- "io.llmctl.sha256=11f4f3060a7dcbde3f31b4760f6ab6908640e69900e1efc33c075a822b74e28a",
+ "io.llmctl.sha256=9b0a1e96048afebd418e31e454f444cc93b9c3eba6acd506fc6d398c4cbcf42b",
  "--label",
- "io.llmctl.evidence=estimate",
+ "io.llmctl.evidence=measured",
  "--label",
  "io.llmctl.runtime-source=shipped",
  "--label",
@@ -49,6 +49,8 @@
  "k2-horizon-7b",
  "--max-model-len",
  "65536",
+ "--gpu-memory-utilization",
+ "0.94",
  "--trust-remote-code",
  "--chat-template-content-format",
  "string",
@@ -66,5 +68,7 @@
  "--default-chat-template-kwargs",
  "{\"reasoning_effort\":\"high\",\"tool_call_format\":\"xml\"}",
  "--override-generation-config",
- "{\"temperature\":1.0,\"top_p\":0.95}"
+ "{\"temperature\":1.0,\"top_p\":0.95}",
+ "--reasoning-effort-map",
+ "{\"none\":\"low\",\"minimal\":\"low\",\"xhigh\":\"high\",\"max\":\"high\"}"
 ]
