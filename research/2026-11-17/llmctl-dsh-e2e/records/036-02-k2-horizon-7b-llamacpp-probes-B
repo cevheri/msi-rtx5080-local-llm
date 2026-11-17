@@ -1,0 +1,65 @@
+{
+  "request": {
+    "model": "local",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Create a file named hello.py containing a function add(a, b) that returns a + b, and a main block that prints add(2, 3). Then read the file back and tell me how many lines it has. Do not run any shell commands."
+      },
+      {
+        "role": "assistant",
+        "content": "",
+        "reasoning": "I will write the file.",
+        "reasoning_content": "I will write the file.",
+        "tool_calls": [
+          {
+            "id": "call_1",
+            "type": "function",
+            "function": {
+              "name": "write",
+              "arguments": "{\"path\": \"hello.py\", \"content\": \"print(1)\\n\"}"
+            }
+          }
+        ]
+      },
+      {
+        "role": "tool",
+        "tool_call_id": "call_1",
+        "content": "ok"
+      }
+    ],
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "write",
+          "description": "Write content to a file.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string"
+              },
+              "content": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "path",
+              "content"
+            ]
+          }
+        }
+      }
+    ],
+    "max_tokens": 256
+  },
+  "status": 200,
+  "reply": "{\"choices\":[{\"finish_reason\":\"tool_calls\",\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"I need to correct the file content to match your request.\",\"reasoning_content\":\"That's wrong, I wrote just \\\"print(1)\\\" which is not the requested content. Let me fix it. The user wants a function add(a,b) returning a+b, a main block that prints add(2,3), then read the file back and tell how many lines.\\n\\nI made a mistake writing the file. Let me write the correct content.\",\"tool_calls\":[{\"type\":\"function\",\"function\":{\"name\":\"write\",\"arguments\":\"{\\\"content\\\":\\\"def add(a, b):\\\\n    return a + b\\\\n\\\\n\\\\nif __name__ == \\\\\\\"__main__\\\\\\\":\\\\n    print(add(2, 3))\\\",\\\"path\\\":\\\"hello.py\\\"}\"},\"id\":\"TsLWlNqSbnRfhu2Rs8tZCF4v5DF5Cw56\"}]}}],\"created\":1794878665,\"model\":\"local\",\"system_fingerprint\":\"b12407-e574a17b0\",\"object\":\"chat.completion\",\"usage\":{\"completion_tokens\":141,\"prompt_tokens\":272,\"total_tokens\":413,\"prompt_tokens_details\":{\"cached_tokens\":2}},\"id\":\"chatcmpl-UKeiyVKyVGimYpOXcyPxKz2NMKRNbyw7\",\"timings\":{\"cache_n\":2,\"prompt_n\":270,\"prompt_ms\":58.28,\"prompt_per_token_ms\":0.21585185185185185,\"prompt_per_second\":4632.807137954701,\"predicted_n\":141,\"predicted_ms\":2070.196,\"predicted_per_token_ms\":14.787114285714285,\"predicted_per_second\":67.62644696444201}}",
+  "record": {
+    "probe": "B",
+    "status": 200,
+    "content": true,
+    "reasoning": true
+  }
+}

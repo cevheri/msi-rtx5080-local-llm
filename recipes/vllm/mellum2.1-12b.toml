@@ -1,10 +1,10 @@
-# Recipe from vllm/models.md#mellum21-12b-a25b-thinking-awq-int4; never run on the reference laptop.
+# Measured launch from vllm/models.md#mellum21-12b-a25b-thinking-awq-int4.
 schema = 1
 id = "mellum2.1-12b"
 name = "Mellum2.1 12B-A2.5B Thinking AWQ-INT4"
 aliases = ["mellum"]
 doc = "vllm/models.md#mellum21-12b-a25b-thinking-awq-int4"
-opencode = false
+opencode = true
 
 [model]
 repo = "cyankiwi/Mellum2.1-12B-A2.5B-Thinking-AWQ-INT4"
@@ -29,6 +29,9 @@ thinking = "toggle"
 default = "on"
 
 [evidence]
-kind = "estimate"
-summary = "The documented vLLM recipe, not run on the reference laptop yet"
-doc = "vllm/models.md#mellum21-12b-a25b-thinking-awq-int4"
+kind = "measured"
+summary = "257.2 tok/s decode with thinking on and 128k context over runs of 1,171 to 1,500 tokens, 14,816 MiB GPU peak, smoke test and tool call passed"
+decode_tok_s = 257.2
+date = "2026-11-17"
+hardware = "MSI Raider 18 Max HX A2WI, RTX 5080 Laptop GPU 16 GB, 61 GiB RAM"
+record = "research/2026-11-17/vllm-mellum2.1-12b/"

@@ -1,10 +1,17 @@
-"""The opt-in e2e of llmctl's clients (spec D10, L3, L9): real servers, real clients, real config files.
+"""The opt-in e2e of llmctl's clients (spec D10, L3, L9, dsh design D9): real servers, real clients, real config files.
 
 Only the lead runs it, alone and through heavy, after the full unit suite passes:
-heavy python3 -m launcher.e2e.clients --out research/<date>/llmctl-clients-e2e [--matrix default|extended]
-[--keep-running] [--set-default-round-trip]
+heavy python3 -m launcher.e2e.clients --out research/<date>/llmctl-clients-e2e [--matrix default|extended|all]
+[--keep-running] [--set-default-round-trip] [--skip-dsh]
+It checks four clients, OpenCode, Hermes, Pi and dsh, or the first three with --skip-dsh, which also sets
+LLMCTL_CLIENTS=opencode,hermes,pi for every command.
+Without --skip-dsh it refuses before anything starts when dsh is not installed, a dsh profile patch sets the
+llm-pi-ai row, DEEPSEEK_API_KEY is set, 127.0.0.1:3182 is in use, or the dsh home patch is unreadable or has damaged
+markers; it opens no .env or credential file.
 --out holds only the records; the clients run in fresh work folders under one private temporary folder per run
 (llmctl-e2e-*), outside the repository, which the run leaves in place for inspection.
+Each recipe's dsh steps run with telemetry off, TMPDIR under that folder and a private dsh home there that holds a
+byte copy of the real home patch; the round trip's dsh session runs in the real dsh home.
 Importing this module has no side effects; everything runs inside main and the functions below.
 """
 
@@ -13,17 +20,20 @@ import json
 import os
 import re
 import shlex
+import signal
 import socket
 import subprocess
 import sys
 import tempfile
+import threading
 import time
+import urllib.parse
 from collections.abc import Callable, Iterable, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 from pathlib import Path
 
-from launcher import docker_state, files, hermes_config, opencode_config, pi_config
+from launcher import clients, docker_state, dsh_config, files, hermes_config, opencode_config, pi_config
 from launcher.catalog import load_catalog, override_dir
 from launcher.command import LABEL_PREFIX
 from launcher.errors import LlmctlError, UsageError
@@ -44,9 +54,22 @@ DEFAULT_MATRIX = (("qwen3.8-27b", "llamacpp"), ("k2-horizon-7b", "llamacpp"), ("
 EXTENDED_MATRIX = DEFAULT_MATRIX[:-1] + tuple((name, "llamacpp") for name in (
     "nemotron-3.5-bolt", "qwen3-coder-next", "deepseek-r1-0528-qwen3-8b", "gemma-4-26b-a4b",
     "nemotron-3.5-lightning", "groot-19b-a3b", "k2-horizon-mova-36b", "gpt-oss-20b")) + DEFAULT_MATRIX[-1:]
-MATRICES = {"default": DEFAULT_MATRIX, "extended": EXTENDED_MATRIX}
+# L8 item 5: every shipped recipe, the llama.cpp ones first, then vLLM, ending on the default model as extended does
+ALL_MATRIX = tuple((name, "llamacpp") for name in (
+    "qwen3.8-27b", "k2-horizon-7b", "nemotron-3.5-bolt", "qwen3-coder-next", "deepseek-r1-0528-qwen3-8b",
+    "gemma-4-26b-a4b", "nemotron-3.5-lightning", "groot-19b-a3b", "k2-horizon-mova-36b", "gpt-oss-20b")) + tuple(
+    (name, "vllm") for name in ("gpt-oss-20b", "mellum2.1-12b", "k2-horizon-7b", "qwen3.5-9b", "gemma-4-12b",
+                                "gemma-4-e4b", "groot-19b-a3b", "deepseek-r1-0528-qwen3-8b")) + (
+    ("qwen3.6-35b-a3b", "llamacpp"),)
+MATRICES = {"default": DEFAULT_MATRIX, "extended": EXTENDED_MATRIX, "all": ALL_MATRIX}
 ROUND_TRIP_MODEL = "qwen3.6-35b-a3b"
 PROBE_C = ("k2-horizon-7b", "k2-horizon-mova-36b", "qwen3.6-35b-a3b")
+PROBE_F = "nemotron-3.5-bolt"  # dsh's Medium level on Bolt's real template (dsh design D9 step 5)
+DSH_PORT = 3182  # dsh web's port in the e2e; 3080 is the owner's
+WEB_READY_S = 30
+WEB_TAIL_S = 3
+WEB_KILL_S = 15
+SKIP_DSH_CLIENTS = "opencode,hermes,pi"
 WORK = "{work}"  # replaced by the step's work folder when the step runs
 ROUND_TRIP = "round-trip"
 IN_PROCESS = ()  # the argv of a step the driver runs itself: the config check and the probes
@@ -81,6 +104,15 @@ class Defaults:
     pi_provider: str | None
     pi_model: str | None
     hermes_profile: str
+    dsh_default: bool | None = None  # None when the round trip leaves dsh out
+
+
+@dataclass(frozen=True)
+class WebBoot:
+    line: str | None  # the `dsh web:` line, or None when none came within WEB_READY_S
+    stdout: str
+    stderr: str
+    code: int | None
 
 
 # Parsers of the clients' output
@@ -119,21 +151,33 @@ def _outcome(reasons: list[str], models: list[str]) -> Outcome:
     return Outcome(not reasons, tuple(reasons), tuple(models))
 
 
-def opencode_outcome(lines: Iterable[str]) -> Outcome:
-    """`opencode run --format json`: a completed write and read tool_use, and no error event (spec D10 step 3)."""
+def opencode_outcome(lines: Iterable[str], *, tools: bool = True) -> Outcome:
+    """`opencode run --format json`: a completed write and read tool_use, and no error event (spec D10 step 3);
+    without tools a non-empty text answer and no tool_use event (L8 item 5)."""
     events, reasons = _events(lines)
     done, models = set(), []
+    used = answered = False
     for event in events:
         part = _dict(event.get("part"))
         for holder in (event, part, _dict(part.get("info"))):
             _add_model(models, holder.get("providerID"), holder.get("modelID"))
-        if event.get("type") == "tool_use" and _dict(part.get("state")).get("status") == "completed":
-            done.add(part.get("tool"))
+        if event.get("type") == "tool_use":
+            used = True
+            if _dict(part.get("state")).get("status") == "completed":
+                done.add(part.get("tool"))
+        if event.get("type") == "text" and _non_empty(part.get("text")):
+            answered = True
         if event.get("type") == "error":
             reasons.append(f"error event: {json.dumps(event)[:300]}")
-    for tool in ("write", "read"):
-        if tool not in done:
-            reasons.append(f"no completed {tool} tool_use")
+    if tools:
+        for tool in ("write", "read"):
+            if tool not in done:
+                reasons.append(f"no completed {tool} tool_use")
+    else:
+        if not answered:
+            reasons.append("no text answer")
+        if used:
+            reasons.append("a tool_use event in a chat-only session")
     return _outcome(reasons, models)
 
 
@@ -197,6 +241,143 @@ def pi_outcome(lines: Iterable[str], *, tools: bool = True) -> Outcome:
     return _outcome(reasons, models)
 
 
+def dsh_outcome(lines: Iterable[str], *, tools: bool = True) -> Outcome:
+    """`dsh --profile headless ... --json`: no error event, every tool_result completed, a final event that
+    completed, and with tools a completed write and read (dsh design D9, L6); dsh's events do not name the model."""
+    events, reasons = _events(lines)
+    errors, results = [], []
+    called: dict[object, object] = {}
+    done, used, final = set(), False, None
+    for event in events:
+        kind = event.get("type")
+        if kind == "error":
+            errors.append(f"error event: {json.dumps(event)[:300]}")
+        elif kind == "tool_call":
+            used = True
+            called[event.get("callId")] = event.get("tool")
+        elif kind == "tool_result":
+            used = True
+            tool, status = called.get(event.get("callId"), "?"), event.get("status")
+            if status == "completed":
+                done.add(tool)
+            else:
+                code = _dict(event.get("error")).get("code") or "?"
+                results.append(f"tool_result {tool} has status {status} ({code})")
+        elif kind == "final":
+            final = event
+    reasons += errors + results
+    if final is None:
+        reasons.append("no final event")
+    else:
+        reason = _dict(final.get("reason"))
+        if reason.get("kind") != "completed":
+            error = _dict(reason.get("error"))
+            reasons.append(f"final reason {reason.get('kind')} ({error.get('code') or '?'}: "
+                           f"{error.get('message') or '?'})")
+    if tools:
+        if not done & {"write", "apply_patch", "edit"}:
+            reasons.append("no completed write, apply_patch or edit tool_result")
+        if "read" not in done:
+            reasons.append("no completed read tool_result")
+    else:
+        if used:
+            reasons.append("a tool event in a chat-only session")
+        if final is not None and not _non_empty(final.get("text")):
+            reasons.append("the final text is empty")
+    return _outcome(reasons, [])
+
+
+WEB_LINE = "dsh web:"
+WEB_SHOWN = "dsh web: <address withheld>"
+
+
+def web_line(line: str) -> tuple[str, str | None]:
+    """The `dsh web:` line as a record may show it, and the launch token of its URL, or None without one."""
+    if not line.startswith(WEB_LINE):
+        raise ValueError(f"not a {WEB_LINE!r} line")
+    url = line[len(WEB_LINE):].strip()
+    tokens = urllib.parse.parse_qs(urllib.parse.urlsplit(url).query).get("token")
+    return WEB_SHOWN, tokens[0] if tokens else None
+
+
+def web_outcome(boot: WebBoot) -> Outcome:
+    """`dsh web`: a ready line within WEB_READY_S, and no stderr line saying that an entry did not activate (D9)."""
+    reasons = [] if boot.line is not None else [f"no {WEB_LINE!r} line within {WEB_READY_S} s"]
+    reasons += [line.strip() for line in boot.stderr.splitlines() if "did not activate" in line]
+    return _outcome(reasons, [])
+
+
+def _signal(killpg: Callable[[int, int], None], pid: int, sig: int) -> None:
+    try:
+        killpg(pid, sig)
+    except ProcessLookupError:
+        pass  # the group is already gone
+
+
+def _stop(proc, killpg: Callable[[int, int], None], kill_s: float) -> int | None:
+    """SIGTERM to the process group unless the process exited; SIGKILL when it lingers kill_s later."""
+    if proc.poll() is None:
+        _signal(killpg, proc.pid, signal.SIGTERM)
+        try:
+            proc.wait(timeout=kill_s)
+        except subprocess.TimeoutExpired:
+            _signal(killpg, proc.pid, signal.SIGKILL)
+            proc.wait()
+    return proc.returncode
+
+
+def web_boot(argv: Sequence[str], *, cwd: Path, env: Mapping[str, str], popen=subprocess.Popen, killpg=os.killpg,
+             sleep=time.sleep, timer=threading.Timer, ready_s: float = WEB_READY_S, tail_s: float = WEB_TAIL_S,
+             kill_s: float = WEB_KILL_S) -> WebBoot:
+    """Start `dsh web` in its own process group, wait up to ready_s for its `dsh web:` line, read stderr for tail_s
+    more, and stop the group, also on an interrupt (dsh design D9 step 4); without the line by ready_s the group gets
+    SIGTERM, and SIGKILL kill_s later when it is still alive; only a failure to start is exit 127, and an error after
+    the start propagates."""
+    try:
+        proc = popen(list(argv), cwd=cwd, env=dict(env), stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                     stderr=subprocess.PIPE, text=True, start_new_session=True)
+    except OSError as exc:
+        return WebBoot(None, "", f"{argv[0]}: {exc}", 127)
+    err: list[str] = []
+    reader = threading.Thread(target=lambda: err.extend(iter(proc.stderr.readline, "")), daemon=True)
+    reader.start()
+    escalations: list = []
+
+    def kill_if_alive() -> None:
+        if proc.poll() is None:
+            _signal(killpg, proc.pid, signal.SIGKILL)
+
+    def escalate() -> None:
+        # Ends a stdout that never says ready: SIGTERM, then SIGKILL kill_s later for a group that ignores it, so the
+        # readline below returns even then.
+        _signal(killpg, proc.pid, signal.SIGTERM)
+        escalation = timer(kill_s, kill_if_alive)
+        escalations.append(escalation)
+        escalation.start()
+
+    alarm = timer(ready_s, escalate)
+    alarm.start()
+    out: list[str] = []
+    line = None
+    try:
+        for text in iter(proc.stdout.readline, ""):
+            out.append(text)
+            if text.startswith(WEB_LINE):
+                line = text.rstrip("\n")
+                break
+        alarm.cancel()
+        if line is not None:
+            sleep(tail_s)  # stderr keeps arriving in the reader
+    finally:
+        alarm.cancel()
+        for escalation in escalations:
+            escalation.cancel()
+        code = _stop(proc, killpg, kill_s)
+        reader.join(kill_s)
+    out.append(proc.stdout.read())
+    return WebBoot(line, "".join(out), "".join(err), code)
+
+
 def hello_valid(path: Path) -> bool:
     """The task's file exists and holds def add and add(2, 3)."""
     try:
@@ -218,7 +399,7 @@ def gateway_serves_llmctl(text: str) -> bool:
 GATEWAY_WARNING = "warning: Hermes' gateway serves the profile llmctl"
 
 
-def status_reasons(text: str, *, opencode: bool) -> list[str]:
+def status_reasons(text: str, *, opencode: bool, dsh: bool = False) -> list[str]:
     """One reason per client line of ./llmctl status that does not say the running model (spec D10 step 1), and
     the gateway warning (spec L3)."""
     lines = {}
@@ -228,10 +409,10 @@ def status_reasons(text: str, *, opencode: bool) -> list[str]:
                 label, rest = line.strip().split(": ", 1)
                 lines[label] = rest
     reasons = []
-    for label in (("OpenCode",) if opencode else ()) + ("Hermes", "Pi"):
+    for label in (("OpenCode",) if opencode else ()) + ("Hermes", "Pi") + (("dsh",) if dsh else ()):
         if label not in lines:
             reasons.append(f"no {label} line in status")
-        elif "the running model" not in lines[label]:
+        elif "the running model" not in lines[label] or "not the running model" in lines[label]:
             reasons.append(f"{label}: {lines[label]}")
     reasons += [line for line in text.splitlines() if line.startswith(GATEWAY_WARNING)]
     return reasons
@@ -254,7 +435,7 @@ def _session_argv(target: Target, prompt: str, tools: bool, *, pinned: bool) -> 
     profile = ("-p", hermes_config.PROFILE) if pinned else ()
     file_tools = ("-t", "file") if tools else ()
     sessions = {}
-    if tools and recipe.opencode:
+    if recipe.opencode:
         model = ("--model", f"{target.runtime.opencode_provider}/{recipe.id}") if pinned else ()
         sessions["opencode"] = ("opencode", "run", "--standalone", "--archived", "--auto", "--format", "json",
                                 *model, prompt)
@@ -275,8 +456,20 @@ def up_argv(target: Target, *extra: str) -> tuple[str, ...]:
     return ("./llmctl", "up", target.recipe.id, *flag, *extra)
 
 
-def plan_steps(catalog, matrix: Sequence[tuple[str, str]], *, round_trip: bool, keep_running: bool) -> list[Step]:
-    """Every step of a run, in order (spec D10, L3, L9); argv () marks a step the driver runs in-process."""
+def _dsh_headless(prompt: str, chat_only: bool, *, pinned: bool) -> tuple[str, ...]:
+    """dsh's headless session; its launcher flags come before --json, which dsh hands to the app (plan, Spec)."""
+    patches = ()
+    if pinned:
+        patches = ("--patch", f"{WORK}/llmctl-default.patch.yml")
+        if chat_only:
+            patches += ("--patch", f"{WORK}/llmctl-no-tools.patch.yml")
+    return ("dsh", "--profile", "headless", *patches, "--json", prompt)
+
+
+def plan_steps(catalog, matrix: Sequence[tuple[str, str]], *, round_trip: bool, keep_running: bool,
+               dsh: bool = False) -> list[Step]:
+    """Every step of a run, in order (spec D10, L3, L9, dsh design D9); argv () marks a step the driver runs
+    in-process."""
     steps = []
 
     def add(name: str, argv: tuple[str, ...], cwd: str = ".") -> None:
@@ -294,12 +487,19 @@ def plan_steps(catalog, matrix: Sequence[tuple[str, str]], *, round_trip: bool, 
             add(f"{prefix} hermes-config-{key}", get, f"{prefix}-hermes-config-{key}")
         for kind, argv in _session_argv(target, TASK if tools else CHAT, tools, pinned=True).items():
             add(f"{prefix} {kind}", argv, f"{prefix}-{kind}")
+        if dsh:
+            add(f"{prefix} dsh-config", IN_PROCESS)
+            add(f"{prefix} dsh-headless", _dsh_headless(TASK if tools else CHAT, not tools, pinned=True),
+                f"{prefix}-dsh-headless")
+            add(f"{prefix} dsh-web", ("dsh", "web", "--port", str(DSH_PORT), "--no-open"), f"{prefix}-dsh-web")
         add(f"{prefix} probes", IN_PROCESS)
     if round_trip:
         target = _target(catalog, ROUND_TRIP_MODEL, "llamacpp")
         add(f"{ROUND_TRIP} up", up_argv(target, "--set-default"))
         for kind, argv in _session_argv(target, TASK, True, pinned=False).items():
             add(f"{ROUND_TRIP} {kind}", argv, f"{ROUND_TRIP}-{kind}")
+        if dsh:
+            add(f"{ROUND_TRIP} dsh-headless", _dsh_headless(TASK, False, pinned=False), f"{ROUND_TRIP}-dsh-headless")
     if not keep_running:
         add("down", ("./llmctl", "down"))
     return steps
@@ -318,6 +518,8 @@ def _write_tool() -> dict:
 
 
 def probe_bodies(target: Target) -> dict[str, dict]:
+    """The probe requests for one recipe by name: A and B always, except that a chat-only recipe gets no B, then C,
+    D, E and F where they apply."""
     served, recipe = target.served, target.recipe
     title_schema = {"type": "object", "properties": {"title": {"type": "string"}}, "required": ["title"],
                     "additionalProperties": False}
@@ -334,6 +536,8 @@ def probe_bodies(target: Target) -> dict[str, dict]:
             {"role": "tool", "tool_call_id": "call_1", "content": "ok"},
         ], "tools": [_write_tool()], "max_tokens": 256},
     }
+    if recipe.chat_only:  # no e2e session sends it tools, and vLLM refuses them without --enable-auto-tool-choice
+        del bodies["B"]
     plain = {"model": served, "messages": [{"role": "user", "content": _OK_PROMPT}], "max_tokens": 256}
     if recipe.id in PROBE_C:
         bodies["C"] = {"model": served, "messages": plain["messages"], "reasoning_effort": "none", "max_tokens": 256}
@@ -341,6 +545,8 @@ def probe_bodies(target: Target) -> dict[str, dict]:
         bodies["D"] = dict(plain, model=recipe.id)
         if recipe.id == "k2-horizon-7b":
             bodies["E"] = dict(plain, chat_template_kwargs={"tool_call_format": "xml"})
+    if recipe.id == PROBE_F:
+        bodies["F"] = dict(plain, chat_template_kwargs={"enable_thinking": True, "medium_effort": 1})
     return bodies
 
 
@@ -378,9 +584,13 @@ def _contains(value: object, wanted: object) -> bool:
     return type(value) is type(wanted) and value == wanted
 
 
-def driver_env(environ: Mapping[str, str]) -> dict[str, str]:
-    """The environment of every command the driver runs: LLMCTL_SET_DEFAULT removed (spec D10)."""
-    return {name: value for name, value in environ.items() if name != "LLMCTL_SET_DEFAULT"}
+def driver_env(environ: Mapping[str, str], *, skip_dsh: bool = False) -> dict[str, str]:
+    """The environment of every command the driver runs: LLMCTL_SET_DEFAULT removed (spec D10), and with skip_dsh
+    LLMCTL_CLIENTS naming the other three clients (dsh design D9)."""
+    env = {name: value for name, value in environ.items() if name != "LLMCTL_SET_DEFAULT"}
+    if skip_dsh:
+        env["LLMCTL_CLIENTS"] = SKIP_DSH_CLIENTS
+    return env
 
 
 def _replace_path(text: str, path: str, name: str) -> str:
@@ -455,7 +665,7 @@ def names_private(text: str, values: Sequence[str]) -> bool:
 # Defaults, their restore and the gateway check (spec L3, L9)
 
 
-def snapshot_defaults(env: Mapping[str, str]) -> Defaults:
+def snapshot_defaults(env: Mapping[str, str], *, dsh: bool = False) -> Defaults:
     path, model, problem = opencode_config.current_default(env)
     if not isinstance(model, str):
         detail = problem or f"its model is {json.dumps(model)}"
@@ -463,7 +673,8 @@ def snapshot_defaults(env: Mapping[str, str]) -> Defaults:
                          "line edit can set that value but not remove it; set it, "
                          "or run without --set-default-round-trip")
     provider, pi_model = pi_config.pi_default(env)
-    return Defaults(model, provider, pi_model, hermes_config.sticky_profile(env))
+    return Defaults(model, provider, pi_model, hermes_config.sticky_profile(env),
+                    dsh_config.holds_default(env) if dsh else None)
 
 
 def _write(change: files.FileChange | None) -> None:
@@ -510,10 +721,25 @@ def _restore_opencode(host, snapshot: Defaults) -> list[str]:
     return [f"OpenCode: model reads {problem or _shown(found)}, expected {snapshot.opencode_model}"]
 
 
-def restore_defaults(host, snapshot: Defaults) -> list[str]:
-    """Put each client's default back on its own, Pi, Hermes, OpenCode; one line per value not restored (L9)."""
+def _restore_dsh(host, snapshot: Defaults, target: Target | None) -> list[str]:
+    """Release dsh's default when llmctl's block did not hold it before, or check that it still does (D9)."""
+    if snapshot.dsh_default:
+        held = dsh_config.holds_default(host.env)
+        return [] if held else ["dsh: the llmctl block no longer holds dsh's default"]
+    if target is None:
+        return ["dsh: no target to release the default"]
+    _write(dsh_config.plan_release_default(host.env, target))
+    return ["dsh: the llmctl block still holds dsh's default"] if dsh_config.holds_default(host.env) else []
+
+
+def restore_defaults(host, snapshot: Defaults, *, target: Target | None = None) -> list[str]:
+    """Put each client's default back on its own, Pi, Hermes, OpenCode, then dsh when the snapshot read it; one line
+    per value not restored (L9, dsh design D9)."""
     problems = []
-    for label, restore in (("Pi", _restore_pi), ("Hermes", _restore_hermes), ("OpenCode", _restore_opencode)):
+    steps = [("Pi", _restore_pi), ("Hermes", _restore_hermes), ("OpenCode", _restore_opencode)]
+    if snapshot.dsh_default is not None:
+        steps.append(("dsh", lambda host_, snapshot_: _restore_dsh(host_, snapshot_, target)))
+    for label, restore in steps:
         try:
             problems += restore(host, snapshot)
         except (LlmctlError, OSError) as exc:
@@ -521,22 +747,23 @@ def restore_defaults(host, snapshot: Defaults) -> list[str]:
     return problems
 
 
-def round_trip(host, check: Callable[[], None], report: Callable[[list[str]], None] | None = None) -> list[str]:
+def round_trip(host, check: Callable[[], None], report: Callable[[list[str]], None] | None = None, *,
+               dsh: bool = False, target: Target | None = None) -> list[str]:
     """Snapshot the defaults, run check, and restore them even when check raises (spec L9).
 
     report, when given, gets the restore's problem lines on both paths, so a caller can record them although check
     raised."""
-    snapshot = snapshot_defaults(host.env)
+    snapshot = snapshot_defaults(host.env, dsh=dsh)
     try:
         check()
     except BaseException:
-        problems = restore_defaults(host, snapshot)
+        problems = restore_defaults(host, snapshot, target=target)
         for line in problems:
             host.err.write(f"not restored: {line}\n")
         if report is not None:
             report(problems)
         raise
-    problems = restore_defaults(host, snapshot)
+    problems = restore_defaults(host, snapshot, target=target)
     if report is not None:
         report(problems)
     return problems
@@ -571,7 +798,8 @@ class _Row:
 class _Run:
     """Runs the planned steps against the real clients and writes every record under --out."""
 
-    def __init__(self, out: Path, catalog, host: RealHost, env: dict[str, str], work_root: Path):
+    def __init__(self, out: Path, catalog, host: RealHost, env: dict[str, str], work_root: Path, *,
+                 dsh_snapshot: tuple[str | None, bool] | None = None):
         self.out = out
         self.work_root = work_root
         self.catalog = catalog
@@ -581,6 +809,8 @@ class _Run:
         self.private = private_values(env, str(work_root))
         self.rows: list[_Row] = []
         self.count = 0
+        self.dsh_snapshot = dsh_snapshot  # the home patch text (None when missing) and holds_default at the start
+        self.dsh = dsh_snapshot is not None
 
     def record(self, name: str, text: str) -> None:
         self.count += 1
@@ -591,17 +821,18 @@ class _Run:
         return redact(text, self.home, str(self.work_root))
 
     def command(self, name: str, argv: Sequence[str], cwd: Path, timeout_s: int, *, with_stderr: bool = False,
-                drop: Sequence[str] = ()) -> tuple[int | None, str, float, bool]:
+                drop: Sequence[str] = (), extra_env: Mapping[str, str] | None = None
+                ) -> tuple[int | None, str, float, bool]:
         """Run one command; (exit status or None on timeout, stdout, seconds, withheld), all of it recorded.
 
         with_stderr returns stdout followed by stderr instead; the record keeps the two apart.
         drop names the event types the recorded stdout leaves out; the returned stdout keeps them.
         withheld is True when the redacted output still named a private value, so the record holds neither stream.
+        extra_env adds to the driver's environment for this command only.
         """
         start = time.monotonic()
         try:
-            # OpenCode takes its working directory from PWD, so PWD has to name the folder the command runs in
-            env = dict(self.env, PWD=str(Path(cwd).resolve()))
+            env = self.step_env(cwd, extra_env)
             done = subprocess.run(list(argv), cwd=cwd, env=env, capture_output=True, text=True,
                                   timeout=timeout_s)
             code, stdout, stderr = done.returncode, done.stdout, done.stderr
@@ -624,6 +855,10 @@ class _Run:
         self.record(name, json.dumps(record, indent=2, ensure_ascii=False) + "\n")
         return code, stdout + stderr if with_stderr else stdout, seconds, withheld
 
+    def step_env(self, cwd: Path, extra_env: Mapping[str, str] | None = None) -> dict[str, str]:
+        # OpenCode and dsh take their working directory from PWD, so PWD has to name the folder the command runs in
+        return dict(self.env, **(extra_env or {}), PWD=str(Path(cwd).resolve()))
+
     def add(self, recipe: str, step: str, reasons: list[str], seconds: float) -> None:
         self.rows.append(_Row(recipe, step, not reasons, reasons, seconds))
 
@@ -637,6 +872,27 @@ class _Run:
             (folder / "opencode.json").write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
         return folder
 
+    def dsh_env(self, step: Step, folder: Path, target: Target) -> dict[str, str]:
+        """The extra environment of a dsh step (dsh design D9): telemetry off and TMPDIR under the work root; a matrix
+        step also gets a private DSH_HOME holding a byte copy of the real home patch and an empty DSH_AGENTS_HOME,
+        and its headless session the overlay files its argv names."""
+        tmp = self.work_root / f"{step.cwd}.tmp"
+        tmp.mkdir()
+        extra = {"DSH_TELEMETRY_DISABLED": "1", "TMPDIR": str(tmp)}
+        if step.name.startswith(ROUND_TRIP + " "):
+            return extra  # the round trip's session runs in the real dsh home
+        home, agents = self.work_root / f"{step.cwd}.home", self.work_root / f"{step.cwd}.agents"
+        home.mkdir(mode=0o700)
+        os.chmod(home, 0o700)
+        agents.mkdir()
+        (home / "cordis.patch.yml").write_bytes(dsh_config.home_patch(self.env).read_bytes())
+        extra.update(DSH_HOME=str(home), DSH_AGENTS_HOME=str(agents))
+        if step.name.endswith(" dsh-headless"):
+            (folder / "llmctl-default.patch.yml").write_text(dsh_config.default_overlay(target), encoding="utf-8")
+            if target.recipe.chat_only:
+                (folder / "llmctl-no-tools.patch.yml").write_text(dsh_config.no_tools_patch(), encoding="utf-8")
+        return extra
+
     def run_step(self, step: Step, target: Target) -> tuple[list[str], float]:
         """Run one planned step; (its failure reasons, seconds)."""
         kind = step.name.split(" ", 1)[1]
@@ -645,16 +901,32 @@ class _Run:
             return self.config_check(target), time.monotonic() - start
         if kind == "probes":
             return self.probes(step, target), time.monotonic() - start
+        if kind == "dsh-config":
+            return self.dsh_config_check(step, target), time.monotonic() - start
         folder = self.work(step)
         argv = [part.replace(WORK, str(folder)) for part in step.argv]
-        code, stdout, seconds, withheld = self.command(step.name, argv, folder, step.timeout_s,
-                                                       drop=DROPPED_EVENTS.get(kind, ()))
         tools = not target.recipe.chat_only
+        extra_env = None
+        if kind.startswith("dsh-"):
+            try:
+                extra_env = self.dsh_env(step, folder, target)
+            except OSError as exc:
+                return [f"cannot prepare the dsh folders: {exc}"], time.monotonic() - start
+        if kind == "dsh-web":
+            return self.web(step, argv, folder, extra_env), time.monotonic() - start
+        since = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        code, stdout, seconds, withheld = self.command(step.name, argv, folder, step.timeout_s,
+                                                       drop=DROPPED_EVENTS.get(kind, ()), extra_env=extra_env)
         reasons = [] if code == 0 or kind == "pi" or kind == "hermes-chat" else [f"exit status {code}"]
         if withheld:  # the other reasons may quote the output that the record withheld
             return reasons + [WITHHELD_REASON], seconds
         if kind == "status":
-            reasons += status_reasons(stdout, opencode=target.recipe.opencode)
+            reasons += status_reasons(stdout, opencode=target.recipe.opencode, dsh=self.dsh)
+        elif kind == "dsh-headless":
+            reasons += list(dsh_outcome(stdout.splitlines(), tools=tools).reasons)
+            if tools and not hello_valid(folder / "hello.py"):
+                reasons.append("hello.py is missing or lacks def add and add(2, 3)")
+            reasons += self.logs_since(since, target, record=f"{step.name} docker-logs", session="the dsh session")
         elif kind.startswith("hermes-config-"):
             reasons += self.config_value(kind[len("hermes-config-"):], stdout, target)
         elif kind in ("opencode", "hermes-z", "hermes-chat", "pi"):
@@ -675,7 +947,7 @@ class _Run:
                 target: Target) -> list[str]:
         lines = stdout.splitlines()
         if kind == "opencode":
-            outcome = opencode_outcome(lines)
+            outcome = opencode_outcome(lines, tools=tools)
         elif kind == "hermes-chat":
             outcome = hermes_stream_outcome(lines, tools=tools)
         elif kind == "pi":
@@ -694,6 +966,64 @@ class _Run:
             reasons.append(f"Hermes answered from {', '.join(outcome.models) or 'no model'}, "
                            f"not custom/{target.served}")
         return reasons
+
+    def guarded(self, *texts: str, extra: Sequence[str] = ()) -> tuple[list[str], bool]:
+        """The texts redacted, or all of them WITHHELD when one still names a private value or one of extra."""
+        redacted = [self.redact(text) for text in texts]
+        values = (*self.private, *extra)
+        if any(names_private(text, values) for text in redacted):
+            return [WITHHELD] * len(texts), True
+        return redacted, False
+
+    def dsh_config_check(self, step: Step, target: Target) -> list[str]:
+        """dsh design D9 step 1: the home patch is what llmctl writes from the text it held at the start, keeping
+        the default it held then, and no profile patch sets the llm-pi-ai row."""
+        old, held = self.dsh_snapshot
+        path = dsh_config.home_patch(self.env)
+        reasons = []
+        try:
+            wanted = dsh_config.home_text(path, old, target, default=held)
+            with open(path, encoding="utf-8", newline="") as handle:
+                found = handle.read()
+        except (LlmctlError, OSError, UnicodeDecodeError) as exc:
+            reasons.append(f"the dsh home patch: {exc}")
+        else:
+            if found != wanted:
+                reasons.append(f"the dsh home patch is not what llmctl writes for {target.recipe.id} from the text "
+                               "it held when the run started")
+                (found_shown, wanted_shown), _ = self.guarded(found, wanted)
+                self.record(step.name, json.dumps({"found": found_shown, "wanted": wanted_shown}, indent=2,
+                                                  ensure_ascii=False) + "\n")
+        try:
+            findings = dsh_config.profile_findings(self.env)
+        except LlmctlError as exc:
+            return reasons + [f"the dsh profile patches: {exc}"]
+        reasons += [f"{finding.path} line {finding.line} sets the llm-pi-ai row" for finding in findings
+                    if finding.row_id == "llm-pi-ai"]
+        return reasons
+
+    def web(self, step: Step, argv: list[str], folder: Path, extra_env: Mapping[str, str]) -> list[str]:
+        """dsh design D9 step 4: boot dsh web, record its output without the launch token, and check it."""
+        start = time.monotonic()
+        boot = web_boot(argv, cwd=folder, env=self.step_env(folder, extra_env))
+        seconds = time.monotonic() - start
+        stdout, tokens = [], []
+        for line in boot.stdout.splitlines(keepends=True):
+            if line.startswith(WEB_LINE):
+                shown, token = web_line(line.rstrip("\n"))
+                line = shown + "\n" if line.endswith("\n") else shown
+                tokens += [token] if token else []
+            stdout.append(line)
+        if boot.line is not None:
+            token = web_line(boot.line)[1]
+            tokens += [token] if token else []
+        (recorded, recorded_err), withheld = self.guarded("".join(stdout), boot.stderr, extra=tokens)
+        self.record(step.name, json.dumps({"command": shlex.join(argv), "cwd": str(folder), "exit": boot.code,
+                                           "seconds": round(seconds, 1), "stdout": recorded,
+                                           "stderr": recorded_err}, indent=2, ensure_ascii=False) + "\n")
+        if withheld:  # web_outcome's reasons quote stderr, which the record withheld
+            return list(web_outcome(replace(boot, stderr="")).reasons) + [WITHHELD_REASON]
+        return list(web_outcome(boot).reasons)
 
     def config_check(self, target: Target) -> list[str]:
         """The in-process half of D10 step 2: the block, Pi's entry and Pi's level as llmctl wrote them."""
@@ -731,13 +1061,14 @@ class _Run:
                                                             "record": record}, indent=2, ensure_ascii=False) + "\n")
             if name == "A" and not (status == 200 and record["title_ok"]):
                 reasons.append(f"probe A: status {status}, title_ok {record['title_ok']}")
-            if name == "B" and status != 200:
-                reasons.append(f"probe B: status {status}")
+            if name in ("B", "F") and status != 200:
+                reasons.append(f"probe {name}: status {status}")
         return reasons
 
-    def logs_since(self, since: str, target: Target) -> list[str]:
+    def logs_since(self, since: str, target: Target, *, record: str = f"{ROUND_TRIP} docker-logs",
+                   session: str = "the OpenCode run") -> list[str]:
         # docker logs replays the container's stderr on stderr, and llama.cpp writes its log there
-        code, text, _, withheld = self.command(f"{ROUND_TRIP} docker-logs",
+        code, text, _, withheld = self.command(record,
                                                ["docker", "logs", "--since", since, target.runtime.container_name],
                                                REPO, STEP_TIMEOUT_S, with_stderr=True)
         if code != 0:
@@ -746,7 +1077,7 @@ class _Run:
             return [f"docker logs: {WITHHELD_REASON}"]
         if "/v1/chat/completions" in text or "print_timing" in text:
             return []
-        return ["the llama.cpp log shows no request since the OpenCode run started"]
+        return [f"the {target.label} log shows no request since {session} started"]
 
 
 def _steps_by_prefix(steps: list[Step]) -> dict[str, list[Step]]:
@@ -773,6 +1104,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--keep-running", action="store_true", help="leave the last model running")
     parser.add_argument("--set-default-round-trip", action="store_true",
                         help="after the matrix, run up --set-default, check every client, then restore the defaults")
+    parser.add_argument("--skip-dsh", action="store_true",
+                        help=f"leave dsh out: no dsh steps, and LLMCTL_CLIENTS={SKIP_DSH_CLIENTS} for every command")
     return parser
 
 
@@ -816,7 +1149,7 @@ def _run_round_trip(run: _Run, steps: list[Step], catalog) -> None:
 
     restored: list[list[str]] = []
     try:
-        round_trip(run.host, check, report=restored.append)
+        round_trip(run.host, check, report=restored.append, dsh=run.dsh, target=target)
     except (LlmctlError, OSError) as exc:
         run.add(ROUND_TRIP, "check", [f"{type(exc).__name__}: {exc}"], 0.0)
     run.add(ROUND_TRIP, "restore", restored[0] if restored else ["the restore did not run"], 0.0)
@@ -848,21 +1181,60 @@ def round_trip_refusal(catalog, env: Mapping[str, str]) -> str | None:
     return None
 
 
+def dsh_refusal(host, env: Mapping[str, str]) -> str | None:
+    """Why the dsh steps cannot run here, else None (dsh design D9); it opens no .env or credential file."""
+    state = next(state for state in clients.client_states(host) if state.name == "dsh")
+    if not state.active:
+        return f"dsh is not installed here ({state.reason}); install it, or run with --skip-dsh"
+    rows = [f"{finding.path} line {finding.line}" for finding in dsh_config.profile_findings(env)
+            if finding.row_id == "llm-pi-ai"]
+    if rows:
+        return (f"a dsh profile patch sets the llm-pi-ai row ({'; '.join(rows)}); move it as "
+                "docs/clients.md#moving-a-hand-made-setup says, or run with --skip-dsh")
+    if env.get("DEEPSEEK_API_KEY"):
+        return ("DEEPSEEK_API_KEY is set, so dsh's web_search could send model-written queries to DeepSeek; unset it "
+                "for the e2e, or run with --skip-dsh")
+    if host.port_open(DSH_PORT):
+        return (f"127.0.0.1:{DSH_PORT} is in use, and the dsh web step needs it; stop what listens there, or run with "
+                "--skip-dsh")
+    return None
+
+
+def _home_snapshot(env: Mapping[str, str]) -> tuple[str | None, bool]:
+    """The dsh home patch's text as it is (None when missing) and whether llmctl's block holds dsh's default."""
+    path = dsh_config.home_patch(env)
+    try:
+        with open(path, encoding="utf-8", newline="") as handle:
+            text = handle.read()
+    except FileNotFoundError:
+        text = None
+    except (OSError, UnicodeDecodeError) as exc:
+        raise UsageError(f"cannot read {path}: {exc}") from exc
+    return text, dsh_config.holds_default(env)
+
+
 def main(argv: list[str] | None = None, *, make_host: Callable[[dict[str, str]], RealHost] = RealHost) -> int:
     args = build_parser().parse_args(argv)
+    dsh_snapshot = None
     try:
         if "LLMCTL_CLIENTS" in os.environ:
-            raise UsageError("unset LLMCTL_CLIENTS: the e2e checks all three clients")
-        env = driver_env(os.environ)
+            raise UsageError("unset LLMCTL_CLIENTS: the e2e checks all four clients, or three with --skip-dsh")
+        env = driver_env(os.environ, skip_dsh=args.skip_dsh)
         os.environ.pop("LLMCTL_SET_DEFAULT", None)  # RealHost.run passes os.environ to hermes profile use
         host = make_host(env)
         catalog = load_catalog(REPO / "recipes", override_dir(env))
         matrix = MATRICES[args.matrix]
-        steps = plan_steps(catalog, matrix, round_trip=args.set_default_round_trip, keep_running=args.keep_running)
+        steps = plan_steps(catalog, matrix, round_trip=args.set_default_round_trip, keep_running=args.keep_running,
+                           dsh=not args.skip_dsh)
         running = running_servers(host)
         if running is not None:  # the first up --replace would stop the owner's server
             raise UsageError(f"an llmctl model server is running ({running}); stop it with ./llmctl down, "
                              "then run the driver again")
+        if not args.skip_dsh:
+            refusal = dsh_refusal(host, env)
+            if refusal is not None:
+                raise UsageError(refusal)
+            dsh_snapshot = _home_snapshot(env)  # damaged markers or an unreadable file refuse here, too
         if args.set_default_round_trip:
             snapshot_defaults(env)  # refuse before the first server starts when OpenCode has no model to restore
             refusal = round_trip_refusal(catalog, env)
@@ -878,10 +1250,18 @@ def main(argv: list[str] | None = None, *, make_host: Callable[[dict[str, str]],
         return 1
     sys.stdout.write(f"records in {out}; work folders in {work_root}, left in place after the run\n")
     sys.stdout.flush()
-    run = _Run(out, catalog, host, env, work_root)
-    for argv_ in (["hermes", "--version"], ["pi", "--version"], ["opencode", "--version"],
-                  ["nvidia-smi", "--query-gpu=power.limit", "--format=csv,noheader"]):
-        if run.command(argv_[0] + " version", argv_, REPO, 60)[3]:
+    run = _Run(out, catalog, host, env, work_root, dsh_snapshot=dsh_snapshot)
+    versions = [["hermes", "--version"], ["pi", "--version"], ["opencode", "--version"]]
+    versions += [["dsh", "--version"]] if run.dsh else []
+    for argv_ in versions + [["nvidia-smi", "--query-gpu=power.limit", "--format=csv,noheader"]]:
+        extra_env, cwd = None, REPO
+        if argv_[0] == "dsh":  # dsh design D9: every dsh command of the e2e runs in a fresh work folder, with
+            cwd = work_root / "dsh-version"  # telemetry off and TMPDIR under the work root
+            tmp = work_root / "dsh-version.tmp"
+            cwd.mkdir()
+            tmp.mkdir()
+            extra_env = {"DSH_TELEMETRY_DISABLED": "1", "TMPDIR": str(tmp)}
+        if run.command(argv_[0] + " version", argv_, cwd, 60, extra_env=extra_env)[3]:
             sys.stderr.write(f"{argv_[0]} version: {WITHHELD_REASON}\n")
     try:
         _run_matrix(run, [s for s in steps if s.name.split(" ", 1)[0] not in (ROUND_TRIP, "down")], catalog, matrix)

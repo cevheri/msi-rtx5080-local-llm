@@ -11,7 +11,7 @@ from collections.abc import Mapping
 from pathlib import Path
 
 from launcher.errors import ClientError, ClientWriteError
-from launcher.files import FileChange, env_path, home_dir
+from launcher.files import FileChange, bare, env_path, find_markers, home_dir, split_lines
 from launcher.host import Host
 from launcher.model import Target
 
@@ -89,21 +89,6 @@ def profile_config(env: Mapping[str, str]) -> Path:
     return profile_dir(env) / "config.yaml"
 
 
-def _split_lines(text: str) -> list[str]:
-    """The lines of text with their endings; only \n ends a line, as in YAML."""
-    parts = text.split("\n")
-    lines = [part + "\n" for part in parts[:-1]]
-    if parts[-1]:
-        lines.append(parts[-1])
-    return lines
-
-
-def _bare(line: str) -> str:
-    if line.endswith("\n"):
-        line = line[:-1]
-    return line[:-1] if line.endswith("\r") else line
-
-
 def _read_text(path: Path) -> str | None:
     """The file's text with its line endings as they are; None when it does not exist."""
     try:
@@ -115,42 +100,30 @@ def _read_text(path: Path) -> str | None:
         raise ClientError(f"cannot read {path}: {exc}") from exc
 
 
-def _plural(count: int, word: str) -> str:
-    return f"{count} {word}" if count == 1 else f"{count} {word}s"
-
-
 def _markers(path: Path, lines: list[str]) -> tuple[int, int]:
     """The indices of the begin and end marker lines, or a refusal."""
-    bare = [_bare(line) for line in lines]
-    begins = [i for i, line in enumerate(bare) if line == BEGIN]
-    ends = [i for i, line in enumerate(bare) if line == END]
-    if not begins and not ends:
+    found = find_markers(path, lines, begin=BEGIN, end=END)
+    if found is None:
         raise ClientError(f"{path} has no llmctl block, so the Hermes profile llmctl was not created by llmctl; "
                           f"rename it with hermes profile rename llmctl <name>, or {OUT}")
-    if len(begins) == 1 and len(ends) == 1 and begins[0] < ends[0]:
-        return begins[0], ends[0]
-    if len(begins) == 1 and len(ends) == 1:
-        found = "the end marker comes first"
-    else:
-        found = f"{_plural(len(begins), 'begin marker')}, {_plural(len(ends), 'end marker')}"
-    raise ClientError(f"{path}: the llmctl block markers are damaged ({found}); restore the two marker lines exactly")
+    return found
 
 
 def _check_outside(path: Path, lines: list[str], begin: int, end: int) -> None:
     for index, line in enumerate(lines):
         if begin <= index <= end:
             continue
-        bare = _bare(line)
-        if any(char in bare for char in _LONE_BREAKS):
+        text = bare(line)
+        if any(char in text for char in _LONE_BREAKS):
             raise ClientError(f"{path} line {index + 1}: llmctl cannot check this top-level line; "
                               "write top-level keys as plain 'key:'")
-        if not bare.strip() or bare.startswith(("#", " ", "\t")):
+        if not text.strip() or text.startswith(("#", " ", "\t")):
             continue
-        owned = _OWNED_LINE.match(bare)
+        owned = _OWNED_LINE.match(text)
         if owned:
             raise ClientError(f"{path} line {index + 1}: '{owned.group(1)}' is set outside the llmctl block; "
                               "llmctl owns it in this profile and Hermes stops on a duplicate key; delete that setting")
-        if not _PLAIN_KEY.match(bare):
+        if not _PLAIN_KEY.match(text):
             raise ClientError(f"{path} line {index + 1}: llmctl cannot check this top-level line; "
                               "write top-level keys as plain 'key:'")
 
@@ -161,9 +134,9 @@ def profile_block(env: Mapping[str, str]) -> str | None:
     text = _read_text(path)
     if text is None:
         return None
-    lines = _split_lines(text)
+    lines = split_lines(text)
     begin, end = _markers(path, lines)
-    return "".join(_bare(line) + "\n" for line in lines[begin + 1:end])
+    return "".join(bare(line) + "\n" for line in lines[begin + 1:end])
 
 
 def block_description(block: str) -> str | None:
@@ -224,7 +197,7 @@ def plan_profile(env: Mapping[str, str], target: Target) -> FileChange | None:
     old = _read_text(path)
     if old is None:
         raise ClientError(f"cannot read {path}: it disappeared while llmctl read it")
-    lines = _split_lines(old)
+    lines = split_lines(old)
     begin, end = _markers(path, lines)
     _check_outside(path, lines, begin, end)
     before, after = "".join(lines[:begin + 1]), "".join(lines[end:])
@@ -236,7 +209,7 @@ def plan_profile(env: Mapping[str, str], target: Target) -> FileChange | None:
     if new == old:
         return None
     summary = f"llmctl block for {description}"
-    previous = block_description("".join(_bare(line) + "\n" for line in lines[begin + 1:end]))
+    previous = block_description("".join(bare(line) + "\n" for line in lines[begin + 1:end]))
     if previous == description:
         summary += " (same recipe, block rewritten)"
     elif previous is not None:

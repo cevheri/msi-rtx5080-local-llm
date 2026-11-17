@@ -1,0 +1,9 @@
+groot-19b-a3b on vllm: shipped recipe, estimate
+warning: this recipe was never run on the reference laptop; it may not start or fit
+clients: none (LLMCTL_CLIENTS is empty)
+removing the stopped container 'vllm' from an earlier llmctl run
+waiting for groot-19b-a3b to load (up to 900 s)
+ready: http://127.0.0.1:8000/v1, served as 'groot-19b-a3b', context 131072, output 16384
+evidence: The documented vLLM recipe, not run on the reference laptop yet (vllm/models.md#groot-19b-a3b-261023-nvfp4)
+stop with ./llmctl down
+exit 0

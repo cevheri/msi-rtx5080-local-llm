@@ -1,0 +1,8 @@
+{
+  "command": "./llmctl status",
+  "cwd": "$HOME/projects/llm",
+  "exit": 0,
+  "seconds": 1.1,
+  "stdout": "groot-19b-a3b on vllm, container 'vllm', running\n  recipe: shipped file, sha256 c7247901fd2f, measured\n  port: 8000/tcp -> 127.0.0.1:8000, health: ready\n  container memory: 14.94GiB / 32GiB, GPU memory in use: 14814 MiB of 16303 MiB\ngpt-oss-20b on llamacpp, container 'llamacpp', exited\n  recipe: shipped file, sha256 fffc2c8b42cb, measured\nclients:\n  OpenCode: default vllm-docker/groot-19b-a3b, the running model ($HOME/.config/opencode/opencode.json)\n  Hermes: profile llmctl for groot-19b-a3b on vLLM, the running model; default profile: llmctl ($HOME/.hermes/profiles/llmctl/config.yaml)\n  Pi: llmctl/groot-19b-a3b for groot-19b-a3b on vLLM, the running model; default llmctl/groot-19b-a3b, thinking off ($HOME/.pi/agent)\n  dsh: llmctl/groot-19b-a3b for groot-19b-a3b on vLLM, the running model; default llmctl/groot-19b-a3b, held by llmctl ($HOME/.dsh/cordis.patch.yml)\n",
+  "stderr": ""
+}

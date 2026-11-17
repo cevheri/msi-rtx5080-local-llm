@@ -1,6 +1,6 @@
 # Local LLMs on the MSI Raider 18 Max HX (RTX 5080 Laptop)
 
-Last verified: 2026-11-16.
+Last verified: 2026-11-17.
 
 This repository is the knowledge base for running open-weight LLMs in Docker on one laptop, an MSI Raider 18 Max HX A2WI with an RTX 5080 Laptop GPU (16 GB), with llama.cpp and vLLM, and for using them from OpenCode as a coding agent.
 Use Qwen3.6-35B-A3B on llama.cpp as the default: it measured 122 tok/s with 128k context.
@@ -8,7 +8,8 @@ Switch to Qwen3.8-27B (36 tok/s, 64k context) when a task needs the strongest mo
 vLLM is the second path, for the smaller models that fit fully in 16 GB of VRAM.
 GPU access from containers works on this laptop since 2026-11-15, and all ten picks were measured on llama.cpp on 2026-11-16, nine of them completing an OpenCode tool session: Qwen3.8-27B at 36 tok/s and K2 Horizon MoVA at 37 tok/s with 64k context, Qwen3.6-35B-A3B at 122 tok/s, Gemma 4 26B-A4B at 148 tok/s and Qwen3-Coder-Next at 72 tok/s with 128k, K2 Horizon 7B at 67 tok/s with 80k, Groot-19B-A3B at 170 tok/s and Nemotron 3.5 Bolt at 74 tok/s with 128k, and gpt-oss-20b at 166 tok/s; the chat-only DeepSeek-R1-0528-Qwen3-8B measured 71 tok/s and failed the OpenCode tool session when tools were enabled for a test, and Nemotron 3.5 Lightning, an honorable mention, measured 144 tok/s with 128k ([llamacpp/models.md](llamacpp/models.md)).
 On Ollama 0.40.16, the five small models from the user's LibreDB Studio list (qwen3.5:9b, gemma4:12b, ornith:9b, ministral-3:8b and qwen2.5:7b) fit fully on the GPU at 99-119 tok/s and passed the same OpenCode session ([docs/agent-harness-evidence.md](docs/agent-harness-evidence.md#try-here-first)).
-Figures for every other model are still estimates or third-party numbers until they are measured here.
+On vLLM v0.33.0, gpt-oss-20b was measured on 2026-11-16, and Mellum2.1, Qwen3.5-9B, Gemma 4 12B, Gemma 4 E4B, K2 Horizon 7B and Groot-19B-A3B on 2026-11-17 ([research/2026-11-17/](research/2026-11-17/README.md)), while DeepSeek-R1-0528-Qwen3-8B failed there on its tokenizer.
+Figures for every other model and runtime are still estimates or third-party numbers until they are measured here.
 
 ## Quick start
 
@@ -31,7 +32,7 @@ Start a measured model by name with [llmctl](docs/llmctl.md), which applies the 
 | CPU | Intel Core Ultra 9 290HX Plus, 24 cores |
 | RAM | 61 GiB usable, about 40 GiB free with the desktop running |
 | Disk | 2 TB NVMe; the model cache lives under /home |
-| Software | Ubuntu 26.04.1, Docker 29.9.3, Compose v5.7.1, OpenCode v2.3.0, Hermes Agent v0.23.1, Pi 1.5.2 |
+| Software | Ubuntu 26.04.1, Docker 29.9.3, Compose v5.7.1, OpenCode v2.3.0, Hermes Agent v0.23.1, Pi 1.5.2, DeepSeek Harness 0.2.2-rc.3 |
 | NVIDIA Container Toolkit | 1.20.1, installed 2026-11-15; CDI, the `nvidia` Docker runtime and a CUDA kernel in a container verified ([install record](research/2026-11-15/probes/toolkit-install.md)) |
 | Not installed | Ollama and llama.cpp on the host (both run as containers instead) |
 
@@ -44,7 +45,7 @@ The bandwidth figure is NVIDIA's laptop specification ([NVIDIA](https://www.nvid
 | Path | What it covers |
 |---|---|
 | [docs/llmctl.md](docs/llmctl.md) | `./llmctl`: start a measured recipe by name, the client entries it writes, the rules it enforces, the recipe format, overrides for another machine |
-| [docs/clients.md](docs/clients.md) | Hermes Agent v0.23.1 and Pi 1.5.2 with the local servers: the entries llmctl writes, thinking per type, the gateway and sticky-profile side effects, silent fallbacks |
+| [docs/clients.md](docs/clients.md) | Hermes Agent v0.23.1, Pi 1.5.2 and DeepSeek Harness 0.2.2-rc.3 with the local servers: the entries llmctl writes, thinking per type, the gateway and sticky-profile side effects, dsh's home patch and default, silent fallbacks |
 | [docs/model-selection.md](docs/model-selection.md) | Ranked picks with evidence, capability lists, new candidates, exclusions and what to measure first |
 | [docs/host-setup.md](docs/host-setup.md) | NVIDIA Container Toolkit, CDI, Compose GPU syntax, localhost-only ports, memory caps, laptop power, model cache |
 | [docs/opencode.md](docs/opencode.md) | OpenCode v2.3.0 provider config (schema-validated), thinking variants, context budget, known issues, remote trials |
@@ -59,6 +60,7 @@ The bandwidth figure is NVIDIA's laptop specification ([NVIDIA](https://www.nvid
 | [docs/agent-harness-evidence.md](docs/agent-harness-evidence.md) | First-hand tool-loop results from the user's LibreDB Studio harness (measured on the M5 Max), what transfers to this laptop, and which models to try first |
 | [research/2026-11-15/](research/2026-11-15/README.md) | Raw research records behind these documents (discovery, verification, source reviews, ranking, writer and reviewer reports, the no-toolkit GPU probe) |
 | [research/2026-11-16/](research/2026-11-16/README.md) | Measurement records from this laptop: gpt-oss-20b on llama.cpp and vLLM, Qwen3.8-27B, Qwen3.6-35B-A3B and Gemma 4 26B-A4B with their tuning variants, K2 Horizon 7B with an f16 KV check, K2 Horizon MoVA, Qwen3-Coder-Next with offload and KV variants, Nemotron 3.5 Bolt, Groot-19B-A3B, DeepSeek-R1-0528-Qwen3-8B, Nemotron 3.5 Lightning, five Ollama 0.40.16 cross-checks of LibreDB Studio models, the launch plans for the next eight models, and the LibreDB Studio review |
+| [research/2026-11-17/](research/2026-11-17/README.md) | vLLM measurement records from this laptop: Mellum2.1, K2 Horizon 7B, Qwen3.5-9B, Gemma 4 12B, Gemma 4 E4B and Groot-19B-A3B measured, and DeepSeek-R1-0528-Qwen3-8B failed on its tokenizer; the llmctl clients e2e over every recipe with Hermes, Pi and dsh, and with OpenCode for every recipe that has an OpenCode entry (`llmctl-dsh-e2e/`), the first e2e run's summary and cited records (`llmctl-dsh-e2e-run1/`), and the dsh Web UI checklist (`llmctl-dsh-web/`) |
 
 ## Current picks
 
@@ -108,7 +110,7 @@ Ranks 7 and 8 rest on vendor-reported scores, and rank 10 is there only because 
 Versions in this area change every few weeks.
 Before acting on a document, re-check the image tags, issue states and model cards it cites.
 Re-run the judge panel when a strong new model with independent agentic scores appears.
-The raw records are kept in [research/2026-11-15/](research/2026-11-15/README.md) (research runs) and [research/2026-11-16/](research/2026-11-16/README.md) (measurements); do not edit them by hand.
+The raw records are kept in [research/2026-11-15/](research/2026-11-15/README.md) (research runs), [research/2026-11-16/](research/2026-11-16/README.md) and [research/2026-11-17/](research/2026-11-17/README.md) (measurements); do not edit them by hand.
 Before the repository went public on 2026-11-16, a script replaced local paths in the records with `$HOME`, `$SCRATCH` and `$SESSION`, masked one GPU UUID and changed nothing else.
 
 ## License

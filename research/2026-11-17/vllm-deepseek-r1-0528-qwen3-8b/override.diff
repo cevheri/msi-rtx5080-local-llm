@@ -1,0 +1,22 @@
+--- recipes/vllm/deepseek-r1-0528-qwen3-8b.toml	2026-11-16 21:40:35.000000000 +0300
++++ $SCRATCH/vllm-overrides/vllm/deepseek-r1-0528-qwen3-8b.toml	2026-11-17 02:45:13.527881951 +0300
+@@ -1,3 +1,4 @@
++# Save as $SCRATCH/vllm-overrides/vllm/deepseek-r1-0528-qwen3-8b.toml and change what your machine needs.
+ # Recipe from vllm/models.md#deepseek-r1-0528-qwen3-8b-chat-only; never run on the reference laptop.
+ schema = 1
+ id = "deepseek-r1-0528-qwen3-8b"
+@@ -19,6 +20,7 @@
+ [server]
+ context = 65536
+ args = [
++  "--gpu-memory-utilization", "0.965",
+   "--quantization", "fp8_per_tensor", "--max-num-seqs", "1", "--kv-cache-dtype", "fp8",
+   "--attention-backend", "TRITON_ATTN", "--reasoning-parser", "deepseek_r1",
+   "--override-generation-config", '{"temperature":0.6,"top_p":0.95}',
+@@ -30,5 +32,5 @@
+ 
+ [evidence]
+ kind = "estimate"
+-summary = "The documented vLLM recipe, not run on the reference laptop yet"
++summary = "Copied from the shipped recipe deepseek-r1-0528-qwen3-8b; not measured on this machine"
+ doc = "vllm/models.md#deepseek-r1-0528-qwen3-8b-chat-only"

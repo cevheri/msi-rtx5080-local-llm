@@ -1,0 +1,8 @@
+{
+  "command": "dsh --version",
+  "cwd": "$HOME/projects/llm",
+  "exit": 0,
+  "seconds": 0.0,
+  "stdout": "0.2.2-rc.3\n",
+  "stderr": ""
+}

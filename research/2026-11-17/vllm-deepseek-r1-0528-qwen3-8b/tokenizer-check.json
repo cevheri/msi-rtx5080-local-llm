@@ -1,0 +1,60 @@
+{
+ "date": "2026-11-17",
+ "image": "vllm/vllm-openai:v0.33.0",
+ "in_container_versions": {
+  "transformers": "5.20.2",
+  "tokenizers": "0.23.3"
+ },
+ "model_files": {
+  "tokenizer_config.json tokenizer_class": "LlamaTokenizerFast",
+  "tokenizer.json model": "BPE",
+  "tokenizer.json decoder": "ByteLevel"
+ },
+ "in_container_load": {
+  "AutoTokenizer.from_pretrained": {
+   "class": "LlamaTokenizer",
+   "pre_tokenizer": "Metaspace",
+   "decoder": "Sequence",
+   "encode('Say hello world.')": [
+    45764,
+    71,
+    95292,
+    13
+   ],
+   "decode": "Sayhelloworld."
+  },
+  "PreTrainedTokenizerFast.from_pretrained": {
+   "class": "TokenizersBackend",
+   "encode('Say hello world.')": [
+    45764,
+    23811,
+    1879,
+    13
+   ],
+   "decode": "Say hello world."
+  }
+ },
+ "api_requests": {
+  "chat_nonstream_prompt": "Say hello world.",
+  "chat_stream_prompt": "Say hello world.",
+  "completions_prompt": "The capital of France is (temperature 0, 12 tokens)",
+  "results": {
+   "nonstream": {
+    "content_repr": "'\\u010aHello\\u0120world!\\u0120\\xf0\\u0141\\u013a\\u012c\\u010a\\u010aWould\\u0120you\\u0120like\\u0120me\\u0120to\\u0120help\\u0120you\\u0120with\\u0120anything\\u0120specific\\u0120or\\u0120just\\u0120say\\u0120hello?'",
+    "reasoning_head_repr": "'\\u010aHmm,\\u0120the\\u0120user\\u0120just\\u0120typed\\u0120\"Sayhelloworld.\"\\u0120with\\u0120a\\u0120lowercase\\u0120\\'h\\'\\u0120and\\u0120no\\u0120punctuation.\\u0120\\u010a\\u010aOkay,\\u0120let\\'s\\u0120break\\u0120this\\u0120down.\\u0120The\\u0120m'",
+    "content_has_byte_markers": true,
+    "reasoning_has_byte_markers": true
+   },
+   "stream": {
+    "content_repr": "'\\u010aHello!\\u0120How\\u0120can\\u0120I\\u0120assist\\u0120you\\u0120today?'",
+    "content_has_byte_markers": true,
+    "reasoning_has_byte_markers": true
+   },
+   "completions": {
+    "text_repr": "'paris\\u010aThecapitalofFranceisparis\\u010aThe'",
+    "has_byte_markers": true
+   }
+  }
+ },
+ "markers": "U+0120 is the byte-level BPE space marker and U+010A the newline marker; they should never reach the client"
+}

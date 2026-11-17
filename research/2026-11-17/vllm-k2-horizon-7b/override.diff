@@ -1,0 +1,22 @@
+--- recipes/vllm/k2-horizon-7b.toml	2026-11-16 21:40:35.000000000 +0300
++++ $SCRATCH/vllm-overrides/vllm/k2-horizon-7b.toml	2026-11-17 02:22:13.915551899 +0300
+@@ -1,3 +1,4 @@
++# Save as $SCRATCH/vllm-overrides/vllm/k2-horizon-7b.toml and change what your machine needs.
+ # Recipe from vllm/models.md#k2-horizon-7b-awq-int4; never run on the reference laptop.
+ schema = 1
+ id = "k2-horizon-7b"
+@@ -18,6 +19,7 @@
+ [server]
+ context = 65536
+ args = [
++  "--gpu-memory-utilization", "0.94",
+   "--trust-remote-code", "--chat-template-content-format", "string", "--max-num-seqs", "1",
+   "--kv-cache-dtype", "fp8", "--attention-backend", "TRITON_ATTN", "--enable-auto-tool-choice",
+   "--tool-call-parser", "k2_horizon", "--reasoning-parser", "k2_horizon",
+@@ -31,5 +33,5 @@
+ 
+ [evidence]
+ kind = "estimate"
+-summary = "The documented vLLM recipe, not run on the reference laptop yet"
++summary = "Copied from the shipped recipe k2-horizon-7b; not measured on this machine"
+ doc = "vllm/models.md#k2-horizon-7b-awq-int4"

@@ -1,0 +1,8 @@
+{"type": "session"}
+{"type": "status", "phase": "turn_start", "turn": 4}
+{"type": "status", "phase": "step_start", "turn": 4, "step": 1}
+{"type": "thinking"}
+{"type": "text"}
+{"type": "status", "phase": "step_end", "turn": 4, "step": 1}
+{"type": "status", "phase": "turn_end", "turn": 4, "reason": {"kind": "completed"}}
+{"type": "final", "reason": {"kind": "completed"}}

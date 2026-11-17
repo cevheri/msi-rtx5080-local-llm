@@ -1,0 +1,1 @@
+dsh: UNSUPPORTED_REASONING_EFFORT: provider "llmctl" model "local" does not support reasoning effort "high"

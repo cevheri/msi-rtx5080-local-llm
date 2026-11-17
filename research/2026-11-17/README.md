@@ -1,0 +1,37 @@
+# Measurements, 2026-11-17
+
+Last verified: 2026-11-17.
+
+These are the first measurements of the seven vLLM recipes that were estimates until this day: Mellum2.1, K2 Horizon 7B, Qwen3.5-9B, Gemma 4 12B, Gemma 4 E4B, Groot-19B-A3B and DeepSeek-R1-0528-Qwen3-8B, each started with `./llmctl up <id> --runtime vllm` from the shipped recipe.
+Six were measured, and DeepSeek-R1-0528-Qwen3-8B failed because vLLM loads its tokenizer with the wrong class.
+The same day the llmctl clients e2e ran every shipped recipe on Hermes, Pi and DeepSeek Harness (dsh), and on OpenCode every recipe except vLLM DeepSeek-R1-0528-Qwen3-8B, which has no OpenCode entry, and the dsh Web UI checklist ran in a browser; their records are the last three folders below, and the curated results are in [docs/clients.md](../../docs/clients.md#verified-on-this-laptop).
+The curated results are in [vllm/models.md](../../vllm/models.md) (one section per model), [vllm/benchmarking.md](../../vllm/benchmarking.md#results) and the `[evidence]` tables of the recipes in [recipes/vllm/](../../recipes/vllm/).
+Do not edit these records by hand.
+A script replaced local paths in these records with `$HOME` and `$SCRATCH` before they were copied into the repository.
+
+## Setup
+
+- Machine: MSI Raider 18 Max HX A2WI, RTX 5080 Laptop GPU (16,303 MiB per `nvidia-smi`, 15.47 GiB per CUDA), 61 GiB of RAM, enforced power limit 145 W (140 W in the DeepSeek-R1 record).
+- Runtime: `vllm/vllm-openai:v0.33.0`, started by `./llmctl up` from a pristine export of `main` at 9a2c43a, with `LLMCTL_CLIENTS` empty so that no client file changed, one recipe at a time.
+- Start attempts: at most three per recipe, each flag change made in an override copied from `./llmctl show <id> --runtime vllm --as-override` and kept as `override.diff`, with the reason in `attempts.md`.
+- Checks: `./llmctl test` (reply, tool call unless chat only, decode speed), the 2026-11-16 probe [llm_probe.py](../2026-11-16/llm_probe.py) (three decodes of up to 1,500 tokens, 8k and 30k prompts sent twice), and one request per thinking level of the recipe.
+  The DeepSeek-R1 record used a copy of the probe that records the tool-call step's error and goes on, because the recipe is chat only (`probe-chat-only.diff` in its folder).
+- GPU trace: `nvidia-smi` memory, power and temperature every 2 s; the server log of each `vllm-` measurement record stops at `Application startup complete`.
+  The e2e's `docker-logs` records keep the request lines after it, with 172.17.0.1, Docker's default `docker0` bridge gateway, which identifies no machine or person.
+
+## Folders
+
+| Folder | Runtime and launch | Main result |
+|---|---|---|
+| [vllm-mellum2.1-12b/](vllm-mellum2.1-12b/README.md) | Shipped recipe, 131072 context, BF16 KV, CUDA graphs on, first attempt | Measured: 257.2 tok/s decode with thinking on over runs of 1,171 to 1,500 tokens, 426,946 KV tokens, 14,816 MiB GPU memory, smoke test and tool call passed |
+| [vllm-k2-horizon-7b/](vllm-k2-horizon-7b/README.md) | Shipped recipe plus `--gpu-memory-utilization 0.94`, 65536 context, FP8 KV, `TRITON_ATTN`; the shipped recipe lacked KV cache at 0.92 ([attempts](vllm-k2-horizon-7b/attempts.md)) | Measured: 94.8 tok/s decode over full 1,500-token runs, 95,168 KV tokens, 15,384 MiB GPU memory, smoke test and tool call passed |
+| [vllm-qwen3.5-9b/](vllm-qwen3.5-9b/README.md) | Shipped recipe, 131072 context, BF16 KV, first attempt | Measured: 90.8 tok/s decode with thinking off over runs of 676 to 791 tokens, 147,663 KV tokens, 13,726 MiB GPU memory, smoke test and tool call passed |
+| [vllm-gemma-4-12b/](vllm-gemma-4-12b/README.md) | Shipped recipe, 131072 context, FP8 KV, `TRITON_ATTN`, first attempt | Measured: 69.5 tok/s decode with thinking off over runs of 885 to 933 tokens, 366,455 KV tokens, 15,822 MiB GPU memory during startup profiling, smoke test and tool call passed |
+| [vllm-gemma-4-e4b/](vllm-gemma-4-e4b/README.md) | Shipped recipe plus `--enforce-eager`, 65536 context, BF16 KV; two starts without it ran out of GPU memory in the torch.compile autotune ([attempts](vllm-gemma-4-e4b/attempts.md)) | Measured: 45.2 tok/s decode with thinking off over runs of 969 to 1,190 tokens, 204,533 KV tokens, 15,044 MiB GPU memory, smoke test and tool call passed |
+| [vllm-groot-19b-a3b/](vllm-groot-19b-a3b/README.md) | Shipped recipe, 131072 context, FP8 KV, `TRITON_ATTN`, MARLIN NvFp4 MoE backend, first attempt | Measured: 193.4 tok/s decode with thinking off over runs of 780 to 829 tokens, 167,480 KV tokens, 14,812 MiB GPU memory, smoke test and tool call passed |
+| [vllm-deepseek-r1-0528-qwen3-8b/](vllm-deepseek-r1-0528-qwen3-8b/README.md) | Shipped recipe plus `--gpu-memory-utilization 0.965`, 65536 context, FP8 KV; the shipped recipe's cold first start lacked KV cache at 0.92, and later warm starts at 0.92 worked in the e2e runs ([attempts](vllm-deepseek-r1-0528-qwen3-8b/attempts.md)) | Failed: the image's transformers loads the tokenizer as a Metaspace `LlamaTokenizer`, so prompts lose their spaces and every reply carries byte-level markers ([tokenizer check](vllm-deepseek-r1-0528-qwen3-8b/tokenizer-check.json)); decode ran at 72.1 tok/s and `./llmctl test` passed the garbled reply |
+| [llmctl-dsh-e2e/](llmctl-dsh-e2e/README.md) | `heavy python3 -m launcher.e2e.clients --matrix all --set-default-round-trip` over all 19 shipped recipes (11 on llama.cpp b12407, 8 on vLLM v0.33.0) with OpenCode v2.3.0, Hermes Agent v0.23.1, Pi 1.5.2 and dsh 0.2.2-rc.3; the second full run of the day, plus the lead's L2 migration and L5 checks in [lead-checks/](llmctl-dsh-e2e/lead-checks/README.md) | 284 of 294 rows Yes: every up, status, config, dsh-config, dsh-web, gateway and restore row passed, seven sessions failed through model behaviour (two of them dsh-headless sessions of gemma-4-26b-a4b and vLLM gemma-4-e4b with `SANDBOX_ESCALATION_INVALID_ARGUMENT` write errors), K2 Horizon 7B on vLLM failed `hermes -z` and Pi on its chat template's thinking field, and vLLM DeepSeek-R1's probe A got a garbled title; dsh's tool commands run outside `heavy.slice`, and a session without `DSH_TELEMETRY_DISABLED` connected only to 127.0.0.1 |
+| [llmctl-dsh-e2e-run1/](llmctl-dsh-e2e-run1/README.md) | The first full run of the same e2e command that day, before the K2 Horizon 7B `--reasoning-effort-map` and the driver's chat-only probe fix; only its summary and the records the documents cite are kept | 280 Yes and 14 No rows; K2 Horizon 7B's vLLM probe A got HTTP 400 for `reasoning_effort` none, and vLLM DeepSeek-R1's probe B got HTTP 400 for tools |
+| [llmctl-dsh-web/](llmctl-dsh-web/README.md) | `dsh web --port 3182 --no-open` in a private home with a byte copy of the home patch, gemma-4-26b-a4b on llama.cpp, then gpt-oss-20b on vLLM, driven through Playwright accessibility snapshots | All five browser checks passed, the switch to gpt-oss-20b showed in the picker 2.4 s after the home patch changed, and `dsh web` created an empty `~/Documents/deepseek-harness/default-workspace` despite the private home |
+
+Each `vllm-` folder holds a `README.md` with its result line, `attempts.md`, the container arguments, the startup log, the `./llmctl test` output, the probe JSON, the thinking check, the GPU trace and the power limit.

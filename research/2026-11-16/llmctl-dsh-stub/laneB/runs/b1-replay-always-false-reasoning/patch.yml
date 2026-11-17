@@ -1,0 +1,45 @@
+[
+ {
+  "id": "llm-pi-ai",
+  "config": {
+   "providers": {
+    "llmctl": {
+     "displayName": "llmctl",
+     "api": "openai-completions",
+     "baseURL": "http://127.0.0.1:18080/v1",
+     "headers": {
+      "Authorization": "Bearer no-key-required"
+     },
+     "compat": {
+      "supportsStore": false,
+      "supportsDeveloperRole": false,
+      "maxTokensField": "max_tokens"
+     },
+     "models": [
+      {
+       "id": "local",
+       "name": "always-false candidate (llmctl)",
+       "contextWindow": 131072,
+       "maxTokens": 16384,
+       "input": [
+        "text"
+       ],
+       "reasoningEfforts": false
+      }
+     ]
+    }
+   }
+  }
+ },
+ {
+  "id": "agent-default-model",
+  "config": {
+   "provider": "llmctl",
+   "model": "local"
+  }
+ },
+ {
+  "id": "session-title-llm",
+  "disabled": true
+ }
+]

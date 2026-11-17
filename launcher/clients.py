@@ -1,7 +1,8 @@
-"""The clients llmctl configures: OpenCode, Hermes Agent and Pi.
+"""The clients llmctl configures: OpenCode, Hermes Agent, Pi and DeepSeek Harness (dsh).
 
-A client is installed when its binary is on the host's PATH and its config root exists; LLMCTL_CLIENTS picks which
-installed clients llmctl touches (docs/superpowers/specs/2026-11-16-llmctl-clients-design.md, section D9).
+A client is installed when its binary is on the host's PATH and its config root exists (for dsh, <dsh home>/profiles);
+LLMCTL_CLIENTS picks which installed clients llmctl touches (docs/superpowers/specs/2026-11-16-llmctl-clients-design.md,
+section D9, and docs/superpowers/specs/2026-11-16-llmctl-dsh-design.md, sections D1 and D7).
 """
 
 import json
@@ -10,7 +11,7 @@ from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
-from launcher import hermes_config, opencode_config, pi_config
+from launcher import dsh_config, hermes_config, opencode_config, pi_config
 from launcher.errors import ClientError, ClientWriteError, LlmctlError, UsageError
 from launcher.files import FileChange, backup_once, backup_path, load_json_object, make_dirs, write_atomic
 from launcher.host import Host
@@ -20,8 +21,8 @@ __all__ = ["NAMES", "LABELS", "ClientState", "ClientPlan", "ApplyResult", "FileC
            "clients_line", "require_listed", "llmctl_providers", "plan", "dry_run_lines", "apply",
            "failure_message", "thinking_texts", "up_lines", "report", "down_lines"]
 
-NAMES = ("opencode", "hermes", "pi")
-LABELS = {"opencode": "OpenCode", "hermes": "Hermes", "pi": "Pi"}
+NAMES = ("opencode", "hermes", "pi", "dsh")
+LABELS = {"opencode": "OpenCode", "hermes": "Hermes", "pi": "Pi", "dsh": "dsh"}
 ENV_VAR = "LLMCTL_CLIENTS"
 LEFT_OUT = f"left out by {ENV_VAR}"
 
@@ -31,6 +32,7 @@ def _root(name: str, env: Mapping[str, str]) -> Path:
         "opencode": opencode_config.config_root,
         "hermes": hermes_config.hermes_root,
         "pi": pi_config.agent_dir,
+        "dsh": dsh_config.dsh_home,
     }
     return roots[name](env)
 
@@ -57,7 +59,7 @@ def _listed(env: Mapping[str, str]) -> list[str] | None:
     names = [item for item in names if item]
     for name in names:
         if name not in NAMES:
-            raise UsageError(f"{ENV_VAR}: unknown client '{name}'; use opencode, hermes or pi, comma-separated, "
+            raise UsageError(f"{ENV_VAR}: unknown client '{name}'; use opencode, hermes, pi or dsh, comma-separated, "
                              "or an empty value for none")
     return names
 
@@ -74,8 +76,9 @@ def client_states(host: Host) -> list[ClientState]:
             states.append(ClientState(name, label, True, False, f"no {name} on PATH", None))
             continue
         root = _root(name, host.env)
-        if not root.is_dir():
-            states.append(ClientState(name, label, True, False, f"no {root}", root))
+        needed = root / "profiles" if name == "dsh" else root  # dsh creates profiles/ on its first run (design D1)
+        if not needed.is_dir():
+            states.append(ClientState(name, label, True, False, f"no {needed}", root))
             continue
         states.append(ClientState(name, label, True, True, None, root))
     return states
@@ -120,6 +123,9 @@ class ClientPlan:
     changes: tuple[FileChange, ...]
     hermes_use: bool
     pi_active: bool
+    dsh_active: bool = False
+    dsh_checked: str | None = None  # the home patch text the plan's dsh check accepted
+    warnings: tuple[str, ...] = ()  # printed right after the clients line
 
 
 @dataclass(frozen=True)
@@ -129,6 +135,7 @@ class ApplyResult:
     changed: frozenset[str]
     failed: frozenset[str]
     default_failed: frozenset[str] = frozenset()  # written, but making it the default failed (hermes profile use)
+    dsh_old: dsh_config.Block | None = None  # the block read just before the dsh write
 
 
 def _pi_candidate(host: Host, change: FileChange | None) -> str:
@@ -147,8 +154,28 @@ def _validate_pi(host: Host, target: Target, change: FileChange | None) -> str |
     return pi_config.validate_models(host, _pi_candidate(host, change), target, pi_config.models_path(host.env))
 
 
+def _dsh_candidate(host: Host, change: FileChange | None) -> str:
+    """The home patch text dsh checks: the planned text, or the file as it is when the rows are unchanged."""
+    if change is not None:
+        return change.new_text
+    path = dsh_config.home_patch(host.env)
+    try:
+        with open(path, encoding="utf-8", newline="") as handle:
+            return handle.read()
+    except (OSError, UnicodeDecodeError) as exc:
+        raise ClientError(f"cannot read {path}: {exc}") from exc
+
+
+def _check_dsh(host: Host, target: Target, candidate: str) -> None:
+    """Let the installed dsh read the candidate home patch (design D5)."""
+    path = dsh_config.home_patch(host.env)
+    block = dsh_config.parse_block(path, candidate)
+    written = tuple(row["id"] for row in block.rows) if block is not None else ()
+    dsh_config.check_home(host, candidate, target, path=path, written=written)
+
+
 def plan(host: Host, catalog, target: Target, *, set_default: bool, check: bool) -> ClientPlan:
-    """Plan every client change and raise any refusal; nothing is written, and only `check` runs pi."""
+    """Plan every client change and raise any refusal; nothing is written, and only `check` runs pi and dsh."""
     states = client_states(host)
     require_listed(host, states)
     providers = llmctl_providers(catalog)
@@ -166,8 +193,19 @@ def plan(host: Host, catalog, target: Target, *, set_default: bool, check: bool)
             _validate_pi(host, target, models)
         changes.append(models)
         changes.append(pi_config.plan_settings(host.env, target, set_default=set_default))
+    warnings: list[str] = []
+    dsh_checked = None
+    if "dsh" in active:
+        home = dsh_config.plan_home(host.env, target, set_default=set_default)
+        if check:
+            warning = dsh_config.version_warning(host)
+            if warning is not None:
+                warnings.append(warning)
+            dsh_checked = _dsh_candidate(host, home)
+            _check_dsh(host, target, dsh_checked)
+        changes.append(home)
     return ClientPlan(tuple(states), tuple(change for change in changes if change is not None), hermes_use,
-                      "pi" in active)
+                      "pi" in active, "dsh" in active, dsh_checked, tuple(warnings))
 
 
 def dry_run_lines(planned: ClientPlan) -> list[str]:
@@ -179,8 +217,12 @@ def dry_run_lines(planned: ClientPlan) -> list[str]:
         lines.append(change.preview)
     if planned.hermes_use:
         lines.append("would run hermes profile use llmctl")
-    if planned.pi_active:
+    if planned.pi_active and planned.dsh_active:
+        lines.append("dry run: nothing was written, and neither Pi nor dsh has checked llmctl's entries")
+    elif planned.pi_active:
         lines.append("dry run: nothing was written, and Pi has not checked the entry")
+    elif planned.dsh_active:
+        lines.append("dry run: nothing was written, and dsh has not checked llmctl's rows")
     else:
         lines.append("dry run: nothing was written")
     return lines
@@ -198,6 +240,7 @@ class _Applier:
         self.changed: set[str] = set()
         self.failed: set[str] = set()
         self.default_failed: set[str] = set()
+        self.dsh_old: dsh_config.Block | None = None
 
     def write(self, change: FileChange) -> None:
         try:
@@ -275,6 +318,21 @@ class _Applier:
             if settings is not None:
                 self.writes.append(f"wrote {settings.path}: {settings.summary}")
 
+    def dsh(self, host: Host, target: Target, set_default: bool, checked: str | None) -> None:
+        # dsh never writes its home patch, so no lock: re-read, re-plan, and let dsh check the candidate again only
+        # when it differs from the text the plan's check accepted (design D5, D7).
+        old = dsh_config.read_block(host.env)
+        change = dsh_config.plan_home(host.env, target, set_default=set_default)
+        candidate = _dsh_candidate(host, change)
+        if candidate != checked:
+            _check_dsh(host, target, candidate)
+        if change is None:
+            return
+        self.write(change)
+        self.writes.append(f"wrote {change.path}: {change.summary}")
+        self.changed.add("dsh")
+        self.dsh_old = old
+
 
 def _holds(change: FileChange) -> bool:
     """True when the file already holds the change's new text, so its write landed before the failure."""
@@ -308,7 +366,7 @@ def _put_back_message(models: FileChange, failure: ClientWriteError | None, prob
             "settings.json now disagree about the llmctl model; fix them by hand or run up again")
 
 
-def apply(host: Host, catalog, target: Target, *, set_default: bool) -> ApplyResult:
+def apply(host: Host, catalog, target: Target, *, set_default: bool, dsh_checked: str | None = None) -> ApplyResult:
     """Re-read and write each active client on its own after readiness, collecting failures (spec D8)."""
     states = client_states(host)
     providers = llmctl_providers(catalog)
@@ -317,6 +375,7 @@ def apply(host: Host, catalog, target: Target, *, set_default: bool) -> ApplyRes
         "opencode": lambda: applier.opencode(host, target, providers, set_default),
         "hermes": lambda: applier.hermes(host, target, set_default),
         "pi": lambda: applier.pi(host, target, set_default),
+        "dsh": lambda: applier.dsh(host, target, set_default, dsh_checked),
     }
     for state in states:
         if not state.active:
@@ -327,15 +386,20 @@ def apply(host: Host, catalog, target: Target, *, set_default: bool) -> ApplyRes
             applier.failures.append(str(exc))
             applier.failed.add(state.name)
     return ApplyResult(tuple(applier.backups + applier.writes + applier.after), tuple(applier.failures),
-                       frozenset(applier.changed), frozenset(applier.failed), frozenset(applier.default_failed))
+                       frozenset(applier.changed), frozenset(applier.failed), frozenset(applier.default_failed),
+                       applier.dsh_old)
 
 
 def failure_message(failures: Sequence[str]) -> str:
     return f"the model is running, but {len(failures)} client file(s) were not updated: {'; '.join(failures)}"
 
 
-def thinking_texts(target: Target) -> tuple[str, str, str]:
-    """How OpenCode, Hermes and Pi choose this recipe's thinking (spec D8 line templates)."""
+def thinking_texts(target: Target) -> tuple[str, str, str, str]:
+    """How OpenCode, Hermes, Pi and dsh choose this recipe's thinking (spec D8 line templates, dsh design D7)."""
+    return (*_thinking_texts(target), dsh_config.thinking_text(target.recipe.clients))
+
+
+def _thinking_texts(target: Target) -> tuple[str, str, str]:
     meta = target.recipe.clients
     if meta.thinking == "toggle" and meta.default == "on":
         return "on; add #none to turn it off", "on, as the server sets it", "on; --thinking off turns it off"
@@ -422,14 +486,42 @@ def _pi_lines(host: Host, target: Target, up_command: str, thinking: str) -> lis
     return lines + _notes(lambda: pi_config.enabled_models_note(env, target))
 
 
+def _dsh_held(host: Host) -> tuple[bool, str | None]:
+    """(held, why llmctl cannot tell): whether llmctl's block holds dsh's default."""
+    try:
+        return dsh_config.holds_default(host.env), None
+    except ClientError as exc:
+        return False, str(exc)
+
+
+def _dsh_lines(host: Host, target: Target, up_command: str) -> list[str]:
+    held, problem = _dsh_held(host)
+    lines = dsh_config.usage_lines(target, held=held, up_command=up_command)
+    if problem is not None:
+        lines[0] = f"dsh: {dsh_config.PROVIDER}/{target.served}, default unknown ({problem})"
+    return lines
+
+
+def _dsh_notes(host: Host, target: Target, up_command: str, old: dsh_config.Block | None) -> list[str]:
+    env = host.env
+    held, _ = _dsh_held(host)
+    try:
+        findings, problems = dsh_config.profile_findings(env), []
+    except ClientError as exc:
+        findings, problems = [], [f"note: {exc}"]
+    return dsh_config.notes(old, target, path=dsh_config.home_patch(env), held=held, findings=findings,
+                            up_command=up_command) + problems
+
+
 def up_lines(host: Host, target: Target, states: Sequence[ClientState], *, up_command: str,
              changed: frozenset[str], failed: frozenset[str] = frozenset(),
-             default_failed: frozenset[str] = frozenset()) -> list[str]:
+             default_failed: frozenset[str] = frozenset(), dsh_old: dsh_config.Block | None = None) -> list[str]:
     """What up prints about each active client once the server is ready (spec D8); a failed client gets one line,
     and a client whose file was written but whose default failed keeps its block."""
     texts = dict(zip(NAMES, thinking_texts(target)))
     sections: dict[str, Callable[[Host, Target, str, str], list[str]]] = {
-        "opencode": _opencode_lines, "hermes": _hermes_lines, "pi": _pi_lines}
+        "opencode": _opencode_lines, "hermes": _hermes_lines, "pi": _pi_lines,
+        "dsh": lambda host, target, up_command, thinking: _dsh_lines(host, target, up_command)}
     lines = []
     for state in states:
         if not state.active:
@@ -444,6 +536,8 @@ def up_lines(host: Host, target: Target, states: Sequence[ClientState], *, up_co
         named = " and ".join(LABELS[name] for name in ("hermes", "pi") if name not in failed)
         lines.append(f"note: {named} sessions that were open before keep the model they started with; "
                      "start a new session")
+    if "dsh" in changed and "dsh" not in failed:
+        lines += _dsh_notes(host, target, up_command, dsh_old)
     return lines
 
 
@@ -548,12 +642,42 @@ def _pi_report(host: Host, target: Target | None, running_known: bool):
     return f"{pi_config.PROVIDER}/{served or '?'} for {described}{middle}; {tail}", directory, warnings
 
 
+def _dsh_report(host: Host, target: Target | None, running_known: bool):
+    """(text, path, warnings) of dsh's status line (dsh design D7); no dsh command runs."""
+    path = dsh_config.home_patch(host.env)
+    try:
+        block = dsh_config.read_block(host.env)
+    except ClientError as exc:
+        return _problem(path, exc), None, []
+    route = next((row for row in block.rows if row["id"] == "llm-pi-ai"), None) if block is not None else None
+    if route is None:
+        return "no llmctl rows yet (the next ./llmctl up writes them)", path, []
+    held = next((row for row in block.rows if row["id"] == "agent-default-model"), None)
+    named = dsh_config.default_name(held) if held is not None else None
+    default = f"default {named}, held by llmctl" if named is not None else "default left to dsh's model picker"
+    warnings = []
+    if target is None and running_known and named is not None:
+        warnings.append(f"warning: dsh's default {named} {NOT_RUNNING}")
+    if target is not None:
+        try:
+            running = route == dsh_config.rows(target, default=False)[0]
+        except ClientError:
+            running = False
+        if running:
+            return (f"{dsh_config.PROVIDER}/{target.served} for {target.recipe.id} on {target.label}, the running "
+                    f"model; {default}", path, warnings)
+    described = block.description or "an unknown model"
+    middle = ", not the running model (run ./llmctl up again)" if target is not None else ""
+    return f"{dsh_config.PROVIDER}/{block.served or '?'} for {described}{middle}; {default}", path, warnings
+
+
 def report(host: Host, catalog, target: Target | None, *, with_paths: bool, running_known: bool = True) -> list[str]:
     """The clients: section of status and list (spec D8, D2, L5); None as target means no model is running."""
     sections: dict[str, Callable[[], tuple[str, Path | None, list[str]]]] = {
         "opencode": lambda: _opencode_report(host, catalog, target, running_known),
         "hermes": lambda: _hermes_report(host, target, running_known),
         "pi": lambda: _pi_report(host, target, running_known),
+        "dsh": lambda: _dsh_report(host, target, running_known),
     }
     lines = ["clients:"]
     warnings: list[str] = []
@@ -571,7 +695,12 @@ def report(host: Host, catalog, target: Target | None, *, with_paths: bool, runn
     return lines + warnings
 
 
-SWITCH_BACK = {"opencode": "OpenCode /models", "hermes": "hermes profile use default", "pi": "Pi /model"}
+SWITCH_BACK: dict[str, Callable[[Mapping[str, str]], str]] = {
+    "opencode": lambda env: "OpenCode /models",
+    "hermes": lambda env: "hermes profile use default",
+    "pi": lambda env: "Pi /model",
+    "dsh": dsh_config.switch_back,
+}
 
 
 def _points_at_llmctl(name: str, host: Host, providers: frozenset[str]) -> bool:
@@ -583,6 +712,8 @@ def _points_at_llmctl(name: str, host: Host, providers: frozenset[str]) -> bool:
             return opencode_config.points_at_llmctl(data.get("model"), providers)
         if name == "hermes":
             return hermes_config.sticky_profile(env) == hermes_config.PROFILE
+        if name == "dsh":
+            return dsh_config.holds_default(env)
         return pi_config.pi_default(env)[0] == pi_config.PROVIDER
     except ClientError:
         return False
@@ -603,4 +734,4 @@ def down_lines(host: Host, catalog, recipe_id: str) -> list[str]:
     verb = "points" if len(pointing) == 1 else "point"
     gets = "gets" if len(pointing) == 1 else "get"
     return [f"{names} still {verb} at {recipe_id} and {gets} no answer until the next ./llmctl up",
-            "  switch back: " + "; ".join(SWITCH_BACK[state.name] for state in pointing)]
+            "  switch back: " + "; ".join(SWITCH_BACK[state.name](host.env) for state in pointing)]

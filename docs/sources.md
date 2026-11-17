@@ -1,6 +1,6 @@
 # Source catalog
 
-Last verified: 2026-11-16.
+Last verified: 2026-11-17.
 
 This catalog lists the sources behind this knowledge base, what each one can and cannot prove, and how credible it is for this laptop (RTX 5080 Laptop GPU, 16 GB, 896 GB/s, 140 W).
 Primary sources (release pages, source code at a pinned tag, official docs, registry APIs, model cards) carry versions, flags and file sizes; independent evaluators carry quality scores; community posts and calculators are orientation only.
@@ -109,6 +109,32 @@ Reviewed on 2026-11-16 and independently re-checked the same day against the pub
 - The second independent check of 2026-11-16 (see [Hermes Agent](#hermes-agent)) covered the Pi citations too; the three Pi rewordings add an older session without a recorded level and a model switch's explicit level to the thinking-level order (`dist/core/sdk.js:123-126`, `dist/core/agent-session.js:2260-2262`), and say that Pi tries its settings lock 10 times, 20 ms apart (`dist/core/settings-manager.js:127-128`).
 - The stub records in [research/2026-11-16/llmctl-clients-stub/](../research/2026-11-16/llmctl-clients-stub/README.md): measured on this laptop against a recording stub, not against a model.
 
+### DeepSeek Harness
+
+Reviewed on 2026-11-16 by the research lanes, whose verify lane re-read their 117 claims, confirmed 105 and confirmed 12 only partly, with corrections that [clients.md](clients.md#deepseek-harness) applies.
+The claim ids cited here and in clients.md (`configuration-0`, `runtime-1`, `extra-1` and the others) are archived with their verdicts, corrections and sources in [research-claims.json](../research/2026-11-16/llmctl-dsh-stub/research-claims.json), listed in [its README](../research/2026-11-16/llmctl-dsh-stub/README.md#research-claims).
+Independently re-checked on 2026-11-17 against the registry, the repository at the pinned commit, the installed 0.2.2-rc.3 packages and the pages below, each fetched again with `curl` into an empty scratch folder and parsed with `python3 -I`: of the seven sources, four hold and three hold with corrections, which are applied in [clients.md](clients.md#deepseek-harness) and in this list.
+
+- [DeepSeek Harness 0.2.2-rc.3 on npm](https://www.npmjs.com/package/@deepseek-ai/dsh/v/0.2.2-rc.3) (`@deepseek-ai/dsh`) and [its registry record](https://registry.npmjs.org/@deepseek-ai%2fdsh/0.2.2-rc.3): the pinned version, dist-tag `next`, while `latest` is 0.2.2-rc.1; `engines` asks for Node 24.9 or newer, and neither tarball has an `npm-shrinkwrap.json` (`configuration-0`, `runtime-1`).
+  Holds: `npm view` printed version 0.2.2-rc.3 with no `gitHead` and the dist-tags `next` 0.2.2-rc.3, `latest` 0.2.2-rc.1 and `alpha` 0.2.2-alpha.3, and the registry dates the upload 2026-11-13 08:05 UTC, nine minutes after GitHub's prerelease `v0.2.2-rc.3`.
+  The npm page answers scripts with HTTP 403, so the record is the checkable source; the rc.3 and rc.1 tarballs match its sha512 integrity and hold no `npm-shrinkwrap.json`, and the copy installed here equals the rc.3 tarball in all 532 files.
+- [The repository at tag `dsh-v0.2.2-rc.3`](https://github.com/deepseek-ai/deepseek-harness/tree/dsh-v0.2.2-rc.3), commit `38a6a5c965aa99ab525161efb7cc5cf1fe62fced`: every dsh source file that clients.md cites is linked at that commit, and the 0.2.2-rc.3 npm packages ship the same files in their `src/` folders.
+  Holds with corrections: `git ls-remote` resolves the lightweight tag to that commit, "Merge pull request #8397" of 2026-11-13, and the 26 files clients.md cites, fetched at the commit, are byte-identical to the installed packages, `vendor/include/src/patch.ts` (`@deepseek-ai/cordis-plugin-include` 1.1.0) and `packages/boot/config-editor/README.md` included, so clients.md now links those two as well.
+  Most cited lines say what their sentence claims; the others are corrected as the last item of this list says.
+- The docs site pages the research read, built on 2026-11-11 according to their `Last-Modified` header and equal to files of the 0.2.2-rc.3 package apart from links, a byte-order mark and the language switcher: the [architecture reference](https://deepseek-harness.github.io/deepseek-harness/en/reference/index.md) ("DeepSeek Harness Architecture", `docs/architecture.md`), the [Web UI guide](https://deepseek-harness.github.io/deepseek-harness/en/guide/quickstart.md) ("Use the Web UI", `docs/user/guide/index.md`), the [providers guide](https://deepseek-harness.github.io/deepseek-harness/en/guide/providers.md) and the [Python SDK guide](https://deepseek-harness.github.io/deepseek-harness/en/guide/python-sdk.md); where a page and the source at the tag differ, the source wins.
+  The providers guide and the Python SDK guide hold; the architecture reference and the Web UI guide hold with corrections, because the draft named them after their URLs as the reference and the quick start.
+  The architecture reference names the shipped profiles, the base layer of the web, headless, sdk and acp profiles and the order of the layers (its lines 15, 21 and 23), and the providers guide the four protocols of a custom model API (its line 27).
+- The [DeepSeek Harness privacy policy](https://www.deepseek.com/en/harness/privacy/) ("Last Update: September 20th, 2026"): it says that with custom model services dsh does not store or process input and output on the server side, while the shipped feedback upload sends whole sessions for every provider (`extra-1`), which is why clients.md tells you to set `DSH_TELEMETRY_DISABLED=1`.
+  Holds: fetched again on 2026-11-17 (`Last-Modified` 2026-11-13), the policy still carries that date and says that with custom model services "DeepSeek Harness does not store or process your Input and Output on the server side".
+- The stub records in [research/2026-11-16/llmctl-dsh-stub/](../research/2026-11-16/llmctl-dsh-stub/README.md): measured on this laptop, lane B and S5 against a recording stub (lane B's `real-*` cases through a recording proxy to the llama.cpp server), lane A, S10 and S11 against the real llama.cpp server, and S1 to S4d and S6 to S9 with no model server; the plan's archive review covers them, not this check.
+- Corrections from the check, applied in clients.md: the rule for the npm package of a cited file names its exceptions, `@deepseek-ai/dsh` for `apps/cli`, `dsh-client-ui-model-selection`, `dsh-api-session-controller` and `@deepseek-ai/cordis-plugin-include` 1.1.0.
+  dsh's model picker preselects the route's `reasoning` level and offers its `Default` entry, the provider's own default, only for a route without `reasoning` (`ModelSelect.tsx:138-149`, `llm-pi-ai/src/adapter.ts:221-235` and `379`), so the `Default` that A3-follow showed came from lane A's rows, which had no `reasoning`.
+  A compaction budget that is not positive is logged once per model through dsh's logger (`compaction-basic/src/index.ts:165-171`), which headless did not print in B3-2.
+  The feedback upload carries the working folder's path, not the folder (`session-telemetry/src/coordinator.ts:298-299`), and changing or withdrawing a rating triggers it too (`session-telemetry-otel/README.md:36`).
+  The `linux-scope.ts:129-146` lines cited for `systemd-run --user --scope` are the capability probe, and the launch arguments are at lines 542-560.
+  An aborted headless turn exits 1 without the `dsh: <code>: <message>` line, which only a failed turn prints (`headless/README.md:136`).
+  The schema citation now covers the route keys (`llm-pi-ai/src/config.ts:355-380`), the `DSH_HOME` rule names `~\`, which dsh expands like `~/` (`home-paths/src/index.ts:89`), and the compaction formula cites `config.ts:20` and `172-194`.
+
 ### Model cards, vendor posts and quant publishers
 
 - Hugging Face model cards and raw `config.json` files are primary for architecture, context length, license, parser hints and sampling; their benchmark tables are vendor-reported.
@@ -206,6 +232,7 @@ Credibility is for the stated use.
 - [OpenCode v2.3.0 release](https://github.com/anomalyco/opencode/releases/tag/v2.3.0) and [config schema](https://opencode.ai/config.json)
 - [Hermes Agent v0.23.1](https://github.com/NousResearch/hermes-agent/tree/v0.23.1), source at commit `3b421578588243f920886e6fe79a6faa87ea026e`
 - [Pi 1.5.2 on npm](https://www.npmjs.com/package/@earendil-works/pi-coding-agent/v/1.5.2) with its [registry record](https://registry.npmjs.org/@earendil-works/pi-coding-agent/1.5.2), and [its source at v1.5.2](https://github.com/earendil-works/pi/tree/v1.5.2/packages/coding-agent)
+- [DeepSeek Harness 0.2.2-rc.3 on npm](https://www.npmjs.com/package/@deepseek-ai/dsh/v/0.2.2-rc.3) with its [registry record](https://registry.npmjs.org/@deepseek-ai%2fdsh/0.2.2-rc.3), [the repository at tag `dsh-v0.2.2-rc.3`](https://github.com/deepseek-ai/deepseek-harness/tree/dsh-v0.2.2-rc.3) (commit `38a6a5c965aa99ab525161efb7cc5cf1fe62fced`), the [docs site](https://deepseek-harness.github.io/deepseek-harness/en/reference/index.md) and the [privacy policy](https://www.deepseek.com/en/harness/privacy/), independently re-checked on 2026-11-17
 - [Artificial Analysis](https://artificialanalysis.ai/)
 - [Nemotron 3.5 Lightning model card](https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16)
 - The 19 user-provided sources linked in the table above
@@ -213,6 +240,6 @@ Credibility is for the stated use.
 
 ## Maintenance
 
-Re-verify before relying on this catalog: the pinned versions (vLLM, llama.cpp build and image tag, Ollama, Container Toolkit, OpenCode, Hermes Agent, Pi), whether the stale leaderboards have resumed, and the as-of dates of the live sources (Artificial Analysis index version, Ollama and OpenRouter catalogs, calculator data dates).
+Re-verify before relying on this catalog: the pinned versions (vLLM, llama.cpp build and image tag, Ollama, Container Toolkit, OpenCode, Hermes Agent, Pi, DeepSeek Harness), whether the stale leaderboards have resumed, and the as-of dates of the live sources (Artificial Analysis index version, Ollama and OpenRouter catalogs, calculator data dates).
 Re-run the independent check for any source whose page date has moved since 2026-11-15 before citing a new number from it.
 When the first measurement on this laptop exists, add it as the first "Measured on this machine" example in the evidence class table.

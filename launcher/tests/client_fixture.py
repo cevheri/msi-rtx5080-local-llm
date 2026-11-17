@@ -1,12 +1,13 @@
-"""A FakeHost whose HOME is a temporary folder holding the config roots of OpenCode, Hermes and Pi."""
+"""A FakeHost whose HOME is a temporary folder holding the config roots of OpenCode, Hermes, Pi and dsh."""
 
 import hashlib
 import json
 import os
 from pathlib import Path
 
-from launcher import hermes_config, opencode_config, pi_config
+from launcher import dsh_config, hermes_config, opencode_config, pi_config
 from launcher.tests.fakes import FakeHost, ok
+from launcher.tests.test_dsh_config import dsh_fixture
 from launcher.tests.test_opencode_config import doc_config_text
 
 LIST_HEADER = "provider  model  context  max-out  thinking  images\n"
@@ -18,7 +19,7 @@ class ClientFixture:
         self.root = Path(root)
         host.env["HOME"] = str(self.root / "home")
         host.env.pop("XDG_CONFIG_HOME", None)
-        for folder in (".config/opencode", ".hermes", ".pi/agent"):
+        for folder in (".config/opencode", ".hermes", ".pi/agent", ".dsh/profiles"):
             (self.home / folder).mkdir(parents=True, exist_ok=True)
 
     @property
@@ -45,6 +46,14 @@ class ClientFixture:
     def settings_path(self) -> Path:
         return pi_config.settings_path(self.host.env)
 
+    @property
+    def dsh_home(self) -> Path:
+        return dsh_config.dsh_home(self.host.env)
+
+    @property
+    def home_patch(self) -> Path:
+        return dsh_config.home_patch(self.host.env)
+
     def install(self, *names: str) -> None:
         for name in names:
             self.host.installed[name] = f"/usr/bin/{name}"
@@ -56,6 +65,8 @@ class ClientFixture:
         self.host.on(["opencode", "reload"], ok())
         self.host.on(["hermes", "profile", "use", "llmctl"], self._hermes_use)
         self.host.on(["pi", "--offline", "--list-models", "llmctl"], self._pi_list)
+        self.host.on(["dsh", "--version"], ok("0.2.2-rc.3\n"))
+        self.host.on(["dsh", "--profile", "acp", "--dump-config"], self._dsh_dump)
 
     def _hermes_use(self, argv):
         (self.hermes_root / "active_profile").write_text("llmctl\n", encoding="utf-8")
@@ -67,6 +78,9 @@ class ClientFixture:
         models = doc.get("providers", {}).get("llmctl", {}).get("models", [])
         rows = "".join(f"llmctl    {model['id']}  131.1K   16.4K    yes       no\n" for model in models)
         return ok(LIST_HEADER + rows)
+
+    def _dsh_dump(self, argv):
+        return ok(dsh_fixture("s1-dump.txt", self.host.env_extras[-1]["DSH_HOME"] + "/cordis.patch.yml"))
 
     def snapshot(self) -> dict[str, str]:
         result = {}

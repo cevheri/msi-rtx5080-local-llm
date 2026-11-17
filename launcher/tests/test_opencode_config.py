@@ -1,3 +1,4 @@
+import dataclasses
 import json
 import re
 import tempfile
@@ -112,7 +113,8 @@ class ModelLineTest(unittest.TestCase):
 
     def test_recipe_without_docs_entry(self):
         self.write(doc_config_text())
-        deepseek = target_for("deepseek-r1-0528-qwen3-8b", "llamacpp", REPO / "recipes")
+        shipped = target_for("deepseek-r1-0528-qwen3-8b", "llamacpp", REPO / "recipes")
+        deepseek = dataclasses.replace(shipped, recipe=dataclasses.replace(shipped.recipe, opencode=False))
         self.assertIsNone(self.plan(deepseek))
         self.assertIsNone(self.plan(deepseek, set_default=True))
         self.assertEqual(opencode_config.opencode_notes(self.env, deepseek), [

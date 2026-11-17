@@ -1,0 +1,9 @@
+# dsh rows for the model llmctl runs (docs/llmctl.md#clients).
+# llmctl rewrites the lines between the two markers on every ./llmctl up and keeps the rest of this file.
+# The agent-default-model and acp rows stay only while they are in the block: delete both lines to give
+# dsh's model picker its default back; ./llmctl up <model> --set-default writes them again.
+# >>> llmctl managed block: rewritten by llmctl on every start; edits here are lost >>>
+- {"id": "llm-pi-ai", "config": {"providers": {"llmctl": {"displayName": "llmctl", "api": "openai-completions", "baseURL": "http://127.0.0.1:8000/v1", "headers": {"Authorization": "Bearer no-key-required"}, "compat": {"supportsStore": false, "supportsDeveloperRole": false, "maxTokensField": "max_tokens"}, "models": [{"id": "gpt-oss-20b", "name": "gpt-oss-20b on vLLM (llmctl)", "contextWindow": 65536, "maxTokens": 16384, "input": ["text"], "reasoningEfforts": {"low": "low", "medium": "medium", "high": "high"}, "compat": {"thinkingFormat": "openai", "supportsReasoningEffort": true}}]}}}}
+- {"id": "agent-default-model", "config": {"provider": "llmctl", "model": "gpt-oss-20b", "reasoningEffort": "medium"}}
+- {"id": "acp", "config": {"provider": "llmctl", "model": "gpt-oss-20b"}}
+# <<< llmctl managed block <<<

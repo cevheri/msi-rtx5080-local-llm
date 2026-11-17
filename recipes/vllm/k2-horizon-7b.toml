@@ -1,10 +1,10 @@
-# Recipe from vllm/models.md#k2-horizon-7b-awq-int4; never run on the reference laptop.
+# Measured launch from vllm/models.md#k2-horizon-7b-awq-int4.
 schema = 1
 id = "k2-horizon-7b"
 name = "K2 Horizon 7B AWQ-INT4"
 aliases = ["k2-7b"]
 doc = "vllm/models.md#k2-horizon-7b-awq-int4"
-opencode = false
+opencode = true
 
 [model]
 repo = "cyankiwi/K2-Horizon-7B-AWQ-INT4"
@@ -18,11 +18,13 @@ memory_gib = 32
 [server]
 context = 65536
 args = [
+  "--gpu-memory-utilization", "0.94",
   "--trust-remote-code", "--chat-template-content-format", "string", "--max-num-seqs", "1",
   "--kv-cache-dtype", "fp8", "--attention-backend", "TRITON_ATTN", "--enable-auto-tool-choice",
   "--tool-call-parser", "k2_horizon", "--reasoning-parser", "k2_horizon",
   "--default-chat-template-kwargs", '{"reasoning_effort":"high","tool_call_format":"xml"}',
   "--override-generation-config", '{"temperature":1.0,"top_p":0.95}',
+  "--reasoning-effort-map", '{"none":"low","minimal":"low","xhigh":"high","max":"high"}',
 ]
 
 [clients]
@@ -30,6 +32,9 @@ output = 16384
 thinking = "always"
 
 [evidence]
-kind = "estimate"
-summary = "The documented vLLM recipe, not run on the reference laptop yet"
-doc = "vllm/models.md#k2-horizon-7b-awq-int4"
+kind = "measured"
+summary = "94.8 tok/s decode over full 1,500-token runs with 64k context at --gpu-memory-utilization 0.94, which the shipped launch needed, 15,384 MiB GPU peak, smoke test and tool call passed"
+decode_tok_s = 94.8
+date = "2026-11-17"
+hardware = "MSI Raider 18 Max HX A2WI, RTX 5080 Laptop GPU 16 GB, 61 GiB RAM"
+record = "research/2026-11-17/vllm-k2-horizon-7b/"

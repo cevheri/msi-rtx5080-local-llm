@@ -1,0 +1,35 @@
+{
+  "thinking_type": "always",
+  "model": "deepseek-r1-8b",
+  "results": [
+    {
+      "level": "always (default request)",
+      "request_fields": {
+        "model": "deepseek-r1-8b",
+        "messages": "one user message: What is 17 + 25? Answer with the number.",
+        "max_tokens": 8192
+      },
+      "http_status": 200,
+      "message_keys": [
+        "content",
+        "reasoning",
+        "role"
+      ],
+      "reasoning_present": true,
+      "reasoning_chars": 4106,
+      "reasoning_content_present": false,
+      "content_non_empty": true,
+      "content": "\u010aThe\u0120sum\u0120of\u012017\u0120and\u012025\u0120is\u012042.\u010a\u010a\\boxed{42}",
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 16,
+        "total_tokens": 1209,
+        "completion_tokens": 1193,
+        "prompt_tokens_details": null,
+        "completion_tokens_details": {
+          "reasoning_tokens": 1168
+        }
+      }
+    }
+  ]
+}

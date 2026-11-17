@@ -1,0 +1,9 @@
+# dsh rows for the model llmctl runs (docs/llmctl.md#clients).
+# llmctl rewrites the lines between the two markers on every ./llmctl up and keeps the rest of this file.
+# The agent-default-model and acp rows stay only while they are in the block: delete both lines to give
+# dsh's model picker its default back; ./llmctl up <model> --set-default writes them again.
+# >>> llmctl managed block: rewritten by llmctl on every start; edits here are lost >>>
+- {"id": "llm-pi-ai", "config": {"providers": {"llmctl": {"displayName": "llmctl", "api": "openai-completions", "baseURL": "http://127.0.0.1:8080/v1", "headers": {"Authorization": "Bearer no-key-required"}, "compat": {"supportsStore": false, "supportsDeveloperRole": false, "maxTokensField": "max_tokens"}, "models": [{"id": "local", "name": "gemma-4-26b-a4b on llama.cpp (llmctl)", "contextWindow": 131072, "maxTokens": 16384, "input": ["text"], "reasoningEfforts": {"off": null, "medium": "medium"}, "compat": {"thinkingFormat": "chat-template", "chatTemplateKwargs": {"enable_thinking": {"$var": "thinking.enabled"}}}}]}}}}
+- {"id": "agent-default-model", "config": {"provider": "llmctl", "model": "local", "reasoningEffort": "off"}}
+- {"id": "acp", "config": {"provider": "llmctl", "model": "local"}}
+# <<< llmctl managed block <<<

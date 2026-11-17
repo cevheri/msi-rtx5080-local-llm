@@ -1,0 +1,22 @@
+file://$HOME/.nvm/versions/node/v24.22.1/lib/node_modules/@deepseek-ai/dsh/node_modules/@deepseek-ai/dsh-app-boot/lib/index.js:4765
+		throw new Error(`${binName}: failed to parse ${label} ${file}: ${String(error)}`);
+		      ^
+
+Error: dsh: failed to parse patches {patch}: YAMLException: missed comma between flow collection entries (8:1)
+
+ 5 | # While the block holds the agen ...
+ 6 | # delete that line and the acp l ...
+ 7 | # >>> llmctl managed block: rewr ...
+ 8 | - {"id": "llm-pi-ai", "config":  ...
+-----^
+ 9 | - {"id": "agent-default-model",  ...
+ 10 | - {"id": "acp", "config": {"prov ...
+    at parsePatchList (file://$HOME/.nvm/versions/node/v24.22.1/lib/node_modules/@deepseek-ai/dsh/node_modules/@deepseek-ai/dsh-app-boot/lib/index.js:4765:9)
+    at loadOptionalPatches (file://$HOME/.nvm/versions/node/v24.22.1/lib/node_modules/@deepseek-ai/dsh/node_modules/@deepseek-ai/dsh-app-boot/lib/index.js:4717:9)
+    at collectConfigDumpLayers (file://$HOME/.nvm/versions/node/v24.22.1/lib/node_modules/@deepseek-ai/dsh/lib/dump-config-CKGOvlAq.js:47:23)
+    at runDumpConfig (file://$HOME/.nvm/versions/node/v24.22.1/lib/node_modules/@deepseek-ai/dsh/lib/dump-config-CKGOvlAq.js:26:17)
+    at Module.runCli (file://$HOME/.nvm/versions/node/v24.22.1/lib/node_modules/@deepseek-ai/dsh/lib/bin-CwxESKe-.js:240:4)
+    at async runCli (file://$HOME/.nvm/versions/node/v24.22.1/lib/node_modules/@deepseek-ai/dsh/lib/bin.js:21:2)
+    at async file://$HOME/.nvm/versions/node/v24.22.1/lib/node_modules/@deepseek-ai/dsh/lib/bin.js:25:33
+
+Node.js v24.22.1

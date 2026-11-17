@@ -1,0 +1,13 @@
+dsh: warning: 1 entry did not activate
+llmctl (@deepseek-ai/dsh-llm-pi-ai): LlmError: configurable provider "amazon-bedrock" is already declared
+    at commit (file://$HOME/.nvm/versions/node/v24.22.1/lib/node_modules/@deepseek-ai/dsh/node_modules/@deepseek-ai/dsh-llm/lib/index.js:2040:141)
+    at Proxy.<anonymous> (file://$HOME/.nvm/versions/node/v24.22.1/lib/node_modules/@deepseek-ai/dsh/node_modules/@deepseek-ai/dsh-llm/lib/index.js:2050:5)
+    at Proxy.registerConfigurableProviders (file://$HOME/.nvm/versions/node/v24.22.1/lib/node_modules/@deepseek-ai/dsh/node_modules/@deepseek-ai/dsh-llm/lib/index.js:2048:29)
+    at Object.apply (file://$HOME/.nvm/versions/node/v24.22.1/lib/node_modules/@deepseek-ai/dsh/node_modules/@deepseek-ai/cordis/lib/index.js:122:36)
+    at ensureDirectory (file://$HOME/.nvm/versions/node/v24.22.1/lib/node_modules/@deepseek-ai/dsh/node_modules/@deepseek-ai/dsh-llm-pi-ai/lib/index.js:3124:49)
+    at new apply (file://$HOME/.nvm/versions/node/v24.22.1/lib/node_modules/@deepseek-ai/dsh/node_modules/@deepseek-ai/dsh-llm-pi-ai/lib/index.js:3128:2)
+    at Fiber.execute (file://$HOME/.nvm/versions/node/v24.22.1/lib/node_modules/@deepseek-ai/dsh/node_modules/@deepseek-ai/cordis/lib/index.js:362:24)
+    at file://$HOME/.nvm/versions/node/v24.22.1/lib/node_modules/@deepseek-ai/dsh/node_modules/@deepseek-ai/cordis/lib/index.js:436:34
+    at file://$SCRATCH/laneA/home-a1.7WwGWJ/profiles/headless/#llmctl
+    at file://$SCRATCH/laneA/home-a1.7WwGWJ/profiles/headless/#include
+dsh: NO_ADAPTER: no adapter registered for provider "llmctl"

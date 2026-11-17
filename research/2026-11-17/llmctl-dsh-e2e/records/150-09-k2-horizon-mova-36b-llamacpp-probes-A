@@ -1,0 +1,42 @@
+{
+  "request": {
+    "model": "local",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a short title for a chat about adding two numbers in Python."
+      }
+    ],
+    "reasoning_effort": "none",
+    "response_format": {
+      "type": "json_schema",
+      "json_schema": {
+        "name": "session_title",
+        "strict": true,
+        "schema": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "title"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "max_tokens": 16384,
+    "stream": false
+  },
+  "status": 200,
+  "reply": "{\"choices\":[{\"finish_reason\":\"stop\",\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\n  \\\"title\\\": \\\"Python: Adding Two Numbers\\\"\\n}\",\"reasoning_content\":\"The user: \\\"Write a short title for a chat about adding two numbers in Python.\\\"\\n\\nWe need to produce a short title. Probably something like \\\"Adding Two Numbers in Python\\\" is already short, but maybe we can be creative: \\\"Python: Add Two Numbers\\\", \\\"Quick Python Addition\\\", \\\"Sum Two Numbers with Python\\\", \\\"Simple Python Addition\\\". The user wants a short title for a chat. Could be \\\"Python: Adding Two Numbers\\\". The title should be short. We'll answer with a short title.\\n\\nWe need to be mindful about the request: it's a simple request; we can comply. Provide a title. Possibly we can ask for context? But the request is clear: \\\"Write a short title for a chat about adding two numbers in Python.\\\"\\n\\nThus, answer with a title. Something like \\\"Python Quick Add: Sum Two Numbers\\\". Or \\\"Python: Adding Two Numbers\\\". Should we include quotes? Probably not; just the title.\\n\\nWe'll produce: \\\"Python: Adding Two Numbers\\\". That's short and appropriate.\\n\\nAlternatively, \\\"Add Two Numbers in Python\\\". That's also short. Provide a few options? The user asked \\\"Write a short title\\\", singular. So one title. We can give one.\\n\\nThus answer: \\\"Python: Adding Two Numbers\\\". Or \\\"Sum Two Numbers in Python\\\". Let's give one.\\n\\nI think \\\"Python: Adding Two Numbers\\\" works.\\n\\nI'll answer with a short title.\\n\"}}],\"created\":1794879106,\"model\":\"local\",\"system_fingerprint\":\"b12407-e574a17b0\",\"object\":\"chat.completion\",\"usage\":{\"completion_tokens\":307,\"prompt_tokens\":24,\"total_tokens\":331,\"prompt_tokens_details\":{\"cached_tokens\":2}},\"id\":\"chatcmpl-q4dgTtCLbckmCk6DgJrD6bWSzh7Qb4D6\",\"timings\":{\"cache_n\":2,\"prompt_n\":22,\"prompt_ms\":212.215,\"prompt_per_token_ms\":9.646136363636364,\"prompt_per_second\":103.66844944985039,\"predicted_n\":307,\"predicted_ms\":7821.802,\"predicted_per_token_ms\":25.561444444444444,\"predicted_per_second\":39.12141984673097}}",
+  "record": {
+    "probe": "A",
+    "status": 200,
+    "content": true,
+    "reasoning": true,
+    "title_ok": true
+  }
+}

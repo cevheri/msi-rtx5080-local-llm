@@ -1,0 +1,42 @@
+{
+  "request": {
+    "model": "k2-horizon-7b",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a short title for a chat about adding two numbers in Python."
+      }
+    ],
+    "reasoning_effort": "none",
+    "response_format": {
+      "type": "json_schema",
+      "json_schema": {
+        "name": "session_title",
+        "strict": true,
+        "schema": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "title"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "max_tokens": 16384,
+    "stream": false
+  },
+  "status": 400,
+  "reply": "{\"error\":{\"message\":\"Unsupported reasoning_effort 'none'. Supported values: high, medium, low.\",\"type\":\"BadRequestError\",\"param\":null,\"code\":400}}",
+  "record": {
+    "probe": "A",
+    "status": 400,
+    "content": false,
+    "reasoning": false,
+    "title_ok": false
+  }
+}

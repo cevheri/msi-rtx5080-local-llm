@@ -1,0 +1,20 @@
+{
+  "request": {
+    "model": "nemotron-3.5-lightning",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Reply with exactly the word OK."
+      }
+    ],
+    "max_tokens": 256
+  },
+  "status": 200,
+  "reply": "{\"choices\":[{\"finish_reason\":\"stop\",\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"OK\"}}],\"created\":1794878953,\"model\":\"local\",\"system_fingerprint\":\"b12407-e574a17b0\",\"object\":\"chat.completion\",\"usage\":{\"completion_tokens\":2,\"prompt_tokens\":23,\"total_tokens\":25,\"prompt_tokens_details\":{\"cached_tokens\":0}},\"id\":\"chatcmpl-LnJ58Sfkli3111Ye7uoUmyhwOT2ZE03o\",\"timings\":{\"cache_n\":0,\"prompt_n\":23,\"prompt_ms\":112.784,\"prompt_per_token_ms\":4.903652173913044,\"prompt_per_second\":203.9296354092779,\"predicted_n\":2,\"predicted_ms\":6.628,\"predicted_per_token_ms\":6.628,\"predicted_per_second\":150.8750754375377}}",
+  "record": {
+    "probe": "D",
+    "status": 200,
+    "content": true,
+    "reasoning": false
+  }
+}

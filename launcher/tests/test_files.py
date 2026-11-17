@@ -89,6 +89,46 @@ class JsonTest(unittest.TestCase):
         self.assertIn(f"cannot read {path}: ", str(caught.exception))
 
 
+class MarkerTest(unittest.TestCase):
+    BEGIN = "# >>> llmctl managed block: rewritten by llmctl on every start; edits here are lost >>>"
+    END = "# <<< llmctl managed block <<<"
+
+    def test_split_lines_and_bare(self):
+        self.assertEqual(files.split_lines("a\nb\r\nc"), ["a\n", "b\r\n", "c"])
+        self.assertEqual(files.split_lines(""), [])
+        self.assertEqual(files.split_lines("a\n"), ["a\n"])
+        self.assertEqual(files.bare("b\r\n"), "b")
+        self.assertEqual(files.bare("x\ry\n"), "x\ry")
+        self.assertEqual(files.bare("z"), "z")
+
+    def test_find_markers(self):
+        path = Path("/h/patch.yml")
+        find = lambda lines: files.find_markers(path, lines, begin=self.BEGIN, end=self.END)
+        self.assertIsNone(find(["x\n", "y\n"]))
+        self.assertIsNone(find([]))
+        self.assertEqual(find(["x\n", self.BEGIN + "\r\n", "y\n", self.END + "\n"]), (1, 3))
+        self.assertEqual(find([self.BEGIN + "\n", self.END]), (0, 1))
+        for lines, found in (([self.BEGIN + "\n"], "1 begin marker, 0 end markers"),
+                             ([self.BEGIN + "\n", self.BEGIN + "\n", self.END + "\n"], "2 begin markers, 1 end marker"),
+                             ([self.END + "\n", self.BEGIN + "\n"], "the end marker comes first")):
+            with self.subTest(found=found):
+                with self.assertRaises(ClientError) as caught:
+                    find(lines)
+                self.assertEqual(str(caught.exception), f"{path}: the llmctl block markers are damaged ({found}); "
+                                 "restore the two marker lines exactly")
+
+    def test_find_markers_skips_a_leading_byte_order_mark(self):
+        path = Path("/h/patch.yml")
+        find = lambda lines: files.find_markers(path, lines, begin=self.BEGIN, end=self.END)
+        self.assertEqual(find(["\ufeff" + self.BEGIN + "\n", "x\n", self.END + "\n"]), (0, 2))
+        self.assertEqual(find(["\ufeff" + self.BEGIN + "\r\n", self.END]), (0, 1))
+        for lines in (["x\n", "\ufeff" + self.BEGIN + "\n", self.END + "\n"],
+                      [self.BEGIN + "\n", "\ufeff" + self.END + "\n"]):
+            with self.subTest(lines=lines):
+                with self.assertRaises(ClientError):
+                    find(lines)
+
+
 class WriteTest(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()

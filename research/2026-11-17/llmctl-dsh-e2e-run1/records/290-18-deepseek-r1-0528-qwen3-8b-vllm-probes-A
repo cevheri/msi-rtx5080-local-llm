@@ -1,0 +1,42 @@
+{
+  "request": {
+    "model": "deepseek-r1-8b",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a short title for a chat about adding two numbers in Python."
+      }
+    ],
+    "reasoning_effort": "none",
+    "response_format": {
+      "type": "json_schema",
+      "json_schema": {
+        "name": "session_title",
+        "strict": true,
+        "schema": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "title"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "max_tokens": 16384,
+    "stream": false
+  },
+  "status": 200,
+  "reply": "{\"id\":\"chatcmpl-ab1d9a4d6129c55c\",\"object\":\"chat.completion\",\"created\":1794877736,\"model\":\"deepseek-r1-8b\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"title\\\":Ġ\\\"AddĠTwoĠNumbersĠinĠPython\\\"}\",\"refusal\":null,\"annotations\":null,\"audio\":null,\"function_call\":null,\"reasoning\":\"ĊWeĠareĠgoingĠtoĠwriteĠaĠfunctionĠthatĠaddsĠtwoĠnumbersĠinĠPython.ĊĠWeĠassumeĠtheĠtwoĠnumbersĠcanĠbeĠintegersĠorĠfloats.ĊĠWe'llĠcreateĠaĠfunctionĠnamedĠ`add_numbers`ĠthatĠtakesĠtwoĠparametersĠandĠreturnsĠtheirĠsum.Ċ\"},\"logprobs\":null,\"finish_reason\":\"stop\",\"stop_reason\":null,\"token_ids\":null,\"routed_experts\":null,\"weight_versions\":null}],\"service_tier\":null,\"system_fingerprint\":\"vllm-0.33.0-a1a729cb\",\"usage\":{\"prompt_tokens\":19,\"total_tokens\":77,\"completion_tokens\":58,\"prompt_tokens_details\":null,\"completion_tokens_details\":{\"reasoning_tokens\":45}},\"prompt_logprobs\":null,\"prompt_token_ids\":null,\"prompt_text\":null,\"kv_transfer_params\":null,\"ec_transfer_params\":null,\"metrics\":null}",
+  "record": {
+    "probe": "A",
+    "status": 200,
+    "content": true,
+    "reasoning": true,
+    "title_ok": false
+  }
+}

@@ -1,11 +1,13 @@
 # vLLM on the RTX 5080 Laptop
 
-Last verified: 2026-11-15.
+Last verified: 2026-11-17.
 
-Use vLLM here only for models whose whole checkpoint fits in about 14.65 GiB of VRAM with room left for the KV cache: from the ranked picks, gpt-oss-20b as a 64k-context option, Groot-19B-A3B-261023 NVFP4 (W4A16), the weaker K2 Horizon 7B AWQ-INT4 path and DeepSeek-R1-0528-Qwen3-8B (chat only), plus Gemma 4 12B QAT W4A16 as the vLLM-native honorable mention ([model-selection.md](../docs/model-selection.md)).
+Use vLLM here only for models whose whole checkpoint fits in about 14.65 GiB of VRAM with room left for the KV cache: from the ranked picks, gpt-oss-20b as a 64k-context option, Groot-19B-A3B-261023 NVFP4 (W4A16), and the weaker K2 Horizon 7B AWQ-INT4 path, plus Gemma 4 12B QAT W4A16 as the vLLM-native honorable mention ([model-selection.md](../docs/model-selection.md)).
+DeepSeek-R1-0528-Qwen3-8B (chat only) is not a vLLM use: on vLLM v0.33.0 it starts but every reply comes back garbled, because the image loads its tokenizer with the wrong class ([record](../research/2026-11-17/vllm-deepseek-r1-0528-qwen3-8b/)); run it on llama.cpp.
 Every larger model (Qwen3.8-27B, Qwen3.6-35B-A3B, K2 Horizon MoVA, Gemma 4 26B-A4B, Qwen3-Coder-Next, Nemotron 3.5 Bolt) runs on llama.cpp, because none fits the budget and vLLM v0.33.0 silently undoes MoE expert CPU offload for Marlin-repacked weights ([#66264](https://github.com/vllm-project/vllm/issues/66264)) and llama.cpp's `--n-cpu-moe` works ([llama.cpp README](../llamacpp/README.md)).
 The pinned image is `vllm/vllm-openai:v0.33.0`, started on demand with CDI GPU access, a localhost-only port and a hard RAM cap.
-Nothing in this document has been run on this laptop yet: every context, memory and speed figure is either read from source code or an estimate.
+gpt-oss-20b ran on this laptop on 2026-11-16 ([attempts](../research/2026-11-16/vllm-gpt-oss-20b/attempts.md)) and the seven other recipes on 2026-11-17 ([records](../research/2026-11-17/README.md)), with the results in [benchmarking.md](benchmarking.md#results) and [models.md](models.md).
+Every figure without a measured label is read from source code or an estimate.
 
 Per-model commands live in [models.md](models.md), benchmarking in [benchmarking.md](benchmarking.md), the ranked picks in [model-selection.md](../docs/model-selection.md), host prerequisites in [host-setup.md](../docs/host-setup.md) and the OpenCode side in [opencode.md](../docs/opencode.md).
 
@@ -15,7 +17,7 @@ Per-model commands live in [models.md](models.md), benchmarking in [benchmarking
 |---|---|---|
 | Dense or small MoE checkpoint at or below about 13 GiB, official or vendor 4-bit build exists | vLLM | Full model in VRAM, OpenAI-compatible server with tool and reasoning parsers, prefix caching on by default ([cache.py](https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/config/cache.py)). |
 | MoE checkpoint larger than the 14.65 GiB budget | llama.cpp | vLLM expert offload is undone for Marlin-repacked weights ([#66264](https://github.com/vllm-project/vllm/issues/66264)); the smallest Qwen3.6-35B-A3B vLLM build (Intel AutoRound int4, 18.75 GiB language-model-only) does not fit ([HF API](https://huggingface.co/api/models/Intel/Qwen3.6-35B-A3B-int4-mixed-AutoRound?blobs=true)). |
-| gpt-oss-20b at 128k context | llama.cpp | vLLM reaches about 64k only with `--gpu-memory-utilization 0.95` plus FP8 KV (estimate, see [Memory budget](#memory-budget)). |
+| gpt-oss-20b at 128k context | llama.cpp | vLLM reaches 65536 only with `--gpu-memory-utilization 0.965`, `--enforce-eager`, 256 batched tokens and FP8 KV, at half the llama.cpp decode speed (measured on the MSI Raider 18 Max HX, vLLM v0.33.0, 2026-11-16; see [Memory budget](#memory-budget)). |
 | GGUF file, or a bitsandbytes checkpoint | llama.cpp | GGUF and bitsandbytes are out-of-tree vLLM plugins and are not in the image ([gguf.md](https://github.com/vllm-project/vllm/blob/v0.33.0/docs/features/quantization/gguf.md), [bnb.md](https://github.com/vllm-project/vllm/blob/v0.33.0/docs/features/quantization/bnb.md)). |
 | Brand-new architecture | Check the model card's minimum vLLM version first | Model support ships inside the vLLM version; an older image fails at startup with "Model architectures [...] are not supported for now" ([registry.py](https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/model_executor/models/registry.py)). |
 
@@ -182,12 +184,26 @@ Measured on this laptop on 2026-11-16, the method below was too optimistic in th
 - Weights in GPU memory can exceed the file size: gpt-oss-20b loads as 13.8 GiB against 12.82 GiB of safetensors on the MXFP4 Marlin path (observed).
 - The reserve is larger than 1.2 GiB: activations, CUDA graphs and non-torch memory took about 2.1 GiB with the defaults (2,048 batched tokens, 0.40 GiB of CUDA graphs) and about 1.7 GiB with 1,024 batched tokens and four small graph sizes (derived from the logged budget and KV figures).
 
-So use 15.47 GiB as the total, add about 1 GiB to the file size for Marlin-repacked quantized weights (one observation so far), and plan a reserve of about 2 GiB; every context estimate in [models.md](models.md) that used the old method is likely 1.5 to 2.5 GiB too generous and must be checked against the first startup log.
+On 2026-11-17 the first starts of the seven other recipes, all at the default 0.92, gave KV pools that missed the old-method estimates of [models.md](models.md) in both directions ([records](../research/2026-11-17/README.md)) (measured on the MSI Raider 18 Max HX, vLLM v0.33.0, 2026-11-17):
+
+| Recipe | Estimated weights | Loaded weights | Estimated pool | Measured pool | Miss |
+|---|---|---|---|---|---|
+| K2 Horizon 7B (cold compile cache) | 7.56 GiB | 7.72 GiB | 5.88 GiB | 4.44 GiB | -1.44 GiB |
+| Qwen3.5-9B | 7.42 GiB | 7.48 GiB | 6.03 GiB | 4.71 GiB | -1.32 GiB |
+| DeepSeek-R1-0528-Qwen3-8B (cold compile cache) | 8.79 GiB | 9.12 GiB | 4.66 GiB | 3.83 GiB | -0.83 GiB |
+| Groot-19B-A3B | 10.94 GiB | 10.99 GiB | 2.45 GiB | 1.87 GiB | -0.58 GiB |
+| Gemma 4 E4B (`--enforce-eager`) | 9.83 GiB | 10.13 GiB | 3.62 GiB | 3.67 GiB | +0.05 GiB |
+| Mellum2.1 | 7.15 GiB | 7.20 GiB | 6.30 GiB | 6.37 GiB | +0.07 GiB |
+| Gemma 4 12B | 9.56 GiB | 8.28 GiB | 3.89 GiB | 5.37 GiB | +1.48 GiB |
+
+The estimates used a 14.65 GiB budget and a 1.2 GiB reserve; with the measured 14.23 GiB budget, the rest of each start (activations, CUDA graphs and non-torch memory) took 0.4 to 2.1 GiB (derived from the logged budget, weights and pool of each start).
+So use 15.47 GiB as the total, take the weights from the `Model loading took` line once a model has started, because they came out 1.28 GiB below to 0.33 GiB above the file-size estimates (and about 1 GiB above for gpt-oss-20b's MXFP4 Marlin path), and plan a reserve of about 2 GiB unless a startup log shows less.
+An unmeasured context estimate in [models.md](models.md) can miss its pool by about 1.5 GiB either way, so check it against the first startup log (estimate).
 
 1. Budget: `--gpu-memory-utilization` defaults to 0.92 in v0.33.0 ([cache.py](https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/config/cache.py)).
    The original estimate used 16303 MiB x 0.92 = 14.65 GiB; the measured basis is 15.47 GiB x 0.92 = 14.23 GiB, and 0.965 (14.93 GiB) is the highest value that started here.
 2. Weights: the real on-disk size of the checkpoint files vLLM loads (language model only when you pass `--language-model-only`).
-3. Reserve: originally 1.2 GiB for activations, CUDA graphs and non-torch allocations; measured about 1.7 to 2.1 GiB (compare against the "Available KV cache memory" line in the startup log, [gpu_worker.py](https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/v1/worker/gpu_worker.py)).
+3. Reserve: originally 1.2 GiB for activations, CUDA graphs and non-torch allocations; measured about 1.7 to 2.1 GiB for gpt-oss-20b and 0.4 to 2.1 GiB for the 2026-11-17 recipes (compare against the "Available KV cache memory" line in the startup log, [gpu_worker.py](https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/v1/worker/gpu_worker.py)).
 4. KV pool = budget - weights - reserve.
 5. KV per token = 2 (K and V) x full-attention layers x KV heads x head dim x bytes per element (2 for BF16, 1 for FP8).
    Linear-attention (GDN, Mamba) and sliding-window layers add a bounded amount instead of a per-token cost.
@@ -221,7 +237,7 @@ All flags exist in v0.33.0 ([arg_utils.py](https://github.com/vllm-project/vllm/
 |---|---|---|---|
 | `--served-model-name` | API-visible model id | Short name equal to the OpenCode `modelID` | [arg_utils.py](https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/engine/arg_utils.py) |
 | `--max-model-len` | Context limit | From the memory budget; 65536 is the practical floor for OpenCode | [opencode.md](../docs/opencode.md) |
-| `--gpu-memory-utilization` | Fraction of total VRAM vLLM claims | Default 0.92; 0.95 only for gpt-oss-20b at 64k | [cache.py](https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/config/cache.py) |
+| `--gpu-memory-utilization` | Fraction of total VRAM vLLM claims | Default 0.92; 0.965 with `--enforce-eager` for gpt-oss-20b at 64k, 0.94 for K2 Horizon 7B | [cache.py](https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/config/cache.py) |
 | `--kv-cache-dtype` | KV element type | `auto` (BF16) where context fits; `fp8` to double context; never `fp8_e5m2` ([#41343](https://github.com/vllm-project/vllm/issues/41343)) | [cache.py](https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/config/cache.py) |
 | `--attention-backend` | Force an attention backend | `TRITON_ATTN` with FP8 KV, for gpt-oss, and for Mistral3 | [cuda.py](https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/platforms/cuda.py) |
 | `--max-num-seqs` | Concurrent sequences | 1-4 (default 256 for the API server on a GPU under 70 GiB) | [arg_utils.py](https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/engine/arg_utils.py) |
@@ -290,7 +306,7 @@ For DeepSeek R1 distills the `enable_thinking` kwarg is "harmlessly filtered out
 | Checkpoint format | Kernel path on sm_120 in v0.33.0 | Notes | Source |
 |---|---|---|---|
 | MXFP4 MoE (gpt-oss) | MARLIN with BF16 activations by default, then BATCHED_MARLIN, TRITON, HUMMING | The source keeps OAI Triton opt-in on consumer Blackwell because its 99 KB shared-memory budget caps tile size and Marlin prefills about 10% faster | [mxfp4.py](https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/model_executor/layers/fused_moe/oracle/mxfp4.py) |
-| NVFP4 W4A16 (weights FP4, activations BF16), and int4 W4A16 compressed-tensors such as Google's Gemma 4 QAT | Marlin | No FlashInfer FP4 JIT, so no first-start RAM spike (inferred from source, not measured); the Groot NVFP4 and Gemma 4 12B builds in [models.md](models.md) use this path | [kernels/linear/\_\_init\_\_.py](https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/model_executor/kernels/linear/__init__.py) |
+| NVFP4 W4A16 (weights FP4, activations BF16), and int4 W4A16 compressed-tensors such as Google's Gemma 4 QAT | Marlin | No FlashInfer FP4 JIT, so no first-start RAM spike (inferred from source; RAM was not traced); the Groot NVFP4 and Gemma 4 12B builds in [models.md](models.md) use this path, and their startup logs on this laptop name `MarlinNvFp4LinearKernel` and the `MARLIN` NvFp4 MoE backend for Groot and `MarlinLinearKernel` for Gemma 4 12B (measured on the MSI Raider 18 Max HX, vLLM v0.33.0, 2026-11-17; [Groot record](../research/2026-11-17/vllm-groot-19b-a3b/README.md), [Gemma 4 12B record](../research/2026-11-17/vllm-gemma-4-12b/README.md)) | [kernels/linear/\_\_init\_\_.py](https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/model_executor/kernels/linear/__init__.py) |
 | NVFP4 W4A4 (ModelOpt-style, FP4 activations) | FlashInfer CUTLASS for MoE and `FlashInferCutlassNvFp4LinearKernel` for dense GEMM | First start JIT-compiles `fp4_gemm_cutlass_sm120` at about 6 GiB per compile job, about 52 GiB by default; set `MAX_JOBS=2` (about 14-16 GiB, about 8.5 min); fix PR [#66864](https://github.com/vllm-project/vllm/pull/66864) open | [#46268](https://github.com/vllm-project/vllm/issues/46268) |
 | FP8 weights, MoE | Triton (no CUTLASS FP8 MoE on SM120) | Slower MoE path | [#43507](https://github.com/vllm-project/vllm/issues/43507) |
 | GGUF, bitsandbytes | Not in the image | Out-of-tree `vllm-gguf-plugin` and `vllm-bnb-plugin` need a derived image; use llama.cpp for GGUF | [gguf.md](https://github.com/vllm-project/vllm/blob/v0.33.0/docs/features/quantization/gguf.md), [bnb.md](https://github.com/vllm-project/vllm/blob/v0.33.0/docs/features/quantization/bnb.md) |
@@ -361,6 +377,12 @@ State as read on GitHub on 2026-11-15.
 | [#42348](https://github.com/vllm-project/vllm/issues/42348) Gemma 4 KV-cache CPU offloading broken | KV offloading unusable for Gemma 4 | Open | Do not enable it for Gemma 4 |
 | [#41343](https://github.com/vllm-project/vllm/issues/41343) `fp8_e5m2` KV silently corrupts output | Wrong answers | Open | Use `fp8` (e4m3) only |
 | [#66423](https://github.com/vllm-project/vllm/issues/66423) segfault with a reasoning parser on SM120 NVFP4 W4A4 | Not confirmed: two others could not reproduce it | Open | Note only |
+
+One more issue was measured on this laptop: a model's first vLLM start, with an empty torch.compile cache in the `vllm-cache` volume, left less KV cache memory than later starts with the cache warm.
+K2 Horizon 7B had 4.44 GiB of KV cache at util 0.92 cold against 6.54 GiB at 0.94 warm, a gain of 2.10 GiB of which the 0.02 utilization step explains only 0.31 GiB ([attempts](../research/2026-11-17/vllm-k2-horizon-7b/attempts.md)).
+DeepSeek-R1-0528-Qwen3-8B had 3.83 GiB at 0.92 cold, short of the 4.5 GiB its 65536 context needs ([attempts](../research/2026-11-17/vllm-deepseek-r1-0528-qwen3-8b/attempts.md)) (measured on the MSI Raider 18 Max HX, vLLM v0.33.0, 2026-11-17), and both e2e runs later started it at 0.92 in 25 s and 24 s ([first run's record 277](../research/2026-11-17/llmctl-dsh-e2e-run1/records/277-18-deepseek-r1-0528-qwen3-8b-vllm-up), [second run's record 276](../research/2026-11-17/llmctl-dsh-e2e/records/276-18-deepseek-r1-0528-qwen3-8b-vllm-up)) with the compile cache warm (inferred from those short starts; the records hold no server log, and the compile cache as the cause is not proven).
+A search of the vLLM issues on 2026-11-17 (`gh search issues --repo vllm-project/vllm` for "cold-cache KV cache", "cold start kv cache", "warm cache KV cache", "compile cache KV cache", "first startup KV cache smaller" and "torch.compile cache memory profiling") found one related report, [#62277](https://github.com/vllm-project/vllm/issues/62277) (open): a cold-cache start that ran out of memory while allocating the KV cache with `--kv-cache-memory-bytes` and `--enable-sleep-mode`, which it blames on allocator reservations the profile run leaves behind; these recipes use neither flag, so it is not the same issue (inferred from its description).
+So a recipe that starts with a warm cache may fail on a cold one, after a new image or a cleared `vllm-cache` volume; when a first start lacks KV cache by a small margin, start it once more at the same utilization before raising `--gpu-memory-utilization` (estimate).
 
 ## Smoke tests
 

@@ -1,0 +1,4 @@
+dsh: [$SCRATCH/laneA/home-a4.xsHPj9/cordis.patch.yml] patch: entry "llm-pi-ai" not found
+dsh: [$SCRATCH/laneA/home-a4.xsHPj9/cordis.patch.yml] patch: entry "agent-default-model" not found
+dsh: [$SCRATCH/laneA/home-a4.xsHPj9/cordis.patch.yml] patch: entry "acp" not found
+dsh: [$SCRATCH/laneA/home-a4.xsHPj9/cordis.patch.yml] patch: entry "session-telemetry-otel" not found

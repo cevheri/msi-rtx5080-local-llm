@@ -1,13 +1,14 @@
 # Model selection
 
-Last verified: 2026-11-16.
+Last verified: 2026-11-17.
 
 Use Qwen3.6-35B-A3B on llama.cpp as the default, the user's choice on 2026-11-16 after it measured 122 tok/s with 128k context.
 Switch to Qwen3.8-27B on llama.cpp when a task needs the strongest model: it keeps rank 1 on quality evidence, at 36 tok/s and 64k context.
 The new K2 Horizon models (MoVA 36B A4B and 7B) are the next two picks: both have independent agentic scores, but both cap out around 64k and always think.
-All ten picks run on llama.cpp `server-cuda-b12407`; vLLM v0.33.0 is a secondary path with options for Groot, K2 Horizon 7B and DeepSeek-R1-0528-Qwen3-8B, and on 2026-11-16 it ran gpt-oss-20b only in eager mode at half the llama.cpp speed (measured).
+All ten picks run on llama.cpp `server-cuda-b12407`; vLLM v0.33.0 is a secondary path with options for Groot and K2 Horizon 7B (DeepSeek-R1-0528-Qwen3-8B fails there with garbled replies, [record](../research/2026-11-17/vllm-deepseek-r1-0528-qwen3-8b/)), and on 2026-11-16 it ran gpt-oss-20b only in eager mode at half the llama.cpp speed (measured).
+On 2026-11-17 vLLM ran Groot NVFP4 at 193 tok/s with 128k over runs of 780 to 829 tokens and K2 Horizon 7B AWQ-INT4 at 95 tok/s with 64k over full 1,500-token runs, the latter only at `--gpu-memory-utilization 0.94`, while DeepSeek-R1-0528-Qwen3-8B started but garbled every reply because of its tokenizer class ([vllm/models.md](../vllm/models.md)).
 All ten ranks were measured on this laptop on 2026-11-16, all on llama.cpp: Qwen3.8-27B decodes at 36 tok/s with 64k context, K2 Horizon MoVA at 37 tok/s with 64k, Qwen3.6-35B-A3B at 122 tok/s and Gemma 4 26B-A4B at 148 tok/s with 128k once their RAM-resident experts are cached on the GPU, K2 Horizon 7B at 67 tok/s with 80k, Qwen3-Coder-Next at 72 tok/s with 128k (59 tok/s after a 101k prompt), Groot at 170 tok/s with 128k all in VRAM, Nemotron 3.5 Bolt at 74 tok/s with 128k, gpt-oss-20b at 166 tok/s, and the chat-only DeepSeek-R1-0528-Qwen3-8B at 71 tok/s.
-Every other context and speed figure below is an estimate or a third-party number, and each of those picks needs a smoke test before use.
+Every other context and speed figure below is an estimate or a third-party number unless it carries a measured label, and each pick without one needs a smoke test before use.
 
 ## Decision summary
 
@@ -135,7 +136,7 @@ Sampling: temperature 1.0, top_p 0.95 ([card](https://huggingface.co/IFM/K2-Hori
 Caveats: it only matches Qwen3.6 on TB2.1, and Qwen3.6 leads on SciCode (36.6 vs 27.5), LCR (71.7 vs 69.7) and HLE (22.2 vs 18.2) on AA.
 Output is long and context is 80k, not 128k.
 The vendor's SWE-bench Verified 72.4 is not confirmed independently, the IFM org is not HF-verified, and runtime support is new.
-vLLM is a weak alternative: `cyankiwi/K2-Horizon-7B-AWQ-INT4` (7.56 GiB) with FP8 KV and `TRITON_ATTN` leaves about 85.7k tokens (estimate), but those are pre-FTPO weights (inferred) and [vLLM #62743](https://github.com/vllm-project/vllm/issues/62743) breaks medium and low effort; support starts at v0.30.0 ([registry at v0.30.0](https://raw.githubusercontent.com/vllm-project/vllm/v0.30.0/vllm/model_executor/models/registry.py), [recipe](https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/recipes/models/IFM/K2-Horizon-7B.yaml)).
+vLLM is a weak alternative: `cyankiwi/K2-Horizon-7B-AWQ-INT4` with FP8 KV and `TRITON_ATTN` reached 65536 only at `--gpu-memory-utilization 0.94`, with 95,168 KV tokens and 94.8 tok/s over full 1,500-token runs (measured on the MSI Raider 18 Max HX, vLLM v0.33.0, 2026-11-17), but those are pre-FTPO weights (inferred) and [vLLM #62743](https://github.com/vllm-project/vllm/issues/62743) breaks medium and low effort; support starts at v0.30.0 ([registry at v0.30.0](https://raw.githubusercontent.com/vllm-project/vllm/v0.30.0/vllm/model_executor/models/registry.py), [recipe](https://raw.githubusercontent.com/vllm-project/vllm/v0.33.0/recipes/models/IFM/K2-Horizon-7B.yaml)).
 Evidence: independent (Artificial Analysis) plus vendor; memory and speed measured on this laptop.
 
 ### 5. Gemma 4 26B-A4B IT
@@ -196,7 +197,7 @@ Why: Borda 8 with 5 points (quality 10, practicality 7).
 It is the most practical fast option: fully in VRAM at 128k on llama.cpp, measured on 2026-11-16 at 169.8 tok/s, 112.6 tok/s after a 107k prompt and a 13,822 MiB peak ([llamacpp/models.md](../llamacpp/models.md#8-groot-19b-a3b-261023)), with the same Qwen3-Coder XML tool format and parsers as Qwen3.6 in both pinned runtimes.
 It reads about 2.06 GB per token, so its decode bound is very high (inferred).
 One third-party run exists ([Blackwall](https://guitaripod.github.io/blackwall/#groot-19b-a3b-nvfp4~medium): tools 100, quality index 78.5), without a Qwen3.6 comparator.
-Second path: vLLM v0.33.0 with `GrootTeam/Groot-19B-A3B-261023-NVFP4` and `--language-model-only` (10.94 GiB, W4A16 experts on Marlin), about 128.5k tokens with BF16 KV (estimate); the hybrid GDN NVFP4 crash under load ([vLLM #54331](https://github.com/vllm-project/vllm/issues/54331)) is a risk, so keep `--enforce-eager` in reserve.
+Second path: vLLM v0.33.0 with `GrootTeam/Groot-19B-A3B-261023-NVFP4` and `--language-model-only` (10.99 GiB loaded, weight-only FP4 experts on Marlin), 131072 with FP8 KV, 167,480 KV tokens and 193.4 tok/s with thinking off over runs of 780 to 829 tokens (measured on the MSI Raider 18 Max HX, vLLM v0.33.0, 2026-11-17); the hybrid GDN NVFP4 crash under load ([vLLM #54331](https://github.com/vllm-project/vllm/issues/54331)) is a risk, so keep `--enforce-eager` in reserve.
 Thinking: toggle, on by default (Qwen3.6-style).
 Sampling: precise coding temperature 0.6, top_p 0.95, top_k 20, presence 0; general thinking temperature 1.0, top_p 0.95, top_k 20, presence 1.5; non-thinking temperature 0.7, top_p 0.8, top_k 20, presence 1.5 ([card](https://huggingface.co/GrootTeam/Groot-19B-A3B-261023/raw/main/README.md)).
 Caveats: all agentic scores are self-reported, some Qwen3.6 baselines were copied from Qwen's card rather than run, and on the vendor's own chart Groot loses to its base on SWE-bench Verified (31.66 vs 36.27).
@@ -232,6 +233,7 @@ The [tokenizer chat template](https://huggingface.co/deepseek-ai/DeepSeek-R1-052
 Do not set `capabilities.tools` for it in OpenCode: in a test on 2026-11-16 with tools enabled it wrote the `write` tool's arguments as text instead of calling the tool, although a one-tool probe request did parse.
 Sampling: temperature 0.6, top_p 0.95 ([card](https://huggingface.co/deepseek-ai/DeepSeek-R1-0528-Qwen3-8B/raw/main/README.md)).
 Caveats: it is old and superseded by small Qwen3.x models; on vLLM, `--quantization fp8` is deprecated in v0.33.0 (use `fp8_per_tensor`) and [vLLM #59738](https://github.com/vllm-project/vllm/issues/59738) leaves `deepseek_r1` streaming reasoning deltas undetokenized.
+On vLLM v0.33.0 it does not work at all: on 2026-11-17 its first start, with an empty torch.compile cache, failed at the default `--gpu-memory-utilization 0.92`, later starts with the cache warm worked at 0.92, and the image's transformers loaded its tokenizer as a Metaspace `LlamaTokenizer`, so prompts lost their spaces and every reply came back garbled ([record](../research/2026-11-17/vllm-deepseek-r1-0528-qwen3-8b/)); use llama.cpp.
 Evidence: independent (Artificial Analysis) plus vendor; memory, speed and the tool failure measured on this laptop.
 
 ## Capability lists
@@ -305,13 +307,13 @@ Ternary Bonsai 2 27B is fast and fits at 128k with q8_0 KV (Q2_0 7.10 GiB, about
 | Model | Role | Reason |
 |---|---|---|
 | [Nanbeige4.3-33B](https://artificialanalysis.ai/models/nanbeige4-3-33b) | Trial candidate | Borda rank 10 (3 points), displaced by the required DeepSeek swap; re-judge after PR #31986 ships and a smoke test passes |
-| [Gemma 4 12B IT](https://huggingface.co/google/gemma-4-12B-it/raw/main/README.md) | vLLM-native Gemma, fast fallback or sub-agent | 3 points; official QAT W4A16 at 9.56 GiB, 128k with FP8 KV; AA TB2.1 27.3; open gemma4 parser bugs remain |
+| [Gemma 4 12B IT](https://huggingface.co/google/gemma-4-12B-it/raw/main/README.md) | vLLM-native Gemma, fast fallback or sub-agent | 3 points; official QAT W4A16 at 9.56 GiB, 128k with FP8 KV at 69.5 tok/s over runs of 885 to 933 tokens (measured on the MSI Raider 18 Max HX, vLLM v0.33.0, 2026-11-17); AA TB2.1 27.3; open gemma4 parser bugs remain |
 | [GLM-4.7-Flash](https://huggingface.co/zai-org/GLM-4.7-Flash/raw/main/README.md) | Alternative MoE | 2 points; AA tau2 98.8 and TB-Hard 22.0 but no TB2.1, older (2026-01); unsloth Q4_K_M 17.05 GiB with `--n-cpu-moe 20` (17-18 is too tight because block 0 is dense) |
 | [NVIDIA Nemotron 3.5 Lightning 30B-A3B](https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16/raw/main/README.md) | Fallback if Bolt does not fit | Previous rank 6; ggml-org Q4_0 17.60 GiB with `--n-cpu-moe 25`, `-lm none` and a 3,200 MiB expert cache, measured on 2026-11-16 at 128k: 143.6 tok/s decode, 128 tok/s after a 104k prompt, 15,106 MiB peak, tool test and OpenCode session passed ([llamacpp/models.md](../llamacpp/models.md#nemotron-35-lightning-30b-a3b-fallback-if-bolt-does-not-fit)); TB2.1 24.58 in the Lightning card's NVIDIA table (23.46 in the Bolt card's table), AA 24.3; first-hand 30/30 in the user's harness with thinking on (measured on the M5 Max, libredb-studio; [agent-harness-evidence.md](agent-harness-evidence.md)), which Bolt lacks |
 | [Qwen3-Coder-30B-A3B-Instruct](https://ollama.com/library/qwen3-coder/tags) | Fast non-thinking tool-calling worker or sub-agent | In the user's harness it was the most reliable and among the fastest: 30/30, every cell on its first attempt, 11 s median run (measured on the M5 Max, libredb-studio; [agent-harness-evidence.md](agent-harness-evidence.md)); its coding scores (independent SWE-bench Verified 31.8, TB2.1 13.5) keep it out of the top 10, and here its experts partly spill to RAM (Ollama 19 GB; llama.cpp with `--n-cpu-moe` about 20, estimate), so the Mac's speed will not carry over |
-| [Mellum2.1 12B-A2.5B Thinking](https://huggingface.co/JetBrains/Mellum2.1-12B-A2.5B-Thinking/raw/main/README.md) | Fast sub-agent | Fully in VRAM with 128k on either runtime (GGUF Q6_K 10.13 GiB, vLLM AWQ-INT4 7.15 GiB); vendor-only, weaker than Qwen3.5-9B in its own table |
+| [Mellum2.1 12B-A2.5B Thinking](https://huggingface.co/JetBrains/Mellum2.1-12B-A2.5B-Thinking/raw/main/README.md) | Fast sub-agent | Fully in VRAM with 128k on either runtime (GGUF Q6_K 10.13 GiB, vLLM AWQ-INT4 7.15 GiB, 257.2 tok/s with thinking on over runs of 1,171 to 1,500 tokens (measured on the MSI Raider 18 Max HX, vLLM v0.33.0, 2026-11-17)); vendor-only, weaker than Qwen3.5-9B in its own table |
 | [KAT-Coder-V2.5-Dev](https://huggingface.co/Kwaipilot/KAT-Coder-V2.5-Dev/raw/main/README.md) | Qwen3.6 fine-tune | Same runtime as Qwen3.6; in-house SWE-bench Verified 69.4 and TB2.1 41.02, contested; try it only if your own tests beat Qwen3.6 |
-| [Qwen3.5-9B](https://huggingface.co/RedHatAI/Qwen3.5-9B-NVFP4) | Conservative vLLM-native 9B | RedHatAI NVFP4 7.42 GiB, 131k, build with `MAX_JOBS=2`; use it if every vendor-only small model is rejected |
+| [Qwen3.5-9B](https://huggingface.co/RedHatAI/Qwen3.5-9B-NVFP4) | Conservative vLLM-native 9B | RedHatAI NVFP4 7.42 GiB, 131k at 90.8 tok/s over runs of 676 to 791 tokens (measured on the MSI Raider 18 Max HX, vLLM v0.33.0, 2026-11-17), build with `MAX_JOBS=2`; use it if every vendor-only small model is rejected |
 
 ## Excluded models
 
@@ -337,7 +339,7 @@ Ternary Bonsai 2 27B is fast and fits at 128k with q8_0 KV (Q2_0 7.10 GiB, about
 
 ## What to measure first
 
-All ten ranks were measured on 2026-11-16 (items 3 to 8 below, and Gemma 4, Qwen3-Coder-Next, gpt-oss-20b and DeepSeek-R1 in their own sections); the rest has not been run on this laptop.
+All ten ranks were measured on 2026-11-16 (items 3 to 8 below, and Gemma 4, Qwen3-Coder-Next, gpt-oss-20b and DeepSeek-R1 in their own sections); on 2026-11-17 the vLLM honorable mentions Gemma 4 12B, Qwen3.5-9B and Mellum2.1, plus Gemma 4 E4B, were measured on vLLM ([research/2026-11-17/README.md](../research/2026-11-17/README.md)); the rest has not been run on this laptop.
 Record each result with the template in [llamacpp/benchmarking.md](../llamacpp/benchmarking.md) or [vllm/benchmarking.md](../vllm/benchmarking.md), and note the power limit.
 
 1. Done on 2026-11-15: the NVIDIA Container Toolkit with CDI is installed and `docker run --device nvidia.com/gpu=all` sees the RTX 5080 Laptop GPU and runs a CUDA kernel ([install record](../research/2026-11-15/probes/toolkit-install.md)).
@@ -392,7 +394,7 @@ The earlier ranking is the first-run synthesis of 2026-11-15, before the new-can
 Audit fixes applied in this document:
 
 - `GGML_CUDA_DISABLE_GRAPHS=1` is a `docker -e` flag placed before the image and applies to every llama.cpp command.
-- gpt-oss-20b runs primarily on llama.cpp, with vLLM as an option at 64k using utilization 0.95, FP8 KV and `TRITON_ATTN`.
+- gpt-oss-20b runs primarily on llama.cpp, with vLLM as an option at 64k using utilization 0.965, `--enforce-eager`, FP8 KV and `TRITON_ATTN`.
 - #28581 is no longer given as the reason to avoid the CUDA 13 image; the reason is `cuda>=13.5`; a soft IQ-quant sanity note remains for Qwen3-Coder-Next.
 - `--n-cpu-moe` is described as counting blocks from 0.
 - The smallest vLLM checkpoint for Qwen3.6 is the 18.75 GiB AutoRound (language model only).

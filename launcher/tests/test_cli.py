@@ -78,7 +78,16 @@ class CliTest(unittest.TestCase):
         self.assertTrue(err.startswith("error: "), err)
         self.assertNotIn("Traceback", err)
 
+    def estimate_override(self):
+        """vLLM gemma-4-12b as an override, which show --as-override marks as an estimate whatever the shipped file says."""
+        shown = self.host()
+        self.assertEqual(main(["show", "gemma-4-12b", "--runtime", "vllm", "--as-override"], shown), 0)
+        path = self.overrides / "vllm" / "gemma-4-12b.toml"
+        path.parent.mkdir(parents=True)
+        path.write_text(shown.out.getvalue())
+
     def test_list_shows_measured_and_estimate(self):
+        self.estimate_override()
         host = self.host()
         self.assertEqual(main(["list"], host), 0)
         out = host.out.getvalue()
@@ -145,6 +154,7 @@ class CliTest(unittest.TestCase):
         self.assertNotIn("but no model is running", out)
 
     def test_list_speed_column(self):
+        self.estimate_override()
         rows, _ = self.list_rows(self.host())
         self.assertEqual(rows[("qwen3.6-35b-a3b", "llamacpp")]["TOK/S"], "122.5")
         self.assertEqual(rows[("gpt-oss-20b", "vllm")]["TOK/S"], "83.5")
@@ -276,6 +286,30 @@ class CliTest(unittest.TestCase):
         self.assertEqual(main(["up", "qwen3.6"], host), 1)
         self.assertIn("unknown client 'claude'", host.err.getvalue())
         self.assert_nothing_ran(host, clients, before)
+
+    def test_up_help_names_the_clients(self):
+        import contextlib
+        import io
+        from launcher.cli import build_parser
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out), self.assertRaises(SystemExit):
+            build_parser().parse_args(["up", "--help"])
+        self.assertIn("make it the default of every installed client: OpenCode, Hermes, Pi and dsh (or set "
+                      "LLMCTL_SET_DEFAULT=1)", " ".join(out.getvalue().split()))
+
+    def test_unknown_client_lists_dsh(self):
+        host, clients = self.client_host(LLMCTL_CLIENTS="claude")
+        self.assertEqual(main(["up", "qwen3.6"], host), 1)
+        self.assertIn("use opencode, hermes, pi or dsh", host.err.getvalue())
+
+    def test_relative_dsh_home_is_usage_error(self):
+        host, clients = self.client_host(DSH_HOME="rel")
+        clients.install("dsh")
+        before = clients.snapshot()
+        self.assertEqual(main(["up", "qwen3.6"], host), 1)
+        self.assertTrue(host.err.getvalue().startswith("error: DSH_HOME is relative (rel)"), host.err.getvalue())
+        self.assertEqual(host.calls, [])
+        self.assertEqual(clients.snapshot(), before)
 
     def test_client_write_error_exit_6(self):
         import os

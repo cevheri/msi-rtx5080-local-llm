@@ -8,15 +8,15 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from launcher import hermes_config, pi_config
+from launcher import dsh_config, hermes_config, pi_config
 from launcher.catalog import load_catalog
 from launcher.tests.fakes import REPO
 from launcher.tests.regen_golden import CLIENT_GOLDEN, GOLDEN, golden_argv, target_for
 
-CLIENT_MODULES = ["files.py", "hermes_config.py", "pi_config.py", "opencode_config.py", "clients.py"]
+CLIENT_MODULES = ["files.py", "hermes_config.py", "pi_config.py", "opencode_config.py", "clients.py", "dsh_config.py"]
 ADAPTERS = ["runtimes/llamacpp.py", "runtimes/vllm.py"]
 CLIENT_IMPORTS = {"launcher.files", "launcher.clients", "launcher.hermes_config", "launcher.pi_config",
-                  "launcher.opencode_config"}
+                  "launcher.opencode_config", "launcher.dsh_config"}
 
 
 def edit_runtime(directory: Path, port: int, extra_arg: str) -> None:
@@ -64,16 +64,21 @@ class IsolationTest(unittest.TestCase):
                                 f"the edit did not reach the Hermes block of {edited}/{recipe_id}")
             self.assertNotEqual(texts[1], (CLIENT_GOLDEN / edited / f"{recipe_id}.pi.json").read_text(),
                                 f"the edit did not reach the Pi entry of {edited}/{recipe_id}")
+            self.assertNotEqual(texts[2], (CLIENT_GOLDEN / edited / f"{recipe_id}.dsh.yml").read_text(),
+                                f"the edit did not reach the dsh block of {edited}/{recipe_id}")
         for recipe_id in catalog.runtimes[untouched].recipes:
             texts = self.client_texts(recipe_id, untouched)
             self.assertEqual(texts[0], (CLIENT_GOLDEN / untouched / f"{recipe_id}.hermes.yaml").read_text(),
                              f"{untouched}/{recipe_id}.hermes.yaml")
             self.assertEqual(texts[1], (CLIENT_GOLDEN / untouched / f"{recipe_id}.pi.json").read_text(),
                              f"{untouched}/{recipe_id}.pi.json")
+            self.assertEqual(texts[2], (CLIENT_GOLDEN / untouched / f"{recipe_id}.dsh.yml").read_text(),
+                             f"{untouched}/{recipe_id}.dsh.yml")
 
-    def client_texts(self, recipe_id: str, runtime: str) -> tuple[str, str]:
+    def client_texts(self, recipe_id: str, runtime: str) -> tuple[str, str, str]:
         target = target_for(recipe_id, runtime, self.recipes)
-        return hermes_config.render_block(target), pi_config.new_models_text(target)
+        return (hermes_config.render_block(target), pi_config.new_models_text(target),
+                dsh_config.render_block(target, default=True))
 
     def test_llamacpp_edits_leave_vllm_alone(self):
         edit_runtime(self.recipes / "llamacpp", 8090, "--metrics")
@@ -129,6 +134,12 @@ class ClientBoundaryTest(unittest.TestCase):
                 bad = [m for m in imported_modules(parse_module(name))
                        if m.startswith("launcher.runtimes.") or m in CLIENT_IMPORTS]
                 self.assertEqual(bad, [])
+
+    def test_dsh_config_imports_no_other_client_module(self):
+        others = {"launcher.clients", "launcher.hermes_config", "launcher.pi_config", "launcher.opencode_config"}
+        bad = [m for m in imported_modules(parse_module("dsh_config.py"))
+               if m in others or m == "launcher.runtimes" or m.startswith("launcher.runtimes.")]
+        self.assertEqual(bad, [])
 
 
 if __name__ == "__main__":

@@ -7,7 +7,7 @@ import json
 import math
 import os
 import re
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -77,6 +77,47 @@ def load_json_object(path: Path, client: str) -> tuple[str | None, dict]:
         raise ClientError(f"{path} holds an escaped lone surrogate (\\ud800 to \\udfff) that llmctl cannot write "
                           f"back as UTF-8; fix it, or leave {client} out with LLMCTL_CLIENTS") from exc
     return text, data
+
+
+def split_lines(text: str) -> list[str]:
+    """The lines of text with their endings; only \n ends a line, as in YAML."""
+    parts = text.split("\n")
+    lines = [part + "\n" for part in parts[:-1]]
+    if parts[-1]:
+        lines.append(parts[-1])
+    return lines
+
+
+def bare(line: str) -> str:
+    """The line without its \n and then one trailing \r."""
+    if line.endswith("\n"):
+        line = line[:-1]
+    return line[:-1] if line.endswith("\r") else line
+
+
+def _plural(count: int, word: str) -> str:
+    return f"{count} {word}" if count == 1 else f"{count} {word}s"
+
+
+def find_markers(path: Path, lines: Sequence[str], *, begin: str, end: str) -> tuple[int, int] | None:
+    """The indices of the one begin and one end marker line; None when neither exists, else a refusal.
+
+    A byte-order mark at the start of line 0 is skipped, as YAML readers skip it; the caller keeps its bytes.
+    """
+    bares = [bare(line) for line in lines]
+    if bares and bares[0].startswith("\ufeff"):
+        bares[0] = bares[0][1:]
+    begins = [i for i, line in enumerate(bares) if line == begin]
+    ends = [i for i, line in enumerate(bares) if line == end]
+    if not begins and not ends:
+        return None
+    if len(begins) == 1 and len(ends) == 1 and begins[0] < ends[0]:
+        return begins[0], ends[0]
+    if len(begins) == 1 and len(ends) == 1:
+        found = "the end marker comes first"
+    else:
+        found = f"{_plural(len(begins), 'begin marker')}, {_plural(len(ends), 'end marker')}"
+    raise ClientError(f"{path}: the llmctl block markers are damaged ({found}); restore the two marker lines exactly")
 
 
 @dataclass(frozen=True)

@@ -1,0 +1,20 @@
+{
+  "request": {
+    "model": "k2-horizon-7b",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Reply with exactly the word OK."
+      }
+    ],
+    "max_tokens": 256
+  },
+  "status": 200,
+  "reply": "{\"choices\":[{\"finish_reason\":\"length\",\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning_content\":\"1.  **Analyze the Request:** The user has given a very simple and direct instruction: \\\"Reply with exactly the word OK.\\\"\\n\\n2.  **Identify the Core Task:** The task is to output a specific string of text: \\\"OK\\\".\\n\\n3.  **Identify Constraints:**\\n    *   **\\\"exactly the word\\\"**: This is the most crucial constraint.\\n        *   It means no extra punctuation (like a period at the end).\\n        *   It means no surrounding text, like \\\"The answer is OK\\\" or \\\"Here you go: OK\\\".\\n        *   It means no capitalization variations (it should be \\\"OK\\\", not \\\"ok\\\", \\\"Ok\\\", or \\\"O.K.\\\").\\n        *   It means no leading or trailing whitespace.\\n        *   It means no newline characters before or after (though many systems implicitly add one at the very end of the response block, which is usually fine, but the *content* should just be \\\"OK\\\").\\n\\n4.  **Formulate the Output:** Based on the constraints, the final output must be the string `OK`.\\n\\n5.  **Final Verification:** Does my proposed output \\\"OK\\\" meet all constraints?\\n    *   Is it the word \\\"OK\\\"? Yes.\\n    *  \"}}],\"created\":1794878669,\"model\":\"local\",\"system_fingerprint\":\"b12407-e574a17b0\",\"object\":\"chat.completion\",\"usage\":{\"completion_tokens\":256,\"prompt_tokens\":17,\"total_tokens\":273,\"prompt_tokens_details\":{\"cached_tokens\":16}},\"id\":\"chatcmpl-JZIJDBTvNzNstujNOmnPp7hnHo3p42kF\",\"timings\":{\"cache_n\":16,\"prompt_n\":1,\"prompt_ms\":15.128,\"prompt_per_token_ms\":15.128,\"prompt_per_second\":66.10259122157589,\"predicted_n\":256,\"predicted_ms\":3752.485,\"predicted_per_token_ms\":14.715627450980392,\"predicted_per_second\":67.95496850753567}}",
+  "record": {
+    "probe": "D",
+    "status": 200,
+    "content": false,
+    "reasoning": true
+  }
+}

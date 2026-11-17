@@ -1,0 +1,60 @@
+[
+ {
+  "id": "llm-pi-ai",
+  "config": {
+   "providers": {
+    "llmctl": {
+     "displayName": "llmctl",
+     "api": "openai-completions",
+     "baseURL": "http://127.0.0.1:18080/v1",
+     "headers": {
+      "Authorization": "Bearer no-key-required"
+     },
+     "compat": {
+      "supportsStore": false,
+      "supportsDeveloperRole": false,
+      "maxTokensField": "max_tokens"
+     },
+     "models": [
+      {
+       "id": "local",
+       "name": "effort-qwen38 candidate (llmctl)",
+       "contextWindow": 131072,
+       "maxTokens": 16384,
+       "input": [
+        "text"
+       ],
+       "reasoningEfforts": {
+        "off": "none",
+        "low": "low",
+        "medium": "medium"
+       },
+       "compat": {
+        "thinkingFormat": "openai",
+        "supportsReasoningEffort": true
+       }
+      }
+     ]
+    }
+   }
+  }
+ },
+ {
+  "id": "agent-default-model",
+  "config": {
+   "provider": "llmctl",
+   "model": "local",
+   "reasoningEffort": "medium"
+  }
+ },
+ {
+  "id": "session-title-llm",
+  "disabled": true
+ },
+ {
+  "id": "compaction-basic",
+  "config": {
+   "retainTokens": 500
+  }
+ }
+]

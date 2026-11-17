@@ -111,8 +111,10 @@ def up(host, catalog, name: str, runtime_name: str | None, *, replace: bool, dry
         out.write(f"runtime settings from {runtime.source.path}: the OpenCode provider's baseURL must use port "
                   f"{runtime.host_port}, and an image other than the shipped one has no measurement behind it\n")
     if recipe.evidence.kind == "estimate":
-        out.write("warning: this recipe was never run on the reference laptop; it may not start or fit\n")
+        out.write("warning: this recipe has no measurement on the reference laptop; it may not start or fit\n")
     out.write(clients.clients_line(host, list(plan.states)) + "\n")
+    for line in plan.warnings:
+        out.write(line + "\n")
     if dry_run:
         out.write(shlex.join(argv) + "\n")
         for line in clients.dry_run_lines(plan):
@@ -132,11 +134,11 @@ def up(host, catalog, name: str, runtime_name: str | None, *, replace: bool, dry
             return 130
         out.write(f"ready: http://127.0.0.1:{runtime.host_port}/v1, served as '{target.served}', "
                   f"context {recipe.context}, output {recipe.clients.output}\n")
-        result = clients.apply(host, catalog, target, set_default=set_default)
+        result = clients.apply(host, catalog, target, set_default=set_default, dsh_checked=plan.dsh_checked)
         for line in result.lines:
             out.write(line + "\n")
     for line in clients.up_lines(host, target, plan.states, up_command=up_command(recipe), changed=result.changed,
-                                 failed=result.failed, default_failed=result.default_failed):
+                                 failed=result.failed, default_failed=result.default_failed, dsh_old=result.dsh_old):
         out.write(line + "\n")
     if recipe.chat_only:
         out.write("note: chat only, no tool calling\n")
