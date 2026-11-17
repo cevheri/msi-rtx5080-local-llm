@@ -1,0 +1,10 @@
+| Start | Free right after ready | After D8's flush | Near-full prompt (tokens, share) | After it | After the first grammar request | After the forced tool request | Lowest after ready (to the end of probe) | Drop from ready | Drop from the flushed reading |
+|---|---|---|---|---|---|---|---|---|---|
+| D qwen3.5-9b d2-env | 911 | 937 | 124,502, 95.0% | 551 | 549 | 549 | 541 | 370 | 396 |
+| D gemma-4-12b d2-env | 1,099 | 1,119 | 124,433, 94.9% | 841 | 841 | 841 | 841 | 258 | 278 |
+| D gemma-4-e4b d2-env | 1,407 | 1,923 | 62,244, 95.0% | 1,627 | 1,627 | 1,627 | 1,627 | -220 | 296 |
+| B qwen3.5-9b m12-a3 | 911 | not read | 124,499, 95.0% | 545 | 545 | 545 | 537 | 374 | none |
+| B gemma-4-12b m2-fp8-b | 1,099 | not read | 124,431, 94.9% | 839 | 839 | 839 | 839 | 260 | none |
+| B gemma-4-e4b m5-a4-swa | 1,407 | not read | 62,244, 95.0% | 1,403 | 1,403 | 1,403 | 1,403 | 4 | none |
+
+largest drop over these starts 396 MiB (the flushed reading where there is one); D8 rule: MIN_FREE = next multiple of 64 above 396 + 256 = 704 MiB; ship gate F_ready >= 832 MiB

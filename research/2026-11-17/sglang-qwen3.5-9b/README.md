@@ -1,9 +1,10 @@
 # Qwen3.5-9B NVFP4 on SGLang, 2026-11-17
 
-Last verified: 2026-11-17.
+Last verified: 2026-11-18.
 
 Result: measured in the hands-on run (a2 and a3 ran, a1 was refused), in measurement A (M6, M7, M8 and M15 at the a3 settings) and in measurement B (the margins, M12 and M15 at the a3 settings, with the model overlay and both NCCL variables), all started by hand before llmctl had an SGLang recipe.
-At the shipped settings, measurement B's start m12-a3 held a fresh 124,499-token prompt, both grammar requests and 300 s of load with at least 537 MiB free and decoded 93.7 tok/s, and an offline start from an empty cache volume reached `/ready` in 48.3 s (measured on the MSI Raider 18 Max HX, SGLang v0.5.23, 2026-11-17).
+At measurement B's settings, which the shipped settings keep with two variables added, start m12-a3 held a fresh 124,499-token prompt, both grammar requests and 300 s of load with at least 537 MiB free and decoded 93.7 tok/s, and an offline start from an empty cache volume reached `/ready` in 48.3 s (measured on the MSI Raider 18 Max HX, SGLang v0.5.23, 2026-11-17).
+Measurement D measured the shipped settings, m12-a3's with the runtime file's eight variables (`TIKTOKEN_ENCODINGS_BASE` and `PYTORCH_ALLOC_CONF` added), in [research/2026-11-18/sglang-qwen3.5-9b/](../../2026-11-18/sglang-qwen3.5-9b/README.md).
 
 Image: `lmsysorg/sglang:v0.5.23-runtime`.
 Model: `RedHatAI/Qwen3.5-9B-NVFP4` at revision `a4df85a20fb7e54740f564f15af0c2f5d9c6616c`, served as `qwen3.5-9b`.

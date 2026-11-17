@@ -1,13 +1,14 @@
 # K2 Horizon 7B AWQ-INT4 on SGLang, 2026-11-17
 
-Last verified: 2026-11-17.
+Last verified: 2026-11-18.
 
 Result: measured in the hands-on run (a1 crashed on its first grammar request, a2 ran), in measurement A (M6, M7 and M8 at the a2 settings) and in measurement B (step 0, M12, M13 and M15 at the a2 settings, with the model overlay and both NCCL variables), all started by hand before llmctl had an SGLang recipe.
-At the shipped settings, measurement B's start b0-a2 held a fresh 62,257-token prompt, both grammar requests and 300 s of load with at least 532 MiB free and decoded 89.5 tok/s, FP8 and BF16 KV gave the same 20 correct M13 answers, and an offline start from an empty cache volume reached `/ready` in 137.9 s (measured on the MSI Raider 18 Max HX, SGLang v0.5.23, 2026-11-17).
+In measurement B, the earlier measurement, start b0-a2 at fraction 0.90 held a fresh 62,257-token prompt, both grammar requests and 300 s of load with at least 532 MiB free and decoded 89.5 tok/s, FP8 and BF16 KV gave the same 20 correct M13 answers, and an offline start from an empty cache volume reached `/ready` in 137.9 s (measured on the MSI Raider 18 Max HX, SGLang v0.5.23, 2026-11-17).
+The shipped settings are measurement D's start d1-f088, b0-a2's settings at fraction 0.88 with the runtime file's eight variables, which left 1,152 MiB free after ready where b0-a2 left 865 MiB, in [research/2026-11-18/sglang-k2-horizon-7b/](../../2026-11-18/sglang-k2-horizon-7b/README.md) (measured on the MSI Raider 18 Max HX, SGLang v0.5.23, 2026-11-18).
 
 Image: `lmsysorg/sglang:v0.5.23-runtime`.
 Model: `cyankiwi/K2-Horizon-7B-AWQ-INT4` at revision `530d5ceccd8ea660ceaa2a9f3a4bcbb68ba44291`, served as `k2-horizon-7b`.
-Working settings (a2, [handson/cmds/k2-horizon-7b-a2.sh](handson/cmds/k2-horizon-7b-a2.sh)): `--context-length 65536 --mem-fraction-static 0.90 --max-running-requests 1 --disable-prefill-cuda-graph --trust-remote-code --kv-cache-dtype fp8_e4m3 --tool-call-parser k2_horizon --reasoning-parser k2_horizon --default-chat-template-kwargs {"reasoning_effort":"high","tool_call_format":"xml"}`, with `--device nvidia.com/gpu=all --ipc=host --memory 32g --memory-swap 32g`, the Hugging Face cache mounted read-only and `HF_HUB_OFFLINE=1`.
+Settings of a2, which measurement B's b0-a2 measured at fraction 0.90 and measurement D's shipped d1-f088 at 0.88 ([handson/cmds/k2-horizon-7b-a2.sh](handson/cmds/k2-horizon-7b-a2.sh)): `--context-length 65536 --mem-fraction-static 0.90 --max-running-requests 1 --disable-prefill-cuda-graph --trust-remote-code --kv-cache-dtype fp8_e4m3 --tool-call-parser k2_horizon --reasoning-parser k2_horizon --default-chat-template-kwargs {"reasoning_effort":"high","tool_call_format":"xml"}`, with `--device nvidia.com/gpu=all --ipc=host --memory 32g --memory-swap 32g`, the Hugging Face cache mounted read-only and `HF_HUB_OFFLINE=1`.
 The cross-model reports are [the hands-on README](../sglang-runtime/handson/README.md), [measurement A's README](../sglang-runtime/measure-a/README.md) and [measurement B's lane README](../sglang-runtime/measure-b/README.md), and measurement B's report on this model is [measure-b/README.md](measure-b/README.md); every figure below comes from them.
 
 ## Hands-on run

@@ -1,0 +1,19 @@
+chain d1 start 22:24:02
+{"exit": "ready", "ready_seen_s": 36.81, "served_listed_s": 35.05, "memory_usage": {"weight": 7.887, "kvcache": 5.355, "startup_available": 1.258, "token_capacity": 77988, "token_capacity_swa": null, "graph": {"prefill": 0.0, "decode": 0.061, "target_verify": 0.0, "draft_prefill": 0.0, "draft_decode": 0.0, "draft_extend": 0.0}}, "gpu_right_after_ready": {"t": 1794954279.839, "used_mib": 14690, "free_mib": 1152, "total_mib": 16303}}
+{"event": "gpu_before", "step": "nearfull_p2", "t": 1794954733.25, "used_mib": 15020, "free_mib": 822, "total_mib": 16303, "utc": "22:32:13"}
+{"event": "request", "step": "nearfull_p2", "status": 200, "t": 1794954733.251, "seconds": 33.643, "finish_reason": "length", "content": "", "reasoning_content_chars": 151, "tool_calls": [], "usage": {"prompt_tokens": 62257, "completion_tokens": 32}, "utc": "22:32:13"}
+{"event": "gpu_after", "step": "nearfull_p2", "cgroup": {"anon_gib": 4.837, "file_gib": 8.576, "shmem_gib": 0.085, "unevictable_gib": 0.0, "peak_gib": 13.527}, "t": 1794954766.923, "used_mib": 15020, "free_mib": 822, "total_mib": 16303, "utc": "22:32:46"}
+{"event": "end", "result": "completed", "container": "running exit=0 oom=false", "cgroup": {"anon_gib": 4.837, "file_gib": 8.576, "shmem_gib": 0.085, "unevictable_gib": 0.0, "peak_gib": 13.528}, "memory_usage": {"weight": 7.887, "kvcache": 5.355, "startup_available": 1.258, "token_capacity": 77988, "token_capacity_swa": null, "graph": {"prefill": 0.0, "decode": 0.061, "target_verify": 0.0, "draft_
+comm: file 1 is not in sorted order
+comm: file 2 is not in sorted order
+comm: input is not in sorted order
+logs/d1-f088.log 1188 -> 41 lines
+[2026-11-17 22:24:21] Auto-detected template features: reasoning_config=ReasoningToggleConfig(toggle_param=None, default_enabled=None, special_case='always', effort_kwarg=None), reasoning_parser=k2_horizon, tool_call_parser=k2_horizon
+[2026-11-17 22:24:31] Load weight end. elapsed=2.76 s, type=K2HorizonForCausalLM, quant=compressed-tensors, avail mem=7.17 GB, mem usage=7.89 GB.
+[2026-11-17 22:24:35] KV Cache is allocated. dtype: torch.float8_e4m3fn, #tokens: 77988, K size: 2.68 GB, V size: 2.68 GB
+[2026-11-17 22:24:36] max_total_num_tokens=77988, chunked_prefill_size=2048, max_prefill_tokens=16384, max_running_requests=1, context_len=65536, available_gpu_mem=1.26 GB
+[2026-11-17 22:24:37] Using default chat sampling params from model generation config: {'temperature': 1.0, 'top_p': 0.95}
+[2026-11-17 22:24:39] The server is fired up and ready to roll!
+running exit=0 oom=false started=2026-11-17T22:24:03.095443045Z finished=0001-01-01T00:00:00Z
+d1-f088 done 22:32:52
+chain d1 end 22:32:52

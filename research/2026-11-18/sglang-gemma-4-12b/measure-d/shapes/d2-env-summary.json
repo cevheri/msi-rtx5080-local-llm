@@ -1,0 +1,285 @@
+{
+ "run": "d2-env",
+ "ready": {
+  "exit": "ready",
+  "ready_seen_s": 29.72,
+  "served_listed_s": 27.55,
+  "memory_usage": {
+   "weight": 8.773,
+   "kvcache": 4.673,
+   "startup_available": 1.519,
+   "token_capacity": 204172,
+   "token_capacity_swa": 20417,
+   "graph": {
+    "prefill": 0.0,
+    "decode": 0.035,
+    "target_verify": 0.0,
+    "draft_prefill": 0.0,
+    "draft_decode": 0.0,
+    "draft_extend": 0.0
+   }
+  },
+  "max_total_num_tokens": 204172,
+  "free_mib_right_after_ready": 1099,
+  "cgroup_at_ready": {
+   "anon_gib": 5.533,
+   "file_gib": 8.667,
+   "kernel_gib": 0.12,
+   "shmem_gib": 0.066,
+   "file_mapped_gib": 0.077,
+   "inactive_file_gib": 0.844,
+   "active_file_gib": 7.757,
+   "unevictable_gib": 0.0,
+   "current_gib": 14.324,
+   "peak_gib": 14.324
+  },
+  "first_200_s": {
+   "/ready": 29.55,
+   "/v1/models": 27.55,
+   "/server_info": 27.55
+  }
+ },
+ "ready_line_s": 28.5,
+ "log_lines": [
+  "[2026-11-17 22:38:24] Using default HuggingFace chat template with detected content format: openai",
+  "[2026-11-17 22:38:24] Auto-detected template features: reasoning_config=ReasoningToggleConfig(toggle_param='enable_thinking', default_enabled=False, special_case=None, effort_kwarg=None), reasoning_parser=gemma4, tool_call_parser=gemma4",
+  "[2026-11-17 22:38:30] Load weight end. elapsed=1.99 s, type=Gemma4UnifiedForConditionalGeneration, quant=compressed-tensors, avail mem=6.28 GB, mem usage=8.77 GB.",
+  "[2026-11-17 22:38:31] Full KV Cache is allocated. dtype: torch.float8_e4m3fn, #tokens: 204172, K size: 0.78 GB, V size: 0.78 GB",
+  "[2026-11-17 22:38:31] SWA KV Cache is allocated. dtype: torch.float8_e4m3fn, #tokens: 20417, K size: 1.56 GB, V size: 1.56 GB",
+  "[2026-11-17 22:38:31] SWAKVPool mem usage: 4.67 GB, swa size: 20417, full size: 204172",
+  "[2026-11-17 22:38:31] Memory pool end. avail mem=1.60 GB",
+  "[2026-11-17 22:38:31] Capture target decode CUDA graph begin. backend=full, num_tokens_per_req=1, avail mem=1.55 GB",
+  "[2026-11-17 22:38:33] Capture target decode CUDA graph end. bs=[1], elapsed=1.42 s, mem usage=0.04 GB, avail mem=1.52 GB.",
+  "[2026-11-17 22:38:33] max_total_num_tokens=204172, chunked_prefill_size=2048, max_prefill_tokens=16384, max_running_requests=1, context_len=131072, available_gpu_mem=1.52 GB",
+  "[2026-11-17 22:38:33] Using default chat sampling params from model generation config: {'temperature': 1.0, 'top_k': 64, 'top_p': 0.95}",
+  "[2026-11-17 22:38:35] The server is fired up and ready to roll!"
+ ],
+ "events": [
+  {
+   "event": "nearfull_plan",
+   "step": "p1",
+   "per_paragraph": 118.0,
+   "overhead": 61.0,
+   "paragraphs": 1054,
+   "prompt_tokens": 124433,
+   "context": 131072,
+   "token_capacity": 204172,
+   "share_of_context": 0.9493
+  },
+  {
+   "event": "flush_cache",
+   "status": 200,
+   "used_mib": 14728,
+   "free_mib": 1115,
+   "total_mib": 16303
+  },
+  {
+   "event": "end",
+   "result": "completed",
+   "container": "running exit=0 oom=false",
+   "cgroup": {
+    "anon_gib": 5.682,
+    "file_gib": 8.671,
+    "shmem_gib": 0.066,
+    "unevictable_gib": 0.0,
+    "peak_gib": 14.476
+   },
+   "memory_usage": {
+    "weight": 8.773,
+    "kvcache": 4.673,
+    "startup_available": 1.519,
+    "token_capacity": 204172,
+    "token_capacity_swa": 20417,
+    "graph": {
+     "prefill": 0.0,
+     "decode": 0.035,
+     "target_verify": 0.0,
+     "draft_prefill": 0.0,
+     "draft_decode": 0.0,
+     "draft_extend": 0.0
+    }
+   },
+   "used_mib": 15000,
+   "free_mib": 843,
+   "total_mib": 16303
+  }
+ ],
+ "phases": [
+  {
+   "step": "probe",
+   "rc": 0,
+   "seconds": 59.3,
+   "free_mib_after": 843,
+   "cgroup": {
+    "anon_gib": 5.682,
+    "file_gib": 8.671,
+    "shmem_gib": 0.066,
+    "unevictable_gib": 0.0,
+    "peak_gib": 14.476
+   }
+  }
+ ],
+ "requests": [
+  {
+   "step": "nearfull_p1",
+   "status": 200,
+   "seconds": 106.003,
+   "prompt_tokens": 124433,
+   "finish": "stop",
+   "content": "The function calculates the average normalized weight for each unique combinatio... (148 chars)",
+   "tool_calls": [],
+   "title_parses": null,
+   "free_before_mib": 1119,
+   "free_after_mib": 841,
+   "cgroup_after": {
+    "anon_gib": 5.676,
+    "file_gib": 8.671,
+    "shmem_gib": 0.066,
+    "unevictable_gib": 0.0,
+    "peak_gib": 14.47
+   }
+  },
+  {
+   "step": "title_first_grammar",
+   "status": 200,
+   "seconds": 0.248,
+   "prompt_tokens": 45,
+   "finish": "stop",
+   "content": "{\n  \"title\": \"Adding Numbers in Python\"\n}",
+   "tool_calls": [],
+   "title_parses": true,
+   "free_before_mib": 841,
+   "free_after_mib": 841,
+   "cgroup_after": {
+    "anon_gib": 5.681,
+    "file_gib": 8.671,
+    "shmem_gib": 0.066,
+    "unevictable_gib": 0.0,
+    "peak_gib": 14.474
+   }
+  },
+  {
+   "step": "forced_tool",
+   "status": 200,
+   "seconds": 0.34,
+   "prompt_tokens": 73,
+   "finish": "tool_calls",
+   "content": "",
+   "tool_calls": [
+    {
+     "name": "get_weather",
+     "arguments": "{\"city\": \"Paris\"}"
+    }
+   ],
+   "title_parses": null,
+   "free_before_mib": 841,
+   "free_after_mib": 841,
+   "cgroup_after": {
+    "anon_gib": 5.681,
+    "file_gib": 8.671,
+    "shmem_gib": 0.066,
+    "unevictable_gib": 0.0,
+    "peak_gib": 14.475
+   }
+  }
+ ],
+ "probe": {
+  "decode_tok_s_median": 70.1,
+  "decode_runs": [
+   {
+    "tok_s": 70.1,
+    "completion_tokens": 824
+   },
+   {
+    "tok_s": 70.0,
+    "completion_tokens": 905
+   },
+   {
+    "tok_s": 70.1,
+    "completion_tokens": 864
+   }
+  ],
+  "long": [
+   {
+    "prompt_tokens": 9936,
+    "ttft_first_s": 4.096,
+    "ttft_repeat_s": 0.047
+   },
+   {
+    "prompt_tokens": 37194,
+    "ttft_first_s": 15.368,
+    "ttft_repeat_s": 0.071
+   }
+  ],
+  "ok_test": {
+   "content": "OK",
+   "reasoning_chars": 0,
+   "finish": "stop",
+   "usage": {
+    "prompt_tokens": 18,
+    "total_tokens": 20,
+    "completion_tokens": 2,
+    "prompt_tokens_details": null,
+    "reasoning_tokens": 0,
+    "completion_tokens_details": null
+   },
+   "seconds": 0.04
+  },
+  "tool_test": {
+   "finish": "tool_calls",
+   "calls": [
+    {
+     "name": "get_weather",
+     "arguments": "{\"city\": \"Paris\"}"
+    }
+   ],
+   "content": "",
+   "seconds": 0.24
+  }
+ },
+ "trace": {
+  "gpu_used_peak_mib": 15002.0,
+  "gpu_free_min_mib": 841.0,
+  "power_max_w": 146.75,
+  "temp_max_c": 71.0,
+  "cg_anon_peak_gib": 5.682,
+  "cg_shmem_peak_gib": 0.066,
+  "cg_file_peak_gib": 8.671,
+  "cg_peak_gib": 14.476,
+  "cg_unevictable_peak_gib": 0.0,
+  "samples": 195
+ },
+ "state.txt": [
+  "running exit=0 oom=false started=2026-11-17T22:38:06.535813103Z finished=0001-01-01T00:00:00Z"
+ ],
+ "meta": [
+  "gpu_used_before_mib=112",
+  "enforced_power_limit=145.00W",
+  "cmd=d2-env.sh",
+  "docker_run_exit=0",
+  "poller_exit=0",
+  "seq_exit=0"
+ ],
+ "procmem.txt": [
+  "== at ready 22:38:36",
+  "pid=1962354 name=python3 VmRSS_kB=2246072 RssAnon_kB=1564620 RssFile_kB=593992 RssShmem_kB=87460 VmLck_kB=16 VmPin_kB=0",
+  "pid=1963635 name=sglang::schedul VmRSS_kB=3765460 RssAnon_kB=2911140 RssFile_kB=734548 RssShmem_kB=119772 VmLck_kB=16 VmPin_kB=0",
+  "pid=1963636 name=sglang::detoken VmRSS_kB=1779960 RssAnon_kB=1319664 RssFile_kB=460296 RssShmem_kB=0 VmLck_kB=16 VmPin_kB=0",
+  "cgroup anon=5.533 GiB",
+  "cgroup file=8.667 GiB",
+  "cgroup shmem=0.066 GiB",
+  "cgroup file_mapped=0.077 GiB",
+  "cgroup unevictable=0.000 GiB",
+  "cgroup memory.current=14.324 GiB memory.peak=14.324 GiB",
+  "== at the end 22:41:25",
+  "pid=1962354 name=python3 VmRSS_kB=2340636 RssAnon_kB=1659100 RssFile_kB=594076 RssShmem_kB=87460 VmLck_kB=16 VmPin_kB=0",
+  "pid=1963635 name=sglang::schedul VmRSS_kB=3829876 RssAnon_kB=2972704 RssFile_kB=737400 RssShmem_kB=119772 VmLck_kB=16 VmPin_kB=0",
+  "pid=1963636 name=sglang::detoken VmRSS_kB=1779988 RssAnon_kB=1319692 RssFile_kB=460296 RssShmem_kB=0 VmLck_kB=16 VmPin_kB=0",
+  "cgroup anon=5.682 GiB",
+  "cgroup file=8.671 GiB",
+  "cgroup shmem=0.066 GiB",
+  "cgroup file_mapped=0.077 GiB",
+  "cgroup unevictable=0.000 GiB",
+  "cgroup memory.current=14.476 GiB memory.peak=14.476 GiB"
+ ]
+}

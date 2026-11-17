@@ -1,9 +1,10 @@
 # Gemma 4 E4B QAT W4A16 on SGLang, 2026-11-17
 
-Last verified: 2026-11-17.
+Last verified: 2026-11-18.
 
 Result: failed in the hands-on run: SGLang v0.5.23 could not build the model's audio tower from the W4A16 checkpoint, and with the language model alone it found no processor; measurement A did not run this model; measured in measurement B, which ran it with two flags.
-At the shipped settings, `--json-model-override-args '{"audio_config": null}'` and `--swa-full-tokens-ratio 0.1` at fraction 0.85, measurement B's start m5-a4-swa served text at 64k with a 101,791-token pool, held a fresh 62,244-token prompt, both grammar requests and 300 s of load with at least 1,403 MiB free and decoded 141.3 tok/s, and an offline start from an empty cache volume reached `/ready` in 138.1 s; the vision tower stays uninitialized, and with thinking on a short reply can land wholly in `reasoning_content` (measured on the MSI Raider 18 Max HX, SGLang v0.5.23, 2026-11-17).
+At measurement B's settings, `--json-model-override-args '{"audio_config": null}'` and `--swa-full-tokens-ratio 0.1` at fraction 0.85, which the shipped settings keep with two variables added, start m5-a4-swa served text at 64k with a 101,791-token pool, held a fresh 62,244-token prompt, both grammar requests and 300 s of load with at least 1,403 MiB free and decoded 141.3 tok/s, and an offline start from an empty cache volume reached `/ready` in 138.1 s; the vision tower stays uninitialized, and with thinking on a short reply can land wholly in `reasoning_content` (measured on the MSI Raider 18 Max HX, SGLang v0.5.23, 2026-11-17).
+Measurement D measured the shipped settings, m5-a4-swa's with the runtime file's eight variables (`TIKTOKEN_ENCODINGS_BASE` and `PYTORCH_ALLOC_CONF` added), in [research/2026-11-18/sglang-gemma-4-e4b/](../../2026-11-18/sglang-gemma-4-e4b/README.md).
 
 Image: `lmsysorg/sglang:v0.5.23-runtime`.
 Model: `google/gemma-4-E4B-it-qat-w4a16-ct` at revision `6cd26aaa2357fb2bad8c51699a7558a4d1a965bb`, served as `gemma-4-e4b`.
