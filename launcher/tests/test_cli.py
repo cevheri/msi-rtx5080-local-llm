@@ -1,13 +1,16 @@
 import hashlib
 import re
+import shutil
 import tempfile
 import tomllib
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from launcher.cli import main
-from launcher.runtimes import llamacpp
+from launcher.runtimes import ADAPTERS, llamacpp, vllm
 from launcher.tests.fakes import REPO, FakeHost, fail, http, ok
+from launcher.tests.sglang_fixture import FIXTURES, registered
 from launcher.validate import read_toml
 
 
@@ -252,6 +255,21 @@ class CliTest(unittest.TestCase):
         host = self.host()
         self.assertEqual(main(["show", "my-gemma", "--runtime", "vllm", "--as-override"], host), 2)
         self.assertIn(f"fix or remove {path}", host.err.getvalue())
+
+    def test_list_unknown_runtime_message(self):
+        host = self.host()
+        with mock.patch.dict(ADAPTERS, {"llamacpp": llamacpp, "vllm": vllm}, clear=True):
+            self.assertEqual(main(["list", "--runtime", "x"], host), 1)
+        self.assertIn("error: unknown runtime 'x'; choose llamacpp or vllm", host.err.getvalue())
+
+    def test_show_sglang_has_the_overlay_mount(self):
+        shutil.copytree(FIXTURES, self.overrides / "sglang")
+        host = self.host()
+        with registered():
+            self.assertEqual(main(["show", "qwen3.5-9b", "--runtime", "sglang"], host), 0)
+        out = host.out.getvalue()
+        self.assertIn("-v /home/user/.cache/llmctl/sglang/overlays/qwen3.5-9b:/llmctl/model:ro", out)
+        self.assertIn("GPU need 15500 MiB", out)
 
     def test_pull_needs_yes_without_tty(self):
         host = self.host(tty=False)

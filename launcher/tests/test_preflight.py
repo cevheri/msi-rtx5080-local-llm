@@ -1,6 +1,6 @@
 import unittest
 
-from launcher import ops
+from launcher import ops, preflight
 from launcher.errors import PreflightError
 from launcher.tests.fakes import fail, ok
 from launcher.tests.ops_fixture import GPU_APPS, GPU_QUERY, OpsFixture, managed_line
@@ -80,6 +80,18 @@ class PreflightRefusalTest(unittest.TestCase):
     def test_ram_too_low(self):
         self.f.host.meminfo_text = "MemTotal: 32000000 kB\nMemAvailable:   10485760 kB\n"
         self.refuse("20 GiB", "10.0 GiB")
+
+
+class PullHintTest(unittest.TestCase):
+    def test_pull_hint_names_the_runtime(self):
+        f = OpsFixture()
+        self.addCleanup(f.cleanup)
+        f.use_sglang()
+        recipes = {name: entry.recipes for name, entry in f.catalog.runtimes.items()}
+        self.assertEqual(preflight.pull_hint(recipes["llamacpp"]["qwen3.6-35b-a3b"]), "./llmctl pull qwen3.6-35b-a3b")
+        self.assertEqual(preflight.pull_hint(recipes["vllm"]["gpt-oss-20b"]), "./llmctl pull gpt-oss-20b --runtime vllm")
+        self.assertEqual(preflight.pull_hint(recipes["sglang"]["qwen3.5-9b"]),
+                         "./llmctl pull qwen3.5-9b --runtime sglang")
 
 
 if __name__ == "__main__":

@@ -10,10 +10,12 @@ from launcher import clients, dsh_config, hermes_config, kimi_config, ops, pi_co
 from launcher.catalog import resolve
 from launcher.errors import ClientError, ClientWriteError, PreflightError, StartError, UsageError
 from launcher.lock import hold_lock, lock_path
+from launcher.runtimes import llamacpp, vllm
 from launcher.tests.client_fixture import ClientFixture
 from launcher.tests.fakes import REPO, fail, http, ok
 from launcher.tests.ops_fixture import OpsFixture, managed_line
 from launcher.tests.regen_golden import target_for
+from launcher.tests.sglang_fixture import place_snapshot, server_info
 from launcher.tests.test_kimi_config import OWNER_TEXT
 
 NO_CLIENTS = ("clients: none (opencode: not installed, no opencode on PATH) (hermes: not installed, no hermes on PATH) "
@@ -853,6 +855,210 @@ class UpClientsTest(unittest.TestCase):
         self.assertEqual(self.f.calls_starting("docker", "stop"), [["docker", "stop", "-t", "60", "llamacpp"]])
         self.assertEqual(self.out().splitlines(), ["stopped qwen3.6-35b-a3b in container 'llamacpp'"])
         self.assertEqual(self.c.snapshot(), before)
+
+
+SGLANG_UP = "./llmctl up qwen3.5-9b --runtime sglang"
+STOPPED_SUFFIX = "; llmctl stopped the container and kept it for its logs: ./llmctl logs, ./llmctl down --remove"
+
+
+class SglangUpTest(unittest.TestCase):
+    def setUp(self):
+        self.f = OpsFixture()
+        self.addCleanup(self.f.cleanup)
+        self.f.use_sglang()
+        self.overlay = self.f.cache_dir / "sglang" / "overlays" / "qwen3.5-9b"
+
+    def up(self, replace=False, dry_run=False, fixture=None):
+        f = fixture or self.f
+        return ops.up(f.host, f.catalog, "qwen3.5-9b", "sglang", replace=replace, dry_run=dry_run)
+
+    def lines(self, fixture=None):
+        return (fixture or self.f).host.out.getvalue().splitlines()
+
+    def test_up_builds_the_overlay_then_runs_then_checks(self):
+        seen = []
+        self.f.host.on(("docker", "run"), lambda argv: seen.append(
+            (self.overlay / "generation_config.json").is_file()) or ok("0123456789ab\n"))
+        self.assertEqual(self.up(), 0)
+        self.assertEqual(seen, [True])
+        self.assertEqual(self.lines()[:6], [
+            "qwen3.5-9b on sglang: shipped recipe, measured",
+            NO_CLIENTS,
+            f"wrote {self.overlay}: model overlay with 2 links into snapshot a4df85a20fb7 of "
+            "RedHatAI/Qwen3.5-9B-NVFP4, and generation_config.json with temperature 0.6, top_p 0.95, top_k 20",
+            "waiting for qwen3.5-9b to load (up to 900 s)",
+            "memory: KV pool 140976 tokens for context 131072; 1013 MiB of GPU memory free after the start, "
+            "at least 640 MiB needed",
+            "ready: http://127.0.0.1:30000/v1, served as 'qwen3.5-9b', context 131072, output 16384",
+        ])
+        [run] = self.f.calls_starting("docker", "run")
+        mount = run.index(f"{self.overlay}:/llmctl/model:ro")
+        self.assertEqual(run[mount - 1], "-v")
+
+    def test_refusal_stops_the_container_and_writes_no_client(self):
+        self.f.host.on_http("GET", "http://127.0.0.1:30000/server_info", server_info(120000))
+        with mock.patch.object(ops.clients, "apply", side_effect=AssertionError("no client write after a refusal")):
+            with self.assertRaises(StartError) as ctx:
+                self.up()
+        self.assertEqual(ctx.exception.exit_code, 4)
+        self.assertTrue(str(ctx.exception).startswith("the KV pool holds 120000 tokens, fewer than the context 131072"))
+        self.assertTrue(str(ctx.exception).endswith(STOPPED_SUFFIX), str(ctx.exception))
+        self.assertIn(["docker", "stop", "-t", "60", "sglang"], self.f.host.calls)
+        self.assertIn("memory: KV pool 120000 tokens for context 131072; 1013 MiB of GPU memory free after the start, "
+                      "at least 640 MiB needed", self.lines())
+        self.assertFalse(any(line.startswith("ready:") for line in self.lines()))
+
+    def test_refusal_when_the_stop_fails(self):
+        self.f.host.on_http("GET", "http://127.0.0.1:30000/server_info", server_info(120000))
+        self.f.host.on(("docker", "stop"), fail("Error response from daemon: cannot stop"))
+        with self.assertRaises(StartError) as ctx:
+            self.up()
+        self.assertEqual(ctx.exception.exit_code, 4)
+        self.assertTrue(str(ctx.exception).endswith(
+            "; llmctl could not stop the container (could not stop sglang: Error response from daemon: cannot stop), "
+            "so stop it with ./llmctl down"), str(ctx.exception))
+
+    def test_memory_taken_after_preflight_refuses_then_recovers(self):
+        self.f.gpu_free = [15731, 600]
+        with mock.patch.object(ops.clients, "apply", side_effect=AssertionError("no client write after a refusal")):
+            with self.assertRaises(StartError) as ctx:
+                self.up()
+        self.assertTrue(str(ctx.exception).startswith("only 600 MiB of GPU memory is free after the start"),
+                        str(ctx.exception))
+        self.assertTrue(str(ctx.exception).endswith(STOPPED_SUFFIX))
+        self.f.managed_lines = [managed_line("sglang", "exited", "qwen3.5-9b", runtime="sglang")]
+        self.f.gpu_free = [15731, 1013]
+        self.f.host.calls.clear()
+        self.f.host.out.truncate(0)
+        self.f.host.out.seek(0)
+        self.assertEqual(self.up(), 0)
+        calls = self.f.host.calls
+        self.assertLess(calls.index(["docker", "rm", "sglang"]), calls.index(self.f.calls_starting("docker", "run")[0]))
+        self.assertTrue((self.overlay / "generation_config.json").is_file())
+        lines = self.lines()
+        removing = lines.index("removing the stopped container 'sglang' from an earlier llmctl run")
+        wrote = [i for i, line in enumerate(lines) if line.startswith(f"wrote {self.overlay}: model overlay with ")]
+        ready = [i for i, line in enumerate(lines) if line.startswith("ready: http://127.0.0.1:30000/v1")]
+        self.assertEqual((len(wrote), len(ready)), (1, 1), lines)
+        self.assertLess(removing, wrote[0])
+        self.assertLess(wrote[0], ready[0])
+
+    def stopped_container_with_old_overlay(self, fixture, overlay):
+        overlay.mkdir(parents=True)
+        (overlay / "marker").write_text("old overlay")
+        fixture.managed_lines = [managed_line("sglang", "exited", "qwen3.5-9b", runtime="sglang")]
+
+    def test_overlay_is_rebuilt_only_after_the_stopped_container_is_removed(self):
+        self.stopped_container_with_old_overlay(self.f, self.overlay)
+        seen = []
+        self.f.host.on(("docker", "rm"), lambda argv: seen.append((self.overlay / "marker").exists()) or ok())
+        self.assertEqual(self.up(), 0)
+        self.assertEqual(seen, [True])
+        self.assertFalse((self.overlay / "marker").exists())
+
+        failing = OpsFixture()
+        self.addCleanup(failing.cleanup)
+        failing.use_sglang()
+        overlay = failing.cache_dir / "sglang" / "overlays" / "qwen3.5-9b"
+        self.stopped_container_with_old_overlay(failing, overlay)
+        failing.host.on(("docker", "rm"), fail("Error response from daemon: removal failed"))
+        with self.assertRaises(PreflightError) as ctx:
+            self.up(fixture=failing)
+        self.assertEqual(ctx.exception.exit_code, 3)
+        self.assertEqual(failing.calls_starting("docker", "run"), [])
+        self.assertTrue((overlay / "marker").exists())
+
+    def test_already_running_skips_the_check_and_says_so(self):
+        recipe, runtime = resolve(self.f.catalog, "qwen3.5-9b", "sglang")
+        self.f.managed_lines = [managed_line("sglang", "running", "qwen3.5-9b", runtime="sglang",
+                                             sha=recipe.source.sha256, runtime_sha=runtime.source.sha256)]
+        self.f.sglang_ready = [http(200)]
+        self.assertEqual(self.up(), 0)
+        self.assertEqual(self.f.calls_starting("docker", "run"), [])
+        self.assertFalse((self.f.cache_dir / "sglang" / "overlays").exists())
+        self.assertNotIn("http://127.0.0.1:30000/server_info", [url for _, url, _ in self.f.host.http_calls])
+        lines = self.lines()
+        running = lines.index("qwen3.5-9b is already running from this recipe file; nothing to start")
+        self.assertEqual(lines[running + 1],
+                         "note: qwen3.5-9b was already running from this recipe file, so llmctl did not check its "
+                         f"memory again; {SGLANG_UP} --replace restarts it and checks it")
+
+    def test_interrupt_during_the_check(self):
+        self.f.host.on_http("GET", "http://127.0.0.1:30000/server_info", KeyboardInterrupt())
+        self.assertEqual(self.up(), 130)
+        self.assertEqual(self.f.host.err.getvalue(),
+                         "interrupted; the server is running, but llmctl did not check its memory or write the "
+                         f"clients; {SGLANG_UP} --replace restarts it and checks it\n")
+        self.assertEqual(self.f.calls_starting("docker", "stop"), [])
+        with hold_lock(self.f.host.env):
+            pass
+
+    def test_interrupt_during_the_refusal_stop_keeps_the_refusal(self):
+        self.f.gpu_free = [15731, 600]
+
+        def interrupted_stop(argv):
+            raise KeyboardInterrupt()
+
+        self.f.host.on(("docker", "stop"), interrupted_stop)
+        with mock.patch.object(ops.clients, "apply", side_effect=AssertionError("no client write after a refusal")):
+            self.assertEqual(self.up(), 130)
+        err = self.f.host.err.getvalue()
+        self.assertEqual(err.count("\n"), 1, err)
+        self.assertTrue(err.startswith("only 600 MiB of GPU memory is free after the start"), err)
+        self.assertTrue(err.endswith("; the stop was interrupted, so the container may still be running: "
+                                     "./llmctl status, ./llmctl down\n"), err)
+        self.assertIn(["docker", "stop", "-t", "60", "sglang"], self.f.host.calls)
+        self.assertFalse(any(line.startswith("ready:") for line in self.lines()))
+        with hold_lock(self.f.host.env):
+            pass
+
+    def test_dry_run_prints_would_write_and_writes_nothing(self):
+        self.assertEqual(self.up(dry_run=True), 0)
+        lines = self.lines()
+        run = next(i for i, line in enumerate(lines) if line.startswith("docker run -d --name sglang"))
+        self.assertEqual(lines[run - 1],
+                         f"would write {self.overlay}: model overlay with links into snapshot a4df85a20fb7 of "
+                         "RedHatAI/Qwen3.5-9B-NVFP4, and generation_config.json with temperature 0.6, top_p 0.95, "
+                         "top_k 20")
+        self.assertFalse((self.f.cache_dir / "sglang" / "overlays").exists())
+        self.assertEqual(self.f.calls_starting("docker", "run"), [])
+
+    def test_sampling_file_problem_refuses_before_anything_stops(self):
+        recipe = self.f.catalog.runtimes["sglang"].recipes["qwen3.5-9b"]
+        place_snapshot(self.f.hf_home, recipe.model, {"generation_config.json": b"not json"})
+        self.f.managed_lines = [managed_line("vllm", "running", "gpt-oss-20b", runtime="vllm")]
+        with self.assertRaises(PreflightError) as ctx:
+            self.up(replace=True)
+        self.assertEqual(ctx.exception.exit_code, 3)
+        self.assertIn("qwen3.5-9b: the model files are not ready", str(ctx.exception))
+        self.assertIn("generation_config.json in snapshot a4df85a20fb7 is not a JSON object", str(ctx.exception))
+        self.assertEqual(self.f.calls_starting("docker", "stop"), [])
+        self.assertEqual(self.f.calls_starting("docker", "run"), [])
+
+    def test_llamacpp_and_vllm_define_no_hooks(self):
+        for adapter in (llamacpp, vllm):
+            for name in ("prepare_start", "check_started"):
+                with self.subTest(adapter=adapter.NAME, member=name):
+                    self.assertIsNone(getattr(adapter, name, None))
+
+    def pull(self, name, runtime):
+        start = len(self.f.host.out.getvalue())
+        self.assertEqual(ops.pull(self.f.host, self.f.catalog, name, runtime, yes=True, env_file=None), 0)
+        return self.f.host.out.getvalue()[start:].splitlines()
+
+    def test_printed_commands_name_the_sglang_runtime(self):
+        self.assertEqual(self.pull("qwen3.5-9b", "sglang"),
+                         [f"qwen3.5-9b: already pulled; start it with {SGLANG_UP}"])
+        self.f.place_files("gpt-oss-20b", runtime="vllm")
+        self.assertEqual(self.pull("gpt-oss-20b", "vllm"),
+                         ["gpt-oss-20b: already pulled; start it with ./llmctl up gpt-oss-20b --runtime vllm"])
+        self.assertEqual(self.pull("qwen3.6-35b-a3b", None),
+                         ["qwen3.6-35b-a3b: already pulled; start it with ./llmctl up qwen3.6-35b-a3b"])
+        self.f.host.on(("docker", "image", "inspect"), fail("Error: No such image"))
+        self.assertEqual(self.pull("qwen3.5-9b", "sglang")[-1], f"ready: {SGLANG_UP}")
+        with self.assertRaises(PreflightError) as ctx:
+            self.up()
+        self.assertIn("run ./llmctl pull qwen3.5-9b --runtime sglang", str(ctx.exception))
 
 
 class DownStatusLogsTest(unittest.TestCase):

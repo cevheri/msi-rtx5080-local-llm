@@ -41,6 +41,19 @@ def override_dir(env) -> Path:
     return Path(env.get("HOME", "~")).expanduser() / ".config" / "llmctl" / "recipes"
 
 
+def cache_dir(env) -> Path:
+    """llmctl's own cache folder, which holds the overlays it mounts into model containers."""
+    if env.get("XDG_CACHE_HOME"):
+        return Path(env["XDG_CACHE_HOME"]) / "llmctl"
+    return Path(env.get("HOME", "~")).expanduser() / ".cache" / "llmctl"
+
+
+def runtime_choices() -> str:
+    """The runtime names in preference order, as 'a', 'a or b' or 'a, b or c'."""
+    names = list(ADAPTERS)
+    return names[0] if len(names) == 1 else f"{', '.join(names[:-1])} or {names[-1]}"
+
+
 def _toml_files(directory: Path | None) -> dict[str, Path]:
     if directory is None or not directory.is_dir():
         return {}
@@ -125,7 +138,7 @@ def load_catalog(shipped: Path, overrides: Path | None) -> Catalog:
 
 def resolve(catalog: Catalog, name: str, runtime: str | None) -> tuple[Recipe, RuntimeConfig]:
     if runtime is not None and runtime not in ADAPTERS:
-        raise UsageError(f"unknown runtime '{runtime}'; choose {' or '.join(ADAPTERS)}")
+        raise UsageError(f"unknown runtime '{runtime}'; choose {runtime_choices()}")
     key = name.lower()
     searched = [runtime] if runtime else list(ADAPTERS)
     for runtime_name in searched:

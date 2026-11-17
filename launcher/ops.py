@@ -3,7 +3,7 @@
 import shlex
 
 from launcher import clients, docker_state
-from launcher.catalog import resolve
+from launcher.catalog import cache_dir, resolve
 from launcher.command import LABEL_PREFIX, docker_run_argv
 from launcher.errors import ClientWriteError, DownloadError, PreflightError, StartError, UsageError
 from launcher.gpu import gpu_info
@@ -45,7 +45,7 @@ def _same_recipe(running, recipe, runtime) -> bool:
             and labels.get(LABEL_PREFIX + "runtime-sha256") == runtime.source.sha256)
 
 
-def _start(host, recipe, runtime, adapter, argv, running, replace) -> None:
+def _start(host, recipe, runtime, adapter, argv, running, replace, env: HostEnv) -> None:
     out = host.out
     if running and not replace:
         names = ", ".join(describe(container) for container in running)
@@ -60,9 +60,34 @@ def _start(host, recipe, runtime, adapter, argv, running, replace) -> None:
         out.write(f"removing the stopped container '{existing.name}' from an earlier llmctl run\n")
         docker_state.remove(host, existing.name)
     check_resources(host, recipe, runtime, adapter)
+    prepare_start = getattr(adapter, "prepare_start", None)
+    if prepare_start is not None:
+        for line in prepare_start(recipe, runtime, env, dry_run=False):
+            out.write(line + "\n")
     result = host.run(argv)
     if result.returncode != 0:
         raise StartError(f"docker run failed: {(result.stderr or result.stdout).strip()}")
+
+
+def _apply_check(host, runtime, check) -> int | None:
+    """Print the post-ready check's lines; a refusal stops the container, keeps it, and fails the start.
+
+    Returns 130 when an interrupt lands during the refusal's stop, after one stderr line that keeps the refusal."""
+    for line in check.lines:
+        host.out.write(line + "\n")
+    if check.refusal is None:
+        return None
+    try:
+        docker_state.stop(host, runtime.container_name)
+    except KeyboardInterrupt:
+        host.err.write(f"{check.refusal}; the stop was interrupted, so the container may still be running: "
+                       "./llmctl status, ./llmctl down\n")
+        return 130
+    except PreflightError as exc:
+        raise StartError(f"{check.refusal}; llmctl could not stop the container ({exc}), so stop it with "
+                         "./llmctl down") from None
+    raise StartError(f"{check.refusal}; llmctl stopped the container and kept it for its logs: ./llmctl logs, "
+                     "./llmctl down --remove")
 
 
 def client_target(recipe: Recipe, runtime: RuntimeConfig) -> Target:
@@ -102,7 +127,10 @@ def up(host, catalog, name: str, runtime_name: str | None, *, replace: bool, dry
     adapter = ADAPTERS[recipe.runtime]
     home = hf_home(host.env)
     uid, gid = host.uid_gid()
-    argv = docker_run_argv(recipe, runtime, adapter.container_spec(recipe, runtime, HostEnv(home, uid, gid)))
+    env = HostEnv(home, uid, gid, cache_dir(host.env))
+    argv = docker_run_argv(recipe, runtime, adapter.container_spec(recipe, runtime, env))
+    prepare_start = getattr(adapter, "prepare_start", None)
+    check_started = getattr(adapter, "check_started", None)
     out = host.out
     out.write(f"{recipe.id} on {recipe.runtime}: {recipe.source.kind} recipe, {recipe.evidence.kind}\n")
     if recipe.source.kind == "override":
@@ -116,6 +144,8 @@ def up(host, catalog, name: str, runtime_name: str | None, *, replace: bool, dry
     for line in plan.warnings:
         out.write(line + "\n")
     if dry_run:
+        for line in prepare_start(recipe, runtime, env, dry_run=True) if prepare_start else ():
+            out.write(line + "\n")
         out.write(shlex.join(argv) + "\n")
         for line in clients.dry_run_lines(plan):
             out.write(line + "\n")
@@ -123,15 +153,29 @@ def up(host, catalog, name: str, runtime_name: str | None, *, replace: bool, dry
     with hold_lock(host.env):
         check_static(host, recipe, runtime, adapter, home)
         running = check_containers(host, runtime)
-        if _same_recipe(running, recipe, runtime) and not replace:
+        started = not (_same_recipe(running, recipe, runtime) and not replace)
+        if not started:
             out.write(f"{recipe.id} is already running from this recipe file; nothing to start\n")
+            if check_started is not None:
+                out.write(f"note: {recipe.id} was already running from this recipe file, so llmctl did not check "
+                          f"its memory again; {up_command(recipe)} --replace restarts it and checks it\n")
         else:
-            _start(host, recipe, runtime, adapter, argv, running, replace)
+            _start(host, recipe, runtime, adapter, argv, running, replace, env)
         try:
             _wait_ready(host, recipe, runtime, adapter)
         except KeyboardInterrupt:
             host.err.write(f"interrupted; the server keeps starting in the background, check ./llmctl status\n")
             return 130
+        if started and check_started is not None:
+            try:
+                check = check_started(host, runtime, recipe)
+            except KeyboardInterrupt:
+                host.err.write("interrupted; the server is running, but llmctl did not check its memory or write the "
+                               f"clients; {up_command(recipe)} --replace restarts it and checks it\n")
+                return 130
+            interrupted = _apply_check(host, runtime, check)
+            if interrupted is not None:
+                return interrupted
         out.write(f"ready: http://127.0.0.1:{runtime.host_port}/v1, served as '{target.served}', "
                   f"context {recipe.context}, output {recipe.clients.output}\n")
         result = clients.apply(host, catalog, target, set_default=set_default, dsh_checked=plan.dsh_checked,
@@ -224,7 +268,7 @@ def pull(host, catalog, name: str, runtime_name: str | None, *, yes: bool, env_f
     image_needed = not docker_state.image_present(host, runtime.image)
     out = host.out
     if not files_needed and not image_needed:
-        out.write(f"{recipe.id}: already pulled; start it with ./llmctl up {recipe.id}\n")
+        out.write(f"{recipe.id}: already pulled; start it with {up_command(recipe)}\n")
         return 0
     parts = []
     if files_needed:
@@ -247,5 +291,5 @@ def pull(host, catalog, name: str, runtime_name: str | None, *, yes: bool, env_f
                 raise DownloadError(f"docker pull {runtime.image} failed")
         if files_needed:
             adapter.pull(host, recipe, runtime, home, auth, out)
-    out.write(f"ready: ./llmctl up {recipe.id}{'' if recipe.runtime == 'llamacpp' else ' --runtime ' + recipe.runtime}\n")
+    out.write(f"ready: {up_command(recipe)}\n")
     return 0

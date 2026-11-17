@@ -2,14 +2,17 @@ import shutil
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
+from launcher import catalog as catalog_module
 from launcher import model
 from launcher.catalog import load_catalog, override_dir, resolve
 from launcher.command import docker_run_argv
 from launcher.errors import RecipeError, UsageError
 from launcher.model import HostEnv
-from launcher.runtimes import ADAPTERS
+from launcher.runtimes import ADAPTERS, llamacpp, vllm
 from launcher.tests.fakes import REPO
+from launcher.tests.sglang_fixture import recipes_with_sglang, registered
 
 ENV = HostEnv(Path("/home/user/.cache/huggingface"), 1000, 1000)
 QWEN_FILE = "qwen3.6-35b-a3b.toml"
@@ -158,6 +161,50 @@ class OverrideDirTest(unittest.TestCase):
         self.assertEqual(override_dir({"LLMCTL_RECIPES_DIR": "/x", "XDG_CONFIG_HOME": "/c", "HOME": "/h"}), Path("/x"))
         self.assertEqual(override_dir({"XDG_CONFIG_HOME": "/c", "HOME": "/h"}), Path("/c/llmctl/recipes"))
         self.assertEqual(override_dir({"XDG_CONFIG_HOME": "", "HOME": "/h"}), Path("/h/.config/llmctl/recipes"))
+
+    def test_cache_dir(self):
+        self.assertEqual(catalog_module.cache_dir({"XDG_CACHE_HOME": "/c", "HOME": "/h"}), Path("/c/llmctl"))
+        self.assertEqual(catalog_module.cache_dir({"XDG_CACHE_HOME": "", "HOME": "/h"}), Path("/h/.cache/llmctl"))
+        self.assertEqual(catalog_module.cache_dir({"HOME": "/h"}), Path("/h/.cache/llmctl"))
+
+
+class ThreeRuntimeTest(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+
+    def test_runtime_choices(self):
+        with mock.patch.dict(ADAPTERS, {"llamacpp": llamacpp, "vllm": vllm}, clear=True):
+            self.assertEqual(catalog_module.runtime_choices(), "llamacpp or vllm")
+        with registered():
+            self.assertEqual(catalog_module.runtime_choices(), "llamacpp, vllm or sglang")
+            catalog = load_catalog(recipes_with_sglang(Path(self.tmp.name)), None)
+            with self.assertRaises(UsageError) as ctx:
+                resolve(catalog, "qwen3.5-9b", "ollama")
+        self.assertEqual(str(ctx.exception), "unknown runtime 'ollama'; choose llamacpp, vllm or sglang")
+
+    def test_three_runtime_resolution(self):
+        with registered():
+            recipes = recipes_with_sglang(Path(self.tmp.name))
+            # Without a llama.cpp recipe of this name, so the test still checks vLLM before SGLang once a llama.cpp
+            # qwen3.5-9b recipe ships.
+            (recipes / "llamacpp" / "qwen3.5-9b.toml").unlink(missing_ok=True)
+            catalog = load_catalog(recipes, None)
+            self.assertEqual(resolve(catalog, "qwen3.5-9b", None)[0].runtime, "vllm")
+            self.assertEqual(resolve(catalog, "gpt-oss-20b", None)[0].runtime, "llamacpp")
+            self.assertEqual(resolve(catalog, "qwen3.5-9b", "sglang")[0].runtime, "sglang")
+
+    def test_llamacpp_and_vllm_ignore_cache_dir(self):
+        shipped = load_catalog(REPO / "recipes", None)
+        with_cache = HostEnv(ENV.hf_home, ENV.uid, ENV.gid, Path("/x"))
+        for name in ("llamacpp", "vllm"):
+            entry = shipped.runtimes[name]
+            for recipe in entry.recipes.values():
+                with self.subTest(recipe=f"{name}/{recipe.id}"):
+                    adapter = ADAPTERS[name]
+                    self.assertEqual(
+                        docker_run_argv(recipe, entry.runtime, adapter.container_spec(recipe, entry.runtime, with_cache)),
+                        docker_run_argv(recipe, entry.runtime, adapter.container_spec(recipe, entry.runtime, ENV)))
 
 
 TOGGLE_OFF = (16384, "toggle", "off", (), ())
