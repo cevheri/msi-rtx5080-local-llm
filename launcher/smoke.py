@@ -1,6 +1,7 @@
 """`llmctl test`: three requests against the running server, as in llamacpp/README.md#smoke-tests."""
 
 import json
+import re
 
 from launcher.errors import StartError
 from launcher.runtimes import ADAPTERS
@@ -39,7 +40,7 @@ def smoke(host, recipe, runtime) -> int:
     message = data["choices"][0]["message"]
     content = (message.get("content") or "").strip()
     reasoning = message.get("reasoning_content") or message.get("reasoning") or ""
-    if "OK" in content.upper():
+    if re.fullmatch(r"[\s*_`\"'.!,]*ok[\s*_`\"'.!,]*", content.lower()):
         out.write(f"reply: ok ({content[:40]!r})\n")
     elif not content and reasoning:
         out.write("reply: ok (reasoning only; the model spent its budget thinking)\n")

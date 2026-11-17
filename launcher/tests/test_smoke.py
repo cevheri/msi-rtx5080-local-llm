@@ -61,6 +61,36 @@ class SmokeTest(unittest.TestCase):
         self.assertEqual(smoke(host, self.recipe, self.runtime), 0)
         self.assertIn("reply: ok (reasoning only", host.out.getvalue())
 
+    def smoke_with_reply(self, content):
+        host = FakeHost()
+        call = {"function": {"name": "get_weather", "arguments": "{}"}}
+
+        def answer(method, url, headers, body):
+            request = json.loads(body)
+            if "tools" in request:
+                return reply({"tool_calls": [call]}, "tool_calls")
+            if "lighthouse" in request["messages"][0]["content"]:
+                return reply({"content": "x"}, usage={"completion_tokens": 10}, timings={"predicted_per_second": 50.0})
+            return reply({"content": content})
+
+        host.on_http("POST", URL, answer)
+        return smoke(host, self.recipe, self.runtime), host.out.getvalue()
+
+    def test_garbled_reply_fails(self):
+        for content in ("\u010aOK", "NOT OK", "BOOK", "OKAY", "OK, but no"):
+            with self.subTest(content=content):
+                code, out = self.smoke_with_reply(content)
+                self.assertEqual(code, 4)
+                self.assertIn(f"reply: FAILED, expected OK, got {content!r}", out)
+
+    def test_exact_ok_reply_passes(self):
+        for content in ("OK", "ok.", "**OK**", " OK\n", '"OK"', "'OK'", "`OK`", "_OK_", "OK!", "OK,", '" OK"',
+                        '"\u00a0OK"', "*\u2003OK\u3000*"):
+            with self.subTest(content=content):
+                code, out = self.smoke_with_reply(content)
+                self.assertEqual(code, 0, out)
+                self.assertIn("reply: ok", out)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,6 +1,6 @@
 # Example override: copy it to ~/.config/llmctl/recipes/llamacpp/ and edit it.
 # It replaces the shipped Qwen3.6 recipe whole, so it must state every value, and its evidence
-# says estimate until you measure it on your machine (docs/llmctl.md, Local overrides).
+# says estimate until you measure it on your machine (docs/llmctl.md, Overrides for another machine).
 schema = 1
 id = "qwen3.6-35b-a3b"
 name = "Qwen3.6-35B-A3B Q4_K_M"
