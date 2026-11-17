@@ -9,8 +9,8 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
-from launcher.errors import DownloadError, RecipeError
-from launcher.hfcache import HfAuth, repo_dirname
+from launcher.errors import RecipeError
+from launcher.hfcache import HfAuth, HfRepoModel, cli_download, repo_dirname, snapshot_problems
 from launcher.model import ClientMeta, ContainerSpec, GpuInfo, HostEnv, Recipe, RuntimeConfig, Source
 from launcher.validate import (
     check_keys,
@@ -55,16 +55,6 @@ _VOLUME = re.compile(r"[a-zA-Z0-9][a-zA-Z0-9_.-]*:/[^:]+(:ro)?")
 @dataclass(frozen=True)
 class VllmRuntimeConfig(RuntimeConfig):
     default_gpu_memory_utilization: float = 0.0  # what the image's vLLM uses when a recipe does not set it
-
-
-@dataclass(frozen=True)
-class HfRepoModel:
-    repo: str
-    revision: str
-    include: tuple[str, ...]
-    exclude: tuple[str, ...]
-    size_bytes: int
-    served_name: str
 
 
 def parse_runtime(data: dict, source: Source) -> RuntimeConfig:
@@ -234,25 +224,8 @@ def parse_recipe(data: dict, source: Source, stem: str) -> Recipe:
     )
 
 
-def snapshot_path(recipe: Recipe, hf_home: Path) -> Path:
-    return hf_home / "hub" / repo_dirname(recipe.model.repo) / "snapshots" / recipe.model.revision
-
-
 def file_problems(recipe: Recipe, hf_home: Path) -> list[str]:
-    """Complete means every link resolves and the files add up to the recipe's size; hf links small files first."""
-    snapshot = snapshot_path(recipe, hf_home)
-    if not snapshot.is_dir():
-        return [f"missing snapshot {recipe.model.revision} of {recipe.model.repo}"]
-    entries = [path for path in snapshot.rglob("*") if path.is_symlink() or path.is_file()]
-    dangling = sorted(path.name for path in entries if not path.exists())
-    if dangling:
-        return [f"the download is incomplete: {', '.join(dangling[:3])} missing in snapshot {recipe.model.revision}"]
-    if not (snapshot / "config.json").is_file():
-        return [f"missing config.json in snapshot {recipe.model.revision}"]
-    total = sum(path.stat().st_size for path in entries)
-    if total != recipe.model.size_bytes:
-        return [f"the snapshot holds {total} bytes, the recipe expects {recipe.model.size_bytes}; the download is incomplete"]
-    return []
+    return snapshot_problems(recipe.model, hf_home)
 
 
 def served_name(recipe: Recipe, runtime: RuntimeConfig) -> str:
@@ -301,28 +274,7 @@ def ready(host, runtime: RuntimeConfig, recipe: Recipe) -> bool:
 
 def pull(host, recipe: Recipe, runtime: RuntimeConfig, hf_home: Path, auth: HfAuth, out) -> None:
     """Download the repository at its pinned revision with the hf CLI from the pinned vLLM image."""
-    uid, gid = host.uid_gid()
-    argv = ["docker", "run", "--rm", "--user", f"{uid}:{gid}", "-e", "HOME=/tmp", "-e", "HF_HOME=/hf"]
-    env_extra = {}
-    if auth.env_file is not None:
-        argv += ["--env-file", str(auth.env_file)]
-    elif auth.token:
-        argv += ["-e", "HF_TOKEN"]
-        env_extra["HF_TOKEN"] = auth.token
-    argv += ["-v", f"{hf_home}:/hf", "--memory", "8g", "--memory-swap", "8g",
-             "--entrypoint", "hf", runtime.image, "download", recipe.model.repo, "--revision", recipe.model.revision]
-    for pattern in recipe.model.include:
-        argv += ["--include", pattern]
-    for pattern in recipe.model.exclude:
-        argv += ["--exclude", pattern]
-    out.write(f"{recipe.id}: downloading {recipe.model.repo} at {recipe.model.revision[:12]} with the hf CLI\n")
-    result = host.run(argv, env_extra=env_extra or None)
-    if result.returncode != 0:
-        tail = "\n".join((result.stderr or result.stdout).strip().splitlines()[-5:])
-        raise DownloadError(f"{recipe.id}: hf download exited {result.returncode}:\n{tail}")
-    problems = file_problems(recipe, hf_home)
-    if problems:
-        raise DownloadError(f"{recipe.id}: " + "; ".join(problems))
+    cli_download(host, recipe.id, recipe.model, runtime.image, "hf", (), hf_home, auth, out)
 
 
 def gpu_need_text(recipe: Recipe, runtime: VllmRuntimeConfig) -> str:

@@ -2,7 +2,9 @@
 
 download_file writes the same layout huggingface_hub does, from a pinned revision, and checks every file
 against the SHA-256 that Hugging Face publishes for it before linking it into the snapshot.
-The token is only ever sent in a request header; it is never printed.
+snapshot_problems and cli_download serve the runtimes that download a whole snapshot with an image's hf CLI.
+The token goes only into a request header (download_file) or into docker run's environment or --env-file
+(cli_download); it never appears in an argv and is never printed.
 """
 
 import hashlib
@@ -41,6 +43,60 @@ def repo_dir(home: Path, repo: str) -> Path:
 
 def snapshot_dir(home: Path, repo: str, revision: str) -> Path:
     return repo_dir(home, repo) / "snapshots" / revision
+
+
+@dataclass(frozen=True)
+class HfRepoModel:
+    repo: str
+    revision: str
+    include: tuple[str, ...]
+    exclude: tuple[str, ...]
+    size_bytes: int
+    served_name: str
+
+
+def snapshot_problems(model: HfRepoModel, home: Path) -> list[str]:
+    """Complete means every link resolves and the files add up to the recipe's size; hf links small files first."""
+    snapshot = snapshot_dir(home, model.repo, model.revision)
+    if not snapshot.is_dir():
+        return [f"missing snapshot {model.revision} of {model.repo}"]
+    entries = [path for path in snapshot.rglob("*") if path.is_symlink() or path.is_file()]
+    dangling = sorted(path.name for path in entries if not path.exists())
+    if dangling:
+        return [f"the download is incomplete: {', '.join(dangling[:3])} missing in snapshot {model.revision}"]
+    if not (snapshot / "config.json").is_file():
+        return [f"missing config.json in snapshot {model.revision}"]
+    total = sum(path.stat().st_size for path in entries)
+    if total != model.size_bytes:
+        return [f"the snapshot holds {total} bytes, the recipe expects {model.size_bytes}; the download is incomplete"]
+    return []
+
+
+def cli_download(host, recipe_id: str, model: HfRepoModel, image: str, entrypoint: str, command: tuple[str, ...],
+                 home: Path, auth: HfAuth, out) -> None:
+    """Download the repository at its pinned revision with the hf CLI from a pinned runtime image."""
+    uid, gid = host.uid_gid()
+    argv = ["docker", "run", "--rm", "--user", f"{uid}:{gid}", "-e", "HOME=/tmp", "-e", "HF_HOME=/hf"]
+    env_extra = {}
+    if auth.env_file is not None:
+        argv += ["--env-file", str(auth.env_file)]
+    elif auth.token:
+        argv += ["-e", "HF_TOKEN"]
+        env_extra["HF_TOKEN"] = auth.token
+    argv += ["-v", f"{home}:/hf", "--memory", "8g", "--memory-swap", "8g",
+             "--entrypoint", entrypoint, image, *command, "download", model.repo, "--revision", model.revision]
+    for pattern in model.include:
+        argv += ["--include", pattern]
+    for pattern in model.exclude:
+        argv += ["--exclude", pattern]
+    out.write(f"{recipe_id}: downloading {model.repo} at {model.revision[:12]} with the hf CLI\n")
+    result = host.run(argv, env_extra=env_extra or None)
+    if result.returncode != 0:
+        tail = "\n".join((result.stderr or result.stdout).strip().splitlines()[-5:])
+        raise DownloadError(f"{recipe_id}: hf download exited {result.returncode}:\n{tail}")
+    problems = snapshot_problems(model, home)
+    if problems:
+        raise DownloadError(f"{recipe_id}: " + "; ".join(problems))
 
 
 def read_auth(env, env_file: Path | None) -> HfAuth:

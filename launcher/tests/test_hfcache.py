@@ -5,6 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from launcher import hfcache
 from launcher.catalog import load_catalog, resolve
 from launcher.errors import DownloadError, PreflightError, UsageError
 from launcher.hfcache import HfAuth, download_file, hf_home, read_auth, snapshot_dir
@@ -126,6 +127,100 @@ class DownloadTest(unittest.TestCase):
         with self.assertRaises(DownloadError) as ctx:
             download_file(self.host, self.home, "org/model", REV, "m.gguf", None, self.out)
         self.assertIn("no SHA-256", str(ctx.exception))
+
+
+class SnapshotHelpersTest(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.home = Path(self.tmp.name)
+        self.catalog = load_catalog(REPO / "recipes", None)
+        self.out = io.StringIO()
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def test_snapshot_problems_rules(self):
+        model = hfcache.HfRepoModel("org/m", REV, (), (), 12, "m")
+        snapshot = snapshot_dir(self.home, "org/m", REV)
+        self.assertEqual(hfcache.snapshot_problems(model, self.home), [f"missing snapshot {REV} of org/m"])
+        snapshot.mkdir(parents=True)
+        self.assertEqual(hfcache.snapshot_problems(model, self.home), [f"missing config.json in snapshot {REV}"])
+        os.symlink("../../blobs/gone", snapshot / "x.safetensors")
+        problems = hfcache.snapshot_problems(model, self.home)
+        self.assertEqual(len(problems), 1)
+        self.assertTrue(problems[0].startswith("the download is incomplete: x.safetensors missing in snapshot"))
+        (snapshot / "x.safetensors").unlink()
+        (snapshot / "config.json").write_text("{}")
+        (snapshot / "model.safetensors").write_bytes(b"x" * 9)
+        self.assertEqual(hfcache.snapshot_problems(model, self.home),
+                         ["the snapshot holds 11 bytes, the recipe expects 12; the download is incomplete"])
+        (snapshot / "model.safetensors").write_bytes(b"x" * 10)
+        self.assertEqual(hfcache.snapshot_problems(model, self.home), [])
+
+    def _completing_host(self, recipe):
+        host = FakeHost()
+        snapshot = snapshot_dir(self.home, recipe.model.repo, recipe.model.revision)
+
+        def done(argv):
+            complete_snapshot(snapshot, recipe.model.size_bytes)
+            return ok()
+
+        host.on(("docker", "run"), done)
+        return host
+
+    def test_cli_download_hf_is_the_vllm_argv(self):
+        recipe, runtime = resolve(self.catalog, "gpt-oss-20b", "vllm")
+        host = self._completing_host(recipe)
+        hfcache.cli_download(host, recipe.id, recipe.model, runtime.image, "hf", (), self.home,
+                             HfAuth(SECRET, None), self.out)
+        self.assertEqual(host.calls[0], [
+            "docker", "run", "--rm", "--user", "1000:1000", "-e", "HOME=/tmp", "-e", "HF_HOME=/hf",
+            "-e", "HF_TOKEN", "-v", f"{self.home}:/hf", "--memory", "8g", "--memory-swap", "8g",
+            "--entrypoint", "hf", "vllm/vllm-openai:v0.33.0", "download", "openai/gpt-oss-20b",
+            "--revision", "6cee5e81ee83917806bbde320786a8fb61efebee", "--exclude", "original/*",
+            "--exclude", "metal/*"])
+        self.assertEqual(host.env_extras[0], {"HF_TOKEN": SECRET})
+        self.assertEqual(self.out.getvalue(),
+                         "gpt-oss-20b: downloading openai/gpt-oss-20b at 6cee5e81ee83 with the hf CLI\n")
+
+    def test_cli_download_python_module(self):
+        recipe, _ = resolve(self.catalog, "gpt-oss-20b", "vllm")
+        host = self._completing_host(recipe)
+        hfcache.cli_download(host, recipe.id, recipe.model, "lmsysorg/sglang:v0.5.23-runtime", "python3",
+                             ("-m", "huggingface_hub.cli.hf"), self.home, HfAuth(SECRET, None), self.out)
+        argv = host.calls[0]
+        self.assertEqual(argv[argv.index("--entrypoint"):], [
+            "--entrypoint", "python3", "lmsysorg/sglang:v0.5.23-runtime", "-m", "huggingface_hub.cli.hf",
+            "download", "openai/gpt-oss-20b", "--revision", "6cee5e81ee83917806bbde320786a8fb61efebee",
+            "--exclude", "original/*", "--exclude", "metal/*"])
+        self.assertFalse(any(SECRET in item for item in argv))
+        self.assertNotIn(SECRET, self.out.getvalue() + host.out.getvalue() + host.err.getvalue())
+
+    def test_cli_download_env_file_and_failures(self):
+        recipe, runtime = resolve(self.catalog, "gpt-oss-20b", "vllm")
+        host = self._completing_host(recipe)
+        hfcache.cli_download(host, recipe.id, recipe.model, runtime.image, "hf", (), self.home,
+                             HfAuth(SECRET, Path("/x/hf.env")), self.out)
+        argv = host.calls[0]
+        self.assertEqual(argv[argv.index("--env-file") + 1], "/x/hf.env")
+        self.assertNotIn("HF_TOKEN", argv)
+        self.assertEqual(host.env_extras[0], {})
+
+        host = FakeHost()
+        host.on(("docker", "run"), fail("Repository not found"))
+        with self.assertRaises(DownloadError) as ctx:
+            hfcache.cli_download(host, recipe.id, recipe.model, runtime.image, "hf", (),
+                                 Path(self.tmp.name) / "empty", HfAuth(None, None), self.out)
+        self.assertTrue(str(ctx.exception).startswith("gpt-oss-20b: hf download exited 1:"))
+
+        host = FakeHost()
+        host.on(("docker", "run"), ok())
+        snapshot = snapshot_dir(self.home, recipe.model.repo, recipe.model.revision)
+        (snapshot / "model.safetensors").unlink()
+        with self.assertRaises(DownloadError) as ctx:
+            hfcache.cli_download(host, recipe.id, recipe.model, runtime.image, "hf", (), self.home,
+                                 HfAuth(None, None), self.out)
+        self.assertTrue(str(ctx.exception).startswith("gpt-oss-20b: the snapshot holds"))
 
 
 class PullTest(unittest.TestCase):
