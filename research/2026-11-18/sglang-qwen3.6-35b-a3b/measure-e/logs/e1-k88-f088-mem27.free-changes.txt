@@ -1,0 +1,35 @@
+utc, free before, free after, last sequence event before the sample
+22:57:25, 15731, 15728, before ready
+22:57:42, 15728, 15486, before ready
+22:57:43, 15486, 13144, before ready
+22:57:44, 13144, 11782, before ready
+22:57:45, 11782, 10298, before ready
+22:57:46, 10298, 8814, before ready
+22:57:47, 8814, 7488, before ready
+22:57:48, 7488, 6030, before ready
+22:57:49, 6030, 5784, before ready
+22:58:06, 5784, 5350, before ready
+22:58:08, 5350, 5346, before ready
+22:58:09, 5346, 5344, before ready
+22:58:10, 5344, 5342, before ready
+22:58:11, 5342, 5338, before ready
+22:58:12, 5338, 5336, before ready
+22:58:13, 5336, 5334, before ready
+22:58:14, 5334, 5332, before ready
+22:58:15, 5332, 5328, before ready
+22:58:16, 5328, 5326, before ready
+22:58:17, 5326, 5324, before ready
+22:58:18, 5324, 5322, before ready
+22:58:19, 5322, 5320, before ready
+22:58:20, 5320, 5316, before ready
+22:58:21, 5316, 5128, before ready
+22:58:22, 5128, 1488, before ready
+22:58:23, 1488, 1427, before ready
+22:58:24, 1427, 1426, before ready
+22:58:25, 1426, 1071, before ready
+22:58:26, 1071, 977, flush_ready
+22:58:29, 977, 637, gpu_before nearfull_p1
+22:58:30, 637, 507, gpu_before nearfull_p1
+22:58:58, 507, 505, gpu_before nearfull_p1
+23:05:16, 505, 783, end
+23:05:17, 783, 15731, end

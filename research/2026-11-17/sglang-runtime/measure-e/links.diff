@@ -1,0 +1,50 @@
+--- $SCRATCH/sglang/measure-e/README.md
++++ sglang-runtime/measure-e/README.md
+@@ -3,10 +3,10 @@
+ Last verified: 2026-11-18.
+ 
+ This folder holds measurement E for the lead who adds SGLang as llmctl's third runtime, as the brief `$SCRATCH/prompts/sglang-measure-e.md` asks, with measurements C and D as the template for method, layout and wording.
+-It is one warm start, e1-k88-f088-mem27, of measurement C's shipped Qwen3.6-35B-A3B settings as the draft `$SCRATCH/sglang/overrides/sglang/qwen3.6-35b-a3b.toml` and C's command file `w3-k88-f088-mem27.sh` give them: K 88 of 256 experts resident, Marlin, fraction 0.88, BF16 KV, 8 Mamba slots, 128k, the runtime file's eight variables including `PYTORCH_ALLOC_CONF=pinned_max_round_threshold_mb:1`, `--memory 27g --memory-swap 27g` and the warm volume `sglang-research-cache` ([sglang-qwen3.6-35b-a3b/](sglang-qwen3.6-35b-a3b/README.md)).
++It is one warm start, e1-k88-f088-mem27, of measurement C's shipped Qwen3.6-35B-A3B settings as the draft `$SCRATCH/sglang/overrides/sglang/qwen3.6-35b-a3b.toml` and C's command file `w3-k88-f088-mem27.sh` give them: K 88 of 256 experts resident, Marlin, fraction 0.88, BF16 KV, 8 Mamba slots, 128k, the runtime file's eight variables including `PYTORCH_ALLOC_CONF=pinned_max_round_threshold_mb:1`, `--memory 27g --memory-swap 27g` and the warm volume `sglang-research-cache` ([sglang-qwen3.6-35b-a3b/](../../../2026-11-18/sglang-qwen3.6-35b-a3b/measure-e/README.md)).
+ The container was `lmsysorg/sglang:v0.5.23-runtime` (image ID `3ce6da3e5ea0`) named `sglang-measure`, with `--device nvidia.com/gpu=all --ipc=host`, `-p 127.0.0.1:30000:30000`, the Hugging Face cache read-only, no restart policy, and C's model overlay `$SCRATCH/sglang/measure-c/overlay/qwen3.6-35b-a3b/` mounted read-only at `/llmctl/model`, as C's command file names it.
+ Every llmctl command ran as the copy of main at 5ad8883 (`$SCRATCH/llmctl-main/llmctl`), and the repository was only read.
+-The enforced GPU power limit read 145 W before the start, and the desktop held 112 MiB ([sglang-qwen3.6-35b-a3b/logs/e1-k88-f088-mem27.meta](sglang-qwen3.6-35b-a3b/logs/e1-k88-f088-mem27.meta)) (measured).
++The enforced GPU power limit read 145 W before the start, and the desktop held 112 MiB ([sglang-qwen3.6-35b-a3b/logs/e1-k88-f088-mem27.meta](../../../2026-11-18/sglang-qwen3.6-35b-a3b/measure-e/logs/e1-k88-f088-mem27.meta)) (measured).
+ Labels: "(measured on the MSI Raider 18 Max HX, SGLang v0.5.23)" for this run and for figures read from the records of measurements B, C and D, "(inferred from <what>)" for conclusions drawn from logs and records, "(estimate)" for arithmetic and for the D8 rule.
+ "Free" means `nvidia-smi` free memory of the whole GPU; "flushed" means read right after D8's `POST /flush_cache`; times are UTC and dates local (+03:00).
+ 
+@@ -23,7 +23,7 @@
+ | Drop from the flushed reading | 472 MiB (446 MiB from the unflushed reading) |
+ | M12 | 91 requests in 300 s, no error, decode median 155.25 tok/s |
+ 
+-All figures are measured on the MSI Raider 18 Max HX, SGLang v0.5.23 ([sglang-qwen3.6-35b-a3b/README.md](sglang-qwen3.6-35b-a3b/README.md), [lane-logs/margins-qwen3.6.txt](lane-logs/margins-qwen3.6.txt)).
++All figures are measured on the MSI Raider 18 Max HX, SGLang v0.5.23 ([sglang-qwen3.6-35b-a3b/README.md](../../../2026-11-18/sglang-qwen3.6-35b-a3b/measure-e/README.md), [lane-logs/margins-qwen3.6.txt](lane-logs/margins-qwen3.6.txt)).
+ - The flush released 26 MiB (951 to 977 MiB); the first 95% prompt then took 472 MiB, and nothing after it took more: every reading and every 1 s sample from 22:58:58 to the end read 505 MiB (measured).
+ - The draft's `ram_gib = 23` and `memory_gib = 27` still hold: anon plus shmem peaked at 22.76 GiB and the non-reclaimable total at 22.98 GiB under the 27 GiB cap, without OOM (measured).
+ 
+@@ -65,7 +65,7 @@
+ 
+ | Time (UTC) | Record | Start | Ready line | Poll | Sequence |
+ |---|---|---|---|---|---|
+-| 22:57:22 | [sglang-qwen3.6-35b-a3b](sglang-qwen3.6-35b-a3b/README.md) | e1-k88-f088-mem27 | 63.8 s | 64.08 s | ready reading, D8's flush and flushed reading, 95% prompt, title and forced tool requests, 300 s load, second 95% prompt |
++| 22:57:22 | [sglang-qwen3.6-35b-a3b](../../../2026-11-18/sglang-qwen3.6-35b-a3b/measure-e/README.md) | e1-k88-f088-mem27 | 63.8 s | 64.08 s | ready reading, D8's flush and flushed reading, 95% prompt, title and forced tool requests, 300 s load, second 95% prompt |
+ 
+ Measured on the MSI Raider 18 Max HX, SGLang v0.5.23 ([lane-logs/starts.txt](lane-logs/starts.txt), by `scripts/starts_table_c.py`); "ready line" is SGLang's "The server is fired up and ready to roll!" after the `docker run` call and "poll" the readiness poll (`/ready` 200 and the served name in `/v1/models`); the container ended `running exit=0 oom=false` before its removal.
+ Besides it, one throwaway `--rm --ipc=host --network none --memory 256m` container of the same image removed the `/dev/shm` files the start left.
+@@ -74,14 +74,14 @@
+ 
+ ## Deviations from the brief
+ 
+-1. The docker run file is C's `w3-k88-f088-mem27.sh` with one line added, `-e TIKTOKEN_ENCODINGS_BASE=/opt/sglang/lib/python3.12/site-packages/tml_renderers/data`, because the brief asks for the eight runtime variables and C's file sets seven; nothing else differs ([sglang-qwen3.6-35b-a3b/logs/e1-k88-f088-mem27.cmd-diff-vs-c.txt](sglang-qwen3.6-35b-a3b/logs/e1-k88-f088-mem27.cmd-diff-vs-c.txt)).
++1. The docker run file is C's `w3-k88-f088-mem27.sh` with one line added, `-e TIKTOKEN_ENCODINGS_BASE=/opt/sglang/lib/python3.12/site-packages/tml_renderers/data`, because the brief asks for the eight runtime variables and C's file sets seven; nothing else differs ([sglang-qwen3.6-35b-a3b/logs/e1-k88-f088-mem27.cmd-diff-vs-c.txt](../../../2026-11-18/sglang-qwen3.6-35b-a3b/measure-e/logs/e1-k88-f088-mem27.cmd-diff-vs-c.txt)).
+ 2. `$SCRATCH/llmctl-main/llmctl status` ran both plain, as the brief names it, and with the `.kimi-code/bin` prefix, at the start and at the end, all read-only, because the plain runs list Kimi as "not installed (no kimi on PATH)" and only the prefixed runs show every client, as D did.
+ 
+ Not deviations, but differences from D's method that the brief sets: `margins_e.py` rounds as the brief says (a sum that is already a multiple of 64 stays), where D's `margins_d.py` and the design's D8 text use "the next multiple of 64 above", and it prints both when they differ; for every measured drop they agree.
+ 
+ ## Files
+ 
+-- [sglang-qwen3.6-35b-a3b/](sglang-qwen3.6-35b-a3b/README.md): the record of the start, with `cmds/`, `logs/`, `shapes/` and its README.
++- [sglang-qwen3.6-35b-a3b/](../../../2026-11-18/sglang-qwen3.6-35b-a3b/measure-e/README.md): the record of the start, with `cmds/`, `logs/`, `shapes/` and its README.
+ - [scripts/](scripts/): `run_e.sh` drives the start (D's `run_d.sh` with E's folder), `chain_e1.sh` queued it, `margins_e.py` is D's `margins_d.py` with the brief's window and rounding and an `--exclude` view, and `check_inputs_e.py` checks the docker run file against the draft and the overlay against C's make record and the snapshot; copied unchanged from D: `seq_d.py`, `poll_c.py`, `trace_c.sh`, `procmem.sh`, `maps_inside.py`, `mcommon.py`, `cutlog.py`, `reqlog.py`, `sustained.py` (the hands-on script, sha256 `47830acf...`), `anonshmem.py`, `nonreclaim.py`, `summarize_c.py`, `starts_table_c.py`, `scrub.py`, `shm_cleanup.sh` and `margins_d.py`; run the Python scripts with `python3 -I`.
+ - [lane-logs/](lane-logs/): the llmctl outputs, the chain log, the margin tables (`margins-bcde.txt` over all 15 starts, `margins-qwen3.6.txt` over the three Qwen3.6 starts, `margins-bcd-check.txt` with the list of B's, C's and D's starts in `margins-runs-bcd.list`), the starts table, the `/dev/shm` reading at the lane start, and the end reading of disk, volumes, containers and `/dev/shm`.
+ - Local paths in the records were replaced with `$HOME` and `$SCRATCH`, and the user and host names with `<user>` and `<host>`, by `scripts/scrub.py`.

@@ -1,0 +1,20 @@
+| Start | Free right after ready | After D8's flush | Near-full prompt (tokens, share) | After it | After the first grammar request | After the forced tool request | Lowest over the protocol | Drop from ready | Drop from the flushed reading |
+|---|---|---|---|---|---|---|---|---|---|
+| E qwen3.6-35b-a3b e1-k88-f088-mem27 | 951 | 977 | 124,502, 95.0% | 505 | 505 | 505 | 505 | 446 | 472 |
+| D k2-horizon-7b d1-f088 | 1,152 | 1,152 | 62,254, 95.0% | 828 | 828 | 828 | 822 | 330 | 330 |
+| D qwen3.5-9b d2-env | 911 | 937 | 124,502, 95.0% | 551 | 549 | 549 | 541 | 370 | 396 |
+| D gemma-4-12b d2-env | 1,099 | 1,119 | 124,433, 94.9% | 841 | 841 | 841 | 841 | 258 | 278 |
+| D gemma-4-e4b d2-env | 1,407 | 1,923 | 62,244, 95.0% | 1,627 | 1,627 | 1,627 | 1,627 | -220 | 296 |
+| C gpt-oss-20b pe-round1 | 1,346 | not read | 124,457, 95.0% | 1,036 | 1,036 | 1,036 | 1,022 | 324 | none |
+| C gpt-oss-20b pe-round2-mem20 | 1,347 | not read | 124,459, 95.0% | 1,006 | 1,006 | 1,006 | 1,006 | 341 | none |
+| C qwen3.6-35b-a3b w3-k88-f088 | 951 | not read | 124,498, 95.0% | 503 | 503 | 503 | 465 | 486 | none |
+| C qwen3.6-35b-a3b w3-k88-f088-mem27 | 951 | not read | 124,498, 95.0% | 503 | 503 | 503 | 501 | 450 | none |
+| B qwen3.5-9b m12-a3 | 911 | not read | 124,499, 95.0% | 545 | 545 | 545 | 537 | 374 | none |
+| B k2-horizon-7b b0-a2 | 865 | not read | 62,257, 95.0% | 543 | 543 | 543 | 532 | 333 | none |
+| B gpt-oss-20b b0-a4 | 1,329 | not read | 124,463, 95.0% | 989 | 989 | 989 | 989 | 340 | none |
+| B gpt-oss-20b ld19-mem28 | 1,328 | not read | 124,458, 95.0% | 988 | 988 | 988 | 988 | 340 | none |
+| B gemma-4-e4b m5-a4-swa | 1,407 | not read | 62,244, 95.0% | 1,403 | 1,403 | 1,403 | 1,403 | 4 | none |
+| B gemma-4-12b m2-fp8-b | 1,099 | not read | 124,431, 94.9% | 839 | 839 | 839 | 839 | 260 | none |
+
+over these 15 starts (the flushed reading where there is one): largest drop 486 MiB (sglang-qwen3.6-35b-a3b/w3-k88-f088); 486 + 256 = 742; MIN_FREE = 768 MiB (rounded up to a multiple of 64, a multiple stays); ship gate F_ready >= 896 MiB
+without sglang-qwen3.6-35b-a3b/w3-k88-f088, sglang-qwen3.6-35b-a3b/w3-k88-f088-mem27: largest drop 472 MiB (sglang-qwen3.6-35b-a3b/e1-k88-f088-mem27); 472 + 256 = 728; MIN_FREE = 768 MiB (rounded up to a multiple of 64, a multiple stays); ship gate F_ready >= 896 MiB
