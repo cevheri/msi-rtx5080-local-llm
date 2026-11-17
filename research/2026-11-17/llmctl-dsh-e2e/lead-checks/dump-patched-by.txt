@@ -1,0 +1,64 @@
+web.dump:51:# == @deepseek-ai/dsh-base, patched by $HOME/.dsh/cordis.patch.yml
+web.dump-52-- id: agent-default-model
+--
+web.dump:78:# == @deepseek-ai/dsh-base, patched by $HOME/.dsh/cordis.patch.yml
+web.dump-79-- id: llm-pi-ai
+--
+web.dump:153:# == @deepseek-ai/dsh-base, patched by $HOME/.dsh/cordis.patch.yml
+web.dump-154-- id: session-telemetry-otel
+--
+web.dump:211:# == @deepseek-ai/dsh-base, patched by @deepseek-ai/dsh-web-app
+web.dump-212-- id: tool-bash
+--
+web.dump:225:# == @deepseek-ai/dsh-base, patched by @deepseek-ai/dsh-web-app
+web.dump-226-- id: tool-fs
+--
+web.dump:244:# == @deepseek-ai/dsh-base, patched by @deepseek-ai/dsh-web-app
+web.dump-245-- id: skill-filesystem
+--
+web.dump:260:# == @deepseek-ai/dsh-base, patched by @deepseek-ai/dsh-web-app
+web.dump-261-- id: command-goal
+--
+web.dump:318:# == @deepseek-ai/dsh-base, patched by @deepseek-ai/dsh-web-app
+web.dump-319-- id: compaction-basic
+--
+web.dump:342:# == @deepseek-ai/dsh-base, patched by @deepseek-ai/dsh-web-app
+web.dump-343-- id: tool-subagent-control
+--
+web.dump:363:# == @deepseek-ai/dsh-base, patched by @deepseek-ai/dsh-web-app
+web.dump-364-- id: workflow-ptc
+--
+web.dump:383:# == @deepseek-ai/dsh-base, patched by @deepseek-ai/dsh-web-app
+web.dump-384-- id: tool-result-pruner
+--
+web.dump:394:# == @deepseek-ai/dsh-base, patched by @deepseek-ai/dsh-web-app
+web.dump-395-- id: tool-todo
+--
+web.dump:425:# == @deepseek-ai/dsh-base, patched by @deepseek-ai/dsh-web-app
+web.dump-426-- id: tool-web
+--
+web.dump:442:# == @deepseek-ai/dsh-base, patched by @deepseek-ai/dsh-web-app
+web.dump-443-- id: system-prompt
+--
+web.dump:625:# == @deepseek-ai/dsh-web-app, patched by $HOME/.dsh/profiles/web/cordis.patch.yml
+web.dump-626-- id: ui-settings-general
+headless.dump:10:# == @deepseek-ai/dsh-base, patched by @deepseek-ai/dsh-headless
+headless.dump-11-- id: hmr
+--
+headless.dump:53:# == @deepseek-ai/dsh-base, patched by $HOME/.dsh/cordis.patch.yml
+headless.dump-54-- id: agent-default-model
+--
+headless.dump:70:# == @deepseek-ai/dsh-base, patched by @deepseek-ai/dsh-headless
+headless.dump-71-- id: authorization
+--
+headless.dump:84:# == @deepseek-ai/dsh-base, patched by $HOME/.dsh/cordis.patch.yml
+headless.dump-85-- id: llm-pi-ai
+--
+headless.dump:159:# == @deepseek-ai/dsh-base, patched by $HOME/.dsh/cordis.patch.yml
+headless.dump-160-- id: session-telemetry-otel
+--
+headless.dump:183:# == @deepseek-ai/dsh-base, patched by @deepseek-ai/dsh-headless
+headless.dump-184-- id: sandbox-policy
+--
+headless.dump:414:# == @deepseek-ai/dsh-base, patched by @deepseek-ai/dsh-headless
+headless.dump-415-- id: system-prompt

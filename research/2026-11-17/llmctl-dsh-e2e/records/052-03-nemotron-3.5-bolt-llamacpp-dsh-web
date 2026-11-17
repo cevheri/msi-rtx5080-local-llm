@@ -1,0 +1,8 @@
+{
+  "command": "dsh web --port 3182 --no-open",
+  "cwd": "$WORK/03-nemotron-3.5-bolt-llamacpp-dsh-web",
+  "exit": 0,
+  "seconds": 4.5,
+  "stdout": "dsh web: <address withheld>\n",
+  "stderr": ""
+}

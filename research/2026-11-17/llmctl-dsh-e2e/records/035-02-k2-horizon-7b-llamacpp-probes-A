@@ -1,0 +1,42 @@
+{
+  "request": {
+    "model": "local",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a short title for a chat about adding two numbers in Python."
+      }
+    ],
+    "reasoning_effort": "none",
+    "response_format": {
+      "type": "json_schema",
+      "json_schema": {
+        "name": "session_title",
+        "strict": true,
+        "schema": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "title"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "max_tokens": 32768,
+    "stream": false
+  },
+  "status": 200,
+  "reply": "{\"choices\":[{\"finish_reason\":\"stop\",\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"title\\\": \\\"Adding Two Numbers in Python\\\"}\",\"reasoning_content\":\"The user wants a short title for a chat about adding two numbers in Python.\\n The topic is: \\\"adding two numbers in Python\\\"\\n A short, clear title would be something like:\\n - \\\"Adding Two Numbers in Python\\\"\\n - \\\"Python: Adding Numbers\\\"\\n - \\\"Adding Two Numbers\\\"\\n - \\\"Python Number Addition\\\"\\n\\n \\\"Adding Two Numbers in Python\\\" is good because it's specific and short.\\n Or even shorter: \\\"Python Addition\\\"\\n\\n Let's go with \\\"Adding Two Numbers in Python\\\" as it's clear and concise.\"}}],\"created\":1794878663,\"model\":\"local\",\"system_fingerprint\":\"b12407-e574a17b0\",\"object\":\"chat.completion\",\"usage\":{\"completion_tokens\":118,\"prompt_tokens\":24,\"total_tokens\":142,\"prompt_tokens_details\":{\"cached_tokens\":2}},\"id\":\"chatcmpl-LjMqBUgZJMwWV2RDAkp4FgD72Nj5F3CE\",\"timings\":{\"cache_n\":2,\"prompt_n\":22,\"prompt_ms\":16.55,\"prompt_per_token_ms\":0.7522727272727273,\"prompt_per_second\":1329.3051359516617,\"predicted_n\":118,\"predicted_ms\":1731.057,\"predicted_per_token_ms\":14.795358974358974,\"predicted_per_second\":67.58876224179792}}",
+  "record": {
+    "probe": "A",
+    "status": 200,
+    "content": true,
+    "reasoning": true,
+    "title_ok": true
+  }
+}

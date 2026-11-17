@@ -1,0 +1,20 @@
+{
+  "request": {
+    "model": "deepseek-r1-0528-qwen3-8b",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Reply with exactly the word OK."
+      }
+    ],
+    "max_tokens": 256
+  },
+  "status": 200,
+  "reply": "{\"choices\":[{\"finish_reason\":\"stop\",\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"\\nOK\",\"reasoning_content\":\"\\nHmm, the user just asked me to reply with exactly the word \\\"OK\\\". That's a very specific instruction. \\n\\nOkay, let me process this. The user wants a minimal response - just the word \\\"OK\\\" without anything else. This could be testing my compliance with instructions, or perhaps they're looking for a quick confirmation without unnecessary details. \\n\\nI should consider why they might want this. Maybe they're in a hurry, or perhaps they're checking if I can follow directions precisely. It could also be a way to start a conversation with a simple, neutral response. \\n\\nSince the instruction is so clear-cut, my best move is to just respond with \\\"OK\\\" as requested. No need to add anything else that might violate their specific directive. \\n\\nThis seems straightforward - just deliver what they asked for exactly. The user appears to value precision and minimalism in this case. I'll keep it simple and not overthink it.\\n\"}}],\"created\":1794878879,\"model\":\"local\",\"system_fingerprint\":\"b12407-e574a17b0\",\"object\":\"chat.completion\",\"usage\":{\"completion_tokens\":195,\"prompt_tokens\":10,\"total_tokens\":205,\"prompt_tokens_details\":{\"cached_tokens\":2}},\"id\":\"chatcmpl-hwBbdE1btoFEpzdfa0NldsaSB5TPgxy8\",\"timings\":{\"cache_n\":2,\"prompt_n\":8,\"prompt_ms\":29.978,\"prompt_per_token_ms\":3.74725,\"prompt_per_second\":266.86236573487224,\"predicted_n\":195,\"predicted_ms\":2720.071,\"predicted_per_token_ms\":14.020984536082473,\"predicted_per_second\":71.32166770646796}}",
+  "record": {
+    "probe": "D",
+    "status": 200,
+    "content": true,
+    "reasoning": true
+  }
+}

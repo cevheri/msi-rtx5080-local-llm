@@ -1,0 +1,21 @@
+{
+  "request": {
+    "model": "local",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Reply with exactly the word OK."
+      }
+    ],
+    "reasoning_effort": "none",
+    "max_tokens": 256
+  },
+  "status": 200,
+  "reply": "{\"choices\":[{\"finish_reason\":\"stop\",\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"OK\",\"reasoning_content\":\"The user says: \\\"Reply with exactly the word OK.\\\" So the assistant should output exactly \\\"OK\\\". No extra punctuation, no formatting, just the word OK. Ensure no extra whitespace? Typically \\\"OK\\\". Should be exactly that.\"}}],\"created\":1794878666,\"model\":\"local\",\"system_fingerprint\":\"b12407-e574a17b0\",\"object\":\"chat.completion\",\"usage\":{\"completion_tokens\":50,\"prompt_tokens\":17,\"total_tokens\":67,\"prompt_tokens_details\":{\"cached_tokens\":2}},\"id\":\"chatcmpl-EUB8cD74jGM8ASuPIIv2DlesyQNJp0ry\",\"timings\":{\"cache_n\":2,\"prompt_n\":15,\"prompt_ms\":18.059,\"prompt_per_token_ms\":1.2039333333333333,\"prompt_per_second\":830.6107757904646,\"predicted_n\":50,\"predicted_ms\":715.878,\"predicted_per_token_ms\":14.609755102040817,\"predicted_per_second\":68.44741701798351}}",
+  "record": {
+    "probe": "C",
+    "status": 200,
+    "content": true,
+    "reasoning": true
+  }
+}

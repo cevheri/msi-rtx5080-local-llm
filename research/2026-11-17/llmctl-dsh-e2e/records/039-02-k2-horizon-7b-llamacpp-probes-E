@@ -1,0 +1,23 @@
+{
+  "request": {
+    "model": "local",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Reply with exactly the word OK."
+      }
+    ],
+    "max_tokens": 256,
+    "chat_template_kwargs": {
+      "tool_call_format": "xml"
+    }
+  },
+  "status": 200,
+  "reply": "{\"choices\":[{\"finish_reason\":\"stop\",\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"OK\",\"reasoning_content\":\"The user says \\\"Reply with exactly the word OK.\\\" So we should respond exactly with \\\"OK\\\". No extra punctuation, no code block. Just OK.\"}}],\"created\":1794878670,\"model\":\"local\",\"system_fingerprint\":\"b12407-e574a17b0\",\"object\":\"chat.completion\",\"usage\":{\"completion_tokens\":34,\"prompt_tokens\":17,\"total_tokens\":51,\"prompt_tokens_details\":{\"cached_tokens\":16}},\"id\":\"chatcmpl-Ao7jVupKPLy4B3IVWLUjGfTlbavprwHc\",\"timings\":{\"cache_n\":16,\"prompt_n\":1,\"prompt_ms\":14.877,\"prompt_per_token_ms\":14.877,\"prompt_per_second\":67.2178530617732,\"predicted_n\":34,\"predicted_ms\":482.543,\"predicted_per_token_ms\":14.622515151515152,\"predicted_per_second\":68.3876877293837}}",
+  "record": {
+    "probe": "E",
+    "status": 200,
+    "content": true,
+    "reasoning": true
+  }
+}

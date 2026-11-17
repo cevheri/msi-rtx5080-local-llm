@@ -1,0 +1,42 @@
+{
+  "request": {
+    "model": "local",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a short title for a chat about adding two numbers in Python."
+      }
+    ],
+    "reasoning_effort": "none",
+    "response_format": {
+      "type": "json_schema",
+      "json_schema": {
+        "name": "session_title",
+        "strict": true,
+        "schema": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "title"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "max_tokens": 16384,
+    "stream": false
+  },
+  "status": 200,
+  "reply": "{\"choices\":[{\"finish_reason\":\"stop\",\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\n  \\\"title\\\": \\\"Python: Add Two Numbers\\\"\\n}\",\"reasoning_content\":\"\\nWe are writing a short title for a chat about adding two numbers in Python.\\n The title should be concise and descriptive. Since it's about adding two numbers, we can focus on the operation and the language.\\n Let's consider some options:\\n 1. \\\"Add Two Numbers in Python\\\"\\n 2. \\\"Python Number Addition\\\"\\n 3. \\\"Simple Python Addition\\\"\\n 4. \\\"Adding Numbers in Python: Basics\\\"\\n 5. \\\"Python: Two Number Sum\\\"\\n\\n We want to keep it short, so maybe 1-3 words? But we need to convey the context.\\n\\n However, note that the user said \\\"short title\\\", so let's aim for 2-4 words.\\n\\n Option 1: \\\"Add Two Numbers in Python\\\" (4 words) - clear and direct.\\n Option 2: \\\"Python Number Addition\\\" (3 words) - also clear, but might be a bit more general.\\n Option 3: \\\"Simple Python Addition\\\" (3 words) - straightforward.\\n Option 4: \\\"Python: Two Number Sum\\\" (4 words) - uses a colon and is concise.\\n\\n But let's also consider that the user might want a very short title, like just \\\"Add Two Numbers\\\".\\n\\n We'll choose based on clarity and context. Since it's a chat, we might want to be clear that it's in Python.\\n\\n Let's go with: \\\"Add Two Numbers in Python\\\"\\n\\n However, the user might want even shorter. We can also think of:\\n\\n \\\"Python Add Two Numbers\\\"\\n\\n But that might be misinterpreted as the title of a function or code snippet.\\n\\n Considering the above, the most clear and direct short title is \\\"Add Two Numbers in Python\\\".\\n\\n But note: the instruction says \\\"short title\\\", so if we are to make it very short, maybe:\\n\\n \\\"Python Addition Basics\\\"\\n\\n Or even:\\n\\n \\\"Two Number Sum in Python\\\"\\n\\n However, the original request was about adding two numbers, so \\\"Add Two Numbers\\\" is the operation.\\n\\n Let me stick to the operation and the language: \\\"Add Two Numbers in Python\\\"\\n\\n But wait, the user might have meant a very short title for a chat session, so maybe:\\n\\n \\\"Python: Adding Two\\\"\\n\\n But that's not clear.\\n\\n Alternatively, we can use:\\n\\n \\\"Basic Python Addition\\\"\\n\\n Let's choose a few and then decide.\\n\\n However, the user did not specify the level of detail, so I'll provide one that is very clear and concise.\\n\\n Final choice: \\\"Adding Two Numbers in Python\\\"\\n\\n But note that the user said \\\"Write a short title\\\", so we can also do:\\n\\n \\\"Python: Sum of Two\\\"\\n\\n But again, we need to be clear.\\n\\n I think the best is to keep it very clear and use the exact operation. So:\\n\\n Title: \\\"Adding Two Numbers in Python\\\"\\n\\n But if we want to avoid the word \\\"Adding\\\", we can use:\\n\\n \\\"Two Numbers Sum in Python\\\"\\n\\n However, the user might be more familiar with the word \\\"Add\\\". Let's use:\\n\\n \\\"Add Two Numbers in Python\\\"\\n\\n We'll output that as the title.\\n\"}}],\"created\":1794878877,\"model\":\"local\",\"system_fingerprint\":\"b12407-e574a17b0\",\"object\":\"chat.completion\",\"usage\":{\"completion_tokens\":640,\"prompt_tokens\":17,\"total_tokens\":657,\"prompt_tokens_details\":{\"cached_tokens\":1}},\"id\":\"chatcmpl-7eF40gK9xwg9dqJyOjxDWA1cKqbV47CH\",\"timings\":{\"cache_n\":1,\"prompt_n\":16,\"prompt_ms\":16.828,\"prompt_per_token_ms\":1.05175,\"prompt_per_second\":950.7962918944617,\"predicted_n\":640,\"predicted_ms\":9015.798,\"predicted_per_token_ms\":14.109230046948358,\"predicted_per_second\":70.87558971485386}}",
+  "record": {
+    "probe": "A",
+    "status": 200,
+    "content": true,
+    "reasoning": true,
+    "title_ok": true
+  }
+}

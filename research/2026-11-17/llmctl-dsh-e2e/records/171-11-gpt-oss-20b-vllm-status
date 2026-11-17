@@ -1,0 +1,8 @@
+{
+  "command": "./llmctl status",
+  "cwd": "$HOME/projects/llm",
+  "exit": 0,
+  "seconds": 1.2,
+  "stdout": "gpt-oss-20b on vllm, container 'vllm', running\n  recipe: shipped file, sha256 d75471355d37, measured\n  port: 8000/tcp -> 127.0.0.1:8000, health: ready\n  container memory: 16.25GiB / 32GiB, GPU memory in use: 15698 MiB of 16303 MiB\ngpt-oss-20b on llamacpp, container 'llamacpp', exited\n  recipe: shipped file, sha256 fffc2c8b42cb, measured\nclients:\n  OpenCode: default vllm-docker/gpt-oss-20b, the running model ($HOME/.config/opencode/opencode.json)\n  Hermes: profile llmctl for gpt-oss-20b on vLLM, the running model; default profile: llmctl ($HOME/.hermes/profiles/llmctl/config.yaml)\n  Pi: llmctl/gpt-oss-20b for gpt-oss-20b on vLLM, the running model; default llmctl/gpt-oss-20b, thinking medium ($HOME/.pi/agent)\n  dsh: llmctl/gpt-oss-20b for gpt-oss-20b on vLLM, the running model; default llmctl/gpt-oss-20b, held by llmctl ($HOME/.dsh/cordis.patch.yml)\n",
+  "stderr": ""
+}
