@@ -15,7 +15,7 @@ from launcher.tests.regen_golden import CLIENT_GOLDEN, GOLDEN, golden_argv, targ
 
 CLIENT_MODULES = ["files.py", "hermes_config.py", "pi_config.py", "opencode_config.py", "clients.py", "dsh_config.py",
                   "kimi_config.py"]
-ADAPTERS = ["runtimes/llamacpp.py", "runtimes/vllm.py"]
+ADAPTERS = ["runtimes/llamacpp.py", "runtimes/vllm.py", "runtimes/sglang.py"]
 CLIENT_IMPORTS = {"launcher.files", "launcher.clients", "launcher.hermes_config", "launcher.pi_config",
                   "launcher.opencode_config", "launcher.dsh_config", "launcher.kimi_config"}
 

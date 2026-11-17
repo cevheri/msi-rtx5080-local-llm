@@ -1,0 +1,41 @@
+# Test fixture of launcher/tests/test_sglang.py: values that stand for measurements are not measurements.
+schema = 1
+id = "deepseek-r1-0528-qwen3-8b"
+name = "DeepSeek-R1-0528-Qwen3-8B FP8 (chat only)"
+aliases = ["deepseek-r1"]
+doc = "sglang/models.md#deepseek-r1-0528-qwen3-8b-chat-only"
+opencode = false
+chat_only = true
+
+[model]
+repo = "deepseek-ai/DeepSeek-R1-0528-Qwen3-8B"
+revision = "6e8885a6ff5c1dc5201574c8fd700323f23c25fa"
+size_bytes = 16388927770
+served_name = "deepseek-r1-8b"
+
+[container]
+memory_gib = 32
+
+[server]
+context = 65536
+args = [
+  "--quantization", "fp8", "--kv-cache-dtype", "fp8_e4m3", "--mem-fraction-static", "0.90",
+  "--max-running-requests", "1", "--disable-prefill-cuda-graph", "--reasoning-parser", "deepseek-r1",
+]
+sampling = { temperature = 0.6, top_p = 0.95 }
+
+[needs]
+gpu_mib = 15500
+ram_gib = 9.0
+
+[clients]
+output = 16384
+thinking = "always"
+
+[evidence]
+kind = "measured"
+summary = "Fixture: 70.0 tok/s"
+decode_tok_s = 70.0
+date = "2026-11-17"
+hardware = "MSI Raider 18 Max HX A2WI, RTX 5080 Laptop GPU 16 GB, 61 GiB RAM"
+record = "research/2026-11-17/sglang-deepseek-r1-0528-qwen3-8b/"

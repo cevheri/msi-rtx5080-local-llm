@@ -1,0 +1,44 @@
+# Test fixture of launcher/tests/test_sglang.py: values that stand for measurements are not measurements.
+# Measured launch from sglang/models.md#qwen35-9b-nvfp4.
+# Effective sampling: temperature 0.6, top_p 0.95 and top_k 20 from the overlay; min_p 0.0 and repetition_penalty 1.0 by SGLang's defaults.
+schema = 1
+id = "qwen3.5-9b"
+name = "Qwen3.5-9B NVFP4"
+aliases = ["qwen3.5"]
+doc = "sglang/models.md#qwen35-9b-nvfp4"
+opencode = true
+
+[model]
+repo = "RedHatAI/Qwen3.5-9B-NVFP4"
+revision = "a4df85a20fb7e54740f564f15af0c2f5d9c6616c"
+size_bytes = 9381214599
+served_name = "qwen3.5-9b"
+
+[container]
+memory_gib = 32
+
+[server]
+context = 131072
+args = [
+  "--mem-fraction-static", "0.88", "--max-running-requests", "1", "--max-mamba-cache-size", "8",
+  "--disable-prefill-cuda-graph", "--tool-call-parser", "qwen3_coder", "--reasoning-parser", "qwen3",
+  "--default-chat-template-kwargs", '{"enable_thinking":false}',
+]
+sampling = { temperature = 0.6, top_p = 0.95, top_k = 20 }
+
+[needs]
+gpu_mib = 15500
+ram_gib = 9.5
+
+[clients]
+output = 16384
+thinking = "toggle"
+default = "off"
+
+[evidence]
+kind = "measured"
+summary = "Fixture: 92.8 tok/s"
+decode_tok_s = 92.8
+date = "2026-11-17"
+hardware = "MSI Raider 18 Max HX A2WI, RTX 5080 Laptop GPU 16 GB, 61 GiB RAM"
+record = "research/2026-11-17/sglang-qwen3.5-9b/"

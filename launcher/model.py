@@ -35,6 +35,8 @@ class RuntimeConfig:
     opencode_provider: str
     served_name: str | None
     source: Source
+    refuses_tools_without_parser: bool = False  # an engine fact the adapter sets, never read from TOML
+    effort_enables_toggle_thinking: bool = False  # an engine fact the adapter sets, never read from TOML
 
 
 @dataclass(frozen=True)
@@ -75,7 +77,7 @@ class Target:
     recipe: Recipe
     runtime: RuntimeConfig
     served: str
-    label: str  # "llama.cpp" or "vLLM"
+    label: str  # "llama.cpp", "vLLM" or "SGLang"
 
 
 @dataclass(frozen=True)
@@ -102,6 +104,15 @@ class HostEnv:
     hf_home: Path
     uid: int
     gid: int
+    cache_dir: Path | None = None  # llmctl's own cache folder
+
+
+@dataclass(frozen=True)
+class StartCheck:
+    """What a runtime's post-ready check found: the lines up prints, and why the server may not be used."""
+
+    lines: tuple[str, ...]
+    refusal: str | None  # None when the server may be used
 
 
 @dataclass(frozen=True)

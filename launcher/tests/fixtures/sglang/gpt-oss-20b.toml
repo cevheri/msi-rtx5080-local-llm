@@ -1,0 +1,46 @@
+# Test fixture of launcher/tests/test_sglang.py: values that stand for measurements are not measurements.
+# Measured launch from sglang/models.md#gpt-oss-20b.
+# Effective sampling: temperature 1.0 and top_p 1.0 from the overlay, which equal SGLang's defaults; top_k -1, min_p 0.0 and repetition_penalty 1.0 by SGLang's defaults.
+schema = 1
+id = "gpt-oss-20b"
+name = "gpt-oss-20b MXFP4 (SGLang, Paged Experts)"
+aliases = ["gpt-oss"]
+doc = "sglang/models.md#gpt-oss-20b"
+opencode = true
+
+[model]
+repo = "openai/gpt-oss-20b"
+revision = "6cee5e81ee83917806bbde320786a8fb61efebee"
+exclude = ["original/*", "metal/*"]
+size_bytes = 13789264674
+served_name = "gpt-oss-20b"
+
+[container]
+memory_gib = 40
+
+[server]
+context = 131072
+args = [
+  "--mem-fraction-static", "0.90", "--max-running-requests", "1", "--kv-cache-dtype", "fp8_e4m3",
+  "--swa-full-tokens-ratio", "0.1", "--chunked-prefill-size", "1024", "--disable-prefill-cuda-graph",
+  "--moe-runner-backend", "marlin", "--enable-paged-experts", "--paged-experts-num-resident", "24",
+  "--tool-call-parser", "gpt-oss", "--reasoning-parser", "gpt-oss",
+]
+sampling = { temperature = 1.0, top_p = 1.0 }
+
+[needs]
+gpu_mib = 15200
+ram_gib = 31.5
+
+[clients]
+output = 16384
+thinking = "effort"
+efforts = ["low", "medium", "high"]
+
+[evidence]
+kind = "measured"
+summary = "Fixture: 125.5 tok/s"
+decode_tok_s = 125.5
+date = "2026-11-17"
+hardware = "MSI Raider 18 Max HX A2WI, RTX 5080 Laptop GPU 16 GB, 61 GiB RAM"
+record = "research/2026-11-17/sglang-gpt-oss-20b/"
