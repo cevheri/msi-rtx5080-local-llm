@@ -133,6 +133,12 @@ class SglangDataTest(SglangTestCase):
         self.assertIs(runtime.effort_enables_toggle_thinking, True)
         self.assertIs(runtime.refuses_tools_without_parser, False)
 
+    def test_runtime_env_secret_refused(self):
+        with self.assertRaises(RecipeError) as ctx:
+            load_runtime(lambda d: d["env"].update(HF_TOKEN="x"))
+        self.assertIn("[env]: 'HF_TOKEN' would put a secret into the docker run command line", str(ctx.exception))
+        load_runtime()
+
     def test_runtime_refusals(self):
         file = str(FIXTURES / "_runtime.toml")
         cases = [

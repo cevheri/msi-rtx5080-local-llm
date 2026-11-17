@@ -1,6 +1,6 @@
 # Host setup for GPU containers
 
-Last verified: 2026-11-16.
+Last verified: 2026-11-18.
 
 Before any model server can run, install the NVIDIA Container Toolkit from NVIDIA's apt repo and give containers the GPU through CDI (`--device nvidia.com/gpu=all`).
 The `nvidia-container-toolkit-base` package alone is enough for that CDI path, and a toolkit-free manual setup also works but is fragile ([Smaller options](#smaller-options-base-package-only-or-no-toolkit)).
@@ -418,12 +418,13 @@ Current `huggingface_hub` documents `hf cache ls`, `hf cache verify <repo>`, `hf
 
 | Item | Size | Location |
 |---|---|---|
-| vLLM image `v0.33.0` | 9.74 GB compressed; `v0.33.0-x86_64-zstd` is 7.70 GB compressed ([Docker Hub](https://hub.docker.com/r/vllm/vllm-openai/tags)) | `/var/lib/docker` on `/` (405 GB free) |
+| llama.cpp image `ghcr.io/ggml-org/llama.cpp:server-cuda-b12407` | 7.05 GB on disk as `docker image ls` reports it (measured on the MSI Raider 18 Max HX, Docker 29.9.3, 2026-11-18) | `/var/lib/docker` on `/` |
+| vLLM image `vllm/vllm-openai:v0.33.0` | 35.4 GB on disk as `docker image ls` reports it (measured on the MSI Raider 18 Max HX, Docker 29.9.3, 2026-11-18); 9.74 GB compressed; `v0.33.0-x86_64-zstd` is 7.70 GB compressed ([Docker Hub](https://hub.docker.com/r/vllm/vllm-openai/tags)) | `/var/lib/docker` on `/` (405 GB free) |
+| SGLang image `lmsysorg/sglang:v0.5.23-runtime` | 49.7 GB on disk as `docker image ls` reports it (measured on the MSI Raider 18 Max HX, Docker 29.9.3, 2026-11-18) | `/var/lib/docker` on `/` |
 | vLLM compile cache volume | Unknown, grows per model and config | `/var/lib/docker` on `/` |
 | All ten ranked picks, one file each, plus gpt-oss-20b in both GGUF and safetensors | About 174 GiB (estimate, sum of the sizes in [model selection](model-selection.md) plus the 12.82 GiB gpt-oss-20b safetensors) | `~/.cache/huggingface` on `/home` (562 GB free) |
 
 Disk is not the constraint here; RAM and VRAM are.
-The uncompressed size of the images on disk was not measured.
 
 ## Commands that need sudo
 

@@ -1060,6 +1060,12 @@ class SglangUpTest(unittest.TestCase):
             self.up()
         self.assertIn("run ./llmctl pull qwen3.5-9b --runtime sglang", str(ctx.exception))
 
+    def test_pull_names_the_disk_budget(self):
+        self.f.host.on(("docker", "image", "inspect"), fail("Error: No such image"))
+        self.assertEqual(self.pull("qwen3.6-35b-a3b", None)[0],
+                         "qwen3.6-35b-a3b: the image ghcr.io/ggml-org/llama.cpp:server-cuda-b12407 "
+                         "(see docs/host-setup.md#disk-budget for its size) to download")
+
 
 class DownStatusLogsTest(unittest.TestCase):
     def setUp(self):

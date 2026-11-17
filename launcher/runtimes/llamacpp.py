@@ -12,6 +12,7 @@ from launcher.errors import DownloadError, RecipeError
 from launcher.hfcache import HfAuth, download_file, repo_dirname
 from launcher.model import ClientMeta, ContainerSpec, GpuInfo, HostEnv, Recipe, RuntimeConfig, Source
 from launcher.validate import (
+    check_env_secrets,
     check_keys,
     flag_present,
     flag_value,
@@ -78,6 +79,7 @@ def parse_runtime(data: dict, source: Source) -> RuntimeConfig:
     for key, value in env.items():
         if not isinstance(value, str):
             raise RecipeError(f"{where} [env]: '{key}' must be a string")
+    check_env_secrets(env, where)
     if GRAPHS_OFF[0] in env:
         raise RecipeError(f"{where} [env]: {GRAPHS_OFF[0]} is set by llmctl (always 1) and may not appear here")
     served = get_str(data, "served_name", where)

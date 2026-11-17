@@ -38,6 +38,14 @@ class LlamacppRecipeTest(unittest.TestCase):
         runtime = load_runtime()
         self.assertEqual((runtime.refuses_tools_without_parser, runtime.effort_enables_toggle_thinking), (False, False))
 
+    def test_runtime_env_secret_refused(self):
+        data, source = read_toml(RECIPES / "_runtime.toml", "shipped")
+        data["env"] = {"HF_TOKEN": "x"}
+        with self.assertRaises(RecipeError) as ctx:
+            llamacpp.parse_runtime(data, source)
+        self.assertIn("[env]: 'HF_TOKEN' would put a secret into the docker run command line", str(ctx.exception))
+        load_runtime()
+
     def test_runtime_file_must_name_its_runtime(self):
         data, source = read_toml(RECIPES / "_runtime.toml", "shipped")
         data["runtime"] = "vllm"

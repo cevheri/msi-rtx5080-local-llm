@@ -13,6 +13,7 @@ from launcher.errors import RecipeError
 from launcher.hfcache import HfAuth, HfRepoModel, cli_download, repo_dirname, snapshot_problems
 from launcher.model import ClientMeta, ContainerSpec, GpuInfo, HostEnv, Recipe, RuntimeConfig, Source
 from launcher.validate import (
+    check_env_secrets,
     check_keys,
     flag_present,
     flag_value,
@@ -73,6 +74,7 @@ def parse_runtime(data: dict, source: Source) -> RuntimeConfig:
     for key, value in env.items():
         if not isinstance(value, str):
             raise RecipeError(f"{where} [env]: '{key}' must be a string")
+    check_env_secrets(env, where)
     volumes = get_str_list(data, "volumes", where, required=False)
     for volume in volumes:
         if not _VOLUME.fullmatch(volume):

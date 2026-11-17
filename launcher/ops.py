@@ -274,7 +274,7 @@ def pull(host, catalog, name: str, runtime_name: str | None, *, yes: bool, env_f
     if files_needed:
         parts.append(f"{recipe.model.size_bytes / 1e9:.1f} GB of model files into {home}")
     if image_needed:
-        parts.append(f"the image {runtime.image} (several GB)")
+        parts.append(f"the image {runtime.image} (see docs/host-setup.md#disk-budget for its size)")
     out.write(f"{recipe.id}: {' and '.join(parts)} to download\n")
     if not yes:
         if not host.isatty():

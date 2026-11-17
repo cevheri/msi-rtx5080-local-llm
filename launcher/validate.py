@@ -177,6 +177,18 @@ def parse_clients(data: dict, where: str, *, context: int) -> ClientMeta:
     return ClientMeta(output, thinking, default, efforts, medium_kwargs)
 
 
+SECRET_ENV_SUFFIXES = ("_TOKEN", "_KEY", "_SECRET", "_PASSWORD")
+
+
+def check_env_secrets(env: dict, where: str) -> None:
+    """Refuses an [env] key that names a secret, since [env] goes into the docker run command line."""
+    for key in env:
+        if key.upper().endswith(SECRET_ENV_SUFFIXES):
+            raise RecipeError(f"{where} [env]: '{key}' would put a secret into the docker run command line; llmctl "
+                              "takes a Hugging Face token only from HF_TOKEN or --hf-env-file at pull time "
+                              "(docs/llmctl.md#what-llmctl-enforces)")
+
+
 def flag_value(args: tuple[str, ...], flag: str) -> str | None:
     """The value of the first `flag` in args: the next token, or the text after `flag=`; "" when flag ends args."""
     for index, arg in enumerate(args):
