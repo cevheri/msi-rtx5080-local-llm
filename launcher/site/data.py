@@ -4,13 +4,15 @@ decides what the page shows computed here, so that render.py reads nothing else.
 A missing or malformed source, or any disagreement design D5 and D13 list, raises SiteError naming the source.
 """
 
+import json
 import re
-from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
+from collections.abc import Callable, Mapping, Sequence
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 from launcher import clients, markdown, ops, preflight
 from launcher.catalog import Catalog, load_catalog, resolve
+from launcher.e2e.summary import SUMMARY_HEAD, SummaryRow, read_summary, recipe_key, step_client
 from launcher.errors import LlmctlError
 from launcher.model import Recipe, RuntimeConfig
 from launcher.runtimes import ADAPTERS
@@ -19,10 +21,24 @@ SELECTION = "docs/model-selection.md"
 THINKING = {"toggle": "Toggle", "effort": "Effort levels", "always": "Always on", "none": "No thinking"}
 LETTERS: dict[str, str] = {}
 STATUS_WORDS = (("Runs:", "runs"), ("Failed:", "failed"), ("Does not fit:", "does-not-fit"))
+# The clients llmctl writes an entry for only on some recipes; every other client is supported for every recipe.
+SUPPORTED: dict[str, Callable[[Recipe], bool]] = {"opencode": lambda recipe: recipe.opencode}
+# The driver's stand-in for output that named a private value (launcher/e2e/clients.py WITHHELD); the page may not
+# import the driver, and test_versions_are_read_from_client_records_only holds the two equal.
+WITHHELD = "[withheld: the output named a private value after redaction]"
+CLASSES = ("passed", "known-issue", "failed", "not-tested", "not-supported")
+# The setup steps of a recipe whose failure marks its cell (design D6); gateway, check, restore and down are not.
+CELL_SETUP_STEPS = ("up", "status", "long-grammar", "config", "probes")
+# The setup steps after whose failure the driver runs no more steps of the recipe.
+STOPPING_STEPS = ("up", "long-grammar")
 
 _MEASURED = re.compile(r"measured (\d{4}-\d{2}-\d{2})")
 _HF_LINK = re.compile(r"\]\(https://huggingface\.co/([^)\s]+)\)")
 _ID_CELL = re.compile(r"`([^`]+)`")
+_DATE = re.compile(r"\d{4}-\d{2}-\d{2}")
+_E2E_DATE = re.compile(r"e2e \d{4}-\d{2}-\d{2}:")
+_CODE_SPAN = re.compile(r"`([^`]*)`")
+_VERSION_RECORD = re.compile(r"\d{3,}-(.+)-version")
 
 
 class SiteError(Exception):
@@ -91,6 +107,16 @@ class ClientResult:
     runs: int
     latest: str | None
     not_reached: str | None
+
+
+@dataclass(frozen=True)
+class ClientRun:
+    """One run that counts in a client's history for one recipe (design D6)."""
+    date: str
+    folder: str
+    passed: bool
+    failed: tuple[str, ...]  # the client's failed steps, or the setup step that stopped the recipe
+    not_reached: str | None  # that setup step when the client had no row because the recipe stopped before it
 
 
 @dataclass(frozen=True)
@@ -334,6 +360,189 @@ def _cell(root: Path, catalog: Catalog, model_id: str, runtime: Runtime, text: s
                 fastest=None, clients=(), history=(), covered=None, setup=(), uses=(), positions=())
 
 
+def known_steps(note: str, date: str) -> frozenset[str]:
+    """The code spans of the note text after each `e2e <date>:` up to the next `e2e YYYY-MM-DD:` or the end
+    (plan ruling 3); empty when the note names no such date."""
+    marker = f"e2e {date}:"
+    spans: set[str] = set()
+    start = note.find(marker)
+    while start != -1:
+        rest = note[start + len(marker):]
+        following = _E2E_DATE.search(rest)
+        spans.update(_CODE_SPAN.findall(rest if following is None else rest[:following.start()]))
+        start = note.find(marker, start + len(marker))
+    return frozenset(spans)
+
+
+def classify(client: str, supported: bool, history: Sequence[ClientRun], note: str) -> ClientResult:
+    """The class of one client on one cell from its history and the cell's note (design D6)."""
+    if not supported:
+        return ClientResult(client, "not-supported", 0, 0, None, None)
+    if not history:
+        return ClientResult(client, "not-tested", 0, 0, None, None)
+    passed_runs = sum(1 for run in history if run.passed)
+    latest = max(run.date for run in history)
+    failing = [run for run in history if run.date == latest and not run.passed]
+    if not failing:
+        return ClientResult(client, "passed", passed_runs, len(history), latest, None)
+    failed = {step for run in failing for step in run.failed}
+    known = f"e2e {latest}:" in note and failed <= known_steps(note, latest)
+    not_reached = next((run.not_reached for run in failing if run.not_reached is not None), None)
+    return ClientResult(client, "known-issue" if known else "failed", passed_runs, len(history), latest, not_reached)
+
+
+@dataclass(frozen=True)
+class _RunData:
+    run: Run
+    rows: tuple[tuple[tuple[str, str] | None, str | None, SummaryRow], ...]  # (key, client, row) per row
+    record_names: tuple[str, ...]
+
+
+def _e2e_summaries(root: Path) -> list[tuple[str, str, str, str]]:
+    """(summary path, date, folder, text) of each e2e summary under research/, sorted by path."""
+    found = []
+    for path in sorted(root.glob("research/**/summary.md")):
+        source = _relative(root, path)
+        if (path.read_bytes().splitlines() or [b""])[0] != SUMMARY_HEAD[0].encode("utf-8"):
+            continue
+        try:
+            text = path.read_text(encoding="utf-8")
+        except UnicodeDecodeError as exc:
+            raise SiteError(f"{source}: not valid UTF-8: {exc}") from None
+        parts = source.split("/")
+        if len(parts) != 4 or not _DATE.fullmatch(parts[1]):
+            raise SiteError(f"{source}: an e2e summary must lie at research/<YYYY-MM-DD>/<folder>/summary.md")
+        found.append((source, parts[1], parts[2], text))
+    if not found:
+        raise SiteError(f"research: no e2e summary (a research/<YYYY-MM-DD>/<folder>/summary.md whose first line is "
+                        f"{SUMMARY_HEAD[0]})")
+    return sorted(found, key=lambda item: (item[1], item[2]))
+
+
+def _versions(root: Path, path: str, names: Sequence[str]) -> tuple[tuple[str, str | None], ...]:
+    """(client, version or None) for each client version record of the run, in clients.NAMES order."""
+    by_client: dict[str, tuple[str, str | None]] = {}
+    for name in names:
+        match = _VERSION_RECORD.fullmatch(name)
+        if match is None or match.group(1) not in clients.NAMES:
+            continue
+        client, source = match.group(1), f"{path}/records/{name}"
+        if client in by_client:
+            raise SiteError(f"{source}: a second version record of {client}, after {by_client[client][0]}")
+        try:
+            record = json.loads((root / source).read_text(encoding="utf-8"))
+        except (UnicodeDecodeError, ValueError) as exc:
+            raise SiteError(f"{source}: not a JSON record: {exc}") from None
+        if not isinstance(record, dict) or "exit" not in record or not isinstance(record.get("stdout"), str):
+            raise SiteError(f"{source}: a version record must be a JSON object with exit and stdout")
+        stdout = record["stdout"]
+        line = stdout.split("\n", 1)[0].strip()
+        usable = type(record["exit"]) is int and record["exit"] == 0 and line and stdout != WITHHELD
+        by_client[client] = (source, line if usable else None)
+    return tuple((client, by_client[client][1]) for client in clients.NAMES if client in by_client)
+
+
+def _runs(root: Path, catalog: Catalog) -> list[_RunData]:
+    runs = []
+    for source, date, folder, text in _e2e_summaries(root):
+        try:
+            rows = read_summary(text)
+        except ValueError as exc:
+            raise SiteError(f"{source}: {exc}") from None
+        keyed = []
+        for n, row in enumerate(rows, start=len(SUMMARY_HEAD) + 1):
+            try:
+                keyed.append((recipe_key(row.recipe), step_client(row.step, clients.NAMES), row))
+            except ValueError as exc:
+                raise SiteError(f"{source}: line {n}: {exc}") from None
+        path = source.rsplit("/", 1)[0]
+        keys = {key for key, _, _ in keyed if key is not None}
+        orphans = sum(1 for key, _, _ in keyed if key is not None and (
+            key[1] not in catalog.runtimes or key[0] not in catalog.runtimes[key[1]].recipes))
+        readme = root / path / "README.md"
+        try:
+            no_rows = readme.is_file() and "the-no-rows" in markdown.heading_slugs(readme)
+        except UnicodeDecodeError as exc:
+            raise SiteError(f"{path}/README.md: not valid UTF-8: {exc}") from None
+        records = root / path / "records"
+        names = tuple(sorted(entry.name for entry in records.iterdir())) if records.is_dir() else ()
+        used = {client for _, client, _ in keyed if client is not None}
+        run = Run(path=path, date=date, folder=folder, rows=len(rows), passed_rows=sum(1 for r in rows if r.passed),
+                  recipes=len(keys), orphan_rows=orphans,
+                  readme=f"{path}/README.md" if readme.is_file() else None,
+                  no_rows=no_rows,
+                  records=records.is_dir(), clients=tuple(name for name in clients.NAMES if name in used),
+                  versions=_versions(root, path, names))
+        runs.append(_RunData(run, tuple(keyed), names))
+    return runs
+
+
+def _records(data: _RunData, cell_prefix: str, step: str) -> tuple[str, ...]:
+    """The records of a failed step: the one named after it exactly, else those whose name starts with it."""
+    if not data.run.records:
+        return ()
+    slug = re.sub(r"[^A-Za-z0-9_.-]+", "-", f"{cell_prefix} {step}").strip("-")
+    exact = [name for name in data.record_names if re.fullmatch(rf"\d{{3,}}-{re.escape(slug)}", name)]
+    if len(exact) > 1:
+        raise SiteError(f"{data.run.path}/records: two records named after the failed step {step} of {cell_prefix}: "
+                        f"{', '.join(exact)}")
+    names = exact or [name for name in data.record_names if re.match(rf"\d{{3,}}-{re.escape(slug)}-", name)]
+    return tuple(f"{data.run.path}/records/{name}" for name in names)
+
+
+def _cell_results(cell: Cell, recipe: Recipe, runs: list[_RunData]) -> Cell:
+    """The cell with its history, client classes, covered date and setup checks (design D6)."""
+    key = (cell.model, cell.runtime)
+    history: list[CellRun] = []
+    client_runs: dict[str, list[ClientRun]] = {name: [] for name in clients.NAMES}
+    setup_by_date: dict[str, list[Failure]] = {}
+    for data in runs:
+        rows = [(client, row) for row_key, client, row in data.rows if row_key == key and row.step != "gateway"]
+        if not rows:
+            continue
+        failures = tuple(Failure(row.step, row.reasons, _records(data, row.recipe, row.step))
+                         for _, row in rows if not row.passed)
+        history.append(CellRun(data.run, len(rows), failures))
+        setup_by_date.setdefault(data.run.date, []).extend(
+            failure for failure in failures if failure.step in CELL_SETUP_STEPS)
+        stopped = next((step for step in STOPPING_STEPS
+                        if any(row.step == step and not row.passed for _, row in rows)), None)
+        for name in clients.NAMES:
+            own = [row for client, row in rows if client == name]
+            if own:
+                failed = tuple(row.step for row in own if not row.passed)
+                client_runs[name].append(ClientRun(data.run.date, data.run.folder, not failed, failed, None))
+            elif stopped is not None and name in data.run.clients:
+                client_runs[name].append(ClientRun(data.run.date, data.run.folder, False, (stopped,), stopped))
+    results = tuple(classify(name, SUPPORTED.get(name, lambda _: True)(recipe), client_runs[name], cell.note)
+                    for name in clients.NAMES)
+    if not history:
+        return replace(cell, clients=results)
+    covered = max(cell_run.run.date for cell_run in history)
+    ordered = sorted(history, key=lambda cell_run: (cell_run.run.date, cell_run.run.folder))
+    ordered.sort(key=lambda cell_run: cell_run.run.date, reverse=True)
+    return replace(cell, clients=results, history=tuple(ordered), covered=covered,
+                   setup=tuple(setup_by_date.get(covered, ())))
+
+
+def _client_versions(runs: Sequence[Run]) -> dict[str, tuple[tuple[str, str], ...]]:
+    """Each client's distinct versions on the newest date that has one, in folder order, with the run's path."""
+    versions: dict[str, tuple[tuple[str, str], ...]] = {}
+    for name in clients.NAMES:
+        found = [(run, version) for run in runs for client, version in run.versions
+                 if client == name and version is not None]
+        if not found:
+            versions[name] = ()
+            continue
+        newest = max(run.date for run, _ in found)
+        listed: list[tuple[str, str]] = []
+        for run, version in found:
+            if run.date == newest and version not in [known for known, _ in listed]:
+                listed.append((version, run.path))
+        versions[name] = tuple(listed)
+    return versions
+
+
 def load(root: Path) -> Matrix:
     """The page's data model from the repository at `root`."""
     catalog = shipped_catalog(root)
@@ -350,6 +559,7 @@ def load(root: Path) -> Matrix:
     ranks, ranked_without_recipe = rank_of(_section(root, f"{SELECTION}#top-10"),
                                            {repo: tuple(sorted(ids)) for repo, ids in sorted(repos.items())})
     letters = client_letters(clients.NAMES, clients.LABELS, LETTERS)
+    runs = _runs(root, catalog)
     models = []
     for model_id in shipped:
         recipes = [catalog.runtimes[name].recipes[model_id] for name in ADAPTERS
@@ -358,11 +568,17 @@ def load(root: Path) -> Matrix:
         for recipe in recipes:
             aliases += [alias for alias in recipe.aliases if alias not in aliases]
         cells = tuple(_cell(root, catalog, model_id, runtime, text) for runtime, text in zip(runtimes, coverage[model_id]))
+        cells = tuple(_cell_results(cell, catalog.runtimes[cell.runtime].recipes[model_id], runs)
+                      if cell.status == "runs" else cell for cell in cells)
         models.append(Model(id=model_id, aliases=tuple(aliases), rank=ranks.get(model_id),
                             chat_only=any(recipe.chat_only for recipe in recipes), cells=cells, positions=()))
     license_lines = tuple(line for line in _section(root, "README.md#license") if line.strip())
     if not license_lines:
         raise SiteError("README.md: the License section has no text")
+    run_list = tuple(data.run for data in runs)
+    versions = _client_versions(run_list)
     return Matrix(runtimes=runtimes,
-                  clients=tuple(Client(name, clients.LABELS[name], letters[name], ()) for name in clients.NAMES),
-                  models=tuple(models), runs=(), ranked_without_recipe=ranked_without_recipe, license=license_lines)
+                  clients=tuple(Client(name, clients.LABELS[name], letters[name], versions[name])
+                                for name in clients.NAMES),
+                  models=tuple(models), runs=run_list, ranked_without_recipe=ranked_without_recipe,
+                  license=license_lines)

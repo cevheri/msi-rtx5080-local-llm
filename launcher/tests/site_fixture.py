@@ -1,12 +1,14 @@
 """A small repository for the runtime matrix page's tests: real recipe files with pinned values, and the documents the
 page reads, each written so that a test can change one fact and load the page model again."""
 
+import json
 import re
 import shutil
 import tomllib
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 
+from launcher.e2e.summary import SUMMARY_HEAD
 from launcher.runtimes import ADAPTERS
 from launcher.tests.fakes import REPO
 
@@ -28,6 +30,47 @@ TOP10_ROW = "| {rank} | [{id}](https://huggingface.co/{repo}) | llama.cpp |"
 TOP10_IDS = ("qwen3.6-35b-a3b", "gpt-oss-20b", "deepseek-r1-0528-qwen3-8b")
 LICENSE_LINES = ("The documentation is licensed under CC BY 4.0 ([LICENSE](LICENSE)); the code under MIT "
                  "([LICENSE-CODE](LICENSE-CODE)).", "Third-party material keeps its own license.")
+
+
+DEFAULT_RUN = ("2026-11-18", "llmctl-fixture-e2e")
+DEFAULT_VERSIONS = (("001-hermes-version", "Hermes Agent v0.23.1"), ("002-pi-version", "1.5.2"),
+                    ("003-opencode-version", "opencode v2.3.0"), ("004-dsh-version", "0.2.2-rc.3"),
+                    ("005-kimi-version", "2.5.3"), ("006-nvidia-smi-version", "[N/A]"))
+CLIENT_STEPS = ("opencode", "hermes-z", "hermes-chat", "pi", "dsh-headless", "kimi")
+
+
+def row(recipe: str, step: str, reasons: str = "", seconds: int = 1) -> str:
+    """One summary row as the driver writes it; a row with reasons failed."""
+    return f"| {recipe} | {step} | {'No' if reasons else 'Yes'} | {reasons} | {seconds} |"
+
+
+def prefix(runtime: str, recipe_id: str) -> str:
+    """The Recipe cell of a fixture recipe: its 1-based place in RECIPES, its ID and its runtime."""
+    return f"{RECIPES.index((runtime, recipe_id)) + 1:02d}-{recipe_id}-{runtime}"
+
+
+def version_record(stdout: str, exit: int | None = 0) -> str:
+    """A `<client> --version` record as the driver writes it."""
+    record = {"command": "client --version", "cwd": "$HOME/projects/llm", "exit": exit, "seconds": 1.0,
+              "stdout": stdout, "stderr": ""}
+    return json.dumps(record, indent=2, ensure_ascii=False) + "\n"
+
+
+def default_rows() -> list[str]:
+    """Every recipe of RECIPES passing every step, then the round trip and the final down."""
+    rows = []
+    for runtime, recipe_id in RECIPES:
+        cell = prefix(runtime, recipe_id)
+        steps = ["up", "status", *(["long-grammar"] if runtime == "sglang" else []), "config",
+                 *(step for step in CLIENT_STEPS
+                   if not (step == "opencode" and (runtime, recipe_id) == ("vllm", "deepseek-r1-0528-qwen3-8b"))),
+                 "probes"]
+        for step in steps:
+            rows.append(row(cell, step))
+            if step == "up" and len(rows) == 1:
+                rows.append(row(cell, "gateway"))
+    rows += [row("round-trip", "up"), row("round-trip", "opencode"), row("round-trip", "restore"), row("-", "down")]
+    return rows
 
 
 def _separator(header: str) -> str:
@@ -66,6 +109,21 @@ class SiteFixture:
         self._write("LICENSE", "CC BY 4.0\n")
         self._write("LICENSE-CODE", "MIT\n")
         self._write_selection()
+        self.run(*DEFAULT_RUN, default_rows(), readme="# e2e\n\n## The No rows\n\nNone.\n",
+                 records={name: version_record(stdout) for name, stdout in DEFAULT_VERSIONS})
+
+    def run(self, date: str, folder: str, rows: Sequence[str], *, readme: str | None = "# e2e\n",
+            records: Mapping[str, str] | None = None) -> str:
+        """Write research/<date>/<folder>/summary.md with the rows, its README and its records; the run's path."""
+        path = f"research/{date}/{folder}"
+        self._write(f"{path}/summary.md", "\n".join([*SUMMARY_HEAD, *rows]) + "\n")
+        if readme is not None:
+            self._write(f"{path}/README.md", readme)
+        if records is not None:
+            (self.root / path / "records").mkdir(parents=True, exist_ok=True)
+            for name, text in records.items():
+                self._write(f"{path}/records/{name}", text)
+        return path
 
     def _recipe(self, runtime: str, recipe_id: str) -> Path:
         return self.root / "recipes" / runtime / f"{recipe_id}.toml"
