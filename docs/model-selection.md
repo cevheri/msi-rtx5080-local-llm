@@ -41,6 +41,8 @@ The vLLM cells keep the 14.65 GiB budget of the earlier estimate, and the measur
 
 The [runtime matrix page](https://cevheri.github.io/msi-rtx5080-local-llm/) shows this table with each recipe's facts and client results, and quotes every cell whole.
 Write a cell in plain text, code spans and links to files of this repository or to https pages, because the page build stops on any other Markdown.
+It also stops on text that GitHub shows as plain text: `*`, `~`, `<`, `>`, a backslash, an HTML entity, a bare URL or e-mail address and an `_` at the edge of a word outside a code span, so put such text in a code span.
+`python3 -m unittest discover -s launcher/tests -t .` renders every cell and names the row, engine and column of a stop, so run it before you push a change to this table.
 The page shows a failed e2e session as a known issue when its cell names the session's step in a code span after the `e2e <date>:` of that session's date, and as Failed until then.
 
 | Model ID | llama.cpp b12407 | vLLM v0.33.0 | SGLang v0.5.23 |

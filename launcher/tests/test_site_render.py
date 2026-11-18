@@ -6,6 +6,7 @@ import base64
 import contextlib
 import hashlib
 import io
+import os
 import re
 import socket
 import subprocess
@@ -217,7 +218,29 @@ class SiteRenderTest(unittest.TestCase):
         matrix = self.fixture.load()
         tree = parse(render.page(matrix, BUILD, self.fixture.root))
         words = {"runs": "Runs", "failed": "Failed", "does-not-fit": "Does not fit"}
+        words_engine = {runtime.id: runtime.label for runtime in matrix.runtimes}
+        squash = lambda node: " ".join(node.text().split())
         table = tree.by_id("matrix")
+        # Without JavaScript the controls stay hidden and the no-JS line shows; the script, the skip link and WCAG
+        # need the rest: the document language, the status line, the descriptions, the clipped caption and the
+        # matrix as a focus target.
+        page_text = render.page(matrix, BUILD, self.fixture.root)
+        self.assertIn('<html lang="en" class="no-js">', page_text)
+        self.assertEqual([(node_id, tree.by_id(node_id).tag, "hidden" in tree.by_id(node_id).attrs)
+                          for node_id in ("uses", "toolbar", "notice")],
+                         [("uses", "fieldset", True), ("toolbar", "div", True), ("notice", "div", True)])
+        self.assertEqual([node.text() for node in tree.find_all("p", "only-no-js")],
+                         ["Filters and use cases need JavaScript; the full matrix and each use case as a list are below."])
+        self.assertEqual((table.tag, table.attrs.get("tabindex")), ("table", "-1"))
+        self.assertEqual(tree.find_all("a", "skip")[0].attrs["href"], "#matrix")
+        self.assertEqual(tree.by_id("answer").attrs.get("role"), "status")
+        self.assertEqual(tree.by_id("uses").attrs.get("aria-describedby"), "use-rule")
+        self.assertEqual(tree.by_id("ram").attrs.get("aria-describedby"), "ram-help")
+        self.assertEqual(squash(tree.by_id("ram-help")), "./llmctl up refuses to start a recipe when less RAM than its "
+                                                          "container's memory cap is available.")
+        self.assertEqual((tree.by_id("caption").tag, tree.by_id("caption").attrs.get("class")), ("caption", "vh"))
+        self.assertEqual([(node_id, "open" in tree.by_id(node_id).attrs) for node_id in ("versions", "legend", "filters")],
+                         [("versions", True), ("legend", True), ("filters", False)])
         for model in matrix.models:
             for cell in model.cells:
                 with self.subTest(model=model.id, runtime=cell.runtime):
@@ -226,10 +249,12 @@ class SiteRenderTest(unittest.TestCase):
                     self.assertIn(words[cell.status], td.find_all("span", "status")[0].text())
                     section = tree.by_id(f"d-{cell.runtime}-{model.id}")
                     self.assertIsNotNone(section)
+                    # page.js names the dialog by this h3 (aria-labelledby).
+                    self.assertEqual([(node.attrs.get("id"), squash(node)) for node in section.find_all("h3")],
+                                     [(f"t-{cell.runtime}-{model.id}", f"{model.id} on {words_engine[cell.runtime]}")])
                     self.assertIn("details", section.attrs["class"].split())
                     self.assertEqual((section.attrs["data-model"], section.attrs["data-engine"]),
                                      (model.id, cell.runtime))
-        squash = lambda node: " ".join(node.text().split())
         self.assertEqual(squash(tree.by_id("answer")), data.view(matrix, "", data.Filters(), None).answer)
         labels = [clients.LABELS[name] for name in clients.NAMES]
 
@@ -328,10 +353,13 @@ class SiteRenderTest(unittest.TestCase):
         # a hash), and the script sets it before its first showModal(); Chrome 157 then focuses button#close.
         drawer = tree.by_id("drawer")
         self.assertEqual((drawer.tag, drawer.attrs), ("dialog", {"id": "drawer"}))
-        self.assertEqual([(node.tag, node.attrs.get("id")) for node in drawer.children if not isinstance(node, str)],
-                         [("button", "close"), ("div", "drawer-body")])
+        self.assertEqual([(node.tag, node.attrs) for node in drawer.children if not isinstance(node, str)],
+                         [("button", {"type": "button", "id": "close"}), ("div", {"id": "drawer-body"}),
+                          ("p", {"id": "drawer-live", "class": "vh", "aria-live": "polite"})])
         script = (REPO / "launcher/site/page.js").read_text(encoding="utf-8")
         self.assertRegex(script, r"drawer\.autofocus = true;[^\0]*?drawer\.showModal\(\)")
+        # The modal dialog makes #live inert, so a copy inside it is announced in the dialog's own live region.
+        self.assertRegex(script, r"\(drawer\.open \? drawerLive : live\)\.textContent = text;")
         page = render.page(matrix, BUILD, self.fixture.root)
         self.assertIn("Filters and use cases need JavaScript; the full matrix and each use case as a list are below.",
                       page)
@@ -365,6 +393,9 @@ class SiteRenderTest(unittest.TestCase):
                 self.assertNotIn("style", node.attrs)
                 self.assertEqual([name for name in node.attrs if name.startswith("on")], [])
         self.assertEqual(tree.find_all("form"), [])
+        # A policy in a meta element governs only what is parsed after it, so it comes before any script, style or link.
+        policy_at = page.index('http-equiv="Content-Security-Policy"')
+        self.assertEqual([tag for tag in ("<script", "<style", "<link") if page.index(tag) < policy_at], [])
 
         def sha(text):
             return "'sha256-" + base64.b64encode(hashlib.sha256(text.encode("utf-8")).digest()).decode("ascii") + "'"
@@ -419,6 +450,9 @@ class SiteRenderTest(unittest.TestCase):
                                      (cell.status, data.search_text(model, cell, labels[cell.runtime])))
                     tile = tds[cell.runtime].find_all("a", "tile")[0]
                     self.assertEqual(tile.attrs["href"], f"#d-{cell.runtime}-{model.id}")
+                    # The stacked layout shows the engine label first, so it starts the link's name (SC 2.5.3).
+                    first = next(node for node in tile.children if not isinstance(node, str))
+                    self.assertEqual((first.attrs, first.text()), ({"class": "engine"}, labels[cell.runtime]))
                     # A card below the switch width names the engine of a cell out of view, as its tile does
                     # (Cells: "In the stacked layout each cell starts with its engine label").
                     out = tds[cell.runtime].find_all("span", "out")[0]
@@ -443,6 +477,20 @@ class SiteRenderTest(unittest.TestCase):
         rows = [node.attrs["id"][2:] for node in tree.by_id("matrix").find_all("tbody")[0].find_all("tr")]
         self.assertEqual(rows, list(data.view(matrix, "", data.Filters(), None).rows))
         tile = self.tile(tree, "qwen3.6-35b-a3b", "sglang")
+        # The visible facts of one tile per status, typed from the fixture's pinned SPEEDS, CONTEXTS and FAILED_CELL.
+        parts = lambda model_id, runtime: [(node.attrs["class"], squash(node)) for node in
+                                           self.tile(tree, model_id, runtime).children
+                                           if not isinstance(node, str) and node.attrs["class"] != "lamps"]
+        self.assertEqual(parts("qwen3.6-35b-a3b", "sglang"),
+                         [("engine", "SGLang"), ("status", "Runs"), ("tag", "* Fastest by 24%"), ("speed", "151.3"),
+                          ("unit", "tok/s"), ("pill", "128k")])
+        self.assertEqual(parts("k2-horizon-7b", "llamacpp"),
+                         [("engine", "llama.cpp"), ("status", "Runs"), ("speed", "66.9"), ("unit", "tok/s"),
+                          ("pill", "80k")])
+        self.assertEqual(parts("deepseek-r1-0528-qwen3-8b", "sglang"),
+                         [("engine", "SGLang"), ("status", "Failed"), ("date", "on 2026-11-17")])
+        self.assertEqual(parts("k2-horizon-7b", "vllm"),
+                         [("engine", "vLLM"), ("status", "Does not fit"), ("label", "(estimate)")])
         tag = tile.find_all("span", "tag")[0]
         self.assertEqual(" ".join(tag.text().split()), "* Fastest by 24%")
         self.assertEqual([(node.attrs, node.text()) for node in tag.find_all("span")], [({"aria-hidden": "true"}, "*")])
@@ -468,6 +516,14 @@ class SiteRenderTest(unittest.TestCase):
         self.assertEqual(setups, [("qwen3.6-35b-a3b", "llamacpp")])
         self.assertEqual(self.tile(tree, "qwen3.6-35b-a3b", "llamacpp").find_all("span", "setup")[0].text(),
                          "Setup check failed")
+        # data-search holds the model ID, the aliases, the recipe name and the engine label, lower-cased (Cells).
+        self.fixture.set_value("llamacpp", "k2-horizon-7b", "aliases", '["k2-7b", "horizon"]')
+        self.fixture.set_value("llamacpp", "k2-horizon-7b", "name", '"K2 Horizon Q4"')
+        tree = parse(self.page())
+        self.assertEqual(tile_cell(tree, "k2-horizon-7b", "llamacpp").attrs["data-search"],
+                         "k2-horizon-7b k2-7b horizon k2 horizon q4 llama.cpp")
+        self.assertEqual(tile_cell(tree, "k2-horizon-7b", "vllm").attrs["data-search"],
+                         "k2-horizon-7b k2-7b horizon vllm")
 
     def tile(self, tree, model_id, runtime):
         return tile_cell(tree, model_id, runtime).find_all("a", "tile")[0]
@@ -480,6 +536,25 @@ class SiteRenderTest(unittest.TestCase):
         self.assertNotIn("& <b>", page)
         self.assertNotIn("& <B>", page)
         self.assertIn('mellum "q" & <b>', tile_cell(parse(page), "mellum2.1-12b", "llamacpp").attrs["data-search"])
+        # Free repository text in four more places: a short and a long reason, a client version and an evidence
+        # summary; each must reach the page escaped once, never as markup.
+        hostile = '<i>"x"</i> &'
+        self.fixture.set_value("llamacpp", "mellum2.1-12b", "summary", '"' + hostile.replace('"', '\\"') + '"')
+        qwen = prefix("llamacpp", "qwen3.6-35b-a3b")
+        self.fixture.run("2026-11-19", "llmctl-hostile-e2e",
+                         [row(qwen, "up"), row(qwen, "pi", "y" * 121 + hostile), row(qwen, "kimi", hostile)],
+                         records={"005-kimi-version": version_record(hostile)})
+        page = self.page()
+        self.assertEqual(well_formed_problems(page), [])
+        self.assertNotIn("<i>", page)
+        escaped = "&lt;i&gt;&quot;x&quot;&lt;/i&gt; &amp;"
+        tree = parse(page)
+        self.assertIn(f"<p>{escaped}</p>", page)                                             # the evidence summary
+        self.assertIn(f"<code>{escaped}</code>", page)                                       # the client versions
+        self.assertEqual(page.count(f"Kimi <code>{escaped}</code>"), 2)                      # header and run line
+        self.assertIn(f"{'y' * 121}{escaped}</p></details>", page)                           # the long reason
+        self.assertIn(f"<code>kimi</code> failed: {escaped} (no record named after this step)", page)
+        self.assertIn(hostile, text(tree, "d-llamacpp-mellum2.1-12b"))
 
     def test_header_and_footer_facts(self):
         matrix = self.fixture.load()
@@ -504,6 +579,37 @@ class SiteRenderTest(unittest.TestCase):
                 "Kimi 2.5.3.")
         self.assertEqual([squash(li) for li in tree.by_id("runs").find_all("li")], [line])
         self.assertIsNone(tree.by_id("ranked-without-recipe"))
+        # The header's and footer's fixed words and links (Structure, Copy), typed out rather than taken from render.
+        links = lambda node: [(squash(a), a.attrs["href"]) for a in node.find_all("a")]
+        header = tree.find_all("header")[0]
+        self.assertEqual((squash(tree.find_all("title")[0]), squash(header.find_all("h1")[0]),
+                          squash(header.find_all("p", "lead")[0])),
+                         ("Local LLM runtime matrix", "Local LLM runtime matrix", "Which open-weight models run on this "
+                          "laptop, on which engine, how fast, and with which agent clients."))
+        self.assertEqual(squash(versions.find_all("summary")[0]), "Versions")
+        self.assertEqual(links(header.find_all("p", "links")[0]),
+                         [("Repository", TREE), ("How to start a model", BLOB + "/README.md#quick-start")])
+        self.assertEqual([(node.tag, squash(node)) for node in (tree.find_all("label")[len(data.USE_CASES)],
+                                                                tree.by_id("clear"), tree.by_id("copy-link"),
+                                                                tree.by_id("dismiss"), tree.by_id("close"))],
+                         [("label", "Search models"), ("button", "Clear filters"),
+                          ("button", "Copy link to this view"), ("button", "Dismiss"), ("button", "Close")])
+        self.assertEqual(tree.by_id("q").attrs.get("placeholder"), "ID, alias or build")
+        footer = tree.find_all("footer")[0]
+        self.assertEqual(squash(footer.find_all("h2")[0]), "About the data")
+        paragraphs = footer.find_all("p")
+        self.assertEqual((squash(paragraphs[0]), links(paragraphs[0])),
+                         ("Built from the repository at commit " + "a" * 40 + ", committed 1970-01-01 00:00 UTC.",
+                          [("a" * 40, TREE)]))
+        self.assertEqual((squash(paragraphs[1]), links(paragraphs[1])),
+                         ("Data: the recipes in recipes/, the runtime coverage and Top 10 of docs/model-selection.md, "
+                          "and the llmctl clients e2e summaries in research/.",
+                          [("recipes/", TREE + "/recipes"),
+                           ("runtime coverage", BLOB + "/docs/model-selection.md#runtime-coverage"),
+                           ("Top 10", BLOB + "/docs/model-selection.md#top-10"), ("research/", TREE + "/research")]))
+        self.assertIn("License, as README.md states it:", [squash(node) for node in paragraphs])
+        self.assertEqual(links(tree.by_id("runs")),
+                         [("llmctl-fixture-e2e", BLOB + "/research/2026-11-18/llmctl-fixture-e2e/README.md#the-no-rows")])
         description = next(node.attrs["content"] for node in tree.find_all("meta") if node.attrs.get("name") == "description")
         self.assertEqual(description, "Which open-weight LLMs run on one laptop with llama.cpp, vLLM and SGLang, how "
                                       f"fast, and with which agent clients; measured on {hardware}.")
@@ -610,6 +716,13 @@ class SiteRenderTest(unittest.TestCase):
         drawn = " ".join(body for selector, body in rules if selector == "#drawer-body section.details")
         self.assertRegex(drawn, r"scroll-margin-top: [0-9.]+rem;")
         self.assertIn(("#drawer-body section.details:target", "outline: none;"), rules)
+        # Print: a details section may break across pages (each is taller than the space left on one), and a
+        # heading never ends a page.
+        printed = re.search(r"@media print \{(.*)\}\s*$", css, flags=re.S).group(1)
+        self.assertNotIn("avoid-page", " ".join(body for selector, body in rules if "section.details" in selector))
+        self.assertIn(("h2, h3, h4", "break-after: avoid-page;"),
+                      [(" ".join(sel.split()), " ".join(body.split()))
+                       for sel, body in re.findall(r"([^{}]*)\{([^{}]*)\}", printed)])
 
     def test_script_keeps_no_state_outside_the_url(self):
         js = (REPO / "launcher/site/page.js").read_text(encoding="utf-8")
@@ -703,6 +816,15 @@ class SiteRenderTest(unittest.TestCase):
                 self.assertEqual((code, stdout), (1, ""))
                 self.assertEqual(stderr, f"site: --out {refused}: not a folder\n" if refused == target else
                                  f"site: --out {out}: {out / 'index.html'} is not a regular file\n")
+        # An --out the build cannot create ends in one line, as a source problem does (D13), not in a traceback.
+        code, stdout, stderr = self.build(target / "out")
+        self.assertEqual((code, stdout, stderr), (1, "", f"site: --out {target / 'out'}: Not a directory\n"))
+        if os.geteuid() != 0:                                                        # root reads any file
+            readme = self.fixture.root / "README.md"
+            readme.chmod(0)
+            self.addCleanup(readme.chmod, 0o644)
+            code, stdout, stderr = self.build(Path(self._tmp.name) / "unread")
+            self.assertEqual((code, stdout, stderr), (1, "", "site: README.md: Permission denied\n"))
         (out / "index.html").rmdir()
         (out / "index.html").symlink_to(target)
         code, stdout, stderr = self.build(out)
@@ -710,7 +832,7 @@ class SiteRenderTest(unittest.TestCase):
         self.assertEqual(target.read_text(encoding="utf-8"), "keep\n")
 
     def test_site_reads_no_environment_and_runs_nothing(self):
-        files = sorted((REPO / "launcher/site").glob("*.py")) + [REPO / "launcher/e2e/summary.py"]
+        files = sorted((REPO / "launcher/site").glob("*.py")) + [REPO / "launcher/e2e/summary.py", REPO / "launcher/markdown.py"]
         self.assertGreater(len(files), 4)
         banned = {"subprocess", "socket", "urllib.request", "http.client", "launcher.e2e.clients"}
         for path in files:

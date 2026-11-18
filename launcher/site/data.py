@@ -6,6 +6,7 @@ A missing or malformed source, or any disagreement design D5 and D13 list, raise
 
 import json
 import math
+import os
 import re
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, replace
@@ -14,7 +15,7 @@ from pathlib import Path
 
 from launcher import clients, markdown, ops, preflight
 from launcher.catalog import Catalog, load_catalog, resolve
-from launcher.e2e.summary import SUMMARY_HEAD, SummaryRow, read_summary, recipe_key, step_client
+from launcher.e2e.summary import SUMMARY_HEAD, SummaryRow, is_summary, read_summary, recipe_key, step_client
 from launcher.errors import LlmctlError
 from launcher.model import Recipe, RuntimeConfig
 from launcher.runtimes import ADAPTERS
@@ -449,10 +450,16 @@ class _RunData:
 
 def _e2e_summaries(root: Path) -> list[tuple[str, str, str, str]]:
     """(summary path, date, folder, text) of each e2e summary under research/, sorted by path."""
+    def unlisted(exc: OSError) -> None:
+        raise SiteError(f"{_relative(root, Path(exc.filename))}: {exc.strerror}")
+
+    # os.walk with onerror, not Path.glob, which skips a folder it cannot list without a word.
+    paths = [Path(folder) / "summary.md" for folder, _, names in os.walk(root / "research", onerror=unlisted)
+             if "summary.md" in names] if (root / "research").is_dir() else []
     found = []
-    for path in sorted(root.glob("research/**/summary.md")):
+    for path in sorted(paths):
         source = _relative(root, path)
-        if (path.read_bytes().splitlines() or [b""])[0] != SUMMARY_HEAD[0].encode("utf-8"):
+        if not is_summary(path.read_bytes()):
             continue
         try:
             text = path.read_text(encoding="utf-8")
@@ -526,16 +533,25 @@ def _runs(root: Path, catalog: Catalog) -> list[_RunData]:
     return runs
 
 
+def _record_slug(name: str) -> str:
+    """The slug of a record name, as the driver's _Run.record writes it (launcher/e2e/clients.py)."""
+    return re.sub(r"[^A-Za-z0-9_.-]+", "-", name).strip("-")
+
+
 def _records(data: _RunData, cell_prefix: str, step: str) -> tuple[str, ...]:
-    """The records of a failed step: the one named after it exactly, else those whose name starts with it."""
+    """The records of a failed step: the one named after it exactly, else those whose name starts with it, but not
+    those of a longer step of the same cell in the run (a failed kimi does not cite kimi-config's record)."""
     if not data.run.records:
         return ()
-    slug = re.sub(r"[^A-Za-z0-9_.-]+", "-", f"{cell_prefix} {step}").strip("-")
+    slug = _record_slug(f"{cell_prefix} {step}")
+    longer = [_record_slug(f"{cell_prefix} {row.step}") for _, _, row in data.rows
+              if row.recipe == cell_prefix and row.step.startswith(step + "-")]
     exact = [name for name in data.record_names if re.fullmatch(rf"\d{{3,}}-{re.escape(slug)}", name)]
     if len(exact) > 1:
         raise SiteError(f"{data.run.path}/records: two records named after the failed step {step} of {cell_prefix}: "
                         f"{', '.join(exact)}")
-    names = exact or [name for name in data.record_names if re.match(rf"\d{{3,}}-{re.escape(slug)}-", name)]
+    names = exact or [name for name in data.record_names if re.match(rf"\d{{3,}}-{re.escape(slug)}-", name)
+                      and not any(re.fullmatch(rf"\d{{3,}}-{re.escape(other)}(-.*)?", name) for other in longer)]
     return tuple(f"{data.run.path}/records/{name}" for name in names)
 
 
@@ -594,6 +610,7 @@ def _client_versions(runs: Sequence[Run]) -> dict[str, tuple[tuple[str, str], ..
 
 OPENCODE_MINIMUM = 65_536  # docs/opencode.md#context-budget: "The practical minimum for OpenCode is 64k tokens"
 LONG_CONTEXT = 131_072
+ASCII_SPACE = " \t\n\r\f\v"  # the search trims these only, as page.js does (str.strip and String.trim differ)
 USE_CASES = (
     UseCase("", "All results", "rank", "Every model on every engine; best quality first, then fastest."),
     UseCase("opencode", "Coding in OpenCode", "rank",
@@ -713,7 +730,7 @@ def search_text(model: Model, cell: Cell, label: str) -> str:
 
 def _keeps(model: Model, cell: Cell, label: str, filters: Filters) -> bool:
     """Whether every active filter keeps the cell; a filter that needs a running cell drops every other cell."""
-    search = filters.search.strip().lower()
+    search = filters.search.strip(ASCII_SPACE).lower()
     if search and search not in search_text(model, cell, label):
         return False
     if filters.engines is not None and cell.runtime not in filters.engines:

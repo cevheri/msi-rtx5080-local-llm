@@ -24,6 +24,15 @@ class SummaryRow:
     seconds: int
 
 
+def is_summary(raw: bytes) -> bool:
+    """Whether a summary.md is an e2e summary: its first line, after a UTF-8 byte order mark, is the head's first line.
+
+    It reads bytes, so a research note in another encoding is not one; a summary with a byte order mark is one, and
+    read_summary then stops at its line 1.
+    """
+    return (raw.removeprefix(b"\xef\xbb\xbf").splitlines() or [b""])[0] == SUMMARY_HEAD[0].encode("utf-8")
+
+
 def read_summary(text: str) -> list[SummaryRow]:
     """Read a summary that _summary() wrote; any other text raises ValueError naming its 1-based line."""
     lines = text.split("\n")

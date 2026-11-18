@@ -9,6 +9,8 @@
   const SELECTS = ["pass", "ctx", "tools", "ram"];
   const NOUNS = {use: "a use case", engine: "an engine", status: "a status", pass: "a client", ctx: "a context",
                  think: "a thinking type", tools: "a tools value", ram: "a RAM value", sort: "a sort"};
+  // The search trims ASCII whitespace only, as data.ASCII_SPACE does: String.prototype.trim and str.strip differ.
+  const EDGE_SPACE = /^[ \t\n\r\f\v]+|[ \t\n\r\f\v]+$/g;
   const REFUSED = "This browser does not let the page update its address, so links to views are off.";
 
   const byId = (id) => document.getElementById(id);
@@ -20,6 +22,7 @@
   const sortSelect = byId("sort");
   const answer = byId("answer");
   const live = byId("live");
+  const drawerLive = byId("drawer-live");
   const notice = byId("notice");
   const radios = [...document.querySelectorAll('input[name="use"]')];
   const checkboxes = [...document.querySelectorAll('input[type="checkbox"]')];
@@ -99,7 +102,7 @@
 
   function state() {
     const radio = chosenUse();
-    const view = {use: radio.value, useSort: radio.dataset.sort, search: search.value.trim().toLowerCase(),
+    const view = {use: radio.value, useSort: radio.dataset.sort, search: search.value.replace(EDGE_SPACE, "").toLowerCase(),
                   sort: sortSelect.value};
     for (const name of GROUPS) {
       view[name] = group(name);
@@ -491,8 +494,9 @@
   // Copy (Details): the command's data-copy or the URL of this view, "Copied" for 2 s, and a polite announcement.
   const labels = new WeakMap();
 
+  // The open modal dialog makes everything outside it inert, #live included, so the dialog has its own live region.
   function announce(text) {
-    live.textContent = text;
+    (drawer.open ? drawerLive : live).textContent = text;
   }
 
   async function copy(button) {
@@ -600,12 +604,23 @@
     byId("legend").open = false;
   }
   noticeLines = read();
-  if (matchMedia("(min-width: 64rem)").matches || filtersSet(state()) > 0) {
+  // A link that sets a filter control or a sort other than its use case's opens Filters, so the sort is shown.
+  const loaded = state();
+  if (matchMedia("(min-width: 64rem)").matches || filtersSet(loaded) > 0 || loaded.sort !== loaded.useSort) {
     byId("filters").open = true;
+  }
+  const initial = sectionOf(location.hash);
+  if (!initial && /^#d-/i.test(location.hash)) {
+    let asked = location.hash.slice(1);
+    try {
+      asked = decodeURIComponent(asked);
+    } catch (error) {
+      // A malformed percent escape is named as written.
+    }
+    noticeLines.push("This link asks for details this page does not list: " + asked + ".");
   }
   apply();
   showNotice();
-  const initial = sectionOf(location.hash);
   if (initial) {
     opener = tileFor(initial.id);
     show(initial);

@@ -21,6 +21,8 @@ RECIPES = (("llamacpp", "qwen3.6-35b-a3b"), ("sglang", "qwen3.6-35b-a3b"), ("lla
 SPEEDS = dict(zip(RECIPES, ("122.5", "151.3", "166.2", "83.5", "124.6", "70.6", "72.5", "66.9", "71.5", "188.2")))
 CONTEXTS = dict(zip(RECIPES, ("131072", "131072", "131072", "65536", "131072", "65536", "65536", "81920", "131072",
                               "131072")))
+# Memory caps the RAM filter tests count; pinned, so re-measuring a real recipe never breaks a page test (ruling 13).
+MEMORY = dict(zip(RECIPES, ("20", "27", "16", "32", "20", "16", "32", "16", "35", "16")))
 COVERAGE_HEADER = "| Model ID | llama.cpp b12407 | vLLM v0.33.0 | SGLang v0.5.23 |"
 RUNS_CELL = "Runs: {k}k, {speed} tok/s, measured {date} ([recipe](../{doc}))"
 FAILED_CELL = ("Failed: out of memory, measured 2026-11-17 "
@@ -91,6 +93,7 @@ class SiteFixture:
             shutil.copyfile(REPO / "recipes" / runtime / f"{recipe_id}.toml", self._recipe(runtime, recipe_id))
             self.set_value(runtime, recipe_id, "decode_tok_s", SPEEDS[runtime, recipe_id])
             self.set_value(runtime, recipe_id, "context", CONTEXTS[runtime, recipe_id])
+            self.set_value(runtime, recipe_id, "memory_gib", MEMORY[runtime, recipe_id])
         self._cells: dict[tuple[str, str], str] = {}
         self._table: list[str] | None = None
         self._top10 = [TOP10_ROW.format(rank=rank, id=recipe_id, repo=self._read("llamacpp", recipe_id)["model"]["repo"])

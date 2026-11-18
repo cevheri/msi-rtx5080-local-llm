@@ -420,7 +420,7 @@ class _Page:
 
     def _tile(self, model: data.Model, cell: data.Cell) -> str:
         label = self.labels[cell.runtime]
-        parts = [f'<span class="engine" aria-hidden="true">{_e(label)}</span>',
+        parts = [f'<span class="engine">{_e(label)}</span>',
                  f'<span class="status">{_e(STATUS_LABELS[cell.status])}</span>']
         if cell.status == "failed":
             parts.append(f'<span class="date">on {_e(cell.measured)}</span>')
@@ -783,7 +783,8 @@ class _Page:
             '<button type="button" id="dismiss">Dismiss</button>', "</div>", self.legend(), self.matrix_table(),
             self.use_lists(), self.details(), '<p id="live" class="vh" aria-live="polite"></p>', "</main>",
             self.footer(), '<dialog id="drawer">', '<button type="button" id="close">Close</button>',
-            '<div id="drawer-body"></div>', "</dialog>", self.template(), f"<script>{script}</script>", "</body>"])
+            '<div id="drawer-body"></div>',
+            '<p id="drawer-live" class="vh" aria-live="polite"></p>', "</dialog>", self.template(), f"<script>{script}</script>", "</body>"])
 
 
 def page(matrix: data.Matrix, build: Build, root: Path) -> str:

@@ -58,9 +58,12 @@ def _build(args: argparse.Namespace, root: Path) -> None:
             raise data.SiteError(f"--out {out}: {index} is not a regular file")
     matrix = data.load(root)
     text = render.page(matrix, facts, root)
-    out.mkdir(parents=True, exist_ok=True)
     path = out / INDEX
-    files.write_atomic(path, text, new_mode=0o644)
+    try:
+        out.mkdir(parents=True, exist_ok=True)
+        files.write_atomic(path, text, new_mode=0o644)
+    except OSError as exc:
+        raise data.SiteError(f"--out {out}: {exc.strerror}") from None
     print(f"wrote {path}: {len(text.encode('utf-8'))} bytes, {len(matrix.models)} models, {len(matrix.runtimes)} engines, "
           f"{len(matrix.clients)} clients, {len(matrix.runs)} e2e runs")
 
@@ -92,4 +95,9 @@ def main(argv: list[str] | None = None, *, root: Path = REPO) -> int:
         return 0
     except data.SiteError as exc:
         print(f"site: {exc}", file=sys.stderr)
+        return 1
+    except OSError as exc:                     # a source the build cannot read, named from the root
+        name = Path(exc.filename) if exc.filename is not None else None
+        where = (name.relative_to(root).as_posix() if name is not None and name.is_relative_to(root) else str(name))
+        print(f"site: {where}: {exc.strerror}", file=sys.stderr)
         return 1

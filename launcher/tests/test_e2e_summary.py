@@ -57,15 +57,20 @@ class SummaryTest(unittest.TestCase):
     def test_committed_summaries_read_back(self):
         found = 0
         for path in sorted((REPO / "research").rglob("summary.md")):
-            text = path.read_text(encoding="utf-8")
-            if text.split("\n", 1)[0] != summary.SUMMARY_HEAD[0]:
+            raw = path.read_bytes()
+            if not summary.is_summary(raw):                     # the page's own rule: a note need not be UTF-8
                 continue
+            text = raw.decode("utf-8")
             found += 1
             with self.subTest(path=str(path.relative_to(REPO))):
                 rows = summary.read_summary(text)
                 if tuple(text.split("\n")[:4]) == summary.SUMMARY_HEAD:
                     self.assertEqual(e2e._summary(rebuilt(rows)), text)
         self.assertGreater(found, 0)
+        head = "\n".join(summary.SUMMARY_HEAD).encode("utf-8") + b"\n"
+        self.assertEqual([summary.is_summary(raw) for raw in (head, b"\xef\xbb\xbf" + head, head.replace(b"\n", b"\r\n"),
+                                                               b"# Benchmark summary\n\nCaf\xe9 notes.\n", b"")],
+                         [True, True, True, False, False])
 
     def test_step_client_takes_the_longest_name(self):
         hermes = ("hermes-z", "hermes-chat", "hermes-config-model", "hermes-config-providers",

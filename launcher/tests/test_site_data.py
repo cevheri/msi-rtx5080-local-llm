@@ -2,6 +2,7 @@
 D13), loaded from a small fixture repository."""
 
 import dataclasses
+import os
 import shutil
 import tempfile
 import unittest
@@ -377,6 +378,23 @@ class SiteDataTest(unittest.TestCase):
         fixture.run("2026-11-19", "llmctl-records-e2e", rows, records={**records, f"013-{QWEN}-opencode": "x\n"})
         message = self.assertStops(fixture, "opencode")
         self.assertTrue(message.startswith("research/2026-11-19/llmctl-records-e2e/records: "), message)
+        # The driver's own _Run.record names the record, so a change to its naming breaks this test too.
+        fixture = self.fresh()
+        path = fixture.run("2026-11-19", "llmctl-records-e2e", rows, records={})
+        from launcher.e2e import clients as e2e
+        from launcher.tests.fakes import FakeHost
+        out = fixture.root / path
+        e2e._Run(out, None, FakeHost(env={}), {"HOME": str(out)}, out).record(f"{QWEN} opencode", "x\n")
+        cell_run = self.run_of(cell_of(fixture.load(), "qwen3.6-35b-a3b", "llamacpp"), path)
+        self.assertEqual(cell_run.failures[0].records, (f"{path}/records/001-{QWEN}-opencode",))
+        # A record of the longer step kimi-config is not a record of a failed kimi; its docker-logs record is.
+        fixture = self.fresh()
+        path = fixture.run("2026-11-19", "llmctl-records-e2e",
+                           [row(QWEN, "up"), row(QWEN, "kimi-config"), row(QWEN, "kimi", "no answer")],
+                           records={f"014-{QWEN}-kimi-config": "x\n", f"016-{QWEN}-kimi-docker-logs": "x\n"})
+        cell_run = self.run_of(cell_of(fixture.load(), "qwen3.6-35b-a3b", "llamacpp"), path)
+        self.assertEqual([(f.step, f.records) for f in cell_run.failures],
+                         [("kimi", (f"{path}/records/016-{QWEN}-kimi-docker-logs",))])
 
     def test_versions_are_read_from_client_records_only(self):
         from launcher.e2e import clients as e2e
@@ -434,6 +452,20 @@ class SiteDataTest(unittest.TestCase):
                 shutil.copyfile(fixture.root / "research/2026-11-18/llmctl-fixture-e2e/summary.md", fixture.root / path)
                 message = self.assertStops(fixture, path)
                 self.assertTrue(message.startswith(path + ": "), message)
+        # A summary that starts with a byte order mark is an e2e summary still, and stops at line 1 rather than
+        # leaving the page in silence; so does a research folder the build cannot list.
+        fixture = self.fresh()
+        bom = fixture.root / "research/2026-11-18/llmctl-fixture-e2e/summary.md"
+        bom.write_bytes(b"\xef\xbb\xbf" + bom.read_bytes())
+        message = self.assertStops(fixture, "llmctl-fixture-e2e/summary.md")
+        self.assertTrue(message.startswith("research/2026-11-18/llmctl-fixture-e2e/summary.md: line 1: "), message)
+        if os.geteuid() != 0:                                                        # root lists any folder
+            fixture = self.fresh()
+            locked = fixture.root / "research/2026-11-17/locked"
+            locked.mkdir(parents=True)
+            locked.chmod(0)
+            self.addCleanup(locked.chmod, 0o755)
+            self.assertEqual(self.assertStops(fixture, "locked"), "research/2026-11-17/locked: Permission denied")
         shutil.rmtree(self.fixture.root / "research/2026-11-18/llmctl-fixture-e2e")
         self.assertStops(self.fixture, "no e2e summary")
 
@@ -529,6 +561,9 @@ class SiteDataTest(unittest.TestCase):
         self.assertIn("every-client", uses(cell))
         self.assertNotIn("every-client", uses(classes(kimi="not-supported")))
         self.assertIn("compare", uses(cell))
+        unmeasured = tuple(dataclasses.replace(c, recipe=dataclasses.replace(c.recipe, decode=None))
+                           if c.runtime == "sglang" else c for c in model.cells)                # Runs cells, not speeds
+        self.assertIn("compare", uses(cell, dataclasses.replace(model, cells=unmeasured)))
         self.assertNotIn("compare", uses(cell, dataclasses.replace(model, cells=tuple(
             c for c in model.cells if c.runtime != "sglang"))))
         self.assertEqual(uses(cell_of(matrix, "deepseek-r1-0528-qwen3-8b", "sglang"),
@@ -576,6 +611,11 @@ class SiteDataTest(unittest.TestCase):
         self.assertIn(deepseek, cells(must_pass="hermes"))
         self.assertEqual((len(cells(must_pass="every")), len(cells(must_pass="hermes"))), (9, 10))
         self.assertEqual(data.view(m, "", data.Filters(search=" 3.6 "), None).rows, ("qwen3.6-35b-a3b",))
+        # The search trims ASCII whitespace only, as page.js does; other spaces stay part of the search.
+        self.assertEqual(data.view(m, "", data.Filters(search="\t\n3.6\r\f\v"), None).rows, ("qwen3.6-35b-a3b",))
+        for search in ("\ufeff3.6", "\x853.6", "\xa03.6"):
+            with self.subTest(search=search):
+                self.assertEqual(data.view(m, "", data.Filters(search=search), None).rows, ())
         gpt = lambda use, sort: [c[1] for c in data.view(m, use, data.Filters(), sort).cells if c[0] == "gpt-oss-20b"]
         self.assertEqual(gpt("", "speed"), ["llamacpp", "sglang", "vllm"])
         self.assertEqual(gpt("compare", None), ["llamacpp", "vllm", "sglang"])
