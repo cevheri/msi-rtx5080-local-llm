@@ -8,49 +8,19 @@ import re
 import shlex
 import unittest
 
-from launcher import dsh_config, kimi_config, opencode_config
+from launcher import dsh_config, kimi_config, markdown, opencode_config
 from launcher.catalog import load_catalog
 from launcher.hfcache import repo_dirname
+from launcher.markdown import heading_slugs
 from launcher.runtimes import ADAPTERS
 from launcher.tests.fakes import REPO
 
 
-def slug(heading: str) -> str:
-    """GitHub's anchor rule, as the knowledge base's link checker applies it."""
-    text = re.sub(r"`|\*\*|\*", "", heading)
-    text = re.sub(r"\[([^\]]*)\]\([^)]*\)", r"\1", text)
-    return re.sub(r"[^\w\- ]", "", text.lower()).replace(" ", "-")
-
-
 def section(doc: str) -> list[str]:
-    path, anchor = doc.split("#", 1)
-    lines, found, depth = [], False, 0
-    for line in (REPO / path).read_text().splitlines():
-        heading = re.match(r"^(#{2,6})\s+(.*?)\s*$", line)
-        if heading:
-            if found and len(heading.group(1)) <= depth:
-                break
-            if slug(heading.group(2)) == anchor:
-                found, depth = True, len(heading.group(1))
-                continue
-        if found:
-            lines.append(line)
-    if not found:
-        raise AssertionError(f"no section #{anchor} in {path}")
-    return lines
-
-
-def heading_slugs(path) -> set[str]:
-    """The anchors of every Markdown heading in a file, outside fenced blocks."""
-    slugs, inside = set(), False
-    for line in path.read_text().splitlines():
-        if line.startswith("```"):
-            inside = not inside
-            continue
-        heading = None if inside else re.match(r"^#{1,6}\s+(.*?)\s*$", line)
-        if heading:
-            slugs.add(slug(heading.group(1)))
-    return slugs
+    try:
+        return markdown.section(REPO, doc)
+    except LookupError as exc:
+        raise AssertionError(str(exc)) from None
 
 
 def last_run_block(lines: list[str]) -> list[str] | None:
