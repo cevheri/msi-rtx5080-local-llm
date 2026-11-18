@@ -1,0 +1,4 @@
+model: {"provider": "custom:llmctl", "default": "qwen3.6-35b-a3b"}
+providers: {"llmctl": {"name": "llmctl: qwen3.6-35b-a3b on SGLang", "api": "http://127.0.0.1:30000/v1", "transport": "chat_completions", "default_model": "qwen3.6-35b-a3b", "discover_models": false, "extra_body": {"max_tokens": 16384}, "models": {"qwen3.6-35b-a3b": {"context_length": 131072}}}}
+model_overrides: {"custom": {"qwen3.6-35b-a3b": {"supports_reasoning": false}}}
+gateway: {"standalone": true}

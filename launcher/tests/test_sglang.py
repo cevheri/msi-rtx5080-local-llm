@@ -827,7 +827,8 @@ class ShippedSglangTest(unittest.TestCase):
 
     def test_recipes_parse(self):
         found = sorted(path.stem for path in SHIPPED.glob("*.toml") if path.name != "_runtime.toml")
-        self.assertEqual(found, ["gemma-4-12b", "gemma-4-e4b", "gpt-oss-20b", "k2-horizon-7b", "qwen3.5-9b"])
+        self.assertEqual(found, ["gemma-4-12b", "gemma-4-e4b", "gpt-oss-20b", "k2-horizon-7b", "qwen3.5-9b",
+                                 "qwen3.6-35b-a3b"])
         for stem in found:
             with self.subTest(recipe=stem):
                 data, source = read_toml(SHIPPED / f"{stem}.toml", "shipped")

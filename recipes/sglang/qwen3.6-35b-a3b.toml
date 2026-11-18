@@ -1,0 +1,44 @@
+# Measured launch from sglang/models.md#qwen36-35b-a3b-nvfp4.
+# Effective sampling: temperature 0.6, top_p 0.95, top_k 20 and min_p 0.0 from the overlay (the llama.cpp twin's --temp, --top-p, --top-k and --min-p); repetition_penalty 1.0 by SGLang's default; the twin's --presence-penalty 0 is SGLang's default and cannot be pinned.
+schema = 1
+id = "qwen3.6-35b-a3b"
+name = "Qwen3.6-35B-A3B NVFP4 (SGLang, Paged Experts)"
+aliases = ["qwen3.6"]
+doc = "sglang/models.md#qwen36-35b-a3b-nvfp4"
+opencode = true
+
+[model]
+repo = "nvidia/Qwen3.6-35B-A3B-NVFP4"
+revision = "1355db6a052410cfd62085d94b58866fd0f2c3c5"
+size_bytes = 23462477857
+served_name = "qwen3.6-35b-a3b"
+
+[container]
+memory_gib = 27
+
+[server]
+context = 131072
+args = [
+  "--mem-fraction-static", "0.88", "--max-running-requests", "1", "--kv-cache-dtype", "bf16",
+  "--max-mamba-cache-size", "8", "--disable-prefill-cuda-graph", "--moe-runner-backend", "marlin",
+  "--enable-paged-experts", "--paged-experts-num-resident", "88", "--tool-call-parser", "qwen3_coder",
+  "--reasoning-parser", "qwen3", "--default-chat-template-kwargs", '{"enable_thinking":false}',
+]
+sampling = { temperature = 0.6, top_p = 0.95, top_k = 20, min_p = 0.0 }
+
+[needs]
+gpu_mib = 15266
+ram_gib = 23
+
+[clients]
+output = 16384
+thinking = "toggle"
+default = "off"
+
+[evidence]
+kind = "measured"
+summary = "151.3 tok/s decode with thinking off and 128k context through Paged Experts (88 of 256 experts resident), 161,736-token BF16 pool, 951 MiB free after ready and 503 MiB after a 124,498-token prompt and the first grammar request, 300 s of sustained load without error, 15,378 MiB GPU peak, 22.92 GiB of non-reclaimable host memory including the 16.97 GiB pinned expert store, smoke test and tool call passed"
+decode_tok_s = 151.3
+date = "2026-11-18"
+hardware = "MSI Raider 18 Max HX A2WI, RTX 5080 Laptop GPU 16 GB, 61 GiB RAM"
+record = "research/2026-11-18/sglang-qwen3.6-35b-a3b/"

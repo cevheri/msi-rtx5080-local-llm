@@ -39,7 +39,7 @@ A custom openai-compatible model with neither `variants` nor `capabilities.reaso
 
 ## The validated config
 
-This is the three-provider config with one entry for every recipe of [llmctl](llmctl.md) that is measured on this laptop: the eleven llama.cpp recipes, with Qwen3.6-35B-A3B as the default, gpt-oss-20b, Groot-19B-A3B-261023 NVFP4, K2 Horizon 7B, Gemma 4 12B, Qwen3.5-9B, Mellum2.1 and Gemma 4 E4B on vLLM, and Qwen3.5-9B, K2 Horizon 7B, gpt-oss-20b, Gemma 4 12B and Gemma 4 E4B on SGLang.
+This is the three-provider config with one entry for every recipe of [llmctl](llmctl.md) that is measured on this laptop: the eleven llama.cpp recipes, with Qwen3.6-35B-A3B as the default, gpt-oss-20b, Groot-19B-A3B-261023 NVFP4, K2 Horizon 7B, Gemma 4 12B, Qwen3.5-9B, Mellum2.1 and Gemma 4 E4B on vLLM, and Qwen3.5-9B, K2 Horizon 7B, gpt-oss-20b, Gemma 4 12B, Gemma 4 E4B and Qwen3.6-35B-A3B on SGLang.
 It extends the research-phase config with a `qwen3.8-27b` entry that uses `reasoning_effort` levels, as the audit asked.
 After the 2026-11-15 re-ranking, the default moved from Qwen3.6-35B-A3B to Qwen3.8-27B, the two K2 Horizon entries were added, and the Gemma 4 12B entry (now an honorable mention; its entry is in [vllm/models.md](../vllm/models.md)) was replaced by Groot, whose entry is copied from [vllm/models.md](../vllm/models.md).
 On 2026-11-16 the user made Qwen3.6-35B-A3B the default again, after it measured 122 tok/s with 128k context against 36 tok/s with 64k for Qwen3.8-27B ([model-selection.md](model-selection.md#decision-summary)).
@@ -53,6 +53,8 @@ On 2026-11-18 the `sglang-docker` provider was added with the entries of the thr
 I re-validated it on 2026-11-18, after adding that provider, against a fresh copy of [https://opencode.ai/config.json](https://opencode.ai/config.json) (sha256 `828719e5c07c6806c002e764a98a4ee9d3904b0d2b084a8d984b714b25d44c62`, byte for byte the copy of 2026-11-15) with Python `jsonschema` 4.19.2 (Draft 2020-12): 0 errors for 21 models, and the same two negative tests are rejected.
 Later on 2026-11-18 the SGLang `gemma-4-12b` and `gemma-4-e4b` entries were added, which equal their vLLM twins apart from the name.
 I re-validated it then against a fresh copy of the schema (the same sha256): 0 errors for 23 models, and the same two negative tests are rejected.
+Later on 2026-11-18 the SGLang `qwen3.6-35b-a3b` entry was added, which equals the llama.cpp entry of the same model apart from the name and the `modelID`, because SGLang serves it under its own name rather than llama.cpp's `local`.
+I re-validated it then against a fresh copy of the schema (the same sha256): 0 errors for 24 models, and the same two negative tests are rejected.
 On 2026-11-16 this config was installed as the global `~/.config/opencode/opencode.json` on this laptop, merged with the `mcp` block that file already held, and validated again with 0 errors against the live schema (unchanged).
 Measured the same day: `opencode run` without `-m` reached the default `qwen3.6-35b-a3b` entry and passed the write-and-read task in 9 s ([records](../research/2026-11-16/opencode-global-config/)).
 
@@ -274,6 +276,16 @@ Measured the same day: `opencode run` without `-m` reached the default `qwen3.6-
             { "id": "thinking", "body": { "chat_template_kwargs": { "enable_thinking": true } } },
             { "id": "none", "body": { "chat_template_kwargs": { "enable_thinking": false } } }
           ]
+        },
+        "qwen3.6-35b-a3b": {
+          "modelID": "qwen3.6-35b-a3b",
+          "name": "Qwen3.6-35B-A3B NVFP4, Paged Experts (SGLang)",
+          "capabilities": { "tools": true, "input": ["text"], "output": ["text"], "reasoning": { "supported": true } },
+          "limit": { "context": 131072, "output": 16384 },
+          "variants": [
+            { "id": "thinking", "body": { "chat_template_kwargs": { "enable_thinking": true } } },
+            { "id": "none", "body": { "chat_template_kwargs": { "enable_thinking": false } } }
+          ]
         }
       }
     }
@@ -324,6 +336,7 @@ The config above assumes these server settings; the full commands live in [vllm/
 | `sglang-docker/gpt-oss-20b` | SGLang :30000 | `--served-model-name gpt-oss-20b` | `--context-length 131072` (needs Paged Experts with 24 resident experts and FP8 KV) |
 | `sglang-docker/gemma-4-12b` | SGLang :30000 | `--served-model-name gemma-4-12b` | `--context-length 131072` (FP8 KV, `--swa-full-tokens-ratio 0.1`, no audio tower) |
 | `sglang-docker/gemma-4-e4b` | SGLang :30000 | `--served-model-name gemma-4-e4b` | `--context-length 65536` (`--swa-full-tokens-ratio 0.1`, no audio tower) |
+| `sglang-docker/qwen3.6-35b-a3b` | SGLang :30000 | `--served-model-name qwen3.6-35b-a3b` | `--context-length 131072` (needs Paged Experts with 88 resident experts, BF16 KV and 8 Mamba slots) |
 
 [llmctl](llmctl.md) starts each entry's server with these values, and its tests check every recipe against this config.
 llmctl keeps a default that points at llmctl on the running model, rewriting only the top-level `"model"` line ([llmctl.md](llmctl.md#clients)), and its tests check each entry's `limit.output`, reasoning and variants against the recipe's `[clients]` table.
