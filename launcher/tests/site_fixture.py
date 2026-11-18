@@ -1,6 +1,7 @@
 """A small repository for the runtime matrix page's tests: real recipe files with pinned values, and the documents the
 page reads, each written so that a test can change one fact and load the page model again."""
 
+import html.parser
 import json
 import re
 import shutil
@@ -208,3 +209,96 @@ def cell_of(matrix, model_id: str, runtime: str):
 
 def model_of(matrix, model_id: str):
     return next(model for model in matrix.models if model.id == model_id)
+
+
+VOID = frozenset({"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"})
+
+
+class Node:
+    """One element of a parsed page: its tag, its attributes and its children (elements and text)."""
+
+    def __init__(self, tag: str, attrs: dict[str, str | None]):
+        self.tag = tag
+        self.attrs = attrs
+        self.children: list["Node | str"] = []
+
+    def text(self) -> str:
+        return "".join(child if isinstance(child, str) else child.text() for child in self.children)
+
+    def iter(self):
+        """The descendant elements in document order."""
+        for child in self.children:
+            if isinstance(child, Node):
+                yield child
+                yield from child.iter()
+
+    def by_id(self, element_id: str) -> "Node | None":
+        return next((node for node in self.iter() if node.attrs.get("id") == element_id), None)
+
+    def find_all(self, tag: str | None = None, cls: str | None = None) -> list["Node"]:
+        return [node for node in self.iter() if (tag is None or node.tag == tag)
+                and (cls is None or cls in (node.attrs.get("class") or "").split())]
+
+
+class _Tree(html.parser.HTMLParser):
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.root = Node("#document", {})
+        self.stack = [self.root]
+        self.problems: list[str] = []
+        self.ids: dict[str, int] = {}
+        self.hrefs: list[str] = []
+
+    def handle_starttag(self, tag, attrs):
+        node = Node(tag, dict(attrs))
+        self.stack[-1].children.append(node)
+        element_id = node.attrs.get("id")
+        if element_id is not None:
+            self.ids[element_id] = self.ids.get(element_id, 0) + 1
+        href = node.attrs.get("href")
+        if href is not None and href.startswith("#"):
+            self.hrefs.append(href[1:])
+        if tag not in VOID:
+            self.stack.append(node)
+
+    def handle_startendtag(self, tag, attrs):
+        self.problems.append(f"<{tag} ... /> is written as a self-closing tag")
+        self.handle_starttag(tag, attrs)
+
+    def handle_endtag(self, tag):
+        if tag in VOID:
+            self.problems.append(f"</{tag}> closes a void element")
+            return
+        if len(self.stack) == 1 or self.stack[-1].tag != tag:
+            self.problems.append(f"</{tag}> closes <{self.stack[-1].tag}> out of order")
+            return
+        self.stack.pop()
+
+    def handle_data(self, data):
+        self.stack[-1].children.append(data)
+
+
+def _tree(page: str) -> _Tree:
+    tree = _Tree()
+    tree.feed(page)
+    tree.close()
+    return tree
+
+
+def parse(page: str) -> Node:
+    """The page as a tree of Node elements."""
+    return _tree(page).root
+
+
+def well_formed_problems(page: str) -> list[str]:
+    """What keeps the page from being well formed: an element closed out of order or left open, a duplicate ID, a
+    count of h1 other than one, and an href="#x" without an element whose ID is x."""
+    tree = _tree(page)
+    problems = list(tree.problems)
+    problems += [f"<{node.tag}> is never closed" for node in tree.stack[1:]]
+    problems += [f"the ID {element_id} is used {n} times" for element_id, n in sorted(tree.ids.items()) if n > 1]
+    h1 = len(tree.root.find_all("h1"))
+    if h1 != 1:
+        problems.append(f"{h1} h1 elements")
+    problems += [f"href=#{target} names no element" for target in sorted(set(tree.hrefs)) if target not in tree.ids]
+    return problems

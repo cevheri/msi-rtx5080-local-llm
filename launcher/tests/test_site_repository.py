@@ -6,8 +6,9 @@ from launcher import clients
 from launcher.catalog import load_catalog
 from launcher.e2e import summary
 from launcher.runtimes import ADAPTERS
-from launcher.site import data
+from launcher.site import data, render
 from launcher.tests.fakes import REPO
+from launcher.tests.site_fixture import well_formed_problems
 
 
 class SiteRepositoryTest(unittest.TestCase):
@@ -24,6 +25,9 @@ class SiteRepositoryTest(unittest.TestCase):
                         self.assertIsNotNone(cell.recipe, cell.runtime)
                     else:
                         self.assertIsNone(cell.recipe, cell.runtime)
+        page = render.page(matrix, data.Build("https://github.com/cevheri/msi-rtx5080-local-llm", "0" * 40, 0), REPO)
+        self.assertEqual(well_formed_problems(page), [])
+        self.assertNotIn(str(REPO), page)
 
     def test_supported_rule_matches_the_e2e_plan(self):
         from launcher.e2e import clients as e2e
