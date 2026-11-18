@@ -74,10 +74,10 @@ model_overrides: {}
 gateway: {"standalone": true}
 ```
 
-Every llama.cpp recipe is served as `local`, so its block names the model `local`; a vLLM recipe uses its served name.
+Every llama.cpp recipe is served as `local`, so its block names the model `local`; a vLLM or SGLang recipe uses its served name.
 `context_length` equals the recipe's context, and `extra_body.max_tokens` its `[clients] output`, so every request carries the output cap.
 Hermes refuses a context below 64,000 tokens (R19), so llmctl refuses such a recipe for Hermes; every shipped recipe has 65,536 or more.
-The golden files for all 19 recipes are under `launcher/tests/golden/clients/`, and the tests keep them equal to what llmctl writes.
+The golden files for all 22 recipes are under `launcher/tests/golden/clients/`, and the tests keep them equal to what llmctl writes.
 
 Before it writes, llmctl refuses a profile it cannot change safely: one without the two marker lines (a profile llmctl did not create), damaged markers, an owned key set outside the block (Hermes' loader rejects a file with a duplicate key (E5), and a gateway then serves the profile on default settings (E3)), a top-level line that is not a plain `key:`, or Hermes' deleted-profile marker `<root>/profiles/.deleted/llmctl` ([hermes_constants.py:387-392](https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/hermes_constants.py#L387-L392)).
 It then checks its own result: the text before and after the block is unchanged byte for byte, and every block line parses back to the intended value.
@@ -104,6 +104,7 @@ Hermes titles each session after its first exchange with a separate request that
 In E6, `hermes chat -q` made one such request per run and `hermes -z` made none, and each one carried `reasoning_effort: "none"`, a `json_schema` `response_format` and the block's `max_tokens` (E6, [runs](../research/2026-11-16/llmctl-clients-stub/hermes/design/hq/)) (measured on the MSI Raider 18 Max HX against a recording stub, Hermes v0.23.1); interactive sessions were not recorded.
 In the e2e, a request of that shape got HTTP 200 and a title that parses from llama.cpp with Qwen3.8-27B, K2 Horizon 7B and Qwen3.6-35B-A3B and from vLLM with gpt-oss-20b (probe A, [Verified on this laptop](#verified-on-this-laptop)); K2 Horizon 7B still reasoned, and vLLM's gpt-oss-20b recipe maps `none` to `low` through `--reasoning-effort-map` ([vllm/README.md](../vllm/README.md#flags-reference)).
 In the first full e2e run of 2026-11-17, vLLM's K2 Horizon 7B recipe refused that request with HTTP 400 `Unsupported reasoning_effort 'none'. Supported values: high, medium, low.` ([record 214 of that run](../research/2026-11-17/llmctl-dsh-e2e-run1/records/214-13-k2-horizon-7b-vllm-probes-A)), so the recipe now carries the same `--reasoning-effort-map`; with it the title request got HTTP 200 and a title that parses ([check](../research/2026-11-17/vllm-k2-horizon-7b/effort-map-check.txt), the second run's probe A in [record 213](../research/2026-11-17/llmctl-dsh-e2e/records/213-13-k2-horizon-7b-vllm-probes-A)) (measured on the MSI Raider 18 Max HX, vLLM v0.33.0, 2026-11-17).
+SGLang serves that title request through its grammar path, whose first request in v0.5.23 allocates NCCL memory and can crash a server that has too little GPU memory left; the SGLang runtime file's two NCCL variables move that allocation before ready, and `up`'s post-ready check refuses a start that leaves less free memory than the title request and a long prompt need ([sglang/README.md](../sglang/README.md#grammar-requests-and-nccl)).
 
 Hermes and Pi sessions with K2 Horizon 7B on vLLM still fail whenever they replay an assistant tool turn that came back without reasoning.
 The model's chat template requires one of `think`, `reasoning`, `reasoning_content`, `think_fast` or `think_faster` on every assistant message and otherwise raises `Assistant message is missing a thinking field` ([chat_template.jinja:958-959](https://huggingface.co/cyankiwi/K2-Horizon-7B-AWQ-INT4/blob/530d5ceccd8ea660ceaa2a9f3a4bcbb68ba44291/chat_template.jinja#L958-L959) of `cyankiwi/K2-Horizon-7B-AWQ-INT4` at the pinned revision), which vLLM returns as HTTP 400.
@@ -396,7 +397,7 @@ The `llm-pi-ai` row describes one provider, `llmctl`, with one model, built from
 |---|---|---|
 | `displayName` | `"llmctl"` | The provider label in the picker |
 | `api` | `"openai-completions"` | The protocol of hand-declared OpenAI-compatible routes (`configuration-4`) |
-| `baseURL` | `http://127.0.0.1:<port>/v1` | 8080 for llama.cpp, 8000 for vLLM |
+| `baseURL` | `http://127.0.0.1:<port>/v1` | 8080 for llama.cpp, 8000 for vLLM, 30000 for SGLang |
 | `headers` | `{"Authorization": "Bearer no-key-required"}` | pi-ai sends nothing without a key or an Authorization header (`configuration-7`); the servers here take no key |
 | `compat` | `{"supportsStore": false, "supportsDeveloperRole": false, "maxTokensField": "max_tokens"}` | Without it pi-ai sends `store`, `max_completion_tokens` and the `developer` role to 127.0.0.1 (B1-0, [shapes](../research/2026-11-16/llmctl-dsh-stub/shapes/laneB/b1-nocompat-gptoss.jsonl)) |
 | `reasoning` | The recipe's default level, absent for `none` | The session's level unless the session or `agent-default-model` picks one (B1-8) |
@@ -436,8 +437,8 @@ Generated block for gpt-oss-20b on vLLM, with the default lines (`launcher/tests
 ```
 
 Without `--set-default`, and without default lines in the earlier block, the block holds only the first line.
-Every llama.cpp recipe is served as `local`, so its rows name the model `local`; a vLLM recipe uses its served name.
-The golden files for all 19 recipes are under `launcher/tests/golden/clients/`, and the tests keep them equal to what llmctl writes.
+Every llama.cpp recipe is served as `local`, so its rows name the model `local`; a vLLM or SGLang recipe uses its served name.
+The golden files for all 22 recipes are under `launcher/tests/golden/clients/`, and the tests keep them equal to what llmctl writes.
 
 Nemotron 3.5 Bolt's medium level relies on two things: pi-ai leaves out a thinking budget of 0, so High sends no `medium_effort` (`@earendil-works/pi-ai` 1.5.2 `dist/api/openai-completions.js:750-756`, read in the package), and Bolt's chat template tests `medium_effort` only for truth (B-T, read in the template, not rendered), so `1` works like `true` (B1-2, [shapes](../research/2026-11-16/llmctl-dsh-stub/shapes/laneB/b1-bolt-medium.jsonl)).
 A `medium_kwargs` value other than `true` cannot be sent per level that way, so llmctl refuses such a recipe for dsh; no shipped recipe has one.
@@ -521,7 +522,7 @@ llmctl writes no title row, because a `session-title-llm` row would change title
 
 dsh has no per-model tool switch and sends its tools with every request unless a `--patch` disables its tool rows (B4-1, `configuration-25`), so llmctl writes the `always` rows for both `deepseek-r1-0528-qwen3-8b` recipes anyway, to keep dsh's provider on the running model, and `up` prints a chat-only line.
 The other clients leave tools out of a chat-only recipe themselves: OpenCode through the entry's `"tools": false`, Hermes through the block's `platform_toolsets: {"cli": []}`, and Pi when started with `--no-tools`.
-On vLLM, whose recipe has no tool parser, every dsh request that carries tools fails with HTTP 400 (B4-3); on llama.cpp the template renders the tools (not run).
+On vLLM, whose recipe has no tool parser, every dsh request that carries tools fails with HTTP 400 (B4-3); on llama.cpp the template renders the tools (not run); SGLang ships no chat-only recipe, and an SGLang recipe without a tool parser would answer such a request with HTTP 200 and any call as text (inferred from serving_chat.py, [sglang/README.md](../sglang/README.md#tool-calling-and-reasoning)).
 For a prompt without tools, save these rows to a file and pass it with `--patch`; they disable dsh's 14 tool rows, and dsh then sends no `tools` (B4-2, [shapes](../research/2026-11-16/llmctl-dsh-stub/shapes/laneB/b4-notools.jsonl)) (measured on the MSI Raider 18 Max HX against a recording stub, dsh 0.2.2-rc.3):
 
 ```yaml
@@ -605,7 +606,7 @@ The provider table, in this key order:
 | Key | Value | Why |
 |---|---|---|
 | `type` | `"openai"` | The Chat Completions wire, documented for compatible servers (docs-K036, docs-K041) (vendor-reported) |
-| `base_url` | `"http://127.0.0.1:<port>/v1"`, 8080 for llama.cpp and 8000 for vLLM | The type's default is the OpenAI endpoint (docs-K043), and without a `base_url` Kimi uses the shell's `OPENAI_BASE_URL` (local-K30) |
+| `base_url` | `"http://127.0.0.1:<port>/v1"`, 8080 for llama.cpp, 8000 for vLLM and 30000 for SGLang | The type's default is the OpenAI endpoint (docs-K043), and without a `base_url` Kimi uses the shell's `OPENAI_BASE_URL` (local-K30) |
 | `api_key` | `"no-key-required"` | Without a credential Kimi sends the shell's `OPENAI_API_KEY`, else `Bearer unused` (local-K30); E2 recorded `Authorization: Bearer no-key-required` |
 | `model_source` | `"static"` | Keeps the provider out of every catalog refresh (local-K45); a refresh left llmctl's tables byte for byte (E4d) |
 
@@ -664,8 +665,8 @@ support_efforts = ["low", "medium", "high"]
 default_effort = "medium"
 ```
 
-Every llama.cpp recipe is served as `local`, so its alias is `llmctl/local`; a vLLM recipe's alias is `llmctl/<served name>`, such as `llmctl/gpt-oss-20b`.
-The golden files for all 19 recipes are under `launcher/tests/golden/clients/`, and the tests keep them equal to what llmctl writes.
+Every llama.cpp recipe is served as `local`, so its alias is `llmctl/local`; a vLLM or SGLang recipe's alias is `llmctl/<served name>`, such as `llmctl/gpt-oss-20b`, and the SGLang recipes keep the vLLM recipes' served names, so an open Kimi session keeps its alias across a switch between those two.
+The golden files for all 22 recipes are under `launcher/tests/golden/clients/`, and the tests keep them equal to what llmctl writes.
 
 Kimi rewrites `config.toml` itself, so llmctl finds its tables as TOML, never by text patterns (measured on the MSI Raider 18 Max HX, Kimi Code 2.5.3, no server):
 
@@ -729,16 +730,16 @@ A Kimi write that read the file before llmctl's rename and lands after the read-
 
 | Thinking type | Recipes | Model keys | Main request (E2) | `thinking:` line of `up` |
 |---|---|---|---|---|
-| toggle, default off | Qwen3.6, Gemma 4 26B-A4B, Gemma 4 12B and E4B, Groot (both runtimes), Nemotron 3.5 Bolt and Lightning, Qwen3.5 | `capabilities = ["tool_use"]` | No thinking field, so the server's default applies | `off, as the server sets it` |
+| toggle, default off | Qwen3.6, Gemma 4 26B-A4B, Gemma 4 12B and E4B, Groot (llama.cpp and vLLM), Nemotron 3.5 Bolt and Lightning, Qwen3.5 (vLLM and SGLang) | `capabilities = ["tool_use"]` | No thinking field, so the server's default applies | `off, as the server sets it` |
 | toggle, default on | Mellum2.1 | `capabilities = ["tool_use"]` | No thinking field | `on, as the server sets it` |
 | effort with `none` | Qwen3.8-27B | `["tool_use", "thinking"]`, `support_efforts = ["low", "medium"]`, `default_effort = "medium"`, `off_effort = "none"` | `reasoning_effort: "medium"` | `medium effort; /effort in kimi for another (off, low, medium)` |
-| effort without `none` | gpt-oss-20b (both runtimes) | `["tool_use", "thinking"]`, `support_efforts = ["low", "medium", "high"]`, `default_effort = "medium"` | `reasoning_effort: "medium"` | `medium effort; /effort in kimi for another (low, medium, high)` |
-| always | K2 Horizon 7B (both runtimes), K2 Horizon Mova 36B, DeepSeek-R1 (both runtimes) | `["tool_use"]`, and `[]` for DeepSeek-R1 | No thinking field | `always on, at the effort the server sets` |
+| effort without `none` | gpt-oss-20b (all three runtimes) | `["tool_use", "thinking"]`, `support_efforts = ["low", "medium", "high"]`, `default_effort = "medium"` | `reasoning_effort: "medium"` | `medium effort; /effort in kimi for another (low, medium, high)` |
+| always | K2 Horizon 7B (all three runtimes), K2 Horizon Mova 36B, DeepSeek-R1 (llama.cpp and vLLM) | `["tool_use"]`, and `[]` for DeepSeek-R1 | No thinking field | `always on, at the effort the server sets` |
 | none | Qwen3-Coder-Next | `["tool_use"]` | No thinking field | `none` |
 
-That is 10 toggle, 3 effort, 5 always and 1 none recipe (E1, E2) (measured on the MSI Raider 18 Max HX, Kimi Code 2.5.3, recording stub).
+That is 11 toggle, 4 effort, 6 always and 1 none recipe; the keys and requests come from E1 and E2 (measured on the MSI Raider 18 Max HX, Kimi Code 2.5.3, recording stub), which ran before SGLang was added, and the three SGLang recipes get the keys of their thinking types (inferred from their golden files).
 Kimi sends a thinking level on this wire only as `reasoning_effort` (local-K31), so a toggle recipe cannot be switched from Kimi, as in Hermes, and Nemotron 3.5 Bolt's `medium_kwargs` cannot be sent, because the wire carries no `chat_template_kwargs` (E2 never saw one).
-Kimi replays reasoning verbatim under the field the server used, `reasoning_content` from llama.cpp and `reasoning` from vLLM, and keeps `reasoning_effort` unchanged after a reply with reasoning (E2 `e2r-*` and `e2c-*` runs).
+Kimi replays reasoning verbatim under the field the server used, `reasoning_content` from llama.cpp and SGLang and `reasoning` from vLLM, and keeps `reasoning_effort` unchanged after a reply with reasoning (E2 `e2r-*` and `e2c-*` runs).
 gpt-oss-20b cannot stop reasoning, so it has no `off_effort`, and Kimi refuses thinking off for it with exit 1 in 0.53 s, before any request: `Model '<name>' reasons by default but declares no off effort, so thinking cannot be turned off.` (E2 `e2t-*-gpt-oss-20b-off` runs); llmctl never sends another effort in its place.
 `/effort` in the TUI offered `Off  Low  [ Medium ]` for Qwen3.8-27B (P3); for gpt-oss-20b its levels follow from `support_efforts` (inferred from main.cjs:481166-481180, not run).
 
@@ -756,11 +757,13 @@ llmctl never writes `[thinking]`; instead `up`, after the Kimi lines, and `statu
 | `enabled = false`, or `effort = "off"` | effort, efforts without `none` | `warning: [thinking] enabled = false in <path> makes Kimi refuse every prompt to llmctl/<served> before sending it, ...` |
 | `enabled = false`, or `effort = "off"` | effort, efforts with `none` | `warning: [thinking] enabled = false in <path> makes Kimi send reasoning_effort none to llmctl/<served>, so <id> runs without thinking; ...` |
 | `effort` is a string other than `on` and `off`, and not one of the recipe's efforts | effort | `warning: [thinking] effort = "<x>" in <path> makes Kimi send reasoning_effort <x> to llmctl/<served>, which lists only <efforts>; ...` |
+| `effort` is a string other than `on`, `off` and `none` | toggle, on SGLang | `warning: [thinking] effort = "<x>" in <path> makes Kimi send reasoning_effort <x> to llmctl/<served>, which turns thinking on for <id>, because SGLang reads every effort except none as thinking on; ...` |
 | `effort` is a string other than `on` and `off` | toggle, always or none | `warning: [thinking] effort = "<x>" in <path> makes Kimi send reasoning_effort <x> to llmctl/<served>, which sets its thinking on the server (<type>); ...` |
 | `effort` is one of the recipe's efforts and not `medium` | effort | `note: [thinking] effort = "<x>" in <path> makes Kimi use effort <x> for llmctl/<served> instead of medium` |
 | Anything else, or no table | any | Nothing |
 
 Each warning names its fix: `set enabled = true there`, or another effort with `/effort` in Kimi, or removing the effort line.
+The SGLang row exists because SGLang v0.5.23 turns `enable_thinking` on for any `reasoning_effort` other than `none`, which on Qwen3.5-9B turned thinking on although the server default is off, while `none` kept it off (measured on the MSI Raider 18 Max HX, SGLang v0.5.23, 2026-11-17; [sglang/README.md](../sglang/README.md#tool-calling-and-reasoning)); other thinking types were not measured that way, so they keep the general row.
 Kimi's effort selector saves the choice for every model; to choose an effort for llmctl's model in one session only, press Alt+S in the selector, which the TUI shows as `Alt+S session-only` (P3), and leave the saved table alone unless you want that effort for every model.
 Probe G of the e2e sent the plain OK request with `reasoning_effort: "low"`, the field a global `[thinking] effort = "low"` makes Kimi send, to every recipe, a level that only Qwen3.8-27B and gpt-oss-20b list, and every server answered with status 200 and content ([table](#verified-on-this-laptop)) (measured on the MSI Raider 18 Max HX, llama.cpp b12407 and vLLM v0.33.0, 2026-11-17).
 On llama.cpp no recipe whose server default is off returned reasoning, as without the field in probe D; on vLLM Qwen3.5-9B, Gemma 4 12B and Groot-19B-A3B returned reasoning, Gemma 4 E4B did not, and the run recorded no control without the field for them, so this does not show that the field caused it; K2 Horizon 7B on vLLM returned none.
@@ -784,7 +787,7 @@ The default matters more for Kimi than for the other clients, because print mode
 - the TUI with `-m` works without a default (E8 `e8-tui-m`), and shows `Model: not set, run /login or /provider` when there is none.
 
 So `up` prints, for a model that is not Kimi's default, that `kimi -p` needs `--set-default` first, and `up` and `status` warn when `default_model` names an alias the file does not define: `warning: Kimi's default_model <x> names no model in <path>, so every kimi -p fails (...); pick a model with /model in kimi, or run ./llmctl up <model> --set-default`.
-The follow rule keeps an llmctl default from naming a missing alias when the alias changes between `llmctl/local` on llama.cpp and `llmctl/<served name>` on vLLM.
+The follow rule keeps an llmctl default from naming a missing alias when the alias changes between `llmctl/local` on llama.cpp and `llmctl/<served name>` on vLLM or SGLang.
 
 `KIMI_MODEL_NAME` in the shell outranks `default_model`, and only `-m` outranks it (docs-K031) (vendor-reported); it activates an alias of its own, `__kimi_env_model__`, on a provider of its own whose id is `__kimi_env__` and whose type is `KIMI_MODEL_PROVIDER_TYPE`, `kimi` by default, and neither is ever written to the file (local-K32).
 `up` and `status` print `note: KIMI_MODEL_NAME is set in this shell, so kimi uses that model instead of Kimi's default_model; unset it, or pass -m llmctl/<served>` when llmctl's environment has it set.
@@ -814,6 +817,7 @@ What it does not prove: that a request succeeds, which E2, the golden files and 
 
 Kimi has no per-model tool switch: `tool_use` gates only dynamic tool selection, and every request carries Kimi's 24 tools, the two DeepSeek-R1 entries with `capabilities = []` included (E2; local-K22).
 On vLLM, whose DeepSeek-R1 recipe has no tool parser, a request with tools gets HTTP 400, and Kimi exited 1 after 0.61 s without retrying against a stub that answers as that server does (E3, [summary](../research/2026-11-17/llmctl-kimi-stub/exp/runs/e3-summary.jsonl)) (measured on the MSI Raider 18 Max HX, Kimi Code 2.5.3, recording stub).
+SGLang ships no chat-only recipe; an SGLang recipe without a tool parser would answer a request with tools with HTTP 200 and any call as text instead (inferred from serving_chat.py, [sglang/README.md](../sglang/README.md#tool-calling-and-reasoning)).
 As for dsh, llmctl writes both DeepSeek-R1 entries anyway, so Kimi's default stays on the running model, and `up` prints a chat-only line.
 
 A prompt without tools works in print mode with an agent file whose front matter has `tools: []`: the request then has no `tools` key, and the agent's body is its system prompt (E3).
@@ -1036,8 +1040,9 @@ Across runs 2 to 4 every setup step passed, and the session failures changed fro
 - The output the Kimi check reads: `kimi provider list --json` prints llmctl's keys in camelCase (`baseUrl`, `apiKey`, `modelSource`, `maxContextSize`, `maxOutputSize`, `displayName`, `supportEfforts`, `defaultEffort`, `offEffort`) ([record](../research/2026-11-17/llmctl-kimi-stub/exp/records/provider-list-llamacpp-qwen3.8-27b.json)); if a later Kimi prints other names, the check refuses with `Kimi ... does not read llmctl's entry` and `launcher/kimi_config.py` needs a change.
 - Kimi's writer, which [The Kimi tables](#the-kimi-tables) relies on: on an upgrade, rerun E4's writer runs (`exp/bin/e4.sh`, `e4_web.sh` and `e4_registry.sh` in [the archive](../research/2026-11-17/llmctl-kimi-stub/README.md#rerun)) and check that llmctl still finds and keeps its tables in the files Kimi writes, because a writer that moves, splits or reformats tables in a new way is what the line-by-line edit must survive.
 - P1 to P3 on an upgrade: whether the TUI still ignores `--agent-file` and print mode still drops `tools` with the shipped agent file (P1), whether print mode still sends a global `[thinking] effort` verbatim (P2), and what `/effort` saves (P3); the warnings and the chat-only line of `up` rest on them.
-- The e2e run proves real sessions through OpenCode, Hermes, Pi, dsh and Kimi on both runtimes; run it only alone, through heavy, after the unit suite passes: `PATH=$HOME/.kimi-code/bin:$PATH heavy python3 -m launcher.e2e.clients --out research/<date>/llmctl-clients-e2e [--matrix default|extended|all] [--keep-running] [--set-default-round-trip] [--skip-dsh] [--skip-kimi]`.
+- The e2e run proves real sessions through OpenCode, Hermes, Pi, dsh and Kimi on all three runtimes; run it only alone, through heavy, after the unit suite passes: `PATH=$HOME/.kimi-code/bin:$PATH heavy python3 -m launcher.e2e.clients --out research/<date>/llmctl-clients-e2e [--matrix default|extended|all] [--keep-running] [--set-default-round-trip] [--skip-dsh] [--skip-kimi]`.
   `--matrix all` runs every shipped recipe.
+  Every SGLang recipe gets a long-grammar step right after its `status` step: a calibration request of 20 copies of a fixed code paragraph, a request of as many copies as fill 90% of the context, Hermes' title request and, for a recipe with tools, a forced tool call, then a `GET /ready`; a step whose server stopped answering skips the recipe's remaining steps, because SGLang's [grammar path](../sglang/README.md#grammar-requests-and-nccl) is most at risk right after a long prompt.
   `--skip-dsh` leaves out the dsh steps and `--skip-kimi` the Kimi steps, and each sets `LLMCTL_CLIENTS` for every command to the clients that stay: `opencode,hermes,pi,kimi`, `opencode,hermes,pi,dsh`, or `opencode,hermes,pi` with both.
   Without `--skip-kimi` the driver puts `$HOME/.kimi-code/bin` first on `PATH` for itself and every command, so `./llmctl` and every step find the native `kimi` before any other.
   Before it starts anything, it refuses with exit 1 when `LLMCTL_CLIENTS` is set, when an llmctl model server is running (`error: an llmctl model server is running (<recipe> on <runtime>); stop it with ./llmctl down, then run the driver again`), or when the `--out` folder exists.

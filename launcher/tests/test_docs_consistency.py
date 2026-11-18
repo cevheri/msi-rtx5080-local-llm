@@ -185,6 +185,17 @@ KIMI_REFUSALS = (
     "`of the new config.toml failed`",
 )
 
+# The first cells of the SGLang rows in docs/llmctl.md "When up refuses" (SGLang design, Failure modes; plan ruling 6).
+SGLANG_ROWS = (
+    "`llmctl's cache folder ... is not an absolute path`",
+    "`cannot write the model overlay`",
+    "`generation_config.json in snapshot ... is not a JSON object`",
+    "`the KV pool holds ... tokens, fewer than the context`",
+    "`only ... MiB of GPU memory is free after the start`",
+    "`could not read internal_states[0].memory_usage.token_capacity`",
+    "`POST http://127.0.0.1:30000/flush_cache answered`",
+)
+
 # Ruling 11 of the Kimi plan: the documents cite only claims archived with a verdict that holds.
 KIMI_CLAIMS = REPO / "research/2026-11-17/llmctl-kimi-stub/research-claims.json"
 KIMI_CLAIM_DOCS = ("docs/clients.md", "docs/llmctl.md", "docs/sources.md", "README.md")
@@ -300,7 +311,7 @@ class DocsConsistencyTest(unittest.TestCase):
         lines = (REPO / "docs/clients.md").read_text().splitlines()
         named = []
         for index, line in enumerate(lines):
-            match = re.search(r"`launcher/tests/golden/clients/((?:llamacpp|vllm)/[^`]+)`", line)
+            match = re.search(r"`launcher/tests/golden/clients/((?:llamacpp|vllm|sglang)/[^`]+)`", line)
             if match is None:
                 continue
             name = match.group(1)
@@ -350,6 +361,14 @@ class DocsConsistencyTest(unittest.TestCase):
                 self.assertTrue(any(start in cell for cell in first_cells),
                                 f"no row of docs/llmctl.md#when-up-refuses starts with {start}")
 
+    def test_every_sglang_refusal_has_a_row(self):
+        first_cells = [line.split("|")[1].strip() for line in section("docs/llmctl.md#when-up-refuses")
+                       if line.startswith("|")]
+        for start in SGLANG_ROWS:
+            with self.subTest(start=start):
+                self.assertTrue(any(start in cell for cell in first_cells),
+                                f"no row of docs/llmctl.md#when-up-refuses starts with {start}")
+
     def test_kimi_claim_ids_resolve(self):
         verdicts = {claim["id"]: claim["verdict"] for claim in json.loads(KIMI_CLAIMS.read_text())}
         found = 0
@@ -372,7 +391,8 @@ class DocsConsistencyTest(unittest.TestCase):
                 self.assertIn(recipe_id, text)
 
     def test_readme_recipe_table_matches_the_catalog(self):
-        header = "| Model ID | Aliases | llama.cpp | Context | Decode tok/s | vLLM | Context | Decode tok/s |"
+        header = ("| Model ID | Aliases | llama.cpp | Context | Decode tok/s | vLLM | Context | Decode tok/s "
+                  "| SGLang | Context | Decode tok/s |")
         lines = section("README.md#quick-start")
         self.assertIn(header, lines, "README.md#quick-start has no recipe table")
         start = lines.index(header) + 2
@@ -381,7 +401,7 @@ class DocsConsistencyTest(unittest.TestCase):
             if not line.startswith("|"):
                 break
             cells = [cell.strip() for cell in line.strip("|").split("|")]
-            self.assertEqual(len(cells), 8, line)
+            self.assertEqual(len(cells), 11, line)
             recipe_id = cells[0].strip("`")
             self.assertNotIn(recipe_id, rows, f"{recipe_id} has more than one row")
             rows[recipe_id] = cells
@@ -390,7 +410,7 @@ class DocsConsistencyTest(unittest.TestCase):
         for recipe_id, cells in rows.items():
             with self.subTest(recipe=recipe_id):
                 aliases = []
-                for column, name in ((2, "llamacpp"), (5, "vllm")):
+                for column, name in ((2, "llamacpp"), (5, "vllm"), (8, "sglang")):
                     recipe = self.catalog.runtimes[name].recipes.get(recipe_id)
                     if recipe is None:
                         self.assertEqual(cells[column:column + 3], ["No", "-", "-"], name)

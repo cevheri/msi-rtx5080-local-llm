@@ -1,6 +1,6 @@
 # Model selection
 
-Last verified: 2026-11-17.
+Last verified: 2026-11-18.
 
 Use Qwen3.6-35B-A3B on llama.cpp as the default, the user's choice on 2026-11-16 after it measured 122 tok/s with 128k context.
 Switch to Qwen3.8-27B on llama.cpp when a task needs the strongest model: it keeps rank 1 on quality evidence, at 36 tok/s and 64k context.
@@ -18,6 +18,7 @@ Borda rank 10 was Nanbeige4.3-33B (3 points, quality judge only), which moves to
 That rank 10 is a chat and reasoning model only: it has no tool calling and is not for OpenCode agent mode.
 The default model is a separate, practical choice and does not change the ranking: since 2026-11-16 it is rank 2, Qwen3.6-35B-A3B, which measured 3.4 times the decode speed of rank 1 with twice its context ([llamacpp/models.md](../llamacpp/models.md#2-qwen36-35b-a3b)).
 The required families are covered: Qwen (ranks 1, 2, 6), Gemma (5), Nemotron (7), gpt-oss (9) and DeepSeek (10).
+SGLang v0.5.23 is the third engine and changes neither the ranking nor the default: it serves Qwen3.5-9B, K2 Horizon 7B and gpt-oss-20b, none of them materially faster than the fastest other recipe of the same model ([sglang/models.md](../sglang/models.md)).
 
 Runtime rules that apply to every pick are documented in [llamacpp/README.md](../llamacpp/README.md) and [vllm/README.md](../vllm/README.md); the short version is below.
 
@@ -406,6 +407,7 @@ Audit fixes applied in this document:
 
 - llama.cpp commands, offload values, context and sampling per model: [llamacpp/models.md](../llamacpp/models.md).
 - vLLM recipes for the models that fit (gpt-oss-20b, Groot NVFP4, the K2 Horizon 7B AWQ path, DeepSeek-R1-0528-Qwen3-8B) and the models that do not: [vllm/models.md](../vllm/models.md).
+- SGLang recipes for the models that run on SGLang v0.5.23 (Qwen3.5-9B, K2 Horizon 7B, gpt-oss-20b with Paged Experts) and the models that do not: [sglang/models.md](../sglang/models.md).
 - Third-party speed and quality numbers, normalized and labelled: [community-benchmarks.md](community-benchmarks.md).
 - OpenCode configuration, thinking variants and trying these models remotely through OpenRouter: [opencode.md](opencode.md).
 - Evidence classes and the 19 reviewed sources: [sources.md](sources.md).

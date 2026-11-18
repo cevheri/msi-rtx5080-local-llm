@@ -1,9 +1,9 @@
 # llmctl: start a measured model by name
 
-Last verified: 2026-11-17.
+Last verified: 2026-11-18.
 
 `./llmctl` starts a model from this repository's recipes with one command, applies the rules from [README.md](../README.md#rules-for-every-setup-here) for you, and points OpenCode, Hermes Agent, Pi, DeepSeek Harness (dsh) and Kimi Code CLI at it ([Clients](#clients)).
-It runs llama.cpp and vLLM in Docker, one model server at a time, on an NVIDIA GPU.
+It runs llama.cpp, vLLM and SGLang in Docker, one model server at a time, on an NVIDIA GPU.
 The recipes were measured on an MSI Raider 18 Max HX A2WI with an RTX 5080 Laptop GPU (16 GB) and 61 GiB of RAM; on another machine, read `./llmctl list` and write an override wherever yours differs.
 
 ## Quick start
@@ -26,11 +26,11 @@ Checked on the reference laptop on 2026-11-16: `up qwen3.6` was ready in 9 s and
 
 | Command | What it does |
 |---|---|
-| `./llmctl list [--runtime R]` | Every recipe: ID, runtime, status, aliases, evidence, measured decode speed, context, GPU need, RAM need, download size, whether the files and the image are present, and whether an override replaces it; below the table, the running server's address and the client lines of `status` without paths |
+| `./llmctl list [--runtime R]` | Every recipe: ID, runtime, status, aliases, evidence, measured decode speed, context, GPU need (for SGLang the measured peak), RAM need, download size, whether the files and the image are present, and whether an override replaces it; below the table, the running server's address and the client lines of `status` without paths |
 | `./llmctl show <model> [--runtime R]` | The effective recipe, its file and SHA-256, and the exact `docker run` command `up` would run |
 | `./llmctl show <model> [--runtime R] --as-override` | A complete copy of the shipped recipe, marked as an estimate, to save as an override and edit; redirecting into an override that already exists loses what it held ([Overrides for another machine](#overrides-for-another-machine)) |
 | `./llmctl pull <model> [--runtime R] [--yes] [--hf-env-file F]` | Says how much it will download, asks, then pulls the image if it is missing and downloads the model files; without a terminal it needs `--yes` |
-| `./llmctl up <model> [--runtime R] [--replace] [--dry-run] [--set-default]` | Runs the checks below, starts the container, waits until the server answers, writes the llmctl entries of the installed clients ([Clients](#clients)), and prints the endpoint, the served name, the context, the output cap, each client's model and thinking choices, and the evidence; with `--set-default` it also makes the model every installed client's default |
+| `./llmctl up <model> [--runtime R] [--replace] [--dry-run] [--set-default]` | Runs the checks below, starts the container, waits until the server answers (for SGLang it writes the model overlay before the start and checks the KV pool and the free GPU memory after it), writes the llmctl entries of the installed clients ([Clients](#clients)), and prints the endpoint, the served name, the context, the output cap, each client's model and thinking choices, and the evidence; with `--set-default` it also makes the model every installed client's default |
 | `./llmctl status` | The container llmctl started: its recipe, source file and SHA-256, state, port, health, memory use and the GPU memory in use; then each client's llmctl entry and default, and whether they match the running model |
 | `./llmctl logs [-f] [--tail N]` | The server's log, the last 100 lines by default |
 | `./llmctl test` | Three requests against the running server: a reply that must be exactly OK (ignoring case and any whitespace, quotes, backticks, `*`, `_`, `.`, `!` or `,` around it); one tool call; and a decode of up to 512 tokens |
@@ -38,8 +38,9 @@ Checked on the reference laptop on 2026-11-16: `up qwen3.6` was ready in 9 s and
 | `./llmctl check` | Validates every shipped recipe and every override and lists each problem with its file |
 
 A model is named by its recipe ID or an alias, such as `qwen3.6` for `qwen3.6-35b-a3b`.
-When a name has a recipe for both runtimes, llama.cpp is used, because it is the main runtime here; `--runtime vllm` picks vLLM.
+When a name has recipes for more than one runtime, llama.cpp comes first, then vLLM, then SGLang, because llama.cpp is the main runtime here; `--runtime vllm` or `--runtime sglang` picks another, and every SGLang recipe needs `--runtime sglang`, because each shares its name with a llama.cpp or vLLM recipe.
 Running `up` for the model that is already running from the same recipe file starts nothing, writes the client entries again where they differ and prints the summary again; `--replace` restarts it.
+For an SGLang recipe such an `up` skips the memory check and says so: `note: <id> was already running from this recipe file, so llmctl did not check its memory again; ./llmctl up <id> --runtime sglang --replace restarts it and checks it`.
 Run `./llmctl <command> --help` for every option.
 In `list`, STATUS is `running` for the server that answers, `starting` while it loads, `running (older file)` when it was started from an earlier version of its recipe file, and `?` when Docker did not answer.
 
@@ -59,7 +60,7 @@ llmctl never creates a config folder; inside an existing Hermes root it creates 
 
 | Client | File | What changes | When |
 |---|---|---|---|
-| OpenCode | `opencode.json` (or `opencode.jsonc`) in the OpenCode folder | Only the top-level `"model"` line, then `opencode reload` so an open OpenCode sees it; the provider config stays the one from [opencode.md](opencode.md#the-validated-config) | When the config holds the recipe's entry, and the default already names a `llamacpp-docker` or `vllm-docker` model or you pass `--set-default` |
+| OpenCode | `opencode.json` (or `opencode.jsonc`) in the OpenCode folder | Only the top-level `"model"` line, then `opencode reload` so an open OpenCode sees it; the provider config stays the one from [opencode.md](opencode.md#the-validated-config) | When the config holds the recipe's entry, and the default already names a `llamacpp-docker`, `vllm-docker` or `sglang-docker` model or you pass `--set-default` |
 | Hermes | `<root>/profiles/llmctl/config.yaml` | Only the llmctl block between its two marker lines (`model`, `providers`, `model_overrides`, `gateway`, and `platform_toolsets` for a chat-only recipe); created once with a header and `_config_version: 53` after the block | Every `up` that changes the block |
 | Hermes | `<root>/active_profile` | Written by `hermes profile use llmctl`, which llmctl runs | Only with `--set-default`, when the sticky profile is not `llmctl` yet |
 | Pi | `models.json` in Pi's folder | Only `providers.llmctl`, replaced in place or appended | Every `up` that changes the entry |
@@ -83,7 +84,7 @@ llmctl neither reads nor writes a client the variable leaves out, and `status` s
 `LLMCTL_SET_DEFAULT` accepts only `1` and `0` (or empty).
 After `hermes profile use llmctl`, plain `hermes` commands, `hermes gateway` and `hermes config` included, act on the profile llmctl; `up` says so and prints `Hermes default profile: <previous> -> llmctl`.
 
-Without the flag, a default that already points at llmctl follows the running model, so no client keeps talking to a stopped recipe or falls back to another provider: an OpenCode `"model"` that names a `llamacpp-docker` or `vllm-docker` model is moved to the running one, Pi's `defaultModel` is moved when `defaultProvider` is `llmctl`, dsh's default lines follow when the block already holds them, Kimi's `default_model` follows when it names an `llmctl/` alias, and Hermes' profile llmctl describes the running model anyway.
+Without the flag, a default that already points at llmctl follows the running model, so no client keeps talking to a stopped recipe or falls back to another provider: an OpenCode `"model"` that names a `llamacpp-docker`, `vllm-docker` or `sglang-docker` model is moved to the running one, Pi's `defaultModel` is moved when `defaultProvider` is `llmctl`, dsh's default lines follow when the block already holds them, Kimi's `default_model` follows when it names an `llmctl/` alias, and Hermes' profile llmctl describes the running model anyway.
 A default that points anywhere else never changes without the flag.
 To opt out, point OpenCode's default at a model that is not llmctl's, or leave OpenCode out with `LLMCTL_CLIENTS=hermes,pi,dsh`; the same works for Hermes and Pi, for dsh you delete the `agent-default-model` and `acp` lines from its block, and for Kimi you point its default at another model with `/model`, or leave Kimi out with `LLMCTL_CLIENTS=opencode,hermes,pi,dsh`.
 A default that dsh's model picker saved in a profile patch is not followed, because llmctl never edits the files the Web UI owns; `up` prints a note when it would go stale ([clients.md](clients.md#the-default-model-and-the-picker)).
@@ -171,6 +172,22 @@ When the model is not Kimi's default, Kimi's lines read `Kimi: llmctl/<served na
 For a chat-only recipe Kimi's section holds only the `Kimi:` line, the thinking line and a `chat only:` line with `kimi -p "your prompt" --agent-file <path>`, the agent file llmctl ships, and asks for `--set-default` first when the model is not Kimi's default; it leaves out the `kimi` and `kimi -m` lines, because Kimi's TUI always sends its tools ([clients.md](clients.md#kimi-chat-only-recipes)).
 After Kimi's usage lines, `up` prints a warning or a note when your `[thinking]` table in `config.toml` changes what Kimi sends to the model ([clients.md](clients.md#kimi-thinking-per-type)), a warning when `default_model` names a model the file does not define, and a note when `KIMI_MODEL_NAME` is set in llmctl's environment, which outranks `default_model` ([clients.md](clients.md#the-kimi-default-model)); right after the `clients:` line it warns when the installed Kimi is not 2.5.3 ([clients.md](clients.md#maintenance)).
 
+An SGLang recipe adds two lines to that sample: before the `waiting` line the model overlay that llmctl builds from the snapshot ([sglang/README.md](../sglang/README.md#sampling-and-the-model-overlay)), and before the `ready` line the post-ready check of the KV pool and the free GPU memory ([sglang/README.md](../sglang/README.md#readiness-and-the-memory-check)).
+For `./llmctl up qwen3.5 --runtime sglang`, with the pool and the free memory that measurement D read for that recipe ([record](../research/2026-11-18/sglang-qwen3.5-9b/README.md)):
+
+```text
+qwen3.5-9b on sglang: shipped recipe, measured
+clients: opencode, hermes, pi, dsh, kimi
+wrote /home/u/.cache/llmctl/sglang/overlays/qwen3.5-9b: model overlay with 11 links into snapshot a4df85a20fb7 of RedHatAI/Qwen3.5-9B-NVFP4, and generation_config.json with temperature 0.6, top_p 0.95, top_k 20
+waiting for qwen3.5-9b to load (up to 900 s)
+memory: KV pool 140974 tokens for context 131072; 937 MiB of GPU memory free after the start, at least 768 MiB needed
+ready: http://127.0.0.1:30000/v1, served as 'qwen3.5-9b', context 131072, output 16384
+```
+
+The client lines follow with `on SGLang` and port 30000.
+A check that refuses prints the `memory:` line when it read one, then `error: <refusal>; llmctl stopped the container and kept it for its logs: ./llmctl logs, ./llmctl down --remove`, exits with code 4 and writes no client file; the refusals are in [When up refuses](#when-up-refuses).
+`up --dry-run` prints `would write <folder>: model overlay with links into snapshot ...` instead of the `wrote` line and builds nothing.
+
 `status` and `list` end with the client lines (`list` without the paths), and warn when a default points at llmctl while no model runs, or when OpenCode's llmctl default is not the running model:
 
 ```text
@@ -197,6 +214,8 @@ These rules live in the code, and no recipe, runtime file or override can change
 - Every llama.cpp container gets `GGML_CUDA_DISABLE_GRAPHS=1`, the workaround for the CUDA-graph hang on RTX 50 laptop GPUs ([llama.cpp #27330](https://github.com/ggml-org/llama.cpp/issues/27330)); a runtime file that tries to set it is refused.
 - A Hugging Face token comes from `HF_TOKEN` or from `--hf-env-file` (a file with an `HF_TOKEN=` line), and never appears in a command line, an output line, a label or `--dry-run`.
   It is sent only to huggingface.co: when a download redirects to another host, such as the storage CDN, the token is dropped.
+- A runtime file's `[env]` may not set a variable whose name ends in `_TOKEN`, `_KEY`, `_SECRET` or `_PASSWORD`, in any case, because `[env]` goes into the `docker run` command line; such a runtime file is refused with exit 2.
+- Every SGLang container mounts the Hugging Face cache and the recipe's model overlay read-only, and an SGLang start that fails the post-ready check of its KV pool and free GPU memory is stopped and refused with exit 4 ([When up refuses](#when-up-refuses)).
 - `pull` checks every llama.cpp file against the SHA-256 that Hugging Face publishes for it, and keeps a partial file when the network fails, so running `pull` again resumes it.
 
 The containers carry labels that say what started them: `io.llmctl.managed`, `runtime`, `recipe`, `source`, `sha256` (of the recipe file as read), `evidence`, `runtime-source` and `runtime-sha256`.
@@ -204,8 +223,8 @@ The containers carry labels that say what started them: `io.llmctl.managed`, `ru
 
 ## Recipes
 
-Recipes live in [recipes/llamacpp/](../recipes/llamacpp/) and [recipes/vllm/](../recipes/vllm/), one TOML file per model, plus a `_runtime.toml` per runtime with what every model of that runtime shares.
-The two runtimes never read each other's files, so a change to a llama.cpp file cannot change a vLLM command, and the reverse; the tests check this.
+Recipes live in [recipes/llamacpp/](../recipes/llamacpp/), [recipes/vllm/](../recipes/vllm/) and [recipes/sglang/](../recipes/sglang/), one TOML file per model, plus a `_runtime.toml` per runtime with what every model of that runtime shares.
+The three runtimes never read each other's files, so a change to one runtime's file cannot change another runtime's command; the tests check this.
 
 A llama.cpp recipe has these keys:
 
@@ -232,11 +251,26 @@ A llama.cpp recipe has these keys:
 A vLLM recipe differs in three places: `[model]` has `include` and `exclude` patterns and a `served_name` instead of `files`; `args` are the flags after the model; and `[needs]` has only `ram_gib`, because the GPU need is the `--gpu-memory-utilization` share of the memory CUDA can use, which is vLLM's own start check.
 A vLLM recipe without that flag uses `default_gpu_memory_utilization` from `recipes/vllm/_runtime.toml`, 0.92 for vLLM v0.33.0.
 
-Both runtimes take the same `[clients]` table, and each checks it against its own server args, so the entries llmctl writes for the clients describe what the server does:
+An SGLang recipe has the vLLM recipe's shape, with `args` the flags after llmctl's own, plus these keys:
+
+| Key | Meaning and bounds |
+|---|---|
+| `[server] sampling` | Optional: an inline table of `temperature` (0 to 2), `top_p` (above 0, at most 1), `top_k` (-1 or 1 to 1,000,000), `min_p` (0 to 1) and `repetition_penalty` (above 0, at most 2), which llmctl writes into the model overlay's `generation_config.json`, because SGLang reads its sampling defaults from that file ([sglang/README.md](../sglang/README.md#sampling-and-the-model-overlay)) |
+| `[needs] gpu_mib` | Required: the server's measured GPU peak minus the desktop's share at the time, which preflight compares with the free GPU memory, because SGLang sizes itself from whatever is free |
+| `[needs] ram_gib` | Required: the container's measured peak of non-reclaimable memory (anon plus shmem), which for a Paged Experts recipe includes the pinned expert store; refused when larger than `memory_gib` |
+
+Its `args` must hold `--mem-fraction-static` with a number above 0 and at most 0.90 and `--max-running-requests 1`, and `--disable-prefill-cuda-graph` unless `[evidence] kind` is `measured` ([sglang/README.md](../sglang/README.md#memory-budget)).
+They may not hold `--disable-cuda-graph`, which SGLang v0.5.23 deprecates and which also turns the decode graph off, `--sampling-defaults` with any value but `model`, or `--preferred-sampling-params`, which does not reach chat requests in v0.5.23.
+`--enable-paged-experts` needs `--paged-experts-num-resident` with a positive integer and `--moe-runner-backend marlin`, and `--paged-experts-num-resident` needs `--enable-paged-experts` ([sglang/README.md](../sglang/README.md#paged-experts)).
+Every flag these rules read, and every owned or secret flag below, counts in its `--flag=value` form too, must be written in full and only once, because SGLang expands an abbreviated flag and keeps the last of two values; an abbreviation or a second copy is refused with exit 2.
+Some rules depend on the model's architecture, which a recipe does not name, so llmctl cannot check them and the post-ready check of the KV pool catches what they miss: `--max-mamba-cache-size` for Gated DeltaNet models (8 for Qwen3.5-9B), `--swa-full-tokens-ratio` for sliding-window models (0.1 for gpt-oss-20b), FP8 KV written as `fp8_e4m3`, and BF16 KV where the pool holds the context ([sglang/README.md](../sglang/README.md#memory-budget)).
+
+All three runtimes take the same `[clients]` table, and each checks it against its own server args, so the entries llmctl writes for the clients describe what the server does:
 
 - llama.cpp: `default = "off"` exactly when the args hold `--reasoning off` or a `--chat-template-kwargs` that sets `enable_thinking` to false; `effort` needs `--reasoning-effort` absent or `medium`; `always` needs `--reasoning-effort high`, `reasoning_effort` `high` in `--chat-template-kwargs`, or `--reasoning-format deepseek`; `none` allows none of `--reasoning`, `--reasoning-effort`, `--reasoning-format` and `--chat-template-kwargs`.
 - vLLM: `--reasoning-parser` is present exactly when thinking is not `none`; a toggle whose `--default-chat-template-kwargs` sets `enable_thinking` must match `default`; a recipe with tools needs `--enable-auto-tool-choice` and `--tool-call-parser`, and a chat-only recipe may set neither.
-- Both: the served name (the llama.cpp runtime file's `served_name`, a vLLM recipe's `served_name`) uses only letters, digits, `.`, `_` and `-`, and starts with a letter or a digit.
+- SGLang: as vLLM, without `--enable-auto-tool-choice`, which SGLang lacks: `--reasoning-parser` is present exactly when thinking is not `none`, a toggle's `--default-chat-template-kwargs` must match `default`, a recipe with tools needs `--tool-call-parser`, a chat-only recipe may not set it, and both parsers need an explicit name, not `auto` ([sglang/README.md](../sglang/README.md#tool-calling-and-reasoning)).
+- All: the served name (the llama.cpp runtime file's `served_name`, a vLLM or SGLang recipe's `served_name`) uses only letters, digits, `.`, `_` and `-`, and starts with a letter or a digit.
 
 llmctl sets some flags itself, and a recipe that contains them is refused:
 
@@ -244,32 +278,36 @@ llmctl sets some flags itself, and a recipe that contains them is refused:
 |---|---|---|
 | llama.cpp | `-m`, `--model`, `-hf` and every `--hf-*` form, `-c`, `--ctx-size`, `-a`, `--alias`, `--host`, `--port` | `--api-key`, `--hf-token`, `-hft` |
 | vLLM | the model argument, `--model`, `--revision`, `--served-model-name`, `--max-model-len`, `--host`, `--port` | `--api-key`, `--hf-token` |
+| SGLang | `--model-path`, `--model`, `--served-model-name`, `--context-length`, `--host`, `--port`, `--revision`, and any abbreviation of them | `--api-key`, `--admin-api-key`, `--config` (its YAML file could carry a key) |
 
-A runtime file has `image`, `container_name`, `host_port`, `ready_path`, `start_timeout_s`, `opencode_provider`, and an `[env]` table; the llama.cpp file adds `served_name` (`local`), and the vLLM file adds named `volumes` and `default_gpu_memory_utilization`.
+A runtime file has `image`, `container_name`, `host_port`, `ready_path`, `start_timeout_s`, `opencode_provider`, and an `[env]` table; the llama.cpp file adds `served_name` (`local`), the vLLM file adds named `volumes` and `default_gpu_memory_utilization`, and the SGLang file adds named `volumes` and `min_free_at_ready_mib`.
+`min_free_at_ready_mib`, 768 in `recipes/sglang/_runtime.toml`, is the free GPU memory, read with `nvidia-smi` after a `POST /flush_cache` of the idle server, that must remain once the server is ready, because long prompts and the first grammar request take more after ready; it comes from the margins measured with every shipped SGLang recipe ([sglang/benchmarking.md](../sglang/benchmarking.md#post-ready-margins)), and 0 switches the check off.
+The SGLang file's `[env]` holds eight variables: `HF_HUB_OFFLINE=1` and `FLASHINFER_NO_DOWNLOAD=1`, so a start fetches nothing from the network; `HF_MODULES_CACHE=/tmp/hf_modules`, a writable folder for the code a `--trust-remote-code` model brings; `MAX_JOBS=2`; `SYNC_TOKEN_IDS_ACROSS_TP=1` and `NCCL_MAX_P2P_NCHANNELS=1`, which move the NCCL memory that SGLang v0.5.23 allocates on the first grammar-constrained request into the server's own warm-up and shrink it ([sglang/README.md](../sglang/README.md#grammar-requests-and-nccl)); `TIKTOKEN_ENCODINGS_BASE`, gpt-oss's Harmony vocabulary from the image; and `PYTORCH_ALLOC_CONF=pinned_max_round_threshold_mb:1`, which cut gpt-oss-20b's pinned expert store from 19.19 to 10.37 GiB (measured on the MSI Raider 18 Max HX, SGLang v0.5.23, 2026-11-17; [record](../research/2026-11-17/sglang-gpt-oss-20b/README.md)) by keeping PyTorch from rounding each pinned host allocation up to a power of two (inferred from the image's PyTorch source).
+`min_free_at_ready_mib` holds only while `[env]` sets both NCCL variables: a runtime override without them gets no refusal or warning, so drop them only with an image that contains SGLang #48487, where the override may set `min_free_at_ready_mib = 0`, or measure your own margins ([sglang/README.md](../sglang/README.md#grammar-requests-and-nccl)).
 The llama.cpp runtime file may not set `GGML_CUDA_DISABLE_GRAPHS`, and the vLLM file sets `HF_MODULES_CACHE` to a writable path inside the container, because the model cache is mounted read-only there and a `--trust-remote-code` model copies its code into that cache.
 Unknown keys are errors with a "did you mean" hint, because a misspelled key that was ignored would run a configuration you did not write.
 
 ## Overrides for another machine
 
-Put your own files in `~/.config/llmctl/recipes/llamacpp/` and `~/.config/llmctl/recipes/vllm/` (`$XDG_CONFIG_HOME/llmctl/recipes` when that is set, or the directory in `LLMCTL_RECIPES_DIR`).
+Put your own files in `~/.config/llmctl/recipes/llamacpp/`, `~/.config/llmctl/recipes/vllm/` and `~/.config/llmctl/recipes/sglang/` (`$XDG_CONFIG_HOME/llmctl/recipes` when that is set, or the directory in `LLMCTL_RECIPES_DIR`).
 
 - A file with a shipped recipe's name replaces that recipe whole; nothing is merged across the two files, because half of one measurement beside half of another is a configuration nobody has run.
 - A file with a new name adds a model.
 - A `_runtime.toml` replaces that runtime's settings whole, for another image tag, port or cache volume; the rules above still hold, and when you change the port, change the OpenCode provider's `baseURL` to match.
 - `mkdir -p ~/.config/llmctl/recipes/llamacpp && ./llmctl show qwen3.6 --as-override > ~/.config/llmctl/recipes/llamacpp/qwen3.6-35b-a3b.toml` writes a complete copy to start from, marked `kind = "estimate"` until you measure it; [recipes/examples/](../recipes/examples/llamacpp/qwen3.6-35b-a3b.toml) has one.
   For a shipped model it copies the shipped recipe and does not read the override folder for that model, so the redirect works although the shell creates the empty target file before llmctl runs.
-  For a model both runtimes ship, `--runtime vllm` (or `--runtime llamacpp`) picks which recipe is copied; without it the copy follows the same runtime order as `show`, llama.cpp first, and the copy's first line names the path it belongs at.
+  For a model that more than one runtime ships, `--runtime vllm`, `--runtime sglang` or `--runtime llamacpp` picks which recipe is copied; without it the copy follows the same runtime order as `show`, llama.cpp first, then vLLM, then SGLang, and the copy's first line names the path it belongs at.
   Redirecting into an override that already exists loses what that override held, because the shell empties the file before llmctl runs: for a shipped model the file then holds the shipped recipe, and for a model that exists only in the override folder it stays empty.
   To keep your own override, copy that file instead.
   A model that exists only in the override folder has no shipped recipe to copy, so `--as-override` refuses it and names its file.
 - An override that does not validate is listed by `check` and `list`, and `up` refuses that model until it is fixed or removed, instead of quietly running the shipped recipe.
 
-On a GPU with less memory, lower `--moe-cache-mib` first and then raise `--n-cpu-moe`, as [llamacpp/README.md](../llamacpp/README.md#moe-expert-offload) explains; on a machine with less RAM, lower `--cache-ram` or `memory_gib`.
+On a GPU with less memory, lower `--moe-cache-mib` first and then raise `--n-cpu-moe`, as [llamacpp/README.md](../llamacpp/README.md#moe-expert-offload) explains; for SGLang, lower `--mem-fraction-static` or the context, or the resident experts of a Paged Experts recipe ([sglang/README.md](../sglang/README.md#memory-budget)); on a machine with less RAM, lower `--cache-ram` or `memory_gib`.
 
 ## When up refuses
 
-`up` checks, in order: the clients, Docker, the CDI spec, the image, the model files, other containers and the port, free GPU memory, and available RAM.
-Each refusal names what it found and exits with the code in its row: 1 for a usage error, 3 for a check that refused before anything started, and 6 when the model is running but a client file or command failed.
+`up` checks, in order: the clients, Docker, the CDI spec, the image, the model files, other containers and the port, free GPU memory, and available RAM; for SGLang it then builds the model overlay, and after the server is ready it checks the KV pool and the free GPU memory.
+Each refusal names what it found and exits with the code in its row: 1 for a usage error, 3 for a check that refused before anything started, 4 for an SGLang server that started but failed its post-ready check, which llmctl then stops and keeps for its logs, and 6 when the model is running but a client file or command failed.
 A client problem that appears only after the server is ready, such as a file that changed while the model loaded, is reported inside the exit 6 message instead of refusing.
 `status` and `list` stop with the same `LLMCTL_CLIENTS`, `HOME`, `~user`, relative `DSH_HOME` and empty or relative `KIMI_CODE_HOME` usage errors; `down` stops the server first and reports them afterwards, with exit code 1.
 
@@ -278,14 +316,21 @@ A client problem that appears only after the server is ready, such as a file tha
 | `Docker is not answering` | 3 | Start Docker: `sudo systemctl start docker` |
 | `Docker refused the connection (permission denied` | 3 | Add yourself to the `docker` group and log in again |
 | `no CDI spec for nvidia.com/gpu` | 3 | Install the NVIDIA Container Toolkit and generate the spec ([host-setup.md](host-setup.md)) |
-| `the image ... is not on this machine` | 3 | `./llmctl pull <model>` |
-| `the model files are not ready` | 3 | `./llmctl pull <model>`; for vLLM this also finishes a download that stopped partway |
+| `the image ... is not on this machine` | 3 | Run the `./llmctl pull` command the message names (with `--runtime` for a vLLM or SGLang recipe) |
+| `the model files are not ready` | 3 | Run the `./llmctl pull` command the message names (with `--runtime` for a vLLM or SGLang recipe); for vLLM and SGLang this also finishes a download that stopped partway |
+| `generation_config.json in snapshot ... is not a JSON object` (inside `the model files are not ready` for SGLang) | 3 | The snapshot's sampling file is damaged, so llmctl cannot add the recipe's sampling to the model overlay: delete that file and its blob from the Hugging Face cache, then pull again; `pull` checks the same file and fails with exit 5 ([sglang/README.md](../sglang/README.md#sampling-and-the-model-overlay)) |
+| `llmctl's cache folder ... is not an absolute path` | 1 | Set `XDG_CACHE_HOME`, or `HOME` when it is unset, to an absolute path: llmctl builds the SGLang model overlay under `<cache>/llmctl/sglang/overlays/` and never relative to the working folder |
+| `cannot write the model overlay` | 3 | Check the free space and permissions of llmctl's cache folder, which the message names; when it names a missing snapshot instead, run `./llmctl pull <model> --runtime sglang`, and when it names the snapshot's `generation_config.json`, delete that file and its blob from the Hugging Face cache, then pull again ([sglang/README.md](../sglang/README.md#sampling-and-the-model-overlay)) |
 | `another model server is running` | 3 | `./llmctl down`, or `./llmctl up <model> --replace` |
 | `a container named ... was not started by llmctl` | 3 | Check that you do not need it, then `docker rm -f <name>` |
 | `port 127.0.0.1:... is already in use` | 3 | Stop the program that holds the port |
-| `... needs N MiB of free GPU memory` | 3 | Close the programs it lists, or write the override the message suggests: a smaller `--moe-cache-mib` for an offloaded MoE model, a smaller context for other llama.cpp models, a smaller `--gpu-memory-utilization` or context for vLLM |
+| `... needs N MiB of free GPU memory` | 3 | Close the programs it lists, or write the override the message suggests: a smaller `--moe-cache-mib` for an offloaded MoE model, a smaller context for other llama.cpp models, a smaller `--gpu-memory-utilization` or context for vLLM, and for SGLang a smaller `--mem-fraction-static` or context, or fewer resident experts (`--paged-experts-num-resident`) for a Paged Experts recipe, with the `gpu_mib` you measure with it |
 | `... may use up to N GiB of RAM` | 3 | Close programs, or write an override with a smaller `memory_gib` or `--cache-ram` |
-| `nvidia-smi was not found` or `nvidia-smi failed` | 3 | Install or load the NVIDIA driver |
+| `nvidia-smi was not found` or `nvidia-smi failed` | 3, or 4 in SGLang's check after the start | Install or load the NVIDIA driver; after an SGLang start llmctl stopped the container, so run `up` again once `nvidia-smi` answers |
+| `the KV pool holds ... tokens, fewer than the context` | 4 | The SGLang server is stopped and kept for its logs; write an override with a smaller context, FP8 KV (`--kv-cache-dtype fp8_e4m3`) or fewer Mamba slots ([sglang/README.md](../sglang/README.md#memory-budget)), then run `up` again |
+| `only ... MiB of GPU memory is free after the start` | 4 | Another program may have taken GPU memory while the model loaded: close other GPU programs and run the same `up` again, or write an override with a `--mem-fraction-static` 0.02 lower, which frees about 300 MiB ([sglang/README.md](../sglang/README.md#memory-budget)) |
+| `could not read internal_states[0].memory_usage.token_capacity` | 4 | llmctl could not read the KV pool's size from the SGLang server, for the reason the message names; read `./llmctl logs`, then run `up` again, or `./llmctl down --remove` ([sglang/README.md](../sglang/README.md#readiness-and-the-memory-check)) |
+| `POST http://127.0.0.1:30000/flush_cache answered` or `... failed` | 4 | llmctl could not empty SGLang's cache before it read the free memory; read `./llmctl logs`, then run `up` again ([sglang/README.md](../sglang/README.md#readiness-and-the-memory-check)) |
 | `another llmctl command is running` | 3 | Wait for it to finish |
 | `LLMCTL_CLIENTS: unknown client` | 1 | Use only `opencode`, `hermes`, `pi`, `dsh` and `kimi`, comma-separated, or an empty value for none |
 | `LLMCTL_SET_DEFAULT must be 1 or 0` | 1 | Set it to `1` or `0`, or unset it |
@@ -339,12 +384,12 @@ A client problem that appears only after the server is ready, such as a file tha
 | `hermes profile use llmctl exited ...` (inside the exit 6 message) | 6 | Read Hermes' message, then run `hermes profile use llmctl` yourself |
 | `...: the file changed while llmctl wrote it, probably through Kimi` (inside the exit 6 message) | 6 | An open Kimi saved `config.toml` while llmctl wrote it; check the file, then run `./llmctl up <model>` again ([clients.md](clients.md#the-kimi-tables)) |
 
-Exit codes: 0 success; 1 a usage error, or a download you declined; 2 an invalid recipe or override; 3 a refused check; 4 a server that failed to start or become ready, or a failed `test`; 5 a failed download or checksum; 6 the model is running, but a client file or command failed; 130 interrupted.
+Exit codes: 0 success; 1 a usage error, or a download you declined; 2 an invalid recipe or override; 3 a refused check; 4 a server that failed to start or become ready, an SGLang server that failed its post-ready check, or a failed `test`; 5 a failed download or checksum; 6 the model is running, but a client file or command failed; 130 interrupted.
 
 ## Adding or changing a recipe
 
-1. Measure the launch with the method in [llamacpp/benchmarking.md](../llamacpp/benchmarking.md) or [vllm/benchmarking.md](../vllm/benchmarking.md), and keep the records under `research/`.
-2. Write the launch into its section of [llamacpp/models.md](../llamacpp/models.md) or [vllm/models.md](../vllm/models.md), and the recipe file into `recipes/` with its `[clients]` table; set `opencode = true` only together with an entry in [opencode.md](opencode.md#the-validated-config), and otherwise put an "OpenCode entry" snippet in the model's section.
+1. Measure the launch with the method in [llamacpp/benchmarking.md](../llamacpp/benchmarking.md), [vllm/benchmarking.md](../vllm/benchmarking.md) or [sglang/benchmarking.md](../sglang/benchmarking.md), and keep the records under `research/`.
+2. Write the launch into its section of [llamacpp/models.md](../llamacpp/models.md), [vllm/models.md](../vllm/models.md) or [sglang/models.md](../sglang/models.md), and the recipe file into `recipes/` with its `[clients]` table; set `opencode = true` only together with an entry in [opencode.md](opencode.md#the-validated-config), and otherwise put an "OpenCode entry" snippet in the model's section.
    A measured recipe always gets `opencode = true` and its entry, and a chat-only one keeps `"tools": false` in it; only an estimate goes without.
 3. Run `python3 -m launcher.tests.regen_golden`, which also writes the Hermes and Pi entries under `launcher/tests/golden/clients/`, read the diff of `launcher/tests/golden/`, and run `python3 -m unittest discover -s launcher/tests -t .`.
 

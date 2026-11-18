@@ -6,7 +6,7 @@ Before any model server can run, install the NVIDIA Container Toolkit from NVIDI
 The `nvidia-container-toolkit-base` package alone is enough for that CDI path, and a toolkit-free manual setup also works but is fragile ([Smaller options](#smaller-options-base-package-only-or-no-toolkit)).
 Then publish every server port on `127.0.0.1` only, because Docker-published ports bypass ufw.
 Give every container its own memory cap, because the `heavy` wrapper does not reach containers.
-Start servers on demand with no restart policy, one at a time, and keep one Hugging Face cache under `/home` that vLLM and llama.cpp share.
+Start servers on demand with no restart policy, one at a time, and keep one Hugging Face cache under `/home` that vLLM, llama.cpp and SGLang share.
 The toolkit was installed and verified on this laptop on 2026-11-15, including a CUDA kernel run inside a container ([install record](../research/2026-11-15/probes/toolkit-install.md)); no model server has been run yet.
 
 ## Current host state (observed)
@@ -196,6 +196,7 @@ CUDA 13.3 to 13.5 images run only under [minor version compatibility](https://do
 Use `nvidia/cuda:13.0.3-base-ubuntu24.04` for verification: it matches the CUDA 13.0.3 base of the vLLM v0.33.0 image ([Dockerfile](https://github.com/vllm-project/vllm/blob/v0.33.0/docker/Dockerfile)); `13.2.1-base-ubuntu24.04` also fits ([Docker Hub tags](https://hub.docker.com/r/nvidia/cuda/tags)).
 The `ubuntu26.04` CUDA base tags start at 13.3.0, which is newer than R595, so avoid them for the smoke test ([Docker Hub tags](https://hub.docker.com/r/nvidia/cuda/tags)).
 The same rule is why the llama.cpp guide pins `server-cuda-b12407` (CUDA 12.8.1, [cuda.Dockerfile](https://github.com/ggml-org/llama.cpp/blob/b12418/.devops/cuda.Dockerfile)) rather than `server-cuda13`, and why vLLM `cu135-nightly` tags are avoided; see [llama.cpp](../llamacpp/README.md) and [vLLM](../vllm/README.md).
+The SGLang image `lmsysorg/sglang:v0.5.23-runtime` is built on CUDA 13.0.3, so it runs natively as well, while SGLang's `nightly-cu134*` tags are built for CUDA 13.4 (driver branch R615) and would rely on minor version compatibility, so they are avoided too ([SGLang](../sglang/README.md#image-and-versions)).
 
 `nvidia-smi` inside a container needs the `utility` driver capability; when `NVIDIA_DRIVER_CAPABILITIES` is unset the default is `utility,compute`, and the CUDA base images set it ([specialized configurations](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/docker-specialized.html)).
 
@@ -310,6 +311,8 @@ Sizing guidance (estimates, except where a row says measured):
 | vLLM, first start of an NVFP4 W4A4 model | Same cap plus `-e MAX_JOBS=2` | The FlashInfer JIT build on first start can use about 52 GiB of host RAM ([vllm#46268](https://github.com/vllm-project/vllm/issues/46268), open), which a 32g cap would kill with exit 137; the open fix [vllm#66864](https://github.com/vllm-project/vllm/pull/66864) budgets about 8 GiB per compiler job, so 2 jobs fit in 32g (estimate, not tested here) |
 | llama.cpp, model fully on the GPU | `--memory=16g --memory-swap=16g` | Server process plus the host prompt cache (`--cache-ram`, default 8192 MiB), as in the [llama.cpp models](../llamacpp/models.md) recipes (estimate) |
 | llama.cpp with MoE experts in RAM | RAM-resident expert size plus the host prompt cache plus the context checkpoints plus about 2-3 GiB | 20g for Qwen3.6-35B-A3B (10.5 GiB of pinned experts plus the default 8 GiB prompt cache; the container peaked at 14.9 GiB) and 35g for Qwen3-Coder-Next (26.4 GiB of pinned experts with `--cache-ram 4096` and `-ctxcp 8`; it peaked at 31.9 GiB), both measured on 2026-11-16; see [llama.cpp models](../llamacpp/models.md) |
+| SGLang, model fully on the GPU | `--memory=32g --memory-swap=32g` | The cap of the Qwen3.5-9B and K2 Horizon 7B recipes, whose anon plus shmem host memory peaked at 5.61 and 4.92 GiB under 300 s of load (measured on the MSI Raider 18 Max HX, SGLang v0.5.23, 2026-11-17 and 2026-11-18); the rest is room for loading and compilation; see [SGLang models](../sglang/models.md) |
+| SGLang with Paged Experts | The measured non-reclaimable peak plus a margin | The pinned expert store is host memory and counts against the cap: the gpt-oss-20b recipe caps at 20g for a 15.45 GiB non-reclaimable peak that includes a 10.37 GiB pinned store, and 300 s of load stayed below the cap at a 17.04 GiB cgroup peak with no OOM kill (measured on the MSI Raider 18 Max HX, SGLang v0.5.23, 2026-11-17); see [SGLang Paged Experts](../sglang/README.md#paged-experts) |
 | `hf download` helper container | `--memory=8g --memory-swap=8g` | Example value, not measured |
 
 Run one model server at a time.
@@ -354,7 +357,9 @@ Keep one Hugging Face cache at `~/.cache/huggingface` on `/home`, which has 562 
 The HF hub default cache is `~/.cache/huggingface/hub`, with content-addressed files in `blobs/` and per-revision symlinks in `snapshots/` ([HF cache guide](https://huggingface.co/docs/huggingface_hub/guides/manage-cache)).
 vLLM's official example mounts the cache at that path ([vLLM Docker docs](https://github.com/vllm-project/vllm/blob/v0.33.0/docs/deployment/docker.md)).
 llama.cpp's `-hf` download uses the same hub layout (search order `LLAMA_CACHE`, `HF_HUB_CACHE`, `HF_HOME/hub`, then `~/.cache/huggingface/hub`), and its CUDA image runs as root, so the same mount works ([hf-cache.cpp at b12418](https://github.com/ggml-org/llama.cpp/blob/b12418/common/hf-cache.cpp)).
-One cache means a model downloaded once is visible to both runtimes; see [vLLM](../vllm/README.md) and [llama.cpp](../llamacpp/README.md) for the run commands.
+One cache means a model downloaded once is visible to all three runtimes; see [vLLM](../vllm/README.md), [llama.cpp](../llamacpp/README.md) and [SGLang](../sglang/README.md) for the run commands.
+llmctl mounts the cache read-only into every vLLM and SGLang container.
+An SGLang container also mounts llmctl's model overlay, `~/.cache/llmctl/sglang/overlays/<id>/` (under `$XDG_CACHE_HOME/llmctl/` when that is set), read-only at `/llmctl/model`: a folder of links into the pinned snapshot plus a `generation_config.json` that carries the recipe's sampling, which llmctl rebuilds before every start ([SGLang](../sglang/README.md#sampling-and-the-model-overlay)).
 
 Create the directory as your user before the first container starts.
 If it does not exist, `docker run -v` creates it ([bind mounts](https://docs.docker.com/engine/storage/bind-mounts/)), and the rootful daemon creates it owned by root (inferred).
@@ -363,7 +368,8 @@ If it does not exist, `docker run -v` creates it ([bind mounts](https://docs.doc
 mkdir -p ~/.cache/huggingface
 ```
 
-Both images run as root, so files they download into the cache are owned by root on the host, and deleting them needs `sudo` or a container (standard bind-mount behaviour with rootful Docker).
+All three images, llama.cpp, vLLM and SGLang, run as root, so files that a hand-run container downloads into a writable cache mount, as in the commands below, are owned by root on the host, and deleting them needs `sudo` or a container (standard bind-mount behaviour with rootful Docker).
+llmctl's own `pull` runs its download container as your user, and llmctl mounts the cache read-only into vLLM and SGLang containers.
 
 ### Download through a container
 
@@ -387,6 +393,8 @@ docker run --rm --memory=8g --memory-swap=8g -e HF_TOKEN \
   --entrypoint hf vllm/vllm-openai:v0.33.0 \
   download <org>/<repo>-GGUF --include "*Q4_K_M*"
 ```
+
+The SGLang image has no `hf` executable, but its `huggingface_hub` runs as `python3 -m huggingface_hub.cli.hf`, and `./llmctl pull <model> --runtime sglang` runs it that way with `--user` set to your user, so its files stay yours (measured on the MSI Raider 18 Max HX, offline probe, 2026-11-17; [design probes](../research/2026-11-17/sglang-runtime/spec-probes/offline-image-probe.txt)).
 
 `hf download` takes `--include` and `--exclude` patterns ([HF CLI guide](https://huggingface.co/docs/huggingface_hub/guides/cli)).
 The exact repo ids and file patterns per model are in [vLLM models](../vllm/models.md) and [llama.cpp models](../llamacpp/models.md).
@@ -420,8 +428,11 @@ Current `huggingface_hub` documents `hf cache ls`, `hf cache verify <repo>`, `hf
 |---|---|---|
 | llama.cpp image `ghcr.io/ggml-org/llama.cpp:server-cuda-b12407` | 7.05 GB on disk as `docker image ls` reports it (measured on the MSI Raider 18 Max HX, Docker 29.9.3, 2026-11-18) | `/var/lib/docker` on `/` |
 | vLLM image `vllm/vllm-openai:v0.33.0` | 35.4 GB on disk as `docker image ls` reports it (measured on the MSI Raider 18 Max HX, Docker 29.9.3, 2026-11-18); 9.74 GB compressed; `v0.33.0-x86_64-zstd` is 7.70 GB compressed ([Docker Hub](https://hub.docker.com/r/vllm/vllm-openai/tags)) | `/var/lib/docker` on `/` (405 GB free) |
-| SGLang image `lmsysorg/sglang:v0.5.23-runtime` | 49.7 GB on disk as `docker image ls` reports it (measured on the MSI Raider 18 Max HX, Docker 29.9.3, 2026-11-18) | `/var/lib/docker` on `/` |
+| SGLang image `lmsysorg/sglang:v0.5.23-runtime` | 49.7 GB on disk as `docker image ls` reports it (measured on the MSI Raider 18 Max HX, Docker 29.9.3, 2026-11-18); 14.47 GB compressed for amd64 ([Docker Hub tag record](https://hub.docker.com/v2/repositories/lmsysorg/sglang/tags/v0.5.23-runtime), SG-04 in the [SGLang sources check](../research/2026-11-17/sglang-runtime/sources-check.md)) (vendor-reported) | `/var/lib/docker` on `/` |
 | vLLM compile cache volume | Unknown, grows per model and config | `/var/lib/docker` on `/` |
+| SGLang `sglang-cache` volume | 11 to 23 MB after the cold start of each shipped SGLang recipe, growing per model (measured on the MSI Raider 18 Max HX, SGLang v0.5.23, 2026-11-17; [SGLang cold starts](../sglang/benchmarking.md#cold-starts-without-the-network)) | `/var/lib/docker` on `/` |
+| SGLang Paged Experts checkpoints of Qwen3.6-35B-A3B and Nemotron 3.5 Lightning | 41.9 GiB of safetensors (vendor-reported, SG-101 in the [SGLang sources check](../research/2026-11-17/sglang-runtime/sources-check.md)) | `~/.cache/huggingface` on `/home` |
+| The four GGUF files of Gemma 4 12B, Gemma 4 E4B, Mellum2.1 and Qwen3.5-9B for llama.cpp | 30.3 GiB (vendor-reported, SG-98 in the [SGLang sources check](../research/2026-11-17/sglang-runtime/sources-check.md)) | `~/.cache/huggingface` on `/home` |
 | All ten ranked picks, one file each, plus gpt-oss-20b in both GGUF and safetensors | About 174 GiB (estimate, sum of the sizes in [model selection](model-selection.md) plus the 12.82 GiB gpt-oss-20b safetensors) | `~/.cache/huggingface` on `/home` (562 GB free) |
 
 Disk is not the constraint here; RAM and VRAM are.
