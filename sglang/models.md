@@ -3,13 +3,13 @@
 Last verified: 2026-11-18 (Qwen3.5-9B and gpt-oss-20b measured on 2026-11-17, K2 Horizon 7B at fraction 0.88 on 2026-11-18).
 
 SGLang v0.5.23 (`lmsysorg/sglang:v0.5.23-runtime`) serves three of the active models as llmctl recipes on this 16 GB GPU: Qwen3.5-9B NVFP4 and gpt-oss-20b at 128k context and K2 Horizon 7B AWQ-INT4 at 64k.
-gpt-oss-20b fits only through Paged Experts, which keeps 24 of its 32 experts per layer on the GPU and pages the rest from pinned host memory.
+gpt-oss-20b fits only through [Paged Experts](README.md#paged-experts), which keeps 24 of its 32 experts per layer on the GPU and pages the rest from pinned host memory.
 Every SGLang recipe shares its name with a llama.cpp or vLLM recipe, which `./llmctl up` prefers, so each one starts only with `--runtime sglang` ([llmctl](../docs/llmctl.md)).
 None of the three is a material speed gain over the fastest other recipe of the same model: Qwen3.5-9B decodes 93.7 tok/s against 90.8 on vLLM, K2 Horizon 7B 89.6 against 94.8 on vLLM, and gpt-oss-20b 124.6 against 166.2 on llama.cpp (measured on the MSI Raider 18 Max HX, each with its runtime, 2026-11-16 to 2026-11-18; records linked in each section and in [vllm/models.md](../vllm/models.md) and [llamacpp/models.md](../llamacpp/models.md)).
 
 llmctl adds two things to the launches below.
-It mounts a model overlay at `/llmctl/model` instead of the snapshot: links into the pinned snapshot plus a `generation_config.json` that carries the recipe's sampling, because SGLang v0.5.23 reads its default sampling only from that file.
-After the server is ready it posts `/flush_cache`, reads the KV pool from `/server_info` and the free GPU memory from `nvidia-smi`, and stops a start whose pool is shorter than the context or that leaves less than 768 MiB free.
+It mounts a model overlay at `/llmctl/model` instead of the snapshot: links into the pinned snapshot plus a `generation_config.json` that carries the recipe's sampling, because SGLang v0.5.23 reads its default sampling only from that file ([Sampling and the model overlay](README.md#sampling-and-the-model-overlay)).
+After the server is ready it posts `/flush_cache`, reads the KV pool from `/server_info` and the free GPU memory from `nvidia-smi`, and stops a start whose pool is shorter than the context or that leaves less than 768 MiB free ([Readiness and the memory check](README.md#readiness-and-the-memory-check)), the room that long prompts and grammar requests need ([Grammar requests and NCCL](README.md#grammar-requests-and-nccl), [Post-ready margins](benchmarking.md#post-ready-margins)).
 Each recipe's `[evidence] record` names the folder with its measurements; the methods are the ones of [research/2026-11-17/sglang-runtime/](../research/2026-11-17/sglang-runtime/README.md).
 
 ## Which models run
@@ -233,7 +233,7 @@ OpenCode entry:
 ## Models that do not run on SGLang
 
 The arithmetic below takes the static budget of SGLang v0.5.23 on this GPU as 15.06 GiB times `--mem-fraction-static`, 13.55 GiB at 0.90, for the weights, the KV pool, the Mamba state and a 0.10 GiB multimodal reserve together (estimate, from the hands-on start logs).
-"Free RAM" means the about 40 GiB that the desktop leaves free.
+"Free RAM" means the about 40 GiB that the desktop leaves free, and the budget itself is explained in [Memory budget](README.md#memory-budget).
 
 | Model | Why it does not run |
 |---|---|

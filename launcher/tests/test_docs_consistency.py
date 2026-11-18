@@ -408,7 +408,7 @@ class DocsConsistencyTest(unittest.TestCase):
                         self.assertIn(f"`{recipe_id}`", prose, "an unmeasured recipe needs a note outside the table")
 
     def test_doc_anchors_in_messages_resolve(self):
-        pattern = re.compile(r"\b((?:docs|llamacpp|vllm)/[A-Za-z0-9_.-]+\.md)#([A-Za-z0-9_-]+)")
+        pattern = re.compile(r"\b((?:docs|llamacpp|vllm|sglang)/[A-Za-z0-9_.-]+\.md)#([A-Za-z0-9_-]+)")
         found = 0
         for source in sorted((REPO / "launcher").rglob("*.py")):
             if (REPO / "launcher/tests") in source.parents:
