@@ -60,6 +60,7 @@ from launcher import (
 )
 from launcher.catalog import load_catalog, override_dir
 from launcher.command import LABEL_PREFIX
+from launcher.e2e.summary import SUMMARY_HEAD
 from launcher.errors import ClientError, LlmctlError, UsageError
 from launcher.host import RealHost
 from launcher.model import Target
@@ -1415,7 +1416,7 @@ def _steps_by_prefix(steps: list[Step]) -> dict[str, list[Step]]:
 
 
 def _summary(rows: list[_Row]) -> str:
-    lines = ["# llmctl clients e2e", "", "| Recipe | Step | Pass | Reasons | Seconds |", "|---|---|---|---|---|"]
+    lines = list(SUMMARY_HEAD)
     for row in rows:
         reasons = "; ".join(row.reasons).replace("|", "/").replace("\n", " ")
         lines.append(f"| {row.recipe} | {row.step} | {'Yes' if row.passed else 'No'} | {reasons} | {row.seconds:.0f} |")
