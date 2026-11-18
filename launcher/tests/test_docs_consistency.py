@@ -472,6 +472,62 @@ class DocsConsistencyTest(unittest.TestCase):
                     with self.subTest(unmeasured=f"{recipe_id} on {name}"):
                         self.assertIn(f"`{recipe_id}`", prose, "an unmeasured recipe needs a note outside the table")
 
+    def test_runtime_coverage_matches_the_catalog(self):
+        # D17 of the SGLang design: every model of the README table has one cell per engine, and a cell starts Runs:
+        # exactly when a measured recipe ships (ruling 28); an estimate recipe's cell starts Failed:.
+        header = "| Model ID | llama.cpp b12407 | vLLM v0.33.0 | SGLang v0.5.23 |"
+        lines = section("docs/model-selection.md#runtime-coverage")
+        self.assertIn(header, lines, "docs/model-selection.md#runtime-coverage has no coverage table")
+        rows = []
+        for line in lines[lines.index(header) + 2:]:
+            if not line.startswith("|"):
+                break
+            cells = [cell.strip() for cell in line.strip("|").split("|")]
+            self.assertEqual(len(cells), 4, line)
+            rows.append(cells)
+        readme = section("README.md#quick-start")
+        table = next(index for index, line in enumerate(readme) if line.startswith("| Model ID | Aliases |"))
+        readme_ids = []
+        for line in readme[table + 2:]:
+            if not line.startswith("|"):
+                break
+            readme_ids.append(line.strip("|").split("|")[0].strip().strip("`"))
+        self.assertEqual([cells[0].strip("`") for cells in rows], readme_ids)
+        link = re.compile(r"\]\(\.\./([^)#\s]+)(?:#[^)\s]*)?\)")
+        dated = re.compile(r"measured (\d{4}-\d{2}-\d{2})")
+        for cells in rows:
+            for column, name in ((1, "llamacpp"), (2, "vllm"), (3, "sglang")):
+                cell, recipe = cells[column], self.catalog.runtimes[name].recipes.get(cells[0].strip("`"))
+                with self.subTest(model=cells[0], runtime=name):
+                    starts = [word for word in ("Runs:", "Failed:", "Does not fit:") if cell.startswith(word)]
+                    self.assertEqual(len(starts), 1, cell)
+                    for target in link.findall(cell):
+                        self.assertTrue((REPO / target).exists(), f"{target} does not exist")
+                    measured = recipe is not None and recipe.evidence.kind == "measured"
+                    self.assertEqual(starts[0] == "Runs:", measured, cell)
+                    if measured:
+                        speed = f"{recipe.evidence.decode_tok_s:g} tok/s"
+                        for text in (f"{recipe.context // 1024}k", speed, f"measured {recipe.evidence.date}",
+                                     f"](../{recipe.doc})"):
+                            self.assertIn(text, cell)
+                        e2e = re.search(r"e2e (\d{4}-\d{2}-\d{2}):", cell)
+                        self.assertIsNotNone(e2e, "a Runs: cell names its e2e date")
+                        self.assertRegex(cell, rf"\]\(\.\./research/{e2e.group(1)}/[^)/\s]+/summary\.md\)")
+                        if name == "vllm" and recipe.model.tokenizer_class:
+                            self.assertGreater(cell.find("tokenizer overlay"), cell.find(speed), cell)
+                    elif recipe is not None:
+                        record = re.search(r"research/(\d{4}-\d{2}-\d{2})/[^/\s]+/", recipe.evidence.summary)
+                        self.assertIsNotNone(record, "an estimate recipe's summary names its failure record")
+                        self.assertEqual(starts[0], "Failed:", cell)
+                        self.assertIn(f"measured {record.group(1)}", cell)
+                        self.assertIn(f"](../{record.group(0)}", cell)
+                    if starts[0] == "Failed:":
+                        date = dated.search(cell)
+                        self.assertIsNotNone(date, "a Failed: cell names the date of its measurement")
+                        self.assertRegex(cell, rf"\]\(\.\./research/{date.group(1)}/[^)/\s]+/")
+                    if starts[0] == "Does not fit:":
+                        self.assertIn("(estimate)", cell)
+
     def test_doc_anchors_in_messages_resolve(self):
         pattern = re.compile(r"\b((?:docs|llamacpp|vllm|sglang)/[A-Za-z0-9_.-]+\.md)#([A-Za-z0-9_-]+)")
         found = 0
