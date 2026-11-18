@@ -1,0 +1,8 @@
+{
+  "command": "hermes -p llmctl config get providers --json",
+  "cwd": "$WORK/15-gpt-oss-20b-vllm-hermes-config-providers",
+  "exit": 0,
+  "seconds": 0.4,
+  "stdout": "{\"llmctl\": {\"name\": \"llmctl: gpt-oss-20b on vLLM\", \"api\": \"http://127.0.0.1:8000/v1\", \"transport\": \"chat_completions\", \"default_model\": \"gpt-oss-20b\", \"discover_models\": false, \"extra_body\": {\"max_tokens\": 16384}, \"models\": {\"gpt-oss-20b\": {\"context_length\": 65536}}}}\n",
+  "stderr": ""
+}

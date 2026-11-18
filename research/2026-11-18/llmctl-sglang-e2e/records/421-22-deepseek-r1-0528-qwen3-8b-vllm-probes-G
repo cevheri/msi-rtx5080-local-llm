@@ -1,0 +1,21 @@
+{
+  "request": {
+    "model": "deepseek-r1-8b",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Reply with exactly the word OK."
+      }
+    ],
+    "max_tokens": 256,
+    "reasoning_effort": "low"
+  },
+  "status": 200,
+  "reply": "{\"id\":\"chatcmpl-9374306d7c34371b\",\"object\":\"chat.completion\",\"created\":1794970427,\"model\":\"deepseek-r1-8b\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":null,\"refusal\":null,\"annotations\":null,\"audio\":null,\"function_call\":null,\"reasoning\":\"\\nHmm, the user is asking me to reply with exactly the word \\\"OK\\\". \\n\\nThis seems straightforward, but I should consider if there's any hidden meaning or context they're trying to convey. Maybe they're testing my compliance with instructions, or perhaps they're looking for a quick confirmation without further interaction.\\n\\nAs DeepSeek, my primary goal is to be helpful and accurate. In this case, the user specifically wants just the word \\\"OK\\\", so I should respect that and not add anything extra. \\n\\nI wonder about the user's scenario. Are they in a hurry? Or is this part of a larger system integration where concise responses are needed? It's possible they're using me for automation purposes, like in a chatbot or API setting.\\n\\nConsidering the user's identity, they could be anyone from a developer testing functionality to someone seeking simple acknowledgment. Since there's no additional information, I'll stick to the basic interpretation.\\n\\nThe actual need here is clear: the user wants a single-word response. But deeper unspoken needs might include saving time or ensuring my responses are minimal when appropriate. I should fulfill this exactly to maintain trust and efficiency in our interaction.\\n\\nIn my response, I'll use the word \\\"OK\\\" as requested, keeping it direct and neutral since\"},\"logprobs\":null,\"finish_reason\":\"length\",\"stop_reason\":null,\"token_ids\":null,\"routed_experts\":null,\"weight_versions\":null}],\"service_tier\":null,\"system_fingerprint\":\"vllm-0.33.0-a1a729cb\",\"usage\":{\"prompt_tokens\":10,\"total_tokens\":266,\"completion_tokens\":256,\"prompt_tokens_details\":null,\"completion_tokens_details\":{\"reasoning_tokens\":255}},\"prompt_logprobs\":null,\"prompt_token_ids\":null,\"prompt_text\":null,\"kv_transfer_params\":null,\"ec_transfer_params\":null,\"metrics\":null}",
+  "record": {
+    "probe": "G",
+    "status": 200,
+    "content": false,
+    "reasoning": true
+  }
+}

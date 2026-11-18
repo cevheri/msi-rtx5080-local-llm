@@ -1,0 +1,8 @@
+{
+  "command": "hermes -p llmctl config get providers --json",
+  "cwd": "$WORK/21-groot-19b-a3b-vllm-hermes-config-providers",
+  "exit": 0,
+  "seconds": 0.4,
+  "stdout": "{\"llmctl\": {\"name\": \"llmctl: groot-19b-a3b on vLLM\", \"api\": \"http://127.0.0.1:8000/v1\", \"transport\": \"chat_completions\", \"default_model\": \"groot-19b-a3b\", \"discover_models\": false, \"extra_body\": {\"max_tokens\": 16384}, \"models\": {\"groot-19b-a3b\": {\"context_length\": 131072}}}}\n",
+  "stderr": ""
+}

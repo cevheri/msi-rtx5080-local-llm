@@ -1,0 +1,8 @@
+{
+  "command": "hermes -p llmctl config get model_overrides --json",
+  "cwd": "$WORK/29-qwen3.6-35b-a3b-llamacpp-hermes-config-model_overrides",
+  "exit": 0,
+  "seconds": 0.4,
+  "stdout": "{\"custom\": {\"local\": {\"supports_reasoning\": false}}}\n",
+  "stderr": ""
+}

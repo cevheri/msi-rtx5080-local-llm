@@ -1,0 +1,8 @@
+{
+  "command": "hermes -p llmctl -z 'Create a file named hello.py containing a function add(a, b) that returns a + b, and a main block that prints add(2, 3). Then read the file back and tell me how many lines it has. Do not run any shell commands.' -t file --usage-file $WORK/01-qwen3.8-27b-llamacpp-hermes-z/usage.json",
+  "cwd": "$WORK/01-qwen3.8-27b-llamacpp-hermes-z",
+  "exit": 0,
+  "seconds": 13.4,
+  "stdout": "Done. Created $WORK/01-qwen3.8-27b-llamacpp-hermes-z/hello.py and read it back: it has 6 lines (an `add(a, b)` function and a main block printing `add(2, 3)` → 5). No shell commands were run.\n",
+  "stderr": ""
+}

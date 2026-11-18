@@ -1,0 +1,8 @@
+{
+  "command": "kimi -p 'Say hello in one sentence.' --output-format stream-json -m llmctl/local --agent-file $HOME/projects/llm/launcher/kimi-chat-only.md",
+  "cwd": "$WORK/05-deepseek-r1-0528-qwen3-8b-llamacpp-kimi",
+  "exit": 0,
+  "seconds": 8.2,
+  "stdout": "{\"role\":\"meta\",\"type\":\"system.version\",\"version\":\"2.5.3\"}\n{\"role\":\"assistant\",\"content\":\"\\nHello!\"}\n{\"role\":\"meta\",\"type\":\"session.resume_hint\",\"session_id\":\"session_1518bdde-de9f-49a0-b0f1-4025a94cbc97\",\"command\":\"kimi -r session_1518bdde-de9f-49a0-b0f1-4025a94cbc97\",\"content\":\"To resume this session: kimi -r session_1518bdde-de9f-49a0-b0f1-4025a94cbc97\"}\n",
+  "stderr": ""
+}

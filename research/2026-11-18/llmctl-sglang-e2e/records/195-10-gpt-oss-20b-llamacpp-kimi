@@ -1,0 +1,8 @@
+{
+  "command": "kimi -p 'Create a file named hello.py containing a function add(a, b) that returns a + b, and a main block that prints add(2, 3). Then read the file back and tell me how many lines it has. Do not run any shell commands.' --output-format stream-json -m llmctl/local",
+  "cwd": "$WORK/10-gpt-oss-20b-llamacpp-kimi",
+  "exit": 0,
+  "seconds": 4.1,
+  "stdout": "{\"role\":\"meta\",\"type\":\"system.version\",\"version\":\"2.5.3\"}\n{\"role\":\"assistant\",\"tool_calls\":[{\"type\":\"function\",\"id\":\"mLxyS8dziCSGfCw5nen7GxUXt4MfJ15I\",\"function\":{\"name\":\"Write\",\"arguments\":\"{\\\"path\\\":\\\"hello.py\\\",\\\"content\\\":\\\"def add(a, b):\\\\n    return a + b\\\\n\\\\nif __name__ == \\\\\\\"__main__\\\\\\\":\\\\n    print(add(2, 3))\\\\n\\\",\\\"mode\\\":\\\"overwrite\\\"}\"}}]}\n{\"role\":\"tool\",\"tool_call_id\":\"mLxyS8dziCSGfCw5nen7GxUXt4MfJ15I\",\"content\":\"Wrote 81 bytes to hello.py\"}\n{\"role\":\"assistant\",\"tool_calls\":[{\"type\":\"function\",\"id\":\"a8pMtzxE8CpyzDDoTLVNu5vJ73s10AMx\",\"function\":{\"name\":\"Read\",\"arguments\":\"{\\\"path\\\":\\\"hello.py\\\",\\\"n_lines\\\":1000}\"}}]}\n{\"role\":\"tool\",\"tool_call_id\":\"a8pMtzxE8CpyzDDoTLVNu5vJ73s10AMx\",\"content\":\"1\\tdef add(a, b):\\n2\\t    return a + b\\n3\\t\\n4\\tif __name__ == \\\"__main__\\\":\\n5\\t    print(add(2, 3))\"}\n{\"role\":\"assistant\",\"content\":\"The file `hello.py` contains **5 lines**.\"}\n{\"role\":\"meta\",\"type\":\"session.resume_hint\",\"session_id\":\"session_d3778cc7-49d0-4a80-a29b-cf41c132168f\",\"command\":\"kimi -r session_d3778cc7-49d0-4a80-a29b-cf41c132168f\",\"content\":\"To resume this session: kimi -r session_d3778cc7-49d0-4a80-a29b-cf41c132168f\"}\n",
+  "stderr": ""
+}

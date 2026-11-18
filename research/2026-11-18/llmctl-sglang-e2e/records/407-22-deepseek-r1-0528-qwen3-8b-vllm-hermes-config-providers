@@ -1,0 +1,8 @@
+{
+  "command": "hermes -p llmctl config get providers --json",
+  "cwd": "$WORK/22-deepseek-r1-0528-qwen3-8b-vllm-hermes-config-providers",
+  "exit": 0,
+  "seconds": 0.4,
+  "stdout": "{\"llmctl\": {\"name\": \"llmctl: deepseek-r1-0528-qwen3-8b on vLLM\", \"api\": \"http://127.0.0.1:8000/v1\", \"transport\": \"chat_completions\", \"default_model\": \"deepseek-r1-8b\", \"discover_models\": false, \"extra_body\": {\"max_tokens\": 16384}, \"models\": {\"deepseek-r1-8b\": {\"context_length\": 65536}}}}\n",
+  "stderr": ""
+}

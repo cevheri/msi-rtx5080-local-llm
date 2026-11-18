@@ -1,0 +1,5 @@
+Two requests sent straight to SGLang on 2026-11-18 at 03:36 UTC, streamed as OpenCode streams, with max_completion_tokens 16384 and one user message of repository Markdown, to read SGLang's refusal texts:
+1. docs/clients.md, llamacpp/models.md, vllm/models.md and sglang/README.md joined:
+{"object":"error","message":"The input (149783 tokens) is longer than the model's context length (131072 tokens).","type":"BadRequestError","param":null,"code":400}
+2. docs/clients.md, vllm/models.md, sglang/README.md and README.md joined:
+{"object":"error","message":"Requested token count exceeds the model's maximum context length of 131072 tokens. You requested a total of 134070 tokens: 117686 tokens from the input messages and 16384 tokens for the completion. Please reduce the number of tokens in the input messages or the completion to fit within the limit.","type":"BadRequestError","param":null,"code":400}

@@ -1,0 +1,21 @@
+{
+  "request": {
+    "model": "qwen3.5-9b",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Reply with exactly the word OK."
+      }
+    ],
+    "max_tokens": 256,
+    "reasoning_effort": "low"
+  },
+  "status": 200,
+  "reply": "{\"id\":\"9f2496edcb3646db9a1ec5e73b07e312\",\"object\":\"chat.completion\",\"created\":1794970537,\"model\":\"qwen3.5-9b\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"\\n\\nOK\",\"reasoning_content\":\"Thinking Process:\\n1.  **Analyze the Request:** The user is asking me to reply with exactly the word \\\"OK\\\".\\n2.  **Check Constraints:** The instruction is explicit: \\\"Reply with exactly the word OK.\\\"\\n3.  **Formulate Output:** The output must be \\\"OK\\\" and nothing else (no punctuation, no extra text, no explanations).\\n4.  **Verify:** Does \\\"OK\\\" meet the criteria? Yes.\\n5.  **Final Decision:** Output \\\"OK\\\".\\n\"},\"logprobs\":null,\"finish_reason\":\"stop\",\"matched_stop\":248046}],\"usage\":{\"prompt_tokens\":17,\"total_tokens\":129,\"completion_tokens\":112,\"prompt_tokens_details\":null,\"reasoning_tokens\":109,\"completion_tokens_details\":{\"reasoning_tokens\":109}},\"metadata\":{\"weight_version\":\"default\",\"weight_versions\":[{\"version\":\"default\",\"start\":0,\"end\":112}]}}",
+  "record": {
+    "probe": "G",
+    "status": 200,
+    "content": true,
+    "reasoning": true
+  }
+}

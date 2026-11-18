@@ -1,0 +1,42 @@
+{
+  "request": {
+    "model": "gemma-4-12b",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a short title for a chat about adding two numbers in Python."
+      }
+    ],
+    "reasoning_effort": "none",
+    "response_format": {
+      "type": "json_schema",
+      "json_schema": {
+        "name": "session_title",
+        "strict": true,
+        "schema": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "title"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "max_tokens": 16384,
+    "stream": false
+  },
+  "status": 200,
+  "reply": "{\"id\":\"chatcmpl-8bea6170b7b2c676\",\"object\":\"chat.completion\",\"created\":1794970179,\"model\":\"gemma-4-12b\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{ \\\"title\\\": \\\"Adding Two Numbers in Python\\\" }\",\"refusal\":null,\"annotations\":null,\"audio\":null,\"function_call\":null,\"reasoning\":null},\"logprobs\":null,\"finish_reason\":\"stop\",\"stop_reason\":106,\"token_ids\":null,\"routed_experts\":null,\"weight_versions\":null}],\"service_tier\":null,\"system_fingerprint\":\"vllm-0.33.0-b9344da9\",\"usage\":{\"prompt_tokens\":27,\"total_tokens\":40,\"completion_tokens\":13,\"prompt_tokens_details\":null,\"completion_tokens_details\":{\"reasoning_tokens\":0}},\"prompt_logprobs\":null,\"prompt_token_ids\":null,\"prompt_text\":null,\"kv_transfer_params\":null,\"ec_transfer_params\":null,\"metrics\":null}",
+  "record": {
+    "probe": "A",
+    "status": 200,
+    "content": true,
+    "reasoning": false,
+    "title_ok": true
+  }
+}

@@ -1,0 +1,11 @@
+03:41:00.193 $ env LLMCTL_CLIENTS= ./llmctl up deepseek-r1 --runtime vllm --replace
+03:41:23.205 deepseek-r1-0528-qwen3-8b on vllm: shipped recipe, measured
+03:41:23.226 clients: none (LLMCTL_CLIENTS is empty)
+03:41:23.245 removing the stopped container 'vllm' from an earlier llmctl run
+03:41:23.262 wrote $HOME/.cache/llmctl/vllm/tokenizers/deepseek-r1-0528-qwen3-8b: tokenizer overlay with 9 links into snapshot 6e8885a6ff5c of deepseek-ai/DeepSeek-R1-0528-Qwen3-8B, and tokenizer_config.json with tokenizer_class PreTrainedTokenizerFast
+03:41:23.278 waiting for deepseek-r1-0528-qwen3-8b to load (up to 900 s)
+03:41:23.291 ready: http://127.0.0.1:8000/v1, served as 'deepseek-r1-8b', context 65536, output 16384
+03:41:23.306 note: chat only, no tool calling
+03:41:23.322 evidence: 72.5 tok/s decode with 64k context, cold and warm starts with a 4.8 GiB KV cache (69,904 tokens) set by --kv-cache-memory-bytes, 15,036 MiB GPU peak, 1,105 MiB free after ready; with the tokenizer folder the prompts count as on llama.cpp and replies read correctly; tools get HTTP 400 as a chat-only recipe should (2026-11-18, research/2026-11-18/vllm-deepseek-r1-0528-qwen3-8b-cold-start/)
+03:41:23.337 stop with ./llmctl down
+03:41:23.395 exit 0

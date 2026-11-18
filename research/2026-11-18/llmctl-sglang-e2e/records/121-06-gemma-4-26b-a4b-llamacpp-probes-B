@@ -1,0 +1,65 @@
+{
+  "request": {
+    "model": "local",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Create a file named hello.py containing a function add(a, b) that returns a + b, and a main block that prints add(2, 3). Then read the file back and tell me how many lines it has. Do not run any shell commands."
+      },
+      {
+        "role": "assistant",
+        "content": "",
+        "reasoning": "I will write the file.",
+        "reasoning_content": "I will write the file.",
+        "tool_calls": [
+          {
+            "id": "call_1",
+            "type": "function",
+            "function": {
+              "name": "write",
+              "arguments": "{\"path\": \"hello.py\", \"content\": \"print(1)\\n\"}"
+            }
+          }
+        ]
+      },
+      {
+        "role": "tool",
+        "tool_call_id": "call_1",
+        "content": "ok"
+      }
+    ],
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "write",
+          "description": "Write content to a file.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string"
+              },
+              "content": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "path",
+              "content"
+            ]
+          }
+        }
+      }
+    ],
+    "max_tokens": 256
+  },
+  "status": 200,
+  "reply": "{\"choices\":[{\"finish_reason\":\"tool_calls\",\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"\",\"tool_calls\":[{\"type\":\"function\",\"function\":{\"name\":\"write\",\"arguments\":\"{\\\"content\\\":\\\"def add(a, b):\\\\n    return a + b\\\\n\\\\nif __name__ == \\\\\\\"__main__\\\\\\\":\\\\n    print(add(2, 3))\\\\n\\\",\\\"path\\\":\\\"hello.py\\\"}\"},\"id\":\"Ty8GKwtZSaDR2g0DZcLwDQypYJieIky3\"}]}}],\"created\":1794969212,\"model\":\"local\",\"system_fingerprint\":\"b12407-e574a17b0\",\"object\":\"chat.completion\",\"usage\":{\"completion_tokens\":58,\"prompt_tokens\":170,\"total_tokens\":228,\"prompt_tokens_details\":{\"cached_tokens\":1}},\"id\":\"chatcmpl-ZOSYGFmFJrees9VMB0DaMeDiW24hQ2PO\",\"timings\":{\"cache_n\":1,\"prompt_n\":169,\"prompt_ms\":138.353,\"prompt_per_token_ms\":0.8186568047337278,\"prompt_per_second\":1221.5130860913748,\"predicted_n\":58,\"predicted_ms\":362.083,\"predicted_per_token_ms\":6.352333333333334,\"predicted_per_second\":157.42246943380385}}",
+  "record": {
+    "probe": "B",
+    "status": 200,
+    "content": false,
+    "reasoning": false
+  }
+}

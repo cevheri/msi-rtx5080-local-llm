@@ -1,0 +1,8 @@
+{
+  "command": "hermes -p llmctl config get model --json",
+  "cwd": "$WORK/19-gemma-4-12b-vllm-hermes-config-model",
+  "exit": 0,
+  "seconds": 0.4,
+  "stdout": "{\"provider\": \"custom:llmctl\", \"default\": \"gemma-4-12b\"}\n",
+  "stderr": ""
+}

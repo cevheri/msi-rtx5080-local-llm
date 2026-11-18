@@ -1,0 +1,5 @@
+03:40:52.426 $ ./llmctl down
+03:41:00.182 stopped qwen3.5-9b in container 'sglang'
+03:41:00.184 OpenCode, Hermes, Pi and dsh still point at qwen3.5-9b and get no answer until the next ./llmctl up
+03:41:00.186   switch back: OpenCode /models; hermes profile use default; Pi /model; dsh: delete the agent-default-model and acp lines in $HOME/.dsh/cordis.patch.yml
+03:41:00.189 exit 0

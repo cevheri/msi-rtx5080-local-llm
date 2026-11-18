@@ -1,0 +1,8 @@
+{
+  "command": "nvidia-smi --query-gpu=power.limit --format=csv,noheader",
+  "cwd": "$HOME/projects/llm",
+  "exit": 0,
+  "seconds": 0.0,
+  "stdout": "[N/A]\n",
+  "stderr": ""
+}

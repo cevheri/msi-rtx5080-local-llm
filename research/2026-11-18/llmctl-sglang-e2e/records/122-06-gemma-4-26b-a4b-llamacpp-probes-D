@@ -1,0 +1,20 @@
+{
+  "request": {
+    "model": "gemma-4-26b-a4b",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Reply with exactly the word OK."
+      }
+    ],
+    "max_tokens": 256
+  },
+  "status": 200,
+  "reply": "{\"choices\":[{\"finish_reason\":\"stop\",\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"OK\"}}],\"created\":1794969212,\"model\":\"local\",\"system_fingerprint\":\"b12407-e574a17b0\",\"object\":\"chat.completion\",\"usage\":{\"completion_tokens\":2,\"prompt_tokens\":20,\"total_tokens\":22,\"prompt_tokens_details\":{\"cached_tokens\":1}},\"id\":\"chatcmpl-VOpVFVr3YtDP5ffDiLkbqoWqc2VUD4dN\",\"timings\":{\"cache_n\":1,\"prompt_n\":19,\"prompt_ms\":47.996,\"prompt_per_token_ms\":2.526105263157895,\"prompt_per_second\":395.8663221935161,\"predicted_n\":2,\"predicted_ms\":6.963,\"predicted_per_token_ms\":6.963,\"predicted_per_second\":143.61625736033318}}",
+  "record": {
+    "probe": "D",
+    "status": 200,
+    "content": true,
+    "reasoning": false
+  }
+}

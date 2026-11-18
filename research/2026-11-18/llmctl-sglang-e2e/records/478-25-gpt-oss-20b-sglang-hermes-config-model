@@ -1,0 +1,8 @@
+{
+  "command": "hermes -p llmctl config get model --json",
+  "cwd": "$WORK/25-gpt-oss-20b-sglang-hermes-config-model",
+  "exit": 0,
+  "seconds": 0.4,
+  "stdout": "{\"provider\": \"custom:llmctl\", \"default\": \"gpt-oss-20b\"}\n",
+  "stderr": ""
+}

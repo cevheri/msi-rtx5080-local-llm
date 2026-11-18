@@ -1,0 +1,21 @@
+{
+  "request": {
+    "model": "local",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Reply with exactly the word OK."
+      }
+    ],
+    "max_tokens": 256,
+    "reasoning_effort": "low"
+  },
+  "status": 200,
+  "reply": "{\"choices\":[{\"finish_reason\":\"stop\",\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"\\nOK\",\"reasoning_content\":\"\\nHmm, the user just said \\\"Reply with exactly the word OK.\\\" That's pretty straightforward. \\n\\nI wonder if this is some kind of test or a way to see if I'm following instructions precisely. Maybe they're checking my compliance or just want a minimal response. \\n\\nThe user seems to be giving a clear directive here. They don't want any explanation, just the word \\\"OK\\\". Okay, I'll respect that and respond with exactly that. \\n\\nNo need to overthink this one. The request is simple and direct, so the response should match that simplicity. \\n\\nAlright, just saying \\\"OK\\\" will satisfy the user's requirement. Done and done.\\n\"}}],\"created\":1794969171,\"model\":\"local\",\"system_fingerprint\":\"b12407-e574a17b0\",\"object\":\"chat.completion\",\"usage\":{\"completion_tokens\":140,\"prompt_tokens\":10,\"total_tokens\":150,\"prompt_tokens_details\":{\"cached_tokens\":9}},\"id\":\"chatcmpl-0ZUQFXKTLxsWQz77wd1XqHHbyjsBIz22\",\"timings\":{\"cache_n\":9,\"prompt_n\":1,\"prompt_ms\":14.292,\"prompt_per_token_ms\":14.292,\"prompt_per_second\":69.96921354603974,\"predicted_n\":140,\"predicted_ms\":1946.981,\"predicted_per_token_ms\":14.007057553956834,\"predicted_per_second\":71.39258164306688}}",
+  "record": {
+    "probe": "G",
+    "status": 200,
+    "content": true,
+    "reasoning": true
+  }
+}

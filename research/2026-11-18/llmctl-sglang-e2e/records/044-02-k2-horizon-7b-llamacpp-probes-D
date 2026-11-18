@@ -1,0 +1,20 @@
+{
+  "request": {
+    "model": "k2-horizon-7b",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Reply with exactly the word OK."
+      }
+    ],
+    "max_tokens": 256
+  },
+  "status": 200,
+  "reply": "{\"choices\":[{\"finish_reason\":\"stop\",\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"OK\",\"reasoning_content\":\"The user asks: \\\"Reply with exactly the word OK.\\\" So respond with exactly \\\"OK\\\". No extra punctuation? The word OK. Probably just \\\"OK\\\". Ensure no extra whitespace or newline? Usually okay.\"}}],\"created\":1794968904,\"model\":\"local\",\"system_fingerprint\":\"b12407-e574a17b0\",\"object\":\"chat.completion\",\"usage\":{\"completion_tokens\":45,\"prompt_tokens\":17,\"total_tokens\":62,\"prompt_tokens_details\":{\"cached_tokens\":16}},\"id\":\"chatcmpl-PqHJuBqHfrPewqCL874sGfkviQbdMLJl\",\"timings\":{\"cache_n\":16,\"prompt_n\":1,\"prompt_ms\":14.92,\"prompt_per_token_ms\":14.92,\"prompt_per_second\":67.02412868632707,\"predicted_n\":45,\"predicted_ms\":646.282,\"predicted_per_token_ms\":14.688227272727273,\"predicted_per_second\":68.08173521775325}}",
+  "record": {
+    "probe": "D",
+    "status": 200,
+    "content": true,
+    "reasoning": true
+  }
+}

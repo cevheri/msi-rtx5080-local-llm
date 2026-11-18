@@ -1,0 +1,21 @@
+Work folder $SCRATCH/sglang/compaction/work: the repository's Markdown files at commit 5790b4cc16237b2dd186ebd1dc35b636e4866c42, each written with git show HEAD:<path>, plus the e2e driver's opencode.json.
+bytes path
+41473 docs/agent-harness-evidence.md
+164590 docs/clients.md
+46188 docs/community-benchmarks.md
+51067 docs/host-setup.md
+66938 docs/llmctl.md
+65861 docs/model-selection.md
+58795 docs/opencode.md
+65180 docs/sources.md
+65581 llamacpp/benchmarking.md
+109628 llamacpp/models.md
+43486 llamacpp/README.md
+24058 README.md
+24093 sglang/benchmarking.md
+49554 sglang/models.md
+71278 sglang/README.md
+44134 vllm/benchmarking.md
+83448 vllm/models.md
+57255 vllm/README.md
+1132607 in total, 18 files

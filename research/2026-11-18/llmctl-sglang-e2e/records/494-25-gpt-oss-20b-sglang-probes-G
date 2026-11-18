@@ -1,0 +1,21 @@
+{
+  "request": {
+    "model": "gpt-oss-20b",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Reply with exactly the word OK."
+      }
+    ],
+    "max_tokens": 256,
+    "reasoning_effort": "low"
+  },
+  "status": 200,
+  "reply": "{\"id\":\"b828a98629cb4fa186dcce389964bf84\",\"object\":\"chat.completion\",\"created\":1794971106,\"model\":\"gpt-oss-20b\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"OK\",\"reasoning_content\":\"User wants exactly \\\"OK\\\".\"},\"logprobs\":null,\"finish_reason\":\"stop\",\"matched_stop\":200002}],\"usage\":{\"prompt_tokens\":74,\"total_tokens\":91,\"completion_tokens\":17,\"prompt_tokens_details\":null,\"reasoning_tokens\":10,\"completion_tokens_details\":{\"reasoning_tokens\":10}},\"metadata\":{\"weight_version\":\"default\",\"weight_versions\":[{\"version\":\"default\",\"start\":0,\"end\":17}]}}",
+  "record": {
+    "probe": "G",
+    "status": 200,
+    "content": true,
+    "reasoning": true
+  }
+}

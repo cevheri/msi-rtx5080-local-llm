@@ -1,0 +1,65 @@
+{
+  "request": {
+    "model": "gpt-oss-20b",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Create a file named hello.py containing a function add(a, b) that returns a + b, and a main block that prints add(2, 3). Then read the file back and tell me how many lines it has. Do not run any shell commands."
+      },
+      {
+        "role": "assistant",
+        "content": "",
+        "reasoning": "I will write the file.",
+        "reasoning_content": "I will write the file.",
+        "tool_calls": [
+          {
+            "id": "call_1",
+            "type": "function",
+            "function": {
+              "name": "write",
+              "arguments": "{\"path\": \"hello.py\", \"content\": \"print(1)\\n\"}"
+            }
+          }
+        ]
+      },
+      {
+        "role": "tool",
+        "tool_call_id": "call_1",
+        "content": "ok"
+      }
+    ],
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "write",
+          "description": "Write content to a file.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string"
+              },
+              "content": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "path",
+              "content"
+            ]
+          }
+        }
+      }
+    ],
+    "max_tokens": 256
+  },
+  "status": 200,
+  "reply": "{\"id\":\"chatcmpl-bd68cbd74c06b55b\",\"object\":\"chat.completion\",\"created\":1794969749,\"model\":\"gpt-oss-20b\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":null,\"refusal\":null,\"annotations\":null,\"audio\":null,\"function_call\":null,\"tool_calls\":[{\"id\":\"chatcmpl-tool-85151231a47f2e18\",\"type\":\"function\",\"function\":{\"name\":\"write\",\"arguments\":\"{\\\"path\\\": \\\"hello.py\\\", \\\"content\\\": \\\"def add(a, b):\\\\n    return a + b\\\\n\\\\nif __name__ == \\\\\\\"__main__\\\\\\\":\\\\n    print(add(2, 3))\\\\n\\\"}\"}}],\"reasoning\":\"Oops I accidentally wrote dummy. I need to write actual content.\"},\"logprobs\":null,\"finish_reason\":\"tool_calls\",\"stop_reason\":200012,\"token_ids\":null,\"routed_experts\":null,\"weight_versions\":null}],\"service_tier\":null,\"system_fingerprint\":\"vllm-0.33.0-c2876be3\",\"usage\":{\"prompt_tokens\":229,\"total_tokens\":306,\"completion_tokens\":77,\"prompt_tokens_details\":null,\"completion_tokens_details\":{\"reasoning_tokens\":60}},\"prompt_logprobs\":null,\"prompt_token_ids\":null,\"prompt_text\":null,\"kv_transfer_params\":null,\"ec_transfer_params\":null,\"metrics\":null}",
+  "record": {
+    "probe": "B",
+    "status": 200,
+    "content": false,
+    "reasoning": true
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "request": {
+    "model": "local",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a short title for a chat about adding two numbers in Python."
+      }
+    ],
+    "reasoning_effort": "none",
+    "response_format": {
+      "type": "json_schema",
+      "json_schema": {
+        "name": "session_title",
+        "strict": true,
+        "schema": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "title"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "max_tokens": 32768,
+    "stream": false
+  },
+  "status": 200,
+  "reply": "{\"choices\":[{\"finish_reason\":\"stop\",\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"title\\\": \\\"Python: Adding Two Numbers\\\"}\",\"reasoning_content\":\"The user asks: \\\"Write a short title for a chat about adding two numbers in Python.\\\" They want a short title. Could be like \\\"Python Basics: Adding Two Numbers\\\" or \\\"Adding Two Numbers with Python\\\". The instruction: Write a short title. So we can produce one title. Perhaps also consider they want a title that is short and descriptive.\\n\\nWe'll output a single title, maybe like \\\"Python: Adding Two Numbers\\\". That's short.\\n\\nLet's produce that.\"}}],\"created\":1794968902,\"model\":\"local\",\"system_fingerprint\":\"b12407-e574a17b0\",\"object\":\"chat.completion\",\"usage\":{\"completion_tokens\":109,\"prompt_tokens\":24,\"total_tokens\":133,\"prompt_tokens_details\":{\"cached_tokens\":2}},\"id\":\"chatcmpl-m9tLeOivDnSJtfiPZhW2GKf9efOaHk1W\",\"timings\":{\"cache_n\":2,\"prompt_n\":22,\"prompt_ms\":16.568,\"prompt_per_token_ms\":0.7530909090909091,\"prompt_per_second\":1327.8609367455335,\"predicted_n\":109,\"predicted_ms\":1600.993,\"predicted_per_token_ms\":14.824009259259258,\"predicted_per_second\":67.45813379571304}}",
+  "record": {
+    "probe": "A",
+    "status": 200,
+    "content": true,
+    "reasoning": true,
+    "title_ok": true
+  }
+}

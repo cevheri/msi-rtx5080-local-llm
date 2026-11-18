@@ -1,0 +1,8 @@
+{
+  "command": "docker logs --since 2026-11-18T02:32:37Z llamacpp",
+  "cwd": "$HOME/projects/llm",
+  "exit": 0,
+  "seconds": 0.0,
+  "stdout": "",
+  "stderr": "1.10.714.079 I slot get_availabl: id  0 | task -1 | selected slot by LRU, n_tokens = 441, t_last = 318117867628\n1.10.722.572 I slot launch_slot_: id  0 | task 3672 | processing task, is_child = 0\n1.13.767.537 I slot print_timing: id  0 | task 3672 | n_gen =    215, tg =  71.27 t/s, tg_3s =  71.61 t/s\n1.16.772.444 I slot print_timing: id  0 | task 3672 | n_gen =    428, tg =  71.08 t/s, tg_3s =  70.88 t/s\n1.18.410.357 I slot print_timing: id  0 | task 3672 | prompt eval time =      42.38 ms /   194 tokens (    0.22 ms per token,  4577.09 tokens per second)\n1.18.410.360 I slot print_timing: id  0 | task 3672 |        eval time =    7645.39 ms /   544 tokens (   14.08 ms per token,    71.02 tokens per second)\n1.18.410.360 I slot print_timing: id  0 | task 3672 |       total time =    7687.77 ms /   738 tokens\n1.18.410.361 I slot print_timing: id  0 | task 3672 |    graphs reused =       4169\n1.18.410.361 I slot print_timing: id  0 | task 3672 |   graph reallocs =          0    /     0        (same size) / (changed size)\n1.18.410.375 I slot      release: id  0 | task 3672 | stop processing: n_tokens = 740, truncated = 0\n"
+}

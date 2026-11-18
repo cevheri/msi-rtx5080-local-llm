@@ -1,0 +1,21 @@
+{
+  "request": {
+    "model": "qwen3.5-9b",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Reply with exactly the word OK."
+      }
+    ],
+    "max_tokens": 256,
+    "reasoning_effort": "low"
+  },
+  "status": 200,
+  "reply": "{\"id\":\"chatcmpl-8249d2cf82217599\",\"object\":\"chat.completion\",\"created\":1794970072,\"model\":\"qwen3.5-9b\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"\\n\\nOK\",\"refusal\":null,\"annotations\":null,\"audio\":null,\"function_call\":null,\"reasoning\":\"Thinking Process:\\n1.  **Analyze the Request:** The user wants me to reply with exactly the word \\\"OK\\\".\\n2.  **Check Constraints:** The constraint is \\\"exactly the word OK\\\". This means no punctuation (like periods or question marks) unless it's part of the word, no capitalization changes, no extra text.\\n3.  **Formulate Output:** The output should be just \\\"OK\\\".\\n4.  **Final Verification:** Does \\\"OK\\\" match the requirement? Yes. Is it exactly that word? Yes.\\n\\n*Self-Correction/Refinement:* Sometimes users want \\\"OK.\\\" with a period, but the prompt says \\\"exactly the word OK\\\". I should avoid punctuation to be safe and precise.\\n\\nOutput: OK\\n\"},\"logprobs\":null,\"finish_reason\":\"stop\",\"stop_reason\":null,\"token_ids\":null,\"routed_experts\":null,\"weight_versions\":null}],\"service_tier\":null,\"system_fingerprint\":\"vllm-0.33.0-ea1bf86c\",\"usage\":{\"prompt_tokens\":17,\"total_tokens\":182,\"completion_tokens\":165,\"prompt_tokens_details\":null,\"completion_tokens_details\":{\"reasoning_tokens\":161}},\"prompt_logprobs\":null,\"prompt_token_ids\":null,\"prompt_text\":null,\"kv_transfer_params\":null,\"ec_transfer_params\":null,\"metrics\":null}",
+  "record": {
+    "probe": "G",
+    "status": 200,
+    "content": true,
+    "reasoning": true
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "request": {
+    "model": "qwen3.5-9b",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a short title for a chat about adding two numbers in Python."
+      }
+    ],
+    "reasoning_effort": "none",
+    "response_format": {
+      "type": "json_schema",
+      "json_schema": {
+        "name": "session_title",
+        "strict": true,
+        "schema": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "title"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "max_tokens": 16384,
+    "stream": false
+  },
+  "status": 200,
+  "reply": "{\"id\":\"9083096a6a534ea39952954c34e9da9d\",\"object\":\"chat.completion\",\"created\":1794970534,\"model\":\"qwen3.5-9b\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{ \\\"title\\\": \\\"Adding Numbers in Python\\\" }\",\"reasoning_content\":null},\"logprobs\":null,\"finish_reason\":\"stop\",\"matched_stop\":248044}],\"usage\":{\"prompt_tokens\":26,\"total_tokens\":38,\"completion_tokens\":12,\"prompt_tokens_details\":null,\"reasoning_tokens\":0,\"completion_tokens_details\":null},\"metadata\":{\"weight_version\":\"default\",\"weight_versions\":[{\"version\":\"default\",\"start\":0,\"end\":12}]}}",
+  "record": {
+    "probe": "A",
+    "status": 200,
+    "content": true,
+    "reasoning": false,
+    "title_ok": true
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "request": {
+    "model": "mellum2.1-12b",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Reply with exactly the word OK."
+      }
+    ],
+    "max_tokens": 256
+  },
+  "status": 200,
+  "reply": "{\"choices\":[{\"finish_reason\":\"stop\",\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"OK\",\"reasoning_content\":\"We need to respond with exactly the word OK. No extra spaces, no punctuation? The user says \\\"Reply with exactly the word OK.\\\" So output \\\"OK\\\".\\n\"}}],\"created\":1794969661,\"model\":\"local\",\"system_fingerprint\":\"b12407-e574a17b0\",\"object\":\"chat.completion\",\"usage\":{\"completion_tokens\":41,\"prompt_tokens\":15,\"total_tokens\":56,\"prompt_tokens_details\":{\"cached_tokens\":0}},\"id\":\"chatcmpl-kuWKMIOj72oPVgZZZlTj6ZQvhDVSZc7K\",\"timings\":{\"cache_n\":0,\"prompt_n\":15,\"prompt_ms\":26.983,\"prompt_per_token_ms\":1.7988666666666666,\"prompt_per_second\":555.9055701738131,\"predicted_n\":41,\"predicted_ms\":204.518,\"predicted_per_token_ms\":5.11295,\"predicted_per_second\":195.58180698031467}}",
+  "record": {
+    "probe": "D",
+    "status": 200,
+    "content": true,
+    "reasoning": true
+  }
+}

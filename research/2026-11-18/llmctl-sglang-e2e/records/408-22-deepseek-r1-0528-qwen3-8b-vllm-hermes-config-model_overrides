@@ -1,0 +1,8 @@
+{
+  "command": "hermes -p llmctl config get model_overrides --json",
+  "cwd": "$WORK/22-deepseek-r1-0528-qwen3-8b-vllm-hermes-config-model_overrides",
+  "exit": 0,
+  "seconds": 0.4,
+  "stdout": "{\"custom\": {\"deepseek-r1-8b\": {\"supports_reasoning\": false}}}\n",
+  "stderr": ""
+}

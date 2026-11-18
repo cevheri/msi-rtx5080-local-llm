@@ -1,0 +1,8 @@
+{
+  "command": "docker logs --since 2026-11-18T02:45:41Z vllm",
+  "cwd": "$HOME/projects/llm",
+  "exit": 0,
+  "seconds": 0.0,
+  "stdout": "INFO:     172.17.0.1:37556 - \"POST /v1/chat/completions HTTP/1.1\" 200 OK\n(APIServer pid=1) WARNING 11-18 02:45:41 [hf.py:927] Chat template rejected the request: Assistant message is missing a thinking field. Provide one of: think, reasoning, reasoning_content, think_fast, think_faster.\nINFO:     172.17.0.1:37556 - \"POST /v1/chat/completions HTTP/1.1\" 400 Bad Request\nINFO:     172.17.0.1:37576 - \"POST /v1/chat/completions HTTP/1.1\" 200 OK\nINFO:     172.17.0.1:37572 - \"POST /v1/chat/completions HTTP/1.1\" 200 OK\n(APIServer pid=1) INFO 11-18 02:45:45 [loggers.py:335] Engine 000: Avg prompt throughput: 664.3 tokens/s, Avg generation throughput: 59.6 tokens/s, Running: 1 reqs, Waiting: 1 reqs, GPU KV cache usage: 5.1%, Prefix cache hit rate: 59.5%\nINFO:     172.17.0.1:37576 - \"POST /v1/chat/completions HTTP/1.1\" 200 OK\n(APIServer pid=1) WARNING 11-18 02:45:48 [hf.py:927] Chat template rejected the request: Assistant message is missing a thinking field. Provide one of: think, reasoning, reasoning_content, think_fast, think_faster.\nINFO:     172.17.0.1:37576 - \"POST /v1/chat/completions HTTP/1.1\" 400 Bad Request\n",
+  "stderr": ""
+}

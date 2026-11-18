@@ -1,0 +1,20 @@
+{
+  "request": {
+    "model": "deepseek-r1-0528-qwen3-8b",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Reply with exactly the word OK."
+      }
+    ],
+    "max_tokens": 256
+  },
+  "status": 200,
+  "reply": "{\"choices\":[{\"finish_reason\":\"stop\",\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"\\nOK\",\"reasoning_content\":\"\\nHmm, the user just asked me to reply with exactly the word \\\"OK\\\". That's a very specific instruction. \\n\\nThe user seems to be testing my ability to follow directions precisely. They might be curious about how I handle strict instructions or perhaps they're just making sure I'm functioning correctly. \\n\\nSince the request is so straightforward and they didn't provide any context or deeper meaning behind it, the best approach is to comply exactly as instructed. \\n\\nI wonder if this is part of a larger interaction or just a simple test. But since there's no additional information, I shouldn't overthink it. \\n\\nThe user might be evaluating my response accuracy or perhaps they're setting up a test case. Either way, keeping it simple and precise seems appropriate here. \\n\\nAlright, I'll respond with just \\\"OK\\\" as requested. No need to add anything else unless they follow up with more context.\\n\"}}],\"created\":1794969169,\"model\":\"local\",\"system_fingerprint\":\"b12407-e574a17b0\",\"object\":\"chat.completion\",\"usage\":{\"completion_tokens\":186,\"prompt_tokens\":10,\"total_tokens\":196,\"prompt_tokens_details\":{\"cached_tokens\":2}},\"id\":\"chatcmpl-gorRRpKqKhbelc1wlROu9QBHJiyRuyWr\",\"timings\":{\"cache_n\":2,\"prompt_n\":8,\"prompt_ms\":27.174,\"prompt_per_token_ms\":3.39675,\"prompt_per_second\":294.39905792301465,\"predicted_n\":186,\"predicted_ms\":2589.409,\"predicted_per_token_ms\":13.996805405405405,\"predicted_per_second\":71.44487410061524}}",
+  "record": {
+    "probe": "D",
+    "status": 200,
+    "content": true,
+    "reasoning": true
+  }
+}

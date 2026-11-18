@@ -1,0 +1,8 @@
+{
+  "command": "dsh web --port 3182 --no-open",
+  "cwd": "$WORK/13-gemma-4-e4b-llamacpp-dsh-web",
+  "exit": 0,
+  "seconds": 4.6,
+  "stdout": "dsh web: <address withheld>\n",
+  "stderr": ""
+}

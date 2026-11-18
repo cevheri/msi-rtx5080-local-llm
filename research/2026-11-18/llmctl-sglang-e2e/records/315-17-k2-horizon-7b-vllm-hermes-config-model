@@ -1,0 +1,8 @@
+{
+  "command": "hermes -p llmctl config get model --json",
+  "cwd": "$WORK/17-k2-horizon-7b-vllm-hermes-config-model",
+  "exit": 0,
+  "seconds": 0.4,
+  "stdout": "{\"provider\": \"custom:llmctl\", \"default\": \"k2-horizon-7b\"}\n",
+  "stderr": ""
+}

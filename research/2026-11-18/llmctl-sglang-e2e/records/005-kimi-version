@@ -1,0 +1,8 @@
+{
+  "command": "kimi --version",
+  "cwd": "$WORK/kimi-version",
+  "exit": 0,
+  "seconds": 0.3,
+  "stdout": "2.5.3\n",
+  "stderr": ""
+}

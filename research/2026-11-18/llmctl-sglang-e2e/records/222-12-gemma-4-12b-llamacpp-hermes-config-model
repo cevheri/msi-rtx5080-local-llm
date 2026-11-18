@@ -1,0 +1,8 @@
+{
+  "command": "hermes -p llmctl config get model --json",
+  "cwd": "$WORK/12-gemma-4-12b-llamacpp-hermes-config-model",
+  "exit": 0,
+  "seconds": 0.4,
+  "stdout": "{\"provider\": \"custom:llmctl\", \"default\": \"local\"}\n",
+  "stderr": ""
+}

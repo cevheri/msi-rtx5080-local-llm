@@ -1,0 +1,11 @@
+03:42:23.235 $ env LLMCTL_CLIENTS= ./llmctl up gpt-oss-20b --runtime sglang --replace
+03:43:14.695 gpt-oss-20b on sglang: shipped recipe, measured
+03:43:14.697 clients: none (LLMCTL_CLIENTS is empty)
+03:43:14.699 removing the stopped container 'sglang' from an earlier llmctl run
+03:43:14.701 wrote $HOME/.cache/llmctl/sglang/overlays/gpt-oss-20b: model overlay with 13 links into snapshot 6cee5e81ee83 of openai/gpt-oss-20b, and generation_config.json with temperature 1.0, top_p 1.0
+03:43:14.702 waiting for gpt-oss-20b to load (up to 900 s)
+03:43:14.704 memory: KV pool 169835 tokens for context 131072; 1346 MiB of GPU memory free after the start, at least 768 MiB needed
+03:43:14.706 ready: http://127.0.0.1:30000/v1, served as 'gpt-oss-20b', context 131072, output 16384
+03:43:14.707 evidence: 124.6 tok/s decode with 128k context through Paged Experts (24 of 32 experts resident), 169,853-token pool, 1,347 MiB free after ready and 1,006 MiB after a 124,459-token prompt and the first grammar request, 300 s of sustained load without error under a 20 GiB memory cap, 14,836 MiB GPU peak, 15.45 GiB of non-reclaimable host memory including the 10.37 GiB pinned expert store, smoke test and tool call passed; a forced tool_choice comes back as text (#41747) (2026-11-17, research/2026-11-17/sglang-gpt-oss-20b/)
+03:43:14.709 stop with ./llmctl down
+03:43:14.724 exit 0

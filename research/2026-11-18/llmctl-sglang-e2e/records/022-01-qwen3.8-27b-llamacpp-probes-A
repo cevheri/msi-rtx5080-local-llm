@@ -1,0 +1,42 @@
+{
+  "request": {
+    "model": "local",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a short title for a chat about adding two numbers in Python."
+      }
+    ],
+    "reasoning_effort": "none",
+    "response_format": {
+      "type": "json_schema",
+      "json_schema": {
+        "name": "session_title",
+        "strict": true,
+        "schema": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "title"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "max_tokens": 16384,
+    "stream": false
+  },
+  "status": 200,
+  "reply": "{\"choices\":[{\"finish_reason\":\"stop\",\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{ \\\"title\\\": \\\"Python: Adding Two Numbers\\\" }\"}}],\"created\":1794968815,\"model\":\"local\",\"system_fingerprint\":\"b12407-e574a17b0\",\"object\":\"chat.completion\",\"usage\":{\"completion_tokens\":13,\"prompt_tokens\":26,\"total_tokens\":39,\"prompt_tokens_details\":{\"cached_tokens\":0}},\"id\":\"chatcmpl-a1WFQhe2IZkGwbtCbr5ayThu8vspyci2\",\"timings\":{\"cache_n\":0,\"prompt_n\":26,\"prompt_ms\":123.019,\"prompt_per_token_ms\":4.7315000000000005,\"prompt_per_second\":211.34946634259748,\"predicted_n\":13,\"predicted_ms\":331.513,\"predicted_per_token_ms\":27.62608333333333,\"predicted_per_second\":36.19767550593793}}",
+  "record": {
+    "probe": "A",
+    "status": 200,
+    "content": true,
+    "reasoning": false,
+    "title_ok": true
+  }
+}

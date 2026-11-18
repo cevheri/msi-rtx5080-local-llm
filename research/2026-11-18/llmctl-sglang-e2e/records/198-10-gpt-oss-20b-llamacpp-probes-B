@@ -1,0 +1,65 @@
+{
+  "request": {
+    "model": "local",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Create a file named hello.py containing a function add(a, b) that returns a + b, and a main block that prints add(2, 3). Then read the file back and tell me how many lines it has. Do not run any shell commands."
+      },
+      {
+        "role": "assistant",
+        "content": "",
+        "reasoning": "I will write the file.",
+        "reasoning_content": "I will write the file.",
+        "tool_calls": [
+          {
+            "id": "call_1",
+            "type": "function",
+            "function": {
+              "name": "write",
+              "arguments": "{\"path\": \"hello.py\", \"content\": \"print(1)\\n\"}"
+            }
+          }
+        ]
+      },
+      {
+        "role": "tool",
+        "tool_call_id": "call_1",
+        "content": "ok"
+      }
+    ],
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "write",
+          "description": "Write content to a file.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string"
+              },
+              "content": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "path",
+              "content"
+            ]
+          }
+        }
+      }
+    ],
+    "max_tokens": 256
+  },
+  "status": 200,
+  "reply": "{\"choices\":[{\"finish_reason\":\"tool_calls\",\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning_content\":\"Oops I wrote wrong content. Let's correct.\",\"tool_calls\":[{\"type\":\"function\",\"function\":{\"name\":\"write\",\"arguments\":\"{\\\"path\\\":\\\"hello.py\\\",\\\"content\\\":\\\"def add(a, b):\\\\n    return a + b\\\\n\\\\nif __name__ == \\\\\\\"__main__\\\\\\\":\\\\n    print(add(2, 3))\\\"}\"},\"id\":\"4JxWgfndKMZCGCYv8W3YKrwXL3W45AlE\"}]}}],\"created\":1794969489,\"model\":\"local\",\"system_fingerprint\":\"b12407-e574a17b0\",\"object\":\"chat.completion\",\"usage\":{\"completion_tokens\":71,\"prompt_tokens\":231,\"total_tokens\":302,\"prompt_tokens_details\":{\"cached_tokens\":34}},\"id\":\"chatcmpl-vqtrxWat45fb4BV3vuzaHVGJq18MpPQB\",\"timings\":{\"cache_n\":34,\"prompt_n\":197,\"prompt_ms\":66.544,\"prompt_per_token_ms\":0.33778680203045686,\"prompt_per_second\":2960.447222890118,\"predicted_n\":71,\"predicted_ms\":435.917,\"predicted_per_token_ms\":6.227385714285714,\"predicted_per_second\":160.5810280397415}}",
+  "record": {
+    "probe": "B",
+    "status": 200,
+    "content": false,
+    "reasoning": true
+  }
+}

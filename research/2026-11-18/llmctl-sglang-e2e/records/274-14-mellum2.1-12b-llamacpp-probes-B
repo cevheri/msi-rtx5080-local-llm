@@ -1,0 +1,65 @@
+{
+  "request": {
+    "model": "local",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Create a file named hello.py containing a function add(a, b) that returns a + b, and a main block that prints add(2, 3). Then read the file back and tell me how many lines it has. Do not run any shell commands."
+      },
+      {
+        "role": "assistant",
+        "content": "",
+        "reasoning": "I will write the file.",
+        "reasoning_content": "I will write the file.",
+        "tool_calls": [
+          {
+            "id": "call_1",
+            "type": "function",
+            "function": {
+              "name": "write",
+              "arguments": "{\"path\": \"hello.py\", \"content\": \"print(1)\\n\"}"
+            }
+          }
+        ]
+      },
+      {
+        "role": "tool",
+        "tool_call_id": "call_1",
+        "content": "ok"
+      }
+    ],
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "write",
+          "description": "Write content to a file.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string"
+              },
+              "content": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "path",
+              "content"
+            ]
+          }
+        }
+      }
+    ],
+    "max_tokens": 256
+  },
+  "status": 200,
+  "reply": "{\"choices\":[{\"finish_reason\":\"length\",\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning_content\":\"Okay, let's see. The user wants me to create a file named hello.py with a function add(a, b) that returns a + b, and a main block that prints add(2, 3). Then read the file back and tell how many lines it has.\\n\\nFirst, I need to write the correct content to hello.py. The initial tool call I made was writing \\\"print(1)\\\\n\\\", which is obviously wrong. That's why the response was \\\"ok\\\" but the content is incorrect. So I need to correct that.\\n\\nWait, the user's instruction says to create the function add(a, b) and a main block. So the correct content should be something like:\\n\\ndef add(a, b):\\n    return a + b\\n\\nif __name__ == \\\"__main__\\\":\\n    print(add(2, 3))\\n\\nBut maybe the user wants the main block to just print add(2,3) without the if __name__ check. Let me check the problem statement again: \\\"a main block that prints add(2, 3)\\\". So perhaps it's:\\n\\ndef add(a, b):\"}}],\"created\":1794969661,\"model\":\"local\",\"system_fingerprint\":\"b12407-e574a17b0\",\"object\":\"chat.completion\",\"usage\":{\"completion_tokens\":256,\"prompt_tokens\":288,\"total_tokens\":544,\"prompt_tokens_details\":{\"cached_tokens\":0}},\"id\":\"chatcmpl-Wrpzg6DMRUbRGujkLR1m13TeBKXlmjZM\",\"timings\":{\"cache_n\":0,\"prompt_n\":288,\"prompt_ms\":106.414,\"prompt_per_token_ms\":0.36949305555555556,\"prompt_per_second\":2706.410810607627,\"predicted_n\":256,\"predicted_ms\":1350.252,\"predicted_per_token_ms\":5.295105882352941,\"predicted_per_second\":188.85363621012965}}",
+  "record": {
+    "probe": "B",
+    "status": 200,
+    "content": false,
+    "reasoning": true
+  }
+}
