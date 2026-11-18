@@ -16,8 +16,8 @@ def slug(heading: str) -> str:
 def section(root: Path, doc: str) -> list[str]:
     """The lines under the heading that `doc` ("<repository path>#<anchor>") names.
 
-    The section ends at the next heading of level 2 up to its own level; a level 1 heading and a line inside a fenced
-    block do not end it, as in the docs tests this helper came from.
+    The section ends at the next heading of level 2 up to its own level, even one inside a fenced block, because
+    fences are not tracked; a level 1 heading does not end it. This is the docs tests' rule, moved unchanged.
     """
     path, anchor = doc.split("#", 1)
     lines, found, depth = [], False, 0
