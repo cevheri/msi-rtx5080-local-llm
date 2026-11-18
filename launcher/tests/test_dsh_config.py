@@ -229,7 +229,7 @@ class GenerateTest(unittest.TestCase):
                 self.assertEqual(model["contextWindow"], target.recipe.context)
                 self.assertEqual(model["maxTokens"], target.recipe.clients.output)
             count += 1
-        self.assertEqual(count, 22)
+        self.assertEqual(count, 24)
 
     def test_lines_are_ascii_and_reparse(self):
         for runtime, recipe_id, target in all_targets():

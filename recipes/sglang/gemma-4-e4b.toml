@@ -1,0 +1,43 @@
+# Measured launch from sglang/models.md#gemma-4-e4b-it-qat-w4a16.
+# Effective sampling: temperature 1.0, top_p 0.95 and top_k 64 from the overlay (the checkpoint's own values); min_p 0.0 and repetition_penalty 1.0 by SGLang's defaults.
+schema = 1
+id = "gemma-4-e4b"
+name = "Gemma 4 E4B IT QAT W4A16 (smoke-test model)"
+aliases = ["gemma4-e4b"]
+doc = "sglang/models.md#gemma-4-e4b-it-qat-w4a16"
+opencode = true
+
+[model]
+repo = "google/gemma-4-E4B-it-qat-w4a16-ct"
+revision = "6cd26aaa2357fb2bad8c51699a7558a4d1a965bb"
+size_bytes = 11546108983
+served_name = "gemma-4-e4b"
+
+[container]
+memory_gib = 32
+
+[server]
+context = 65536
+args = [
+  "--mem-fraction-static", "0.85", "--max-running-requests", "1", "--swa-full-tokens-ratio", "0.1",
+  "--disable-prefill-cuda-graph", "--json-model-override-args", '{"audio_config": null}',
+  "--tool-call-parser", "gemma4", "--reasoning-parser", "gemma4",
+]
+sampling = { temperature = 1.0, top_p = 0.95, top_k = 64 }
+
+[needs]
+gpu_mib = 14327
+ram_gib = 6
+
+[clients]
+output = 16384
+thinking = "toggle"
+default = "off"
+
+[evidence]
+kind = "measured"
+summary = "141.3 tok/s decode with thinking off and 64k context over runs of 981 to 1,099 tokens, 101,791-token pool, 1,407 MiB free after ready and 1,403 MiB after a 62,244-token prompt and the first grammar request, 300 s of sustained load without error, 14,439 MiB GPU peak, smoke test and tool call passed; with thinking on a reply without a thought block lands in reasoning_content"
+decode_tok_s = 141.3
+date = "2026-11-17"
+hardware = "MSI Raider 18 Max HX A2WI, RTX 5080 Laptop GPU 16 GB, 61 GiB RAM"
+record = "research/2026-11-17/sglang-gemma-4-e4b/"

@@ -86,7 +86,7 @@ ALL_MATRIX = tuple((name, "llamacpp") for name in (
     "gemma-4-26b-a4b", "nemotron-3.5-lightning", "groot-19b-a3b", "k2-horizon-mova-36b", "gpt-oss-20b")) + tuple(
     (name, "vllm") for name in ("gpt-oss-20b", "mellum2.1-12b", "k2-horizon-7b", "qwen3.5-9b", "gemma-4-12b",
                                 "gemma-4-e4b", "groot-19b-a3b", "deepseek-r1-0528-qwen3-8b")) + tuple(
-    (name, "sglang") for name in ("qwen3.5-9b", "k2-horizon-7b", "gpt-oss-20b")) + (
+    (name, "sglang") for name in ("qwen3.5-9b", "k2-horizon-7b", "gpt-oss-20b", "gemma-4-12b", "gemma-4-e4b")) + (
     ("qwen3.6-35b-a3b", "llamacpp"),)
 MATRICES = {"default": DEFAULT_MATRIX, "extended": EXTENDED_MATRIX, "all": ALL_MATRIX}
 ROUND_TRIP_MODEL = "qwen3.6-35b-a3b"

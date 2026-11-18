@@ -122,9 +122,10 @@ class CliTest(unittest.TestCase):
         runtimes = [re.split(r"\s{2,}", line)[1] for line in out.splitlines()[1:]
                     if len(re.split(r"\s{2,}", line)) > 2 and re.split(r"\s{2,}", line)[1] in ADAPTERS]
         self.assertEqual(runtimes, sorted(runtimes, key=list(ADAPTERS).index))
-        self.assertEqual(runtimes[-3:], ["sglang"] * 3)
+        self.assertEqual(runtimes[-5:], ["sglang"] * 5)
         expected = {"qwen3.5-9b": ("15193 MiB", "6"), "k2-horizon-7b": ("14908 MiB", "5"),
-                    "gpt-oss-20b": ("14724 MiB", "16")}
+                    "gpt-oss-20b": ("14724 MiB", "16"), "gemma-4-12b": ("14891 MiB", "6"),
+                    "gemma-4-e4b": ("14327 MiB", "6")}
         for recipe_id, (gpu, ram) in expected.items():
             with self.subTest(recipe=recipe_id):
                 row = rows[(recipe_id, "sglang")]
@@ -320,7 +321,7 @@ class CliTest(unittest.TestCase):
     def test_check_reports_problems(self):
         host = self.host()
         self.assertEqual(main(["check"], host), 0)
-        self.assertIn("ok: 22 recipes (llamacpp 11, vllm 8, sglang 3)", host.out.getvalue())
+        self.assertIn("ok: 24 recipes (llamacpp 11, vllm 8, sglang 5)", host.out.getvalue())
         path = self.break_override()
         host = self.host()
         self.assertEqual(main(["check"], host), 2)

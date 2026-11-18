@@ -83,7 +83,7 @@ class EntryTest(unittest.TestCase):
                     expected["baseUrl"] = f"http://127.0.0.1:{target.runtime.host_port}/v1"
                 self.assertEqual(entry, expected)
                 checked += 1
-        self.assertEqual(checked, 22)
+        self.assertEqual(checked, 24)
 
     def test_default_levels(self):
         expected = {

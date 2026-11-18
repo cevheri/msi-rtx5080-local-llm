@@ -77,7 +77,7 @@ gateway: {"standalone": true}
 Every llama.cpp recipe is served as `local`, so its block names the model `local`; a vLLM or SGLang recipe uses its served name.
 `context_length` equals the recipe's context, and `extra_body.max_tokens` its `[clients] output`, so every request carries the output cap.
 Hermes refuses a context below 64,000 tokens (R19), so llmctl refuses such a recipe for Hermes; every shipped recipe has 65,536 or more.
-The golden files for all 22 recipes are under `launcher/tests/golden/clients/`, and the tests keep them equal to what llmctl writes.
+The golden files for all 24 recipes are under `launcher/tests/golden/clients/`, and the tests keep them equal to what llmctl writes.
 
 Before it writes, llmctl refuses a profile it cannot change safely: one without the two marker lines (a profile llmctl did not create), damaged markers, an owned key set outside the block (Hermes' loader rejects a file with a duplicate key (E5), and a gateway then serves the profile on default settings (E3)), a top-level line that is not a plain `key:`, or Hermes' deleted-profile marker `<root>/profiles/.deleted/llmctl` ([hermes_constants.py:387-392](https://github.com/NousResearch/hermes-agent/blob/3b421578588243f920886e6fe79a6faa87ea026e/hermes_constants.py#L387-L392)).
 It then checks its own result: the text before and after the block is unchanged byte for byte, and every block line parses back to the intended value.
@@ -438,7 +438,7 @@ Generated block for gpt-oss-20b on vLLM, with the default lines (`launcher/tests
 
 Without `--set-default`, and without default lines in the earlier block, the block holds only the first line.
 Every llama.cpp recipe is served as `local`, so its rows name the model `local`; a vLLM or SGLang recipe uses its served name.
-The golden files for all 22 recipes are under `launcher/tests/golden/clients/`, and the tests keep them equal to what llmctl writes.
+The golden files for all 24 recipes are under `launcher/tests/golden/clients/`, and the tests keep them equal to what llmctl writes.
 
 Nemotron 3.5 Bolt's medium level relies on two things: pi-ai leaves out a thinking budget of 0, so High sends no `medium_effort` (`@earendil-works/pi-ai` 1.5.2 `dist/api/openai-completions.js:750-756`, read in the package), and Bolt's chat template tests `medium_effort` only for truth (B-T, read in the template, not rendered), so `1` works like `true` (B1-2, [shapes](../research/2026-11-16/llmctl-dsh-stub/shapes/laneB/b1-bolt-medium.jsonl)).
 A `medium_kwargs` value other than `true` cannot be sent per level that way, so llmctl refuses such a recipe for dsh; no shipped recipe has one.
@@ -503,7 +503,7 @@ A value the installed dsh rejects makes the `llm-pi-ai` row fail to activate, wh
 
 dsh compacts a session before the window fills only above `min(0.8 x window, window - maxTokens - 65,536)` tokens, and never when that value is not positive, which dsh reports only once per model through its own logger and headless did not print at all (B3-2; [compaction-basic/src/config.ts:20](https://github.com/deepseek-ai/deepseek-harness/blob/38a6a5c965aa99ab525161efb7cc5cf1fe62fced/packages/compaction/compaction-basic/src/config.ts#L20), [75](https://github.com/deepseek-ai/deepseek-harness/blob/38a6a5c965aa99ab525161efb7cc5cf1fe62fced/packages/compaction/compaction-basic/src/config.ts#L75) and [172-194](https://github.com/deepseek-ai/deepseek-harness/blob/38a6a5c965aa99ab525161efb7cc5cf1fe62fced/packages/compaction/compaction-basic/src/config.ts#L172-L194), [src/index.ts:165-171](https://github.com/deepseek-ai/deepseek-harness/blob/38a6a5c965aa99ab525161efb7cc5cf1fe62fced/packages/compaction/compaction-basic/src/index.ts#L165-L171), [runs](../research/2026-11-16/llmctl-dsh-stub/laneB/runs/b3-comp-64k-60000/)) (measured on the MSI Raider 18 Max HX against a recording stub, dsh 0.2.2-rc.3).
 The 128k recipes compact at 49,152 tokens.
-9 of 22 recipes have a context minus output cap of 65,536 tokens or less and get no proactive compaction: on llama.cpp qwen3.8-27b, k2-horizon-7b, k2-horizon-mova-36b and deepseek-r1-0528-qwen3-8b, on vLLM gemma-4-e4b, gpt-oss-20b, k2-horizon-7b and deepseek-r1-0528-qwen3-8b, and on SGLang k2-horizon-7b.
+10 of 24 recipes have a context minus output cap of 65,536 tokens or less and get no proactive compaction: on llama.cpp qwen3.8-27b, k2-horizon-7b, k2-horizon-mova-36b and deepseek-r1-0528-qwen3-8b, on vLLM gemma-4-e4b, gpt-oss-20b, k2-horizon-7b and deepseek-r1-0528-qwen3-8b, and on SGLang k2-horizon-7b and gemma-4-e4b.
 For them dsh still recovers after the server rejects an overlong prompt (`configuration-23`, `extra-5`), and `up` prints a compaction line; llmctl writes no compaction row.
 
 `streamIdleTimeoutMs` 900000 replaces dsh's default of 300,000 ([llm-pi-ai/src/config.ts:47](https://github.com/deepseek-ai/deepseek-harness/blob/38a6a5c965aa99ab525161efb7cc5cf1fe62fced/packages/llm/llm-pi-ai/src/config.ts#L47)), because time spent queued behind another request on a single-slot server counts as idle (B3-4), and 16,384 output tokens at Qwen3.8-27B's 36 tok/s take about 455 s (B3-8) (estimate).
@@ -666,7 +666,7 @@ default_effort = "medium"
 ```
 
 Every llama.cpp recipe is served as `local`, so its alias is `llmctl/local`; a vLLM or SGLang recipe's alias is `llmctl/<served name>`, such as `llmctl/gpt-oss-20b`, and the SGLang recipes keep the vLLM recipes' served names, so an open Kimi session keeps its alias across a switch between those two.
-The golden files for all 22 recipes are under `launcher/tests/golden/clients/`, and the tests keep them equal to what llmctl writes.
+The golden files for all 24 recipes are under `launcher/tests/golden/clients/`, and the tests keep them equal to what llmctl writes.
 
 Kimi rewrites `config.toml` itself, so llmctl finds its tables as TOML, never by text patterns (measured on the MSI Raider 18 Max HX, Kimi Code 2.5.3, no server):
 
@@ -730,14 +730,14 @@ A Kimi write that read the file before llmctl's rename and lands after the read-
 
 | Thinking type | Recipes | Model keys | Main request (E2) | `thinking:` line of `up` |
 |---|---|---|---|---|
-| toggle, default off | Qwen3.6, Gemma 4 26B-A4B, Gemma 4 12B and E4B, Groot (llama.cpp and vLLM), Nemotron 3.5 Bolt and Lightning, Qwen3.5 (vLLM and SGLang) | `capabilities = ["tool_use"]` | No thinking field, so the server's default applies | `off, as the server sets it` |
+| toggle, default off | Qwen3.6, Gemma 4 26B-A4B, Gemma 4 12B and E4B (vLLM and SGLang), Groot (llama.cpp and vLLM), Nemotron 3.5 Bolt and Lightning, Qwen3.5 (vLLM and SGLang) | `capabilities = ["tool_use"]` | No thinking field, so the server's default applies | `off, as the server sets it` |
 | toggle, default on | Mellum2.1 | `capabilities = ["tool_use"]` | No thinking field | `on, as the server sets it` |
 | effort with `none` | Qwen3.8-27B | `["tool_use", "thinking"]`, `support_efforts = ["low", "medium"]`, `default_effort = "medium"`, `off_effort = "none"` | `reasoning_effort: "medium"` | `medium effort; /effort in kimi for another (off, low, medium)` |
 | effort without `none` | gpt-oss-20b (all three runtimes) | `["tool_use", "thinking"]`, `support_efforts = ["low", "medium", "high"]`, `default_effort = "medium"` | `reasoning_effort: "medium"` | `medium effort; /effort in kimi for another (low, medium, high)` |
 | always | K2 Horizon 7B (all three runtimes), K2 Horizon Mova 36B, DeepSeek-R1 (llama.cpp and vLLM) | `["tool_use"]`, and `[]` for DeepSeek-R1 | No thinking field | `always on, at the effort the server sets` |
 | none | Qwen3-Coder-Next | `["tool_use"]` | No thinking field | `none` |
 
-That is 11 toggle, 4 effort, 6 always and 1 none recipe; the keys and requests come from E1 and E2 (measured on the MSI Raider 18 Max HX, Kimi Code 2.5.3, recording stub), which ran before SGLang was added, and the three SGLang recipes get the keys of their thinking types (inferred from their golden files).
+That is 13 toggle, 4 effort, 6 always and 1 none recipe; the keys and requests come from E1 and E2 (measured on the MSI Raider 18 Max HX, Kimi Code 2.5.3, recording stub), which ran before SGLang was added, and the five SGLang recipes get the keys of their thinking types (inferred from their golden files).
 Kimi sends a thinking level on this wire only as `reasoning_effort` (local-K31), so a toggle recipe cannot be switched from Kimi, as in Hermes, and Nemotron 3.5 Bolt's `medium_kwargs` cannot be sent, because the wire carries no `chat_template_kwargs` (E2 never saw one).
 Kimi replays reasoning verbatim under the field the server used, `reasoning_content` from llama.cpp and SGLang and `reasoning` from vLLM, and keeps `reasoning_effort` unchanged after a reply with reasoning (E2 `e2r-*` and `e2c-*` runs).
 gpt-oss-20b cannot stop reasoning, so it has no `off_effort`, and Kimi refuses thinking off for it with exit 1 in 0.53 s, before any request: `Model '<name>' reasons by default but declares no off effort, so thinking cannot be turned off.` (E2 `e2t-*-gpt-oss-20b-off` runs); llmctl never sends another effort in its place.

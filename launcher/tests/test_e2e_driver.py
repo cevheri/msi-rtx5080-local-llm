@@ -831,7 +831,7 @@ class PlanTest(unittest.TestCase):
 
     def test_all_matrix_runs_every_recipe(self):
         matrix = e2e.ALL_MATRIX
-        self.assertEqual(len(matrix), 22)
+        self.assertEqual(len(matrix), 24)
         shipped = {(recipe_id, runtime) for runtime, entry in self.catalog.runtimes.items()
                    for recipe_id in entry.recipes}
         self.assertEqual(set(matrix), shipped)
@@ -851,9 +851,12 @@ class PlanTest(unittest.TestCase):
         self.assertEqual(matrix[10], ("gpt-oss-20b", "vllm"))
         self.assertEqual(matrix[len(matrix) - 1 - len(self.catalog.runtimes["sglang"].recipes)],
                          ("qwen3.5-9b", "sglang"))
+        # The wave 2 Gemma recipes follow gpt-oss-20b in the SGLang block.
+        self.assertEqual([name for name, runtime in matrix if runtime == "sglang"],
+                         ["qwen3.5-9b", "k2-horizon-7b", "gpt-oss-20b", "gemma-4-12b", "gemma-4-e4b"])
         self.assertIs(e2e.MATRICES["all"], matrix)
         self.assertEqual(e2e.build_parser().parse_args(["--out", "x", "--matrix", "all"]).matrix, "all")
-        self.assertEqual(len(up_steps(self.plan(matrix))), 22)
+        self.assertEqual(len(up_steps(self.plan(matrix))), 24)
 
     def test_chat_only_opencode_step(self):
         target = target_for("deepseek-r1-0528-qwen3-8b", "llamacpp", REPO / "recipes")
