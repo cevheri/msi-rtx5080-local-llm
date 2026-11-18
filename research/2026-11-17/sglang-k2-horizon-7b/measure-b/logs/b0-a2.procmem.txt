@@ -1,0 +1,20 @@
+== at ready 18:16:58
+pid=1342576 name=python3 VmRSS_kB=1710332 RssAnon_kB=1240528 RssFile_kB=450844 RssShmem_kB=18960 VmLck_kB=16 VmPin_kB=0
+pid=1344001 name=sglang::schedul VmRSS_kB=3229820 RssAnon_kB=2479836 RssFile_kB=596812 RssShmem_kB=153172 VmLck_kB=16 VmPin_kB=0
+pid=1344002 name=sglang::detoken VmRSS_kB=1622088 RssAnon_kB=1170696 RssFile_kB=451392 RssShmem_kB=0 VmLck_kB=16 VmPin_kB=0
+cgroup anon=4.671 GiB
+cgroup file=8.385 GiB
+cgroup shmem=0.085 GiB
+cgroup file_mapped=0.157 GiB
+cgroup unevictable=0.000 GiB
+cgroup memory.current=13.170 GiB memory.peak=13.171 GiB
+== at the end 18:25:34
+pid=1342576 name=python3 VmRSS_kB=1752772 RssAnon_kB=1291320 RssFile_kB=442492 RssShmem_kB=18960 VmLck_kB=16 VmPin_kB=0
+pid=1344001 name=sglang::schedul VmRSS_kB=3254504 RssAnon_kB=2538112 RssFile_kB=563220 RssShmem_kB=153172 VmLck_kB=16 VmPin_kB=0
+pid=1344002 name=sglang::detoken VmRSS_kB=1614804 RssAnon_kB=1170732 RssFile_kB=444072 RssShmem_kB=0 VmLck_kB=16 VmPin_kB=0
+cgroup anon=4.775 GiB
+cgroup file=3.259 GiB
+cgroup shmem=0.085 GiB
+cgroup file_mapped=0.154 GiB
+cgroup unevictable=0.000 GiB
+cgroup memory.current=8.139 GiB memory.peak=13.276 GiB

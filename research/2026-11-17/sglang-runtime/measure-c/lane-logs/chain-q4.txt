@@ -1,0 +1,124 @@
+chain q4 start 21:14:32
+{"exit": "ready", "ready_seen_s": 60.19, "served_listed_s": 58.05, "memory_usage": {"weight": 9.48, "kvcache": 3.085, "startup_available": 1.392, "token_capacity": 161736, "token_capacity_swa": null, "graph": {"prefill": 0.0, "decode": 0.061, "target_verify": 0.0, "draft_prefill": 0.0, "draft_decode": 0.0, "draft_extend": 0.0}}, "gpu_right_after_ready": {"t": 1794950133.35, "used_mib": 14892, "free_mib": 951, "total_mib": 16303}}
+{"event": "gpu_before", "step": "nearfull_p2", "t": 1794950514.432, "used_mib": 15342, "free_mib": 501, "total_mib": 16303, "utc": "21:21:54"}
+{"event": "request", "step": "nearfull_p2", "status": 200, "t": 1794950514.433, "seconds": 49.509, "finish_reason": "length", "content": "The function computes the average normalized weight (calculated as `weight * sca... (167 chars)", "reasoning_content_chars": 0, "tool_calls": [], "usage": {"prompt_tokens": 124501, "completion_tokens": 32}, "utc": "21:21:54"}
+{"event": "gpu_after", "step": "nearfull_p2", "cgroup": {"anon_gib": 5.726, "file_gib": 21.046, "shmem_gib": 16.973, "unevictable_gib": 0.0, "peak_gib": 27.0}, "t": 1794950563.976, "used_mib": 15342, "free_mib": 501, "total_mib": 16303, "utc": "21:22:43"}
+{"event": "end", "result": "completed", "container": "running exit=0 oom=false", "cgroup": {"anon_gib": 5.726, "file_gib": 21.046, "shmem_gib": 16.973, "unevictable_gib": 0.0, "peak_gib": 27.0}, "memory_usage": {"weight": 9.48, "kvcache": 3.085, "startup_available": 1.392, "token_capacity": 161736, "token_capacity_swa": null, "graph": {"prefill": 0.0, "decode": 0.061, "target_verify": 0.0, "draft_
+comm: file 1 is not in sorted order
+comm: file 2 is not in sorted order
+comm: input is not in sorted order
+logs/w3-k88-f088-mem27.log 1536 -> 61 lines
+[2026-11-17 21:14:50] Auto-detected template features: reasoning_config=ReasoningToggleConfig(toggle_param='enable_thinking', default_enabled=True, special_case=None, effort_kwarg=None), reasoning_parser=qwen3, tool_call_parser=qwen3_coder
+[2026-11-17 21:15:27] Load weight end. elapsed=33.52 s, type=Qwen3_5MoeForConditionalGeneration, quant=modelopt_mixed, quant_algo=MIXED_PRECISION, avail mem=5.56 GB, mem usage=9.48 GB.
+[2026-11-17 21:15:28] Mamba Cache is allocated. max_mamba_cache_size: 8, conv_state size: 0.01GB, ssm_state size: 0.53GB 
+[2026-11-17 21:15:28] KV Cache is allocated. dtype: torch.bfloat16, #tokens: 161736, K size: 1.54 GB, V size: 1.54 GB
+[2026-11-17 21:15:30] max_total_num_tokens=161736, chunked_prefill_size=2048, max_prefill_tokens=16384, max_running_requests=1, context_len=131072, available_gpu_mem=1.39 GB
+[2026-11-17 21:15:30] Using default chat sampling params from model generation config: {'temperature': 0.6, 'top_k': 20, 'top_p': 0.95, 'min_p': 0.0}
+[2026-11-17 21:15:33] The server is fired up and ready to roll!
+running exit=0 oom=false started=2026-11-17T21:14:33.226552498Z finished=0001-01-01T00:00:00Z
+w3-k88-f088-mem27 done 21:22:51
+at 0.29 s /ready URLError
+at 329.06 s /ready 503
+at 345.46 s /ready 200
+at 345.62 s served name listed in /v1/models
+free_mib_after_ready=687
+chat {"status": 200, "content": "OK", "reasoning_chars": 0, "finish_reason": "stop", "completion_tokens": 2}
+comm: file 1 is not in sorted order
+comm: file 2 is not in sorted order
+comm: input is not in sorted order
+logs/m15-netnone.log 120 -> 70 lines
+running exit=0 oom=false started=2026-11-17T21:22:51.401243008Z finished=0001-01-01T00:00:00Z network=none
+at 0.29 s /ready URLError
+at 329.06 s /ready 503
+at 345.46 s /ready 200
+at 345.62 s served name listed in /v1/models
+free_mib_after_ready=687
+chat {"status": 200, "content": "OK", "reasoning_chars": 0, "finish_reason": "stop", "completion_tokens": 2}
+3
+m15 qwen3.6 done 21:28:44
+chain q4 end 21:28:44
+chain n1 start 21:28:44
+{"exit": "ready", "ready_seen_s": 82.58, "served_listed_s": 62.06, "memory_usage": {"weight": 10.379, "kvcache": 2.734, "startup_available": 0.932, "token_capacity": 477868, "token_capacity_swa": null, "graph": {"prefill": 0.0, "decode": 0.057, "target_verify": 0.0, "draft_prefill": 0.0, "draft_decode": 0.0, "draft_extend": 0.0}}, "gpu_right_after_ready": {"t": 1794951007.391, "used_mib": 15562, "free_mib": 280, "total_mib": 16303}}
+{"event": "flush_cache", "status": 200, "t": 1794951007.892, "used_mib": 15050, "free_mib": 792, "total_mib": 16303, "utc": "21:30:07"}
+{"event": "phase_start", "step": "probe", "argv": ["/usr/bin/python3", "-I", "$SCRATCH/sglang/measure-c/scripts/llm_probe.py", "--base", "http://127.0.0.1:30000/v1", "--model", "nemotron-3.5-lightning", "--label", "m11-bf16-k64", "--out", "$SCRATCH
+{"event": "phase_end", "step": "probe", "rc": 0, "seconds": 53.9, "output_tail": "ity.\\n\\nActually, the standard behavior for these prompts is usually to ask for the location.\\nLet's assume the user wants to know the weather.\\nI will ask for the location.\\n\\nWait, looking at the pattern of these requests, usually, the user wants to know the weather of a specific place, but they forgot to spe
+{"event": "end", "result": "completed", "container": "running exit=0 oom=false", "cgroup": {"anon_gib": 5.071, "file_gib": 26.712, "shmem_gib": 16.005, "unevictable_gib": 0.0, "peak_gib": 32.0}, "memory_usage": {"weight": 10.379, "kvcache": 2.734, "startup_available": 0.932, "token_capacity": 477868, "token_capacity_swa": null, "graph": {"prefill": 0.0, "decode": 0.057, "target_verify": 0.0, "draf
+comm: file 1 is not in sorted order
+comm: file 2 is not in sorted order
+comm: input is not in sorted order
+logs/m11-bf16-k64.log 434 -> 199 lines
+[2026-11-17 21:29:10] Auto-detected template features: reasoning_config=ReasoningToggleConfig(toggle_param='enable_thinking', default_enabled=True, special_case=None, effort_kwarg=None), reasoning_parser=nemotron_3, tool_call_parser=qwen3_coder
+[2026-11-17 21:29:34] Load weight end. elapsed=26.49 s, type=NemotronHForCausalLM, quant=modelopt_mixed, quant_algo=MIXED_PRECISION, avail mem=4.66 GB, mem usage=10.38 GB.
+[2026-11-17 21:29:37] Mamba Cache is allocated. max_mamba_cache_size: 8, conv_state size: 0.01GB, ssm_state size: 0.40GB 
+[2026-11-17 21:29:37] KV Cache is allocated. dtype: torch.bfloat16, #tokens: 477868, K size: 1.37 GB, V size: 1.37 GB
+[2026-11-17 21:29:46] max_total_num_tokens=477868, chunked_prefill_size=2048, max_prefill_tokens=16384, max_running_requests=1, context_len=131072, available_gpu_mem=0.93 GB
+[2026-11-17 21:29:46] Using default chat sampling params from model generation config: {'temperature': 1.0, 'top_p': 0.95}
+[2026-11-17 21:30:07] The server is fired up and ready to roll!
+running exit=0 oom=false started=2026-11-17T21:28:44.872315406Z finished=0001-01-01T00:00:00Z
+nemotron m11 bf16 K=64 done 21:31:09
+{"exit": "ready", "ready_seen_s": 56.82, "served_listed_s": 55.56, "memory_usage": {"weight": 11.451, "kvcache": 1.662, "startup_available": 1.008, "token_capacity": 290476, "token_capacity_swa": null, "graph": {"prefill": 0.0, "decode": 0.057, "target_verify": 0.0, "draft_prefill": 0.0, "draft_decode": 0.0, "draft_extend": 0.0}}, "gpu_right_after_ready": {"t": 1794951126.201, "used_mib": 14992, "free_mib": 850, "total_mib": 16303}}
+{"event": "flush_cache", "status": 200, "t": 1794951126.716, "used_mib": 14972, "free_mib": 870, "total_mib": 16303, "utc": "21:32:06"}
+{"event": "phase_start", "step": "probe", "argv": ["/usr/bin/python3", "-I", "$SCRATCH/sglang/measure-c/scripts/llm_probe.py", "--base", "http://127.0.0.1:30000/v1", "--model", "nemotron-3.5-lightning", "--label", "m11-bf16-k72", "--out", "$SCRATCH
+{"event": "phase_end", "step": "probe", "rc": 0, "seconds": 31.3, "output_tail": "{\n \"label\": \"m11-bf16-k72\",\n \"models\": [\n  \"nemotron-3.5-lightning\"\n ],\n \"ok\": {\n  \"content\": \"OK\",\n  \"reasoning_chars\": 0,\n  \"finish\": \"stop\",\n  \"usage\": {\n   \"prompt_tokens\": 21,\n   \"total_tokens\": 23,\n   \"completion_tokens\": 2,\n   \"prompt_tokens_details\": null,\n   \"reas
+{"event": "end", "result": "completed", "container": "running exit=0 oom=false", "cgroup": {"anon_gib": 4.896, "file_gib": 24.406, "shmem_gib": 16.005, "unevictable_gib": 0.0, "peak_gib": 29.522}, "memory_usage": {"weight": 11.451, "kvcache": 1.662, "startup_available": 1.008, "token_capacity": 290476, "token_capacity_swa": null, "graph": {"prefill": 0.0, "decode": 0.057, "target_verify": 0.0, "dr
+comm: file 1 is not in sorted order
+comm: file 2 is not in sorted order
+comm: input is not in sorted order
+logs/m11-bf16-k72.log 253 -> 78 lines
+[2026-11-17 21:31:35] Auto-detected template features: reasoning_config=ReasoningToggleConfig(toggle_param='enable_thinking', default_enabled=True, special_case=None, effort_kwarg=None), reasoning_parser=nemotron_3, tool_call_parser=qwen3_coder
+[2026-11-17 21:31:59] Load weight end. elapsed=26.61 s, type=NemotronHForCausalLM, quant=modelopt_mixed, quant_algo=MIXED_PRECISION, avail mem=3.59 GB, mem usage=11.45 GB.
+[2026-11-17 21:32:02] Mamba Cache is allocated. max_mamba_cache_size: 8, conv_state size: 0.01GB, ssm_state size: 0.40GB 
+[2026-11-17 21:32:02] KV Cache is allocated. dtype: torch.bfloat16, #tokens: 290476, K size: 0.83 GB, V size: 0.83 GB
+[2026-11-17 21:32:04] max_total_num_tokens=290476, chunked_prefill_size=2048, max_prefill_tokens=16384, max_running_requests=1, context_len=131072, available_gpu_mem=1.01 GB
+[2026-11-17 21:32:04] Using default chat sampling params from model generation config: {'temperature': 1.0, 'top_p': 0.95}
+[2026-11-17 21:32:05] The server is fired up and ready to roll!
+running exit=0 oom=false started=2026-11-17T21:31:09.45173853Z finished=0001-01-01T00:00:00Z
+nemotron m11 bf16 K=72 done 21:32:45
+{"exit": "ready", "ready_seen_s": 58.17, "served_listed_s": 56.56, "memory_usage": {"weight": 12.666, "kvcache": 0.447, "startup_available": 1.072, "token_capacity": 78167, "token_capacity_swa": null, "graph": {"prefill": 0.0, "decode": 0.059, "target_verify": 0.0, "draft_prefill": 0.0, "draft_decode": 0.0, "draft_extend": 0.0}}, "gpu_right_after_ready": {"t": 1794951223.529, "used_mib": 14906, "free_mib": 936, "total_mib": 16303}}
+{"event": "flush_cache", "status": 200, "t": 1794951224.038, "used_mib": 14886, "free_mib": 956, "total_mib": 16303, "utc": "21:33:44"}
+{"event": "phase_start", "step": "probe", "argv": ["/usr/bin/python3", "-I", "$SCRATCH/sglang/measure-c/scripts/llm_probe.py", "--base", "http://127.0.0.1:30000/v1", "--model", "nemotron-3.5-lightning", "--label", "m11-bf16-k80", "--out", "$SCRATCH
+{"event": "phase_end", "step": "probe", "rc": 0, "seconds": 27.9, "output_tail": "e can simulate? The instruction says we must use tools. But we have no external data. We can perhaps answer with typical weather? But must be accurate. Possibly we should call a weather API? Not possible. We could respond that we cannot get real-time weather without external API. But we can provide approximate. Howev
+{"event": "end", "result": "completed", "container": "running exit=0 oom=false", "cgroup": {"anon_gib": 4.935, "file_gib": 24.239, "shmem_gib": 16.005, "unevictable_gib": 0.0, "peak_gib": 29.389}, "memory_usage": {"weight": 12.666, "kvcache": 0.447, "startup_available": 1.072, "token_capacity": 78167, "token_capacity_swa": null, "graph": {"prefill": 0.0, "decode": 0.059, "target_verify": 0.0, "dra
+comm: file 1 is not in sorted order
+comm: file 2 is not in sorted order
+comm: input is not in sorted order
+logs/m11-bf16-k80.log 249 -> 70 lines
+[2026-11-17 21:33:11] Auto-detected template features: reasoning_config=ReasoningToggleConfig(toggle_param='enable_thinking', default_enabled=True, special_case=None, effort_kwarg=None), reasoning_parser=nemotron_3, tool_call_parser=qwen3_coder
+[2026-11-17 21:33:36] Load weight end. elapsed=27.86 s, type=NemotronHForCausalLM, quant=modelopt_mixed, quant_algo=MIXED_PRECISION, avail mem=2.37 GB, mem usage=12.67 GB.
+[2026-11-17 21:33:39] Mamba Cache is allocated. max_mamba_cache_size: 8, conv_state size: 0.01GB, ssm_state size: 0.40GB 
+[2026-11-17 21:33:39] KV Cache is allocated. dtype: torch.bfloat16, #tokens: 78167, K size: 0.22 GB, V size: 0.22 GB
+[2026-11-17 21:33:41] KV pool holds 78167 tokens, fewer than --context-length 131072. One full-length request cannot fit, so long requests will be refused or truncated at serving time. Lower --context-length, raise --mem-fraction-static, or free memory taken before the pool is sized.
+[2026-11-17 21:33:41] max_total_num_tokens=78167, chunked_prefill_size=2048, max_prefill_tokens=16384, max_running_requests=1, context_len=131072, available_gpu_mem=1.07 GB
+[2026-11-17 21:33:41] Using default chat sampling params from model generation config: {'temperature': 1.0, 'top_p': 0.95}
+[2026-11-17 21:33:43] The server is fired up and ready to roll!
+running exit=0 oom=false started=2026-11-17T21:32:45.424719901Z finished=0001-01-01T00:00:00Z
+nemotron m11 bf16 K=80 done 21:34:19
+{"exit": "container stopped", "ready_seen_s": null, "served_listed_s": null, "memory_usage": null, "gpu_right_after_ready": null}
+comm: file 1 is not in sorted order
+comm: file 2 is not in sorted order
+comm: input is not in sorted order
+logs/m11-fp8-k56.log 87 -> 31 lines
+[2026-11-17 21:34:31] Hybrid SWA model detected. architectures=['Gemma4ForConditionalGeneration']
+[2026-11-17 21:34:37] Auto-detected template features: reasoning_config=ReasoningToggleConfig(toggle_param='enable_thinking', default_enabled=False, special_case=None, effort_kwarg=None), reasoning_parser=gemma4, tool_call_parser=gemma4
+RuntimeError: Failed at /sgl-workspace/sglang/python/sglang/kernels/jit/csrc/gemm/marlin/gptq_marlin_repack.cuh:311: size_n = 8608 is not divisible by tile_n_size = 64
+exited exit=0 oom=false started=2026-11-17T21:34:19.273337095Z finished=2026-11-17T21:34:55.217705952Z
+gemma m11 fp8 K=56 done 21:35:00
+{"exit": "container stopped", "ready_seen_s": null, "served_listed_s": null, "memory_usage": null, "gpu_right_after_ready": null}
+comm: file 1 is not in sorted order
+comm: file 2 is not in sorted order
+comm: input is not in sorted order
+logs/m11-fp8-k64.log 87 -> 31 lines
+[2026-11-17 21:35:12] Hybrid SWA model detected. architectures=['Gemma4ForConditionalGeneration']
+[2026-11-17 21:35:18] Auto-detected template features: reasoning_config=ReasoningToggleConfig(toggle_param='enable_thinking', default_enabled=False, special_case=None, effort_kwarg=None), reasoning_parser=gemma4, tool_call_parser=gemma4
+RuntimeError: Failed at /sgl-workspace/sglang/python/sglang/kernels/jit/csrc/gemm/marlin/gptq_marlin_repack.cuh:311: size_n = 8608 is not divisible by tile_n_size = 64
+exited exit=0 oom=false started=2026-11-17T21:35:01.134975596Z finished=2026-11-17T21:35:32.041178626Z
+gemma m11 fp8 K=64 done 21:35:37
+{"exit": "container stopped", "ready_seen_s": null, "served_listed_s": null, "memory_usage": null, "gpu_right_after_ready": null}
+comm: file 1 is not in sorted order
+comm: file 2 is not in sorted order
+comm: input is not in sorted order
+logs/m11-fp8-k72.log 87 -> 31 lines
+[2026-11-17 21:35:49] Hybrid SWA model detected. architectures=['Gemma4ForConditionalGeneration']
+[2026-11-17 21:35:54] Auto-detected template features: reasoning_config=ReasoningToggleConfig(toggle_param='enable_thinking', default_enabled=False, special_case=None, effort_kwarg=None), reasoning_parser=gemma4, tool_call_parser=gemma4
+RuntimeError: Failed at /sgl-workspace/sglang/python/sglang/kernels/jit/csrc/gemm/marlin/gptq_marlin_repack.cuh:311: size_n = 8608 is not divisible by tile_n_size = 64
+exited exit=0 oom=false started=2026-11-17T21:35:37.96228652Z finished=2026-11-17T21:36:08.505501994Z

@@ -1,0 +1,9 @@
+| Replays | Count | Tool call | Text | Empty |
+|---|---|---|---|---|
+| streamed, batch 1 (replay.py) | 40 | 36 | 0 | 4 |
+| streamed, seeds 1 to 80 (seedscan.py) | 80 | 76 | 0 | 4 |
+| streamed, batch 3 with request logging (replay.py) | 40 | 36 | 0 | 4 |
+| plain, batch 1 (replay.py, rawparse.py) | 40 | 35 | 3 | 2 |
+| plain, seeds 1 to 80 (seedscan.py) | 80 | 71 | 2 | 7 |
+| all streamed | 160 | 148 | 0 | 12 |
+| all plain | 120 | 106 | 5 | 9 |

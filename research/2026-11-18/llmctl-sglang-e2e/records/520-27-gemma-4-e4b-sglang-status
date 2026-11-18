@@ -1,0 +1,8 @@
+{
+  "command": "./llmctl status",
+  "cwd": "$HOME/projects/llm",
+  "exit": 0,
+  "seconds": 1.1,
+  "stdout": "gemma-4-e4b on sglang, container 'sglang', running\n  recipe: shipped file, sha256 6b0b5c7f7e66, measured\n  port: 30000/tcp -> 127.0.0.1:30000, health: ready\n  container memory: 8.65GiB / 32GiB, GPU memory in use: 13920 MiB of 16303 MiB\ndeepseek-r1-0528-qwen3-8b on vllm, container 'vllm', exited\n  recipe: shipped file, sha256 fea75b71595f, measured\nmellum2.1-12b on llamacpp, container 'llamacpp', exited\n  recipe: shipped file, sha256 9ec60dbc1464, measured\nclients:\n  OpenCode: default sglang-docker/gemma-4-e4b, the running model ($HOME/.config/opencode/opencode.json)\n  Hermes: profile llmctl for gemma-4-e4b on SGLang, the running model; default profile: llmctl ($HOME/.hermes/profiles/llmctl/config.yaml)\n  Pi: llmctl/gemma-4-e4b for gemma-4-e4b on SGLang, the running model; default llmctl/gemma-4-e4b, thinking off ($HOME/.pi/agent)\n  dsh: llmctl/gemma-4-e4b for gemma-4-e4b on SGLang, the running model; default llmctl/gemma-4-e4b, held by llmctl ($HOME/.dsh/cordis.patch.yml)\n  Kimi: llmctl/gemma-4-e4b for gemma-4-e4b on SGLang, the running model; default llmctl/gemma-4-e4b ($HOME/.kimi-code/config.toml)\n",
+  "stderr": ""
+}

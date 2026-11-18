@@ -1,0 +1,20 @@
+{
+  "request": {
+    "model": "k2-horizon-7b",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Reply with exactly the word OK."
+      }
+    ],
+    "max_tokens": 256
+  },
+  "status": 200,
+  "reply": "{\"id\":\"f510600b24444d49bc888d366e7f50bf\",\"object\":\"chat.completion\",\"created\":1794970768,\"model\":\"k2-horizon-7b\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"OK\",\"reasoning_content\":\"The user says: \\\"Reply with exactly the word OK.\\\" So we need to respond with exactly \\\"OK\\\". No extra punctuation? It says exactly the word OK. So we output \\\"OK\\\". Ensure no extra characters.\"},\"logprobs\":null,\"finish_reason\":\"stop\",\"matched_stop\":250019}],\"usage\":{\"prompt_tokens\":17,\"total_tokens\":64,\"completion_tokens\":47,\"prompt_tokens_details\":null,\"reasoning_tokens\":45,\"completion_tokens_details\":{\"reasoning_tokens\":45}},\"metadata\":{\"weight_version\":\"default\",\"weight_versions\":[{\"version\":\"default\",\"start\":0,\"end\":47}]}}",
+  "record": {
+    "probe": "D",
+    "status": 200,
+    "content": true,
+    "reasoning": true
+  }
+}

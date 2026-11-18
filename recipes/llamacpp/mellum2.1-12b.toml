@@ -1,0 +1,40 @@
+# Measured launch from llamacpp/models.md#mellum21-12b-a25b-thinking-q6_k.
+schema = 1
+id = "mellum2.1-12b"
+name = "Mellum2.1 12B-A2.5B Thinking Q6_K"
+aliases = ["mellum"]
+doc = "llamacpp/models.md#mellum21-12b-a25b-thinking-q6_k"
+opencode = true
+
+[model]
+repo = "JetBrains/Mellum2.1-12B-A2.5B-Thinking-GGUF"
+revision = "4159d684ffdb09ba89dc2a58feb3e75c54eef036"
+files = ["Mellum2.1-12B-A2.5B-Thinking-Q6_K.gguf"]
+size_bytes = 10879834400
+
+[container]
+memory_gib = 16
+
+[server]
+context = 131072
+args = [
+  "-ngl", "all", "-fa", "on", "-np", "1", "--jinja", "--temp", "0.6", "--top-p", "0.95",
+  "--top-k", "20", "--min-p", "0", "--presence-penalty", "0",
+]
+
+[clients]
+output = 16384
+thinking = "toggle"
+default = "on"
+
+[needs]
+gpu_mib = 12562
+ram_gib = 13.2
+
+[evidence]
+kind = "measured"
+summary = "188.2 tok/s decode with thinking on and 128k context, 12,674 MiB GPU peak, 13.2 GiB container RAM, llmctl test, a tool call with its second turn and a json_schema title request passed; the OpenCode session passed in the e2e of 2026-11-18"
+decode_tok_s = 188.2
+date = "2026-11-17"
+hardware = "MSI Raider 18 Max HX A2WI, RTX 5080 Laptop GPU 16 GB, 61 GiB RAM"
+record = "research/2026-11-17/llamacpp-mellum2.1-12b/"

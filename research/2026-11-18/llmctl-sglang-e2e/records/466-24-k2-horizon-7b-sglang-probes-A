@@ -1,0 +1,42 @@
+{
+  "request": {
+    "model": "k2-horizon-7b",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a short title for a chat about adding two numbers in Python."
+      }
+    ],
+    "reasoning_effort": "none",
+    "response_format": {
+      "type": "json_schema",
+      "json_schema": {
+        "name": "session_title",
+        "strict": true,
+        "schema": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "title"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "max_tokens": 16384,
+    "stream": false
+  },
+  "status": 200,
+  "reply": "{\"id\":\"ec166594f1864d2db18451cdf653a060\",\"object\":\"chat.completion\",\"created\":1794970766,\"model\":\"k2-horizon-7b\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"title\\\": \\\"Adding Two Numbers in Python\\\"}\",\"reasoning_content\":\"The user wants a short title for a chat about adding two numbers in Python. Let me think of some concise and clear options.\\n\\nPossible titles:\\n- \\\"Adding Numbers in Python\\\"\\n- \\\"Python: Sum of Two Numbers\\\"\\n- \\\"Simple Addition in Python\\\"\\n- \\\"Adding Two Numbers with Python\\\"\\n- \\\"Python Arithmetic: Adding Numbers\\\"\\n\\nThe most straightforward and clear would be \\\"Adding Two Numbers in Python\\\" or \\\"Simple Addition in Python\\\". Since it's a chat, maybe something engaging like \\\"Python Addition: Adding Two Numbers\\\".\\n\\nI'll go with something concise and clear: \\\"Adding Two Numbers in Python\\\" or \\\"Python: Adding Two Numbers\\\".\\n\\nActually, since the user asked for a \\\"short title\\\", I'll keep it very concise:\\n\\\"Adding Numbers in Python\\\" or \\\"Python Addition of Two Numbers\\\"\\n\\nLet me provide a few options or just one good one. I'll give a single clear title: \\\"Adding Two Numbers in Python\\\"\"},\"logprobs\":null,\"finish_reason\":\"stop\",\"matched_stop\":250019}],\"usage\":{\"prompt_tokens\":24,\"total_tokens\":227,\"completion_tokens\":203,\"prompt_tokens_details\":null,\"reasoning_tokens\":192,\"completion_tokens_details\":{\"reasoning_tokens\":192}},\"metadata\":{\"weight_version\":\"default\",\"weight_versions\":[{\"version\":\"default\",\"start\":0,\"end\":203}]}}",
+  "record": {
+    "probe": "A",
+    "status": 200,
+    "content": true,
+    "reasoning": true,
+    "title_ok": true
+  }
+}

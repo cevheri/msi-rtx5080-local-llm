@@ -1,0 +1,45 @@
+# Draft llama.cpp recipe for the SGLang work (2026-11-17), an estimate that a measurement lane finalizes.
+# [model] is exact, read from the Hugging Face API on 2026-11-17.
+# The args are those of recipes/llamacpp/gemma-4-26b-a4b.toml (same family, same sampling and thinking switch)
+# without its expert-offload flags (--n-cpu-moe 12, -lm none, -t 8, --moe-cache-mib 2368), because this
+# dense 6.50 GiB file fits whole on the GPU; f16 KV stays, as there, for the 512-wide global heads.
+# memory_gib is copied from that recipe; gpu_mib is an estimate (see [needs]).
+schema = 1
+id = "gemma-4-12b"
+name = "Gemma 4 12B IT QAT Q4_0"
+aliases = ["gemma4-12b"]
+doc = "docs/superpowers/research/2026-11-17-sglang/research-report.md#4-per-model-and-engine"
+opencode = false
+
+[model]
+repo = "google/gemma-4-12B-it-qat-q4_0-gguf"
+revision = "29d097773436b69ff9feafd636ab4cf873786537"
+# gemma-4-12b-it-qat-q4_0.gguf: SHA-256 93567e57a8fe10b23569b9d9ec38cd005deedf71e29477c421a4b83f418a538b, 6,975,879,296 bytes
+files = ["gemma-4-12b-it-qat-q4_0.gguf"]
+size_bytes = 6975879296
+
+[container]
+memory_gib = 20
+
+[server]
+context = 131072
+args = [
+  "-ngl", "all", "-fa", "on", "-np", "1", "--jinja", "-ctxcp", "16", "--reasoning", "off",
+  "--temp", "1.0", "--top-p", "0.95", "--top-k", "64",
+]
+
+[clients]
+output = 16384
+thinking = "toggle"
+default = "off"
+
+[needs]
+# Estimate: 6.50 GiB of weights, 2.00 GiB of f16 global KV at 128k (8 layers x 1 KV head x (512 + 512) x 2 B),
+# 0.47 GiB of sliding-window KV (40 layers, 1,536 cells) and about 0.8 GiB of context and buffers.
+# Replace it with the measured peak minus the desktop's 112 MiB, and add ram_gib from the measurement.
+gpu_mib = 10240
+
+[evidence]
+kind = "estimate"
+summary = "Draft from the SGLang research report, section 4, with the args of the shipped gemma-4-26b-a4b recipe less its expert offload; not measured on this laptop"
+doc = "docs/superpowers/research/2026-11-17-sglang/research-report.md#4-per-model-and-engine"

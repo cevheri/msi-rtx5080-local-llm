@@ -1,0 +1,42 @@
+{
+  "request": {
+    "model": "local",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a short title for a chat about adding two numbers in Python."
+      }
+    ],
+    "reasoning_effort": "none",
+    "response_format": {
+      "type": "json_schema",
+      "json_schema": {
+        "name": "session_title",
+        "strict": true,
+        "schema": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "title"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "max_tokens": 16384,
+    "stream": false
+  },
+  "status": 200,
+  "reply": "{\"choices\":[{\"finish_reason\":\"stop\",\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\n  \\\"title\\\": \\\"Adding Two Numbers in Python\\\"\\n}\",\"reasoning_content\":\"\\nWe are writing a short title for a chat about adding two numbers in Python.\\n Since it's a simple operation, the title should be concise and clear.\\n Let's consider some possibilities and choose the best one.\\n\"}}],\"created\":1794969166,\"model\":\"local\",\"system_fingerprint\":\"b12407-e574a17b0\",\"object\":\"chat.completion\",\"usage\":{\"completion_tokens\":67,\"prompt_tokens\":17,\"total_tokens\":84,\"prompt_tokens_details\":{\"cached_tokens\":1}},\"id\":\"chatcmpl-zjSQGHQs2P9crt69elKfyvucdD9hVNEV\",\"timings\":{\"cache_n\":1,\"prompt_n\":16,\"prompt_ms\":16.884,\"prompt_per_token_ms\":1.05525,\"prompt_per_second\":947.6427386875148,\"predicted_n\":67,\"predicted_ms\":966.454,\"predicted_per_token_ms\":14.643242424242423,\"predicted_per_second\":68.29088606389958}}",
+  "record": {
+    "probe": "A",
+    "status": 200,
+    "content": true,
+    "reasoning": true,
+    "title_ok": true
+  }
+}

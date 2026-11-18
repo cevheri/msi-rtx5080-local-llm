@@ -1,0 +1,161 @@
+exchange 1 at 06:39:01.794950: POST /v1/chat/completions HTTP/1.1
+  parameters {"model": "qwen3.5-9b", "stream": true, "stream_options": {"include_usage": true}, "max_completion_tokens": 16384}, tools 8
+  system: 17402 chars
+  user: 262 chars | Read every Markdown file in this folder and its subfolders, one file at a time, with the read tool. 
+  reply: HTTP/1.1 200 OK
+exchange 2 at 06:39:01.805094: POST /v1/chat/completions HTTP/1.1
+  parameters {"model": "qwen3.5-9b", "stream": true, "stream_options": {"include_usage": true}, "chat_template_kwargs": {"enable_thinking": false}}, tools 0
+  system: 1806 chars
+  user: 359 chars | Here is the first message of the conversation:  <message> Read every Markdown file in this folder an
+  reply: HTTP/1.1 200 OK
+exchange 3 at 06:39:03.426198: POST /v1/chat/completions HTTP/1.1
+  parameters {"model": "qwen3.5-9b", "stream": true, "stream_options": {"include_usage": true}, "max_completion_tokens": 16384}, tools 8
+  system: 17402 chars
+  user: 262 chars | Read every Markdown file in this folder and its subfolders, one file at a time, with the read tool. 
+  assistant: 119 chars, other fields (JSON chars) {'tool_calls': 267, 'reasoning_content': 2}
+  tool: 2525 chars, other fields (JSON chars) {'tool_call_id': 31}
+  reply: HTTP/1.1 200 OK
+exchange 4 at 06:39:04.787997: POST /v1/chat/completions HTTP/1.1
+  parameters {"model": "qwen3.5-9b", "stream": true, "stream_options": {"include_usage": true}, "max_completion_tokens": 16384}, tools 8
+  system: 17402 chars
+  user: 262 chars | Read every Markdown file in this folder and its subfolders, one file at a time, with the read tool. 
+  assistant: 119 chars, other fields (JSON chars) {'tool_calls': 267, 'reasoning_content': 2}
+  tool: 2525 chars, other fields (JSON chars) {'tool_call_id': 31}
+  assistant: 75 chars, other fields (JSON chars) {'tool_calls': 253, 'reasoning_content': 2}
+  tool: 25018 chars, other fields (JSON chars) {'tool_call_id': 31}
+  reply: HTTP/1.1 200 OK
+exchange 5 at 06:39:07.191679: POST /v1/chat/completions HTTP/1.1
+  parameters {"model": "qwen3.5-9b", "stream": true, "stream_options": {"include_usage": true}, "max_completion_tokens": 16384}, tools 8
+  system: 17402 chars
+  user: 262 chars | Read every Markdown file in this folder and its subfolders, one file at a time, with the read tool. 
+  assistant: 119 chars, other fields (JSON chars) {'tool_calls': 267, 'reasoning_content': 2}
+  tool: 2525 chars, other fields (JSON chars) {'tool_call_id': 31}
+  assistant: 75 chars, other fields (JSON chars) {'tool_calls': 253, 'reasoning_content': 2}
+  tool: 25018 chars, other fields (JSON chars) {'tool_call_id': 31}
+  assistant: 195 chars, other fields (JSON chars) {'tool_calls': 258, 'reasoning_content': 2}
+  tool: 53489 chars, other fields (JSON chars) {'tool_call_id': 31}
+  reply: HTTP/1.1 200 OK
+exchange 6 at 06:39:11.257739: POST /v1/chat/completions HTTP/1.1
+  parameters {"model": "qwen3.5-9b", "stream": true, "stream_options": {"include_usage": true}, "max_completion_tokens": 16384}, tools 8
+  system: 17402 chars
+  user: 262 chars | Read every Markdown file in this folder and its subfolders, one file at a time, with the read tool. 
+  assistant: 119 chars, other fields (JSON chars) {'tool_calls': 267, 'reasoning_content': 2}
+  tool: 2525 chars, other fields (JSON chars) {'tool_call_id': 31}
+  assistant: 75 chars, other fields (JSON chars) {'tool_calls': 253, 'reasoning_content': 2}
+  tool: 25018 chars, other fields (JSON chars) {'tool_call_id': 31}
+  assistant: 195 chars, other fields (JSON chars) {'tool_calls': 258, 'reasoning_content': 2}
+  tool: 53489 chars, other fields (JSON chars) {'tool_call_id': 31}
+  assistant: 189 chars, other fields (JSON chars) {'tool_calls': 258, 'reasoning_content': 2}
+  tool: 53781 chars, other fields (JSON chars) {'tool_call_id': 31}
+  reply: HTTP/1.1 200 OK
+exchange 7 at 06:39:16.849686: POST /v1/chat/completions HTTP/1.1
+  parameters {"model": "qwen3.5-9b", "stream": true, "stream_options": {"include_usage": true}, "max_completion_tokens": 16384}, tools 8
+  system: 17402 chars
+  user: 262 chars | Read every Markdown file in this folder and its subfolders, one file at a time, with the read tool. 
+  assistant: 119 chars, other fields (JSON chars) {'tool_calls': 267, 'reasoning_content': 2}
+  tool: 2525 chars, other fields (JSON chars) {'tool_call_id': 31}
+  assistant: 75 chars, other fields (JSON chars) {'tool_calls': 253, 'reasoning_content': 2}
+  tool: 25018 chars, other fields (JSON chars) {'tool_call_id': 31}
+  assistant: 195 chars, other fields (JSON chars) {'tool_calls': 258, 'reasoning_content': 2}
+  tool: 53489 chars, other fields (JSON chars) {'tool_call_id': 31}
+  assistant: 189 chars, other fields (JSON chars) {'tool_calls': 258, 'reasoning_content': 2}
+  tool: 53781 chars, other fields (JSON chars) {'tool_call_id': 31}
+  assistant: 190 chars, other fields (JSON chars) {'tool_calls': 264, 'reasoning_content': 2}
+  tool: 46470 chars, other fields (JSON chars) {'tool_call_id': 31}
+  reply: HTTP/1.1 200 OK
+exchange 8 at 06:39:22.417354: POST /v1/chat/completions HTTP/1.1
+  parameters {"model": "qwen3.5-9b", "stream": true, "stream_options": {"include_usage": true}, "max_completion_tokens": 16384}, tools 8
+  system: 17402 chars
+  user: 262 chars | Read every Markdown file in this folder and its subfolders, one file at a time, with the read tool. 
+  assistant: 119 chars, other fields (JSON chars) {'tool_calls': 267, 'reasoning_content': 2}
+  tool: 2525 chars, other fields (JSON chars) {'tool_call_id': 31}
+  assistant: 75 chars, other fields (JSON chars) {'tool_calls': 253, 'reasoning_content': 2}
+  tool: 25018 chars, other fields (JSON chars) {'tool_call_id': 31}
+  assistant: 195 chars, other fields (JSON chars) {'tool_calls': 258, 'reasoning_content': 2}
+  tool: 53489 chars, other fields (JSON chars) {'tool_call_id': 31}
+  assistant: 189 chars, other fields (JSON chars) {'tool_calls': 258, 'reasoning_content': 2}
+  tool: 53781 chars, other fields (JSON chars) {'tool_call_id': 31}
+  assistant: 190 chars, other fields (JSON chars) {'tool_calls': 264, 'reasoning_content': 2}
+  tool: 46470 chars, other fields (JSON chars) {'tool_call_id': 31}
+  assistant: 206 chars, other fields (JSON chars) {'tool_calls': 258, 'reasoning_content': 2}
+  tool: 52935 chars, other fields (JSON chars) {'tool_call_id': 31}
+  reply: HTTP/1.1 200 OK
+exchange 9 at 06:39:28.354665: POST /v1/chat/completions HTTP/1.1
+  parameters {"model": "qwen3.5-9b", "stream": true, "stream_options": {"include_usage": true}, "max_completion_tokens": 16384}, tools 8
+  system: 17402 chars
+  user: 262 chars | Read every Markdown file in this folder and its subfolders, one file at a time, with the read tool. 
+  assistant: 119 chars, other fields (JSON chars) {'tool_calls': 267, 'reasoning_content': 2}
+  tool: 2525 chars, other fields (JSON chars) {'tool_call_id': 31}
+  assistant: 75 chars, other fields (JSON chars) {'tool_calls': 253, 'reasoning_content': 2}
+  tool: 25018 chars, other fields (JSON chars) {'tool_call_id': 31}
+  assistant: 195 chars, other fields (JSON chars) {'tool_calls': 258, 'reasoning_content': 2}
+  tool: 53489 chars, other fields (JSON chars) {'tool_call_id': 31}
+  assistant: 189 chars, other fields (JSON chars) {'tool_calls': 258, 'reasoning_content': 2}
+  tool: 53781 chars, other fields (JSON chars) {'tool_call_id': 31}
+  assistant: 190 chars, other fields (JSON chars) {'tool_calls': 264, 'reasoning_content': 2}
+  tool: 46470 chars, other fields (JSON chars) {'tool_call_id': 31}
+  assistant: 206 chars, other fields (JSON chars) {'tool_calls': 258, 'reasoning_content': 2}
+  tool: 52935 chars, other fields (JSON chars) {'tool_call_id': 31}
+  assistant: 177 chars, other fields (JSON chars) {'tool_calls': 260, 'reasoning_content': 2}
+  tool: 53930 chars, other fields (JSON chars) {'tool_call_id': 31}
+  reply: HTTP/1.1 200 OK
+exchange 10 at 06:39:36.068083: POST /v1/chat/completions HTTP/1.1
+  parameters {"model": "qwen3.5-9b", "stream": true, "stream_options": {"include_usage": true}, "max_completion_tokens": 6344}, tools 8
+  system: 17402 chars
+  user: 262 chars | Read every Markdown file in this folder and its subfolders, one file at a time, with the read tool. 
+  assistant: 119 chars, other fields (JSON chars) {'tool_calls': 267, 'reasoning_content': 2}
+  tool: 2525 chars, other fields (JSON chars) {'tool_call_id': 31}
+  assistant: 75 chars, other fields (JSON chars) {'tool_calls': 253, 'reasoning_content': 2}
+  tool: 25018 chars, other fields (JSON chars) {'tool_call_id': 31}
+  assistant: 195 chars, other fields (JSON chars) {'tool_calls': 258, 'reasoning_content': 2}
+  tool: 53489 chars, other fields (JSON chars) {'tool_call_id': 31}
+  assistant: 189 chars, other fields (JSON chars) {'tool_calls': 258, 'reasoning_content': 2}
+  tool: 53781 chars, other fields (JSON chars) {'tool_call_id': 31}
+  assistant: 190 chars, other fields (JSON chars) {'tool_calls': 264, 'reasoning_content': 2}
+  tool: 46470 chars, other fields (JSON chars) {'tool_call_id': 31}
+  assistant: 206 chars, other fields (JSON chars) {'tool_calls': 258, 'reasoning_content': 2}
+  tool: 52935 chars, other fields (JSON chars) {'tool_call_id': 31}
+  assistant: 177 chars, other fields (JSON chars) {'tool_calls': 260, 'reasoning_content': 2}
+  tool: 53930 chars, other fields (JSON chars) {'tool_call_id': 31}
+  assistant: 216 chars, other fields (JSON chars) {'tool_calls': 267, 'reasoning_content': 2}
+  tool: 52709 chars, other fields (JSON chars) {'tool_call_id': 31}
+  user: 2723 chars | You MUST summarize the conversation above into a structured summary that will be given to another ag
+  reply: HTTP/1.1 400 Bad Request
+  body: {"object":"error","message":"The input (131332 tokens) is longer than the model's context length (131072 tokens).","type":"BadRequestError","param":null,"code":400}
+exchange 11 at 06:39:36.203386: POST /v1/chat/completions HTTP/1.1
+  parameters {"model": "qwen3.5-9b", "stream": true, "stream_options": {"include_usage": true}, "max_completion_tokens": 16384}, tools 0
+  system: 17402 chars
+  user: 344159 chars | [User]: Read every Markdown file in this folder and its subfolders, one file at a time, with the rea
+  user: 2723 chars | You MUST summarize the conversation above into a structured summary that will be given to another ag
+  reply: HTTP/1.1 400 Bad Request
+  body: {"object":"error","message":"Requested token count exceeds the model's maximum context length of 131072 tokens. You requested a total of 145252 tokens: 128868 tokens from the input messages and 16384 tokens for the completion. Please reduce the number of tokens in the input messages or the completion to fit within the limit.","type":"BadRequestError","param":null,"code":400}
+exchange 12 at 06:39:36.327515: POST /v1/chat/completions HTTP/1.1
+  parameters {"model": "qwen3.5-9b", "stream": true, "stream_options": {"include_usage": true}, "max_completion_tokens": 16384}, tools 0
+  system: 17402 chars
+  user: 19556 chars | [User]: Read every Markdown file in this folder and its subfolders, one file at a time, with the rea
+  user: 2723 chars | You MUST summarize the conversation above into a structured summary that will be given to another ag
+  reply: HTTP/1.1 200 OK
+exchange 13 at 06:39:41.609998: POST /v1/chat/completions HTTP/1.1
+  parameters {"model": "qwen3.5-9b", "stream": true, "stream_options": {"include_usage": true}, "max_completion_tokens": 16384}, tools 8
+  system: 17402 chars
+  user: 1521 chars | <conversation-checkpoint> The following is a summary and serialized record of earlier conversation. 
+  reply: HTTP/1.1 200 OK
+exchange 14 at 06:39:43.211987: POST /v1/chat/completions HTTP/1.1
+  parameters {"model": "qwen3.5-9b", "stream": true, "stream_options": {"include_usage": true}, "max_completion_tokens": 16384}, tools 8
+  system: 17402 chars
+  user: 1521 chars | <conversation-checkpoint> The following is a summary and serialized record of earlier conversation. 
+  assistant: 4 chars, other fields (JSON chars) {'tool_calls': 267, 'reasoning_content': 2}
+  tool: 2525 chars, other fields (JSON chars) {'tool_call_id': 31}
+  reply: HTTP/1.1 200 OK
+exchange 15 at 06:39:55.270342: POST /v1/chat/completions HTTP/1.1
+  parameters {"model": "qwen3.5-9b", "stream": true, "stream_options": {"include_usage": true}, "max_completion_tokens": 16384}, tools 0
+  system: 17402 chars
+  user: 1521 chars | <conversation-checkpoint> The following is a summary and serialized record of earlier conversation. 
+  user: 26878 chars | [Assistant tool call]: glob({"pattern":"**/*.md","path":"$SCRATCH/sglang/compaction/work-diag2"}) [T
+  user: 3347 chars | Update the existing checkpoint in the conversation above into one consolidated summary.  Newer histo
+  reply: HTTP/1.1 200 OK
+exchange 16 at 06:40:00.431139: POST /v1/chat/completions HTTP/1.1
+  parameters {"model": "qwen3.5-9b", "stream": true, "stream_options": {"include_usage": true}, "max_completion_tokens": 16384}, tools 8
+  system: 17402 chars
+  user: 1337 chars | <conversation-checkpoint> The following is a summary and serialized record of earlier conversation. 
+  reply: HTTP/1.1 200 OK

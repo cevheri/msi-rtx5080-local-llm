@@ -1,0 +1,8 @@
+--- $SCRATCH/sglang/measure-c/llamacpp-qwen3.5-9b/README.md
++++ llamacpp-qwen3.5-9b/measure-c.md
+@@ -37,4 +37,4 @@
+ 
+ ## Files
+ 
+-As in [../llamacpp-gemma-4-12b/README.md](../llamacpp-gemma-4-12b/README.md#files): `cmds/m16-a1.sh`, `logs/m16-a1.*` and `shapes/m16-a1-*`.
++As in [../llamacpp-gemma-4-12b/README.md](../llamacpp-gemma-4-12b/measure-c.md#files): `cmds/m16-a1.sh`, `logs/m16-a1.*` and `shapes/m16-a1-*`.

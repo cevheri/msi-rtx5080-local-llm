@@ -1,0 +1,48 @@
+{
+ "links": 9,
+ "files": [
+  {
+   "path": ".gitattributes",
+   "link": "/root/.cache/huggingface/hub/models--deepseek-ai--DeepSeek-R1-0528-Qwen3-8B/snapshots/6e8885a6ff5c1dc5201574c8fd700323f23c25fa/.gitattributes"
+  },
+  {
+   "path": "LICENSE",
+   "link": "/root/.cache/huggingface/hub/models--deepseek-ai--DeepSeek-R1-0528-Qwen3-8B/snapshots/6e8885a6ff5c1dc5201574c8fd700323f23c25fa/LICENSE"
+  },
+  {
+   "path": "README.md",
+   "link": "/root/.cache/huggingface/hub/models--deepseek-ai--DeepSeek-R1-0528-Qwen3-8B/snapshots/6e8885a6ff5c1dc5201574c8fd700323f23c25fa/README.md"
+  },
+  {
+   "path": "config.json",
+   "link": "/root/.cache/huggingface/hub/models--deepseek-ai--DeepSeek-R1-0528-Qwen3-8B/snapshots/6e8885a6ff5c1dc5201574c8fd700323f23c25fa/config.json"
+  },
+  {
+   "path": "model-00001-of-000002.safetensors",
+   "link": "/root/.cache/huggingface/hub/models--deepseek-ai--DeepSeek-R1-0528-Qwen3-8B/snapshots/6e8885a6ff5c1dc5201574c8fd700323f23c25fa/model-00001-of-000002.safetensors"
+  },
+  {
+   "path": "model-00002-of-000002.safetensors",
+   "link": "/root/.cache/huggingface/hub/models--deepseek-ai--DeepSeek-R1-0528-Qwen3-8B/snapshots/6e8885a6ff5c1dc5201574c8fd700323f23c25fa/model-00002-of-000002.safetensors"
+  },
+  {
+   "path": "model.safetensors.index.json",
+   "link": "/root/.cache/huggingface/hub/models--deepseek-ai--DeepSeek-R1-0528-Qwen3-8B/snapshots/6e8885a6ff5c1dc5201574c8fd700323f23c25fa/model.safetensors.index.json"
+  },
+  {
+   "path": "tokenizer.json",
+   "link": "/root/.cache/huggingface/hub/models--deepseek-ai--DeepSeek-R1-0528-Qwen3-8B/snapshots/6e8885a6ff5c1dc5201574c8fd700323f23c25fa/tokenizer.json"
+  },
+  {
+   "path": "figures/benchmark.png",
+   "link": "/root/.cache/huggingface/hub/models--deepseek-ai--DeepSeek-R1-0528-Qwen3-8B/snapshots/6e8885a6ff5c1dc5201574c8fd700323f23c25fa/figures/benchmark.png"
+  },
+  {
+   "path": "tokenizer_config.json",
+   "real_file": true,
+   "tokenizer_class_before": "LlamaTokenizerFast",
+   "tokenizer_class_after": "PreTrainedTokenizerFast",
+   "bytes": 3964
+  }
+ ]
+}

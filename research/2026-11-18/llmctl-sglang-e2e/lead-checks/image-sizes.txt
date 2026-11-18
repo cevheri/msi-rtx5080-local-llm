@@ -1,0 +1,5 @@
+# 2026-11-18 07:55 +03:00, Docker 29.9.3 (docker version --format '{{.Server.Version}}')
+# docker image ls --format '{{.Repository}}:{{.Tag}} {{.Size}}', the three runtime images' lines only
+ghcr.io/ggml-org/llama.cpp:server-cuda-b12407 7.05GB
+vllm/vllm-openai:v0.33.0 35.4GB
+lmsysorg/sglang:v0.5.23-runtime 49.7GB

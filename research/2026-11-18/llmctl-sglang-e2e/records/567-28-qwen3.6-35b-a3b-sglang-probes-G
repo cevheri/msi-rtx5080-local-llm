@@ -1,0 +1,21 @@
+{
+  "request": {
+    "model": "qwen3.6-35b-a3b",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Reply with exactly the word OK."
+      }
+    ],
+    "max_tokens": 256,
+    "reasoning_effort": "low"
+  },
+  "status": 200,
+  "reply": "{\"id\":\"2ab9fd472abd425598c393d3453f568c\",\"object\":\"chat.completion\",\"created\":1794971710,\"model\":\"qwen3.6-35b-a3b\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"\\n\\nOK\",\"reasoning_content\":\"Here's a thinking process:\\n\\n1.  **Analyze User Input:** The user said: \\\"Reply with exactly the word OK.\\\"\\n2.  **Identify Constraint:** The constraint is very strict: \\\"exactly the word OK.\\\" This means no extra text, no punctuation (unless part of \\\"OK\\\", but typically \\\"OK\\\" is fine), no explanations, just \\\"OK\\\".\\n3.  **Formulate Response:** I need to output only \\\"OK\\\".\\n4.  **Check Constraint:** Does \\\"OK\\\" match \\\"exactly the word OK\\\"? Yes.\\n5.  **Output Generation:** OK.✅\\n\"},\"logprobs\":null,\"finish_reason\":\"stop\",\"matched_stop\":248046}],\"usage\":{\"prompt_tokens\":17,\"total_tokens\":152,\"completion_tokens\":135,\"prompt_tokens_details\":null,\"reasoning_tokens\":132,\"completion_tokens_details\":{\"reasoning_tokens\":132}},\"metadata\":{\"weight_version\":\"default\",\"weight_versions\":[{\"version\":\"default\",\"start\":0,\"end\":135}]}}",
+  "record": {
+    "probe": "G",
+    "status": 200,
+    "content": true,
+    "reasoning": true
+  }
+}

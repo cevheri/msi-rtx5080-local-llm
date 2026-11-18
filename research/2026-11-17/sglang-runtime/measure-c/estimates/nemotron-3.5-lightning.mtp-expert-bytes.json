@@ -1,0 +1,33 @@
+{
+ "snapshot_shards": 52,
+ "moe_layers": 1,
+ "expert_bytes": 2554331136,
+ "expert_gib": 2.379,
+ "other_bytes": 19005258460,
+ "other_gib": 17.7,
+ "per_layer_mib": [
+  2436.0
+ ],
+ "by_tensor_kind_mib": {
+  ".N.down_proj.weight": 1218.0,
+  ".N.up_proj.weight": 1218.0
+ },
+ "examples": {
+  ".N.down_proj.weight": [
+   "mtp.layers.1.mixer.experts.0.down_proj.weight",
+   "BF16",
+   [
+    2688,
+    1856
+   ]
+  ],
+  ".N.up_proj.weight": [
+   "mtp.layers.1.mixer.experts.0.up_proj.weight",
+   "BF16",
+   [
+    1856,
+    2688
+   ]
+  ]
+ }
+}

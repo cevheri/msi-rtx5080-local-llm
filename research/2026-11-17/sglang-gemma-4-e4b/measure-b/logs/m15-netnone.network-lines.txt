@@ -1,0 +1,3 @@
+21:[2026-11-17 19:39:26] server_args={'model_path': '/llmctl/model', 'tokenizer_path': '/llmctl/model', 'tokenizer_mode': 'auto', 'tokenizer_backend': 'huggingface', 'tokenizer_worker_num': 1, 'detokenizer_worker_num': 1, 'skip_tokenizer_init': False, 'load_format': 'auto', 'model_loader_extra_confi
+26:[rank0]:[W1117 19:39:31.543655998 ProcessGroupGloo.cpp:527] Warning: Unable to resolve hostname to a (local) address. Using the loopback address as fallback. Manually set the network interface to bind to with GLOO_SOCKET_IFNAME. (function operator())
+42:[2026-11-17 19:39:41] Disable prefill CUDA graph because cuda_graph_config resolved prefill.backend='disabled' (e.g. via --cuda-graph-backend-prefill=disabled or auto-disable rules).

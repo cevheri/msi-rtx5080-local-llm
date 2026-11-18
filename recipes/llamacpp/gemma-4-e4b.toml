@@ -1,0 +1,40 @@
+# Measured launch from llamacpp/models.md#gemma-4-e4b-it-qat-q4_0.
+schema = 1
+id = "gemma-4-e4b"
+name = "Gemma 4 E4B IT QAT Q4_0"
+aliases = ["gemma4-e4b"]
+doc = "llamacpp/models.md#gemma-4-e4b-it-qat-q4_0"
+opencode = true
+
+[model]
+repo = "google/gemma-4-E4B-it-qat-q4_0-gguf"
+revision = "4b4a2c1d584be7264f87aac328a1bc739ce81b6c"
+files = ["gemma-4-E4B_q4_0-it.gguf"]
+size_bytes = 5154941280
+
+[container]
+memory_gib = 20
+
+[server]
+context = 131072
+args = [
+  "-ngl", "all", "-fa", "on", "-np", "1", "--jinja", "-ctxcp", "16", "--reasoning", "off",
+  "--temp", "1.0", "--top-p", "0.95", "--top-k", "64",
+]
+
+[clients]
+output = 16384
+thinking = "toggle"
+default = "off"
+
+[needs]
+gpu_mib = 5310
+ram_gib = 7.9
+
+[evidence]
+kind = "measured"
+summary = "151.3 tok/s decode with 128k context, 5,422 MiB GPU peak, 7.9 GiB container RAM, llmctl test, a tool call with its second turn and a json_schema title request passed; the OpenCode session passed in the e2e of 2026-11-18"
+decode_tok_s = 151.3
+date = "2026-11-17"
+hardware = "MSI Raider 18 Max HX A2WI, RTX 5080 Laptop GPU 16 GB, 61 GiB RAM"
+record = "research/2026-11-17/llamacpp-gemma-4-e4b/"

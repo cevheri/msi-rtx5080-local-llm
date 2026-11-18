@@ -1,0 +1,50 @@
+== tiktoken files in the image
+== packages
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/importlib/metadata/__init__.py", line 399, in from_name
+    raise PackageNotFoundError(name)
+importlib.metadata.PackageNotFoundError: No package metadata was found for openai-harmony
+== env in image
+== vllm harmony refs
+/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/openai/parser/harmony_utils.py:22:    load_harmony_encoding,
+/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/openai/parser/harmony_utils.py:100:        _harmony_encoding = load_harmony_encoding(HarmonyEncodingName.HARMONY_GPT_OSS)
+openai                                   3.42.0
+oss-harmony                              0.0.12
+tiktoken                                 0.14.0
+/usr/local/lib/python3.12/dist-packages/openai_harmony/__init__.py
+4:import datetime
+5:from collections.abc import Sequence
+6:from typing import Any
+8:from openai.types.responses.tool import Tool
+9:from openai_harmony import (
+25:from vllm import envs
+26:from vllm.entrypoints.openai.chat_completion.protocol import ChatCompletionToolsParam
+27:from vllm.exceptions import VLLMValidationError
+28:from vllm.logger import init_logger
+def has_custom_tools(tool_types: set[str]) -> bool:
+    """Checks if the given tool types are custom tools
+    (i.e. any tool other than MCP builtin tools)
+    """
+    return not tool_types.issubset(MCP_BUILTIN_TOOLS)
+
+
+def get_encoding():
+    global _harmony_encoding
+    if _harmony_encoding is None:
+        _harmony_encoding = load_harmony_encoding(HarmonyEncodingName.HARMONY_GPT_OSS)
+    return _harmony_encoding
+
+
+def get_system_message(
+    model_identity: str | None = None,
+    reasoning_effort: str | None = None,
+    start_date: str | None = None,
+    browser_description: str | None = None,
+    python_description: str | None = None,
+    container_description: str | None = None,
+/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/openai/parser/harmony_utils.py:97:def get_encoding():
+/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/openai/parser/harmony_utils.py:452:    encoding = get_encoding()
+/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/openai/parser/harmony_utils.py:476:    encoding = get_encoding()
+/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/openai/parser/harmony_utils.py:529:    return StreamableParser(get_encoding(), role=Role.ASSISTANT)
+/usr/local/lib/python3.12/dist-packages/vllm/parser/harmony.py:37:    get_encoding,
+/usr/local/lib/python3.12/dist-packages/vllm/parser/harmony.py:398:        return is_reasoning_channel and not get_encoding().is_special_token(token_id)

@@ -1,0 +1,221 @@
+{
+ "run": "m13-bf16",
+ "ready": {
+  "exit": "ready",
+  "ready_seen_s": 37.58,
+  "served_listed_s": 36.05,
+  "memory_usage": {
+   "weight": 7.887,
+   "kvcache": 5.658,
+   "startup_available": 0.981,
+   "token_capacity": 41198,
+   "token_capacity_swa": null,
+   "graph": {
+    "prefill": 0.0,
+    "decode": 0.057,
+    "target_verify": 0.0,
+    "draft_prefill": 0.0,
+    "draft_decode": 0.0,
+    "draft_extend": 0.0
+   }
+  },
+  "max_total_num_tokens": 41198,
+  "free_mib_right_after_ready": 869,
+  "cgroup_at_ready": {
+   "anon_gib": 4.705,
+   "file_gib": 8.616,
+   "kernel_gib": 0.113,
+   "shmem_gib": 0.085,
+   "file_mapped_gib": 0.143,
+   "inactive_file_gib": 0.829,
+   "active_file_gib": 7.702,
+   "unevictable_gib": 0.0,
+   "current_gib": 13.436,
+   "peak_gib": 13.436
+  },
+  "first_200_s": {
+   "/ready": 37.55,
+   "/v1/models": 36.05,
+   "/server_info": 36.05
+  }
+ },
+ "ready_line_s": 37.2,
+ "log_lines": [
+  "[2026-11-17 19:08:37] Attention backend not specified. Use flashinfer backend by default.",
+  "[2026-11-17 19:08:43] Using default HuggingFace chat template with detected content format: string",
+  "[2026-11-17 19:08:43] Auto-detected template features: reasoning_config=ReasoningToggleConfig(toggle_param=None, default_enabled=None, special_case='always', effort_kwarg=None), reasoning_parser=k2_horizon, tool_call_parser=k2_horizon",
+  "[2026-11-17 19:08:53] Load weight end. elapsed=2.77 s, type=K2HorizonForCausalLM, quant=compressed-tensors, avail mem=7.17 GB, mem usage=7.89 GB.",
+  "[2026-11-17 19:08:58] KV Cache is allocated. dtype: torch.bfloat16, #tokens: 41198, K size: 2.83 GB, V size: 2.83 GB",
+  "[2026-11-17 19:08:58] Memory pool end. avail mem=1.47 GB",
+  "[2026-11-17 19:08:58] Capture target decode CUDA graph begin. backend=full, num_tokens_per_req=1, avail mem=1.04 GB",
+  "[2026-11-17 19:08:59] Capture target decode CUDA graph end. bs=[1], elapsed=1.06 s, mem usage=0.06 GB, avail mem=0.98 GB.",
+  "[2026-11-17 19:08:59] max_total_num_tokens=41198, chunked_prefill_size=2048, max_prefill_tokens=16384, max_running_requests=1, context_len=32768, available_gpu_mem=0.98 GB",
+  "[2026-11-17 19:09:00] Using default chat sampling params from model generation config: {'temperature': 1.0, 'top_p': 0.95}",
+  "[2026-11-17 19:09:02] The server is fired up and ready to roll!"
+ ],
+ "events": [
+  {
+   "event": "flush_cache",
+   "status": 200,
+   "used_mib": 14974,
+   "free_mib": 869,
+   "total_mib": 16303
+  },
+  {
+   "event": "m13_summary",
+   "correct": 20,
+   "total": 20
+  },
+  {
+   "event": "end",
+   "result": "completed",
+   "container": "running exit=0 oom=false",
+   "cgroup": {
+    "anon_gib": 4.798,
+    "file_gib": 8.619,
+    "shmem_gib": 0.085,
+    "unevictable_gib": 0.0,
+    "peak_gib": 13.611
+   },
+   "memory_usage": {
+    "weight": 7.887,
+    "kvcache": 5.658,
+    "startup_available": 0.981,
+    "token_capacity": 41198,
+    "token_capacity_swa": null,
+    "graph": {
+     "prefill": 0.0,
+     "decode": 0.057,
+     "target_verify": 0.0,
+     "draft_prefill": 0.0,
+     "draft_decode": 0.0,
+     "draft_extend": 0.0
+    }
+   },
+   "used_mib": 15304,
+   "free_mib": 539,
+   "total_mib": 16303
+  }
+ ],
+ "phases": [
+  {
+   "step": "probe",
+   "rc": 0,
+   "seconds": 66.0,
+   "free_mib_after": 539,
+   "cgroup": {
+    "anon_gib": 4.798,
+    "file_gib": 8.619,
+    "shmem_gib": 0.085,
+    "unevictable_gib": 0.0,
+    "peak_gib": 13.611
+   }
+  }
+ ],
+ "requests": [],
+ "probe": {
+  "decode_tok_s_median": 91.0,
+  "decode_runs": [
+   {
+    "tok_s": 91.1,
+    "completion_tokens": 1500
+   },
+   {
+    "tok_s": 91.0,
+    "completion_tokens": 1500
+   },
+   {
+    "tok_s": 90.9,
+    "completion_tokens": 1500
+   }
+  ],
+  "long": [
+   {
+    "prompt_tokens": 8085,
+    "ttft_first_s": 2.434,
+    "ttft_repeat_s": 0.028
+   },
+   {
+    "prompt_tokens": 30261,
+    "ttft_first_s": 8.924,
+    "ttft_repeat_s": 0.047
+   }
+  ],
+  "ok_test": {
+   "content": "OK",
+   "reasoning_chars": 187,
+   "finish": "stop",
+   "usage": {
+    "prompt_tokens": 15,
+    "total_tokens": 63,
+    "completion_tokens": 48,
+    "prompt_tokens_details": null,
+    "reasoning_tokens": 46,
+    "completion_tokens_details": {
+     "reasoning_tokens": 46
+    }
+   },
+   "seconds": 0.56
+  },
+  "tool_test": {
+   "finish": "tool_calls",
+   "calls": [
+    {
+     "name": "get_weather",
+     "arguments": "{\"city\": \"Paris\"}"
+    }
+   ],
+   "content": "",
+   "seconds": 0.68
+  }
+ },
+ "m13": {
+  "correct": 20,
+  "total": 20,
+  "wrong": []
+ },
+ "trace": {
+  "gpu_used_peak_mib": 15304.0,
+  "gpu_free_min_mib": 539.0,
+  "power_max_w": 145.95,
+  "temp_max_c": 70.0,
+  "cg_anon_peak_gib": 4.798,
+  "cg_shmem_peak_gib": 0.085,
+  "cg_file_peak_gib": 8.619,
+  "cg_peak_gib": 13.611,
+  "cg_unevictable_peak_gib": 0.0,
+  "samples": 127
+ },
+ "state.txt": [
+  "running exit=0 oom=false started=2026-11-17T19:08:24.86090497Z finished=0001-01-01T00:00:00Z"
+ ],
+ "meta": [
+  "gpu_used_before_mib=112",
+  "cmd=m13-bf16.sh",
+  "docker_run_exit=0",
+  "poller_exit=0",
+  "seq_exit=0"
+ ],
+ "procmem.txt": [
+  "== at ready 19:09:02",
+  "pid=1473995 name=python3 VmRSS_kB=1742160 RssAnon_kB=1259780 RssFile_kB=463420 RssShmem_kB=18960 VmLck_kB=16 VmPin_kB=0",
+  "pid=1475279 name=sglang::schedul VmRSS_kB=3286184 RssAnon_kB=2489132 RssFile_kB=643880 RssShmem_kB=153172 VmLck_kB=16 VmPin_kB=0",
+  "pid=1475280 name=sglang::detoken VmRSS_kB=1633340 RssAnon_kB=1177460 RssFile_kB=455880 RssShmem_kB=0 VmLck_kB=16 VmPin_kB=0",
+  "cgroup anon=4.705 GiB",
+  "cgroup file=8.616 GiB",
+  "cgroup shmem=0.085 GiB",
+  "cgroup file_mapped=0.143 GiB",
+  "cgroup unevictable=0.000 GiB",
+  "cgroup memory.current=13.436 GiB memory.peak=13.436 GiB",
+  "== at the end 19:10:33",
+  "pid=1473995 name=python3 VmRSS_kB=1791512 RssAnon_kB=1309104 RssFile_kB=463448 RssShmem_kB=18960 VmLck_kB=16 VmPin_kB=0",
+  "pid=1475279 name=sglang::schedul VmRSS_kB=3337508 RssAnon_kB=2537676 RssFile_kB=646660 RssShmem_kB=153172 VmLck_kB=16 VmPin_kB=0",
+  "pid=1475280 name=sglang::detoken VmRSS_kB=1633340 RssAnon_kB=1177500 RssFile_kB=455840 RssShmem_kB=0 VmLck_kB=16 VmPin_kB=0",
+  "cgroup anon=4.798 GiB",
+  "cgroup file=8.619 GiB",
+  "cgroup shmem=0.085 GiB",
+  "cgroup file_mapped=0.145 GiB",
+  "cgroup unevictable=0.000 GiB",
+  "cgroup memory.current=13.534 GiB memory.peak=13.611 GiB"
+ ]
+}

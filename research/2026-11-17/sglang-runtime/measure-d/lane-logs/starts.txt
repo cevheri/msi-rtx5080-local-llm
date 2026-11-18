@@ -1,0 +1,4 @@
+22:24:03 sglang-k2-horizon-7b               d1-f088            ready_line=36.0 poll=36.81 running exit=0 oom=false
+22:36:31 sglang-qwen3.5-9b                  d2-env             ready_line=28.3 poll=29.27 running exit=0 oom=false
+22:38:06 sglang-gemma-4-12b                 d2-env             ready_line=28.5 poll=29.72 running exit=0 oom=false
+22:41:31 sglang-gemma-4-e4b                 d2-env             ready_line=28.5 poll=29.79 running exit=0 oom=false

@@ -1,0 +1,20 @@
+--- $SCRATCH/sglang/measure-c/sglang-k2-horizon-mova-36b/README.md
++++ sglang-k2-horizon-mova-36b/measure-c/README.md
+@@ -7,7 +7,7 @@
+ Unquantized it does not fit: the BF16 model is 69.75 GiB (report section 4), of which about 49.4 GiB are routed experts that Paged Experts would pin in host memory, more than the about 40 GiB of free RAM, and about 20.4 GiB stay on the GPU (14.1 GiB of value experts, which are attention weights and are not paged, plus about 6.3 GiB of the rest), more than the 13.55 GiB budget at fraction 0.90 (estimate from the AWQ shard headers times four for the 4-bit tensors, `$SCRATCH/sglang/measure-c/estimates/k2-horizon-mova-36b.*.json`).
+ No draft is written.
+ 
+-The download: `cyankiwi/K2-Horizon-MoVA-36B-A4B-AWQ-INT4` at `25ae29a9797a7eb613a40eeaf75a3f8db490836f`, whole repository, 24,272,026,244 bytes (22.61 GiB), 20:18:30 to 20:56:26 UTC (2,276 s) in the downloads lane's `docker run ... --entrypoint hf vllm/vllm-openai:v0.33.0 download` form with the token only as `--env-file`; all 20 files (10 in LFS) matched the API tree by name, size and SHA-256 or git blob id, with no extra file; `/home` had 220,777,906,176 bytes free before and 196,427,476,992 (182.94 GiB) after, `/` 301,273,608,192 and 301,171,089,408 ([../downloads/hf-k2-horizon-mova-cyankiwi-int4.log](../downloads/hf-k2-horizon-mova-cyankiwi-int4.log), [../downloads/verify-snapshot.log](../downloads/verify-snapshot.log)) (measured).
++The download: `cyankiwi/K2-Horizon-MoVA-36B-A4B-AWQ-INT4` at `25ae29a9797a7eb613a40eeaf75a3f8db490836f`, whole repository, 24,272,026,244 bytes (22.61 GiB), 20:18:30 to 20:56:26 UTC (2,276 s) in the downloads lane's `docker run ... --entrypoint hf vllm/vllm-openai:v0.33.0 download` form with the token only as `--env-file`; all 20 files (10 in LFS) matched the API tree by name, size and SHA-256 or git blob id, with no extra file; `/home` had 220,777,906,176 bytes free before and 196,427,476,992 (182.94 GiB) after, `/` 301,273,608,192 and 301,171,089,408 ([../downloads/hf-k2-horizon-mova-cyankiwi-int4.log](../../../2026-11-17/sglang-runtime/measure-c/downloads/hf-k2-horizon-mova-cyankiwi-int4.log), [../downloads/verify-snapshot.log](../../../2026-11-17/sglang-runtime/measure-c/downloads/verify-snapshot.log)) (measured).
+ 
+ | Start | Settings | Outcome |
+ |---|---|---|
+@@ -17,7 +17,7 @@
+ Both rows are measured on the MSI Raider 18 Max HX, SGLang v0.5.23 ([logs/mova-a1.full.log](logs/mova-a1.full.log), [logs/mova-a2.full.log](logs/mova-a2.full.log); both containers ended `oom=false`; host memory peaked at 3.57 GiB of anonymous memory, the store was never built).
+ - The brief allowed one start; the second used the setting that the first error message itself names, because the first stopped on a configuration check before the question the matrix needs (whether this build loads) was reached (a deviation, reported in the lane README).
+ - The checkpoint quantizes the routed experts and the MoVA value experts (`self_attn.v_experts.<n>.weight_packed`) as compressed-tensors int4 with zero points, group 32, and keeps the shared experts and routers in BF16; its 45 MoE layers hold 100 routed experts each (top 8) and 64 value experts each (top 4) (inferred from `config.json` and the index).
+-- The store estimate before the first start was 20.7 GiB with the factor 1.096 and 31.3 GiB with B's 1.84, both under 34 GiB ([../estimates/README.md](../estimates/README.md)) (estimate).
++- The store estimate before the first start was 20.7 GiB with the factor 1.096 and 31.3 GiB with B's 1.84, both under 34 GiB ([../estimates/README.md](../../../2026-11-17/sglang-runtime/measure-c/estimates/README.md)) (estimate).
+ - Even had it loaded, 64k would not have fit: 48 layers of 8 KV heads of 128 cost 96 KiB per FP8 token, 6 GiB at 64k, beside about 8.3 GiB of non-paged weights and 1.1 GiB for 8 resident experts; about 40k tokens was the most (estimate from `config.json` and the shard headers).
+ - `/dev/shm`: each start left one root-owned `sglang_loads_*.shm`, which C removed after the container was gone (`logs/<run>.devshm.txt`) (measured).
+ 

@@ -1,0 +1,8 @@
+{
+  "command": "hermes -p llmctl config get gateway --json",
+  "cwd": "$WORK/11-qwen3.5-9b-llamacpp-hermes-config-gateway",
+  "exit": 0,
+  "seconds": 0.4,
+  "stdout": "{\"unmanaged_idle_exit_seconds\": 600, \"signal_interrupt_grace_timeout\": 1, \"service_install_choice\": null, \"delivery_ledger\": true, \"platform_connect_timeout\": 30, \"loop_watchdog\": true, \"loop_watchdog_probe_interval_s\": 30.0, \"loop_watchdog_probe_timeout_s\": 10.0, \"loop_watchdog_max_strikes\": 3, \"allow_all_users\": false, \"bot_loop_guard\": {\"enabled\": true, \"max_events\": 20, \"window_seconds\": 300, \"cooldown_seconds\": 600, \"max_hops\": 4, \"bot_replies_expect_reply\": false}, \"startup_watchdog\": true, \"startup_watchdog_timeout_seconds\": 300, \"write_sessions_json\": true, \"multiplex_profiles\": true, \"auto_multiplex_migration\": true, \"profile_routes\": [], \"scale_to_zero\": {\"idle_timeout_minutes\": 2}, \"restart_loop_guard\": {\"max_restarts\": 3, \"window_seconds\": 60, \"max_gap_seconds\": 300}, \"respawn_storm\": {\"max_starts\": 5, \"window_seconds\": 120}, \"message_timestamps\": {\"enabled\": false}, \"max_inbound_media_bytes\": 134217728, \"trust_env\": true, \"strict\": false, \"media_delivery_allow_dirs\": [], \"trust_recent_files\": true, \"trust_recent_files_seconds\": 600, \"api_server\": {\"max_concurrent_runs\": 10, \"history_tool_output_max_chars\": 0}, \"standalone\": true}\n",
+  "stderr": ""
+}

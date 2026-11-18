@@ -1,0 +1,21 @@
+{
+  "request": {
+    "model": "gemma-4-12b",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Reply with exactly the word OK."
+      }
+    ],
+    "max_tokens": 256,
+    "reasoning_effort": "low"
+  },
+  "status": 200,
+  "reply": "{\"id\":\"4138db059562481ab5c16e3ac74e070c\",\"object\":\"chat.completion\",\"created\":1794971293,\"model\":\"gemma-4-12b\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"OK\",\"reasoning_content\":\"The user wants me to reply with exactly the word \\\"OK\\\".\\n\\n    *   \\\"Reply with exactly the word OK.\\\"\\n    *   The expected output is just the string \\\"OK\\\".\\n    *   No extra punctuation, no extra words, no \\\"Sure,\\\" no \\\"Here it is.\\\"\\n\\n    *   Input: \\\"Reply with exactly the word OK.\\\"\\n    *   Output: OK\"},\"logprobs\":null,\"finish_reason\":\"stop\",\"matched_stop\":106}],\"usage\":{\"prompt_tokens\":23,\"total_tokens\":111,\"completion_tokens\":88,\"prompt_tokens_details\":null,\"reasoning_tokens\":86,\"completion_tokens_details\":{\"reasoning_tokens\":86}},\"metadata\":{\"weight_version\":\"default\",\"weight_versions\":[{\"version\":\"default\",\"start\":0,\"end\":88}]}}",
+  "record": {
+    "probe": "G",
+    "status": 200,
+    "content": true,
+    "reasoning": true
+  }
+}

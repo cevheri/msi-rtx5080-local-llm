@@ -1,0 +1,93 @@
+--- $SCRATCH/sglang/measure-c/README.md
++++ sglang-runtime/measure-c/README.md
+@@ -3,7 +3,7 @@
+ Last verified: 2026-11-18.
+ 
+ This folder holds measurement C for the lead who adds SGLang as llmctl's third runtime, as the brief `$SCRATCH/prompts/sglang-measure-c.md` asks, with measurement B's records as the template for method, layout and wording.
+-Every SGLang start used `lmsysorg/sglang:v0.5.23-runtime`, one container at a time named `sglang-measure`, `--device nvidia.com/gpu=all --ipc=host`, `--memory 32g --memory-swap 32g` unless a row says otherwise, `-p 127.0.0.1:30000:30000` (none for `--network none` starts), the Hugging Face cache read-only, no restart policy, the model overlay of measurement A's mechanism (one folder per model under [overlay/](overlay/), mounted read-only at `/llmctl/model` with `--model-path /llmctl/model`, its `generation_config.json` carrying the twin recipe's sampling by plan ruling 18), `--served-model-name`, `--host 0.0.0.0 --port 30000`, fraction at most 0.90, `--max-running-requests 1`, `--disable-prefill-cuda-graph`, and B's environment `HF_HUB_OFFLINE=1`, `HF_MODULES_CACHE=/tmp/hf_modules`, `MAX_JOBS=2`, `SYNC_TOKEN_IDS_ACROSS_TP=1`, `NCCL_MAX_P2P_NCHANNELS=1`, `FLASHINFER_NO_DOWNLOAD=1`, plus `PYTORCH_ALLOC_CONF=pinned_max_round_threshold_mb:1` from the gpt-oss check on (and `TIKTOKEN_ENCODINGS_BASE` for gpt-oss); warm starts used the volume `sglang-research-cache`.
++Every SGLang start used `lmsysorg/sglang:v0.5.23-runtime`, one container at a time named `sglang-measure`, `--device nvidia.com/gpu=all --ipc=host`, `--memory 32g --memory-swap 32g` unless a row says otherwise, `-p 127.0.0.1:30000:30000` (none for `--network none` starts), the Hugging Face cache read-only, no restart policy, the model overlay of measurement A's mechanism (one folder per model under `overlay/`, mounted read-only at `/llmctl/model` with `--model-path /llmctl/model`, its `generation_config.json` carrying the twin recipe's sampling by plan ruling 18), `--served-model-name`, `--host 0.0.0.0 --port 30000`, fraction at most 0.90, `--max-running-requests 1`, `--disable-prefill-cuda-graph`, and B's environment `HF_HUB_OFFLINE=1`, `HF_MODULES_CACHE=/tmp/hf_modules`, `MAX_JOBS=2`, `SYNC_TOKEN_IDS_ACROSS_TP=1`, `NCCL_MAX_P2P_NCHANNELS=1`, `FLASHINFER_NO_DOWNLOAD=1`, plus `PYTORCH_ALLOC_CONF=pinned_max_round_threshold_mb:1` from the gpt-oss check on (and `TIKTOKEN_ENCODINGS_BASE` for gpt-oss); warm starts used the volume `sglang-research-cache`.
+ vLLM starts used `vllm/vllm-openai:v0.33.0` as `launcher/runtimes/vllm.py` `container_spec` builds it, named `vllm-measure`, on 127.0.0.1:8000; the four llama.cpp starts were llmctl's own `llamacpp` container, started with `LLMCTL_CLIENTS= LLMCTL_RECIPES_DIR=$SCRATCH/sglang/measure-c/overrides $SCRATCH/llmctl-main/llmctl up <id> --runtime llamacpp`, the copy of main at 5ad8883.
+ Every llmctl command of the lane ran as that copy (`$SCRATCH/llmctl-main/llmctl`); the repository was only read.
+ The enforced GPU power limit read 140 W before 18 starts and 145 W before 10 (`<record>/logs/<run>.meta`).
+@@ -37,7 +37,7 @@
+ - The llama.cpp `ram_gib` figures include the page cache of the mmapped GGUF, which those runs kept active (6.68, 5.00, 10.32 and 9.07 GiB); anonymous memory peaked at 6.25, 2.84, 2.83 and 5.87 GiB, mostly llama-server's host prompt cache (measured).
+ - B's gpt-oss-20b draft is not edited; with the pinned-store setting its `ram_gib` would be 16 instead of 25 and its `memory_gib` 20 instead of 28, measured below.
+ 
+-Records: [sglang-qwen3.6-35b-a3b/](sglang-qwen3.6-35b-a3b/README.md), [sglang-nemotron-3.5-lightning/](sglang-nemotron-3.5-lightning/README.md), [sglang-gemma-4-26b-a4b/](sglang-gemma-4-26b-a4b/README.md), [sglang-k2-horizon-mova-36b/](sglang-k2-horizon-mova-36b/README.md), [sglang-gpt-oss-20b/](sglang-gpt-oss-20b/README.md), [vllm-deepseek-r1-0528-qwen3-8b/](vllm-deepseek-r1-0528-qwen3-8b/README.md), [llamacpp-gemma-4-12b/](llamacpp-gemma-4-12b/README.md), [llamacpp-gemma-4-e4b/](llamacpp-gemma-4-e4b/README.md), [llamacpp-mellum2.1-12b/](llamacpp-mellum2.1-12b/README.md), [llamacpp-qwen3.5-9b/](llamacpp-qwen3.5-9b/README.md).
++Records: [sglang-qwen3.6-35b-a3b/](../../../2026-11-18/sglang-qwen3.6-35b-a3b/measure-c/README.md), [sglang-nemotron-3.5-lightning/](../../../2026-11-18/sglang-nemotron-3.5-lightning/measure-c/README.md), [sglang-gemma-4-26b-a4b/](../../../2026-11-18/sglang-gemma-4-26b-a4b/measure-c/README.md), [sglang-k2-horizon-mova-36b/](../../../2026-11-18/sglang-k2-horizon-mova-36b/measure-c/README.md), [sglang-gpt-oss-20b/](../../sglang-gpt-oss-20b/measure-c/README.md), [vllm-deepseek-r1-0528-qwen3-8b/](../../../2026-11-18/vllm-deepseek-r1-0528-qwen3-8b-cold-start/measure-c.md), [llamacpp-gemma-4-12b/](../../llamacpp-gemma-4-12b/measure-c.md), [llamacpp-gemma-4-e4b/](../../llamacpp-gemma-4-e4b/measure-c.md), [llamacpp-mellum2.1-12b/](../../llamacpp-mellum2.1-12b/measure-c.md), [llamacpp-qwen3.5-9b/](../../llamacpp-qwen3.5-9b/measure-c.md).
+ 
+ ### The margin table and the threshold
+ 
+@@ -68,7 +68,7 @@
+ 
+ ### The pinned store: shared memory, and not in /dev/shm
+ 
+-- B's 1.84 factor is PyTorch 2.14.1's pinned host allocator rounding each paged tensor of the store up to a power of two; the documented `PYTORCH_ALLOC_CONF=pinned_max_round_threshold_mb:1` keeps every pinned request above 1 MiB at its size, and gpt-oss-20b's store fell from 19.19 to 10.37 GiB at the same decode (123.3 and 124.6 against 125.5 tok/s) and stability (73 requests in 300 s, no error), including under a 20 GiB cap ([sglang-gpt-oss-20b/](sglang-gpt-oss-20b/README.md)) (measured; the mechanism inferred from the image's source).
++- B's 1.84 factor is PyTorch 2.14.1's pinned host allocator rounding each paged tensor of the store up to a power of two; the documented `PYTORCH_ALLOC_CONF=pinned_max_round_threshold_mb:1` keeps every pinned request above 1 MiB at its size, and gpt-oss-20b's store fell from 19.19 to 10.37 GiB at the same decode (123.3 and 124.6 against 125.5 tok/s) and stability (73 requests in 300 s, no error), including under a 20 GiB cap ([sglang-gpt-oss-20b/](../../sglang-gpt-oss-20b/measure-c/README.md)) (measured; the mechanism inferred from the image's source).
+ - With the setting, the measured stores were 10.37 GiB for gpt-oss-20b, 16.97 GiB for Qwen3.6 (16.875 GiB of checkpoint expert tensors), 16.07 GiB for Nemotron (15.389 GiB) and 11.98 GiB for Gemma 4 26B (11.964 GiB); Nemotron without it took 26.02 GiB (measured).
+ - The store is shared memory: the scheduler holds it in `/dev/zero (deleted)` shared mappings (`rw-s`), as the CUDA driver's pinned allocations appear, counted as cgroup `shmem` and process `RssShmem` (measured in `logs/<run>.maps.txt`; that `cudaHostAlloc` makes them is inferred).
+ - It does not sit in `/dev/shm` under `--ipc=host`: the host's `/dev/shm` grew by 29 to 37 MiB at ready in the SGLang starts and fell back after the container was gone, while the store was 10 to 26 GiB (measured in `logs/<run>.devshm.txt`).
+@@ -79,13 +79,13 @@
+ 
+ ### K2 Horizon MoVA
+ 
+-Failed before loading: the first start stopped on `ValueError: K2Horizon MoVA requires explicit source router GEMM provenance; ... pass --json-model-override-args '{"xllm_source_router_gemm_partitions": 2}'`, and with that override the second on `ValueError: K2 Horizon MoVA supports unquantized bf16/fp16 weights only` (`xllm.py` line 1215); the 69.75 GiB BF16 model does not fit (about 49.4 GiB of routed experts to pin, about 20.4 GiB that stay on the GPU) ([sglang-k2-horizon-mova-36b/](sglang-k2-horizon-mova-36b/README.md)) (measured; the BF16 arithmetic is an estimate).
++Failed before loading: the first start stopped on `ValueError: K2Horizon MoVA requires explicit source router GEMM provenance; ... pass --json-model-override-args '{"xllm_source_router_gemm_partitions": 2}'`, and with that override the second on `ValueError: K2 Horizon MoVA supports unquantized bf16/fp16 weights only` (`xllm.py` line 1215); the 69.75 GiB BF16 model does not fit (about 49.4 GiB of routed experts to pin, about 20.4 GiB that stay on the GPU) ([sglang-k2-horizon-mova-36b/](../../../2026-11-18/sglang-k2-horizon-mova-36b/measure-c/README.md)) (measured; the BF16 arithmetic is an estimate).
+ The download is verified: 24,272,026,244 bytes, all 20 files equal to the API tree by name, size and hash; `/home` kept 182.94 GiB free (measured).
+ 
+ ### vLLM DeepSeek-R1 cold start
+ 
+ The failure still holds with the tokenizer folder: cold at the default 0.92, `Available KV cache memory: 3.83 GiB` against the 4.5 GiB that 64k needs.
+-Chosen setting: `--kv-cache-memory-bytes 5153960755` (4.8 GiB): a cold start (44.2 s) and a warm start (20.3 s) both got 69,904 tokens at 64k, a 15,036 MiB GPU peak and 1,105 MiB free, and the warm start measured 72.5 tok/s, 1.410 and 8.580 s to the first token, llama.cpp's token counts (8, 8,078, 30,254), correct replies, and HTTP 400 for every request with tools ([vllm-deepseek-r1-0528-qwen3-8b/](vllm-deepseek-r1-0528-qwen3-8b/README.md)) (measured on the MSI Raider 18 Max HX, vLLM v0.33.0).
++Chosen setting: `--kv-cache-memory-bytes 5153960755` (4.8 GiB): a cold start (44.2 s) and a warm start (20.3 s) both got 69,904 tokens at 64k, a 15,036 MiB GPU peak and 1,105 MiB free, and the warm start measured 72.5 tok/s, 1.410 and 8.580 s to the first token, llama.cpp's token counts (8, 8,078, 30,254), correct replies, and HTTP 400 for every request with tools ([vllm-deepseek-r1-0528-qwen3-8b/](../../../2026-11-18/vllm-deepseek-r1-0528-qwen3-8b-cold-start/measure-c.md)) (measured on the MSI Raider 18 Max HX, vLLM v0.33.0).
+ Context 65,536 and output 16,384 are kept; no smaller context was needed.
+ The tokenizer folder is built as llmctl will ship it (the lead's message): every snapshot file linked at its container path and a real `tokenizer_config.json` naming `PreTrainedTokenizerFast`; it behaved as B's three-entry folder did.
+ 
+@@ -121,31 +121,31 @@
+ 
+ | Time (UTC) | Record | Start | Ready line or poll | Outcome |
+ |---|---|---|---|---|
+-| 20:26 | [llamacpp-gemma-4-12b](llamacpp-gemma-4-12b/README.md) | m16-a1 | 3.5 s (`llmctl up`) | M16 |
+-| 20:30 | [llamacpp-gemma-4-e4b](llamacpp-gemma-4-e4b/README.md) | m16-a1 | 2.4 s | M16 |
+-| 20:32 | [llamacpp-mellum2.1-12b](llamacpp-mellum2.1-12b/README.md) | m16-a1 | 4.5 s | M16 |
+-| 20:34 | [llamacpp-qwen3.5-9b](llamacpp-qwen3.5-9b/README.md) | m16-a1 | 3.4 s | M16 |
+-| 20:37 | [sglang-gpt-oss-20b](sglang-gpt-oss-20b/README.md) | pe-round1 | 54.6 s | Pinned-store setting, full protocol |
++| 20:26 | [llamacpp-gemma-4-12b](../../llamacpp-gemma-4-12b/measure-c.md) | m16-a1 | 3.5 s (`llmctl up`) | M16 |
++| 20:30 | [llamacpp-gemma-4-e4b](../../llamacpp-gemma-4-e4b/measure-c.md) | m16-a1 | 2.4 s | M16 |
++| 20:32 | [llamacpp-mellum2.1-12b](../../llamacpp-mellum2.1-12b/measure-c.md) | m16-a1 | 4.5 s | M16 |
++| 20:34 | [llamacpp-qwen3.5-9b](../../llamacpp-qwen3.5-9b/measure-c.md) | m16-a1 | 3.4 s | M16 |
++| 20:37 | [sglang-gpt-oss-20b](../../sglang-gpt-oss-20b/measure-c/README.md) | pe-round1 | 54.6 s | Pinned-store setting, full protocol |
+ | 20:47 | sglang-gpt-oss-20b | pe-round2-mem20 | 50.7 s | The setting under a 20 GiB cap, protocol and M12 |
+-| 20:56 | [sglang-qwen3.6-35b-a3b](sglang-qwen3.6-35b-a3b/README.md) | m11-k64 | 232.5 s | M11, FP8 KV chosen by the checkpoint |
++| 20:56 | [sglang-qwen3.6-35b-a3b](../../../2026-11-18/sglang-qwen3.6-35b-a3b/measure-c/README.md) | m11-k64 | 232.5 s | M11, FP8 KV chosen by the checkpoint |
+ | 21:00 | sglang-qwen3.6-35b-a3b | m11-bf16-k88 | 60.5 s | M11 |
+ | 21:02 | sglang-qwen3.6-35b-a3b | m11-bf16-k96 | 56.8 s | M11 |
+ | 21:04 | sglang-qwen3.6-35b-a3b | m11-bf16-k104 | 57.3 s | M11; pool short of 128k |
+ | 21:05 | sglang-qwen3.6-35b-a3b | w3-k88-f088 | 57.9 s | Shipped settings, full protocol, M12 |
+ | 21:14 | sglang-qwen3.6-35b-a3b | w3-k88-f088-mem27 | 59.9 s | Protocol and M12 under 27 GiB |
+ | 21:22 | sglang-qwen3.6-35b-a3b | m15-netnone | 345.6 s (poll) | M15 |
+-| 21:28 | [sglang-nemotron-3.5-lightning](sglang-nemotron-3.5-lightning/README.md) | m11-bf16-k64 | 82.2 s | M11; tool test failed |
++| 21:28 | [sglang-nemotron-3.5-lightning](../../../2026-11-18/sglang-nemotron-3.5-lightning/measure-c/README.md) | m11-bf16-k64 | 82.2 s | M11; tool test failed |
+ | 21:31 | sglang-nemotron-3.5-lightning | m11-bf16-k72 | 55.6 s | M11; tool test failed |
+ | 21:32 | sglang-nemotron-3.5-lightning | m11-bf16-k80 | 57.7 s | M11; pool short of 128k; tool test failed |
+-| 21:34 | [sglang-gemma-4-26b-a4b](sglang-gemma-4-26b-a4b/README.md) | m11-fp8-k56 | none | Failed while loading (vision MLP repack) |
++| 21:34 | [sglang-gemma-4-26b-a4b](../../../2026-11-18/sglang-gemma-4-26b-a4b/measure-c/README.md) | m11-fp8-k56 | none | Failed while loading (vision MLP repack) |
+ | 21:35 | sglang-gemma-4-26b-a4b | m11-fp8-k64 | none | The same |
+ | 21:35 | sglang-gemma-4-26b-a4b | m11-fp8-k72 | none | The same |
+ | 21:36 | sglang-gemma-4-26b-a4b | m11-fp8-k56-ign | none | Loaded, then failed: no gated-GELU Marlin path |
+ | 21:39 | sglang-nemotron-3.5-lightning | diag-k72-f088 | 57.7 s | Tool-call diagnostic, smoke, M13 10 of 20 |
+ | 21:42 | sglang-nemotron-3.5-lightning | diag-k72-f088-noround | 58.6 s | The same without the setting (34 GiB cap) |
+-| 21:44 | [sglang-k2-horizon-mova-36b](sglang-k2-horizon-mova-36b/README.md) | mova-a1 | none | Failed: router provenance check |
++| 21:44 | [sglang-k2-horizon-mova-36b](../../../2026-11-18/sglang-k2-horizon-mova-36b/measure-c/README.md) | mova-a1 | none | Failed: router provenance check |
+ | 21:45 | sglang-k2-horizon-mova-36b | mova-a2 | none | Failed: quantized MoVA refused |
+-| 21:46 | [vllm-deepseek-r1-0528-qwen3-8b](vllm-deepseek-r1-0528-qwen3-8b/README.md) | cold-r1 | none | Cold, 0.92: 3.83 GiB of KV, refused |
++| 21:46 | [vllm-deepseek-r1-0528-qwen3-8b](../../../2026-11-18/vllm-deepseek-r1-0528-qwen3-8b-cold-start/measure-c.md) | cold-r1 | none | Cold, 0.92: 3.83 GiB of KV, refused |
+ | 21:51 | vllm-deepseek-r1-0528-qwen3-8b | cold-r2-kvbytes | 44.2 s (poll) | Cold with `--kv-cache-memory-bytes`: started |
+ | 21:57 | vllm-deepseek-r1-0528-qwen3-8b | warm-r3-kvbytes | 20.3 s (poll) | Warm measurement |
+ | 22:02 | sglang-qwen3.6-35b-a3b | m15-netnone-b | 351.4 s (poll) | M15 again, with the post-flush reading |
+@@ -173,4 +173,4 @@
+ 
+ - One folder per runtime and model, each with `cmds/` (one `docker run` or llmctl command file per start, reading `$HOME` and `$SCRATCH`), `logs/` (cut and full logs, 1 s GPU and cgroup traces, state, metadata, process memory, the mappings inside the container at ready, the `/dev/shm` readings), `shapes/` (readiness and `/server_info`, sequence records, probe, api probe, sustained load, M13, summaries) and a `README.md`.
+ - [scripts/](scripts/): `run_c.sh`, `run_netnone_c.sh`, `run_llamacpp_c.sh` and `run_vllm_cold_c.sh` drive a start; `poll_c.py`, `seq_c.py` (B's `seq_b.py` with a `llamacpp` kind and a `diag` phase), `mkcmd_c.py`, `mkw3.sh`, `trace_c.sh`, `procmem.sh`, `maps_inside.py`, `shm_cleanup.sh`, `expert_bytes.py`, `anonshmem.py`, `w3_table.py`, `m16_summary.py`, `margins_c.py`, `summarize_c.py`, `starts_table_c.py`, `render_template.py`, `make_tokenizer_folder.py` (and the superseded `make_tokenizer_overlay.py`), `dl-hf-c.sh`, `verify-snapshot.py` (the downloads lane's), `scrub.py`, and `chain_q1.sh` to `chain_q4.sh` and `chain_n1.sh`, which queued starts; copied unchanged from B: `make_overlay.py`, `mcommon.py`, `cutlog.py`, `reqlog.py`, `sustained.py`, `api_probe.py`, `llm_probe_chat_only.py`, `nonreclaim.py`, and `llm_probe.py` (sha256 `ee3fdc0a...`, as in the repository); run the Python scripts with `python3 -I`.
+-- [overlay/](overlay/): the model overlays and `*.make.json`; [offline/](offline/README.md): source files and listings read from the images; [estimates/](estimates/README.md): the store estimates and expert bytes; [downloads/](downloads/): the download log and its verification; [overrides/](overrides/): the four llama.cpp drafts as finalized (the starts read the drafts as they were then, kept as each record's `logs/m16-a1.recipe.toml`); [drafts-before/](drafts-before/): the drafts as they were before this lane (the llama.cpp four and B's vLLM DeepSeek draft); [lane-logs/](lane-logs/): llmctl outputs, chain logs and the margin tables.
++- `overlay/`: the model overlays and `*.make.json`; [offline/](offline/README.md): source files and listings read from the images; [estimates/](estimates/README.md): the store estimates and expert bytes; [downloads/](downloads/): the download log and its verification; [overrides/](overrides/): the four llama.cpp drafts as finalized (the starts read the drafts as they were then, kept as each record's `logs/m16-a1.recipe.toml`); [drafts-before/](drafts-before/): the drafts as they were before this lane (the llama.cpp four and B's vLLM DeepSeek draft); [lane-logs/](lane-logs/): llmctl outputs, chain logs and the margin tables.

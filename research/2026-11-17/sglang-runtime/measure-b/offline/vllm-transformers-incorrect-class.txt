@@ -1,0 +1,120 @@
+380:MODELS_WITH_INCORRECT_HUB_TOKENIZER_CLASS: set[str] = {
+381-    "arctic",
+382-    "chameleon",
+383-    "chatlm",
+384-    "deepseek_v2",
+385-    "deepseek_v3",
+386-    "deepseek_v32",
+387-    "deepseek_v4",
+388-    "deepseek_vl",
+389-    "deepseek_vl_hybrid",
+390-    "deepseek_vl_v2",
+391-    "deepseek_ocr",
+392-    "deepseek_ocr2",
+393-    "unlimited_ocr",
+394-    "ernie4_5",
+395-    "ernie4_5_moe",
+396-    "fuyu",
+397-    "h2ovl_chat",
+398-    "hyperclovax",
+399-    "hyperclovax_vlm",
+400-    "hyperclovax_vision_v2",
+401-    "internlm2",
+402-    "jamba",
+403-    "janus",
+404-    "llava",
+405-    "llava_next",
+406-    "minicpm3",
+407-    "minicpmv",
+408-    "minimax_m2",
+409-    "modernbert",
+410-    "modernbert-decoder",
+411-    "molmo",
+412-    "molmo2",
+413-    "nemotron",
+414-    "nvfp4",
+415-    "opencua",
+416-    "openvla",
+417-    "paddleocr_vl",
+418-    "phi3",
+419-    "phi3_v",
+420-    "phimoe",
+--
+435:for model_type in MODELS_WITH_INCORRECT_HUB_TOKENIZER_CLASS:
+436-    if model_type not in TOKENIZER_MAPPING_NAMES:
+437-        TOKENIZER_MAPPING_NAMES[model_type] = "TokenizersBackend" if is_tokenizers_available() else None
+438-
+439-TOKENIZER_MAPPING = _LazyAutoMapping(CONFIG_MAPPING_NAMES, TOKENIZER_MAPPING_NAMES)
+440-
+441-CONFIG_TO_TYPE = {v: k for k, v in CONFIG_MAPPING_NAMES.items()}
+442-
+443-MODEL_IDS_TO_TOKENIZERS_BACKEND = [
+444-    "deepseek-ai/deepseek-r1-distill-llama-*",
+445-    "deepseek-ai/deepseek-coder-*",
+446-    "allenai/dolma2-tokenizer",
+447-    "google/umt5-small",
+448-    "naver-clova-ix/donut-*",
+449-    "salesforce/blip2-opt-*",
+450-    "salesforce/blip2-flan-t5-*",
+451-    "salesforce/instructblip-flan-t5-*",
+452-    "stepfun-ai/step-3.7-*",
+453-]
+454-
+455-
+456-def load_vocab(vocab_file):
+457-    """Loads a vocabulary file into a dictionary."""
+458-    with open(vocab_file, "r", encoding="utf-8") as reader:
+459-        return json.load(reader)
+460-
+461-
+462-def load_merges(merges_file):
+463-    """Loads a merges file into a list."""
+464-    merges = []
+465-    with open(merges_file, "r", encoding="utf-8") as reader:
+466-        for line in reader:
+467-            line = line.strip()
+468-            if line and not line.startswith("#"):
+469-                merges.append(tuple(line.split()))
+470-    return merges
+471-
+472-
+473-def _use_mistral_format(
+474-    pretrained_model_name_or_path: str | os.PathLike[str],
+475-    mistral_format: bool | None = None,
+--
+858:                        config_model_type in MODELS_WITH_INCORRECT_HUB_TOKENIZER_CLASS
+859:                        or config_model_name in MODELS_WITH_INCORRECT_HUB_TOKENIZER_CLASS
+860-                    )
+861-                    else _hub_class
+862-                )
+863-                tokenizer_class = tokenizer_class_from_name(class_name)
+864-                if tokenizer_class is not None and tokenizer_class.__name__ not in (
+865-                    "TokenizersBackend",
+866-                    "PythonBackend",
+867-                    "PreTrainedTokenizerFast",
+868-                ):
+869-                    return tokenizer_class.from_pretrained(pretrained_model_name_or_path, *inputs, **kwargs)
+870-
+871-            if (
+872-                registered_class_name == "MistralCommonBackend"
+873-                and "fix_mistral_regex" not in kwargs
+874-                and _use_mistral_format(pretrained_model_name_or_path, mistral_format=mistral_format, **kwargs)
+875-            ):
+876-                tokenizer_class = tokenizer_class_from_name("MistralCommonBackend")
+877-                if tokenizer_class is not None:
+878-                    return tokenizer_class.from_pretrained(pretrained_model_name_or_path, *inputs, **kwargs)
+879-
+880-            if TokenizersBackend is not None:
+881-                return TokenizersBackend.from_pretrained(pretrained_model_name_or_path, *inputs, **kwargs)
+882-
+883-            raise ValueError(
+884-                f"Tokenizer class '{_hub_class}' specified in the tokenizer config was not found. "
+885-                f"The tokenizer may need to be converted or re-saved."
+886-            )
+887-
+888-        if tokenizer_config_class and tokenizer_config_class.endswith("Fast"):
+889-            tokenizer_config_class = tokenizer_config_class[:-4]
+890-
+891-        has_remote_code = tokenizer_auto_map is not None
+892-        has_local_code = type(config) in TOKENIZER_MAPPING or (
+893-            tokenizer_config_class is not None

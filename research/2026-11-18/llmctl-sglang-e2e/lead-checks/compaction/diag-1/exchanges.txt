@@ -1,0 +1,28 @@
+exchange 1 at 06:37:04.117864: POST /v1/chat/completions HTTP/1.1
+  parameters {"model": "qwen3.5-9b", "stream": true, "stream_options": {"include_usage": true}, "max_completion_tokens": 16384}, tools 8
+  system: 17400 chars
+  user: 262 chars | Read every Markdown file in this folder and its subfolders, one file at a time, with the read tool. 
+  reply: HTTP/1.1 200 OK
+exchange 2 at 06:37:04.133763: POST /v1/chat/completions HTTP/1.1
+  parameters {"model": "qwen3.5-9b", "stream": true, "stream_options": {"include_usage": true}, "chat_template_kwargs": {"enable_thinking": false}}, tools 0
+  system: 1806 chars
+  user: 359 chars | Here is the first message of the conversation:  <message> Read every Markdown file in this folder an
+  reply: HTTP/1.1 200 OK
+exchange 3 at 06:37:05.339332: POST /v1/chat/completions HTTP/1.1
+  parameters {"model": "qwen3.5-9b", "stream": true, "stream_options": {"include_usage": true}, "max_completion_tokens": 16384}, tools 8
+  system: 17400 chars
+  user: 262 chars | Read every Markdown file in this folder and its subfolders, one file at a time, with the read tool. 
+  assistant: 4 chars, other fields (JSON chars) {'tool_calls': 266, 'reasoning_content': 2}
+  tool: 2507 chars, other fields (JSON chars) {'tool_call_id': 31}
+  reply: HTTP/1.1 200 OK
+exchange 4 at 06:37:15.883715: POST /v1/chat/completions HTTP/1.1
+  parameters {"model": "qwen3.5-9b", "stream": true, "stream_options": {"include_usage": true}, "max_completion_tokens": 16384}, tools 0
+  system: 17400 chars
+  user: 24780 chars | [User]: Read every Markdown file in this folder and its subfolders, one file at a time, with the rea
+  user: 2723 chars | You MUST summarize the conversation above into a structured summary that will be given to another ag
+  reply: HTTP/1.1 200 OK
+exchange 5 at 06:37:36.845521: POST /v1/chat/completions HTTP/1.1
+  parameters {"model": "qwen3.5-9b", "stream": true, "stream_options": {"include_usage": true}, "max_completion_tokens": 16384}, tools 8
+  system: 17400 chars
+  user: 4078 chars | <conversation-checkpoint> The following is a summary and serialized record of earlier conversation. 
+  reply: HTTP/1.1 200 OK

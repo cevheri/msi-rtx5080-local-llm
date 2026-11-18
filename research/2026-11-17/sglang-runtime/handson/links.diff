@@ -1,0 +1,83 @@
+--- $SCRATCH/sglang/handson/README.md
++++ sglang-runtime/handson/README.md
+@@ -14,7 +14,7 @@
+    `docker image ls --tree` shows 49.7 GB disk usage and 14.5 GB content size (measured, [logs/image-inspect.txt](logs/image-inspect.txt)).
+    Inside the image: sglang 0.5.23, torch 2.14.1+cu130, flashinfer 0.7.2, sglang-kernel 0.4.10, transformers 5.19.0, triton 3.8.0 and xgrammar 0.2.7; CDI injects `nvidia-smi`, which lists the RTX 5080 Laptop GPU with 16303 MiB and driver 595.99.02, so `NVIDIA_REQUIRE_CUDA=cuda>=13.0` passes (measured).
+ 3. `./llmctl down` stopped `gemma-4-26b-a4b` on llama.cpp at 18:31; `nvidia-smi` then showed 112 MiB in use and no compute process (measured).
+-4. Twelve SGLang starts by hand as `sglang-research` ([cmds/](cmds/)), one at a time, each removed after its model.
++4. Twelve SGLang starts by hand as `sglang-research` (`cmds/`), one at a time, each removed after its model.
+ 5. `PATH=$HOME/.kimi-code/bin:$PATH ./llmctl up gemma-4-26b-a4b` brought the owner's model back at 19:08 in 8 s; `./llmctl status` reads running, health ready, 15,008 MiB of GPU memory in use, and every client entry pointing at the running model; no client file was written ([logs/llmctl-up.txt](logs/llmctl-up.txt), [logs/llmctl-status-after.txt](logs/llmctl-status-after.txt)).
+ 
+ Every start used `--device nvidia.com/gpu=all`, `--ipc=host` (the upstream quick start runs "docker run --rm --gpus all --ipc=host", [quickstart.mdx](https://github.com/sgl-project/sglang/blob/v0.5.23/docs/docs/get-started/quickstart.mdx)), `--memory 32g --memory-swap 32g`, `-p 127.0.0.1:30000:30000`, no restart policy, the Hugging Face cache mounted read-only at `/root/.cache/huggingface`, `HF_HUB_OFFLINE=1`, `HF_MODULES_CACHE=/tmp/hf_modules`, `MAX_JOBS=2`, and one named volume, `sglang-research-cache`, on `/root/.cache/sglang`.
+@@ -52,7 +52,7 @@
+ - Decode: 92.7 tok/s on three 512-token answers (a2), 92.9 tok/s (a3); the repository probe gave a median of 92.8 tok/s over answers of 643 to 813 tokens, against 90.8 tok/s on vLLM v0.33.0 (measured).
+ - Prefill after `/flush_cache`: 0.580 s to the first token for 8,591 tokens and 2.426 s for 32,153 tokens with the prefill graph (a2), 0.566 s and 2.394 s without it (a3), against 0.592 s and 2.424 s on vLLM (measured).
+ - Long prompts: 67,955 tokens took 8.27 s to the first token (8,217 tok/s) on a2, and 124,667 tokens took 23.13 s (5,390 tok/s) on a3; the same prompts again took 0.042 s and 0.057 s, so the radix cache works for this hybrid model; decode at 124.7k tokens of depth ran at 56.8 tok/s by the server log (measured).
+-- Sustained load (run 4, both CUDA graph types on): 66 back-to-back requests in 300 s with fresh prompts of up to 13,448 tokens, no error, decode 86.7 to 93.5 tok/s (median 91.3, first half 91.7, second half 90.6), at most 70 C and 144.5 W (measured, [shapes/qwen3.5-9b/sustained-a4.json](shapes/qwen3.5-9b/sustained-a4.json)).
++- Sustained load (run 4, both CUDA graph types on): 66 back-to-back requests in 300 s with fresh prompts of up to 13,448 tokens, no error, decode 86.7 to 93.5 tok/s (median 91.3, first half 91.7, second half 90.6), at most 70 C and 144.5 W (measured, [shapes/qwen3.5-9b/sustained-a4.json](../../sglang-qwen3.5-9b/handson/shapes/sustained-a4.json)).
+ 
+ ## gpt-oss-20b (`openai/gpt-oss-20b` at `6cee5e81ee83`)
+ 
+@@ -72,7 +72,7 @@
+   ```
+ 
+   The server then exited; the client got HTTP 500 and every later request a connection reset.
+-  Upstream knows the cause: the open PR [#43302](https://github.com/sgl-project/sglang/pull/43302) says "the final-token-id `all_reduce` is gated only on `SYNC_TOKEN_IDS_ACROSS_TP` (env, default off) or non-empty `sampling_info.grammars`. It does not check the size of the sync group.", and [#48487](https://github.com/sgl-project/sglang/pull/48487), "[Fix] sampler: skip the token-id all-reduce when the TP sync group has one rank", was merged on 2026-11-06, after the v0.5.23 tag of 2026-10-29, so v0.5.23 does not have it (inferred from the GitHub search API, read 2026-11-17, [data-gh/](data-gh/)).
++  Upstream knows the cause: the open PR [#43302](https://github.com/sgl-project/sglang/pull/43302) says "the final-token-id `all_reduce` is gated only on `SYNC_TOKEN_IDS_ACROSS_TP` (env, default off) or non-empty `sampling_info.grammars`. It does not check the size of the sync group.", and [#48487](https://github.com/sgl-project/sglang/pull/48487), "[Fix] sampler: skip the token-id all-reduce when the TP sync group has one rank", was merged on 2026-11-06, after the v0.5.23 tag of 2026-10-29, so v0.5.23 does not have it (inferred from the GitHub search API, read 2026-11-17, `data-gh/`).
+ - a4, Paged Experts (new in v0.5.23): `--moe-runner-backend marlin --enable-paged-experts --paged-experts-num-resident 24` kept 24 of 32 experts per layer on the GPU (measured):
+   - weights 11.46 GB on the GPU, FP8 KV pool 168,443 tokens plus 16,844 SWA tokens (2.12 GB), 1.45 GB free;
+   - decode 133.8 tok/s over 512-token runs (133.0 to 134.1), and a median of 125.5 tok/s in the repository probe over answers of 1,464 to 1,500 tokens;
+@@ -98,11 +98,11 @@
+   The encoders are built with the checkpoint's quantization config ([gemma4_mm.py](https://github.com/sgl-project/sglang/blob/v0.5.23/python/sglang/srt/models/gemma4_mm.py): `self.audio_tower = Gemma4AudioEncoder(config=config.audio_config, quant_config=quant_config, ...)`), so the W4A16 linear has packed weights where the clippable layer expects `weight` (inferred from the traceback and that source).
+ - a2 failed: `ValueError: No processor registered for architecture: ['Gemma4ForCausalLM'].`, because the config still counts as multimodal (measured).
+ - Stopped after two attempts: the listed fixes (attention backend, CUDA graphs, memory fraction, context) act after model construction, `--language-model-only` accepts only four other architectures (a1 of Qwen), and `enable_multimodal` is switched off by default only for "Gemma3ForConditionalGeneration", "Llama4ForConditionalGeneration", "Step3VLForConditionalGeneration" and "InklingForConditionalGeneration" ([model_config.py](https://github.com/sgl-project/sglang/blob/v0.5.23/python/sglang/srt/configs/model_config.py)) (inferred from source).
+-  A search for `ClippableGLUParallelLinear` in the SGLang issues returned nothing on 2026-11-17 ([data-gh/](data-gh/)).
++  A search for `ClippableGLUParallelLinear` in the SGLang issues returned nothing on 2026-11-17 (`data-gh/`).
+ 
+ ## Working docker run commands
+ 
+-Qwen3.5-9B at 128k ([cmds/qwen3.5-9b-a3.sh](cmds/qwen3.5-9b-a3.sh)):
++Qwen3.5-9B at 128k ([cmds/qwen3.5-9b-a3.sh](../../sglang-qwen3.5-9b/handson/cmds/qwen3.5-9b-a3.sh)):
+ 
+ ```bash
+ docker run -d --name sglang-research \
+@@ -123,7 +123,7 @@
+     --default-chat-template-kwargs '{"enable_thinking":false}'
+ ```
+ 
+-gpt-oss-20b at 128k ([cmds/gpt-oss-20b-a4.sh](cmds/gpt-oss-20b-a4.sh)), same `docker run` options:
++gpt-oss-20b at 128k ([cmds/gpt-oss-20b-a4.sh](../../sglang-gpt-oss-20b/handson/cmds/gpt-oss-20b-a4.sh)), same `docker run` options:
+ 
+ ```bash
+   python3 -m sglang.launch_server \
+@@ -137,7 +137,7 @@
+     --tool-call-parser gpt-oss --reasoning-parser gpt-oss
+ ```
+ 
+-K2 Horizon 7B at 64k ([cmds/k2-horizon-7b-a2.sh](cmds/k2-horizon-7b-a2.sh)), same `docker run` options:
++K2 Horizon 7B at 64k ([cmds/k2-horizon-7b-a2.sh](../../sglang-k2-horizon-7b/handson/cmds/k2-horizon-7b-a2.sh)), same `docker run` options:
+ 
+ ```bash
+   python3 -m sglang.launch_server \
+@@ -152,7 +152,7 @@
+ 
+ ## API behaviour the clients will meet
+ 
+-Measured with [scripts/api_probe.py](scripts/api_probe.py) on Qwen3.5-9B, gpt-oss-20b and K2 Horizon 7B unless a line names one model; the shapes are in [shapes/](shapes/).
++Measured with [scripts/api_probe.py](scripts/api_probe.py) on Qwen3.5-9B, gpt-oss-20b and K2 Horizon 7B unless a line names one model; the shapes are in `shapes/`.
+ 
+ - `/v1/models` lists the served name with `max_model_len` equal to `--context-length`, also when the KV pool is smaller (131072 listed over a 74,233-token pool); keys `created`, `id`, `max_model_len`, `object`, `owned_by` (`sglang`), `parent`, `root`.
+ - `/health` answered 503 during warmup and 200 afterwards, and each call takes 1.0 s because it generates a token; `/ready` answered 200 in 1 ms once up; its behaviour during startup was not probed.
+@@ -193,8 +193,8 @@
+ 
+ ## Files
+ 
+-- [cmds/](cmds/): every `docker run`, one file per start.
+-- [logs/](logs/): cut container logs per start (`attemptN.log`, `run4-sustained.log`), `nvidia-smi` and cgroup traces (`trace*.csv`, one row per second), start times, container arguments (`*.cmd.json`), socket tables, the pull log, image facts, power limit, and the `llmctl` outputs with `$HOME` for the home path.
+-- [shapes/](shapes/): request and reply shapes from `api_probe.py`, the repository probe `research/2026-11-16/llm_probe.py` and `sustained.py`.
++- `cmds/`: every `docker run`, one file per start.
++- `logs/`: cut container logs per start (`attemptN.log`, `run4-sustained.log`), `nvidia-smi` and cgroup traces (`trace*.csv`, one row per second), start times, container arguments (`*.cmd.json`), socket tables, the pull log, image facts, power limit, and the `llmctl` outputs with `$HOME` for the home path.
++- `shapes/`: request and reply shapes from `api_probe.py`, the repository probe `research/2026-11-16/llm_probe.py` and `sustained.py`.
+ - [scripts/](scripts/): the helpers, run with `python3 -I` or bash.
+-- [data-gh/](data-gh/): GitHub search API results, read as data only.
++- `data-gh/`: GitHub search API results, read as data only.

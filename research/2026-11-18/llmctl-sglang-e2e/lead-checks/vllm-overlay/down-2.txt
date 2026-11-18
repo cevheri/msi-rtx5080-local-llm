@@ -1,0 +1,5 @@
+03:41:25.685 $ ./llmctl down
+03:41:26.381 stopped deepseek-r1-0528-qwen3-8b in container 'vllm'
+03:41:26.383 OpenCode, Hermes, Pi and dsh still point at deepseek-r1-0528-qwen3-8b and get no answer until the next ./llmctl up
+03:41:26.385   switch back: OpenCode /models; hermes profile use default; Pi /model; dsh: delete the agent-default-model and acp lines in $HOME/.dsh/cordis.patch.yml
+03:41:26.389 exit 0

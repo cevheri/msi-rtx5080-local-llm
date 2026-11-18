@@ -201,7 +201,7 @@ class DetectionTest(unittest.TestCase):
 
     def test_llmctl_providers(self):
         catalog = load_catalog(REPO / "recipes", None)
-        self.assertEqual(clients.llmctl_providers(catalog), frozenset({"llamacpp-docker", "vllm-docker"}))
+        self.assertEqual(clients.llmctl_providers(catalog), frozenset({"llamacpp-docker", "vllm-docker", "sglang-docker"}))
 
 
 START_SETTINGS = {"lastChangelogVersion": "1.5.2", "defaultProvider": "llmctl", "defaultModel": "gpt-oss-20b"}

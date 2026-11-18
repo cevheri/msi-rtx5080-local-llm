@@ -1,0 +1,20 @@
+{"exit": "ready", "ready_seen_s": 20.3, "served_listed_s": 20.05, "memory_usage": null, "gpu_right_after_ready": {"t": 1794952642.051, "used_mib": 14738, "free_mib": 1105, "total_mib": 16303}}
+{"event": "phase_end", "step": "probe", "rc": 0, "seconds": 68.3, "output_tail": "{\n \"label\": \"warm-r3-kvbytes\",\n \"models\": [\n  \"deepseek-r1-8b\"\n ],\n \"ok\": {\n  \"content\": \"\\nOK\",\n  \"reasoning_chars\": 1100,\n  \"finish\": \"stop\",\n  \"usage\": {\n   \"prompt_tokens\": 8,\n   \"total_tokens\": 251,\n   \"completion_tokens\": 243,\n   \"prompt_tokens_details\": null,\n   \"c
+{"event": "phase_start", "step": "smoke", "argv": ["/usr/bin/python3", "-I", "$SCRATCH/sglang/measure-c/scripts/api_probe.py", "--base", "http://127.0.0.1:8000", "--model", "deepseek-r1-8b", "--thinking", "always", "--context", "65536", "--skip-long", "--out", "$SCRATCH
+{"event": "phase_end", "step": "smoke", "rc": 0, "seconds": 196.8, "output_tail": "{\n \"plain\": {\n  \"status\": 200,\n  \"content\": \"\\nOK\",\n  \"finish_reason\": \"stop\",\n  \"reasoning_content_chars\": \"absent\"\n },\n \"tool_auto\": {\n  \"status\": 400,\n  \"finish_reason\": null,\n  \"tool_calls\": null\n },\n \"decode_512_median_tok_s\": 72.2,\n \"long\": {\n  \"paragraphs\": null,\n
+{"event": "end", "result": "completed", "container": "running exit=0 oom=false", "cgroup": {"anon_gib": 2.811, "file_gib": 0.015, "shmem_gib": 0.014, "unevictable_gib": 0.0, "peak_gib": 2.954}, "memory_usage": {}, "t": 1794952916.578, "used_mib": 15036, "free_mib": 807, "total_mib": 16303, "utc": "22:01:56"}
+comm: file 1 is not in sorted order
+comm: file 2 is not in sorted order
+comm: input is not in sorted order
+(APIServer pid=1) INFO 11-17 21:57:06 [startup.py:96] non-default args: {'model_tag': '/root/.cache/huggingface/hub/models--deepseek-ai--DeepSeek-R1-0528-Qwen3-8B/snapshots/6e8885a6ff5c1dc5201574c8fd700323f23c25fa', 'model': '/root/.cache/huggingface/hub/models--deepseek-ai--DeepSeek-R1-0528-Qwen3-8
+(EngineCore pid=192) INFO 11-17 21:57:13 [core.py:139] Initializing a V1 LLM engine (v0.33.0) with config: model='/root/.cache/huggingface/hub/models--deepseek-ai--DeepSeek-R1-0528-Qwen3-8B/snapshots/6e8885a6ff5c1dc5201574c8fd700323f23c25fa', speculative_config=None, tokenizer='/llmctl/tokenizer', s
+(EngineCore pid=192) INFO 11-17 21:57:17 [model_runner.py:428] Model loading took 9.12 GiB memory and 3.047882 seconds
+(EngineCore pid=192) INFO 11-17 21:57:18 [kv_cache_utils.py:1147] GPU KV cache size: 69,904 tokens, Maximum concurrency for 65,536 tokens per request: 1.07x
+INFO:     Application startup complete.
+(APIServer pid=1) ERROR 11-17 22:01:23 [serving.py:280] Error with model error=ErrorInfo(message='The model `not-the-served-name` does not exist. Valid aliases: deepseek-r1-8b.', type='NotFoundError', param='model', code=404)
+running exit=0 oom=false started=2026-11-17T21:57:01.804930683Z finished=0001-01-01T00:00:00Z
+files: 435
+48M	/v
+4.0K	/v/dummy_cache
+8.0K	/v/modelinfos
+48M	/v/torch_compile_cache

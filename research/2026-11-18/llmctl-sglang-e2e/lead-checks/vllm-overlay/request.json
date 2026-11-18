@@ -1,0 +1,59 @@
+{
+ "request": 1,
+ "start_utc": "2026-11-18T03:41:23.067Z",
+ "seconds": 2.586,
+ "status": 200,
+ "body": {
+  "model": "deepseek-r1-8b",
+  "messages": [
+   {
+    "role": "user",
+    "content": "Reply with exactly: OK"
+   }
+  ],
+  "max_tokens": 4096
+ },
+ "reply": {
+  "id": "chatcmpl-bddaca511d15fb8a",
+  "object": "chat.completion",
+  "created": 1794973283,
+  "model": "deepseek-r1-8b",
+  "choices": [
+   {
+    "index": 0,
+    "message": {
+     "role": "assistant",
+     "content": "\nOK",
+     "refusal": null,
+     "annotations": null,
+     "audio": null,
+     "function_call": null,
+     "reasoning": "\nOkay, the user just said \"Reply with exactly: OK\" – that's pretty straightforward. \n\nHmm, they're asking for a very specific response format, which makes me think they might be testing my compliance or perhaps using some kind of protocol where only \"OK\" is acceptable. \n\nThe user seems to want minimal interaction, maybe they're in a hurry or just need a quick confirmation. Could be a developer testing API responses, or someone scripting automated interactions. \n\nI should stick strictly to their request without adding anything extra. Just a simple \"OK\" to match their instruction. \n\nBut... wait, is this part of a larger conversation? The message stands alone so probably not. Still, better to keep it clean and not assume context. \n\nAlright, mission clear: respond with exactly \"OK\". No explanations, no variations. Just the bare minimum they asked for. \n\n*types response* \n"
+    },
+    "logprobs": null,
+    "finish_reason": "stop",
+    "stop_reason": null,
+    "token_ids": null,
+    "routed_experts": null,
+    "weight_versions": null
+   }
+  ],
+  "service_tier": null,
+  "system_fingerprint": "vllm-0.33.0-a1a729cb",
+  "usage": {
+   "prompt_tokens": 8,
+   "total_tokens": 196,
+   "completion_tokens": 188,
+   "prompt_tokens_details": null,
+   "completion_tokens_details": {
+    "reasoning_tokens": 183
+   }
+  },
+  "prompt_logprobs": null,
+  "prompt_token_ids": null,
+  "prompt_text": null,
+  "kv_transfer_params": null,
+  "ec_transfer_params": null,
+  "metrics": null
+ }
+}

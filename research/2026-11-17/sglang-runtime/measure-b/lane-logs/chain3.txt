@@ -1,0 +1,27 @@
+chain3 start 18:54:31
+{"exit": "ready", "ready_seen_s": 28.66, "served_listed_s": 26.55, "memory_usage": {"weight": 9.293, "kvcache": 3.398, "startup_available": 2.281, "token_capacity": 101791, "token_capacity_swa": 10179, "graph": {"prefill": 0.0, "decode": 0.035, "target_verify": 0.0, "draft_prefill": 0.0, "draft_decode": 0.0, "draft_extend": 0.0}}, "gpu_right_after_ready": {"t": 1794941700.701, "used_mib": 14435, "free_mib": 1407, "total_mib": 16303}}
+{"event": "gpu_before", "step": "nearfull_p2", "t": 1794942078.829, "used_mib": 14217, "free_mib": 1625, "total_mib": 16303, "utc": "19:01:18"}
+{"event": "request", "step": "nearfull_p2", "status": 200, "t": 1794942078.83, "seconds": 22.934, "finish_reason": "stop", "content": "The `process_batch` function calculates the mean of transformed weights for vari... (143 chars)", "reasoning_content_chars": 0, "tool_calls": [], "usage": {"prompt_tokens": 62246, "completion_tokens": 30}, "utc": "19:01:18"}
+{"event": "gpu_after", "step": "nearfull_p2", "cgroup": {"anon_gib": 5.547, "file_gib": 0.322, "shmem_gib": 0.067, "unevictable_gib": 0.0, "peak_gib": 5.99}, "t": 1794942101.792, "used_mib": 14217, "free_mib": 1625, "total_mib": 16303, "utc": "19:01:41"}
+{"event": "end", "result": "completed", "container": "running exit=0 oom=false", "cgroup": {"anon_gib": 5.547, "file_gib": 0.322, "shmem_gib": 0.067, "unevictable_gib": 0.0, "peak_gib": 5.99}, "memory_usage": {"weight": 9.293, "kvcache": 3.398, "startup_available": 2.281, "token_capacity": 101791, "token_capacity_swa": 10179, "graph": {"prefill": 0.0, "decode": 0.035, "target_verify": 0.0, "draft_
+logs/m5-a4-swa.log 1491 -> 42 lines
+[2026-11-17 18:54:43] Hybrid SWA model detected. architectures=['Gemma4ForConditionalGeneration']
+[2026-11-17 18:54:49] Auto-detected template features: reasoning_config=ReasoningToggleConfig(toggle_param='enable_thinking', default_enabled=False, special_case=None, effort_kwarg=None), reasoning_parser=gemma4, tool_call_parser=gemma4
+[2026-11-17 18:54:54] Load weight end. elapsed=1.08 s, type=Gemma4ForConditionalGeneration, quant=compressed-tensors, avail mem=5.76 GB, mem usage=9.29 GB.
+[2026-11-17 18:54:56] Full KV Cache is allocated. dtype: torch.bfloat16, #tokens: 101791, K size: 1.36 GB, V size: 1.36 GB
+[2026-11-17 18:54:56] SWA KV Cache is allocated. dtype: torch.bfloat16, #tokens: 10179, K size: 0.34 GB, V size: 0.34 GB
+[2026-11-17 18:54:56] SWAKVPool mem usage: 3.40 GB, swa size: 10179, full size: 101791
+[2026-11-17 18:54:57] max_total_num_tokens=101791, chunked_prefill_size=2048, max_prefill_tokens=16384, max_running_requests=1, context_len=65536, available_gpu_mem=2.28 GB
+[2026-11-17 18:54:57] Init Unified Radix Cache. Components: (<ComponentType.FULL: 0>, <ComponentType.SWA: 1>). Tree Core: RustUnifiedTreeCore
+[2026-11-17 18:54:58] Using default chat sampling params from model generation config: {'temperature': 1.0, 'top_k': 64, 'top_p': 0.95}
+[2026-11-17 18:55:00] The server is fired up and ready to roll!
+running exit=0 oom=false started=2026-11-17T18:54:32.102141612Z finished=0001-01-01T00:00:00Z
+e4b a4 done 19:01:44
+{"exit": "container stopped", "ready_seen_s": null, "served_listed_s": null, "memory_usage": null, "gpu_right_after_ready": null}
+logs/m2-fp8.log 74 -> 29 lines
+[2026-11-17 19:01:57] Hybrid SWA model detected. architectures=['Gemma4UnifiedForConditionalGeneration']
+[2026-11-17 19:02:03] Auto-detected template features: reasoning_config=ReasoningToggleConfig(toggle_param='enable_thinking', default_enabled=False, special_case=None, effort_kwarg=None), reasoning_parser=gemma4, tool_call_parser=gemma4
+AssertionError: Attempted to load weight (torch.Size([3840, 640])) into parameter (torch.Size([3840, 1536]))
+exited exit=0 oom=false started=2026-11-17T19:01:44.684131972Z finished=2026-11-17T19:02:09.129949222Z
+m2 fp8 done 19:02:11
+chain3 end 19:02:11

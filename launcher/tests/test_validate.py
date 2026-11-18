@@ -242,5 +242,22 @@ class FlagTest(unittest.TestCase):
         self.assertFalse(validate.flag_present(("x", "--reasoning"), "--jinja"))
 
 
+class SecretEnvTest(unittest.TestCase):
+    def test_secret_env_names_are_refused(self):
+        for key in ("HF_TOKEN", "hf_token", "MY_API_KEY", "AWS_SECRET", "DB_PASSWORD"):
+            with self.subTest(key=key):
+                with self.assertRaises(RecipeError) as ctx:
+                    validate.check_env_secrets({"HF_HUB_OFFLINE": "1", key: "x"}, "x.toml")
+                self.assertEqual(ctx.exception.exit_code, 2)
+                self.assertEqual(str(ctx.exception),
+                                 f"x.toml [env]: '{key}' would put a secret into the docker run command line; "
+                                 "llmctl takes a Hugging Face token only from HF_TOKEN or --hf-env-file at pull "
+                                 "time (docs/llmctl.md#what-llmctl-enforces)")
+        validate.check_env_secrets({key: "1" for key in (
+            "SYNC_TOKEN_IDS_ACROSS_TP", "TOKEN", "KEYS", "HF_HUB_OFFLINE", "NCCL_MAX_P2P_NCHANNELS",
+            "TIKTOKEN_ENCODINGS_BASE", "HF_MODULES_CACHE")}, "x.toml")
+        self.assertEqual(validate.SECRET_ENV_SUFFIXES, ("_TOKEN", "_KEY", "_SECRET", "_PASSWORD"))
+
+
 if __name__ == "__main__":
     unittest.main()

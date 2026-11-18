@@ -1,0 +1,32 @@
+/sgl-workspace/sglang/python/sglang/launch_server.py:71: UserWarning: 'python -m sglang.launch_server' is still supported, but 'sglang serve' is the recommended entrypoint.
+[2026-11-17 15:39:50] mxfp4 quantization is not fully optimized yet. The speed can be slower than non-quantized models.
+[2026-11-17 15:39:50] Hybrid SWA model detected. architectures=['GptOssForCausalLM']
+[2026-11-17 15:39:50] Detected SM120 and MXFP4 quantization format for GPT-OSS model, enabling FlashInfer CUTLASS MXFP4 MOE kernel.
+[2026-11-17 15:39:52] server_args={'model_path': '/root/.cache/huggingface/hub/models--openai--gpt-oss-20b/snapshots/6cee5e81ee83917806bbde320786a8fb61efebee', 'tokenizer_path': '/root/.cache/huggingface/hub/models--openai--gpt-oss-20b/snapshots/6cee5e81ee83917806bbde320786a8fb61efebee', 'tokenizer_mode': 'auto', 'tokenizer_backend': 'huggingface', 'tokenizer_worker_num': 1, 'detokenizer_worker_num': 1, 'skip_tokenizer_init': False, 'load_format': 'auto', 'model_loader_extra_config': '{}', 'trust_remote_code': False, 'context_length': 65536, 'is_embedding': False, 'enable_multimodal': None, 'revision': None, 'model_impl': 'auto', 'model_config_parser': 'auto', 'json_model_override_args': '{}', 'dtype': 'bfloat16', 'quantization': None, 'quantization_param_path': None, 'kv_cache_dtype': 'fp8_e4m3', 'enable_fp32_lm_head': False, 'modelopt_quant': None, 'modelopt_checkpoint_restore_path': None, 'modelopt_checkpoint_save_path': None, 'modelopt_export_path': None, 'quantize_and_serve': False, 'rl_quant_profile': None, 'enable_tf32_matmul': False, 'mem_fraction_static': 0.95, 'max_running_requests': 1, 'max_queued_requests': None, 'max_total_tokens': None, 'chunked_prefill_size': 1024, 'prefill_decode_interval': 0, 'enable_dynamic_chunking': False, 'max_prefill_tokens': 16384, 'prefill_max_requests': None, 'schedule_policy': 'fcfs', 'enable_priority_scheduling': False, 'disable_priority_preemption': False, 'default_priority_value': None, 'abort_on_priority_when_disabled': False, 'schedule_low_priority_values_first': False, 'priority_scheduling_preemption_threshold': 10, 'retraction_policy': 'length', 'schedule_conservativeness': 1.0, 'page_size': 1, 'c128_page_size': 16, 'swa_full_tokens_ratio': 0.1, 'disable_hybrid_swa_memory': False, 'radix_eviction_policy': 'lru', 'radix_eviction_policy_config': None, 'prefill_only_disable_kv_cache': False, 'disable_radix_cache': False, 'enable_page_major_kv_layout': False, 'enable_unified_memory': False, 'disable_chunked_prefix_cache'
+[2026-11-17 15:39:52] mxfp4 quantization is not fully optimized yet. The speed can be slower than non-quantized models.
+[2026-11-17 15:39:56] Using default HuggingFace chat template with detected content format: string
+[2026-11-17 15:39:56] Auto-detected template features: reasoning_config=ReasoningToggleConfig(toggle_param=None, default_enabled=None, special_case='always', effort_kwarg=None), reasoning_parser=gpt-oss, tool_call_parser=gpt-oss
+[2026-11-17 15:39:57] mxfp4 quantization is not fully optimized yet. The speed can be slower than non-quantized models.
+[2026-11-17 15:39:57] Init parallel begin.
+[2026-11-17 15:39:57] Init parallel ends. elapsed=0.28 s
+[2026-11-17 15:40:01] mxfp4 quantization is not fully optimized yet. The speed can be slower than non-quantized models.
+[2026-11-17 15:40:01] Memory baseline taken. mem usage=0.00 GB
+[2026-11-17 15:40:03] Load weight begin. avail mem=15.06 GB
+[rank0]:[W1117 15:40:06.989244373 CUDACachingAllocator.cpp:3934] memory allocation failed with OOM on device 0 while trying to allocate 289406976 bytes (free: 262078464, total: 16611278848).
+[2026-11-17 15:40:06] Using FP8 KV cache but no scaling factors provided. Defaulting to scaling factors of 1.0.
+[2026-11-17 15:40:06] Load weight end. elapsed=2.78 s, type=GptOssForCausalLM, quant=mxfp4, avail mem=0.60 GB, mem usage=14.45 GB.
+[2026-11-17 15:40:09] Scheduler hit an exception: Traceback (most recent call last):
+  File managers/scheduler.py:6362 in run_scheduler_process
+  File managers/scheduler.py:568 in __init__
+  File managers/scheduler.py:1137 in init_model_worker
+  File managers/scheduler.py:1100 in init_memory_pools
+  File managers/scheduler.py:1090 in init_target_memory_pool
+  File managers/tp_worker.py:409 in alloc_memory_pool
+  File model_executor/model_runner.py:982 in alloc_memory_pool
+  File mem_cache/kv_cache_configurator.py:476 in configure
+  File mem_cache/kv_cache_configurator.py:3182 in _resolve_memory_pool_config
+  File mem_cache/kv_cache_configurator.py:3050 in _profile_available_bytes
+ValueError: Loaded weights leave no GPU memory for the KV cache under --mem-fraction-static=0.95. Raise --mem-fraction-static above 0.961 (minimum viable = 1 - available/pre = 0.9601). If using speculative decoding, draft weights are now counted.
+[2026-11-17 15:40:09] kill_process_tree called: parent_pid=1, include_parent=True, pid=1
+[2026-11-17 15:40:09] kill_process_tree called: parent_pid=1, include_parent=False, pid=1
+[cut] 15 CUDACachingAllocator OOM warnings in total during weight loading

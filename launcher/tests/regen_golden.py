@@ -18,7 +18,7 @@ from launcher.runtimes import ADAPTERS
 REPO = Path(__file__).resolve().parents[2]
 GOLDEN = Path(__file__).resolve().parent / "golden"
 CLIENT_GOLDEN = GOLDEN / "clients"
-ENV = HostEnv(Path("/home/user/.cache/huggingface"), 1000, 1000)
+ENV = HostEnv(Path("/home/user/.cache/huggingface"), 1000, 1000, Path("/home/user/.cache/llmctl"))
 
 
 def golden_argv(recipe_id: str, runtime: str, recipes_dir: Path) -> list[str]:

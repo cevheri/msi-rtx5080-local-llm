@@ -1,0 +1,8 @@
+{
+  "command": "hermes --version",
+  "cwd": "$HOME/projects/llm",
+  "exit": 0,
+  "seconds": 3.5,
+  "stdout": "Hermes Agent v0.23.1 (2026.9.24) · stable · local 3b4215785882\nInstall directory: $HOME/.hermes/hermes-agent\nInstall method: git\nPython: 3.14.9\nOpenAI SDK: 2.54.0\nUpdate available — run 'hermes update'\n",
+  "stderr": ""
+}

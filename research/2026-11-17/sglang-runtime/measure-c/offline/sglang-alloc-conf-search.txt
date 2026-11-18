@@ -1,0 +1,14 @@
+./srt/disaggregation/mooncake/utils.py:32:    for var in ("PYTORCH_CUDA_ALLOC_CONF", "PYTORCH_ALLOC_CONF"):
+./srt/weight_cache/daemon.py:411:        for var in ("PYTORCH_CUDA_ALLOC_CONF", "PYTORCH_ALLOC_CONF"):
+./test/ascend/gsm8k_ascend_mixin.py:36:        "PYTORCH_NPU_ALLOC_CONF": "expandable_segments:True",
+./multimodal_gen/runtime/server_args/auto_tune.py:542:            and "PYTORCH_CUDA_ALLOC_CONF" not in os.environ
+./multimodal_gen/runtime/server_args/auto_tune.py:549:            os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
+./multimodal_gen/runtime/server_args/auto_tune.py:551:                "Host and device share one memory pool: PYTORCH_CUDA_ALLOC_CONF="
+./multimodal_gen/test/server/gpu_cases.py:543:                "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True",
+./multimodal_gen/test/server/gpu_cases.py:574:                "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True",
+./multimodal_gen/test/server/gpu_cases.py:1185:                "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True",
+./multimodal_gen/test/server/gpu_cases.py:1507:                "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True",
+./multimodal_gen/test/single_test_file/test_ipc_a2a_multi_gpu.py:399:            PYTORCH_CUDA_ALLOC_CONF="expandable_segments:True",
+./multimodal_gen/.agents/skills/sglang-diffusion-benchmark-profile/scripts/bench_diffusion_denoise.py:1143:            "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True",
+== image environment
+no *ALLOC_CONF variable in the image environment

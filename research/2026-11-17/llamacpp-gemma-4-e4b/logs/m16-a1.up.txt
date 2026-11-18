@@ -1,0 +1,8 @@
+gemma-4-e4b on llamacpp: override recipe, estimate
+recipe file: $SCRATCH/sglang/measure-c/overrides/llamacpp/gemma-4-e4b.toml
+warning: this recipe has no measurement on the reference laptop; it may not start or fit
+clients: none (LLMCTL_CLIENTS is empty)
+waiting for gemma-4-e4b to load (up to 300 s)
+ready: http://127.0.0.1:8080/v1, served as 'local', context 131072, output 16384
+evidence: Draft from the SGLang research report, section 4, with the args of the shipped gemma-4-26b-a4b recipe less its expert offload; not measured on this laptop (docs/superpowers/research/2026-11-17-sglang/research-report.md#4-per-model-and-engine)
+stop with ./llmctl down

@@ -1,0 +1,20 @@
+--- $SCRATCH/sglang/measure-b/sglang-gpt-oss-20b/README.md
++++ sglang-gpt-oss-20b/measure-b/README.md
+@@ -7,7 +7,7 @@
+ The pinned expert store is shared memory, 19.19 GiB of it, so the container's non-reclaimable memory is 24.35 GiB, not the 13.94 GiB of anonymous memory the hands-on lane read (measured on the MSI Raider 18 Max HX, SGLang v0.5.23).
+ 
+ Every start used `lmsysorg/sglang:v0.5.23-runtime`, the overlay `$SCRATCH/sglang/measure-b/overlay/gpt-oss-20b/` (the snapshot's `generation_config.json` with temperature 1.0 and top_p 1.0, the vLLM recipe's values) mounted read-only at `/llmctl/model`, the lane environment (`HF_HUB_OFFLINE=1`, `HF_MODULES_CACHE=/tmp/hf_modules`, `MAX_JOBS=2`, `SYNC_TOKEN_IDS_ACROSS_TP=1`, `NCCL_MAX_P2P_NCHANNELS=1`, `FLASHINFER_NO_DOWNLOAD=1`, and `TIKTOKEN_ENCODINGS_BASE=/opt/sglang/lib/python3.12/site-packages/tml_renderers/data` unless a row says otherwise), `--memory 32g --memory-swap 32g`, and the hands-on a4 arguments: fraction 0.90, `--max-running-requests 1`, FP8 KV, `--swa-full-tokens-ratio 0.1`, `--chunked-prefill-size 1024`, `--disable-prefill-cuda-graph`, `--moe-runner-backend marlin`, `--enable-paged-experts --paged-experts-num-resident 24`, parsers `gpt-oss` ([cmds/b0-a4.sh](cmds/b0-a4.sh)).
+-The enforced GPU power limit read 145 W ([../lane-logs/llmctl-down.txt](../lane-logs/llmctl-down.txt)).
++The enforced GPU power limit read 145 W ([../lane-logs/llmctl-down.txt](../../sglang-runtime/measure-b/lane-logs/llmctl-down.txt)).
+ 
+ ## Step 0: the grammar fix at the working settings (start b0-a4)
+ 
+@@ -94,7 +94,7 @@
+ - So the variable is needed for `/v1/responses` and to avoid the 52 to 63 s download at every start on a network, and an offline start reaches ready either way (measured here and in measurement A).
+ - The searched patterns (`download`, `fetch`, `urm.nvidia`, `huggingface.co`, `openaipublic`, `blob.core`, `harmony`, `tiktoken`, `resolve`, `connect`) matched only `server_args`, Gloo's `Unable to resolve hostname` warning, the prefill-graph line and, without the variable, the Responses API line (measured).
+ 
+-The shipped vLLM recipe without a network is in [../vllm-gpt-oss-20b/](../vllm-gpt-oss-20b/README.md): it reached ready in 33.3 s with no change.
++The shipped vLLM recipe without a network is in [../vllm-gpt-oss-20b/](../../vllm-gpt-oss-20b-offline/measure-b.md): it reached ready in 33.3 s with no change.
+ 
+ ## Files
+ 

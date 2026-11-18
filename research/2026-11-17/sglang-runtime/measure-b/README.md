@@ -1,0 +1,178 @@
+# SGLang v0.5.23 measurement B: wave 2, wave 1 at its shipped settings, and the vLLM DeepSeek-R1 retry
+
+Last verified: 2026-11-17.
+
+This folder holds measurement B for the lead who adds SGLang as llmctl's third runtime, as the brief `$SCRATCH/prompts/sglang-measure-b.md` asks: the server-side grammar fix on K2 Horizon 7B and gpt-oss-20b, the wave 2 candidates (M1 to M5, M9), the vLLM DeepSeek-R1 retry (LD11), the Paged Experts sweep (M10), stability (M12), FP8 KV accuracy (M13) and offline cold starts (M15), with one folder per runtime and model and draft recipes in `$SCRATCH/sglang/overrides/`.
+Every SGLang start used `lmsysorg/sglang:v0.5.23-runtime` (image ID `3ce6da3e5ea0`), one container at a time named `sglang-measure`, `--device nvidia.com/gpu=all --ipc=host`, `--memory 32g --memory-swap 32g` unless a row says otherwise, `-p 127.0.0.1:30000:30000` (none for the `--network none` starts), the Hugging Face cache read-only, no restart policy, the model overlay of measurement A's mechanism (one folder per model under `overlay/`, mounted read-only at `/llmctl/model` with `--model-path /llmctl/model`, its `generation_config.json` carrying the vLLM recipe's sampling values), and the lane environment `HF_HUB_OFFLINE=1`, `HF_MODULES_CACHE=/tmp/hf_modules`, `MAX_JOBS=2`, `SYNC_TOKEN_IDS_ACROSS_TP=1`, `NCCL_MAX_P2P_NCHANNELS=1`, `FLASHINFER_NO_DOWNLOAD=1`, plus `TIKTOKEN_ENCODINGS_BASE=/opt/sglang/lib/python3.12/site-packages/tml_renderers/data` for gpt-oss-20b; warm starts used the volume `sglang-research-cache`.
+vLLM starts used `vllm/vllm-openai:v0.33.0` as `launcher/runtimes/vllm.py` `container_spec` builds it, named `vllm-measure`, on 127.0.0.1:8000.
+The enforced GPU power limit read 145 W ([lane-logs/llmctl-down.txt](lane-logs/llmctl-down.txt)).
+Labels: "(measured on the MSI Raider 18 Max HX, SGLang v0.5.23)" or "vLLM v0.33.0" for runs here, "(inferred from <what>)" for readings of code and logs, "(estimate)" for arithmetic, "(vendor-reported)" and "(third-party report)" for sources.
+"Free" means `nvidia-smi` free memory of the whole GPU.
+
+## Answers for the lead
+
+Named inputs of the design (`docs/superpowers/specs/2026-11-17-llmctl-sglang-design.md`):
+
+- `<NCCL_OK>`: true.
+  On K2 Horizon 7B the first grammar request after a fresh 62,257-token prompt took no visible memory and left 543 MiB free (measurement A without the variables: 34 MiB), and decode was 89.5 against 89.9 tok/s; on gpt-oss-20b the same after a 124,463-token prompt left 989 MiB, at 125.5 against 125.5 tok/s; every grammar request answered 200 and every server stayed up (measured on the MSI Raider 18 Max HX, SGLang v0.5.23; [sglang-k2-horizon-7b/](../../sglang-k2-horizon-7b/measure-b/README.md), [sglang-gpt-oss-20b/](../../sglang-gpt-oss-20b/measure-b/README.md)).
+- `<TIKTOKEN_OK>`: true.
+  With the variable, a `--network none` start of the gpt-oss recipe on a new empty volume reached ready in 253.6 s with no Responses-API line and no download line; without it, the start still reached ready (254.6 s) but logged `OpenAI Responses API (/v1/responses) disabled: OpenAIServingResponses init failed (HarmonyError: error downloading or loading vocab file: failed to download or load vocab file)`; on a network the variable cut the start-up step from measurement A's 52 to 63 s to 1 s (measured on the MSI Raider 18 Max HX, SGLang v0.5.23).
+- `<VLLM_OFFLINE_ENV>`: none needed.
+  The shipped vLLM gpt-oss-20b recipe reached ready with `--network none` and empty cache volumes in 33.3 s and answered, because the vLLM image's `oss-harmony` 0.0.12 loads the Harmony encoding without the network (measured on the MSI Raider 18 Max HX, vLLM v0.33.0; [vllm-gpt-oss-20b/](../../vllm-gpt-oss-20b-offline/measure-b.md)).
+- `<MIN_FREE>`: 640 MiB by the design's D8 rule, from the largest drop of 374 MiB (Qwen3.5-9B); the ship gate `F_ready >= 768` MiB passes for every recipe here, K2 Horizon 7B lowest at 865 MiB (table below; estimate from the measured margins).
+- `<K_GPT_OSS>`: 24 (M10 below).
+- `<GPU_MIB>`, `<RAM_GIB>`, `<MEM_GIB>`, `<DECODE>`, `<SUMMARY>`, `<DATE>`: in each draft and its record; `ram_gib` is the trace's peak of cgroup `anon` plus `shmem`, rounded up.
+- `<TOOLS_400>`: not measured: M9 needs an SGLang chat-only recipe, and DeepSeek-R1, the only candidate, does not load (M4).
+- `<LD11>`: fixed with a condition (vLLM DeepSeek-R1 below).
+- gpt-oss-20b's sampling line, for the design's D7 table: `Using default chat sampling params from model generation config: {'temperature': 1.0, 'top_p': 1.0}` (measured on the MSI Raider 18 Max HX, SGLang v0.5.23).
+
+Per model:
+
+| Model | Outcome on SGLang v0.5.23 | Shipped settings recommended | Key figures |
+|---|---|---|---|
+| qwen3.5-9b | Runs | Hands-on a3 (fraction 0.88, 8 Mamba slots, BF16 KV, 128k) | 93.7 tok/s; pool 140,981; 911 MiB free after ready, 537 at the lowest; 66 requests in 300 s; cold offline start 48.3 s |
+| k2-horizon-7b | Runs | Hands-on a2 (fraction 0.90, FP8 KV, 64k) | 89.5 tok/s; pool 82,397; 865 / 532 MiB; 52 requests; M13 20 of 20 with FP8 and BF16; cold offline start 137.9 s |
+| gpt-oss-20b | Runs | Paged Experts K 24, Marlin, fraction 0.90, FP8 KV, 128k, `TIKTOKEN_ENCODINGS_BASE`, `memory_gib` 28 (checked: no OOM, same speed) | 125.5 tok/s; pool 168,456; 1,329 / 989 MiB; 74 requests; pinned store 19.19 GiB of shared memory; non-reclaimable 24.35 GiB; cold offline start 253.6 s |
+| gemma-4-e4b | Runs, with two flags | Fraction 0.85, `--json-model-override-args '{"audio_config": null}'`, `--swa-full-tokens-ratio 0.1`, BF16 KV, 64k | 141.3 tok/s (vLLM eager 45.2); pool 101,791; 1,407 / 1,403 MiB; 80 requests; cold offline start 138.1 s; vision tower uninitialized; thinking-on replies can land in `reasoning_content` |
+| gemma-4-12b | Runs, with one flag | Fraction 0.90, `--json-model-override-args '{"audio_config": null}'`, FP8 KV, `--swa-full-tokens-ratio 0.1`, 128k | 70.4 tok/s (vLLM 69.5); pool 204,181; 1,099 / 839 MiB; 41 requests; M13 19 of 20 with FP8 and BF16; BF16 at ratio 0.06 holds 139,214 tokens with 35 to 64% slower long prefills |
+| mellum2.1-12b | Fails while loading | none | `RuntimeError: The size of tensor a (288) must match the size of tensor b (28)`: asymmetric zero points in the transposed layout |
+| groot-19b-a3b | Fails after loading | none | `AttributeError: 'CompressedTensorsConfig' object has no attribute 'group_size'` in the FP4 Marlin preparation |
+| deepseek-r1-0528-qwen3-8b | Fails before loading | none | Out of memory: `--quantization fp8` creates the 15.26 GiB BF16 model first |
+
+All figures in this table are measured on the MSI Raider 18 Max HX, SGLang v0.5.23, in the folders named below; vLLM figures are from the repository's records.
+M12 passed on every recipe that runs, so no fraction was lowered; M13 and M15 are in their sections below.
+
+## The margin table (the post-ready threshold)
+
+| Start | Free right after ready | Near-full prompt (tokens, share) | After it | After the first grammar request | After the forced tool request | Lowest in the trace after ready | Drop |
+|---|---|---|---|---|---|---|---|
+| qwen3.5-9b m12-a3 | 911 | 124,499, 95.0% | 545 | 545 | 545 | 537 | 374 |
+| k2-horizon-7b b0-a2 | 865 | 62,257, 95.0% | 543 | 543 | 543 | 532 | 333 |
+| gpt-oss-20b b0-a4 | 1,329 | 124,463, 95.0% | 989 | 989 | 989 | 989 | 340 |
+| gpt-oss-20b ld19-mem28 (28 GiB cap) | 1,328 | 124,458, 95.0% | 988 | 988 | 988 | 988 | 340 |
+| gemma-4-e4b m5-a4-swa | 1,407 | 62,244, 95.0% | 1,403 | 1,403 | 1,403 | 1,403 | 4 |
+| gemma-4-12b m2-fp8-b | 1,099 | 124,431, 94.9% | 839 | 839 | 839 | 839 | 260 |
+| gemma-4-12b m2-bf16 (not shipped) | 1,089 | 124,435, 94.9% | 847 | 847 | 847 | 831 | 258 |
+
+All values are MiB, measured on the MSI Raider 18 Max HX, SGLang v0.5.23 ([scripts/margins.py](scripts/margins.py) over `shapes/<run>-ready.json`, `shapes/<run>-seq.jsonl` and `logs/<run>-trace.csv` of each record).
+- "Lowest in the trace" covers everything after ready: the near-full prompt, both grammar requests, the repository probe, the api probe, 300 s of sustained load and a second near-full prompt.
+- With both NCCL variables the first grammar request moved no memory on any model, so the drop is the prefill's growth of PyTorch's cache plus kernels loaded during serving (measured; the attribution is inferred).
+- The D8 rule gives `MIN_FREE` 640 MiB (the next multiple of 64 above 374 + 256) and the ship gate 768 MiB (estimate).
+- Cold starts read less right after ready until a flush: Qwen3.5-9B's offline cold start read 607 MiB (M15), which D8's `/flush_cache` before its reading covers (measurement A: 709 to 1,039 MiB after a flush) (measured; that the flush restores it here is inferred from A).
+
+## Starts
+
+| Time (UTC) | Record | Start | Ready line or poll | Outcome |
+|---|---|---|---|---|
+| 18:16 | [sglang-k2-horizon-7b](../../sglang-k2-horizon-7b/measure-b/README.md) | b0-a2 | 37.1 s | Step 0, M12, M13 FP8 |
+| 18:28 | [sglang-gpt-oss-20b](../../sglang-gpt-oss-20b/measure-b/README.md) | b0-a4 | 54.9 s | Step 0, M12, LD19 split, M10 K 24 |
+| 18:37 | sglang-gpt-oss-20b | b0-netnone-tik | 253.6 s (poll) | Offline cold start with the variable; M15 |
+| 18:41 | sglang-gpt-oss-20b | b0-netnone-notik | 254.6 s (poll) | Offline cold start without the variable; Responses API disabled |
+| 18:45 | [vllm-gpt-oss-20b](../../vllm-gpt-oss-20b-offline/measure-b.md) | netnone | 33.4 s (poll) | The shipped vLLM recipe offline |
+| 18:46 | sglang-gpt-oss-20b | m10-k16 | 49.4 s | M10 |
+| 18:48 | sglang-gpt-oss-20b | m10-k20 | 51.9 s | M10 |
+| 18:50 | sglang-gpt-oss-20b | m10-k28 | 54.6 s | M10; pool short of 128k |
+| 18:51 | [sglang-gemma-4-e4b](../../sglang-gemma-4-e4b/measure-b/README.md) | m5-a3 | 40.6 s | M5 retry loads; pool short of 64k |
+| 18:54 | [sglang-mellum2.1-12b](../../sglang-mellum2.1-12b/measure-b/README.md) | m1-a1 | none | Failed while loading |
+| 18:54 | sglang-gemma-4-e4b | m5-a4-swa | 28.0 s | Shipping settings, M12 |
+| 19:01 | [sglang-gemma-4-12b](../../sglang-gemma-4-12b/measure-b/README.md) | m2-fp8 | none | Failed on the audio projection |
+| 19:02 | [sglang-groot-19b-a3b](../../sglang-groot-19b-a3b/measure-b/README.md) | m3-a1 | none | Failed after loading |
+| 19:02 | [sglang-deepseek-r1-0528-qwen3-8b](../../sglang-deepseek-r1-0528-qwen3-8b/measure-b/README.md) | m4-a1 | none | Out of memory while building |
+| 19:03 | [vllm-deepseek-r1-0528-qwen3-8b](../../vllm-deepseek-r1-0528-qwen3-8b-retry/measure-b.md) | ld11-r1 | 24.7 s (poll) | `deepseek_v32` mode: replies correct, prompts one token longer |
+| 19:08 | sglang-k2-horizon-7b | m13-bf16 | 37.2 s | M13 BF16 |
+| 19:10 | [sglang-qwen3.5-9b](../../sglang-qwen3.5-9b/measure-b/README.md) | m12-a3 | 28.7 s | Margins, M12 |
+| 19:18 | vllm-deepseek-r1-0528-qwen3-8b | ld11-r2 | 25.3 s (poll) | Tokenizer overlay: counts equal llama.cpp's |
+| 19:23 | sglang-gemma-4-12b | m2-fp8-b | 33.4 s | Runs; FP8 KV, M12, M13 |
+| 19:34 | sglang-gpt-oss-20b | m10-k25 | 54.6 s | M10 K 25 |
+| 19:35 | sglang-k2-horizon-7b | m15-netnone | 138.0 s (poll) | M15 |
+| 19:38 | sglang-qwen3.5-9b | m15-netnone | 48.5 s (poll) | M15 |
+| 19:39 | sglang-gemma-4-e4b | m15-netnone | 138.2 s (poll) | M15 |
+| 19:41 | sglang-gemma-4-12b | m2-bf16 | 33.4 s | BF16 KV at ratio 0.06, M12, M13 |
+| 19:54 | sglang-gpt-oss-20b | ld19-mem28 | 53.3 s | LD19: K 24 under a 28 GiB cap, margins, M12 |
+| 20:03 | sglang-gemma-4-12b | m15-netnone | 137.2 s (poll) | M15 at the shipping settings (FP8 KV) |
+
+All rows are measured on the MSI Raider 18 Max HX, SGLang v0.5.23 or vLLM v0.33.0 ([scripts/starts_table.py](scripts/starts_table.py)); "ready line" is SGLang's "The server is fired up and ready to roll!" after the `docker run` call, and "poll" the readiness poll (`/ready` 200 and the served name in `/v1/models`, or `/health` and `/v1/models` on vLLM).
+Besides these starts, offline containers of both images (`--rm --network none --memory 2g` to `8g`, no GPU) listed parser names, copied source files and checked tokenizers (`offline/`, [vllm-deepseek-r1-0528-qwen3-8b/offline-out/](../../vllm-deepseek-r1-0528-qwen3-8b-retry/offline-out/)).
+
+## M10: Paged Experts on gpt-oss-20b
+
+K 24 is the recommendation: it holds 128k with 37,384 tokens to spare at 125.5 tok/s; K 16, 20, 25 and 28 gave 87.9, 112.3, 130.0 and 137.6 tok/s, and K 28 holds only 62,643 tokens; the pinned store is 19.25 GiB at every K ([sglang-gpt-oss-20b/README.md](../../sglang-gpt-oss-20b/measure-b/README.md#m10-paged-experts-sweep-k-resident-experts-of-32-fraction-090-marlin-fp8-kv-128k-context)) (measured on the MSI Raider 18 Max HX, SGLang v0.5.23).
+
+## M12: stability at the shipped settings
+
+| Recipe | Requests in 300 s | Errors | Decode (min, median, max) | Halves | Near-full prompt after the load |
+|---|---|---|---|---|---|
+| qwen3.5-9b | 66 | 0 | 88.0, 92.0, 93.7 tok/s | 92.0, 92.0 | 124,503 tokens, 537 MiB left |
+| k2-horizon-7b | 52 | 0 | 79.0, 87.55, 91.3 tok/s | 87.65, 87.55 | 62,253 tokens, 533 MiB left |
+| gpt-oss-20b | 74 | 0 | 118.8, 127.5, 134.9 tok/s | 128.9, 125.8 | 124,462 tokens, 1,059 MiB left |
+| gpt-oss-20b (28 GiB cap) | 73 | 0 | 117.2, 127.1, 131.1 tok/s | 128.45, 125.1 | 124,458 tokens, 1,050 MiB left |
+| gemma-4-e4b | 80 | 0 | 116.6, 134.05, 141.2 tok/s | 137.9, 131.1 | 62,246 tokens, 1,625 MiB left |
+| gemma-4-12b (FP8 KV) | 41 | 0 | 65.8, 68.9, 70.7 tok/s | 69.0, 68.7 | 124,433 tokens, 839 MiB left |
+| gemma-4-12b (BF16 KV, not shipped) | 40 | 0 | 63.7, 68.45, 71.0 tok/s | 68.6, 67.65 | 124,433 tokens, 831 MiB left |
+
+All rows are measured on the MSI Raider 18 Max HX, SGLang v0.5.23, with the hands-on `sustained.py` (fresh prompts of 200 to 12,000 words, 256 or 512 tokens each) ([scripts/sustained.py](scripts/sustained.py), `shapes/<run>-sustained.json`); nothing failed, so no fraction was lowered.
+
+## M13: FP8 against BF16 KV
+
+| Model | FP8 correct | BF16 correct | Same final answers | Notes |
+|---|---|---|---|---|
+| k2-horizon-7b | 20 of 20 | 20 of 20 | 20 of 20, identical `content` strings | 5 reasoning traces differ in length; BF16 at 32k because its pool holds 41,198 tokens |
+| gemma-4-12b | 19 of 20 | 19 of 20 | 20 of 20 | Both answered 30 for `sum(x * x for x in range(4))` (14), with thinking off; BF16 at ratio 0.06 |
+
+Measured on the MSI Raider 18 Max HX, SGLang v0.5.23: 8 arithmetic, 6 Python-output and 6 tool prompts at temperature 0 ([scripts/seq_b.py](scripts/seq_b.py) `M13`, [scripts/m13_compare.py](scripts/m13_compare.py)).
+gpt-oss-20b's BF16 pool would not hold 128k (FP8's 168,456 tokens halved), and Qwen3.5-9B and Gemma 4 E4B already run BF16, so they were not compared.
+
+## M15: cold starts without a network
+
+| Recipe | Start | `/ready` 200 | Decode-graph capture, cold (warm) | Free after ready | Chat request | Download or fetch lines | Volume afterwards |
+|---|---|---|---|---|---|---|---|
+| qwen3.5-9b | m15-netnone | 48.33 s | 10.01 s (2.38 s) | 607 MiB | 200, `OK` | none | 357 files, 18 MB, removed |
+| k2-horizon-7b | m15-netnone | 137.87 s | 95.26 s (1.21 s) | 865 MiB | 200, `OK` | none | 155 files, 11 MB, removed |
+| gpt-oss-20b | b0-netnone-tik | 253.58 s | 185.09 s (1.72 s) | 1,329 MiB | 200, `OK` | none | 249 files, 23 MB, removed |
+| gemma-4-e4b | m15-netnone | 138.05 s | 100.56 s (1.53 s) | 1,407 MiB | 200, `OK` | none | 307 files, 20 MB, removed |
+| gemma-4-12b | m15-netnone | 136.98 s | 100.06 s (2.44 s) | 1,099 MiB | 200, `OK` | none | 267 files, 20 MB, removed |
+
+All rows are measured on the MSI Raider 18 Max HX, SGLang v0.5.23: a new empty `sglang-measure-cold` volume, `FLASHINFER_NO_DOWNLOAD=1`, `--network none`, no published port, readiness and one chat request through `docker exec`, as measurement A did it ([scripts/run_netnone_b.sh](scripts/run_netnone_b.sh), `shapes/<run>-exec-poll.txt`, `logs/<run>.network-lines.txt`, `logs/<run>.volume-*.txt`).
+- The searched patterns (`download`, `fetch`, `urm.nvidia`, `huggingface.co`, `openaipublic`, `blob.core`, `harmony`, `tiktoken`, `resolve`, `connect`) matched only `server_args`, Gloo's `Unable to resolve hostname` warning and the prefill-graph line in every start (measured).
+- The cold cost is the first decode-graph capture, which compiles kernels into the empty volume: 10 to 185 s; the slowest cold start, 253.6 s for gpt-oss-20b, is above the 217 s the design's D4 takes as the slowest and below its 450 s rule, so `start_timeout_s` 900 stands (measured; the rule is the design's).
+
+## The vLLM DeepSeek-R1 retry (LD11)
+
+Retry 2 counted: a read-only tokenizer folder whose `tokenizer_config.json` names `PreTrainedTokenizerFast` instead of `LlamaTokenizerFast`, passed as `--tokenizer /llmctl/tokenizer`, gave llama.cpp's counts (8, 8,078 and 30,254 tokens) and replies that read correctly, at 73.1 tok/s (measured on the MSI Raider 18 Max HX, vLLM v0.33.0).
+It needs llmctl to build and mount that folder, as the design's D7 does for SGLang, so it is not a recipe change alone; retry 1's arguments-only alternative, `--tokenizer-mode deepseek_v32 --default-chat-template-kwargs '{"thinking":true}'`, also gives correct replies but replaces the model's template (one token more per prompt, `</think>` before earlier replies) ([vllm-deepseek-r1-0528-qwen3-8b/README.md](../../vllm-deepseek-r1-0528-qwen3-8b-retry/measure-b.md)).
+The draft `$SCRATCH/sglang/overrides/vllm/deepseek-r1-0528-qwen3-8b.toml` carries retry 2's arguments and says what it needs.
+
+## Draft recipes
+
+In the design's D5 format, in `$SCRATCH/sglang/overrides/sglang/`: `qwen3.5-9b.toml`, `k2-horizon-7b.toml`, `gpt-oss-20b.toml`, `gemma-4-e4b.toml`, `gemma-4-12b.toml`; and `$SCRATCH/sglang/overrides/vllm/deepseek-r1-0528-qwen3-8b.toml` for LD11.
+Mellum2.1, Groot and DeepSeek-R1 have no SGLang draft, because they do not run.
+
+## What contradicted the research report or measurement A
+
+- Report section 4 calls Mellum2.1 "the best next candidate": it does not load, because SGLang's compressed-tensors WNA16 MoE loader expects asymmetric zero points as [groups, out/8] and the checkpoint stores [out/8, groups] (measured; layout inferred from the source).
+- Report section 4 puts DeepSeek-R1 on SGLang at "about 9.1 GiB as on vLLM": SGLang's online FP8 creates every weight in BF16 first, 15.26 GiB, and runs out of memory before loading (measured; mechanism inferred from `fp8.py`).
+- Report section 3.5 expects the audio failure "should not apply" to Gemma 4 12B's encoder-free class: that class failed too, on an audio projection sized from a config key the checkpoint lacks, and the same `audio_config` null flag fixes both models (measured).
+- Report section 4's Groot estimate (11.9 GiB of weights, 128k FP8 with at most 4 Mamba slots) was never reached: the start died in the FP4 Marlin preparation with about 12.4 GiB loaded (measured; the weight figure is an estimate from the GPU peak).
+- Report sections 3.3 and 5.1 and the design's Measurements table give gpt-oss-20b's paged host memory as 13.94 GiB of anonymous memory: that was the loading peak; the pinned store is 19.19 GiB of shared memory and the non-reclaimable total 24.35 GiB (measured).
+- Measurement A's gpt-oss-20b note (27.1 GiB `file`, "page cache and shared memory, which the trace does not split"): 19.19 GiB of it is the expert store in shared memory (measured).
+- Measurement A's threshold estimate of about 1.0 GiB free at ready (without a warm-up) applies only without the NCCL variables; with them the largest drop over the whole protocol was 374 MiB, so D8's rule gives 640 MiB (measured; the threshold is an estimate).
+- Report section 4's Gemma 4 12B BF16 note ("fits only with a ratio near 0.03"): at fraction 0.90 the pool holds 128k up to ratio 0.066, and ratio 0.06 gave 139,214 tokens (measured; the 0.066 bound is arithmetic on the measured pool).
+- Report section 4's Gemma 4 E4B row: the retry works, but it needs `--swa-full-tokens-ratio 0.1` as well for the 64k context, its vision tower stays uninitialized, and SGLang allocates KV for all 42 layers although 18 share their KV (measured; the KV-sharing reading is an estimate checked against the pool size).
+- The design's D4 takes 217 s as the slowest start; gpt-oss-20b's offline cold start took 253.6 s, still under the design's 450 s line (measured).
+- Report section 4 expects SGLang to reach about 7 of 15 models once the four cached candidates and the E4B retry are measured: wave 2 adds two (Gemma 4 E4B and Gemma 4 12B, both with the `audio_config` flag), so SGLang reaches 5 before wave 3 (measured).
+
+## Start and end state
+
+- Before: `gemma-4-26b-a4b` on llama.cpp running and ready, 15,008 MiB of GPU memory, every installed client on it; Kimi listed as not on `PATH` without the `.kimi-code/bin` prefix ([lane-logs/llmctl-status-before.txt](lane-logs/llmctl-status-before.txt)) (measured on the MSI Raider 18 Max HX, llmctl).
+- `./llmctl down` at 21:16:11 (+03:00) left 112 MiB in use ([lane-logs/llmctl-down.txt](lane-logs/llmctl-down.txt)) (measured).
+- End: `PATH=$HOME/.kimi-code/bin:$PATH ./llmctl up gemma-4-26b-a4b` at 23:05:46 (+03:00) printed `ready` with no `wrote` line, and `./llmctl status` read running, health ready, 15,008 MiB of 16,303 MiB, and OpenCode, Hermes, Pi, dsh and Kimi on the running model ([lane-logs/llmctl-up.txt](lane-logs/llmctl-up.txt), [lane-logs/llmctl-status-after.txt](lane-logs/llmctl-status-after.txt)) (measured on the MSI Raider 18 Max HX, llmctl).
+- Left behind: no `sglang-measure` or `vllm-measure` container, every `sglang-measure-cold`, `sglang-measure-cold2`, `vllm-measure-cold` and `vllm-measure-cold-fi` volume removed after its start, `sglang-research-cache` kept (the warm starts added their caches to it; LD18 removes it later), the runtime's `vllm-cache` and `flashinfer-cache` volumes used by the two DeepSeek-R1 retries, and the repository not edited.
+- The two download containers of the downloads lane (`dl-gguf-mellum2.1-12b`, `dl-qwen3.6-nvfp4`) ran during the first starts and had ended by the restore; this lane did not touch them.
+
+## Files
+
+- One folder per runtime and model, each with `cmds/` (one `docker run` file per start, reading `$HOME` and `$SCRATCH`), `logs/` (cut and full logs, 1 s GPU and cgroup traces with anon, file, shmem and kernel, process memory, state, metadata), `shapes/` (readiness and `/server_info`, sequence records, probe, api probe, sustained load, M13 answers, summaries) and a `README.md`.
+- [scripts/](scripts/): `run_b.sh` and `run_netnone_b.sh` drive a start, `poll_b.py` polls readiness, `seq_b.py` runs the measurement sequence, `mkcmd.py` writes the `docker run` files, `trace_b.sh` and `procmem.sh` record memory, `summarize_b.py`, `margins.py`, `nonreclaim.py`, `m13_compare.py` and `starts_table.py` summarize, `scrub.py` replaced local paths with `$HOME` and `$SCRATCH`, `chain1.sh` to `chain9.sh` queued the starts; copied unchanged: `make_overlay.py`, `mcommon.py`, `cutlog.py` and `reqlog.py` from measurement A, `sustained.py` from the hands-on lane, and `llm_probe.py` from `research/2026-11-16/` (sha256 `ee3fdc0a...` as in the repository); `llm_probe_chat_only.py` applies the vLLM record's `probe-chat-only.diff`, and `api_probe.py` is the hands-on copy reading `/server_info`; run the Python scripts with `python3 -I`.
+- `overlay/`: the model overlays and `*.make.json` (the generation config before and after).
+- `offline/`: parser names and source files read from the two images offline, cited by path and line; vendor code, read as data.
+- [lane-logs/](lane-logs/): the llmctl outputs and the chain logs.

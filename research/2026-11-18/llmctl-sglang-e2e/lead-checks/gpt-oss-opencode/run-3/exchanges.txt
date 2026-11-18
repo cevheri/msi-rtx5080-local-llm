@@ -1,0 +1,26 @@
+exchange 1 at 06:43:36.671098: POST /v1/chat/completions HTTP/1.1
+  parameters {"model": "gpt-oss-20b", "stream": true, "stream_options": {"include_usage": true}}, tools 0
+  system: 1806 chars
+  user: 307 chars | Here is the first message of the conversation:  <message> Create a file named hello.py containing a 
+  reply: HTTP/1.1 200 OK
+exchange 2 at 06:43:36.695179: POST /v1/chat/completions HTTP/1.1
+  parameters {"model": "gpt-oss-20b", "stream": true, "stream_options": {"include_usage": true}, "max_completion_tokens": 16384}, tools 8
+  system: 19285 chars
+  user: 210 chars | Create a file named hello.py containing a function add(a, b) that returns a + b, and a main block th
+  reply: HTTP/1.1 200 OK
+exchange 3 at 06:43:39.833128: POST /v1/chat/completions HTTP/1.1
+  parameters {"model": "gpt-oss-20b", "stream": true, "stream_options": {"include_usage": true}, "max_completion_tokens": 16384}, tools 8
+  system: 19285 chars
+  user: 210 chars | Create a file named hello.py containing a function add(a, b) that returns a + b, and a main block th
+  assistant: 4 chars, other fields (JSON chars) {'tool_calls': 246, 'reasoning_content': 774}
+  tool: 35 chars, other fields (JSON chars) {'tool_call_id': 31}
+  reply: HTTP/1.1 200 OK
+exchange 4 at 06:43:40.216948: POST /v1/chat/completions HTTP/1.1
+  parameters {"model": "gpt-oss-20b", "stream": true, "stream_options": {"include_usage": true}, "max_completion_tokens": 16384}, tools 8
+  system: 19285 chars
+  user: 210 chars | Create a file named hello.py containing a function add(a, b) that returns a + b, and a main block th
+  assistant: 4 chars, other fields (JSON chars) {'tool_calls': 246, 'reasoning_content': 774}
+  tool: 35 chars, other fields (JSON chars) {'tool_call_id': 31}
+  assistant: 4 chars, other fields (JSON chars) {'tool_calls': 131, 'reasoning_content': 42}
+  tool: 125 chars, other fields (JSON chars) {'tool_call_id': 31}
+  reply: HTTP/1.1 200 OK

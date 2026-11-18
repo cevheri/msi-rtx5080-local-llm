@@ -21,7 +21,7 @@ class GoldenTest(unittest.TestCase):
                 self.assertEqual(golden_argv(recipe_id, runtime, REPO / "recipes"), expected,
                                  f"{runtime}/{recipe_id} changed; {HINT}")
                 checked += 1
-        self.assertEqual(checked, 19)
+        self.assertEqual(checked, 29)
 
     def test_no_orphan_golden(self):
         catalog = load_catalog(REPO / "recipes", None)
@@ -42,7 +42,7 @@ class GoldenTest(unittest.TestCase):
                     self.assertTrue(path.is_file(), f"no client golden file {path}; {HINT}")
                     self.assertEqual(text, path.read_text(), f"{runtime}/{recipe_id}{suffix} changed; {HINT}")
                     checked[client] += 1
-        self.assertEqual(checked, {"hermes": 19, "pi": 19, "dsh": 19, "kimi": 19})
+        self.assertEqual(checked, {"hermes": 29, "pi": 29, "dsh": 29, "kimi": 29})
 
     def test_no_orphan_client_golden(self):
         catalog = load_catalog(REPO / "recipes", None)
@@ -66,7 +66,7 @@ class GoldenTest(unittest.TestCase):
                 first = path.read_text().splitlines(keepends=True)[0]
                 self.assertEqual(first, dsh_config.render_block(target, default=False), f"{runtime}/{recipe_id}")
                 checked += 1
-        self.assertEqual(checked, 19)
+        self.assertEqual(checked, 29)
 
 
 if __name__ == "__main__":

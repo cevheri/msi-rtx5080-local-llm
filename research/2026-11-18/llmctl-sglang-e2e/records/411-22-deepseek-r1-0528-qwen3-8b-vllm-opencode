@@ -1,0 +1,8 @@
+{
+  "command": "opencode run --standalone --archived --auto --format json --model vllm-docker/deepseek-r1-0528-qwen3-8b 'Say hello in one sentence.'",
+  "cwd": "$WORK/22-deepseek-r1-0528-qwen3-8b-vllm-opencode",
+  "exit": 1,
+  "seconds": 2.1,
+  "stdout": "{\"type\":\"step_start\",\"timestamp\":1794970375852,\"sessionID\":\"ses_e136db001ffeNH5JwDwgcFCEhl\",\"part\":{\"id\":\"prt_1ec9256ac00131soVrDp0qn4dA\",\"sessionID\":\"ses_e136db001ffeNH5JwDwgcFCEhl\",\"messageID\":\"msg_1ec92569d001h9agyvEM9DKeE6\",\"type\":\"step-start\"}}\n{\"type\":\"error\",\"timestamp\":1794970375866,\"sessionID\":\"ses_e136db001ffeNH5JwDwgcFCEhl\",\"error\":{\"type\":\"provider.invalid-request\",\"message\":\"\\\"auto\\\" tool choice requires --enable-auto-tool-choice and --tool-call-parser to be set\",\"status\":400,\"response\":{\"body\":\"{\\\"error\\\":{\\\"message\\\":\\\"\\\\\\\"auto\\\\\\\" tool choice requires --enable-auto-tool-choice and --tool-call-parser to be set\\\",\\\"type\\\":\\\"BadRequestError\\\",\\\"param\\\":null,\\\"code\\\":400}}\"}}}\n",
+  "stderr": ""
+}

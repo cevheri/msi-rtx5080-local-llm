@@ -1,0 +1,9 @@
+gpu_used_before_mib=112
+enforced_power_limit=140.00W
+download_running=1
+up_exit=0 up_seconds=3.494462842
+gpu_right_after_ready=9758MiB,6085MiB
+probe_exit=0
+test_exit=0
+seq_exit=0
+down_exit=0

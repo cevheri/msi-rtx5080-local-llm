@@ -1,0 +1,8 @@
+{
+  "command": "./llmctl down",
+  "cwd": "$HOME/projects/llm",
+  "exit": 0,
+  "seconds": 1.4,
+  "stdout": "stopped qwen3.6-35b-a3b in container 'llamacpp'\nOpenCode, Hermes, Pi, dsh and Kimi still point at qwen3.6-35b-a3b and get no answer until the next ./llmctl up\n  switch back: OpenCode /models; hermes profile use default; Pi /model; dsh: delete the agent-default-model and acp lines in $HOME/.dsh/cordis.patch.yml; Kimi /model\n  Kimi retries a stopped server for about two and a half minutes before a prompt fails\n",
+  "stderr": ""
+}

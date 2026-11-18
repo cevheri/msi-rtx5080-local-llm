@@ -1,0 +1,29 @@
+{
+ "links": 16,
+ "generation_config_source_exists": true,
+ "before": {
+  "bos_token_id": 248044,
+  "do_sample": true,
+  "eos_token_id": [
+   248046,
+   248044
+  ],
+  "pad_token_id": 248044,
+  "temperature": 1.0,
+  "top_k": 20,
+  "top_p": 0.95
+ },
+ "after": {
+  "bos_token_id": 248044,
+  "do_sample": true,
+  "eos_token_id": [
+   248046,
+   248044
+  ],
+  "pad_token_id": 248044,
+  "temperature": 0.6,
+  "top_k": 20,
+  "top_p": 0.95,
+  "min_p": 0.0
+ }
+}

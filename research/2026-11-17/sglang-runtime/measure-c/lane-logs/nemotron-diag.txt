@@ -1,0 +1,17 @@
+{"exit": "ready", "ready_seen_s": 58.12, "served_listed_s": 57.06, "memory_usage": {"weight": 11.451, "kvcache": 1.36, "startup_available": 1.301, "token_capacity": 237617, "token_capacity_swa": null, "graph": {"prefill": 0.0, "decode": 0.057, "target_verify": 0.0, "draft_prefill": 0.0, "draft_decode": 0.0, "draft_extend": 0.0}}, "gpu_right_after_ready": {"t": 1794951642.454, "used_mib": 14692, "free_mib": 1150, "total_mib": 16303}}
+{"event": "m13", "i": 18, "kind": "tool", "status": 200, "finish": "stop", "content": "I\u2019m not able to provide real\u2011time exchange rates, so I can\u2019t give you the exact conversion right now. However, you can quickly get the current EUR \u2192 JPY rate by checking a reliable source such as:\n\n- ", "reasoning_chars": 0, "completion_tokens": 116, "answer": [], "correct": false, "t": 179
+{"event": "m13", "i": 19, "kind": "tool", "status": 200, "finish": "stop", "content": "I\u2019m not sure of the exact time in London right now, but you can find the current local time by checking a world clock or searching \u201ccurrent time London\u201d online. Let me know if you need anything else!", "reasoning_chars": 0, "completion_tokens": 45, "answer": [], "correct": false, "t": 1794951706.6
+{"event": "m13_summary", "correct": 10, "total": 20, "t": 1794951706.613, "utc": "21:41:46"}
+{"event": "end", "result": "completed", "container": "running exit=0 oom=false", "cgroup": {"anon_gib": 4.904, "file_gib": 26.913, "shmem_gib": 16.005, "unevictable_gib": 0.0, "peak_gib": 32.0}, "memory_usage": {"weight": 11.451, "kvcache": 1.36, "startup_available": 1.301, "token_capacity": 237617, "token_capacity_swa": null, "graph": {"prefill": 0.0, "decode": 0.057, "target_verify": 0.0, "draft
+comm: file 1 is not in sorted order
+comm: file 2 is not in sorted order
+comm: input is not in sorted order
+logs/diag-k72-f088.log 419 -> 42 lines
+[2026-11-17 21:40:10] Auto-detected template features: reasoning_config=ReasoningToggleConfig(toggle_param='enable_thinking', default_enabled=True, special_case=None, effort_kwarg=None), reasoning_parser=nemotron_3, tool_call_parser=qwen3_coder
+[2026-11-17 21:40:35] Load weight end. elapsed=28.32 s, type=NemotronHForCausalLM, quant=modelopt_mixed, quant_algo=MIXED_PRECISION, avail mem=3.59 GB, mem usage=11.45 GB.
+[2026-11-17 21:40:38] Mamba Cache is allocated. max_mamba_cache_size: 8, conv_state size: 0.01GB, ssm_state size: 0.40GB 
+[2026-11-17 21:40:38] KV Cache is allocated. dtype: torch.bfloat16, #tokens: 237617, K size: 0.68 GB, V size: 0.68 GB
+[2026-11-17 21:40:40] max_total_num_tokens=237617, chunked_prefill_size=2048, max_prefill_tokens=16384, max_running_requests=1, context_len=131072, available_gpu_mem=1.30 GB
+[2026-11-17 21:40:40] Using default chat sampling params from model generation config: {'temperature': 1.0, 'top_p': 0.95}
+[2026-11-17 21:40:42] The server is fired up and ready to roll!
+running exit=0 oom=false started=2026-11-17T21:39:44.398459724Z finished=0001-01-01T00:00:00Z

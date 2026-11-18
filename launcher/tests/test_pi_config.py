@@ -79,11 +79,11 @@ class EntryTest(unittest.TestCase):
                 self.assertEqual(len(entry["models"]), 1)
                 del entry["models"]
                 expected = dict(reference)
-                if target.runtime.name == "vllm":
-                    expected["baseUrl"] = "http://127.0.0.1:8000/v1"
+                if target.runtime.name != "llamacpp":
+                    expected["baseUrl"] = f"http://127.0.0.1:{target.runtime.host_port}/v1"
                 self.assertEqual(entry, expected)
                 checked += 1
-        self.assertEqual(checked, 19)
+        self.assertEqual(checked, 29)
 
     def test_default_levels(self):
         expected = {

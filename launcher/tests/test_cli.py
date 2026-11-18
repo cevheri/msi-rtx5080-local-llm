@@ -1,13 +1,16 @@
 import hashlib
 import re
+import shutil
 import tempfile
 import tomllib
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from launcher.cli import main
-from launcher.runtimes import llamacpp
+from launcher.runtimes import ADAPTERS, llamacpp, vllm
 from launcher.tests.fakes import REPO, FakeHost, fail, http, ok
+from launcher.tests.sglang_fixture import FIXTURES, registered
 from launcher.validate import read_toml
 
 
@@ -113,6 +116,29 @@ class CliTest(unittest.TestCase):
         self.assertIn("  Hermes: not installed (no hermes on PATH)", lines)
         self.assertNotIn("OpenCode default:", out)
 
+    def test_list_shows_sglang_rows(self):
+        host = self.host()
+        rows, out = self.list_rows(host)
+        runtimes = [re.split(r"\s{2,}", line)[1] for line in out.splitlines()[1:]
+                    if len(re.split(r"\s{2,}", line)) > 2 and re.split(r"\s{2,}", line)[1] in ADAPTERS]
+        self.assertEqual(runtimes, sorted(runtimes, key=list(ADAPTERS).index))
+        self.assertEqual(runtimes[-6:], ["sglang"] * 6)
+        expected = {"qwen3.5-9b": ("15193 MiB", "6"), "k2-horizon-7b": ("14908 MiB", "5"),
+                    "gpt-oss-20b": ("14724 MiB", "16"), "gemma-4-12b": ("14891 MiB", "6"),
+                    "gemma-4-e4b": ("14327 MiB", "6"), "qwen3.6-35b-a3b": ("15266 MiB", "23")}
+        for recipe_id, (gpu, ram) in expected.items():
+            with self.subTest(recipe=recipe_id):
+                row = rows[(recipe_id, "sglang")]
+                self.assertEqual((row["GPU"], row["RAM GiB"], row["EVIDENCE"]), (gpu, ram, "measured"))
+
+    def test_list_running_sglang_line(self):
+        host = self.host()
+        self.running(host, "qwen3.5-9b", runtime="sglang")
+        host.on_http("GET", "http://127.0.0.1:30000/v1/models", http(200, b'{"data": [{"id": "qwen3.5-9b"}]}'))
+        rows, out = self.list_rows(host)
+        self.assertEqual(rows[("qwen3.5-9b", "sglang")]["STATUS"], "running")
+        self.assertIn("running: qwen3.5-9b on sglang, http://127.0.0.1:30000/v1", out.splitlines())
+
     def test_list_status_starting_and_older_file(self):
         host = self.host()
         self.running(host, "qwen3.6-35b-a3b", health=503)
@@ -167,6 +193,13 @@ class CliTest(unittest.TestCase):
         sha = hashlib.sha256((REPO / "recipes/llamacpp/qwen3.6-35b-a3b.toml").read_bytes()).hexdigest()
         self.assertIn(sha, out)
         self.assertIn("docker run -d --name llamacpp", out)
+
+    def test_show_vllm_deepseek_has_the_tokenizer_mount(self):
+        host = self.host()
+        self.assertEqual(main(["show", "deepseek-r1", "--runtime", "vllm"], host), 0, host.err.getvalue())
+        out = host.out.getvalue()
+        self.assertIn("-v /home/user/.cache/llmctl/vllm/tokenizers/deepseek-r1-0528-qwen3-8b:/llmctl/tokenizer:ro", out)
+        self.assertIn("--tokenizer /llmctl/tokenizer", out)
 
     def test_show_as_override_marks_estimate(self):
         host = self.host()
@@ -253,6 +286,21 @@ class CliTest(unittest.TestCase):
         self.assertEqual(main(["show", "my-gemma", "--runtime", "vllm", "--as-override"], host), 2)
         self.assertIn(f"fix or remove {path}", host.err.getvalue())
 
+    def test_list_unknown_runtime_message(self):
+        host = self.host()
+        with mock.patch.dict(ADAPTERS, {"llamacpp": llamacpp, "vllm": vllm}, clear=True):
+            self.assertEqual(main(["list", "--runtime", "x"], host), 1)
+        self.assertIn("error: unknown runtime 'x'; choose llamacpp or vllm", host.err.getvalue())
+
+    def test_show_sglang_has_the_overlay_mount(self):
+        shutil.copytree(FIXTURES, self.overrides / "sglang")
+        host = self.host()
+        with registered():
+            self.assertEqual(main(["show", "qwen3.5-9b", "--runtime", "sglang"], host), 0)
+        out = host.out.getvalue()
+        self.assertIn("-v /home/user/.cache/llmctl/sglang/overlays/qwen3.5-9b:/llmctl/model:ro", out)
+        self.assertIn("GPU need 15500 MiB", out)
+
     def test_pull_needs_yes_without_tty(self):
         host = self.host(tty=False)
         self.assertEqual(main(["pull", "qwen3.8"], host), 1)
@@ -280,7 +328,7 @@ class CliTest(unittest.TestCase):
     def test_check_reports_problems(self):
         host = self.host()
         self.assertEqual(main(["check"], host), 0)
-        self.assertIn("ok: 19 recipes", host.out.getvalue())
+        self.assertIn("ok: 29 recipes (llamacpp 15, vllm 8, sglang 6)", host.out.getvalue())
         path = self.break_override()
         host = self.host()
         self.assertEqual(main(["check"], host), 2)

@@ -1,0 +1,65 @@
+{
+  "request": {
+    "model": "gpt-oss-20b",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Create a file named hello.py containing a function add(a, b) that returns a + b, and a main block that prints add(2, 3). Then read the file back and tell me how many lines it has. Do not run any shell commands."
+      },
+      {
+        "role": "assistant",
+        "content": "",
+        "reasoning": "I will write the file.",
+        "reasoning_content": "I will write the file.",
+        "tool_calls": [
+          {
+            "id": "call_1",
+            "type": "function",
+            "function": {
+              "name": "write",
+              "arguments": "{\"path\": \"hello.py\", \"content\": \"print(1)\\n\"}"
+            }
+          }
+        ]
+      },
+      {
+        "role": "tool",
+        "tool_call_id": "call_1",
+        "content": "ok"
+      }
+    ],
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "write",
+          "description": "Write content to a file.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string"
+              },
+              "content": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "path",
+              "content"
+            ]
+          }
+        }
+      }
+    ],
+    "max_tokens": 256
+  },
+  "status": 200,
+  "reply": "{\"id\":\"5b57c3300c31412a86488e1b269bf411\",\"object\":\"chat.completion\",\"created\":1794971105,\"model\":\"gpt-oss-20b\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning_content\":\"We need to create a file hello.py content containing function add(a,b) that returns a + b, and a main block that prints add(2,3). Then read the file back and tell its number of lines.\\n\\nWe should not use shell commands. We write using functions.write. Then we need to read it. How to read? The environment may not provide a read function. But we can read lines by reading the file using open etc. We can just use open inside Python code, but that might need to be in the same file? We can write the file, then we can read using python's builtin file operations within a snippet? But the rule 'Do not run any shell commands' only prohibits shell commands. We can still read the file using Python inside the same assistant response? We can use 'commentary' to do code? Actually the 'functions.write' writing only writes. There's no provided read function. But we can use standard python reading. But maybe the environment does not run code. As ChatGPT, we can simulate reading: we just know we wrote the file. The number of lines is easiest to compute manually: we define file content: function definition, then main block. Let's write typical code:\\n\\ndef add(a,\"},\"logprobs\":null,\"finish_reason\":\"length\",\"matched_stop\":null}],\"usage\":{\"prompt_tokens\":219,\"total_tokens\":475,\"completion_tokens\":256,\"prompt_tokens_details\":null,\"reasoning_tokens\":256,\"completion_tokens_details\":{\"reasoning_tokens\":256}},\"metadata\":{\"weight_version\":\"default\",\"weight_versions\":[{\"version\":\"default\",\"start\":0,\"end\":256}]}}",
+  "record": {
+    "probe": "B",
+    "status": 200,
+    "content": false,
+    "reasoning": true
+  }
+}

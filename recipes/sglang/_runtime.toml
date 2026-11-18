@@ -1,0 +1,33 @@
+# Settings shared by every SGLang recipe, and by nothing else.
+# The server runs as root with the model cache mounted read-only; llmctl mounts each recipe's model overlay,
+# links into the pinned snapshot plus the recipe's sampling, read-only at /llmctl/model (sglang/README.md).
+schema = 1
+runtime = "sglang"
+image = "lmsysorg/sglang:v0.5.23-runtime"
+container_name = "sglang"
+host_port = 30000
+ready_path = "/ready"
+start_timeout_s = 900
+opencode_provider = "sglang-docker"
+volumes = ["sglang-cache:/root/.cache/sglang"]
+# The free GPU memory (nvidia-smi, after a /flush_cache of the idle server) that must remain once it is ready; set from
+# the margins measured with every shipped recipe (sglang/benchmarking.md#post-ready-margins). Valid only with the two
+# NCCL variables below.
+min_free_at_ready_mib = 768
+
+[env]
+HF_HUB_OFFLINE = "1"
+# The model cache is mounted read-only, so code that a --trust-remote-code model brings is copied here instead.
+HF_MODULES_CACHE = "/tmp/hf_modules"
+MAX_JOBS = "2"
+# A missing FlashInfer artifact fails the start instead of being downloaded.
+FLASHINFER_NO_DOWNLOAD = "1"
+# SGLang v0.5.23 allocates NCCL memory on the first grammar-constrained request; these two move that allocation into
+# the server's own warm-up, before ready, and shrink it from about 605 MiB to about 100 MiB (fix: SGLang #48487).
+SYNC_TOKEN_IDS_ACROSS_TP = "1"
+NCCL_MAX_P2P_NCHANNELS = "1"
+# gpt-oss's Harmony vocabulary from the image instead of openaipublic.blob.core.windows.net.
+TIKTOKEN_ENCODINGS_BASE = "/opt/sglang/lib/python3.12/site-packages/tml_renderers/data"
+# The image's PyTorch rounds each pinned host allocation up to a power of two (inferred from its source); this keeps
+# every one above 1 MiB at its size, which cut gpt-oss-20b's pinned expert store from 19.19 to 10.37 GiB (measured).
+PYTORCH_ALLOC_CONF = "pinned_max_round_threshold_mb:1"

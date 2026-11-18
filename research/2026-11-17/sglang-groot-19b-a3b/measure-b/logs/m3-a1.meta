@@ -1,0 +1,4 @@
+gpu_used_before_mib=112
+cmd=m3-a1.sh
+docker_run_exit=0
+poller_exit=2

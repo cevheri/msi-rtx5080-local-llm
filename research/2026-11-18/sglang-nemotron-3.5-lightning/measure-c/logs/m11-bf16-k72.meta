@@ -1,0 +1,6 @@
+gpu_used_before_mib=112
+enforced_power_limit=145.00W
+cmd=m11-bf16-k72.sh
+docker_run_exit=0
+poller_exit=0
+seq_exit=0

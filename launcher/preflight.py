@@ -7,10 +7,11 @@ from launcher.docker_state import Container, by_name, docker_ok, image_present, 
 from launcher.errors import PreflightError
 from launcher.gpu import gpu_apps, gpu_info
 from launcher.model import Recipe, RuntimeConfig
+from launcher.runtimes import ADAPTERS
 
 
 def pull_hint(recipe: Recipe) -> str:
-    runtime = "" if recipe.runtime == "llamacpp" else f" --runtime {recipe.runtime}"
+    runtime = "" if recipe.runtime == next(iter(ADAPTERS)) else f" --runtime {recipe.runtime}"
     return f"./llmctl pull {recipe.id}{runtime}"
 
 

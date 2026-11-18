@@ -1,0 +1,8 @@
+{
+  "command": "hermes -p llmctl config get model_overrides --json",
+  "cwd": "$WORK/27-gemma-4-e4b-sglang-hermes-config-model_overrides",
+  "exit": 0,
+  "seconds": 0.4,
+  "stdout": "{\"custom\": {\"gemma-4-e4b\": {\"supports_reasoning\": false}}}\n",
+  "stderr": ""
+}

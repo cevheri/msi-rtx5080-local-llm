@@ -2,14 +2,17 @@ import shutil
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
+from launcher import catalog as catalog_module
 from launcher import model
 from launcher.catalog import load_catalog, override_dir, resolve
 from launcher.command import docker_run_argv
 from launcher.errors import RecipeError, UsageError
 from launcher.model import HostEnv
-from launcher.runtimes import ADAPTERS
+from launcher.runtimes import ADAPTERS, llamacpp, vllm
 from launcher.tests.fakes import REPO
+from launcher.tests.sglang_fixture import recipes_with_sglang, registered
 
 ENV = HostEnv(Path("/home/user/.cache/huggingface"), 1000, 1000)
 QWEN_FILE = "qwen3.6-35b-a3b.toml"
@@ -159,6 +162,75 @@ class OverrideDirTest(unittest.TestCase):
         self.assertEqual(override_dir({"XDG_CONFIG_HOME": "/c", "HOME": "/h"}), Path("/c/llmctl/recipes"))
         self.assertEqual(override_dir({"XDG_CONFIG_HOME": "", "HOME": "/h"}), Path("/h/.config/llmctl/recipes"))
 
+    def test_cache_dir(self):
+        self.assertEqual(catalog_module.cache_dir({"XDG_CACHE_HOME": "/c", "HOME": "/h"}), Path("/c/llmctl"))
+        self.assertEqual(catalog_module.cache_dir({"XDG_CACHE_HOME": "", "HOME": "/h"}), Path("/h/.cache/llmctl"))
+        self.assertEqual(catalog_module.cache_dir({"HOME": "/h"}), Path("/h/.cache/llmctl"))
+
+
+class ThreeRuntimeTest(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+
+    def test_runtime_choices(self):
+        with mock.patch.dict(ADAPTERS, {"llamacpp": llamacpp, "vllm": vllm}, clear=True):
+            self.assertEqual(catalog_module.runtime_choices(), "llamacpp or vllm")
+        with registered():
+            self.assertEqual(catalog_module.runtime_choices(), "llamacpp, vllm or sglang")
+            catalog = load_catalog(recipes_with_sglang(Path(self.tmp.name)), None)
+            with self.assertRaises(UsageError) as ctx:
+                resolve(catalog, "qwen3.5-9b", "ollama")
+        self.assertEqual(str(ctx.exception), "unknown runtime 'ollama'; choose llamacpp, vllm or sglang")
+
+    def test_three_runtime_resolution(self):
+        with registered():
+            recipes = recipes_with_sglang(Path(self.tmp.name))
+            # Without a llama.cpp recipe of this name, so the test still checks vLLM before SGLang once a llama.cpp
+            # qwen3.5-9b recipe ships.
+            (recipes / "llamacpp" / "qwen3.5-9b.toml").unlink(missing_ok=True)
+            catalog = load_catalog(recipes, None)
+            self.assertEqual(resolve(catalog, "qwen3.5-9b", None)[0].runtime, "vllm")
+            self.assertEqual(resolve(catalog, "gpt-oss-20b", None)[0].runtime, "llamacpp")
+            self.assertEqual(resolve(catalog, "qwen3.5-9b", "sglang")[0].runtime, "sglang")
+
+    def test_gguf_names_start_on_llamacpp(self):
+        # The four GGUF recipes make these names start on llama.cpp without --runtime; the other engines still
+        # start with --runtime, and mellum2.1-12b has no SGLang recipe, because it does not load on SGLang.
+        catalog = load_catalog(REPO / "recipes", None)
+        for name in ("gemma-4-12b", "gemma-4-e4b", "mellum2.1-12b", "qwen3.5-9b"):
+            with self.subTest(name=name):
+                self.assertEqual(resolve(catalog, name, None)[0].runtime, "llamacpp")
+                self.assertEqual(resolve(catalog, name, "llamacpp")[0].runtime, "llamacpp")
+                self.assertEqual(resolve(catalog, name, "vllm")[0].runtime, "vllm")
+                if name != "mellum2.1-12b":
+                    self.assertEqual(resolve(catalog, name, "sglang")[0].runtime, "sglang")
+        with self.assertRaises(UsageError) as ctx:
+            resolve(catalog, "mellum2.1-12b", "sglang")
+        self.assertEqual(str(ctx.exception), "unknown model 'mellum2.1-12b'; did you mean gemma4-12b, gemma-4-12b? "
+                                             "(./llmctl list shows every recipe)")
+
+    def test_cache_dir_reaches_only_tokenizer_recipes(self):
+        shipped = load_catalog(REPO / "recipes", None)
+        with_cache = HostEnv(ENV.hf_home, ENV.uid, ENV.gid, Path("/x"))
+        with_key = []
+        for name in ("llamacpp", "vllm"):
+            entry = shipped.runtimes[name]
+            adapter = ADAPTERS[name]
+            for recipe in entry.recipes.values():
+                spec = adapter.container_spec(recipe, entry.runtime, with_cache)
+                cached = docker_run_argv(recipe, entry.runtime, spec)
+                with self.subTest(recipe=f"{name}/{recipe.id}"):
+                    if getattr(recipe.model, "tokenizer_class", None) is not None:
+                        with_key.append(recipe.id)
+                        self.assertIn(f"/x/vllm/tokenizers/{recipe.id}:/llmctl/tokenizer:ro", cached)
+                        with self.assertRaises(ValueError):
+                            adapter.container_spec(recipe, entry.runtime, ENV)
+                        continue
+                    plain = adapter.container_spec(recipe, entry.runtime, ENV)
+                    self.assertEqual(cached, docker_run_argv(recipe, entry.runtime, plain))
+        self.assertEqual(with_key, ["deepseek-r1-0528-qwen3-8b"])
+
 
 TOGGLE_OFF = (16384, "toggle", "off", (), ())
 EFFORT_LMH = (16384, "effort", None, ("low", "medium", "high"), ())
@@ -168,17 +240,27 @@ SHIPPED_CLIENTS = {
     ("llamacpp", "gemma-4-26b-a4b"): TOGGLE_OFF,
     ("llamacpp", "nemotron-3.5-lightning"): TOGGLE_OFF,
     ("llamacpp", "groot-19b-a3b"): TOGGLE_OFF,
+    ("llamacpp", "qwen3.5-9b"): TOGGLE_OFF,
+    ("llamacpp", "gemma-4-12b"): TOGGLE_OFF,
+    ("llamacpp", "gemma-4-e4b"): TOGGLE_OFF,
     ("vllm", "groot-19b-a3b"): TOGGLE_OFF,
     ("vllm", "gemma-4-12b"): TOGGLE_OFF,
     ("vllm", "gemma-4-e4b"): TOGGLE_OFF,
     ("vllm", "qwen3.5-9b"): TOGGLE_OFF,
+    ("sglang", "qwen3.5-9b"): TOGGLE_OFF,
+    ("sglang", "gemma-4-12b"): TOGGLE_OFF,
+    ("sglang", "gemma-4-e4b"): TOGGLE_OFF,
+    ("sglang", "qwen3.6-35b-a3b"): TOGGLE_OFF,
     ("llamacpp", "nemotron-3.5-bolt"): (16384, "toggle", "off", (), (("medium_effort", True),)),
     ("vllm", "mellum2.1-12b"): (16384, "toggle", "on", (), ()),
+    ("llamacpp", "mellum2.1-12b"): (16384, "toggle", "on", (), ()),
     ("llamacpp", "qwen3.8-27b"): (16384, "effort", None, ("none", "low", "medium"), ()),
     ("llamacpp", "gpt-oss-20b"): EFFORT_LMH,
     ("vllm", "gpt-oss-20b"): EFFORT_LMH,
+    ("sglang", "gpt-oss-20b"): EFFORT_LMH,
     ("llamacpp", "k2-horizon-mova-36b"): ALWAYS,
     ("vllm", "k2-horizon-7b"): ALWAYS,
+    ("sglang", "k2-horizon-7b"): ALWAYS,
     ("llamacpp", "deepseek-r1-0528-qwen3-8b"): ALWAYS,
     ("vllm", "deepseek-r1-0528-qwen3-8b"): ALWAYS,
     ("llamacpp", "k2-horizon-7b"): (32768, "always", None, (), ()),
@@ -195,7 +277,7 @@ class ClientMetadataTest(unittest.TestCase):
     def test_shipped_client_metadata(self):
         expected = {key: model.ClientMeta(*value) for key, value in SHIPPED_CLIENTS.items()}
         shipped = load_catalog(REPO / "recipes", None)
-        self.assertEqual(len(expected), 19)
+        self.assertEqual(len(expected), 29)
         self.assertEqual(self.clients_of(shipped), expected)
 
         with_example = load_catalog(REPO / "recipes", REPO / "recipes" / "examples")

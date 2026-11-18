@@ -1,0 +1,5 @@
+gpu_used_before_mib=112
+enforced_power_limit=140.00W
+cmd=mova-a2.sh
+docker_run_exit=0
+poller_exit=2

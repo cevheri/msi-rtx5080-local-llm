@@ -1,0 +1,120 @@
+{
+ "snapshot_shards": 7,
+ "moe_layers": 45,
+ "expert_bytes": 15344856000,
+ "expert_gib": 14.291,
+ "other_bytes": 8890170600,
+ "other_gib": 8.28,
+ "per_layer_mib": [
+  325.2
+ ],
+ "by_tensor_kind_mib": {
+  ".N.down_proj.weight_packed": 4218.8,
+  ".N.down_proj.weight_scale": 527.3,
+  ".N.down_proj.weight_shape": 0.1,
+  ".N.down_proj.weight_zero_point": 131.8,
+  ".N.gate_proj.weight_packed": 4218.8,
+  ".N.gate_proj.weight_scale": 527.3,
+  ".N.gate_proj.weight_shape": 0.1,
+  ".N.gate_proj.weight_zero_point": 131.8,
+  ".N.up_proj.weight_packed": 4218.8,
+  ".N.up_proj.weight_scale": 527.3,
+  ".N.up_proj.weight_shape": 0.1,
+  ".N.up_proj.weight_zero_point": 131.8
+ },
+ "examples": {
+  ".N.down_proj.weight_shape": [
+   "model.layers.3.mlp.experts.0.down_proj.weight_shape",
+   "I64",
+   [
+    2
+   ]
+  ],
+  ".N.gate_proj.weight_shape": [
+   "model.layers.3.mlp.experts.0.gate_proj.weight_shape",
+   "I64",
+   [
+    2
+   ]
+  ],
+  ".N.up_proj.weight_shape": [
+   "model.layers.3.mlp.experts.0.up_proj.weight_shape",
+   "I64",
+   [
+    2
+   ]
+  ],
+  ".N.down_proj.weight_packed": [
+   "model.layers.3.mlp.experts.0.down_proj.weight_packed",
+   "I32",
+   [
+    2560,
+    96
+   ]
+  ],
+  ".N.down_proj.weight_zero_point": [
+   "model.layers.3.mlp.experts.0.down_proj.weight_zero_point",
+   "I32",
+   [
+    320,
+    24
+   ]
+  ],
+  ".N.gate_proj.weight_packed": [
+   "model.layers.3.mlp.experts.0.gate_proj.weight_packed",
+   "I32",
+   [
+    768,
+    320
+   ]
+  ],
+  ".N.gate_proj.weight_zero_point": [
+   "model.layers.3.mlp.experts.0.gate_proj.weight_zero_point",
+   "I32",
+   [
+    96,
+    80
+   ]
+  ],
+  ".N.up_proj.weight_packed": [
+   "model.layers.3.mlp.experts.0.up_proj.weight_packed",
+   "I32",
+   [
+    768,
+    320
+   ]
+  ],
+  ".N.up_proj.weight_zero_point": [
+   "model.layers.3.mlp.experts.0.up_proj.weight_zero_point",
+   "I32",
+   [
+    96,
+    80
+   ]
+  ],
+  ".N.down_proj.weight_scale": [
+   "model.layers.3.mlp.experts.0.down_proj.weight_scale",
+   "BF16",
+   [
+    2560,
+    24
+   ]
+  ],
+  ".N.gate_proj.weight_scale": [
+   "model.layers.3.mlp.experts.0.gate_proj.weight_scale",
+   "BF16",
+   [
+    768,
+    80
+   ]
+  ],
+  ".N.up_proj.weight_scale": [
+   "model.layers.3.mlp.experts.0.up_proj.weight_scale",
+   "BF16",
+   [
+    768,
+    80
+   ]
+  ]
+ }
+}

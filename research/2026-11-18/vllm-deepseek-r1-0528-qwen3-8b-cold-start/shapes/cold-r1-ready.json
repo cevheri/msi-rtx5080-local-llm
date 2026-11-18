@@ -1,0 +1,73 @@
+{
+ "t0": 1794952015.1894178,
+ "kind": "vllm",
+ "exit": "container stopped",
+ "ready_seen_s": null,
+ "served_listed_s": null,
+ "endpoints": {
+  "/health": {
+   "first_200_s": null,
+   "changes": [
+    {
+     "at_s": 0.04,
+     "status": "ConnectionRefusedError",
+     "call_s": 0.001
+    },
+    {
+     "at_s": 0.54,
+     "status": "ConnectionResetError",
+     "call_s": 0.001
+    },
+    {
+     "at_s": 51.05,
+     "status": "ConnectionRefusedError",
+     "call_s": 0.0
+    }
+   ],
+   "polls": 103,
+   "last": "ConnectionRefusedError"
+  },
+  "/v1/models": {
+   "first_200_s": null,
+   "changes": [
+    {
+     "at_s": 0.04,
+     "status": "ConnectionRefusedError",
+     "call_s": 0.001
+    },
+    {
+     "at_s": 0.54,
+     "status": "ConnectionResetError",
+     "call_s": 0.0
+    },
+    {
+     "at_s": 5.54,
+     "status": "RemoteDisconnected",
+     "call_s": 0.0
+    },
+    {
+     "at_s": 6.04,
+     "status": "ConnectionResetError",
+     "call_s": 0.0
+    },
+    {
+     "at_s": 14.04,
+     "status": "RemoteDisconnected",
+     "call_s": 0.004
+    },
+    {
+     "at_s": 14.54,
+     "status": "ConnectionResetError",
+     "call_s": 0.0
+    },
+    {
+     "at_s": 51.05,
+     "status": "ConnectionRefusedError",
+     "call_s": 0.0
+    }
+   ],
+   "polls": 103,
+   "last": "ConnectionRefusedError"
+  }
+ }
+}

@@ -1,0 +1,8 @@
+{
+  "command": "./llmctl status",
+  "cwd": "$HOME/projects/llm",
+  "exit": 0,
+  "seconds": 1.2,
+  "stdout": "qwen3-coder-next on llamacpp, container 'llamacpp', running\n  recipe: shipped file, sha256 5e29629ed8ad, measured\n  port: 8080/tcp -> 127.0.0.1:8080, health: ready\n  container memory: 27.37GiB / 35GiB, GPU memory in use: 15022 MiB of 16303 MiB\nclients:\n  OpenCode: default llamacpp-docker/qwen3-coder-next, the running model ($HOME/.config/opencode/opencode.json)\n  Hermes: profile llmctl for qwen3-coder-next on llama.cpp, the running model; default profile: llmctl ($HOME/.hermes/profiles/llmctl/config.yaml)\n  Pi: llmctl/local for qwen3-coder-next on llama.cpp, the running model; default llmctl/local, thinking off ($HOME/.pi/agent)\n  dsh: llmctl/local for qwen3-coder-next on llama.cpp, the running model; default llmctl/local, held by llmctl ($HOME/.dsh/cordis.patch.yml)\n  Kimi: llmctl/local for qwen3-coder-next on llama.cpp, the running model; default llmctl/local ($HOME/.kimi-code/config.toml)\n",
+  "stderr": ""
+}

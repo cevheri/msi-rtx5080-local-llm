@@ -1,0 +1,63 @@
+{
+ "snapshot_shards": 52,
+ "moe_layers": 23,
+ "expert_bytes": 16523353088,
+ "expert_gib": 15.389,
+ "other_bytes": 5036236508,
+ "other_gib": 4.69,
+ "per_layer_mib": [
+  685.13
+ ],
+ "by_tensor_kind_mib": {
+  ".N.down_proj.weight": 7003.5,
+  ".N.down_proj.weight_scale": 875.4,
+  ".N.down_proj.weight_scale_N": 0.0,
+  ".N.up_proj.weight": 7003.5,
+  ".N.up_proj.weight_scale": 875.4,
+  ".N.up_proj.weight_scale_N": 0.0
+ },
+ "examples": {
+  ".N.down_proj.weight_scale_N": [
+   "backbone.layers.1.mixer.experts.0.down_proj.weight_scale_2",
+   "F32",
+   []
+  ],
+  ".N.up_proj.weight_scale_N": [
+   "backbone.layers.1.mixer.experts.0.up_proj.weight_scale_2",
+   "F32",
+   []
+  ],
+  ".N.down_proj.weight_scale": [
+   "backbone.layers.1.mixer.experts.0.down_proj.weight_scale",
+   "F8_E4M3",
+   [
+    2688,
+    116
+   ]
+  ],
+  ".N.up_proj.weight_scale": [
+   "backbone.layers.1.mixer.experts.0.up_proj.weight_scale",
+   "F8_E4M3",
+   [
+    1856,
+    168
+   ]
+  ],
+  ".N.down_proj.weight": [
+   "backbone.layers.1.mixer.experts.0.down_proj.weight",
+   "U8",
+   [
+    2688,
+    928
+   ]
+  ],
+  ".N.up_proj.weight": [
+   "backbone.layers.1.mixer.experts.0.up_proj.weight",
+   "U8",
+   [
+    1856,
+    1344
+   ]
+  ]
+ }
+}

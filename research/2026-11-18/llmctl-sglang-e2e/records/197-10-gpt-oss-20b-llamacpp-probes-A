@@ -1,0 +1,42 @@
+{
+  "request": {
+    "model": "local",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a short title for a chat about adding two numbers in Python."
+      }
+    ],
+    "reasoning_effort": "none",
+    "response_format": {
+      "type": "json_schema",
+      "json_schema": {
+        "name": "session_title",
+        "strict": true,
+        "schema": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "title"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "max_tokens": 16384,
+    "stream": false
+  },
+  "status": 200,
+  "reply": "{\"choices\":[{\"finish_reason\":\"stop\",\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"title\\\":\\\"Add Two Numbers in Python\\\"}\",\"reasoning_content\":\"The user: \\\"Write a short title for a chat about adding two numbers in Python.\\\" They want a short title. We just produce a short title. Perhaps something like \\\"Adding Two Numbers in Python\\\". Or \\\"Python Sum of Two Numbers\\\". Let's think: short title. Should be brief. Maybe \\\"Python: Add Two Numbers\\\". Or \\\"Add Two Numbers in Python\\\". We'll give a concise title.\\n\\nWe should respond with just the title. Possibly with quotes? No need. Just the title. Let's produce.\\n\\n\"}}],\"created\":1794969488,\"model\":\"local\",\"system_fingerprint\":\"b12407-e574a17b0\",\"object\":\"chat.completion\",\"usage\":{\"completion_tokens\":122,\"prompt_tokens\":81,\"total_tokens\":203,\"prompt_tokens_details\":{\"cached_tokens\":35}},\"id\":\"chatcmpl-ov8Qe3siIudZp7fuhsCVmetVueq1VQYK\",\"timings\":{\"cache_n\":35,\"prompt_n\":46,\"prompt_ms\":48.105,\"prompt_per_token_ms\":1.0457608695652174,\"prompt_per_second\":956.2415549319198,\"predicted_n\":122,\"predicted_ms\":695.617,\"predicted_per_token_ms\":5.748900826446281,\"predicted_per_second\":173.94629515954904}}",
+  "record": {
+    "probe": "A",
+    "status": 200,
+    "content": true,
+    "reasoning": true,
+    "title_ok": true
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "request": {
+    "model": "gpt-oss-20b",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Reply with exactly the word OK."
+      }
+    ],
+    "max_tokens": 256
+  },
+  "status": 200,
+  "reply": "{\"choices\":[{\"finish_reason\":\"stop\",\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"OK\",\"reasoning_content\":\"The user says: \\\"Reply with exactly the word OK.\\\" So just respond with \\\"OK\\\". Ensure no other text.\"}}],\"created\":1794969489,\"model\":\"local\",\"system_fingerprint\":\"b12407-e574a17b0\",\"object\":\"chat.completion\",\"usage\":{\"completion_tokens\":35,\"prompt_tokens\":74,\"total_tokens\":109,\"prompt_tokens_details\":{\"cached_tokens\":60}},\"id\":\"chatcmpl-AlRuItVGpHqHHPCwqSBpwvIOc8nxh3JM\",\"timings\":{\"cache_n\":60,\"prompt_n\":14,\"prompt_ms\":41.73,\"prompt_per_token_ms\":2.9807142857142854,\"prompt_per_second\":335.4900551162234,\"predicted_n\":35,\"predicted_ms\":189.371,\"predicted_per_token_ms\":5.569735294117647,\"predicted_per_second\":179.54174609628717}}",
+  "record": {
+    "probe": "D",
+    "status": 200,
+    "content": true,
+    "reasoning": true
+  }
+}

@@ -1,0 +1,8 @@
+files: 155
+11M	/v
+4.0K	/v/inductor
+9.1M	/v/jit
+4.0K	/v/kernels.lock
+4.0K	/v/nv
+856K	/v/triton
+260K	/v/.cache

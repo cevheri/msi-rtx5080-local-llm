@@ -1,0 +1,57 @@
+chain q2 start 21:00:57
+{"exit": "ready", "ready_seen_s": 61.75, "served_listed_s": 59.06, "memory_usage": {"weight": 9.48, "kvcache": 3.387, "startup_available": 1.08, "token_capacity": 177593, "token_capacity_swa": null, "graph": {"prefill": 0.0, "decode": 0.061, "target_verify": 0.0, "draft_prefill": 0.0, "draft_decode": 0.0, "draft_extend": 0.0}}, "gpu_right_after_ready": {"t": 1794949319.293, "used_mib": 15212, "free_mib": 631, "total_mib": 16303}}
+{"event": "flush_cache", "status": 200, "t": 1794949319.92, "used_mib": 15186, "free_mib": 657, "total_mib": 16303, "utc": "21:01:59"}
+{"event": "phase_start", "step": "probe", "argv": ["/usr/bin/python3", "-I", "$SCRATCH/sglang/measure-c/scripts/llm_probe.py", "--base", "http://127.0.0.1:30000/v1", "--model", "qwen3.6-35b-a3b", "--label", "m11-bf16-k88", "--out", "$SCRATCH
+{"event": "phase_end", "step": "probe", "rc": 0, "seconds": 29.9, "output_tail": "{\n \"label\": \"m11-bf16-k88\",\n \"models\": [\n  \"qwen3.6-35b-a3b\"\n ],\n \"ok\": {\n  \"content\": \"OK\",\n  \"reasoning_chars\": 0,\n  \"finish\": \"stop\",\n  \"usage\": {\n   \"prompt_tokens\": 17,\n   \"total_tokens\": 19,\n   \"completion_tokens\": 2,\n   \"prompt_tokens_details\": null,\n   \"reasoning_t
+{"event": "end", "result": "completed", "container": "running exit=0 oom=false", "cgroup": {"anon_gib": 5.606, "file_gib": 26.097, "shmem_gib": 16.973, "unevictable_gib": 0.0, "peak_gib": 32.0}, "memory_usage": {"weight": 9.48, "kvcache": 3.387, "startup_available": 1.08, "token_capacity": 177593, "token_capacity_swa": null, "graph": {"prefill": 0.0, "decode": 0.061, "target_verify": 0.0, "draft_p
+comm: file 1 is not in sorted order
+comm: file 2 is not in sorted order
+comm: input is not in sorted order
+logs/m11-bf16-k88.log 239 -> 78 lines
+[2026-11-17 21:01:14] Auto-detected template features: reasoning_config=ReasoningToggleConfig(toggle_param='enable_thinking', default_enabled=True, special_case=None, effort_kwarg=None), reasoning_parser=qwen3, tool_call_parser=qwen3_coder
+[2026-11-17 21:01:53] Load weight end. elapsed=35.12 s, type=Qwen3_5MoeForConditionalGeneration, quant=modelopt_mixed, quant_algo=MIXED_PRECISION, avail mem=5.56 GB, mem usage=9.48 GB.
+[2026-11-17 21:01:53] Mamba Cache is allocated. max_mamba_cache_size: 8, conv_state size: 0.01GB, ssm_state size: 0.53GB 
+[2026-11-17 21:01:54] KV Cache is allocated. dtype: torch.bfloat16, #tokens: 177593, K size: 1.69 GB, V size: 1.69 GB
+[2026-11-17 21:01:55] max_total_num_tokens=177593, chunked_prefill_size=2048, max_prefill_tokens=16384, max_running_requests=1, context_len=131072, available_gpu_mem=1.08 GB
+[2026-11-17 21:01:56] Using default chat sampling params from model generation config: {'temperature': 0.6, 'top_k': 20, 'top_p': 0.95, 'min_p': 0.0}
+[2026-11-17 21:01:58] The server is fired up and ready to roll!
+running exit=0 oom=false started=2026-11-17T21:00:57.612029106Z finished=0001-01-01T00:00:00Z
+m11 bf16 K=88 done 21:02:36
+{"exit": "ready", "ready_seen_s": 58.11, "served_listed_s": 55.56, "memory_usage": {"weight": 9.98, "kvcache": 2.907, "startup_available": 1.107, "token_capacity": 152403, "token_capacity_swa": null, "graph": {"prefill": 0.0, "decode": 0.061, "target_verify": 0.0, "draft_prefill": 0.0, "draft_decode": 0.0, "draft_extend": 0.0}}, "gpu_right_after_ready": {"t": 1794949415.285, "used_mib": 15184, "free_mib": 659, "total_mib": 16303}}
+{"event": "flush_cache", "status": 200, "t": 1794949415.779, "used_mib": 15158, "free_mib": 685, "total_mib": 16303, "utc": "21:03:35"}
+{"event": "phase_start", "step": "probe", "argv": ["/usr/bin/python3", "-I", "$SCRATCH/sglang/measure-c/scripts/llm_probe.py", "--base", "http://127.0.0.1:30000/v1", "--model", "qwen3.6-35b-a3b", "--label", "m11-bf16-k96", "--out", "$SCRATCH
+{"event": "phase_end", "step": "probe", "rc": 0, "seconds": 28.6, "output_tail": "{\n \"label\": \"m11-bf16-k96\",\n \"models\": [\n  \"qwen3.6-35b-a3b\"\n ],\n \"ok\": {\n  \"content\": \"OK\",\n  \"reasoning_chars\": 0,\n  \"finish\": \"stop\",\n  \"usage\": {\n   \"prompt_tokens\": 17,\n   \"total_tokens\": 19,\n   \"completion_tokens\": 2,\n   \"prompt_tokens_details\": null,\n   \"reasoning_t
+{"event": "end", "result": "completed", "container": "running exit=0 oom=false", "cgroup": {"anon_gib": 5.645, "file_gib": 23.035, "shmem_gib": 16.973, "unevictable_gib": 0.0, "peak_gib": 28.971}, "memory_usage": {"weight": 9.98, "kvcache": 2.907, "startup_available": 1.107, "token_capacity": 152403, "token_capacity_swa": null, "graph": {"prefill": 0.0, "decode": 0.061, "target_verify": 0.0, "draf
+comm: file 1 is not in sorted order
+comm: file 2 is not in sorted order
+comm: input is not in sorted order
+logs/m11-bf16-k96.log 240 -> 78 lines
+[2026-11-17 21:02:54] Auto-detected template features: reasoning_config=ReasoningToggleConfig(toggle_param='enable_thinking', default_enabled=True, special_case=None, effort_kwarg=None), reasoning_parser=qwen3, tool_call_parser=qwen3_coder
+[2026-11-17 21:03:29] Load weight end. elapsed=31.86 s, type=Qwen3_5MoeForConditionalGeneration, quant=modelopt_mixed, quant_algo=MIXED_PRECISION, avail mem=5.06 GB, mem usage=9.98 GB.
+[2026-11-17 21:03:30] Mamba Cache is allocated. max_mamba_cache_size: 8, conv_state size: 0.01GB, ssm_state size: 0.53GB 
+[2026-11-17 21:03:30] KV Cache is allocated. dtype: torch.bfloat16, #tokens: 152403, K size: 1.45 GB, V size: 1.45 GB
+[2026-11-17 21:03:32] max_total_num_tokens=152403, chunked_prefill_size=2048, max_prefill_tokens=16384, max_running_requests=1, context_len=131072, available_gpu_mem=1.11 GB
+[2026-11-17 21:03:32] Using default chat sampling params from model generation config: {'temperature': 0.6, 'top_k': 20, 'top_p': 0.95, 'min_p': 0.0}
+[2026-11-17 21:03:34] The server is fired up and ready to roll!
+running exit=0 oom=false started=2026-11-17T21:02:37.237830363Z finished=0001-01-01T00:00:00Z
+m11 bf16 K=96 done 21:04:11
+{"exit": "ready", "ready_seen_s": 58.71, "served_listed_s": 56.06, "memory_usage": {"weight": 10.723, "kvcache": 2.165, "startup_available": 1.105, "token_capacity": 113491, "token_capacity_swa": null, "graph": {"prefill": 0.0, "decode": 0.061, "target_verify": 0.0, "draft_prefill": 0.0, "draft_decode": 0.0, "draft_extend": 0.0}}, "gpu_right_after_ready": {"t": 1794949510.455, "used_mib": 15166, "free_mib": 677, "total_mib": 16303}}
+{"event": "flush_cache", "status": 200, "t": 1794949510.943, "used_mib": 15140, "free_mib": 703, "total_mib": 16303, "utc": "21:05:10"}
+{"event": "phase_start", "step": "probe", "argv": ["/usr/bin/python3", "-I", "$SCRATCH/sglang/measure-c/scripts/llm_probe.py", "--base", "http://127.0.0.1:30000/v1", "--model", "qwen3.6-35b-a3b", "--label", "m11-bf16-k104", "--out", "$SCRATCH
+{"event": "phase_end", "step": "probe", "rc": 0, "seconds": 27.1, "output_tail": "{\n \"label\": \"m11-bf16-k104\",\n \"models\": [\n  \"qwen3.6-35b-a3b\"\n ],\n \"ok\": {\n  \"content\": \"OK\",\n  \"reasoning_chars\": 0,\n  \"finish\": \"stop\",\n  \"usage\": {\n   \"prompt_tokens\": 17,\n   \"total_tokens\": 19,\n   \"completion_tokens\": 2,\n   \"prompt_tokens_details\": null,\n   \"reasoning_
+{"event": "end", "result": "completed", "container": "running exit=0 oom=false", "cgroup": {"anon_gib": 5.651, "file_gib": 22.454, "shmem_gib": 16.973, "unevictable_gib": 0.0, "peak_gib": 28.399}, "memory_usage": {"weight": 10.723, "kvcache": 2.165, "startup_available": 1.105, "token_capacity": 113491, "token_capacity_swa": null, "graph": {"prefill": 0.0, "decode": 0.061, "target_verify": 0.0, "dr
+comm: file 1 is not in sorted order
+comm: file 2 is not in sorted order
+comm: input is not in sorted order
+logs/m11-bf16-k104.log 238 -> 79 lines
+[2026-11-17 21:04:28] Auto-detected template features: reasoning_config=ReasoningToggleConfig(toggle_param='enable_thinking', default_enabled=True, special_case=None, effort_kwarg=None), reasoning_parser=qwen3, tool_call_parser=qwen3_coder
+[2026-11-17 21:05:04] Load weight end. elapsed=32.62 s, type=Qwen3_5MoeForConditionalGeneration, quant=modelopt_mixed, quant_algo=MIXED_PRECISION, avail mem=4.31 GB, mem usage=10.72 GB.
+[2026-11-17 21:05:05] Mamba Cache is allocated. max_mamba_cache_size: 8, conv_state size: 0.01GB, ssm_state size: 0.53GB 
+[2026-11-17 21:05:05] KV Cache is allocated. dtype: torch.bfloat16, #tokens: 113491, K size: 1.08 GB, V size: 1.08 GB
+[2026-11-17 21:05:07] KV pool holds 113491 tokens, fewer than --context-length 131072. One full-length request cannot fit, so long requests will be refused or truncated at serving time. Lower --context-length, raise --mem-fraction-static, or free memory taken before the pool is sized.
+[2026-11-17 21:05:07] max_total_num_tokens=113491, chunked_prefill_size=2048, max_prefill_tokens=16384, max_running_requests=1, context_len=131072, available_gpu_mem=1.11 GB
+[2026-11-17 21:05:07] Using default chat sampling params from model generation config: {'temperature': 0.6, 'top_k': 20, 'top_p': 0.95, 'min_p': 0.0}
+[2026-11-17 21:05:09] The server is fired up and ready to roll!
+running exit=0 oom=false started=2026-11-17T21:04:11.821043433Z finished=0001-01-01T00:00:00Z
+m11 bf16 K=104 done 21:05:45
+chain q2 end 21:05:45

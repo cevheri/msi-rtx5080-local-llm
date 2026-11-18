@@ -1,0 +1,11 @@
+--- $SCRATCH/sglang/measure-b/sglang-k2-horizon-7b/README.md
++++ sglang-k2-horizon-7b/measure-b/README.md
+@@ -36,7 +36,7 @@
+ ## M13: FP8 against BF16 KV (start m13-bf16)
+ 
+ The BF16 start is b0-a2 without `--kv-cache-dtype` (BF16 is the default) at a 32k context, because at fraction 0.90 the BF16 pool holds 41,198 tokens, half of FP8's 82,397 ([cmds/m13-bf16.sh](cmds/m13-bf16.sh)).
+-The set is 8 arithmetic, 6 Python-output and 6 tool prompts at temperature 0, each with up to 4,096 tokens and K2's own reasoning ([../scripts/seq_b.py](../scripts/seq_b.py), `M13`).
++The set is 8 arithmetic, 6 Python-output and 6 tool prompts at temperature 0, each with up to 4,096 tokens and K2's own reasoning ([../scripts/seq_b.py](../../sglang-runtime/measure-b/scripts/seq_b.py), `M13`).
+ 
+ | KV dtype | Correct | Same final answer as the other | Same completion length | Decode (probe) | First token 8,085 / 30,261 tokens |
+ |---|---|---|---|---|---|

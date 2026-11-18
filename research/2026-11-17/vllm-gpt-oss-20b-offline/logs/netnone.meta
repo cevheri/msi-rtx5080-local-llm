@@ -1,0 +1,6 @@
+gpu_used_before_mib=112
+cmd=netnone.sh volume=vllm-measure-cold vllm-measure-cold-fi
+docker_run_exit=0
+ready=yes
+removed volume vllm-measure-cold
+removed volume vllm-measure-cold-fi

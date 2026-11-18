@@ -1,0 +1,5 @@
+03:50:43.477 $ ./llmctl down
+03:50:47.272 stopped gpt-oss-20b in container 'sglang'
+03:50:47.275 OpenCode, Hermes, Pi and dsh still point at gpt-oss-20b and get no answer until the next ./llmctl up
+03:50:47.276   switch back: OpenCode /models; hermes profile use default; Pi /model; dsh: delete the agent-default-model and acp lines in $HOME/.dsh/cordis.patch.yml
+03:50:47.280 exit 0

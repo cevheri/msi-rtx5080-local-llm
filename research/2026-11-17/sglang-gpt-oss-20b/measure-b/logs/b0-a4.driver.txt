@@ -1,0 +1,17 @@
+{"exit": "ready", "ready_seen_s": 55.71, "served_listed_s": 54.05, "memory_usage": {"weight": 11.455, "kvcache": 2.121, "startup_available": 1.447, "token_capacity": 168456, "token_capacity_swa": 16845, "graph": {"prefill": 0.0, "decode": 0.059, "target_verify": 0.0, "draft_prefill": 0.0, "draft_decode": 0.0, "draft_extend": 0.0}}, "gpu_right_after_ready": {"t": 1794940161.85, "used_mib": 14514, "free_mib": 1329, "total_mib": 16303}}
+{"event": "gpu_before", "step": "nearfull_p2", "t": 1794940579.424, "used_mib": 14784, "free_mib": 1059, "total_mib": 16303, "utc": "18:36:19"}
+{"event": "request", "step": "nearfull_p2", "status": 200, "t": 1794940579.425, "seconds": 44.704, "finish_reason": "length", "content": "", "reasoning_content_chars": 135, "tool_calls": [], "usage": {"prompt_tokens": 124462, "completion_tokens": 32}, "utc": "18:36:19"}
+{"event": "gpu_after", "step": "nearfull_p2", "cgroup": {"anon_gib": 4.968, "file_gib": 26.81, "shmem_gib": 19.189, "unevictable_gib": 0.0, "peak_gib": 32.0}, "t": 1794940624.159, "used_mib": 14784, "free_mib": 1059, "total_mib": 16303, "utc": "18:37:04"}
+{"event": "end", "result": "completed", "container": "running exit=0 oom=false", "cgroup": {"anon_gib": 4.968, "file_gib": 26.81, "shmem_gib": 19.189, "unevictable_gib": 0.0, "peak_gib": 32.0}, "memory_usage": {"weight": 11.455, "kvcache": 2.121, "startup_available": 1.447, "token_capacity": 168456, "token_capacity_swa": 16845, "graph": {"prefill": 0.0, "decode": 0.059, "target_verify": 0.0, "draf
+logs/b0-a4.log 1913 -> 47 lines
+[2026-11-17 18:28:38] Hybrid SWA model detected. architectures=['GptOssForCausalLM']
+[2026-11-17 18:28:44] Auto-detected template features: reasoning_config=ReasoningToggleConfig(toggle_param=None, default_enabled=None, special_case='always', effort_kwarg=None), reasoning_parser=gpt-oss, tool_call_parser=gpt-oss
+[2026-11-17 18:29:13] Load weight end. elapsed=22.50 s, type=GptOssForCausalLM, quant=mxfp4, avail mem=3.60 GB, mem usage=11.46 GB.
+[2026-11-17 18:29:17] Full KV Cache is allocated. dtype: torch.float8_e4m3fn, #tokens: 168456, K size: 0.96 GB, V size: 0.96 GB
+[2026-11-17 18:29:17] SWA KV Cache is allocated. dtype: torch.float8_e4m3fn, #tokens: 16845, K size: 0.10 GB, V size: 0.10 GB
+[2026-11-17 18:29:17] SWAKVPool mem usage: 2.12 GB, swa size: 16845, full size: 168456
+[2026-11-17 18:29:19] max_total_num_tokens=168456, chunked_prefill_size=1024, max_prefill_tokens=16384, max_running_requests=1, context_len=131072, available_gpu_mem=1.45 GB
+[2026-11-17 18:29:19] Init Unified Radix Cache. Components: (<ComponentType.FULL: 0>, <ComponentType.SWA: 1>). Tree Core: RustUnifiedTreeCore
+[2026-11-17 18:29:19] Using default chat sampling params from model generation config: {'temperature': 1.0, 'top_p': 1.0}
+[2026-11-17 18:29:21] The server is fired up and ready to roll!
+running exit=0 oom=false started=2026-11-17T18:28:26.196728317Z finished=0001-01-01T00:00:00Z

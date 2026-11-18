@@ -1,0 +1,8 @@
+2026-11-18T01:44:13+03:00
+Filesystem         1B-blocks         Used    Available Use% Mounted on
+/dev/nvme0n1p10 984139923456 737771134976 196301697024  79% /home
+/dev/nvme0n1p7  589432963072 258227593216 301188571136  47% /
+flashinfer-cache
+ollama-models
+sglang-research-cache
+vllm-cache

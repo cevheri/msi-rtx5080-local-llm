@@ -1,0 +1,94 @@
+/sgl-workspace/sglang/python/sglang/launch_server.py:71: UserWarning: 'python -m sglang.launch_server' is still supported, but 'sglang serve' is the recommended entrypoint.
+[2026-11-17 15:40:56] mxfp4 quantization is not fully optimized yet. The speed can be slower than non-quantized models.
+[2026-11-17 15:40:56] Hybrid SWA model detected. architectures=['GptOssForCausalLM']
+[2026-11-17 15:40:56] Detected SM120 and MXFP4 quantization format for GPT-OSS model, enabling FlashInfer CUTLASS MXFP4 MOE kernel.
+[2026-11-17 15:40:58] server_args={'model_path': '/root/.cache/huggingface/hub/models--openai--gpt-oss-20b/snapshots/6cee5e81ee83917806bbde320786a8fb61efebee', 'tokenizer_path': '/root/.cache/huggingface/hub/models--openai--gpt-oss-20b/snapshots/6cee5e81ee83917806bbde320786a8fb61efebee', 'tokenizer_mode': 'auto', 'tokenizer_backend': 'huggingface', 'tokenizer_worker_num': 1, 'detokenizer_worker_num': 1, 'skip_tokenizer_init': False, 'load_format': 'auto', 'model_loader_extra_config': '{}', 'trust_remote_code': False, 'context_length': 65536, 'is_embedding': False, 'enable_multimodal': None, 'revision': None, 'model_impl': 'auto', 'model_config_parser': 'auto', 'json_model_override_args': '{}', 'dtype': 'bfloat16', 'quantization': None, 'quantization_param_path': None, 'kv_cache_dtype': 'fp8_e4m3', 'enable_fp32_lm_head': False, 'modelopt_quant': None, 'modelopt_checkpoint_restore_path': None, 'modelopt_checkpoint_save_path': None, 'modelopt_export_path': None, 'quantize_and_serve': False, 'rl_quant_profile': None, 'enable_tf32_matmul': False, 'mem_fraction_static': 0.97, 'max_running_requests': 1, 'max_queued_requests': None, 'max_total_tokens': None, 'chunked_prefill_size': 1024, 'prefill_decode_interval': 0, 'enable_dynamic_chunking': False, 'max_prefill_tokens': 16384, 'prefill_max_requests': None, 'schedule_policy': 'fcfs', 'enable_priority_scheduling': False, 'disable_priority_preemption': False, 'default_priority_value': None, 'abort_on_priority_when_disabled': False, 'schedule_low_priority_values_first': False, 'priority_scheduling_preemption_threshold': 10, 'retraction_policy': 'length', 'schedule_conservativeness': 1.0, 'page_size': 1, 'c128_page_size': 16, 'swa_full_tokens_ratio': 0.1, 'disable_hybrid_swa_memory': False, 'radix_eviction_policy': 'lru', 'radix_eviction_policy_config': None, 'prefill_only_disable_kv_cache': False, 'disable_radix_cache': False, 'enable_page_major_kv_layout': False, 'enable_unified_memory': False, 'disable_chunked_prefix_cache'
+[2026-11-17 15:40:58] mxfp4 quantization is not fully optimized yet. The speed can be slower than non-quantized models.
+[2026-11-17 15:41:01] Using default HuggingFace chat template with detected content format: string
+[2026-11-17 15:41:02] Auto-detected template features: reasoning_config=ReasoningToggleConfig(toggle_param=None, default_enabled=None, special_case='always', effort_kwarg=None), reasoning_parser=gpt-oss, tool_call_parser=gpt-oss
+[2026-11-17 15:41:03] mxfp4 quantization is not fully optimized yet. The speed can be slower than non-quantized models.
+[2026-11-17 15:41:03] Init parallel begin.
+[2026-11-17 15:41:03] Init parallel ends. elapsed=0.20 s
+[2026-11-17 15:41:07] mxfp4 quantization is not fully optimized yet. The speed can be slower than non-quantized models.
+[2026-11-17 15:41:07] Memory baseline taken. mem usage=0.00 GB
+[2026-11-17 15:41:08] Load weight begin. avail mem=15.06 GB
+[rank0]:[W1117 15:41:10.035285095 CUDACachingAllocator.cpp:3934] memory allocation failed with OOM on device 0 while trying to allocate 289406976 bytes (free: 262078464, total: 16611278848).
+[2026-11-17 15:41:10] Using FP8 KV cache but no scaling factors provided. Defaulting to scaling factors of 1.0.
+[2026-11-17 15:41:10] Load weight end. elapsed=1.23 s, type=GptOssForCausalLM, quant=mxfp4, avail mem=0.60 GB, mem usage=14.45 GB.
+[2026-11-17 15:41:13] Full KV Cache is allocated. dtype: torch.float8_e4m3fn, #tokens: 11896, K size: 0.07 GB, V size: 0.07 GB
+[2026-11-17 15:41:13] SWA KV Cache is allocated. dtype: torch.float8_e4m3fn, #tokens: 1189, K size: 0.01 GB, V size: 0.01 GB
+[2026-11-17 15:41:13] SWAKVPool mem usage: 0.15 GB, swa size: 1189, full size: 11896
+[2026-11-17 15:41:13] Memory pool end. avail mem=0.60 GB
+[2026-11-17 15:41:14] Running FlashInfer autotune with cache: /root/.cache/sglang/flashinfer/autotune/0.7.2/sm120/61e5b17027bd089d/rank_tp0_pp0_dp0.json
+[2026-11-17 15:42:09] FlashInfer autotune completed.
+[2026-11-17 15:42:09] Disable prefill CUDA graph because cuda_graph_config resolved prefill.backend='disabled' (e.g. via --cuda-graph-backend-prefill=disabled or auto-disable rules).
+[2026-11-17 15:42:09] Capture target decode CUDA graph begin. backend=full, num_tokens_per_req=1, avail mem=0.50 GB
+[2026-11-17 15:42:09] Capture target decode CUDA graph end. bs=[1], elapsed=0.62 s, mem usage=0.04 GB, avail mem=0.46 GB.
+[2026-11-17 15:42:09] KV pool holds 11896 tokens, fewer than --context-length 65536. One full-length request cannot fit, so long requests will be refused or truncated at serving time. Lower --context-length, raise --mem-fraction-static, or free memory taken before the pool is sized.
+[2026-11-17 15:42:09] max_total_num_tokens=11896, chunked_prefill_size=1024, max_prefill_tokens=16384, max_running_requests=1, context_len=65536, available_gpu_mem=0.46 GB
+[2026-11-17 15:42:09] Init Unified Radix Cache. Components: (<ComponentType.FULL: 0>, <ComponentType.SWA: 1>). Tree Core: RustUnifiedTreeCore
+[2026-11-17 15:42:09] Tree cache initialized: source=default impl=UnifiedRadixCache hybrid_swa=True hybrid_ssm=False hicache_attached=False
+[2026-11-17 15:42:10] Engine startup timings (s): load_weight=1.23, kv_cache_allocation=0.26, scheduler_e2e=66.98, cuda_graph={prefill=0.00, decode=0.62, target_verify=0.00, draft_prefill=0.00, draft_decode=0.00, draft_extend=0.00}, tokenizer_e2e=71.89
+[2026-11-17 15:42:16] INFO:     Uvicorn running on http://0.0.0.0:30000 (Press CTRL+C to quit)
+[2026-11-17 15:42:17] Triton kernel 'write_req_to_token_pool_triton' device-loaded after serving started (free device mem: 0.46 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-11-17 15:42:17] Triton kernel 'compute_position_kernel' device-loaded after serving started (free device mem: 0.46 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-11-17 15:42:17] Triton kernel '_small_copy_kernel' device-loaded after serving started (free device mem: 0.46 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-11-17 15:42:17] Triton kernel 'create_flashinfer_kv_indices_triton' device-loaded after serving started (free device mem: 0.46 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-11-17 15:42:17] Triton kernel 'create_flashinfer_kv_indices_triton' device-loaded after serving started (free device mem: 0.46 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-11-17 15:42:18] Triton kernel '_fwd_kernel' device-loaded after serving started (free device mem: 0.46 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-11-17 15:42:18] Triton kernel '_router_triton_kernel' device-loaded after serving started (free device mem: 0.46 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-11-17 15:42:19] Triton kernel '_fwd_kernel' device-loaded after serving started (free device mem: 0.46 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-11-17 15:42:19] Triton kernel '_small_copy_kernel' device-loaded after serving started (free device mem: 0.46 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-11-17 15:42:19] Triton kernel '_small_copy_kernel' device-loaded after serving started (free device mem: 0.46 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-11-17 15:42:19] The server is fired up and ready to roll!
+[2026-11-17 15:42:29] Triton kernel 'write_req_to_token_pool_triton' device-loaded after serving started (free device mem: 0.46 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-11-17 15:42:30] Triton kernel 'get_and_clear_swa_pages_kernel' device-loaded after serving started (free device mem: 0.46 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-11-17 15:42:35] Triton kernel '_small_copy_kernel' device-loaded after serving started (free device mem: 0.44 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-11-17 15:42:39] Triton kernel 'apply_token_bitmask_inplace_kernel' device-loaded after serving started (free device mem: 0.44 GiB). Pre-load it during engine init to avoid CUDA OOM.
+[2026-11-17 15:42:39] Scheduler hit an exception: Traceback (most recent call last):
+  File managers/scheduler.py:6368 in run_scheduler_process
+  File managers/scheduler.py:2010 in run_event_loop
+  File managers/scheduler.py:6215 in dispatch_event_loop
+  File managers/scheduler.py:6231 in _dispatch_event_loop_once
+  File managers/scheduler.py:2128 in event_loop_overlap
+  File managers/scheduler.py:5054 in launch_batch_sample_if_needed
+  File managers/tp_worker.py:733 in sample_batch_func
+  File model_executor/model_runner.py:2161 in sample
+  File layers/sampler.py:333 in forward
+  File layers/sampler.py:726 in _sync_token_ids_across_tp
+torch.distributed.DistBackendError: NCCL error in: /__w/pytorch/pytorch/torch/csrc/distributed/c10d/NCCLUtils.cpp:92, unhandled cuda error (run with NCCL_DEBUG=INFO for details), NCCL version 2.30.7
+ncclUnhandledCudaError: Call to CUDA function failed.
+Failed to CUDA calloc 536870912 bytes
+[2026-11-17 15:42:39] SIGQUIT received. signum=None, frame=None. It usually means one child failed.
+[2026-11-17 15:42:44] kill_process_tree called: parent_pid=1, include_parent=True, pid=1
+[2026-11-17 15:42:44] ERROR:    Traceback (most recent call last):
+  File managers/tokenizer_manager.py:4081 in running_phase_sigquit_handler
+  File utils/common.py:2552 in kill_process_tree
+Traceback (most recent call last):
+Traceback (most recent call last):
+Traceback (most recent call last):
+  File managers/tokenizer_manager.py:1960 in _stream_one_response
+Traceback (most recent call last):
+  File utils/http_middleware_patch.py:50 in __call__
+  File observability/http_request_metrics.py:79 in track_http_status_code
+  File utils/http_middleware_patch.py:47 in call_next
+  File entrypoints/http_server.py:489 in custom_handler
+  File entrypoints/http_server.py:1876 in openai_v1_chat_completions
+  File entrypoints/openai/serving_base.py:116 in handle_request
+  File entrypoints/openai/serving_chat.py:2815 in _handle_non_streaming_request
+  File managers/tokenizer_manager.py:951 in generate_request
+  File managers/tokenizer_manager.py:1967 in _stream_one_response
+[2026-11-17 15:42:44] INFO:     172.17.0.1:53664 - "POST /v1/chat/completions HTTP/1.1" 500 Internal Server Error
+[2026-11-17 15:42:44] kill_process_tree called: parent_pid=1, include_parent=False, pid=1
+[cut] 15 CUDACachingAllocator OOM warnings in total during weight loading
+[cut] 47 batch lines; first 3 and last 6:
+[2026-11-17 15:42:19] Prefill batch, #new-seq: 1, #new-token: 6, #cached-token: 0, full token usage: 0.00, swa token usage: 0.01, #running-req: 0, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 0.60
+[2026-11-17 15:42:29] Prefill batch, #new-seq: 1, #new-token: 1, #cached-token: 0, full token usage: 0.00, swa token usage: 0.00, #running-req: 0, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 0.10
+[2026-11-17 15:42:30] Prefill batch, #new-seq: 1, #new-token: 1, #cached-token: 0, full token usage: 0.00, swa token usage: 0.00, #running-req: 0, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 1.01
+...
+[2026-11-17 15:42:38] Decode batch, #running-req: 1, #full token: 86, full token usage: 0.01, #swa token: 86, swa token usage: 0.07, cuda graph: True, gen throughput (token/s): 130.06, #queue-req: 0
+[2026-11-17 15:42:38] Prefill batch, #new-seq: 1, #new-token: 1, #cached-token: 71, full token usage: 0.01, swa token usage: 0.06, #running-req: 0, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 4.40
+[2026-11-17 15:42:38] Decode batch, #running-req: 1, #full token: 97, full token usage: 0.01, #swa token: 97, swa token usage: 0.08, cuda graph: True, gen throughput (token/s): 129.99, #queue-req: 0
+[2026-11-17 15:42:38] Prefill batch, #new-seq: 1, #new-token: 1, #cached-token: 71, full token usage: 0.01, swa token usage: 0.06, #running-req: 0, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 3.69
+[2026-11-17 15:42:38] Prefill batch, #new-seq: 1, #new-token: 1, #cached-token: 71, full token usage: 0.01, swa token usage: 0.06, #running-req: 0, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 5.95
+[2026-11-17 15:42:38] Decode batch, #running-req: 1, #full token: 81, full token usage: 0.01, #swa token: 81, swa token usage: 0.07, cuda graph: True, gen throughput (token/s): 124.64, #queue-req: 0

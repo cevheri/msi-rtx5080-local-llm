@@ -1,0 +1,9 @@
+files: 470
+41M	/v
+24K	/v/flashinfer
+684K	/v/inductor
+25M	/v/jit
+4.0K	/v/kernels.lock
+4.0K	/v/nv
+16M	/v/triton
+140K	/v/.cache

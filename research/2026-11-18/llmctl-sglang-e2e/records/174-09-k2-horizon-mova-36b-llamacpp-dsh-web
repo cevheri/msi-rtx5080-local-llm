@@ -1,0 +1,8 @@
+{
+  "command": "dsh web --port 3182 --no-open",
+  "cwd": "$WORK/09-k2-horizon-mova-36b-llamacpp-dsh-web",
+  "exit": 0,
+  "seconds": 4.9,
+  "stdout": "dsh web: <address withheld>\n",
+  "stderr": ""
+}

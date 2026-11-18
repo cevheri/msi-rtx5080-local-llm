@@ -1,0 +1,11 @@
+samples: 63, first 20261118T032704.398Z, last 20261118T032735.398Z
+tcp   ESTABLISHED  127.0.0.1            in   2 samples, 20261118T032732.398Z to 20261118T032732.898Z: 127.0.0.1
+tcp   ESTABLISHED  172.17.0.1           in   1 samples, 20261118T032734.398Z to 20261118T032734.398Z: 172.17.0.1
+tcp   ESTABLISHED  172.17.0.2           in   5 samples, 20261118T032733.398Z to 20261118T032735.398Z: 172.17.0.2
+tcp   LISTEN       0.0.0.0              in  24 samples, 20261118T032723.898Z to 20261118T032735.398Z: 0.0.0.0
+tcp   TIME_WAIT    127.0.0.1            in   5 samples, 20261118T032733.398Z to 20261118T032735.398Z: 127.0.0.1
+tcp   TIME_WAIT    172.17.0.1           in   8 samples, 20261118T032731.898Z to 20261118T032735.398Z: 172.17.0.1
+tcp   TIME_WAIT    172.17.0.2           in   5 samples, 20261118T032733.398Z to 20261118T032735.398Z: 172.17.0.2
+tcp6  ESTABLISHED  ::ffff:127.0.0.1     in  24 samples, 20261118T032723.898Z to 20261118T032735.398Z: 127.0.0.1 (written ::ffff:127.0.0.1)
+tcp6  LISTEN       ::                   in  25 samples, 20261118T032723.398Z to 20261118T032735.398Z: 0.0.0.0 (the IPv6 unspecified address ::)
+remote addresses outside 127.0.0.1, ::1, 0.0.0.0 and 172.17.0.x: 0

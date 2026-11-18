@@ -1,0 +1,17 @@
+{"exit": "container stopped", "ready_seen_s": null, "served_listed_s": null, "memory_usage": null, "gpu_right_after_ready": null}
+comm: file 1 is not in sorted order
+comm: file 2 is not in sorted order
+comm: input is not in sorted order
+logs/m11-fp8-k56-ign.log 168 -> 53 lines
+[2026-11-17 21:37:01] Hybrid SWA model detected. architectures=['Gemma4ForConditionalGeneration']
+[2026-11-17 21:37:07] Auto-detected template features: reasoning_config=ReasoningToggleConfig(toggle_param='enable_thinking', default_enabled=False, special_case=None, effort_kwarg=None), reasoning_parser=gemma4, tool_call_parser=gemma4
+[2026-11-17 21:37:26] Load weight end. elapsed=16.02 s, type=Gemma4ForConditionalGeneration, quant=compressed-tensors, avail mem=4.68 GB, mem usage=10.38 GB.
+[2026-11-17 21:37:28] Full KV Cache is allocated. dtype: torch.float8_e4m3fn, #tokens: 160936, K size: 0.77 GB, V size: 0.77 GB
+[2026-11-17 21:37:28] SWA KV Cache is allocated. dtype: torch.float8_e4m3fn, #tokens: 16093, K size: 0.77 GB, V size: 0.77 GB
+[2026-11-17 21:37:28] SWAKVPool mem usage: 3.07 GB, swa size: 16093, full size: 160936
+  File layers/moe/paged_experts/method.py:210 in apply
+  File layers/moe/paged_experts/executor.py:130 in run
+  File layers/moe/paged_experts/runners.py:30 in run_on_slots
+  File layers/moe/paged_experts/formats.py:318 in apply
+AssertionError: Only gated SiLU/SiTU is supported, got gelu.
+exited exit=0 oom=false started=2026-11-17T21:36:50.431003734Z finished=2026-11-17T21:38:59.932248028Z

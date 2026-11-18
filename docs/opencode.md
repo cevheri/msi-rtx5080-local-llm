@@ -1,8 +1,8 @@
 # OpenCode with the local servers
 
-Last verified: 2026-11-17.
+Last verified: 2026-11-18.
 
-Point OpenCode v2.3.0 at the local servers through custom `@opencode/ai/providers/openai-compatible` providers, one for llama.cpp on `127.0.0.1:8080` and one for vLLM on `127.0.0.1:8000`, with `capabilities.tools: true` and an explicit `limit.context` on every model.
+Point OpenCode v2.3.0 at the local servers through custom `@opencode/ai/providers/openai-compatible` providers, one for llama.cpp on `127.0.0.1:8080`, one for vLLM on `127.0.0.1:8000` and one for SGLang on `127.0.0.1:30000`, with `capabilities.tools: true` and an explicit `limit.context` on every model.
 Turn off the built-in vLLM discovery, because it registers every discovered model with tools disabled.
 Keep thinking off by default on the server for toggle models and opt in per session with a `#thinking` variant; Qwen3.8-27B runs at medium effort with `none`, `low` and `medium` choices instead, and the K2 Horizon models and gpt-oss-20b always think.
 Measured on 2026-11-16: the same OpenCode v2.3.0 write-and-read session passed against eleven local servers (gpt-oss-20b on llama.cpp and on vLLM, Qwen3.8-27B, Qwen3.6-35B-A3B, Gemma 4 26B-A4B, K2 Horizon 7B and MoVA, Qwen3-Coder-Next, Groot-19B-A3B, and Nemotron 3.5 Bolt and Lightning on llama.cpp), each with the entry's default variant ([records](../research/2026-11-16/README.md)).
@@ -39,16 +39,27 @@ A custom openai-compatible model with neither `variants` nor `capabilities.reaso
 
 ## The validated config
 
-This is the two-provider config with one entry for every recipe of [llmctl](llmctl.md) that is measured on this laptop: the eleven llama.cpp recipes, with Qwen3.6-35B-A3B as the default, and gpt-oss-20b, Groot-19B-A3B-261023 NVFP4, K2 Horizon 7B, Gemma 4 12B, Qwen3.5-9B, Mellum2.1 and Gemma 4 E4B on vLLM.
+This is the three-provider config with one entry for every recipe of [llmctl](llmctl.md) that is measured on this laptop, except the chat-only vLLM DeepSeek-R1-0528-Qwen3-8B recipe (below): the fifteen llama.cpp recipes, with Qwen3.6-35B-A3B as the default, gpt-oss-20b, Groot-19B-A3B-261023 NVFP4, K2 Horizon 7B, Gemma 4 12B, Qwen3.5-9B, Mellum2.1 and Gemma 4 E4B on vLLM, and Qwen3.5-9B, K2 Horizon 7B, gpt-oss-20b, Gemma 4 12B, Gemma 4 E4B and Qwen3.6-35B-A3B on SGLang.
 It extends the research-phase config with a `qwen3.8-27b` entry that uses `reasoning_effort` levels, as the audit asked.
 After the 2026-11-15 re-ranking, the default moved from Qwen3.6-35B-A3B to Qwen3.8-27B, the two K2 Horizon entries were added, and the Gemma 4 12B entry (now an honorable mention; its entry is in [vllm/models.md](../vllm/models.md)) was replaced by Groot, whose entry is copied from [vllm/models.md](../vllm/models.md).
 On 2026-11-16 the user made Qwen3.6-35B-A3B the default again, after it measured 122 tok/s with 128k context against 36 tok/s with 64k for Qwen3.8-27B ([model-selection.md](model-selection.md#decision-summary)).
 The K2 Horizon entries have no variants because both models always think and the server sets `reasoning_effort` high ([llamacpp/models.md](../llamacpp/models.md)).
 On 2026-11-17 the llama.cpp gpt-oss-20b and DeepSeek-R1-0528-Qwen3-8B entries and the vLLM K2 Horizon 7B, Gemma 4 12B, Qwen3.5-9B, Mellum2.1 and Gemma 4 E4B entries were added from their model sections, after the six vLLM recipes were measured ([records](../research/2026-11-17/README.md)), so that every measured recipe has its entry.
 Those measurements ran the reply and tool-call checks; the clients e2e of the same day then ran an OpenCode write-and-read session through the entry of each of the six measured vLLM recipes, and every one passed: Mellum2.1, K2 Horizon 7B, Qwen3.5-9B, Gemma 4 12B, Gemma 4 E4B and Groot (records [191](../research/2026-11-17/llmctl-dsh-e2e/records/191-12-mellum2.1-12b-vllm-opencode), [206](../research/2026-11-17/llmctl-dsh-e2e/records/206-13-k2-horizon-7b-vllm-opencode), [222](../research/2026-11-17/llmctl-dsh-e2e/records/222-14-qwen3.5-9b-vllm-opencode), [237](../research/2026-11-17/llmctl-dsh-e2e/records/237-15-gemma-4-12b-vllm-opencode), [252](../research/2026-11-17/llmctl-dsh-e2e/records/252-16-gemma-4-e4b-vllm-opencode) and [267](../research/2026-11-17/llmctl-dsh-e2e/records/267-17-groot-19b-a3b-vllm-opencode), [summary](../research/2026-11-17/llmctl-dsh-e2e/summary.md)) (measured on the MSI Raider 18 Max HX, vLLM v0.33.0, OpenCode v2.3.0, 2026-11-17).
-The vLLM DeepSeek-R1-0528-Qwen3-8B recipe failed that measurement, because vLLM v0.33.0 loads its tokenizer with the wrong class and garbles every reply, so it has no entry ([vllm/models.md](../vllm/models.md#deepseek-r1-0528-qwen3-8b-chat-only)).
+The vLLM DeepSeek-R1-0528-Qwen3-8B recipe failed that measurement, because vLLM v0.33.0 loads its tokenizer with the wrong class and garbles every reply, so it had no entry then ([vllm/models.md](../vllm/models.md#deepseek-r1-0528-qwen3-8b-chat-only)).
+On 2026-11-18 that recipe was measured running through llmctl's tokenizer overlay and got a chat-only `vllm-docker` entry with `"tools": false`, which the e2e of the same day removed again.
+OpenCode v2.3.0 sends `tool_choice` `"auto"` even for a model with `"tools": false`, and vLLM refuses that with HTTP 400 when it runs without a tool parser, so the chat-only vLLM recipe has no entry and OpenCode users take the llama.cpp DeepSeek-R1 recipe ([record 411](../research/2026-11-18/llmctl-sglang-e2e/records/411-22-deepseek-r1-0528-qwen3-8b-vllm-opencode), [summary](../research/2026-11-18/llmctl-sglang-e2e/summary.md)) (measured on the MSI Raider 18 Max HX, vLLM v0.33.0, 2026-11-18).
 I re-validated the result on 2026-11-16, after adding the Qwen3-Coder-Next entry, against a fresh copy of [https://opencode.ai/config.json](https://opencode.ai/config.json) (unchanged since 2026-11-15) with Python `jsonschema` 4.19.2 (Draft 2020-12): 0 errors, and negative tests with a V1 `npm` key and a string `tools` value are rejected.
 I re-validated it on 2026-11-17, after adding those seven entries, against a fresh copy of [https://opencode.ai/config.json](https://opencode.ai/config.json) (byte for byte the copy of 2026-11-15) with Python `jsonschema` 4.19.2 (Draft 2020-12): 0 errors for 18 models, and the same two negative tests are rejected.
+On 2026-11-18 the `sglang-docker` provider was added with the entries of the three SGLang recipes, whose model sections are in [sglang/models.md](../sglang/models.md): SGLang answers on `127.0.0.1:30000`, puts reasoning in `reasoning_content`, and keeps vLLM's served names, so the `qwen3.5-9b` and `k2-horizon-7b` entries equal their vLLM twins apart from the name, and the `gpt-oss-20b` entry also holds 131072 tokens of context against vLLM's 65536.
+I re-validated it on 2026-11-18, after adding that provider, against a fresh copy of [https://opencode.ai/config.json](https://opencode.ai/config.json) (sha256 `828719e5c07c6806c002e764a98a4ee9d3904b0d2b084a8d984b714b25d44c62`, byte for byte the copy of 2026-11-15) with Python `jsonschema` 4.19.2 (Draft 2020-12): 0 errors for 21 models, and the same two negative tests are rejected.
+Later on 2026-11-18 the SGLang `gemma-4-12b` and `gemma-4-e4b` entries were added, which equal their vLLM twins apart from the name.
+I re-validated it then against a fresh copy of the schema (the same sha256): 0 errors for 23 models, and the same two negative tests are rejected.
+Later on 2026-11-18 the SGLang `qwen3.6-35b-a3b` entry was added, which equals the llama.cpp entry of the same model apart from the name and the `modelID`, because SGLang serves it under its own name rather than llama.cpp's `local`.
+I re-validated it then against a fresh copy of the schema (the same sha256): 0 errors for 24 models, and the same two negative tests are rejected.
+Later on 2026-11-18 the llama.cpp `qwen3.5-9b`, `gemma-4-12b`, `gemma-4-e4b` and `mellum2.1-12b` entries were added from their model sections in [llamacpp/models.md](../llamacpp/models.md#gguf-builds-of-the-vllm-and-sglang-models), after their GGUF builds were measured ([records](../research/2026-11-17/README.md)); like every llama.cpp entry they use the `modelID` `local`.
+I re-validated it then against a fresh copy of the schema (the same sha256): 0 errors for 28 models, and the same two negative tests are rejected.
+After the vLLM `deepseek-r1-0528-qwen3-8b` entry was removed, I re-validated it on 2026-11-18 against the copy of the schema saved that day (the same sha256): 0 errors for 28 models, and the same two negative tests are rejected.
 On 2026-11-16 this config was installed as the global `~/.config/opencode/opencode.json` on this laptop, merged with the `mcp` block that file already held, and validated again with 0 errors against the live schema (unchanged).
 Measured the same day: `opencode run` without `-m` reached the default `qwen3.6-35b-a3b` entry and passed the write-and-read task in 9 s ([records](../research/2026-11-16/opencode-global-config/)).
 
@@ -150,6 +161,46 @@ Measured the same day: `opencode run` without `-m` reached the default `qwen3.6-
           "name": "DeepSeek-R1-0528-Qwen3-8B Q8_0, chat only (llama.cpp)",
           "capabilities": { "tools": false, "input": ["text"], "output": ["text"], "reasoning": { "supported": true } },
           "limit": { "context": 65536, "output": 16384 }
+        },
+        "qwen3.5-9b": {
+          "modelID": "local",
+          "name": "Qwen3.5-9B Q8_0 (llama.cpp)",
+          "capabilities": { "tools": true, "input": ["text"], "output": ["text"], "reasoning": { "supported": true } },
+          "limit": { "context": 131072, "output": 16384 },
+          "variants": [
+            { "id": "thinking", "body": { "chat_template_kwargs": { "enable_thinking": true } } },
+            { "id": "none", "body": { "chat_template_kwargs": { "enable_thinking": false } } }
+          ]
+        },
+        "gemma-4-12b": {
+          "modelID": "local",
+          "name": "Gemma 4 12B QAT Q4_0 (llama.cpp)",
+          "capabilities": { "tools": true, "input": ["text"], "output": ["text"], "reasoning": { "supported": true } },
+          "limit": { "context": 131072, "output": 16384 },
+          "variants": [
+            { "id": "thinking", "body": { "chat_template_kwargs": { "enable_thinking": true } } },
+            { "id": "none", "body": { "chat_template_kwargs": { "enable_thinking": false } } }
+          ]
+        },
+        "gemma-4-e4b": {
+          "modelID": "local",
+          "name": "Gemma 4 E4B QAT Q4_0 (llama.cpp)",
+          "capabilities": { "tools": true, "input": ["text"], "output": ["text"], "reasoning": { "supported": true } },
+          "limit": { "context": 131072, "output": 16384 },
+          "variants": [
+            { "id": "thinking", "body": { "chat_template_kwargs": { "enable_thinking": true } } },
+            { "id": "none", "body": { "chat_template_kwargs": { "enable_thinking": false } } }
+          ]
+        },
+        "mellum2.1-12b": {
+          "modelID": "local",
+          "name": "Mellum2.1 12B-A2.5B Thinking Q6_K (llama.cpp)",
+          "capabilities": { "tools": true, "input": ["text"], "output": ["text"], "reasoning": { "supported": true } },
+          "limit": { "context": 131072, "output": 16384 },
+          "variants": [
+            { "id": "thinking", "body": { "chat_template_kwargs": { "enable_thinking": true } } },
+            { "id": "none", "body": { "chat_template_kwargs": { "enable_thinking": false } } }
+          ]
         }
       }
     },
@@ -222,6 +273,66 @@ Measured the same day: `opencode run` without `-m` reached the default `qwen3.6-
           ]
         }
       }
+    },
+    "sglang-docker": {
+      "name": "SGLang (Docker)",
+      "package": "@opencode/ai/providers/openai-compatible",
+      "settings": { "baseURL": "http://127.0.0.1:30000/v1", "headerTimeout": 600000 },
+      "compatibility": { "reasoningField": "reasoning_content" },
+      "models": {
+        "qwen3.5-9b": {
+          "modelID": "qwen3.5-9b",
+          "name": "Qwen3.5-9B NVFP4 (SGLang)",
+          "capabilities": { "tools": true, "input": ["text"], "output": ["text"], "reasoning": { "supported": true } },
+          "limit": { "context": 131072, "output": 16384 },
+          "variants": [
+            { "id": "thinking", "body": { "chat_template_kwargs": { "enable_thinking": true } } },
+            { "id": "none", "body": { "chat_template_kwargs": { "enable_thinking": false } } }
+          ]
+        },
+        "k2-horizon-7b": {
+          "modelID": "k2-horizon-7b",
+          "name": "K2 Horizon 7B AWQ-INT4 (SGLang)",
+          "capabilities": { "tools": true, "input": ["text"], "output": ["text"], "reasoning": { "supported": true } },
+          "limit": { "context": 65536, "output": 16384 }
+        },
+        "gpt-oss-20b": {
+          "modelID": "gpt-oss-20b",
+          "name": "gpt-oss-20b MXFP4, Paged Experts (SGLang)",
+          "capabilities": { "tools": true, "input": ["text"], "output": ["text"], "reasoning": { "supported": true, "effort": ["low", "medium", "high"] } },
+          "limit": { "context": 131072, "output": 16384 }
+        },
+        "gemma-4-12b": {
+          "modelID": "gemma-4-12b",
+          "name": "Gemma 4 12B QAT W4A16 (SGLang)",
+          "capabilities": { "tools": true, "input": ["text"], "output": ["text"], "reasoning": { "supported": true } },
+          "limit": { "context": 131072, "output": 16384 },
+          "variants": [
+            { "id": "thinking", "body": { "chat_template_kwargs": { "enable_thinking": true } } },
+            { "id": "none", "body": { "chat_template_kwargs": { "enable_thinking": false } } }
+          ]
+        },
+        "gemma-4-e4b": {
+          "modelID": "gemma-4-e4b",
+          "name": "Gemma 4 E4B QAT W4A16 smoke test (SGLang)",
+          "capabilities": { "tools": true, "input": ["text"], "output": ["text"], "reasoning": { "supported": true } },
+          "limit": { "context": 65536, "output": 16384 },
+          "variants": [
+            { "id": "thinking", "body": { "chat_template_kwargs": { "enable_thinking": true } } },
+            { "id": "none", "body": { "chat_template_kwargs": { "enable_thinking": false } } }
+          ]
+        },
+        "qwen3.6-35b-a3b": {
+          "modelID": "qwen3.6-35b-a3b",
+          "name": "Qwen3.6-35B-A3B NVFP4, Paged Experts (SGLang)",
+          "capabilities": { "tools": true, "input": ["text"], "output": ["text"], "reasoning": { "supported": true } },
+          "limit": { "context": 131072, "output": 16384 },
+          "variants": [
+            { "id": "thinking", "body": { "chat_template_kwargs": { "enable_thinking": true } } },
+            { "id": "none", "body": { "chat_template_kwargs": { "enable_thinking": false } } }
+          ]
+        }
+      }
     }
   }
 }
@@ -242,13 +353,13 @@ Re-validate after any change; the Maintenance section has the command.
 
 OpenCode does not ask the server what it serves when discovery is off, so three values must match by hand.
 
-| OpenCode field | vLLM flag | llama.cpp flag |
-|---|---|---|
-| `modelID` | `--served-model-name <name>` | `--alias <name>` (`-a`); without it the model `id` is the file path ([server README](https://github.com/ggml-org/llama.cpp/blob/b12418/tools/server/README.md)) |
-| `limit.context` | `--max-model-len N` | `-c N` / `--ctx-size N` |
-| `compatibility.reasoningField` | `reasoning` | `reasoning_content` ([server README](https://github.com/ggml-org/llama.cpp/blob/b12418/tools/server/README.md)) |
+| OpenCode field | vLLM flag | llama.cpp flag | SGLang flag |
+|---|---|---|---|
+| `modelID` | `--served-model-name <name>` | `--alias <name>` (`-a`); without it the model `id` is the file path ([server README](https://github.com/ggml-org/llama.cpp/blob/b12418/tools/server/README.md)) | `--served-model-name <name>` |
+| `limit.context` | `--max-model-len N` | `-c N` / `--ctx-size N` | `--context-length N` |
+| `compatibility.reasoningField` | `reasoning` | `reasoning_content` ([server README](https://github.com/ggml-org/llama.cpp/blob/b12418/tools/server/README.md)) | `reasoning_content` ([sglang/README.md](../sglang/README.md#tool-calling-and-reasoning)) |
 
-The config above assumes these server settings; the full commands live in [vllm/README.md](../vllm/README.md) and [llamacpp/README.md](../llamacpp/README.md).
+The config above assumes these server settings; the full commands live in [vllm/README.md](../vllm/README.md), [llamacpp/README.md](../llamacpp/README.md) and [sglang/models.md](../sglang/models.md).
 
 | Entry | Server | Served name | Context |
 |---|---|---|---|
@@ -265,6 +376,12 @@ The config above assumes these server settings; the full commands live in [vllm/
 | `vllm-docker/mellum2.1-12b` | vLLM :8000 | `--served-model-name mellum2.1` | `--max-model-len 131072` |
 | `vllm-docker/gemma-4-e4b` | vLLM :8000 | `--served-model-name gemma-4-e4b` | `--max-model-len 65536` (needs `--enforce-eager`) |
 | `vllm-docker/gpt-oss-20b` | vLLM :8000 | `--served-model-name gpt-oss-20b` | `--max-model-len 65536` (needs `--gpu-memory-utilization 0.965`, `--enforce-eager`, `--max-num-batched-tokens 256`, FP8 KV and `TRITON_ATTN`) |
+| `sglang-docker/qwen3.5-9b` | SGLang :30000 | `--served-model-name qwen3.5-9b` | `--context-length 131072` (8 Mamba slots) |
+| `sglang-docker/k2-horizon-7b` | SGLang :30000 | `--served-model-name k2-horizon-7b` | `--context-length 65536` (FP8 KV, `--mem-fraction-static 0.88`) |
+| `sglang-docker/gpt-oss-20b` | SGLang :30000 | `--served-model-name gpt-oss-20b` | `--context-length 131072` (needs Paged Experts with 24 resident experts and FP8 KV) |
+| `sglang-docker/gemma-4-12b` | SGLang :30000 | `--served-model-name gemma-4-12b` | `--context-length 131072` (FP8 KV, `--swa-full-tokens-ratio 0.1`, no audio tower) |
+| `sglang-docker/gemma-4-e4b` | SGLang :30000 | `--served-model-name gemma-4-e4b` | `--context-length 65536` (`--swa-full-tokens-ratio 0.1`, no audio tower) |
+| `sglang-docker/qwen3.6-35b-a3b` | SGLang :30000 | `--served-model-name qwen3.6-35b-a3b` | `--context-length 131072` (needs Paged Experts with 88 resident experts, BF16 KV and 8 Mamba slots) |
 
 [llmctl](llmctl.md) starts each entry's server with these values, and its tests check every recipe against this config.
 llmctl keeps a default that points at llmctl on the running model, rewriting only the top-level `"model"` line ([llmctl.md](llmctl.md#clients)), and its tests check each entry's `limit.output`, reasoning and variants against the recipe's `[clients]` table.
@@ -273,6 +390,7 @@ If `limit.context` is larger than the server window, OpenCode never compacts in 
 If it is smaller, you waste window that the KV budget already paid for.
 
 On vLLM, tool calling also needs `--enable-auto-tool-choice` and the right `--tool-call-parser` for the model, and a thinking model also needs its `--reasoning-parser` ([vllm/README.md](../vllm/README.md)).
+On SGLang, `--tool-call-parser` alone turns tool calls on, because SGLang has no `--enable-auto-tool-choice` (vendor-reported, SG-33 in the [SGLang sources check](../research/2026-11-17/sglang-runtime/sources-check.md)), and llmctl refuses `auto` or an empty value for it and for `--reasoning-parser`, so every recipe names its parsers ([sglang/README.md](../sglang/README.md#tool-calling-and-reasoning)).
 A wrong tool parser does not raise an error: the tool calls arrive as plain text and the agent stalls (lesson from the user's earlier DGX Spark runbook).
 
 ## Built-in vLLM discovery disables tools
@@ -283,23 +401,24 @@ A discovered vLLM model therefore runs the agent without tools.
 
 The config above avoids this in two ways: `"plugins": ["-opencode.provider.vllm"]` removes discovery, and the separate provider ID `vllm-docker` declares tools explicitly.
 An alternative is to keep discovery and override `providers.vllm.models["<served name>"].capabilities.tools: true`; the config plugin runs after the discovery plugin ([internal.ts](https://github.com/anomalyco/opencode/blob/v2.3.0/packages/core/src/plugin/internal.ts)), so the override should win, but that is read from the code and not tested.
+Discovery reads only `127.0.0.1:8000/v1`, so it never sees the SGLang server on port 30000, and the `sglang-docker` provider declares its models and tools itself like `vllm-docker`.
 Ollama and LM Studio discovery do read tool support, so the problem is specific to vLLM ([local.ts](https://github.com/anomalyco/opencode/blob/v2.3.0/packages/core/src/plugin/provider/local.ts)).
 
 ## Thinking variants per runtime
 
 | Model family | Runtime | OpenCode mechanism | Reasoning field |
 |---|---|---|---|
-| Qwen3.6, Groot, Gemma 4, Nemotron 3.5, GLM-4.7 | vLLM or llama.cpp | `variants` with `body.chat_template_kwargs.enable_thinking` true or false | vLLM `reasoning`, llama.cpp `reasoning_content` |
+| Qwen3.6, Qwen3.5, Groot, Gemma 4, Nemotron 3.5, GLM-4.7 | vLLM, llama.cpp or SGLang | `variants` with `body.chat_template_kwargs.enable_thinking` true or false; on SGLang any `reasoning_effort` except `none` also turns thinking on ([sglang/README.md](../sglang/README.md#tool-calling-and-reasoning)) | vLLM `reasoning`, llama.cpp and SGLang `reasoning_content` |
 | Qwen3.8-27B | llama.cpp | `capabilities.reasoning.effort` `none`, `low`, `medium`; llama.cpp passes `reasoning_effort` to the template and `none` disables thinking ([server README](https://github.com/ggml-org/llama.cpp/blob/b12418/tools/server/README.md)) | `reasoning_content` |
-| K2 Horizon MoVA and 7B | llama.cpp (7B also vLLM) | No variants: thinking is always on, and the server sets `reasoning_effort` high through `--chat-template-kwargs` (llama.cpp) or `--default-chat-template-kwargs` (vLLM), as in [llamacpp/models.md](../llamacpp/models.md) and [vllm/models.md](../vllm/models.md) | as the runtime |
-| gpt-oss-20b | vLLM or llama.cpp | `capabilities.reasoning.effort` `low`, `medium`, `high`, sent as `reasoning_effort` ([variant.ts](https://github.com/anomalyco/opencode/blob/v2.3.0/packages/core/src/variant.ts)); it always thinks | as the runtime |
+| K2 Horizon MoVA and 7B | llama.cpp (7B also vLLM and SGLang) | No variants: thinking is always on, and the server sets `reasoning_effort` high through `--chat-template-kwargs` (llama.cpp) or `--default-chat-template-kwargs` (vLLM and SGLang), as in [llamacpp/models.md](../llamacpp/models.md), [vllm/models.md](../vllm/models.md) and [sglang/models.md](../sglang/models.md) | as the runtime |
+| gpt-oss-20b | vLLM, llama.cpp or SGLang | `capabilities.reasoning.effort` `low`, `medium`, `high`, sent as `reasoning_effort` ([variant.ts](https://github.com/anomalyco/opencode/blob/v2.3.0/packages/core/src/variant.ts)); it always thinks | as the runtime |
 | Any | Ollama | `capabilities.reasoning.effort` with `none` to turn thinking off, because Ollama `/v1` maps `none` to `think: false` ([openai.go](https://github.com/ollama/ollama/blob/v0.40.16/openai/openai.go)); a model that cannot disable thinking, such as gpt-oss, uses its lowest level instead ([Ollama thinking docs](https://docs.ollama.com/capabilities/thinking)) | `reasoning` |
 
 Select a variant with `provider/model#variant`, for example `opencode run --model llamacpp-docker/qwen3.6-35b-a3b#thinking` ([models docs](https://opencode.ai/docs/models/)).
 OpenCode's own NVIDIA protocol uses the same `chat_template_kwargs.enable_thinking` pattern for Qwen, Gemma and Nemotron, which is a good sign the body passes through unchanged ([variant.ts](https://github.com/anomalyco/opencode/blob/v2.3.0/packages/core/src/variant.ts)).
 Setting `reasoningField` also turns on `requireReasoning`, which re-sends earlier reasoning on assistant messages ([models docs](https://opencode.ai/docs/models/)); whether each chat template uses that field is unchecked, and `"requireReasoning": false` is the fallback if it causes errors.
 
-For toggle models, keep thinking off by default on the server: vLLM `--default-chat-template-kwargs '{"enable_thinking":false}'`, llama.cpp `--reasoning off` or `--chat-template-kwargs` ([vllm/README.md](../vllm/README.md), [llamacpp/README.md](../llamacpp/README.md)).
+For toggle models, keep thinking off by default on the server: vLLM and SGLang `--default-chat-template-kwargs '{"enable_thinking":false}'`, llama.cpp `--reasoning off` or `--chat-template-kwargs` ([vllm/README.md](../vllm/README.md), [llamacpp/README.md](../llamacpp/README.md), [sglang/README.md](../sglang/README.md#tool-calling-and-reasoning)).
 A request without a variant then gets the server default, and `#thinking` opts in.
 The lesson comes from the user's DGX Spark runbook: Qwen3.6 with thinking on spent all 1024 output tokens reasoning (`finish_reason: length`, no answer, 23.7 s), while thinking off answered correctly in 1.5 s (measured on a DGX Spark with vLLM, 2026-09-05; not measured on this laptop).
 Thinking still helps agent quality: Qwen3.8-27B scores 49.1 on Terminal-Bench 2.1 without reasoning and 67.4 at low effort (measured by [Artificial Analysis](https://artificialanalysis.ai/models/qwen3-8-27b) at full precision through cloud APIs with the Terminus 2 harness, not a local quant or OpenCode; see [community-benchmarks.md](community-benchmarks.md)), so benchmark both settings instead of assuming one.
@@ -325,6 +444,10 @@ On later steps llama.cpp reused the cached prefix, and only 78 and 86 new tokens
 Compaction keeps a buffer of 15% or at least 16k tokens free and keeps about 15k recent tokens ([compaction docs](https://opencode.ai/docs/compaction/)).
 At 32k, compaction would start near 16k used and leave about 9k tokens of real conversation (estimate); at 64k the threshold is near 48k and leaves about 41k (estimate).
 The docs warn that compaction cannot help when fixed instructions and tools fill most of the window ([compaction docs](https://opencode.ai/docs/compaction/)).
+OpenCode compacts on SGLang: on the Qwen3.5-9B recipe with 131,072 tokens of context, three sessions that read the repository's Markdown compacted five times and each finished with exit 0, once right after a served 110,727-token request (measured on the MSI Raider 18 Max HX, SGLang v0.5.23 and OpenCode v2.3.0, 2026-11-18; [lead checks](../research/2026-11-18/llmctl-sglang-e2e/lead-checks/README.md#2-opencode-compaction-d15-research-risk-14)).
+Two of the five compactions began with two HTTP 400s; in the traced one (diag-2) OpenCode's first compaction request, the whole conversation with its summary instruction, held 131,332 tokens, more than the context, and its second, the conversation as one user message with 16,384 output tokens, still overran it, and the untraced one's requests overran the context the same way (inferred from its token counts); a third request with the message cut short got the summary, and OpenCode showed no error.
+OpenCode sent those 131,332 tokens with `max_completion_tokens` 6,344, which fits only if it counted the input at no more than 124,728 tokens, so it counts this Markdown at least 5% low (inferred from the captured request and SGLang's count).
+llama.cpp and vLLM also refuse a prompt that does not fit beside its output, so the same 400s should meet them near the edge of the window (inferred, not run).
 One desktop RTX 5080 user who runs OpenCode daily wants 80k to 120k at minimum and runs 131k ([r/LocalLLaMA post](https://www.reddit.com/r/LocalLLaMA/comments/1s9mkm1/benchmarked_18_models_that_i_can_run_on_my_rtx/), anecdotal), so treat 64k as the floor and prefer 128k where the KV budget allows it.
 A 2B to 4B model is not a viable OpenCode backend even when its chat answers look good: in OpenCode-style long-context agent loops, small models fail through malformed or missing tool calls, worse as context grows ([r/LocalLLaMA thread](https://www.reddit.com/r/LocalLLaMA/comments/1s7r9wu/), one author's 25-task text-to-SQL agent benchmark, single runs mostly through OpenRouter; anecdotal).
 That is a statement about long contexts, not about tool calling as such: 1.7B to 4B models (lfm3:1.7b, bonsai-2:2b, qwen3:4b, qwen3.5:4b) passed the user's shorter, guarded LibreDB Studio SQL tool loop 30/30 (measured on the M5 Max, libredb-studio; [agent-harness-evidence.md](agent-harness-evidence.md)).
@@ -466,6 +589,6 @@ Before relying on this page, re-check:
 - The installed version with `opencode --version`; on any version other than v2.3.0, re-read the migration guide and re-validate the config.
 - The config against the live schema, for example with `python3 -I -c 'import json,sys,jsonschema; jsonschema.Draft202012Validator(json.load(open(sys.argv[1]))).validate(json.load(open(sys.argv[2])))' schema.json opencode.json` after downloading [https://opencode.ai/config.json](https://opencode.ai/config.json) to `schema.json`.
 - The state of [#55378](https://github.com/anomalyco/opencode/issues/55378), [#50814](https://github.com/anomalyco/opencode/issues/50814), [#60202](https://github.com/anomalyco/opencode/issues/60202) and [#58019](https://github.com/anomalyco/opencode/issues/58019), and whether `vllm.ts` still forces tools off.
-- That every `modelID` and `limit.context` still matches the server commands in [vllm/README.md](../vllm/README.md) and [llamacpp/README.md](../llamacpp/README.md).
+- That every `modelID` and `limit.context` still matches the server commands in [vllm/README.md](../vllm/README.md), [llamacpp/README.md](../llamacpp/README.md) and [sglang/models.md](../sglang/models.md).
 - OpenRouter availability, tool support per endpoint and the privacy settings, which change without notice.
 - Re-measure the prompt overhead when the allowed tools, `AGENTS.md` or MCP servers change; the measured 3,482 to 4,372 tokens cover only the test config with shell, web, task and skill tools denied.

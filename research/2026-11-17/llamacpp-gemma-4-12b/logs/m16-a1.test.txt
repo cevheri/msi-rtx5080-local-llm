@@ -1,0 +1,4 @@
+reply: ok ('OK')
+tool call: ok (get_weather {"city":"Paris"})
+decode: 75.9 tok/s (360 tokens)
+recipe evidence: Draft from the SGLang research report, section 4, with the args of the shipped gemma-4-26b-a4b recipe less its expert offload; not measured on this laptop

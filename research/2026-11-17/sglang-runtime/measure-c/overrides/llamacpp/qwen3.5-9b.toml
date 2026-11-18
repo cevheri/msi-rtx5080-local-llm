@@ -1,0 +1,50 @@
+# Measured by measurement C on 2026-11-17 with llama.cpp b12407 ($SCRATCH/sglang/measure-c/llamacpp-qwen3.5-9b/README.md):
+# the downloads lane's draft started unchanged through llmctl (args, context and memory_gib as drafted).
+# [model] is exact, read from the Hugging Face API on 2026-11-17.
+# The args are those of recipes/llamacpp/groot-19b-a3b.toml unchanged: Groot is the Qwen3.5-family hybrid
+# (qwen35moe) held whole on the GPU, with thinking off by default and the same temperature 0.6, top_p 0.95 and
+# top_k 20 as the vLLM qwen3.5-9b recipe; they equal recipes/llamacpp/qwen3.6-35b-a3b.toml less its
+# expert-offload flags. f16 KV stays: q8_0 KV lost decode speed at depth on 256-wide heads (project notes).
+# memory_gib is copied from that recipe; the measured run stayed under it.
+schema = 1
+id = "qwen3.5-9b"
+name = "Qwen3.5-9B Q8_0"
+aliases = ["qwen3.5"]
+doc = "docs/superpowers/research/2026-11-17-sglang/research-report.md#4-per-model-and-engine"
+opencode = false
+
+[model]
+repo = "unsloth/Qwen3.5-9B-GGUF"
+revision = "3885219b6810b007914f3a7950a8d1b469d598a5"
+# Qwen3.5-9B-Q8_0.gguf: SHA-256 809626574d0cb43d4becfa56169980da2bb448f2299270f7be443cb89d0a6ae4, 9,527,502,048 bytes
+files = ["Qwen3.5-9B-Q8_0.gguf"]
+size_bytes = 9527502048
+
+[container]
+memory_gib = 16
+
+[server]
+context = 131072
+args = [
+  "-ngl", "all", "-fa", "on", "-np", "1", "--jinja", "--reasoning", "off", "--temp", "0.6",
+  "--top-p", "0.95", "--top-k", "20", "--min-p", "0", "--presence-penalty", "0",
+]
+
+[clients]
+output = 16384
+thinking = "toggle"
+default = "off"
+
+[needs]
+# The 12,782 MiB GPU peak minus the desktop's 112 MiB; the docker stats peak of 14.95 GiB, of which 9.07 GiB was
+# page cache of the mmapped GGUF and 5.87 GiB anonymous memory, under the 16 GiB cap.
+gpu_mib = 12670
+ram_gib = 15.0
+
+[evidence]
+kind = "measured"
+summary = "66.0 tok/s decode with 128k context, 12,782 MiB GPU peak, 15.0 GiB container RAM, llmctl test, a tool call with its second turn and a json_schema title request passed; OpenCode session not run"
+decode_tok_s = 66.0
+date = "2026-11-17"
+hardware = "MSI Raider 18 Max HX A2WI, RTX 5080 Laptop GPU 16 GB, 61 GiB RAM"
+record = "$SCRATCH/sglang/measure-c/llamacpp-qwen3.5-9b/"

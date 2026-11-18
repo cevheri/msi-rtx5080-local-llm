@@ -1,0 +1,11 @@
+pid=1 name=vllm VmRSS=1502 MiB
+  [heap]: Rss 536 MiB, shared 0 MiB, private 536 MiB, locked 0 MiB, 1 mappings, perms ['rw-p'], first VmFlags [rd wr mr mw me ac sd]
+  [anon]: Rss 487 MiB, shared 0 MiB, private 487 MiB, locked 0 MiB, 411 mappings, perms ['---p', 'rw-p', 'rwxp'], first VmFlags [rd wr mr mw me ac sd]
+  /usr/local/lib/python3.12/dist-packages/triton/_C/libtriton.so: Rss 71 MiB, shared 68 MiB, private 2 MiB, locked 0 MiB, 4 mappings, perms ['r--p', 'r-xp', 'rw-p'], first VmFlags [rd mr mw me sd]
+pid=192 name=VLLM::EngineCor VmRSS=2436 MiB
+  [anon]: Rss 835 MiB, shared 0 MiB, private 835 MiB, locked 0 MiB, 526 mappings, perms ['---p', 'rw-p', 'rwxp'], first VmFlags [rd wr mr mw me ac sd]
+  [heap]: Rss 831 MiB, shared 0 MiB, private 831 MiB, locked 0 MiB, 1 mappings, perms ['rw-p'], first VmFlags [rd wr mr mw me ac sd]
+  /usr/local/lib/python3.12/dist-packages/triton/_C/libtriton.so: Rss 71 MiB, shared 68 MiB, private 2 MiB, locked 0 MiB, 4 mappings, perms ['r--p', 'r-xp', 'rw-p'], first VmFlags [rd mr mw me sd]
+  /usr/local/lib/python3.12/dist-packages/nvidia/cu13/lib/libcublasLt.so.13: Rss 68 MiB, shared 55 MiB, private 12 MiB, locked 0 MiB, 8 mappings, perms ['---p', 'r--p', 'r-xp', 'rw-p'], first VmFlags [rd ex mr mw me sd]
+mounts:
+  tmpfs /dev/shm tmpfs rw,nosuid,nodev,inode64,usrquota 0 0

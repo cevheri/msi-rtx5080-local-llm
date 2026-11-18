@@ -1,0 +1,75 @@
+{
+ "snapshot_shards": 3,
+ "moe_layers": 24,
+ "expert_bytes": 10165616640,
+ "expert_gib": 9.467,
+ "other_bytes": 3595648128,
+ "other_gib": 3.349,
+ "per_layer_mib": [
+  403.95
+ ],
+ "by_tensor_kind_mib": {
+  ".down_proj_bias": 4.2,
+  ".down_proj_blocks": 3037.5,
+  ".down_proj_scales": 189.8,
+  ".gate_up_proj_bias": 8.4,
+  ".gate_up_proj_blocks": 6075.0,
+  ".gate_up_proj_scales": 379.7
+ },
+ "examples": {
+  ".down_proj_bias": [
+   "model.layers.0.mlp.experts.down_proj_bias",
+   "BF16",
+   [
+    32,
+    2880
+   ]
+  ],
+  ".gate_up_proj_bias": [
+   "model.layers.0.mlp.experts.gate_up_proj_bias",
+   "BF16",
+   [
+    32,
+    5760
+   ]
+  ],
+  ".down_proj_blocks": [
+   "model.layers.0.mlp.experts.down_proj_blocks",
+   "U8",
+   [
+    32,
+    2880,
+    90,
+    16
+   ]
+  ],
+  ".down_proj_scales": [
+   "model.layers.0.mlp.experts.down_proj_scales",
+   "U8",
+   [
+    32,
+    2880,
+    90
+   ]
+  ],
+  ".gate_up_proj_blocks": [
+   "model.layers.0.mlp.experts.gate_up_proj_blocks",
+   "U8",
+   [
+    32,
+    5760,
+    90,
+    16
+   ]
+  ],
+  ".gate_up_proj_scales": [
+   "model.layers.0.mlp.experts.gate_up_proj_scales",
+   "U8",
+   [
+    32,
+    5760,
+    90
+   ]
+  ]
+ }
+}

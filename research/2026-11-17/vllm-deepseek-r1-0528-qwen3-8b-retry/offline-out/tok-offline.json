@@ -1,0 +1,136 @@
+[
+ {
+  "label": "auto",
+  "options": {
+   "tokenizer_name": "/root/.cache/huggingface/hub/models--deepseek-ai--DeepSeek-R1-0528-Qwen3-8B/snapshots/6e8885a6ff5c1dc5201574c8fd700323f23c25fa",
+   "tokenizer_mode": "auto"
+  },
+  "class": "CachedLlamaTokenizer",
+  "pre_tokenizer": "Metaspace",
+  "decoder": "Sequence",
+  "encode_say_hello": [
+   45764,
+   71,
+   95292,
+   13
+  ],
+  "decode_say_hello": "Sayhelloworld.",
+  "chat_counts": {
+   "ok": {
+    "tokens": 9,
+    "llamacpp": 8,
+    "diff": 1,
+    "rendered_head": "<\uff5cbegin\u2581of\u2581sentence\uff5c><\uff5cUser\uff5c>Reply with exactly: OK<\uff5cAssista",
+    "rendered_tail": "ser\uff5c>Reply with exactly: OK<\uff5cAssistant\uff5c>"
+   },
+   "probe_8k": {
+    "tokens": 6903,
+    "llamacpp": 8078,
+    "diff": -1175,
+    "rendered_head": "<\uff5cbegin\u2581of\u2581sentence\uff5c><\uff5cUser\uff5c>def process_batch(items, config",
+    "rendered_tail": "the function above compute?<\uff5cAssistant\uff5c>"
+   },
+   "probe_30k": {
+    "tokens": 25845,
+    "llamacpp": 30254,
+    "diff": -4409,
+    "rendered_head": "<\uff5cbegin\u2581of\u2581sentence\uff5c><\uff5cUser\uff5c>def process_batch(items, config",
+    "rendered_tail": "the function above compute?<\uff5cAssistant\uff5c>"
+   }
+  }
+ },
+ {
+  "label": "deepseek_v32",
+  "options": {
+   "tokenizer_name": "/root/.cache/huggingface/hub/models--deepseek-ai--DeepSeek-R1-0528-Qwen3-8B/snapshots/6e8885a6ff5c1dc5201574c8fd700323f23c25fa",
+   "tokenizer_mode": "deepseek_v32"
+  },
+  "class": "CachedDSV32TokenizersBackend",
+  "pre_tokenizer": "Sequence",
+  "decoder": "ByteLevel",
+  "encode_say_hello": [
+   45764,
+   23811,
+   1879,
+   13
+  ],
+  "decode_say_hello": "Say hello world.",
+  "chat_counts": {
+   "ok": {
+    "tokens": 9,
+    "llamacpp": 8,
+    "diff": 1,
+    "rendered_head": "<\uff5cbegin\u2581of\u2581sentence\uff5c><\uff5cUser\uff5c>Reply with exactly: OK<\uff5cAssista",
+    "rendered_tail": "ly with exactly: OK<\uff5cAssistant\uff5c></think>"
+   },
+   "probe_8k": {
+    "tokens": 8079,
+    "llamacpp": 8078,
+    "diff": 1,
+    "rendered_head": "<\uff5cbegin\u2581of\u2581sentence\uff5c><\uff5cUser\uff5c>def process_batch(items, config",
+    "rendered_tail": "tion above compute?<\uff5cAssistant\uff5c></think>"
+   },
+   "probe_30k": {
+    "tokens": 30255,
+    "llamacpp": 30254,
+    "diff": 1,
+    "rendered_head": "<\uff5cbegin\u2581of\u2581sentence\uff5c><\uff5cUser\uff5c>def process_batch(items, config",
+    "rendered_tail": "tion above compute?<\uff5cAssistant\uff5c></think>"
+   }
+  }
+ },
+ {
+  "label": "deepseek_v4",
+  "options": {
+   "tokenizer_name": "/root/.cache/huggingface/hub/models--deepseek-ai--DeepSeek-R1-0528-Qwen3-8B/snapshots/6e8885a6ff5c1dc5201574c8fd700323f23c25fa",
+   "tokenizer_mode": "deepseek_v4"
+  },
+  "class": "CachedDSV4TokenizersBackend",
+  "pre_tokenizer": "Sequence",
+  "decoder": "ByteLevel",
+  "encode_say_hello": [
+   45764,
+   23811,
+   1879,
+   13
+  ],
+  "decode_say_hello": "Say hello world.",
+  "chat_counts": {
+   "ok": {
+    "tokens": 91,
+    "llamacpp": 8,
+    "diff": 83,
+    "rendered_head": "<\uff5cbegin\u2581of\u2581sentence\uff5c>Reasoning Effort: Absolute maximum with",
+    "rendered_tail": "ply with exactly: OK<\uff5cAssistant\uff5c><think>"
+   },
+   "probe_8k": {
+    "tokens": 8161,
+    "llamacpp": 8078,
+    "diff": 83,
+    "rendered_head": "<\uff5cbegin\u2581of\u2581sentence\uff5c>Reasoning Effort: Absolute maximum with",
+    "rendered_tail": "ction above compute?<\uff5cAssistant\uff5c><think>"
+   },
+   "probe_30k": {
+    "tokens": 30337,
+    "llamacpp": 30254,
+    "diff": 83,
+    "rendered_head": "<\uff5cbegin\u2581of\u2581sentence\uff5c>Reasoning Effort: Absolute maximum with",
+    "rendered_tail": "ction above compute?<\uff5cAssistant\uff5c><think>"
+   }
+  }
+ },
+ {
+  "label": "slow",
+  "options": {
+   "tokenizer_name": "/root/.cache/huggingface/hub/models--deepseek-ai--DeepSeek-R1-0528-Qwen3-8B/snapshots/6e8885a6ff5c1dc5201574c8fd700323f23c25fa",
+   "tokenizer_mode": "slow"
+  },
+  "load_error": "ValueError: No tokenizer registered for tokenizer_mode='slow'.",
+  "traceback_tail": [
+   "                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+   "  File \"/usr/local/lib/python3.12/dist-packages/vllm/tokenizers/registry.py\", line 84, in load_tokenizer_cls",
+   "    raise ValueError(f\"No tokenizer registered for {tokenizer_mode=!r}.\")",
+   "ValueError: No tokenizer registered for tokenizer_mode='slow'."
+  ]
+ }
+]

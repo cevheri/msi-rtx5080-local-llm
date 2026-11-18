@@ -1,0 +1,510 @@
+{
+ "run": "m5-a3",
+ "ready": {
+  "exit": "ready",
+  "ready_seen_s": 41.3,
+  "served_listed_s": 36.55,
+  "memory_usage": {
+   "weight": 9.293,
+   "kvcache": 3.398,
+   "startup_available": 2.229,
+   "token_capacity": 42413,
+   "token_capacity_swa": 33930,
+   "graph": {
+    "prefill": 0.0,
+    "decode": 0.035,
+    "target_verify": 0.0,
+    "draft_prefill": 0.0,
+    "draft_decode": 0.0,
+    "draft_extend": 0.0
+   }
+  },
+  "max_total_num_tokens": 42413,
+  "free_mib_right_after_ready": 1353,
+  "cgroup_at_ready": {
+   "anon_gib": 5.387,
+   "file_gib": 9.374,
+   "kernel_gib": 0.121,
+   "shmem_gib": 0.067,
+   "file_mapped_gib": 0.122,
+   "inactive_file_gib": 0.457,
+   "active_file_gib": 8.85,
+   "unevictable_gib": 0.0,
+   "current_gib": 14.884,
+   "peak_gib": 14.884
+  },
+  "first_200_s": {
+   "/ready": 41.05,
+   "/v1/models": 36.55,
+   "/server_info": 36.55
+  }
+ },
+ "ready_line_s": 40.6,
+ "log_lines": [
+  "[2026-11-17 18:52:16] Using default HuggingFace chat template with detected content format: openai",
+  "[2026-11-17 18:52:16] Auto-detected template features: reasoning_config=ReasoningToggleConfig(toggle_param='enable_thinking', default_enabled=False, special_case=None, effort_kwarg=None), reasoning_parser=gemma4, tool_call_parser=gemma4",
+  "[2026-11-17 18:52:22] Load weight end. elapsed=2.25 s, type=Gemma4ForConditionalGeneration, quant=compressed-tensors, avail mem=5.76 GB, mem usage=9.29 GB.",
+  "[2026-11-17 18:52:24] Full KV Cache is allocated. dtype: torch.bfloat16, #tokens: 42413, K size: 0.57 GB, V size: 0.57 GB",
+  "[2026-11-17 18:52:24] SWA KV Cache is allocated. dtype: torch.bfloat16, #tokens: 33930, K size: 1.13 GB, V size: 1.13 GB",
+  "[2026-11-17 18:52:24] SWAKVPool mem usage: 3.40 GB, swa size: 33930, full size: 42413",
+  "[2026-11-17 18:52:24] Memory pool end. avail mem=2.30 GB",
+  "[2026-11-17 18:52:24] Capture target decode CUDA graph begin. backend=full, num_tokens_per_req=1, avail mem=2.26 GB",
+  "[2026-11-17 18:52:34] Capture target decode CUDA graph end. bs=[1], elapsed=9.62 s, mem usage=0.04 GB, avail mem=2.23 GB.",
+  "[2026-11-17 18:52:34] KV pool holds 42413 tokens, fewer than --context-length 65536. One full-length request cannot fit, so long requests will be refused or truncated at serving time. Lower --context-length, raise --mem-fraction-static, or free memory taken be",
+  "[2026-11-17 18:52:34] max_total_num_tokens=42413, chunked_prefill_size=2048, max_prefill_tokens=16384, max_running_requests=1, context_len=65536, available_gpu_mem=2.23 GB",
+  "[2026-11-17 18:52:34] Using default chat sampling params from model generation config: {'temperature': 1.0, 'top_k': 64, 'top_p': 0.95}",
+  "[2026-11-17 18:52:39] The server is fired up and ready to roll!"
+ ],
+ "events": [
+  {
+   "event": "nearfull_plan",
+   "step": "p1",
+   "per_paragraph": 118.0,
+   "overhead": 55.0,
+   "paragraphs": 358,
+   "prompt_tokens": 42299,
+   "context": 65536,
+   "token_capacity": 42413,
+   "share_of_context": 0.6454
+  },
+  {
+   "event": "flush_cache",
+   "status": 200,
+   "used_mib": 13973,
+   "free_mib": 1869,
+   "total_mib": 16303
+  },
+  {
+   "event": "nearfull_plan",
+   "step": "p2",
+   "per_paragraph": 118.0,
+   "overhead": 55.0,
+   "paragraphs": 358,
+   "prompt_tokens": 42299,
+   "context": 65536,
+   "token_capacity": 42413,
+   "share_of_context": 0.6454
+  },
+  {
+   "event": "end",
+   "result": "completed",
+   "container": "running exit=0 oom=false",
+   "cgroup": {
+    "anon_gib": 5.503,
+    "file_gib": 9.086,
+    "shmem_gib": 0.067,
+    "unevictable_gib": 0.0,
+    "peak_gib": 15.029
+   },
+   "memory_usage": {
+    "weight": 9.293,
+    "kvcache": 3.398,
+    "startup_available": 2.229,
+    "token_capacity": 42413,
+    "token_capacity_swa": 33930,
+    "graph": {
+     "prefill": 0.0,
+     "decode": 0.035,
+     "target_verify": 0.0,
+     "draft_prefill": 0.0,
+     "draft_decode": 0.0,
+     "draft_extend": 0.0
+    }
+   },
+   "used_mib": 14269,
+   "free_mib": 1573,
+   "total_mib": 16303
+  }
+ ],
+ "phases": [
+  {
+   "step": "probe",
+   "rc": 0,
+   "seconds": 35.6,
+   "free_mib_after": 1573,
+   "cgroup": {
+    "anon_gib": 5.487,
+    "file_gib": 9.379,
+    "shmem_gib": 0.067,
+    "unevictable_gib": 0.0,
+    "peak_gib": 15.029
+   }
+  },
+  {
+   "step": "smoke",
+   "rc": 0,
+   "seconds": 15.1,
+   "free_mib_after": 1573,
+   "cgroup": {
+    "anon_gib": 5.487,
+    "file_gib": 9.212,
+    "shmem_gib": 0.067,
+    "unevictable_gib": 0.0,
+    "peak_gib": 15.029
+   }
+  },
+  {
+   "step": "sustained",
+   "rc": -15,
+   "seconds": 1.6,
+   "free_mib_after": 1573,
+   "cgroup": {
+    "anon_gib": 5.487,
+    "file_gib": 9.212,
+    "shmem_gib": 0.067,
+    "unevictable_gib": 0.0,
+    "peak_gib": 15.029
+   }
+  }
+ ],
+ "requests": [
+  {
+   "step": "nearfull_p1",
+   "status": 200,
+   "seconds": 13.774,
+   "prompt_tokens": 42299,
+   "finish": "length",
+   "content": "The function `process_batch` computes the average normalized weight for various ... (183 chars)",
+   "tool_calls": [],
+   "title_parses": null,
+   "free_before_mib": 1353,
+   "free_after_mib": 1351,
+   "cgroup_after": {
+    "anon_gib": 5.476,
+    "file_gib": 9.378,
+    "shmem_gib": 0.067,
+    "unevictable_gib": 0.0,
+    "peak_gib": 15.029
+   }
+  },
+  {
+   "step": "title_first_grammar",
+   "status": 200,
+   "seconds": 0.136,
+   "prompt_tokens": 41,
+   "finish": "stop",
+   "content": "{\n  \"title\": \"Python Addition\"\n}",
+   "tool_calls": [],
+   "title_parses": true,
+   "free_before_mib": 1351,
+   "free_after_mib": 1351,
+   "cgroup_after": {
+    "anon_gib": 5.48,
+    "file_gib": 9.378,
+    "shmem_gib": 0.067,
+    "unevictable_gib": 0.0,
+    "peak_gib": 15.029
+   }
+  },
+  {
+   "step": "forced_tool",
+   "status": 200,
+   "seconds": 0.278,
+   "prompt_tokens": 69,
+   "finish": "tool_calls",
+   "content": "",
+   "tool_calls": [
+    {
+     "name": "get_weather",
+     "arguments": "{\"city\": \"Paris\"}"
+    }
+   ],
+   "title_parses": null,
+   "free_before_mib": 1351,
+   "free_after_mib": 1351,
+   "cgroup_after": {
+    "anon_gib": 5.48,
+    "file_gib": 9.378,
+    "shmem_gib": 0.067,
+    "unevictable_gib": 0.0,
+    "peak_gib": 15.029
+   }
+  },
+  {
+   "step": "nearfull_p2",
+   "status": 200,
+   "seconds": 12.404,
+   "prompt_tokens": 42299,
+   "finish": "length",
+   "content": "The `process_batch` function computes the average of normalized weights, grouped... (145 chars)",
+   "tool_calls": [],
+   "title_parses": null,
+   "free_before_mib": 1573,
+   "free_after_mib": 1573,
+   "cgroup_after": {
+    "anon_gib": 5.503,
+    "file_gib": 9.086,
+    "shmem_gib": 0.067,
+    "unevictable_gib": 0.0,
+    "peak_gib": 15.029
+   }
+  }
+ ],
+ "probe": {
+  "decode_tok_s_median": 141.3,
+  "decode_runs": [
+   {
+    "tok_s": 141.3,
+    "completion_tokens": 1126
+   },
+   {
+    "tok_s": 141.4,
+    "completion_tokens": 1085
+   },
+   {
+    "tok_s": 141.2,
+    "completion_tokens": 1133
+   }
+  ],
+  "long": [
+   {
+    "prompt_tokens": 9932,
+    "ttft_first_s": 1.607,
+    "ttft_repeat_s": 0.041
+   },
+   {
+    "prompt_tokens": 37190,
+    "ttft_first_s": 8.575,
+    "ttft_repeat_s": 0.087
+   }
+  ],
+  "ok_test": {
+   "content": "OK",
+   "reasoning_chars": 0,
+   "finish": "stop",
+   "usage": {
+    "prompt_tokens": 14,
+    "total_tokens": 16,
+    "completion_tokens": 2,
+    "prompt_tokens_details": null,
+    "reasoning_tokens": 0,
+    "completion_tokens_details": null
+   },
+   "seconds": 0.03
+  },
+  "tool_test": {
+   "finish": "tool_calls",
+   "calls": [
+    {
+     "name": "get_weather",
+     "arguments": "{\"city\": \"Paris\"}"
+    }
+   ],
+   "content": "",
+   "seconds": 0.12
+  }
+ },
+ "smoke": {
+  "plain": {
+   "status": 200,
+   "content": "OK",
+   "finish_reason": "stop",
+   "reasoning_content_chars": 0,
+   "tool_calls": []
+  },
+  "plain_stream_usage": {
+   "status": 200,
+   "content": "OK",
+   "reasoning_content_chars": 0,
+   "tool_calls": [],
+   "delta_keys": [
+    "content",
+    "role"
+   ],
+   "done_marker": true
+  },
+  "tool_auto": {
+   "status": 200,
+   "content": "",
+   "finish_reason": "tool_calls",
+   "reasoning_content_chars": 207,
+   "tool_calls": [
+    {
+     "keys": [
+      "function",
+      "id",
+      "index",
+      "type"
+     ],
+     "id": "call_755e70b358954114994e48c3",
+     "type": "function",
+     "index": 0,
+     "name": "get_weather",
+     "arguments_type": "str",
+     "arguments": "{\"city\": \"Paris\"}",
+     "arguments_json": {
+      "city": "Paris"
+     }
+    }
+   ]
+  },
+  "tool_auto_stream": {
+   "status": 200,
+   "content": "",
+   "reasoning_content_chars": 0,
+   "tool_calls": [
+    {
+     "id": "call_03077315e15b419dadcc2478",
+     "type": "function",
+     "name": "get_weather",
+     "arguments": "{\"city\": \"Paris\"}",
+     "fragments": 2,
+     "index": 0
+    }
+   ],
+   "delta_keys": [
+    "content",
+    "role",
+    "tool_calls"
+   ],
+   "done_marker": true
+  },
+  "tool_second_turn": {
+   "status": 200,
+   "content": "The weather in Paris is sunny with a temperature of 18 degrees Celsius.",
+   "finish_reason": "stop",
+   "reasoning_content_chars": 0,
+   "tool_calls": [],
+   "mentions_18": true
+  },
+  "tool_second_turn_stream": {
+   "status": 200,
+   "content": "The weather in Paris is sunny and the temperature is 18\u00b0C.",
+   "reasoning_content_chars": 0,
+   "tool_calls": [],
+   "delta_keys": [
+    "content",
+    "role"
+   ],
+   "done_marker": true
+  },
+  "thinking": {
+   "enable_thinking_true": {
+    "status": 200,
+    "content": "",
+    "reasoning_content_chars": 3
+   },
+   "enable_thinking_false": {
+    "status": 200,
+    "content": "391",
+    "reasoning_content_chars": 0
+   },
+   "no_field_server_default": {
+    "status": 200,
+    "content": "391",
+    "reasoning_content_chars": 0
+   },
+   "reasoning_effort_none": {
+    "status": 200,
+    "content": "391",
+    "reasoning_content_chars": 0
+   },
+   "reasoning_effort_low": {
+    "status": 200,
+    "content": "",
+    "reasoning_content_chars": 3
+   },
+   "reasoning_effort_high": {
+    "status": 200,
+    "content": "",
+    "reasoning_content_chars": 3
+   }
+  },
+  "grammar": {
+   "tool_choice_required": {
+    "status": 200,
+    "finish_reason": "tool_calls",
+    "content": "",
+    "tool_calls": [
+     {
+      "keys": [
+       "function",
+       "id",
+       "index",
+       "type"
+      ],
+      "id": "call_e8951b2a861d4d8bacf9d2c8",
+      "type": "function",
+      "index": 0,
+      "name": "get_weather",
+      "arguments_type": "str",
+      "arguments": "{\"city\": \"Los Angeles\"}",
+      "arguments_json": {
+       "city": "Los Angeles"
+      }
+     }
+    ],
+    "usage": {
+     "prompt_tokens": 63,
+     "total_tokens": 101,
+     "completion_tokens": 38,
+     "prompt_tokens_details": null,
+     "reasoning_tokens": 0,
+     "completion_tokens_details": null
+    },
+    "reasoning_content_chars": 0
+   },
+   "response_format_json_schema": {
+    "status": 200,
+    "finish_reason": "stop",
+    "content": "{\n  \"capital\": \"Paris\"\n}",
+    "tool_calls": [],
+    "usage": {
+     "prompt_tokens": 17,
+     "total_tokens": 29,
+     "completion_tokens": 12,
+     "prompt_tokens_details": null,
+     "reasoning_tokens": 0,
+     "completion_tokens_details": null
+    },
+    "reasoning_content_chars": 0
+   }
+  },
+  "decode_512_median_tok_s": 142.2
+ },
+ "trace": {
+  "gpu_used_peak_mib": 14491.0,
+  "gpu_free_min_mib": 1351.0,
+  "power_max_w": 146.43,
+  "temp_max_c": 68.0,
+  "cg_anon_peak_gib": 5.531,
+  "cg_shmem_peak_gib": 0.067,
+  "cg_file_peak_gib": 9.379,
+  "cg_peak_gib": 15.029,
+  "cg_unevictable_peak_gib": 0.0,
+  "samples": 120
+ },
+ "state.txt": [
+  "running exit=0 oom=false started=2026-11-17T18:51:58.517527208Z finished=0001-01-01T00:00:00Z"
+ ],
+ "meta": [
+  "gpu_used_before_mib=112",
+  "cmd=m5-a3.sh",
+  "docker_run_exit=0",
+  "poller_exit=0",
+  "seq_exit=0",
+  "note=the sustained phase was stopped by hand after 1.6 s (rc -15), because these settings hold 42,413 tokens, short of the 64k context; M12 runs at the shipping settings in m5-a4-swa"
+ ],
+ "procmem.txt": [
+  "== at ready 18:52:39",
+  "pid=1436508 name=python3 VmRSS_kB=1958328 RssAnon_kB=1288956 RssFile_kB=581912 RssShmem_kB=87460 VmLck_kB=16 VmPin_kB=0",
+  "pid=1437745 name=sglang::schedul VmRSS_kB=3933612 RssAnon_kB=3034380 RssFile_kB=778828 RssShmem_kB=120404 VmLck_kB=16 VmPin_kB=0",
+  "pid=1437746 name=sglang::detoken VmRSS_kB=1774460 RssAnon_kB=1318552 RssFile_kB=455908 RssShmem_kB=0 VmLck_kB=16 VmPin_kB=0",
+  "cgroup anon=5.387 GiB",
+  "cgroup file=9.374 GiB",
+  "cgroup shmem=0.067 GiB",
+  "cgroup file_mapped=0.122 GiB",
+  "cgroup unevictable=0.000 GiB",
+  "cgroup memory.current=14.884 GiB memory.peak=14.884 GiB",
+  "== at the end 18:53:59",
+  "pid=1436508 name=python3 VmRSS_kB=2011324 RssAnon_kB=1341780 RssFile_kB=582084 RssShmem_kB=87460 VmLck_kB=16 VmPin_kB=0",
+  "pid=1437745 name=sglang::schedul VmRSS_kB=4004996 RssAnon_kB=3102948 RssFile_kB=781644 RssShmem_kB=120404 VmLck_kB=16 VmPin_kB=0",
+  "pid=1437746 name=sglang::detoken VmRSS_kB=1774488 RssAnon_kB=1318580 RssFile_kB=455908 RssShmem_kB=0 VmLck_kB=16 VmPin_kB=0",
+  "cgroup anon=5.503 GiB",
+  "cgroup file=9.086 GiB",
+  "cgroup shmem=0.067 GiB",
+  "cgroup file_mapped=0.123 GiB",
+  "cgroup unevictable=0.000 GiB",
+  "cgroup memory.current=14.708 GiB memory.peak=15.029 GiB"
+ ]
+}

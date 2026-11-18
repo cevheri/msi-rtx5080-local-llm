@@ -1,0 +1,21 @@
+{
+  "request": {
+    "model": "local",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Reply with exactly the word OK."
+      }
+    ],
+    "reasoning_effort": "none",
+    "max_tokens": 256
+  },
+  "status": 200,
+  "reply": "{\"choices\":[{\"finish_reason\":\"stop\",\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"OK\",\"reasoning_content\":\"The user says: \\\"Reply with exactly the word OK.\\\" So we must output exactly \\\"OK\\\". No extra spaces, no punctuation beyond OK. Should be just OK.\"}}],\"created\":1794968904,\"model\":\"local\",\"system_fingerprint\":\"b12407-e574a17b0\",\"object\":\"chat.completion\",\"usage\":{\"completion_tokens\":37,\"prompt_tokens\":17,\"total_tokens\":54,\"prompt_tokens_details\":{\"cached_tokens\":2}},\"id\":\"chatcmpl-DE3VTJI9Ba2jO7Rm6bzypC9v5t8zmBUd\",\"timings\":{\"cache_n\":2,\"prompt_n\":15,\"prompt_ms\":18.495,\"prompt_per_token_ms\":1.233,\"prompt_per_second\":811.0300081103001,\"predicted_n\":37,\"predicted_ms\":526.853,\"predicted_per_token_ms\":14.634805555555554,\"predicted_per_second\":68.33025530840672}}",
+  "record": {
+    "probe": "C",
+    "status": 200,
+    "content": true,
+    "reasoning": true
+  }
+}

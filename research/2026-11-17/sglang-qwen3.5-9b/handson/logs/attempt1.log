@@ -1,0 +1,10 @@
+/sgl-workspace/sglang/python/sglang/launch_server.py:71: UserWarning: 'python -m sglang.launch_server' is still supported, but 'sglang serve' is the recommended entrypoint.
+[2026-11-17 15:32:12] Attention backend not specified. Use flashinfer backend by default.
+[2026-11-17 15:32:12] kill_process_tree called: parent_pid=1, include_parent=False, pid=1
+Traceback (most recent call last):
+  File server_args.py:277 in resolve_once
+  File arg_groups/pipeline.py:328 in run_resolution_pipeline
+  File arg_groups/resolution_hooks.py:139 in run_hook
+  File arg_groups/pd_disaggregation_hook.py:304 in handle_encoder_disaggregation
+  File arg_groups/model_hook.py:1106 in handle_language_model_only
+ValueError: --language-model-only does not support ['Qwen3_5ForConditionalGeneration']. Supported: ['DeepseekV4ForCausalLM', 'MuseGlimmerForConditionalGeneration', 'Cosmos3ForConditionalGeneration', 'Cosmos3EdgeForConditionalGeneration'].

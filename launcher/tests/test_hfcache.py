@@ -1,10 +1,13 @@
 import hashlib
 import io
 import os
+import stat
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
+from launcher import hfcache
 from launcher.catalog import load_catalog, resolve
 from launcher.errors import DownloadError, PreflightError, UsageError
 from launcher.hfcache import HfAuth, download_file, hf_home, read_auth, snapshot_dir
@@ -126,6 +129,174 @@ class DownloadTest(unittest.TestCase):
         with self.assertRaises(DownloadError) as ctx:
             download_file(self.host, self.home, "org/model", REV, "m.gguf", None, self.out)
         self.assertIn("no SHA-256", str(ctx.exception))
+
+
+class SnapshotHelpersTest(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.home = Path(self.tmp.name)
+        self.catalog = load_catalog(REPO / "recipes", None)
+        self.out = io.StringIO()
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def test_snapshot_problems_rules(self):
+        model = hfcache.HfRepoModel("org/m", REV, (), (), 12, "m")
+        snapshot = snapshot_dir(self.home, "org/m", REV)
+        self.assertEqual(hfcache.snapshot_problems(model, self.home), [f"missing snapshot {REV} of org/m"])
+        snapshot.mkdir(parents=True)
+        self.assertEqual(hfcache.snapshot_problems(model, self.home), [f"missing config.json in snapshot {REV}"])
+        os.symlink("../../blobs/gone", snapshot / "x.safetensors")
+        problems = hfcache.snapshot_problems(model, self.home)
+        self.assertEqual(len(problems), 1)
+        self.assertTrue(problems[0].startswith("the download is incomplete: x.safetensors missing in snapshot"))
+        (snapshot / "x.safetensors").unlink()
+        (snapshot / "config.json").write_text("{}")
+        (snapshot / "model.safetensors").write_bytes(b"x" * 9)
+        self.assertEqual(hfcache.snapshot_problems(model, self.home),
+                         ["the snapshot holds 11 bytes, the recipe expects 12; the download is incomplete"])
+        (snapshot / "model.safetensors").write_bytes(b"x" * 10)
+        self.assertEqual(hfcache.snapshot_problems(model, self.home), [])
+
+    def _completing_host(self, recipe):
+        host = FakeHost()
+        snapshot = snapshot_dir(self.home, recipe.model.repo, recipe.model.revision)
+
+        def done(argv):
+            complete_snapshot(snapshot, recipe.model.size_bytes)
+            return ok()
+
+        host.on(("docker", "run"), done)
+        return host
+
+    def test_cli_download_hf_is_the_vllm_argv(self):
+        recipe, runtime = resolve(self.catalog, "gpt-oss-20b", "vllm")
+        host = self._completing_host(recipe)
+        hfcache.cli_download(host, recipe.id, recipe.model, runtime.image, "hf", (), self.home,
+                             HfAuth(SECRET, None), self.out)
+        self.assertEqual(host.calls[0], [
+            "docker", "run", "--rm", "--user", "1000:1000", "-e", "HOME=/tmp", "-e", "HF_HOME=/hf",
+            "-e", "HF_TOKEN", "-v", f"{self.home}:/hf", "--memory", "8g", "--memory-swap", "8g",
+            "--entrypoint", "hf", "vllm/vllm-openai:v0.33.0", "download", "openai/gpt-oss-20b",
+            "--revision", "6cee5e81ee83917806bbde320786a8fb61efebee", "--exclude", "original/*",
+            "--exclude", "metal/*"])
+        self.assertEqual(host.env_extras[0], {"HF_TOKEN": SECRET})
+        self.assertEqual(self.out.getvalue(),
+                         "gpt-oss-20b: downloading openai/gpt-oss-20b at 6cee5e81ee83 with the hf CLI\n")
+
+    def test_cli_download_python_module(self):
+        recipe, _ = resolve(self.catalog, "gpt-oss-20b", "vllm")
+        host = self._completing_host(recipe)
+        hfcache.cli_download(host, recipe.id, recipe.model, "lmsysorg/sglang:v0.5.23-runtime", "python3",
+                             ("-m", "huggingface_hub.cli.hf"), self.home, HfAuth(SECRET, None), self.out)
+        argv = host.calls[0]
+        self.assertEqual(argv[argv.index("--entrypoint"):], [
+            "--entrypoint", "python3", "lmsysorg/sglang:v0.5.23-runtime", "-m", "huggingface_hub.cli.hf",
+            "download", "openai/gpt-oss-20b", "--revision", "6cee5e81ee83917806bbde320786a8fb61efebee",
+            "--exclude", "original/*", "--exclude", "metal/*"])
+        self.assertFalse(any(SECRET in item for item in argv))
+        self.assertNotIn(SECRET, self.out.getvalue() + host.out.getvalue() + host.err.getvalue())
+
+    def test_cli_download_env_file_and_failures(self):
+        recipe, runtime = resolve(self.catalog, "gpt-oss-20b", "vllm")
+        host = self._completing_host(recipe)
+        hfcache.cli_download(host, recipe.id, recipe.model, runtime.image, "hf", (), self.home,
+                             HfAuth(SECRET, Path("/x/hf.env")), self.out)
+        argv = host.calls[0]
+        self.assertEqual(argv[argv.index("--env-file") + 1], "/x/hf.env")
+        self.assertNotIn("HF_TOKEN", argv)
+        self.assertEqual(host.env_extras[0], {})
+
+        host = FakeHost()
+        host.on(("docker", "run"), fail("Repository not found"))
+        with self.assertRaises(DownloadError) as ctx:
+            hfcache.cli_download(host, recipe.id, recipe.model, runtime.image, "hf", (),
+                                 Path(self.tmp.name) / "empty", HfAuth(None, None), self.out)
+        self.assertTrue(str(ctx.exception).startswith("gpt-oss-20b: hf download exited 1:"))
+
+        host = FakeHost()
+        host.on(("docker", "run"), ok())
+        snapshot = snapshot_dir(self.home, recipe.model.repo, recipe.model.revision)
+        (snapshot / "model.safetensors").unlink()
+        with self.assertRaises(DownloadError) as ctx:
+            hfcache.cli_download(host, recipe.id, recipe.model, runtime.image, "hf", (), self.home,
+                                 HfAuth(None, None), self.out)
+        self.assertTrue(str(ctx.exception).startswith("gpt-oss-20b: the snapshot holds"))
+
+
+class BuildOverlayTest(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self.tmp.name)
+        self.snapshot = self.root / "snap"
+        for name, data in (("config.json", b"{}"), (".gitattributes", b""), ("tokenizer_config.json", b"{}"),
+                           ("sub/a.bin", b"a")):
+            (self.snapshot / name).parent.mkdir(parents=True, exist_ok=True)
+            (self.snapshot / name).write_bytes(data)
+        self.folder = self.root / "cache" / "x" / "m"
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def build(self, files=None, snapshot=None):
+        return hfcache.build_overlay(self.folder, snapshot or self.snapshot, "/c/snap", files or {})
+
+    def links(self) -> dict[str, str]:
+        return {path.relative_to(self.folder).as_posix(): os.readlink(path)
+                for path in sorted(self.folder.rglob("*")) if path.is_symlink()}
+
+    def test_build_overlay_links_and_writes(self):
+        files = {"tokenizer_config.json": b'{"a": 1}\n', "extra.json": b"{}\n"}
+        with mock.patch.object(hfcache.os, "fsync", wraps=os.fsync) as fsync:
+            self.assertEqual(self.build(files), 3)
+        self.assertEqual(fsync.call_count, 2)
+        self.assertEqual(self.links(), {".gitattributes": "/c/snap/.gitattributes",
+                                        "config.json": "/c/snap/config.json", "sub/a.bin": "/c/snap/sub/a.bin"})
+        self.assertTrue((self.folder / "sub").is_dir())
+        self.assertFalse((self.folder / "sub").is_symlink())
+        for name, data in files.items():
+            path = self.folder / name
+            self.assertFalse(path.is_symlink(), name)
+            self.assertEqual(path.read_bytes(), data)
+            self.assertEqual(stat.S_IMODE(path.stat().st_mode), 0o644)
+        self.assertFalse(os.path.lexists(self.folder.parent / ".m.llmctl-tmp"))
+        self.assertFalse(os.path.lexists(self.folder.parent / ".m.llmctl-old"))
+
+    def test_build_overlay_replaces_the_live_folder(self):
+        self.build()
+        (self.folder / "junk").write_bytes(b"x")
+        (self.snapshot / "new.json").write_bytes(b"{}")
+        (self.snapshot / "config.json").unlink()
+        self.assertEqual(self.build(), 4)
+        self.assertEqual(sorted(self.links()), [".gitattributes", "new.json", "sub/a.bin", "tokenizer_config.json"])
+        self.assertFalse(os.path.lexists(self.folder / "junk"))
+
+    def test_build_overlay_removes_leftovers(self):
+        self.folder.parent.mkdir(parents=True)
+        (self.folder.parent / ".m.llmctl-tmp").mkdir()
+        (self.folder.parent / ".m.llmctl-tmp" / "x").write_bytes(b"x")
+        (self.folder.parent / ".m.llmctl-old").write_bytes(b"old")
+        self.build()
+        self.assertEqual(sorted(path.name for path in self.folder.parent.iterdir()), ["m"])
+
+    def test_build_overlay_failures(self):
+        with self.assertRaises(FileNotFoundError):
+            self.build(snapshot=self.root / "missing")
+        self.assertFalse(os.path.lexists(self.root / "cache"))
+
+        if os.geteuid() == 0:
+            self.skipTest("root reads a folder with mode 0o000")
+        self.build()
+        before = self.links()
+        (self.snapshot / "new.json").write_bytes(b"{}")
+        (self.snapshot / "sub").chmod(0o000)
+        try:
+            with self.assertRaises(PermissionError):
+                self.build()
+        finally:
+            (self.snapshot / "sub").chmod(0o755)
+        self.assertEqual(self.links(), before)
 
 
 class PullTest(unittest.TestCase):

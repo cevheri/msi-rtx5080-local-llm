@@ -1,0 +1,10 @@
+diff of measurement C's w3-k88-f088-mem27.sh against this lane's e1-k88-f088-mem27.sh
+2c2,4
+< # Protocol under the chosen cap: w3-k88-f088 under --memory 27g (the 22.81 GiB non-reclaimable peak of the sweep plus about 4 GiB).
+---
+> # Measurement E: measurement C's w3-k88-f088-mem27.sh (the shipped Qwen3.6 settings of the draft qwen3.6-35b-a3b.toml:
+> # K 88, Marlin, fraction 0.88, BF16 KV, 8 Mamba slots, 128k, the 27 GiB cap, C's overlay, the volume
+> # sglang-research-cache) with the runtime file's eighth variable, TIKTOKEN_ENCODINGS_BASE, added; nothing else changed.
+16a19
+>   -e TIKTOKEN_ENCODINGS_BASE=/opt/sglang/lib/python3.12/site-packages/tml_renderers/data \
+diff exit=1

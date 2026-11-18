@@ -1,5 +1,5 @@
 """The runtime adapters, in the order llmctl prefers them when a name exists in more than one."""
 
-from launcher.runtimes import llamacpp, vllm
+from launcher.runtimes import llamacpp, sglang, vllm
 
-ADAPTERS = {"llamacpp": llamacpp, "vllm": vllm}
+ADAPTERS = {"llamacpp": llamacpp, "vllm": vllm, "sglang": sglang}

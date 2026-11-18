@@ -1,0 +1,28 @@
+chain2 start 18:51:58
+{"exit": "ready", "ready_seen_s": 41.3, "served_listed_s": 36.55, "memory_usage": {"weight": 9.293, "kvcache": 3.398, "startup_available": 2.229, "token_capacity": 42413, "token_capacity_swa": 33930, "graph": {"prefill": 0.0, "decode": 0.035, "target_verify": 0.0, "draft_prefill": 0.0, "draft_decode": 0.0, "draft_extend": 0.0}}, "gpu_right_after_ready": {"t": 1794941559.75, "used_mib": 14489, "free_mib": 1353, "total_mib": 16303}}
+{"event": "gpu_before", "step": "nearfull_p2", "t": 1794941627.18, "used_mib": 14269, "free_mib": 1573, "total_mib": 16303, "utc": "18:53:47"}
+{"event": "request", "step": "nearfull_p2", "status": 200, "t": 1794941627.18, "seconds": 12.404, "finish_reason": "length", "content": "The `process_batch` function computes the average of normalized weights, grouped... (145 chars)", "reasoning_content_chars": 0, "tool_calls": [], "usage": {"prompt_tokens": 42299, "completion_tokens": 32}, "utc": "18:53:47"}
+{"event": "gpu_after", "step": "nearfull_p2", "cgroup": {"anon_gib": 5.503, "file_gib": 9.086, "shmem_gib": 0.067, "unevictable_gib": 0.0, "peak_gib": 15.029}, "t": 1794941639.613, "used_mib": 14269, "free_mib": 1573, "total_mib": 16303, "utc": "18:53:59"}
+{"event": "end", "result": "completed", "container": "running exit=0 oom=false", "cgroup": {"anon_gib": 5.503, "file_gib": 9.086, "shmem_gib": 0.067, "unevictable_gib": 0.0, "peak_gib": 15.029}, "memory_usage": {"weight": 9.293, "kvcache": 3.398, "startup_available": 2.229, "token_capacity": 42413, "token_capacity_swa": 33930, "graph": {"prefill": 0.0, "decode": 0.035, "target_verify": 0.0, "draft
+logs/m5-a3.log 406 -> 48 lines
+[2026-11-17 18:52:10] Hybrid SWA model detected. architectures=['Gemma4ForConditionalGeneration']
+[2026-11-17 18:52:16] Auto-detected template features: reasoning_config=ReasoningToggleConfig(toggle_param='enable_thinking', default_enabled=False, special_case=None, effort_kwarg=None), reasoning_parser=gemma4, tool_call_parser=gemma4
+[2026-11-17 18:52:22] Load weight end. elapsed=2.25 s, type=Gemma4ForConditionalGeneration, quant=compressed-tensors, avail mem=5.76 GB, mem usage=9.29 GB.
+[2026-11-17 18:52:24] Full KV Cache is allocated. dtype: torch.bfloat16, #tokens: 42413, K size: 0.57 GB, V size: 0.57 GB
+[2026-11-17 18:52:24] SWA KV Cache is allocated. dtype: torch.bfloat16, #tokens: 33930, K size: 1.13 GB, V size: 1.13 GB
+[2026-11-17 18:52:24] SWAKVPool mem usage: 3.40 GB, swa size: 33930, full size: 42413
+[2026-11-17 18:52:34] KV pool holds 42413 tokens, fewer than --context-length 65536. One full-length request cannot fit, so long requests will be refused or truncated at serving time. Lower --context-length, raise --mem-fraction-static, or free memory taken before the pool is sized.
+[2026-11-17 18:52:34] max_total_num_tokens=42413, chunked_prefill_size=2048, max_prefill_tokens=16384, max_running_requests=1, context_len=65536, available_gpu_mem=2.23 GB
+[2026-11-17 18:52:34] Init Unified Radix Cache. Components: (<ComponentType.FULL: 0>, <ComponentType.SWA: 1>). Tree Core: RustUnifiedTreeCore
+[2026-11-17 18:52:34] Using default chat sampling params from model generation config: {'temperature': 1.0, 'top_k': 64, 'top_p': 0.95}
+[2026-11-17 18:52:39] The server is fired up and ready to roll!
+running exit=0 oom=false started=2026-11-17T18:51:58.517527208Z finished=0001-01-01T00:00:00Z
+m5 done 18:54:02
+{"exit": "container stopped", "ready_seen_s": null, "served_listed_s": null, "memory_usage": null, "gpu_right_after_ready": null}
+logs/m1-a1.log 84 -> 33 lines
+[2026-11-17 18:54:14] Hybrid SWA model detected. architectures=['MellumForCausalLM']
+[2026-11-17 18:54:17] Auto-detected template features: reasoning_config=ReasoningToggleConfig(toggle_param='enable_thinking', default_enabled=True, special_case=None, effort_kwarg=None), reasoning_parser=qwen3, tool_call_parser=qwen
+RuntimeError: The size of tensor a (288) must match the size of tensor b (28) at non-singleton dimension 1
+exited exit=0 oom=false started=2026-11-17T18:54:02.51227988Z finished=2026-11-17T18:54:28.682459562Z
+m1 done 18:54:31
+chain2 end 18:54:31

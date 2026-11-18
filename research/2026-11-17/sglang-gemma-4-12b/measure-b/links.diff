@@ -1,0 +1,11 @@
+--- $SCRATCH/sglang/measure-b/sglang-gemma-4-12b/README.md
++++ sglang-gemma-4-12b/measure-b/README.md
+@@ -18,7 +18,7 @@
+ ```
+ 
+ - The only checkpoint tensor of that shape is `model.embed_audio.embedding_projection.weight`, BF16 [3840, 640] (measured on the MSI Raider 18 Max HX, safetensors header).
+-- SGLang sizes that projection from `audio_config.output_proj_dims` (`Gemma4UnifiedMultimodalEmbedder`, `self.multimodal_hidden_size = multimodal_config.output_proj_dims`, [model_gemma4_unified.py](../../data/src/model_gemma4_unified.py) lines 111 to 122), but this checkpoint's `audio_config` has `audio_embed_dim: 640` and no `output_proj_dims`, so the config class's default of 1536 applies (vendor-reported, the cached `config.json`; the default inferred from the error).
++- SGLang sizes that projection from `audio_config.output_proj_dims` (`Gemma4UnifiedMultimodalEmbedder`, `self.multimodal_hidden_size = multimodal_config.output_proj_dims`, `model_gemma4_unified.py` lines 111 to 122), but this checkpoint's `audio_config` has `audio_embed_dim: 640` and no `output_proj_dims`, so the config class's default of 1536 applies (vendor-reported, the cached `config.json`; the default inferred from the error).
+ - The vision projection is not affected: `vision_config.output_proj_dims` is 3840 and the tensor is [3840, 3840] (measured, header and `config.json`).
+ - With `audio_config` null the class builds no `embed_audio` (lines 166 to 170 of the same file), and the loader skips weights that have no parameter (line 408), so attempt 2 adds the flag (inferred from the source; attempt 2 confirms it).
+ 

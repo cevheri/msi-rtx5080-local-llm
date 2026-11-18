@@ -1,0 +1,2 @@
+stopped qwen3.5-9b in container 'llamacpp'
+removed container 'llamacpp'

@@ -1,0 +1,12 @@
+qwen3.5-9b attempt1: no ready line; last error: ValueError: --language-model-only does not support ['Qwen3_5ForConditionalGeneration']. Supported: ['DeepseekV4ForCausalLM', 'MuseGlimmerForConditionalGeneratio
+qwen3.5-9b attempt2: weights loaded +22 s, ready line +54 s
+qwen3.5-9b attempt3: weights loaded +22 s, ready line +28 s
+qwen3.5-9b run4-sustained: weights loaded +22 s, ready line +35 s
+gpt-oss-20b attempt1: no ready line; last error: ValueError: Loaded weights leave no GPU memory for the KV cache under --mem-fraction-static=0.95. Raise --mem-fraction-static above 0.961 (minimum viable = 1 - 
+gpt-oss-20b attempt2: weights loaded +26 s, ready line +95 s
+gpt-oss-20b attempt3: weights loaded +28 s, ready line +217 s
+gpt-oss-20b attempt4: weights loaded +47 s, ready line +61 s
+k2-horizon-7b attempt1: weights loaded +27 s, ready line +131 s
+k2-horizon-7b attempt2: weights loaded +26 s, ready line +34 s
+gemma-4-e4b attempt1: no ready line; last error: AttributeError: 'MergedColumnParallelLinear' object has no attribute 'weight'
+gemma-4-e4b attempt2: no ready line; last error: ValueError: No processor registered for architecture: ['Gemma4ForCausalLM'].

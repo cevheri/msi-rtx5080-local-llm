@@ -1,0 +1,40 @@
+# Measured launch from llamacpp/models.md#qwen35-9b-q8_0.
+schema = 1
+id = "qwen3.5-9b"
+name = "Qwen3.5-9B Q8_0"
+aliases = ["qwen3.5"]
+doc = "llamacpp/models.md#qwen35-9b-q8_0"
+opencode = true
+
+[model]
+repo = "unsloth/Qwen3.5-9B-GGUF"
+revision = "3885219b6810b007914f3a7950a8d1b469d598a5"
+files = ["Qwen3.5-9B-Q8_0.gguf"]
+size_bytes = 9527502048
+
+[container]
+memory_gib = 16
+
+[server]
+context = 131072
+args = [
+  "-ngl", "all", "-fa", "on", "-np", "1", "--jinja", "--reasoning", "off", "--temp", "0.6",
+  "--top-p", "0.95", "--top-k", "20", "--min-p", "0", "--presence-penalty", "0",
+]
+
+[clients]
+output = 16384
+thinking = "toggle"
+default = "off"
+
+[needs]
+gpu_mib = 12670
+ram_gib = 15.0
+
+[evidence]
+kind = "measured"
+summary = "66 tok/s decode with 128k context, 12,782 MiB GPU peak, 15.0 GiB container RAM, llmctl test, a tool call with its second turn and a json_schema title request passed; the OpenCode session passed in the e2e of 2026-11-18"
+decode_tok_s = 66.0
+date = "2026-11-17"
+hardware = "MSI Raider 18 Max HX A2WI, RTX 5080 Laptop GPU 16 GB, 61 GiB RAM"
+record = "research/2026-11-17/llamacpp-qwen3.5-9b/"

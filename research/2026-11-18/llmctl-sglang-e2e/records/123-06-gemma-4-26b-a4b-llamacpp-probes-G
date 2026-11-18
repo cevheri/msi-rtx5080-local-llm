@@ -1,0 +1,21 @@
+{
+  "request": {
+    "model": "local",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Reply with exactly the word OK."
+      }
+    ],
+    "max_tokens": 256,
+    "reasoning_effort": "low"
+  },
+  "status": 200,
+  "reply": "{\"choices\":[{\"finish_reason\":\"stop\",\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"OK\"}}],\"created\":1794969212,\"model\":\"local\",\"system_fingerprint\":\"b12407-e574a17b0\",\"object\":\"chat.completion\",\"usage\":{\"completion_tokens\":2,\"prompt_tokens\":20,\"total_tokens\":22,\"prompt_tokens_details\":{\"cached_tokens\":15}},\"id\":\"chatcmpl-QXl6HaRbhsRJKJR8m73wHYEk4XNEtxb0\",\"timings\":{\"cache_n\":15,\"prompt_n\":5,\"prompt_ms\":16.01,\"prompt_per_token_ms\":3.2020000000000004,\"prompt_per_second\":312.3048094940662,\"predicted_n\":2,\"predicted_ms\":6.634,\"predicted_per_token_ms\":6.634,\"predicted_per_second\":150.7386192342478}}",
+  "record": {
+    "probe": "G",
+    "status": 200,
+    "content": true,
+    "reasoning": false
+  }
+}

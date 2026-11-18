@@ -15,6 +15,7 @@ from launcher.files import FileChange
 from launcher.model import Target
 from launcher.tests.fakes import REPO, FakeHost, fail, ok
 from launcher.tests.regen_golden import target_for
+from launcher.tests.sglang_fixture import recipes_with_sglang, registered
 
 RECIPES = REPO / "recipes"
 
@@ -304,20 +305,21 @@ class GenerateTest(unittest.TestCase):
     def test_model_tables_of_the_other_kinds(self):
         for (runtime, recipe_id), model_text in DESIGN_MODEL_TABLES.items():
             with self.subTest(recipe=f"{runtime}/{recipe_id}"):
-                text = kimi_config.render_tables(target_for(recipe_id, runtime, RECIPES))
+                target = target_for(recipe_id, runtime, RECIPES)
+                text = kimi_config.render_tables(target)
                 before, after = text.split("\n\n")
-                port = 8080 if runtime == "llamacpp" else 8000
+                port = target.runtime.host_port
                 self.assertEqual(before + "\n", DESIGN_PROVIDER.format(port=port))
                 self.assertEqual(after, model_text)
 
     def test_every_recipe_describes_its_server(self):
         targets = all_targets()
-        self.assertEqual(len(targets), 19)
+        self.assertEqual(len(targets), 29)
         for target in targets:
             with self.subTest(recipe=f"{target.recipe.runtime}/{target.recipe.id}"):
                 provider = kimi_config.provider_table(target)
                 model = kimi_config.model_table(target)
-                port = 8080 if target.recipe.runtime == "llamacpp" else 8000
+                port = target.runtime.host_port
                 self.assertEqual(provider["base_url"], f"http://127.0.0.1:{port}/v1")
                 self.assertEqual(model["model"], target.served)
                 self.assertEqual(model["max_context_size"], target.recipe.context)
@@ -336,7 +338,7 @@ class GenerateTest(unittest.TestCase):
                 self.assertEqual("off_effort" in model, target.recipe.id == "qwen3.8-27b")
                 if target.recipe.id == "deepseek-r1-0528-qwen3-8b":
                     self.assertEqual(model["capabilities"], [])
-        self.assertEqual(kinds, {"toggle": 10, "effort": 3, "always": 5, "none": 1})
+        self.assertEqual(kinds, {"toggle": 18, "effort": 4, "always": 6, "none": 1})
 
     def test_tables_reparse(self):
         for target in all_targets():
@@ -1326,6 +1328,50 @@ class LinesTest(unittest.TestCase):
                     "  thinking: always on, at the effort the server sets",
                     f"{start}; for a prompt without them, make it the default "
                     f'(./llmctl up qwen3.6-35b-a3b --set-default), then kimi -p "your prompt" --agent-file {file}'])
+
+    def test_chat_only_lines_follow_the_runtime(self):
+        # Design D11: the runtime fact refuses_tools_without_parser picks the line, not the label.
+        file = str(kimi_config.AGENT_FILE)
+        with tempfile.TemporaryDirectory() as tmp, registered():
+            sglang = target_for("deepseek-r1-0528-qwen3-8b", "sglang", recipes_with_sglang(Path(tmp)))
+        refusing = dataclasses.replace(sglang, runtime=dataclasses.replace(sglang.runtime,
+                                                                           refuses_tools_without_parser=True))
+        cases = [("vLLM", target_for("deepseek-r1-0528-qwen3-8b", "vllm", RECIPES),
+                  "  chat only: vLLM rejects every Kimi request that carries tools for this recipe (HTTP 400), and "
+                  "Kimi's TUI always sends them"),
+                 ("SGLang", sglang, "  chat only: Kimi sends its tools with every request, also in its TUI"),
+                 ("SGLang refusing tools", refusing,
+                  "  chat only: SGLang rejects every Kimi request that carries tools for this recipe (HTTP 400), and "
+                  "Kimi's TUI always sends them")]
+        for name, target, start in cases:
+            with self.subTest(name):
+                lines = kimi_config.usage_lines(target, is_default=True, up_command=self.cmd)
+                self.assertEqual(lines[-1], f'{start}; for a prompt without them: kimi -p "your prompt" '
+                                            f"--agent-file {file}")
+
+    def test_sglang_toggle_effort_warning(self):
+        # Design D11: SGLang reads every reasoning_effort except none as thinking on for a toggle model.
+        with tempfile.TemporaryDirectory() as tmp, registered():
+            sglang = target_for("qwen3.5-9b", "sglang", recipes_with_sglang(Path(tmp)))
+        vllm = target_for("qwen3.5-9b", "vllm", RECIPES)
+        existing = ('warning: [thinking] effort = "{effort}" in /h/.kimi-code/config.toml makes Kimi send '
+                    "reasoning_effort {effort} to llmctl/qwen3.5-9b, which sets its thinking on the server (toggle); "
+                    "the server may refuse it or think differently; remove that effort line, or choose another with "
+                    "/effort in kimi")
+        rows = [
+            ("low", sglang,
+             ['warning: [thinking] effort = "low" in /h/.kimi-code/config.toml makes Kimi send reasoning_effort low '
+              "to llmctl/qwen3.5-9b, which turns thinking on for qwen3.5-9b, because SGLang reads every effort except "
+              "none as thinking on; remove that effort line, or choose another with /effort in kimi"]),
+            ("none", sglang, [existing.format(effort="none")]),
+            ("on", sglang, []),
+            ("off", sglang, []),
+            ("low", vllm, [existing.format(effort="low")]),
+        ]
+        for effort, target, lines in rows:
+            with self.subTest(effort=effort, runtime=target.label):
+                state = self.state(f'[thinking]\neffort = "{effort}"\n', target)
+                self.assertEqual(self.lines(state, target), lines)
 
     def test_thinking_warnings(self):
         refuse = ("warning: [thinking] {what} in /h/.kimi-code/config.toml makes Kimi refuse every prompt to "

@@ -1,0 +1,47 @@
+/sgl-workspace/sglang/python/sglang/launch_server.py:71: UserWarning: 'python -m sglang.launch_server' is still supported, but 'sglang serve' is the recommended entrypoint.
+[2026-11-17 18:41:39] mxfp4 quantization is not fully optimized yet. The speed can be slower than non-quantized models.
+[2026-11-17 18:41:39] Hybrid SWA model detected. architectures=['GptOssForCausalLM']
+[2026-11-17 18:41:42] server_args={'model_path': '/llmctl/model', 'tokenizer_path': '/llmctl/model', 'tokenizer_mode': 'auto', 'tokenizer_backend': 'huggingface', 'tokenizer_worker_num': 1, 'detokenizer_worker_num': 1, 'skip_tokenizer_init': False, 'load_format': 'auto', 'model_loader_extra_config': '{}', 'trust_remote_code': False, 'context_length': 131072, 'is_embedding': False, 'enable_multimodal': None, 'revision': None, 'model_impl': 'auto', 'model_config_parser': 'auto', 'json_model_override_args': '{}', 'dtype': 'bfloat16', 'quantization': None, 'quantization_param_path': None, 'kv_cache_dtype': 'fp8_e4m3', 'enable_fp32_lm_head': False, 'modelopt_quant': None, 'modelopt_checkpoint_restore_path': None, 'modelopt_checkpoint_save_path': None, 'modelopt_export_path': None, 'quantize_and_serve': False, 'rl_quant_profile': None, 'enable_tf32_matmul': False, 'mem_fraction_static': 0.9, 'max_running_requests': 1, 'max_queued_requests': None, 'max_total_tokens': None, 'chunked_prefill_size': 1024, 'prefill_decode_interval': 0, 'enable_dynamic_chunking': False, 'max_prefill_tokens': 16384, 'prefill_max_requests': None, 'schedule_policy': 'fcfs', 'enable_priority_scheduling': False, 'disable_priority_preemption': False, 'default_priority_value': None, 'abort_on_priority_when_disabled': False, 'schedule_low_priority_values_first': False, 'priority_scheduling_preemption_threshold': 10, 'retraction_policy': 'length', 'schedule_conservativeness': 1.0, 'page_size': 1, 'c128_page_size': 16, 'swa_full_tokens_ratio': 0.1, 'disable_hybrid_swa_memory': False, 'radix_eviction_policy': 'lru', 'radix_eviction_policy_config': None, 'prefill_only_disable_kv_cache': False, 'disable_radix_cache': False, 'enable_page_major_kv_layout': False, 'enable_unified_memory': False, 'disable_chunked_prefix_cache': False, 'disable_overlap_schedule': False, 'num_continuous_decode_steps': 1, 'scheduler_recv_interval': 1, 'enable_mixed_chunk': False, 'nccl_port': None, 'dist_timeout': None, 'dist_init
+[2026-11-17 18:41:42] mxfp4 quantization is not fully optimized yet. The speed can be slower than non-quantized models.
+[2026-11-17 18:41:46] Using default HuggingFace chat template with detected content format: string
+[2026-11-17 18:41:46] Auto-detected template features: reasoning_config=ReasoningToggleConfig(toggle_param=None, default_enabled=None, special_case='always', effort_kwarg=None), reasoning_parser=gpt-oss, tool_call_parser=gpt-oss
+[2026-11-17 18:41:47] mxfp4 quantization is not fully optimized yet. The speed can be slower than non-quantized models.
+[2026-11-17 18:41:47] Init parallel begin.
+[2026-11-17 18:41:47] Init parallel ends. elapsed=0.19 s
+[2026-11-17 18:41:51] mxfp4 quantization is not fully optimized yet. The speed can be slower than non-quantized models.
+[2026-11-17 18:41:51] Memory baseline taken. mem usage=0.00 GB
+[2026-11-17 18:41:53] Load weight begin. avail mem=15.06 GB
+[2026-11-17 18:42:22] Using FP8 KV cache but no scaling factors provided. Defaulting to scaling factors of 1.0.
+[2026-11-17 18:42:22] Load weight end. elapsed=29.07 s, type=GptOssForCausalLM, quant=mxfp4, avail mem=3.60 GB, mem usage=11.46 GB.
+[2026-11-17 18:42:25] Full KV Cache is allocated. dtype: torch.float8_e4m3fn, #tokens: 168456, K size: 0.96 GB, V size: 0.96 GB
+[2026-11-17 18:42:25] SWA KV Cache is allocated. dtype: torch.float8_e4m3fn, #tokens: 16845, K size: 0.10 GB, V size: 0.10 GB
+[2026-11-17 18:42:25] SWAKVPool mem usage: 2.12 GB, swa size: 16845, full size: 168456
+[2026-11-17 18:42:25] Memory pool end. avail mem=1.55 GB
+[2026-11-17 18:42:26] Disable prefill CUDA graph because cuda_graph_config resolved prefill.backend='disabled' (e.g. via --cuda-graph-backend-prefill=disabled or auto-disable rules).
+[2026-11-17 18:42:26] Capture target decode CUDA graph begin. backend=full, num_tokens_per_req=1, avail mem=1.51 GB
+[2026-11-17 18:45:31] Capture target decode CUDA graph end. bs=[1], elapsed=185.31 s, mem usage=0.06 GB, avail mem=1.45 GB.
+[2026-11-17 18:45:31] max_total_num_tokens=168456, chunked_prefill_size=1024, max_prefill_tokens=16384, max_running_requests=1, context_len=131072, available_gpu_mem=1.45 GB
+[2026-11-17 18:45:31] Init Unified Radix Cache. Components: (<ComponentType.FULL: 0>, <ComponentType.SWA: 1>). Tree Core: RustUnifiedTreeCore
+[2026-11-17 18:45:31] Tree cache initialized: source=default impl=UnifiedRadixCache hybrid_swa=True hybrid_ssm=False hicache_attached=False
+[2026-11-17 18:45:31] Engine startup timings (s): load_weight=29.07, kv_cache_allocation=0.28, scheduler_e2e=224.32, cuda_graph={prefill=0.00, decode=185.31, target_verify=0.00, draft_prefill=0.00, draft_decode=0.00, draft_extend=0.00}, tokenizer_e2e=229.45
+[2026-11-17 18:45:32] Using default chat sampling params from model generation config: {'temperature': 1.0, 'top_p': 1.0}
+[2026-11-17 18:45:32] OpenAI Responses API (/v1/responses) disabled: OpenAIServingResponses init failed (HarmonyError: error downloading or loading vocab file: failed to download or load vocab file)
+[2026-11-17 18:45:32] INFO:     Uvicorn running on http://0.0.0.0:30000 (Press CTRL+C to quit)
+[2026-11-17 18:45:32] INFO:     127.0.0.1:51316 - "GET /ready HTTP/1.1" 503 Service Unavailable
+[2026-11-17 18:45:33] INFO:     127.0.0.1:51334 - "GET /ready HTTP/1.1" 503 Service Unavailable
+[2026-11-17 18:45:34] INFO:     127.0.0.1:51350 - "GET /ready HTTP/1.1" 503 Service Unavailable
+[2026-11-17 18:45:35] INFO:     127.0.0.1:51362 - "GET /ready HTTP/1.1" 503 Service Unavailable
+[2026-11-17 18:45:36] INFO:     127.0.0.1:51374 - "GET /ready HTTP/1.1" 503 Service Unavailable
+[2026-11-17 18:45:38] INFO:     127.0.0.1:59176 - "GET /ready HTTP/1.1" 503 Service Unavailable
+[2026-11-17 18:45:39] INFO:     127.0.0.1:59184 - "GET /ready HTTP/1.1" 503 Service Unavailable
+[2026-11-17 18:45:40] INFO:     127.0.0.1:59196 - "GET /ready HTTP/1.1" 503 Service Unavailable
+[2026-11-17 18:45:41] INFO:     127.0.0.1:59198 - "GET /ready HTTP/1.1" 503 Service Unavailable
+[2026-11-17 18:45:41] The server is fired up and ready to roll!
+[cut] HTTP access lines by method, path and status: GET /model_info 200 x1, GET /ready 200 x1, GET /ready 503 x9, GET /v1/models 200 x1, POST /freeze_gc 200 x1, POST /generate 200 x1, POST /v1/chat/completions 200 x1
+[cut] 3 batch lines; first 3 and last 6:
+[2026-11-17 18:45:41] Prefill batch, #new-seq: 1, #new-token: 6, #cached-token: 0, full token usage: 0.00, swa token usage: 0.00, #running-req: 0, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 0.58
+[2026-11-17 18:45:42] Prefill batch, #new-seq: 1, #new-token: 72, #cached-token: 0, full token usage: 0.00, swa token usage: 0.00, #running-req: 0, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 67.10
+[2026-11-17 18:45:43] Decode batch, #running-req: 1, #full token: 106, full token usage: 0.00, #swa token: 106, swa token usage: 0.01, cuda graph: True, gen throughput (token/s): 3.43, #queue-req: 0
+[2026-11-17 18:45:41] Prefill batch, #new-seq: 1, #new-token: 6, #cached-token: 0, full token usage: 0.00, swa token usage: 0.00, #running-req: 0, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 0.58
+[2026-11-17 18:45:42] Prefill batch, #new-seq: 1, #new-token: 72, #cached-token: 0, full token usage: 0.00, swa token usage: 0.00, #running-req: 0, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 67.10
+[2026-11-17 18:45:43] Decode batch, #running-req: 1, #full token: 106, full token usage: 0.00, #swa token: 106, swa token usage: 0.01, cuda graph: True, gen throughput (token/s): 3.43, #queue-req: 0

@@ -1,6 +1,6 @@
 # Source catalog
 
-Last verified: 2026-11-17.
+Last verified: 2026-11-18.
 
 This catalog lists the sources behind this knowledge base, what each one can and cannot prove, and how credible it is for this laptop (RTX 5080 Laptop GPU, 16 GB, 896 GB/s, 140 W).
 Primary sources (release pages, source code at a pinned tag, official docs, registry APIs, model cards) carry versions, flags and file sizes; independent evaluators carry quality scores; community posts and calculators are orientation only.
@@ -51,6 +51,33 @@ Topic documents link the exact page or file next to each claim; this list is the
 - [MoE cache doc](https://github.com/ggml-org/llama.cpp/blob/b12418/docs/moe-cache.md) and [fit-params README](https://github.com/ggml-org/llama.cpp/blob/b12418/tools/fit-params/README.md): expert offload and automatic placement.
 - [Discussion #15396](https://github.com/ggml-org/llama.cpp/discussions/15396) (ggml-org gpt-oss guide; gpt-oss-20b 204.9 tok/s tg128, measured on a desktop RTX 5080, llama.cpp build 6210, CUDA 12.8) and [discussion #15013](https://github.com/ggml-org/llama.cpp/discussions/15013) (CUDA llama-bench scoreboard on Llama 2 7B Q4_0): community measurements on desktop cards, hosted by the project.
 - [Issue #27330](https://github.com/ggml-org/llama.cpp/issues/27330) (CUDA-graph hang on RTX 50 Laptop) and the other open issues are tracked in [llamacpp/README.md](../llamacpp/README.md).
+
+### SGLang
+
+Reviewed on 2026-11-17 by three research lanes (docs, local and hands-on), whose load-bearing claims the research report re-checked against the saved pages and run records, and by measurement A, which read the image's own source files offline.
+Independently re-checked on 2026-11-18: every page and file below was fetched again with `curl` into an empty scratch folder (SGLang's at tag v0.5.23, commit `297e54fd105e974cdf401e5b4d20253a22c16f90`, plus the tag's source archive for whole-tree searches) and read only with `python3 -I`; a quote holds when it is at the cited place and the claim says no more than it, and a claim about code holds when the cited lines do what it says.
+The 110 claims that the SGLang documents may cite, written `SG-01` to `SG-110`, are listed with their sources and verdicts in [sources-check.md](../research/2026-11-17/sglang-runtime/sources-check.md); a document cites a claim only through its row.
+Of the 110 claims, 105 hold and 5 hold with corrections (SG-06, SG-43, SG-82, SG-85 and SG-102), and none fails; the corrections are in the list below.
+
+- [The v0.5.23 release](https://github.com/sgl-project/sglang/releases/tag/v0.5.23) and [tag](https://github.com/sgl-project/sglang/tree/v0.5.23) (vendor-reported): the pinned version, the newest release on 2026-11-18, published 2026-11-02 on a tag commit of 2026-10-29 (SG-01 to SG-03).
+  Holds.
+- [The Docker Hub tag record of `v0.5.23-runtime`](https://hub.docker.com/v2/repositories/lmsysorg/sglang/tags/v0.5.23-runtime) and the [tag list](https://hub.docker.com/r/lmsysorg/sglang/tags) (vendor-reported): the index digest `sha256:3ce6da3e5ea0fee2dac6a23b528cb294fedd31ca74a55a4511f709c5e01e8652`, 14.47 GB compressed against 16.11 GB for `v0.5.23`, and the moving tags (SG-04 to SG-06).
+  Holds, apart from one correction: `nightly-cu134*` is built for CUDA 13.4, whose driver branch is R615, and NVIDIA allows CUDA 13.x applications on drivers from 580 on under minor version compatibility, so driver 595.99 would rely on that compatibility rather than being certain to refuse it; the rule not to use the moving tags stands (SG-06).
+- [docker/Dockerfile](https://github.com/sgl-project/sglang/blob/v0.5.23/docker/Dockerfile) and the [release workflow](https://github.com/sgl-project/sglang/blob/v0.5.23/.github/workflows/_docker-build-and-publish.yml) at v0.5.23 (vendor-reported): CUDA 13.0.3, the runtime stage and the FlashInfer JIT cache in release builds (SG-07 to SG-10).
+  Holds.
+- The documentation at v0.5.23 (vendor-reported): [README.md](https://github.com/sgl-project/sglang/blob/v0.5.23/README.md), [install.mdx](https://github.com/sgl-project/sglang/blob/v0.5.23/docs/docs/get-started/install.mdx), [quickstart.mdx](https://github.com/sgl-project/sglang/blob/v0.5.23/docs/docs/get-started/quickstart.mdx), [server_arguments.mdx](https://github.com/sgl-project/sglang/blob/v0.5.23/docs/docs/advanced_features/server_arguments.mdx), [paged_experts.mdx](https://github.com/sgl-project/sglang/blob/v0.5.23/docs/docs/advanced_features/paged_experts.mdx), [tool_parser.mdx](https://github.com/sgl-project/sglang/blob/v0.5.23/docs/docs/advanced_features/tool_parser.mdx) and [separate_reasoning.mdx](https://github.com/sgl-project/sglang/blob/v0.5.23/docs/docs/advanced_features/separate_reasoning.mdx): supported GPUs, image variants, flag names and defaults, Paged Experts formats and limits with no disk tier at v0.5.23, and the reasoning field (SG-11 to SG-36 and SG-108).
+  Holds.
+- The source files at v0.5.23 that the documents cite by path and line, under [python/sglang/](https://github.com/sgl-project/sglang/tree/v0.5.23/python/sglang) (vendor-reported for what the code states, inferred for what it does): the argument fields, `server_args.py`, `memory_hook.py`, `kv_cache_configurator.py`, `http_server.py`, `auth.py`, `environ.py`, `sampler.py`, `engine.py`, `tokenizer_manager.py`, the OpenAI `protocol.py`, `serving_chat.py` and `serving_responses.py`, `weight_utils.py`, `hf_transformers/common.py`, `model_config.py`, `sampling_params.py`, the two parser-name lists, `xllm.py`, `gemma4_mm.py`, `gemma4_unified.py` and the kernels' `CMakeLists.txt`, with the tree listing and the source archive, and the two parser registries of vLLM v0.33.0 that SG-70 compares them with (SG-37 to SG-77, SG-109 and SG-110).
+  Holds, apart from one correction: the report's sum for the default `--mem-fraction-static` leaves out the decode graph's 16 MiB, which the 4,064 MiB it states includes (SG-43).
+  The sampler reads `SYNC_TOKEN_IDS_ACROSS_TP` under that bare name, which is the name the runtime file sets (SG-55).
+- Pull requests [#48487](https://github.com/sgl-project/sglang/pull/48487), [#42557](https://github.com/sgl-project/sglang/pull/42557) and [#45787](https://github.com/sgl-project/sglang/pull/45787) (merged, vendor-reported), and [#43302](https://github.com/sgl-project/sglang/pull/43302) and [#45520](https://github.com/sgl-project/sglang/pull/45520) (open, third-party reports): #48487 is merged after the tag and in no release, #42557 and #45787 are in v0.5.23 (SG-78 to SG-85).
+  Holds, apart from two corrections: #42557's 16.6 tok/s for `--cpu-offload-gb 3` was measured on the MoE Qwen3-30B-A3B in int4 on a desktop RTX 5070 Ti, which a document citing it for a dense model names (SG-82), and #45520 is a third-party report, not vendor-reported (SG-85).
+- Issues [#40094](https://github.com/sgl-project/sglang/issues/40094), [#49209](https://github.com/sgl-project/sglang/issues/49209), [#48172](https://github.com/sgl-project/sglang/issues/48172), [#41747](https://github.com/sgl-project/sglang/issues/41747), [#44931](https://github.com/sgl-project/sglang/issues/44931), [#40739](https://github.com/sgl-project/sglang/issues/40739), [#42791](https://github.com/sgl-project/sglang/issues/42791) and [#48749](https://github.com/sgl-project/sglang/issues/48749) (third-party reports, all open on 2026-11-18) (SG-86 to SG-93).
+  Holds.
+- [FlashInfer v0.7.2 `flashinfer/jit/cubin_loader.py`](https://github.com/flashinfer-ai/flashinfer/blob/v0.7.2/flashinfer/jit/cubin_loader.py) and [openai-harmony v0.0.4 `src/tiktoken_ext/public_encodings.rs`](https://github.com/openai/harmony/blob/v0.0.4/src/tiktoken_ext/public_encodings.rs), the versions the image ships, which measurement A read inside the image (vendor-reported for the code, inferred for what it does): the kernel download that `FLASHINFER_NO_DOWNLOAD` stops and the Harmony vocabulary download that `TIKTOKEN_ENCODINGS_BASE` replaces (SG-94 to SG-96).
+  Holds, also against A's offline Harmony record.
+- [NVIDIA's CUDA Toolkit release notes](https://docs.nvidia.com/cuda/cuda-toolkit-release-notes/index.html), the [Hugging Face model API](https://huggingface.co/docs/hub/api) records of the checkpoints the SGLang documents size, the [Mellum2.1 model card](https://huggingface.co/JetBrains/Mellum2.1-12B-A2.5B-Thinking), and [llama.cpp b12407 `src/llama-arch.cpp`](https://github.com/ggml-org/llama.cpp/blob/b12407/src/llama-arch.cpp) (vendor-reported): the driver branch per CUDA version, the download and checkpoint sizes, the card's parser flags, and the GGUF architectures (SG-97 to SG-107).
+  Holds, apart from one correction: the Nemotron 3.5 Bolt BF16 checkpoint is 139.49 GiB, not about 138 GiB (SG-102).
 
 ### Ollama
 
@@ -259,6 +286,7 @@ Credibility is for the stated use.
 - [vLLM v0.33.0 release](https://github.com/vllm-project/vllm/releases/tag/v0.33.0rc3) and [docs at the tag](https://github.com/vllm-project/vllm/tree/v0.33.0/docs)
 - [llama.cpp releases](https://github.com/ggml-org/llama.cpp/releases) and [server README at b12418](https://github.com/ggml-org/llama.cpp/blob/b12418/tools/server/README.md)
 - [Ollama v0.40.16 release](https://github.com/ollama/ollama/releases/tag/v0.40.16)
+- [SGLang v0.5.23 release](https://github.com/sgl-project/sglang/releases/tag/v0.5.23), [the repository at tag v0.5.23](https://github.com/sgl-project/sglang/tree/v0.5.23) (commit `297e54fd105e974cdf401e5b4d20253a22c16f90`) and [the `v0.5.23-runtime` tag record](https://hub.docker.com/v2/repositories/lmsysorg/sglang/tags/v0.5.23-runtime), with the pull requests, issues, FlashInfer and openai-harmony files of [the SGLang check](../research/2026-11-17/sglang-runtime/sources-check.md), independently re-checked on 2026-11-18
 - [NVIDIA GeForce RTX 50 Series Laptops](https://www.nvidia.com/en-us/geforce/laptops/50-series/)
 - [NVIDIA Container Toolkit docs](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)
 - [Docker packet filtering and firewalls](https://docs.docker.com/engine/network/packet-filtering-firewalls/)
@@ -274,6 +302,6 @@ Credibility is for the stated use.
 
 ## Maintenance
 
-Re-verify before relying on this catalog: the pinned versions (vLLM, llama.cpp build and image tag, Ollama, Container Toolkit, OpenCode, Hermes Agent, Pi, DeepSeek Harness, Kimi Code CLI), whether the stale leaderboards have resumed, and the as-of dates of the live sources (Artificial Analysis index version, Ollama and OpenRouter catalogs, calculator data dates).
+Re-verify before relying on this catalog: the pinned versions (vLLM, llama.cpp build and image tag, SGLang v0.5.23 and its `v0.5.23-runtime` image digest, Ollama, Container Toolkit, OpenCode, Hermes Agent, Pi, DeepSeek Harness, Kimi Code CLI), whether the stale leaderboards have resumed, and the as-of dates of the live sources (Artificial Analysis index version, Ollama and OpenRouter catalogs, calculator data dates).
 Re-run the independent check for any source whose page date has moved since 2026-11-15 before citing a new number from it.
 When the first measurement on this laptop exists, add it as the first "Measured on this machine" example in the evidence class table.

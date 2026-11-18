@@ -1,0 +1,57 @@
+chain4 start 19:02:15
+{"exit": "container stopped", "ready_seen_s": null, "served_listed_s": null, "memory_usage": null, "gpu_right_after_ready": null}
+logs/m3-a1.log 86 -> 33 lines
+[2026-11-17 19:02:31] Auto-detected template features: reasoning_config=ReasoningToggleConfig(toggle_param='enable_thinking', default_enabled=True, special_case=None, effort_kwarg=None), reasoning_parser=qwen3, tool_call_parser=qwen3_coder
+AttributeError: 'CompressedTensorsConfig' object has no attribute 'group_size'
+exited exit=0 oom=false started=2026-11-17T19:02:15.400034333Z finished=2026-11-17T19:02:51.492398202Z
+m3 done 19:02:53
+{"exit": "container stopped", "ready_seen_s": null, "served_listed_s": null, "memory_usage": null, "gpu_right_after_ready": null}
+logs/m4-a1.log 89 -> 31 lines
+[2026-11-17 19:03:08] Auto-detected template features: reasoning_parser=deepseek-r1, tool_call_parser=deepseekv31
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 1.16 GiB. GPU 0 has a total capacity of 15.47 GiB of which 918.12 MiB is free. Including non-PyTorch memory, this process has 14.46 GiB memory in use. Of the allocated memory 14.16 GiB is allocated by PyTorch, and 1.39 MiB is reserved by 
+exited exit=0 oom=false started=2026-11-17T19:02:54.097857902Z finished=2026-11-17T19:03:16.550369868Z
+m4 done 19:03:19
+{"exit": "ready", "ready_seen_s": 24.73, "served_listed_s": 24.55, "memory_usage": null, "gpu_right_after_ready": {"t": 1794942223.806, "used_mib": 14740, "free_mib": 1103, "total_mib": 16303}}
+{"event": "phase_end", "step": "probe", "rc": 0, "seconds": 67.9, "output_tail": "{\n \"label\": \"ld11-r1\",\n \"models\": [\n  \"deepseek-r1-8b\"\n ],\n \"ok\": {\n  \"content\": \"\\nOK\",\n  \"reasoning_chars\": 1630,\n  \"finish\": \"stop\",\n  \"usage\": {\n   \"prompt_tokens\": 9,\n   \"total_tokens\": 377,\n   \"completion_tokens\": 368,\n   \"prompt_tokens_details\": null,\n   \"completio
+{"event": "phase_start", "step": "smoke", "argv": ["/usr/bin/python3", "-I", "$SCRATCH/sglang/measure-b/scripts/api_probe.py", "--base", "http://127.0.0.1:8000", "--model", "deepseek-r1-8b", "--thinking", "always", "--context", "65536", "--skip-long", "--out", "$SCRATCH
+{"event": "phase_end", "step": "smoke", "rc": 0, "seconds": 192.0, "output_tail": "{\n \"plain\": {\n  \"status\": 200,\n  \"content\": \"\\nOK\",\n  \"finish_reason\": \"stop\",\n  \"reasoning_content_chars\": \"absent\"\n },\n \"tool_auto\": {\n  \"status\": 400,\n  \"finish_reason\": null,\n  \"tool_calls\": null\n },\n \"decode_512_median_tok_s\": 72.7,\n \"long\": {\n  \"paragraphs\": null,\n
+{"event": "end", "result": "completed", "container": "running exit=0 oom=false", "cgroup": {"anon_gib": 2.631, "file_gib": 16.31, "shmem_gib": 0.014, "unevictable_gib": 0.0, "peak_gib": 19.02}, "memory_usage": {}, "t": 1794942502.234, "used_mib": 15038, "free_mib": 805, "total_mib": 16303, "utc": "19:08:22"}
+(APIServer pid=1) INFO 11-17 19:03:24 [startup.py:96] non-default args: {'model_tag': '/root/.cache/huggingface/hub/models--deepseek-ai--DeepSeek-R1-0528-Qwen3-8B/snapshots/6e8885a6ff5c1dc5201574c8fd700323f23c25fa', 'default_chat_template_kwargs': {'thinking': True}, 'model': '/root/.cache/huggingfa
+(EngineCore pid=191) INFO 11-17 19:03:31 [core.py:139] Initializing a V1 LLM engine (v0.33.0) with config: model='/root/.cache/huggingface/hub/models--deepseek-ai--DeepSeek-R1-0528-Qwen3-8B/snapshots/6e8885a6ff5c1dc5201574c8fd700323f23c25fa', speculative_config=None, tokenizer='/root/.cache/huggingf
+(EngineCore pid=191) INFO 11-17 19:03:37 [model_runner.py:428] Model loading took 9.12 GiB memory and 5.211538 seconds
+(EngineCore pid=191) INFO 11-17 19:03:40 [gpu_worker.py:772] Available KV cache memory: 4.8 GiB
+(EngineCore pid=191) INFO 11-17 19:03:40 [kv_cache_utils.py:1147] GPU KV cache size: 69,936 tokens, Maximum concurrency for 65,536 tokens per request: 1.07x
+INFO:     Application startup complete.
+(APIServer pid=1) ERROR 11-17 19:07:51 [serving.py:280] Error with model error=ErrorInfo(message='The model `not-the-served-name` does not exist. Valid aliases: deepseek-r1-8b.', type='NotFoundError', param='model', code=404)
+running exit=0 oom=false started=2026-11-17T19:03:19.143259082Z finished=0001-01-01T00:00:00Z
+ld11 r1 done 19:08:24
+{"exit": "ready", "ready_seen_s": 37.58, "served_listed_s": 36.05, "memory_usage": {"weight": 7.887, "kvcache": 5.658, "startup_available": 0.981, "token_capacity": 41198, "token_capacity_swa": null, "graph": {"prefill": 0.0, "decode": 0.057, "target_verify": 0.0, "draft_prefill": 0.0, "draft_decode": 0.0, "draft_extend": 0.0}}, "gpu_right_after_ready": {"t": 1794942542.387, "used_mib": 14974, "free_mib": 869, "total_mib": 16303}}
+{"event": "m13", "i": 18, "kind": "tool", "status": 200, "finish": "tool_calls", "content": "", "reasoning_chars": 149, "completion_tokens": 72, "answer": [{"name": "convert_currency", "arguments": {"amount": 250, "from_currency": "EUR", "to_currency": "JPY"}}], "correct": true, "t": 1794942633.011, "utc": "19:10:33"}
+{"event": "m13", "i": 19, "kind": "tool", "status": 200, "finish": "tool_calls", "content": "", "reasoning_chars": 101, "completion_tokens": 42, "answer": [{"name": "get_time", "arguments": {"city": "London"}}], "correct": true, "t": 1794942633.485, "utc": "19:10:33"}
+{"event": "m13_summary", "correct": 20, "total": 20, "t": 1794942633.485, "utc": "19:10:33"}
+{"event": "end", "result": "completed", "container": "running exit=0 oom=false", "cgroup": {"anon_gib": 4.798, "file_gib": 8.619, "shmem_gib": 0.085, "unevictable_gib": 0.0, "peak_gib": 13.611}, "memory_usage": {"weight": 7.887, "kvcache": 5.658, "startup_available": 0.981, "token_capacity": 41198, "token_capacity_swa": null, "graph": {"prefill": 0.0, "decode": 0.057, "target_verify": 0.0, "draft_
+logs/m13-bf16.log 344 -> 47 lines
+[2026-11-17 19:08:43] Auto-detected template features: reasoning_config=ReasoningToggleConfig(toggle_param=None, default_enabled=None, special_case='always', effort_kwarg=None), reasoning_parser=k2_horizon, tool_call_parser=k2_horizon
+[2026-11-17 19:08:53] Load weight end. elapsed=2.77 s, type=K2HorizonForCausalLM, quant=compressed-tensors, avail mem=7.17 GB, mem usage=7.89 GB.
+[2026-11-17 19:08:58] KV Cache is allocated. dtype: torch.bfloat16, #tokens: 41198, K size: 2.83 GB, V size: 2.83 GB
+[2026-11-17 19:08:59] max_total_num_tokens=41198, chunked_prefill_size=2048, max_prefill_tokens=16384, max_running_requests=1, context_len=32768, available_gpu_mem=0.98 GB
+[2026-11-17 19:09:00] Using default chat sampling params from model generation config: {'temperature': 1.0, 'top_p': 0.95}
+[2026-11-17 19:09:02] The server is fired up and ready to roll!
+running exit=0 oom=false started=2026-11-17T19:08:24.86090497Z finished=0001-01-01T00:00:00Z
+m13 k2 bf16 done 19:10:36
+{"exit": "ready", "ready_seen_s": 29.69, "served_listed_s": 27.05, "memory_usage": {"weight": 8.391, "kvcache": 4.302, "startup_available": 1.35, "token_capacity": 140981, "token_capacity_swa": null, "graph": {"prefill": 0.0, "decode": 0.096, "target_verify": 0.0, "draft_prefill": 0.0, "draft_decode": 0.0, "draft_extend": 0.0}}, "gpu_right_after_ready": {"t": 1794942665.979, "used_mib": 14931, "free_mib": 911, "total_mib": 16303}}
+{"event": "gpu_before", "step": "nearfull_p2", "t": 1794943058.101, "used_mib": 15303, "free_mib": 539, "total_mib": 16303, "utc": "19:17:38"}
+{"event": "request", "step": "nearfull_p2", "status": 200, "t": 1794943058.101, "seconds": 24.48, "finish_reason": "length", "content": "The function computes a dictionary where each key is a unique combination of an ... (155 chars)", "reasoning_content_chars": 0, "tool_calls": [], "usage": {"prompt_tokens": 124503, "completion_tokens": 32}, "utc": "19:17:38"}
+{"event": "gpu_after", "step": "nearfull_p2", "cgroup": {"anon_gib": 5.483, "file_gib": 9.2, "shmem_gib": 0.098, "unevictable_gib": 0.0, "peak_gib": 14.829}, "t": 1794943082.61, "used_mib": 15305, "free_mib": 537, "total_mib": 16303, "utc": "19:18:02"}
+{"event": "end", "result": "completed", "container": "running exit=0 oom=false", "cgroup": {"anon_gib": 5.483, "file_gib": 9.2, "shmem_gib": 0.098, "unevictable_gib": 0.0, "peak_gib": 14.829}, "memory_usage": {"weight": 8.391, "kvcache": 4.302, "startup_available": 1.35, "token_capacity": 140981, "token_capacity_swa": null, "graph": {"prefill": 0.0, "decode": 0.096, "target_verify": 0.0, "draft_pr
+logs/m12-a3.log 1401 -> 60 lines
+[2026-11-17 19:10:53] Auto-detected template features: reasoning_config=ReasoningToggleConfig(toggle_param='enable_thinking', default_enabled=True, special_case=None, effort_kwarg=None), reasoning_parser=qwen3, tool_call_parser=qwen3_coder
+[2026-11-17 19:10:58] Load weight end. elapsed=2.09 s, type=Qwen3_5ForConditionalGeneration, quant=compressed-tensors, avail mem=6.67 GB, mem usage=8.39 GB.
+[2026-11-17 19:10:59] Mamba Cache is allocated. max_mamba_cache_size: 8, conv_state size: 0.01GB, ssm_state size: 0.42GB 
+[2026-11-17 19:11:00] KV Cache is allocated. dtype: torch.bfloat16, #tokens: 140981, K size: 2.15 GB, V size: 2.15 GB
+[2026-11-17 19:11:02] max_total_num_tokens=140981, chunked_prefill_size=2048, max_prefill_tokens=16384, max_running_requests=1, context_len=131072, available_gpu_mem=1.35 GB
+[2026-11-17 19:11:03] Using default chat sampling params from model generation config: {'temperature': 0.6, 'top_k': 20, 'top_p': 0.95}
+[2026-11-17 19:11:05] The server is fired up and ready to roll!
+running exit=0 oom=false started=2026-11-17T19:10:36.336613202Z finished=0001-01-01T00:00:00Z
+m12 qwen done 19:18:05
+chain4 end 19:18:05

@@ -1,0 +1,8 @@
+{
+  "command": "./llmctl status",
+  "cwd": "$HOME/projects/llm",
+  "exit": 0,
+  "seconds": 1.1,
+  "stdout": "nemotron-3.5-lightning on llamacpp, container 'llamacpp', running\n  recipe: shipped file, sha256 362641abbf49, measured\n  port: 8080/tcp -> 127.0.0.1:8080, health: ready\n  container memory: 8.292GiB / 18GiB, GPU memory in use: 15038 MiB of 16303 MiB\nclients:\n  OpenCode: default llamacpp-docker/nemotron-3.5-lightning, the running model ($HOME/.config/opencode/opencode.json)\n  Hermes: profile llmctl for nemotron-3.5-lightning on llama.cpp, the running model; default profile: llmctl ($HOME/.hermes/profiles/llmctl/config.yaml)\n  Pi: llmctl/local for nemotron-3.5-lightning on llama.cpp, the running model; default llmctl/local, thinking off ($HOME/.pi/agent)\n  dsh: llmctl/local for nemotron-3.5-lightning on llama.cpp, the running model; default llmctl/local, held by llmctl ($HOME/.dsh/cordis.patch.yml)\n  Kimi: llmctl/local for nemotron-3.5-lightning on llama.cpp, the running model; default llmctl/local ($HOME/.kimi-code/config.toml)\n",
+  "stderr": ""
+}

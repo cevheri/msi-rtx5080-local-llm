@@ -1,0 +1,42 @@
+{
+  "request": {
+    "model": "local",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a short title for a chat about adding two numbers in Python."
+      }
+    ],
+    "reasoning_effort": "none",
+    "response_format": {
+      "type": "json_schema",
+      "json_schema": {
+        "name": "session_title",
+        "strict": true,
+        "schema": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "title"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "max_tokens": 16384,
+    "stream": false
+  },
+  "status": 200,
+  "reply": "{\"choices\":[{\"finish_reason\":\"stop\",\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{ \\\"title\\\": \\\"Adding Two Numbers in Python\\\" }\",\"reasoning_content\":\"The user wants a short title for a chat about adding two numbers in Python. I need to think of concise, clear titles that capture the essence of the topic.\\n\\nSome options:\\n- \\\"Adding Two Numbers in Python\\\"\\n- \\\"Python Addition Basics\\\"\\n- \\\"Simple Addition in Python\\\"\\n- \\\"How to Add Numbers in Python\\\"\\n- \\\"Python: Adding Two Values\\\"\\n- \\\"Addition in Python Made Easy\\\"\\n\\nThe user asked for \\\"short\\\", so I should prioritize brevity while keeping it descriptive. The most straightforward and commonly used title would be \\\"Adding Two Numbers in Python\\\" - it's clear, concise, and directly states the topic. It's also exactly what someone would search for or expect in a tutorial.\\n\\nI could make it even shorter: \\\"Python Addition\\\" or \\\"Adding Numbers in Python\\\". But \\\"Adding Two Numbers in Python\\\" is only 4 words and perfectly clear. Let me go with that as it's the most natural and direct option.\\n\"}}],\"created\":1794969428,\"model\":\"local\",\"system_fingerprint\":\"b12407-e574a17b0\",\"object\":\"chat.completion\",\"usage\":{\"completion_tokens\":209,\"prompt_tokens\":24,\"total_tokens\":233,\"prompt_tokens_details\":{\"cached_tokens\":2}},\"id\":\"chatcmpl-2MzIB4s7M4uaN4qD7BM7fEZZmBSF33Tv\",\"timings\":{\"cache_n\":2,\"prompt_n\":22,\"prompt_ms\":213.491,\"prompt_per_token_ms\":9.704136363636364,\"prompt_per_second\":103.04884046634282,\"predicted_n\":209,\"predicted_ms\":5635.7,\"predicted_per_token_ms\":27.09471153846154,\"predicted_per_second\":36.90757137533935}}",
+  "record": {
+    "probe": "A",
+    "status": 200,
+    "content": true,
+    "reasoning": true,
+    "title_ok": true
+  }
+}

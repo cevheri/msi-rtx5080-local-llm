@@ -1,0 +1,18 @@
+== at ready 21:52:10
+pid=1867501 name=vllm VmRSS_kB=1533408 RssAnon_kB=1087768 RssFile_kB=445640 RssShmem_kB=0 VmLck_kB=16 VmPin_kB=0
+pid=1868660 name=VLLM::EngineCor VmRSS_kB=2678484 RssAnon_kB=1890576 RssFile_kB=698396 RssShmem_kB=89512 VmLck_kB=16 VmPin_kB=0
+cgroup anon=2.846 GiB
+cgroup file=0.186 GiB
+cgroup shmem=0.014 GiB
+cgroup file_mapped=0.102 GiB
+cgroup unevictable=0.000 GiB
+cgroup memory.current=3.111 GiB memory.peak=3.131 GiB
+== at the end 21:56:49
+pid=1867501 name=vllm VmRSS_kB=1557044 RssAnon_kB=1110524 RssFile_kB=446520 RssShmem_kB=0 VmLck_kB=16 VmPin_kB=0
+pid=1868660 name=VLLM::EngineCor VmRSS_kB=2751596 RssAnon_kB=1962564 RssFile_kB=699520 RssShmem_kB=89512 VmLck_kB=16 VmPin_kB=0
+cgroup anon=2.936 GiB
+cgroup file=0.188 GiB
+cgroup shmem=0.014 GiB
+cgroup file_mapped=0.102 GiB
+cgroup unevictable=0.000 GiB
+cgroup memory.current=3.202 GiB memory.peak=3.202 GiB

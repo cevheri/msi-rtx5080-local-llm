@@ -1,0 +1,47 @@
+# Measured launch from sglang/models.md#k2-horizon-7b-awq-int4.
+# Effective sampling: temperature 1.0 and top_p 0.95 from the overlay; top_k -1, min_p 0.0 and repetition_penalty 1.0 by SGLang's defaults.
+# Draft from measurement B ($SCRATCH/sglang/measure-b/sglang-k2-horizon-7b/README.md), in the design's D5 format.
+schema = 1
+id = "k2-horizon-7b"
+name = "K2 Horizon 7B AWQ-INT4"
+aliases = ["k2-7b"]
+doc = "sglang/models.md#k2-horizon-7b-awq-int4"
+opencode = true
+
+[model]
+repo = "cyankiwi/K2-Horizon-7B-AWQ-INT4"
+revision = "530d5ceccd8ea660ceaa2a9f3a4bcbb68ba44291"
+size_bytes = 8145038688
+served_name = "k2-horizon-7b"
+
+[container]
+# The cgroup peaked at 13.28 GiB with page cache; non-reclaimable memory (anon plus shmem plus kernel) peaked at 4.97 GiB.
+memory_gib = 32
+
+[server]
+# The FP8 pool holds 82,397 tokens at fraction 0.90; BF16 KV would hold 41,198, short of 64k (M13 found no accuracy cost).
+context = 65536
+args = [
+  "--mem-fraction-static", "0.90", "--max-running-requests", "1", "--disable-prefill-cuda-graph",
+  "--trust-remote-code", "--kv-cache-dtype", "fp8_e4m3", "--tool-call-parser", "k2_horizon",
+  "--reasoning-parser", "k2_horizon",
+  "--default-chat-template-kwargs", '{"reasoning_effort":"high","tool_call_format":"xml"}',
+]
+sampling = { temperature = 1.0, top_p = 0.95 }
+
+[needs]
+# The 15,311 MiB GPU peak minus the desktop's 112 MiB; anon 4.77 plus shmem 0.09 GiB, rounded up.
+gpu_mib = 15199
+ram_gib = 5
+
+[clients]
+output = 16384
+thinking = "always"
+
+[evidence]
+kind = "measured"
+summary = "89.5 tok/s decode over full 1,500-token runs with 64k context and FP8 KV, 82,397-token pool, 865 MiB free after ready and 543 MiB after a 62,257-token prompt and the first grammar request, 300 s of sustained load without error, 15,311 MiB GPU peak, smoke test and tool call passed"
+decode_tok_s = 89.5
+date = "2026-11-17"
+hardware = "MSI Raider 18 Max HX A2WI, RTX 5080 Laptop GPU 16 GB, 61 GiB RAM"
+record = "research/2026-11-17/sglang-k2-horizon-7b/"

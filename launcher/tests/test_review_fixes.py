@@ -226,7 +226,7 @@ class RemoteCodeCacheTest(unittest.TestCase):
         catalog = load_catalog(REPO / "recipes", None)
         runtime = catalog.runtimes["vllm"].runtime
         for recipe in catalog.runtimes["vllm"].recipes.values():
-            spec = vllm.container_spec(recipe, runtime, HostEnv(Path("/h"), 1, 1))
+            spec = vllm.container_spec(recipe, runtime, HostEnv(Path("/h"), 1, 1, Path("/c")))
             env = dict(spec.env)
             self.assertIn("HF_MODULES_CACHE", env, recipe.id)
             read_only = [mount.split(":")[1] for mount in spec.mounts if mount.endswith(":ro")]

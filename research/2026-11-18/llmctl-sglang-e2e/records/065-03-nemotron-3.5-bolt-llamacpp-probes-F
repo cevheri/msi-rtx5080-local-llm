@@ -1,0 +1,24 @@
+{
+  "request": {
+    "model": "local",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Reply with exactly the word OK."
+      }
+    ],
+    "max_tokens": 256,
+    "chat_template_kwargs": {
+      "enable_thinking": true,
+      "medium_effort": 1
+    }
+  },
+  "status": 200,
+  "reply": "{\"choices\":[{\"finish_reason\":\"stop\",\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"OK\",\"reasoning_content\":\"The user wants me to reply with exactly the word \\\"OK\\\". I should just output \\\"OK\\\" with no extra text.\"}}],\"created\":1794968983,\"model\":\"local\",\"system_fingerprint\":\"b12407-e574a17b0\",\"object\":\"chat.completion\",\"usage\":{\"completion_tokens\":28,\"prompt_tokens\":30,\"total_tokens\":58,\"prompt_tokens_details\":{\"cached_tokens\":5}},\"id\":\"chatcmpl-GYRPr7UULAxb8q2YQJgmIOSU6rZ6XWQq\",\"timings\":{\"cache_n\":5,\"prompt_n\":25,\"prompt_ms\":215.635,\"prompt_per_token_ms\":8.625399999999999,\"prompt_per_second\":115.9366522132307,\"predicted_n\":28,\"predicted_ms\":359.01,\"predicted_per_token_ms\":13.296666666666667,\"predicted_per_second\":75.20681875156681}}",
+  "record": {
+    "probe": "F",
+    "status": 200,
+    "content": true,
+    "reasoning": true
+  }
+}

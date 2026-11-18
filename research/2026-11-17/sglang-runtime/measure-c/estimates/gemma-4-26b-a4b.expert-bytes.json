@@ -1,0 +1,93 @@
+{
+ "snapshot_shards": 1,
+ "moe_layers": 30,
+ "expert_bytes": 12846551040,
+ "expert_gib": 11.964,
+ "other_bytes": 4340020172,
+ "other_gib": 4.042,
+ "per_layer_mib": [
+  408.38
+ ],
+ "by_tensor_kind_mib": {
+  ".N.down_proj.weight_packed": 3630.0,
+  ".N.down_proj.weight_scale": 453.8,
+  ".N.down_proj.weight_shape": 0.1,
+  ".N.gate_proj.weight_packed": 3630.0,
+  ".N.gate_proj.weight_scale": 453.8,
+  ".N.gate_proj.weight_shape": 0.1,
+  ".N.up_proj.weight_packed": 3630.0,
+  ".N.up_proj.weight_scale": 453.8,
+  ".N.up_proj.weight_shape": 0.1
+ },
+ "examples": {
+  ".N.down_proj.weight_shape": [
+   "model.language_model.layers.0.experts.0.down_proj.weight_shape",
+   "I64",
+   [
+    2
+   ]
+  ],
+  ".N.gate_proj.weight_shape": [
+   "model.language_model.layers.0.experts.0.gate_proj.weight_shape",
+   "I64",
+   [
+    2
+   ]
+  ],
+  ".N.up_proj.weight_shape": [
+   "model.language_model.layers.0.experts.0.up_proj.weight_shape",
+   "I64",
+   [
+    2
+   ]
+  ],
+  ".N.down_proj.weight_packed": [
+   "model.language_model.layers.0.experts.0.down_proj.weight_packed",
+   "I32",
+   [
+    2816,
+    88
+   ]
+  ],
+  ".N.gate_proj.weight_packed": [
+   "model.language_model.layers.0.experts.0.gate_proj.weight_packed",
+   "I32",
+   [
+    704,
+    352
+   ]
+  ],
+  ".N.up_proj.weight_packed": [
+   "model.language_model.layers.0.experts.0.up_proj.weight_packed",
+   "I32",
+   [
+    704,
+    352
+   ]
+  ],
+  ".N.down_proj.weight_scale": [
+   "model.language_model.layers.0.experts.0.down_proj.weight_scale",
+   "F16",
+   [
+    2816,
+    22
+   ]
+  ],
+  ".N.gate_proj.weight_scale": [
+   "model.language_model.layers.0.experts.0.gate_proj.weight_scale",
+   "F16",
+   [
+    704,
+    88
+   ]
+  ],
+  ".N.up_proj.weight_scale": [
+   "model.language_model.layers.0.experts.0.up_proj.weight_scale",
+   "F16",
+   [
+    704,
+    88
+   ]
+  ]
+ }
+}

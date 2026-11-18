@@ -1,11 +1,11 @@
 # llama.cpp model recipes for the RTX 5080 Laptop
 
-Last verified: 2026-11-17 (all ten ranked picks and Nemotron 3.5 Lightning measured on this laptop on 2026-11-16, and every measured recipe's OpenCode entry in the validated config since 2026-11-17; the other recipes are 2026-11-15 estimates).
+Last verified: 2026-11-18 (all ten ranked picks and Nemotron 3.5 Lightning measured on this laptop on 2026-11-16, the four GGUF builds of the vLLM and SGLang models on 2026-11-17 and in the clients e2e of 2026-11-18, and every measured recipe's OpenCode entry in the validated config since 2026-11-17; the other recipes are 2026-11-15 estimates).
 
 All ten ranked picks run on llama.cpp `ghcr.io/ggml-org/llama.cpp:server-cuda-b12407`, each with the exact GGUF file, `--n-cpu-moe` value, context, KV type, memory cap and thinking control below.
 The default is Qwen3.6-35B-A3B Q4_K_M (MoE, experts of blocks 0-24 in pinned RAM with a 3,200 MiB GPU cache for the most-used ones, 128k); use Qwen3.8-27B UD-Q3_K_XL (dense, all on the GPU, 64k) when a task needs the strongest model.
 VRAM, RAM, context and speed figures are estimates from file sizes and model configs unless a recipe has a "Measured on this laptop" line.
-All ten ranked picks and the Nemotron 3.5 Lightning fallback are measured; every other recipe needs the smoke tests in [README.md](README.md#smoke-tests) and an OpenCode tool-call test before use.
+All ten ranked picks, the Nemotron 3.5 Lightning fallback and the [GGUF builds of the vLLM and SGLang models](#gguf-builds-of-the-vllm-and-sglang-models) are measured; every other recipe needs the smoke tests in [README.md](README.md#smoke-tests) and an OpenCode tool-call test before use.
 The ranking and its evidence live in [../docs/model-selection.md](../docs/model-selection.md); this document only says how to run each model.
 
 Shared background (image choice, why `GGML_CUDA_DISABLE_GRAPHS=1` must come before the image name, flag meanings, offload mechanics, thinking controls, known issues) is in [README.md](README.md).
@@ -630,6 +630,220 @@ OpenCode entry (tools off; use it in plan or chat mode, never as the build agent
   "name": "DeepSeek-R1-0528-Qwen3-8B Q8_0, chat only (llama.cpp)",
   "capabilities": { "tools": false, "input": ["text"], "output": ["text"], "reasoning": { "supported": true } },
   "limit": { "context": 65536, "output": 16384 }
+}
+```
+
+## GGUF builds of the vLLM and SGLang models
+
+These four models also have recipes on [vLLM](../vllm/models.md) and, except Mellum2.1, on [SGLang](../sglang/models.md); their GGUF builds were measured on 2026-11-17 so that every engine runs every model it can.
+With these recipes, `./llmctl up` without `--runtime` starts the four names on llama.cpp, and `--runtime vllm`, or `--runtime sglang` for the three with an SGLang recipe, starts another engine's build.
+Each one fits whole on the GPU at 131072 tokens with f16 KV.
+The clients e2e of 2026-11-18 ran an OpenCode write-and-read session on each of the four, and all four passed, as did every other client session of the four except Kimi on Mellum2.1, which retried once after a thinking-only reply (measured on the MSI Raider 18 Max HX, llama.cpp b12407, OpenCode v2.3.0, 2026-11-18; [summary](../research/2026-11-18/llmctl-sglang-e2e/summary.md), [No rows](../research/2026-11-18/llmctl-sglang-e2e/README.md#the-no-rows), records [207](../research/2026-11-18/llmctl-sglang-e2e/records/207-11-qwen3.5-9b-llamacpp-opencode), [226](../research/2026-11-18/llmctl-sglang-e2e/records/226-12-gemma-4-12b-llamacpp-opencode), [245](../research/2026-11-18/llmctl-sglang-e2e/records/245-13-gemma-4-e4b-llamacpp-opencode) and [264](../research/2026-11-18/llmctl-sglang-e2e/records/264-14-mellum2.1-12b-llamacpp-opencode)).
+The measurements started each recipe through `./llmctl up` from a copy of llmctl, with the GGUF file already in the page cache and the K2 Horizon MoVA download of the same lane running beside it ([records](../research/2026-11-17/README.md)).
+
+### Qwen3.5-9B Q8_0
+
+The GGUF build of the model that [vLLM](../vllm/models.md#qwen35-9b-nvfp4) and [SGLang](../sglang/models.md#qwen35-9b-nvfp4) serve as NVFP4.
+Start it with `./llmctl up qwen3.5` ([llmctl](../docs/llmctl.md)), which runs the launch below from the pinned file in the cache with the checks and rules applied.
+The NVFP4 build is faster: start it with `./llmctl up qwen3.5 --runtime vllm` or `--runtime sglang` when decode speed matters more than the 8-bit weights.
+
+- **GGUF:** [unsloth/Qwen3.5-9B-GGUF](https://huggingface.co/api/models/unsloth/Qwen3.5-9B-GGUF/tree/main), `Qwen3.5-9B-Q8_0.gguf`, 9,527,502,048 B (8.87 GiB), at revision `3885219b6810b007914f3a7950a8d1b469d598a5`.
+  The repository also holds mmproj files, so the launch adds `--no-mmproj`.
+
+```bash
+docker rm -f llamacpp 2>/dev/null
+docker run -d --name llamacpp \
+  --device nvidia.com/gpu=all \
+  -e GGML_CUDA_DISABLE_GRAPHS=1 \
+  -e HF_TOKEN \
+  -e HF_HOME=/root/.cache/huggingface \
+  -v "$HOME/.cache/huggingface:/root/.cache/huggingface" \
+  -p 127.0.0.1:8080:8080 \
+  --memory 16g --memory-swap 16g \
+  ghcr.io/ggml-org/llama.cpp:server-cuda-b12407 \
+  -hf unsloth/Qwen3.5-9B-GGUF \
+  --hf-file Qwen3.5-9B-Q8_0.gguf \
+  --alias local --no-mmproj \
+  -ngl all -fa on -c 131072 -np 1 --jinja \
+  --reasoning off \
+  --temp 0.6 --top-p 0.95 --top-k 20 --min-p 0 --presence-penalty 0
+```
+
+- **Measured on this laptop (2026-11-17, [record](../research/2026-11-17/llamacpp-qwen3.5-9b/)):** `llmctl up` reached ready in 3.4 s and the GPU peaked at 12,782 MiB including about 112 MiB for the desktop; container RAM peaked at 14.95 GiB under the 16 GiB cap, of which 9.07 GiB was page cache of the mmapped GGUF and 5.87 GiB anonymous memory.
+  The model has 4 KV heads of 256 for 16 query heads, and f16 KV holds 128k, so q8_0 KV was not tried.
+- **Measured speed (2026-11-17):** decode 66.0 tok/s at a short context (65.4 to 66.2 over 3 runs), and 1,525 tokens of code at 66.2 tok/s; prompt processing 4,495 tok/s for 8.6k tokens (1.9 s to the first token), 3,834 tok/s for 24k new tokens (6.3 s) and 2,571 tok/s for 76k new tokens (29.5 s), where decode was 45.1 tok/s; repeating a prompt hit the cache in 0.05 to 0.13 s.
+  The GPU drew up to 146.0 W against its 145 W limit and reached 71 C.
+- **Against the other engines:** the NVFP4 build decodes 90.8 tok/s on vLLM v0.33.0 ([record](../research/2026-11-17/vllm-qwen3.5-9b/README.md)) and 93.7 tok/s on SGLang v0.5.23 ([record](../research/2026-11-17/sglang-qwen3.5-9b/README.md)) (measured on the MSI Raider 18 Max HX, 2026-11-17), so this Q8_0 build is about 28% slower; that Q8_0 reads more weight bytes per token than NVFP4 is the likely cause (inferred from the formats, not measured).
+- **Measured behaviour (2026-11-17):** `llmctl test` passed, the tool test returned `get_weather` with `{"city":"Paris"}` and the second turn answered from the tool result, Hermes' title request with a strict `json_schema` returned a title that parses, and a forced `tool_choice` request returned the tool call.
+- **Thinking:** toggle; `--reasoning off` makes the server default off, and `chat_template_kwargs.enable_thinking` true turns it on per request (735 characters of reasoning, measured); no `reasoning_effort` value turns it on.
+- **Sampling:** temperature 0.6, top_p 0.95, top_k 20, min_p 0 and presence_penalty 0, the values of the vLLM recipe of the same model.
+
+OpenCode entry (the validated config carries it under `llamacpp-docker` beside the vLLM and SGLang entries of the same model):
+
+```json
+"qwen3.5-9b": {
+  "modelID": "local",
+  "name": "Qwen3.5-9B Q8_0 (llama.cpp)",
+  "capabilities": { "tools": true, "input": ["text"], "output": ["text"], "reasoning": { "supported": true } },
+  "limit": { "context": 131072, "output": 16384 },
+  "variants": [
+    { "id": "thinking", "body": { "chat_template_kwargs": { "enable_thinking": true } } },
+    { "id": "none", "body": { "chat_template_kwargs": { "enable_thinking": false } } }
+  ]
+}
+```
+
+### Gemma 4 12B IT QAT Q4_0
+
+Google's QAT Q4_0 GGUF of the model that [vLLM](../vllm/models.md#gemma-4-12b-it-qat-w4a16) and [SGLang](../sglang/models.md#gemma-4-12b-it-qat-w4a16) serve as QAT W4A16, and the fastest of the three builds here.
+Start it with `./llmctl up gemma4-12b` ([llmctl](../docs/llmctl.md)), which runs the launch below from the pinned file in the cache with the checks and rules applied.
+
+- **GGUF:** [google/gemma-4-12B-it-qat-q4_0-gguf](https://huggingface.co/api/models/google/gemma-4-12B-it-qat-q4_0-gguf/tree/main), `gemma-4-12b-it-qat-q4_0.gguf`, 6,975,879,296 B (6.50 GiB), at revision `29d097773436b69ff9feafd636ab4cf873786537`, plus a 0.16 GiB mmproj that is not used.
+- **Args:** those of [Gemma 4 26B-A4B](#5-gemma-4-26b-a4b-it), same family, sampling and thinking switch, without its expert offload; f16 KV stays for the 512-wide global heads.
+
+```bash
+docker rm -f llamacpp 2>/dev/null
+docker run -d --name llamacpp \
+  --device nvidia.com/gpu=all \
+  -e GGML_CUDA_DISABLE_GRAPHS=1 \
+  -e HF_TOKEN \
+  -e HF_HOME=/root/.cache/huggingface \
+  -v "$HOME/.cache/huggingface:/root/.cache/huggingface" \
+  -p 127.0.0.1:8080:8080 \
+  --memory 20g --memory-swap 20g \
+  ghcr.io/ggml-org/llama.cpp:server-cuda-b12407 \
+  -hf google/gemma-4-12B-it-qat-q4_0-gguf \
+  --hf-file gemma-4-12b-it-qat-q4_0.gguf \
+  --alias local --no-mmproj \
+  -ngl all -fa on -c 131072 -np 1 --jinja \
+  -ctxcp 16 \
+  --reasoning off \
+  --temp 1.0 --top-p 0.95 --top-k 64
+```
+
+- **Measured on this laptop (2026-11-17, [record](../research/2026-11-17/llamacpp-gemma-4-12b/)):** `llmctl up` reached ready in 3.5 s and the GPU peaked at 9,772 MiB including about 112 MiB for the desktop; container RAM peaked at 12.94 GiB, of which 6.68 GiB was page cache of the mmapped GGUF and 6.25 GiB anonymous memory, mostly llama-server's host prompt cache (`--cache-ram`, 8 GiB by default) holding the long prompts.
+- **Measured speed (2026-11-17):** decode 77.1 tok/s at a short context (76.5 to 77.3 over 3 runs), and 1,628 tokens of code at 72.9 tok/s; prompt processing 2,986 tok/s for 9.9k tokens (3.4 s to the first token), 2,355 tok/s for 27k new tokens (11.6 s) and 1,312 tok/s for 87k new tokens (66.4 s), where decode was 58.6 tok/s; repeating a prompt hit the cache in 0.09 to 0.19 s.
+  The GPU drew up to 146.1 W against its 140 W limit and reached 71 C.
+- **Against the other engines:** vLLM v0.33.0 decodes the QAT W4A16 build at 69.5 tok/s ([record](../research/2026-11-17/vllm-gemma-4-12b/README.md)) and SGLang v0.5.23 at 70.4 tok/s ([record](../research/2026-11-17/sglang-gemma-4-12b/README.md)) (measured on the MSI Raider 18 Max HX, 2026-11-17).
+- **Measured behaviour (2026-11-17):** `llmctl test` passed, the tool test returned `get_weather` with `{"city":"Paris"}`, streamed and not, and the second turn answered from the tool result, Hermes' title request with a strict `json_schema` returned a title that parses, and a forced `tool_choice` request returned the tool call.
+- **Thinking:** toggle; `--reasoning off` makes the server default off, and `chat_template_kwargs.enable_thinking` true turns it on per request (233 characters of reasoning, measured); no `reasoning_effort` value turns it on.
+- **Sampling:** temperature 1.0, top_p 0.95 and top_k 64, as for Gemma 4 26B-A4B.
+
+OpenCode entry (the validated config carries it under `llamacpp-docker` beside the vLLM and SGLang entries of the same model):
+
+```json
+"gemma-4-12b": {
+  "modelID": "local",
+  "name": "Gemma 4 12B QAT Q4_0 (llama.cpp)",
+  "capabilities": { "tools": true, "input": ["text"], "output": ["text"], "reasoning": { "supported": true } },
+  "limit": { "context": 131072, "output": 16384 },
+  "variants": [
+    { "id": "thinking", "body": { "chat_template_kwargs": { "enable_thinking": true } } },
+    { "id": "none", "body": { "chat_template_kwargs": { "enable_thinking": false } } }
+  ]
+}
+```
+
+### Gemma 4 E4B IT QAT Q4_0
+
+Google's QAT Q4_0 GGUF of the smoke-test model that [vLLM](../vllm/models.md#smoke-test-model-gemma-4-e4b-it) and [SGLang](../sglang/models.md#gemma-4-e4b-it-qat-w4a16) serve as QAT W4A16 with 64k context; on llama.cpp it holds twice that context at the highest decode speed of the three.
+Start it with `./llmctl up gemma4-e4b` ([llmctl](../docs/llmctl.md)), which runs the launch below from the pinned file in the cache with the checks and rules applied.
+
+- **GGUF:** [google/gemma-4-E4B-it-qat-q4_0-gguf](https://huggingface.co/api/models/google/gemma-4-E4B-it-qat-q4_0-gguf/tree/main), `gemma-4-E4B_q4_0-it.gguf`, 5,154,941,280 B (4.80 GiB), at revision `4b4a2c1d584be7264f87aac328a1bc739ce81b6c`, plus a 0.92 GiB mmproj that is not used, so the vision input is not loaded.
+- **Args:** those of [Gemma 4 26B-A4B](#5-gemma-4-26b-a4b-it) without its expert offload, as for Gemma 4 12B; 131072 is the model's own context length.
+
+```bash
+docker rm -f llamacpp 2>/dev/null
+docker run -d --name llamacpp \
+  --device nvidia.com/gpu=all \
+  -e GGML_CUDA_DISABLE_GRAPHS=1 \
+  -e HF_TOKEN \
+  -e HF_HOME=/root/.cache/huggingface \
+  -v "$HOME/.cache/huggingface:/root/.cache/huggingface" \
+  -p 127.0.0.1:8080:8080 \
+  --memory 20g --memory-swap 20g \
+  ghcr.io/ggml-org/llama.cpp:server-cuda-b12407 \
+  -hf google/gemma-4-E4B-it-qat-q4_0-gguf \
+  --hf-file gemma-4-E4B_q4_0-it.gguf \
+  --alias local --no-mmproj \
+  -ngl all -fa on -c 131072 -np 1 --jinja \
+  -ctxcp 16 \
+  --reasoning off \
+  --temp 1.0 --top-p 0.95 --top-k 64
+```
+
+- **Measured on this laptop (2026-11-17, [record](../research/2026-11-17/llamacpp-gemma-4-e4b/)):** `llmctl up` reached ready in 2.4 s, b12407 loaded E4B's per-layer embeddings without a warning, and the GPU peaked at 5,422 MiB including about 112 MiB for the desktop; container RAM peaked at 7.86 GiB, of which 5.00 GiB was page cache of the mmapped GGUF and 2.84 GiB anonymous memory.
+- **Measured speed (2026-11-17):** decode 151.3 tok/s at a short context (150.5 to 151.6 over 3 runs), and 1,673 tokens of code at 148.6 tok/s; prompt processing 11,772 tok/s for 9.9k tokens (0.87 s to the first token), 8,834 tok/s for 27k new tokens (3.1 s) and 4,949 tok/s for 87k new tokens (17.7 s), where decode was 84.5 tok/s; repeating a prompt hit the cache in 0.02 to 0.13 s.
+  The GPU drew up to 149.4 W against its 140 W limit and reached 70 C.
+- **Against the other engines:** vLLM v0.33.0 runs the QAT W4A16 build only in eager mode at 64k, at 45.2 tok/s ([record](../research/2026-11-17/vllm-gemma-4-e4b/README.md)), and SGLang v0.5.23 at 64k at 141.3 tok/s ([record](../research/2026-11-17/sglang-gemma-4-e4b/README.md)) (measured on the MSI Raider 18 Max HX, 2026-11-17).
+- **Measured behaviour (2026-11-17):** `llmctl test` passed, the tool test returned `get_weather` with `{"city":"Paris"}` and the second turn answered from the tool result, Hermes' title request with a strict `json_schema` returned a title that parses, and a forced `tool_choice` request returned the tool call.
+- **Thinking:** toggle; `--reasoning off` makes the server default off, and `chat_template_kwargs.enable_thinking` true turns it on per request (259 characters of reasoning, measured); no `reasoning_effort` value turns it on.
+- **Sampling:** temperature 1.0, top_p 0.95 and top_k 64, as for Gemma 4 26B-A4B.
+
+OpenCode entry (the validated config carries it under `llamacpp-docker` beside the vLLM and SGLang entries of the same model):
+
+```json
+"gemma-4-e4b": {
+  "modelID": "local",
+  "name": "Gemma 4 E4B QAT Q4_0 (llama.cpp)",
+  "capabilities": { "tools": true, "input": ["text"], "output": ["text"], "reasoning": { "supported": true } },
+  "limit": { "context": 131072, "output": 16384 },
+  "variants": [
+    { "id": "thinking", "body": { "chat_template_kwargs": { "enable_thinking": true } } },
+    { "id": "none", "body": { "chat_template_kwargs": { "enable_thinking": false } } }
+  ]
+}
+```
+
+### Mellum2.1 12B-A2.5B Thinking Q6_K
+
+JetBrains' GGUF of the thinking MoE that [vLLM](../vllm/models.md#mellum21-12b-a25b-thinking-awq-int4) serves as AWQ-INT4; it does not load on SGLang v0.5.23 ([SGLang](../sglang/models.md#models-that-do-not-run-on-sglang)), so llama.cpp is its second engine.
+Start it with `./llmctl up mellum` ([llmctl](../docs/llmctl.md)), which runs the launch below from the pinned file in the cache with the checks and rules applied.
+
+- **GGUF:** [JetBrains/Mellum2.1-12B-A2.5B-Thinking-GGUF](https://huggingface.co/api/models/JetBrains/Mellum2.1-12B-A2.5B-Thinking-GGUF/tree/main), `Mellum2.1-12B-A2.5B-Thinking-Q6_K.gguf`, 10,879,834,400 B (10.13 GiB), at revision `4159d684ffdb09ba89dc2a58feb3e75c54eef036`.
+  The repository also holds other quantizations and MTP files, so the launch names the file with `--hf-file`.
+- **Args:** those of [Groot-19B-A3B](#8-groot-19b-a3b-261023), a small-active MoE held whole on the GPU with the same temperature, top_p and top_k as the vLLM Mellum2.1 recipe, without `--reasoning off`, because that recipe keeps thinking on by default.
+
+```bash
+docker rm -f llamacpp 2>/dev/null
+docker run -d --name llamacpp \
+  --device nvidia.com/gpu=all \
+  -e GGML_CUDA_DISABLE_GRAPHS=1 \
+  -e HF_TOKEN \
+  -e HF_HOME=/root/.cache/huggingface \
+  -v "$HOME/.cache/huggingface:/root/.cache/huggingface" \
+  -p 127.0.0.1:8080:8080 \
+  --memory 16g --memory-swap 16g \
+  ghcr.io/ggml-org/llama.cpp:server-cuda-b12407 \
+  -hf JetBrains/Mellum2.1-12B-A2.5B-Thinking-GGUF \
+  --hf-file Mellum2.1-12B-A2.5B-Thinking-Q6_K.gguf \
+  --alias local \
+  -ngl all -fa on -c 131072 -np 1 --jinja \
+  --temp 0.6 --top-p 0.95 --top-k 20 --min-p 0 --presence-penalty 0
+```
+
+- **Measured on this laptop (2026-11-17, [record](../research/2026-11-17/llamacpp-mellum2.1-12b/)):** `llmctl up` reached ready in 4.5 s and the GPU peaked at 12,674 MiB including about 112 MiB for the desktop; container RAM peaked at 13.16 GiB under the 16 GiB cap, of which 10.32 GiB was page cache of the mmapped GGUF and 2.83 GiB anonymous memory.
+- **Measured speed (2026-11-17):** decode 188.2 tok/s at a short context with thinking on, reasoning included (187.6 to 189.6 over 3 runs); prompt processing 6,594 tok/s for 9.9k tokens (1.6 s to the first token), 5,422 tok/s for 27k new tokens (5.1 s) and 3,204 tok/s for 87k new tokens (27.2 s), where decode was 121.1 tok/s; repeating a prompt hit the cache in 0.04 to 0.12 s.
+  A code request spent its whole 3,000-token budget on reasoning at 180.4 tok/s, so give thinking-on coding requests a large output budget.
+  The GPU drew up to 145.1 W against its 140 W limit and reached 70 C.
+- **Against the other engines:** vLLM v0.33.0 decodes the AWQ-INT4 build at 257.2 tok/s with thinking on ([record](../research/2026-11-17/vllm-mellum2.1-12b/README.md)), and SGLang v0.5.23 does not load it ([record](../research/2026-11-17/sglang-mellum2.1-12b/README.md)) (measured on the MSI Raider 18 Max HX, 2026-11-17).
+- **Measured behaviour (2026-11-17):** b12407 parses Mellum's tool calls and reasoning: `llmctl test` passed, the tool test returned `get_weather` with `{"city": "Paris"}` and the second turn answered from the tool result, Hermes' title request with `reasoning_effort` `none` and a strict `json_schema` returned a title that parses with no reasoning, and a forced `tool_choice` request with a weather question returned the tool call after its reasoning.
+  A forced `tool_choice` on "Reply with exactly: OK" with thinking off and a 256-token cap ended at the cap with its thinking as text in `content` and no tool call.
+- **Thinking:** toggle, on by default; `chat_template_kwargs.enable_thinking` false or `reasoning_effort` `none` turns it off per request, while `low` and `high` keep it on (measured).
+- **Sampling:** temperature 0.6, top_p 0.95, top_k 20, min_p 0 and presence_penalty 0.
+
+OpenCode entry (the validated config carries it under `llamacpp-docker` beside the vLLM entry of the same model):
+
+```json
+"mellum2.1-12b": {
+  "modelID": "local",
+  "name": "Mellum2.1 12B-A2.5B Thinking Q6_K (llama.cpp)",
+  "capabilities": { "tools": true, "input": ["text"], "output": ["text"], "reasoning": { "supported": true } },
+  "limit": { "context": 131072, "output": 16384 },
+  "variants": [
+    { "id": "thinking", "body": { "chat_template_kwargs": { "enable_thinking": true } } },
+    { "id": "none", "body": { "chat_template_kwargs": { "enable_thinking": false } } }
+  ]
 }
 ```
 

@@ -1,0 +1,932 @@
+{
+ "model": "local",
+ "started": "2026-11-17T23:31:17+0300",
+ "models": {
+  "status": 200,
+  "seconds": 0.001,
+  "data": [
+   {
+    "keys": [
+     "aliases",
+     "architecture",
+     "created",
+     "id",
+     "meta",
+     "object",
+     "owned_by",
+     "tags"
+    ],
+    "id": "local",
+    "max_model_len": null,
+    "owned_by": "llamacpp",
+    "root": null
+   }
+  ]
+ },
+ "/health": {
+  "status": 200,
+  "seconds": 0.0
+ },
+ "/ready": {
+  "status": 404,
+  "seconds": 0.001
+ },
+ "/health_generate": {
+  "status": 404,
+  "seconds": 0.0
+ },
+ "server_info": {
+  "internal_states": null,
+  "key_count": 1
+ },
+ "plain": {
+  "status": 200,
+  "seconds": 0.023,
+  "top_keys": [
+   "choices",
+   "created",
+   "id",
+   "model",
+   "object",
+   "system_fingerprint",
+   "timings",
+   "usage"
+  ],
+  "choice_keys": [
+   "finish_reason",
+   "index",
+   "message"
+  ],
+  "message_keys": [
+   "content",
+   "role"
+  ],
+  "content": "OK",
+  "content_chars": 2,
+  "reasoning_content_chars": "absent",
+  "reasoning_chars": "absent",
+  "reasoning_preview": null,
+  "tool_calls": [],
+  "finish_reason": "stop",
+  "matched_stop": null,
+  "usage": {
+   "completion_tokens": 2,
+   "prompt_tokens": 14,
+   "total_tokens": 16,
+   "prompt_tokens_details": {
+    "cached_tokens": 1
+   }
+  },
+  "model": "local"
+ },
+ "plain_stream_usage": {
+  "chunks": 4,
+  "delta_keys": [
+   "content",
+   "role"
+  ],
+  "chunk_keys": [
+   "choices",
+   "created",
+   "id",
+   "model",
+   "object",
+   "system_fingerprint",
+   "timings",
+   "usage"
+  ],
+  "finish_reasons": [
+   "stop"
+  ],
+  "usage_chunks": [
+   {
+    "choices_len": 0,
+    "usage": {
+     "completion_tokens": 2,
+     "prompt_tokens": 14,
+     "total_tokens": 16,
+     "prompt_tokens_details": {
+      "cached_tokens": 9
+     }
+    }
+   }
+  ],
+  "content_chars": 2,
+  "reasoning_content_chars": 0,
+  "reasoning_chars": 0,
+  "done_marker": true,
+  "status": 200,
+  "content_type": "text/event-stream",
+  "content": "OK",
+  "tool_calls": [],
+  "ttft_s": 0.012,
+  "total_s": 0.019
+ },
+ "plain_stream_no_usage": {
+  "chunks": 3,
+  "delta_keys": [
+   "content",
+   "role"
+  ],
+  "chunk_keys": [
+   "choices",
+   "created",
+   "id",
+   "model",
+   "object",
+   "system_fingerprint",
+   "timings"
+  ],
+  "finish_reasons": [
+   "stop"
+  ],
+  "usage_chunks": [],
+  "content_chars": 2,
+  "reasoning_content_chars": 0,
+  "reasoning_chars": 0,
+  "done_marker": true,
+  "status": 200,
+  "content_type": "text/event-stream",
+  "content": "OK",
+  "tool_calls": [],
+  "ttft_s": 0.012,
+  "total_s": 0.019
+ },
+ "tool_auto": {
+  "status": 200,
+  "seconds": 0.105,
+  "top_keys": [
+   "choices",
+   "created",
+   "id",
+   "model",
+   "object",
+   "system_fingerprint",
+   "timings",
+   "usage"
+  ],
+  "choice_keys": [
+   "finish_reason",
+   "index",
+   "message"
+  ],
+  "message_keys": [
+   "content",
+   "role",
+   "tool_calls"
+  ],
+  "content": "",
+  "content_chars": 0,
+  "reasoning_content_chars": "absent",
+  "reasoning_chars": "absent",
+  "reasoning_preview": null,
+  "tool_calls": [
+   {
+    "keys": [
+     "function",
+     "id",
+     "type"
+    ],
+    "id": "GqraMlMpSudR0h6HoTFtu1xFW70y7EVq",
+    "type": "function",
+    "index": null,
+    "name": "get_weather",
+    "arguments_type": "str",
+    "arguments": "{\"city\":\"Paris\"}",
+    "arguments_json": {
+     "city": "Paris"
+    }
+   }
+  ],
+  "finish_reason": "tool_calls",
+  "matched_stop": null,
+  "usage": {
+   "completion_tokens": 15,
+   "prompt_tokens": 69,
+   "total_tokens": 84,
+   "prompt_tokens_details": {
+    "cached_tokens": 64
+   }
+  },
+  "model": "local"
+ },
+ "tool_auto_stream": {
+  "chunks": 9,
+  "delta_keys": [
+   "role",
+   "tool_calls"
+  ],
+  "chunk_keys": [
+   "choices",
+   "created",
+   "id",
+   "model",
+   "object",
+   "system_fingerprint",
+   "timings"
+  ],
+  "finish_reasons": [
+   "tool_calls"
+  ],
+  "usage_chunks": [],
+  "content_chars": 0,
+  "reasoning_content_chars": 0,
+  "reasoning_chars": 0,
+  "done_marker": true,
+  "status": 200,
+  "content_type": "text/event-stream",
+  "content": "",
+  "tool_calls": [
+   {
+    "id": "VSdmhvvW89s2LzCe2MWNphY8MjKLIphg",
+    "type": "function",
+    "name": "get_weather",
+    "arguments": "{\"city\":\"Paris\"}",
+    "fragments": 7,
+    "index": 0
+   }
+  ],
+  "ttft_s": 0.053,
+  "total_s": 0.104
+ },
+ "tool_no_tool_choice": {
+  "status": 200,
+  "seconds": 0.107,
+  "top_keys": [
+   "choices",
+   "created",
+   "id",
+   "model",
+   "object",
+   "system_fingerprint",
+   "timings",
+   "usage"
+  ],
+  "choice_keys": [
+   "finish_reason",
+   "index",
+   "message"
+  ],
+  "message_keys": [
+   "content",
+   "role",
+   "tool_calls"
+  ],
+  "content": "",
+  "content_chars": 0,
+  "reasoning_content_chars": "absent",
+  "reasoning_chars": "absent",
+  "reasoning_preview": null,
+  "tool_calls": [
+   {
+    "keys": [
+     "function",
+     "id",
+     "type"
+    ],
+    "id": "lBGJa7VrLPIugCSReFcWdrNpARiKjxQN",
+    "type": "function",
+    "index": null,
+    "name": "get_weather",
+    "arguments_type": "str",
+    "arguments": "{\"city\":\"Paris\"}",
+    "arguments_json": {
+     "city": "Paris"
+    }
+   }
+  ],
+  "finish_reason": "tool_calls",
+  "matched_stop": null,
+  "usage": {
+   "completion_tokens": 15,
+   "prompt_tokens": 69,
+   "total_tokens": 84,
+   "prompt_tokens_details": {
+    "cached_tokens": 64
+   }
+  },
+  "model": "local"
+ },
+ "tool_second_turn": {
+  "status": 200,
+  "seconds": 0.124,
+  "top_keys": [
+   "choices",
+   "created",
+   "id",
+   "model",
+   "object",
+   "system_fingerprint",
+   "timings",
+   "usage"
+  ],
+  "choice_keys": [
+   "finish_reason",
+   "index",
+   "message"
+  ],
+  "message_keys": [
+   "content",
+   "role"
+  ],
+  "content": "The weather in Paris is sunny and the temperature is 18\u00b0C.",
+  "content_chars": 58,
+  "reasoning_content_chars": "absent",
+  "reasoning_chars": "absent",
+  "reasoning_preview": null,
+  "tool_calls": [],
+  "finish_reason": "stop",
+  "matched_stop": null,
+  "usage": {
+   "completion_tokens": 17,
+   "prompt_tokens": 117,
+   "total_tokens": 134,
+   "prompt_tokens_details": {
+    "cached_tokens": 64
+   }
+  },
+  "model": "local",
+  "mentions_18": true
+ },
+ "tool_second_turn_stream": {
+  "chunks": 18,
+  "delta_keys": [
+   "content",
+   "role"
+  ],
+  "chunk_keys": [
+   "choices",
+   "created",
+   "id",
+   "model",
+   "object",
+   "system_fingerprint",
+   "timings"
+  ],
+  "finish_reasons": [
+   "stop"
+  ],
+  "usage_chunks": [],
+  "content_chars": 57,
+  "reasoning_content_chars": 0,
+  "reasoning_chars": 0,
+  "done_marker": true,
+  "status": 200,
+  "content_type": "text/event-stream",
+  "content": "The weather in Paris is sunny with a temperature of 18\u00b0C.",
+  "tool_calls": [],
+  "ttft_s": 0.016,
+  "total_s": 0.119
+ },
+ "tool_second_turn_sent_reasoning_content": false,
+ "thinking": {
+  "enable_thinking_true": {
+   "status": 200,
+   "seconds": 0.864,
+   "top_keys": [
+    "choices",
+    "created",
+    "id",
+    "model",
+    "object",
+    "system_fingerprint",
+    "timings",
+    "usage"
+   ],
+   "choice_keys": [
+    "finish_reason",
+    "index",
+    "message"
+   ],
+   "message_keys": [
+    "content",
+    "reasoning_content",
+    "role"
+   ],
+   "content": "391",
+   "content_chars": 3,
+   "reasoning_content_chars": 259,
+   "reasoning_chars": "absent",
+   "reasoning_preview": "The user wants me to calculate 17 multiplied by 23 and provi... (259 chars)",
+   "tool_calls": [],
+   "finish_reason": "stop",
+   "matched_stop": null,
+   "usage": {
+    "completion_tokens": 125,
+    "prompt_tokens": 32,
+    "total_tokens": 157,
+    "prompt_tokens_details": {
+     "cached_tokens": 1
+    }
+   },
+   "model": "local"
+  },
+  "enable_thinking_false": {
+   "status": 200,
+   "seconds": 0.038,
+   "top_keys": [
+    "choices",
+    "created",
+    "id",
+    "model",
+    "object",
+    "system_fingerprint",
+    "timings",
+    "usage"
+   ],
+   "choice_keys": [
+    "finish_reason",
+    "index",
+    "message"
+   ],
+   "message_keys": [
+    "content",
+    "role"
+   ],
+   "content": "391",
+   "content_chars": 3,
+   "reasoning_content_chars": "absent",
+   "reasoning_chars": "absent",
+   "reasoning_preview": null,
+   "tool_calls": [],
+   "finish_reason": "stop",
+   "matched_stop": null,
+   "usage": {
+    "completion_tokens": 4,
+    "prompt_tokens": 25,
+    "total_tokens": 29,
+    "prompt_tokens_details": {
+     "cached_tokens": 1
+    }
+   },
+   "model": "local"
+  },
+  "no_field_server_default": {
+   "status": 200,
+   "seconds": 0.035,
+   "top_keys": [
+    "choices",
+    "created",
+    "id",
+    "model",
+    "object",
+    "system_fingerprint",
+    "timings",
+    "usage"
+   ],
+   "choice_keys": [
+    "finish_reason",
+    "index",
+    "message"
+   ],
+   "message_keys": [
+    "content",
+    "role"
+   ],
+   "content": "391",
+   "content_chars": 3,
+   "reasoning_content_chars": "absent",
+   "reasoning_chars": "absent",
+   "reasoning_preview": null,
+   "tool_calls": [],
+   "finish_reason": "stop",
+   "matched_stop": null,
+   "usage": {
+    "completion_tokens": 4,
+    "prompt_tokens": 25,
+    "total_tokens": 29,
+    "prompt_tokens_details": {
+     "cached_tokens": 20
+    }
+   },
+   "model": "local"
+  },
+  "reasoning_effort_none": {
+   "status": 200,
+   "seconds": 0.032,
+   "top_keys": [
+    "choices",
+    "created",
+    "id",
+    "model",
+    "object",
+    "system_fingerprint",
+    "timings",
+    "usage"
+   ],
+   "choice_keys": [
+    "finish_reason",
+    "index",
+    "message"
+   ],
+   "message_keys": [
+    "content",
+    "role"
+   ],
+   "content": "391",
+   "content_chars": 3,
+   "reasoning_content_chars": "absent",
+   "reasoning_chars": "absent",
+   "reasoning_preview": null,
+   "tool_calls": [],
+   "finish_reason": "stop",
+   "matched_stop": null,
+   "usage": {
+    "completion_tokens": 4,
+    "prompt_tokens": 25,
+    "total_tokens": 29,
+    "prompt_tokens_details": {
+     "cached_tokens": 20
+    }
+   },
+   "model": "local"
+  },
+  "reasoning_effort_low": {
+   "status": 200,
+   "seconds": 0.032,
+   "top_keys": [
+    "choices",
+    "created",
+    "id",
+    "model",
+    "object",
+    "system_fingerprint",
+    "timings",
+    "usage"
+   ],
+   "choice_keys": [
+    "finish_reason",
+    "index",
+    "message"
+   ],
+   "message_keys": [
+    "content",
+    "role"
+   ],
+   "content": "391",
+   "content_chars": 3,
+   "reasoning_content_chars": "absent",
+   "reasoning_chars": "absent",
+   "reasoning_preview": null,
+   "tool_calls": [],
+   "finish_reason": "stop",
+   "matched_stop": null,
+   "usage": {
+    "completion_tokens": 4,
+    "prompt_tokens": 25,
+    "total_tokens": 29,
+    "prompt_tokens_details": {
+     "cached_tokens": 20
+    }
+   },
+   "model": "local"
+  },
+  "reasoning_effort_high": {
+   "status": 200,
+   "seconds": 0.032,
+   "top_keys": [
+    "choices",
+    "created",
+    "id",
+    "model",
+    "object",
+    "system_fingerprint",
+    "timings",
+    "usage"
+   ],
+   "choice_keys": [
+    "finish_reason",
+    "index",
+    "message"
+   ],
+   "message_keys": [
+    "content",
+    "role"
+   ],
+   "content": "391",
+   "content_chars": 3,
+   "reasoning_content_chars": "absent",
+   "reasoning_chars": "absent",
+   "reasoning_preview": null,
+   "tool_calls": [],
+   "finish_reason": "stop",
+   "matched_stop": null,
+   "usage": {
+    "completion_tokens": 4,
+    "prompt_tokens": 25,
+    "total_tokens": 29,
+    "prompt_tokens_details": {
+     "cached_tokens": 20
+    }
+   },
+   "model": "local"
+  }
+ },
+ "thinking_stream_on": {
+  "chunks": 181,
+  "delta_keys": [
+   "content",
+   "reasoning_content",
+   "role"
+  ],
+  "chunk_keys": [
+   "choices",
+   "created",
+   "id",
+   "model",
+   "object",
+   "system_fingerprint",
+   "timings",
+   "usage"
+  ],
+  "finish_reasons": [
+   "stop"
+  ],
+  "usage_chunks": [
+   {
+    "choices_len": 0,
+    "usage": {
+     "completion_tokens": 183,
+     "prompt_tokens": 32,
+     "total_tokens": 215,
+     "prompt_tokens_details": {
+      "cached_tokens": 1
+     }
+    }
+   }
+  ],
+  "content_chars": 3,
+  "reasoning_content_chars": 364,
+  "reasoning_chars": 0,
+  "done_marker": true,
+  "status": 200,
+  "content_type": "text/event-stream",
+  "content": "391",
+  "tool_calls": [],
+  "ttft_s": 0.04,
+  "total_s": 1.223,
+  "decode_tok_s": 154.8
+ },
+ "compat": {
+  "tools_empty_list": {
+   "status": 200,
+   "finish_reason": "stop",
+   "content": "OK",
+   "tool_calls": [],
+   "usage": {
+    "completion_tokens": 2,
+    "prompt_tokens": 14,
+    "total_tokens": 16,
+    "prompt_tokens_details": {
+     "cached_tokens": 1
+    }
+   },
+   "reasoning_content_chars": "absent"
+  },
+  "prompt_cache_key": {
+   "status": 200,
+   "finish_reason": "stop",
+   "content": "OK",
+   "tool_calls": [],
+   "usage": {
+    "completion_tokens": 2,
+    "prompt_tokens": 14,
+    "total_tokens": 16,
+    "prompt_tokens_details": {
+     "cached_tokens": 9
+    }
+   },
+   "reasoning_content_chars": "absent"
+  },
+  "max_completion_tokens": {
+   "status": 200,
+   "finish_reason": "stop",
+   "content": "OK",
+   "tool_calls": [],
+   "usage": {
+    "completion_tokens": 2,
+    "prompt_tokens": 14,
+    "total_tokens": 16,
+    "prompt_tokens_details": {
+     "cached_tokens": 9
+    }
+   },
+   "reasoning_content_chars": "absent"
+  },
+  "tool_choice_auto_without_tools": {
+   "status": 200,
+   "finish_reason": "stop",
+   "content": "OK",
+   "tool_calls": [],
+   "usage": {
+    "completion_tokens": 2,
+    "prompt_tokens": 14,
+    "total_tokens": 16,
+    "prompt_tokens_details": {
+     "cached_tokens": 9
+    }
+   },
+   "reasoning_content_chars": "absent"
+  },
+  "tool_choice_none_with_tools": {
+   "status": 200,
+   "finish_reason": "stop",
+   "content": "OK",
+   "tool_calls": [],
+   "usage": {
+    "completion_tokens": 2,
+    "prompt_tokens": 63,
+    "total_tokens": 65,
+    "prompt_tokens_details": {
+     "cached_tokens": 49
+    }
+   },
+   "reasoning_content_chars": "absent"
+  },
+  "wrong_model_name": {
+   "status": 200,
+   "finish_reason": "stop",
+   "content": "OK",
+   "tool_calls": [],
+   "usage": {
+    "completion_tokens": 2,
+    "prompt_tokens": 14,
+    "total_tokens": 16,
+    "prompt_tokens_details": {
+     "cached_tokens": 9
+    }
+   },
+   "reasoning_content_chars": "absent"
+  },
+  "max_tokens_above_context": {
+   "status": 200,
+   "finish_reason": "stop",
+   "content": "OK",
+   "tool_calls": [],
+   "usage": {
+    "completion_tokens": 2,
+    "prompt_tokens": 14,
+    "total_tokens": 16,
+    "prompt_tokens_details": {
+     "cached_tokens": 9
+    }
+   },
+   "reasoning_content_chars": "absent"
+  },
+  "history_reasoning_field": {
+   "status": 200,
+   "finish_reason": "stop",
+   "content": "OK",
+   "tool_calls": [],
+   "usage": {
+    "completion_tokens": 2,
+    "prompt_tokens": 27,
+    "total_tokens": 29,
+    "prompt_tokens_details": {
+     "cached_tokens": 1
+    }
+   },
+   "reasoning_content_chars": "absent"
+  },
+  "history_reasoning_content_field": {
+   "status": 200,
+   "finish_reason": "stop",
+   "content": "OK",
+   "tool_calls": [],
+   "usage": {
+    "completion_tokens": 2,
+    "prompt_tokens": 27,
+    "total_tokens": 29,
+    "prompt_tokens_details": {
+     "cached_tokens": 22
+    }
+   },
+   "reasoning_content_chars": "absent"
+  }
+ },
+ "decode_512": [
+  {
+   "status": 200,
+   "ttft_s": 0.017,
+   "total_s": 3.416,
+   "decode_tok_s": 150.3,
+   "finish_reasons": [
+    "length"
+   ],
+   "usage_chunks": [
+    {
+     "choices_len": 0,
+     "usage": {
+      "completion_tokens": 512,
+      "prompt_tokens": 41,
+      "total_tokens": 553,
+      "prompt_tokens_details": {
+       "cached_tokens": 1
+      }
+     }
+    }
+   ],
+   "reasoning_content_chars": 0,
+   "content_chars": 2787
+  },
+  {
+   "status": 200,
+   "ttft_s": 0.027,
+   "total_s": 3.433,
+   "decode_tok_s": 150.0,
+   "finish_reasons": [
+    "length"
+   ],
+   "usage_chunks": [
+    {
+     "choices_len": 0,
+     "usage": {
+      "completion_tokens": 512,
+      "prompt_tokens": 41,
+      "total_tokens": 553,
+      "prompt_tokens_details": {
+       "cached_tokens": 1
+      }
+     }
+    }
+   ],
+   "reasoning_content_chars": 0,
+   "content_chars": 2787
+  },
+  {
+   "status": 200,
+   "ttft_s": 0.025,
+   "total_s": 3.441,
+   "decode_tok_s": 149.6,
+   "finish_reasons": [
+    "length"
+   ],
+   "usage_chunks": [
+    {
+     "choices_len": 0,
+     "usage": {
+      "completion_tokens": 512,
+      "prompt_tokens": 41,
+      "total_tokens": 553,
+      "prompt_tokens_details": {
+       "cached_tokens": 1
+      }
+     }
+    }
+   ],
+   "reasoning_content_chars": 0,
+   "content_chars": 2816
+  }
+ ],
+ "decode_512_median_tok_s": 150.0,
+ "grammar": {
+  "tool_choice_required": {
+   "status": 200,
+   "finish_reason": "tool_calls",
+   "content": "",
+   "tool_calls": [
+    {
+     "keys": [
+      "function",
+      "id",
+      "type"
+     ],
+     "id": "H1N6G0anteXOiPIlbjw3z94YEJEUoc2x",
+     "type": "function",
+     "index": null,
+     "name": "get_weather",
+     "arguments_type": "str",
+     "arguments": "{\"city\":\"San Francisco\"}",
+     "arguments_json": {
+      "city": "San Francisco"
+     }
+    }
+   ],
+   "usage": {
+    "completion_tokens": 16,
+    "prompt_tokens": 63,
+    "total_tokens": 79,
+    "prompt_tokens_details": {
+     "cached_tokens": 58
+    }
+   },
+   "reasoning_content_chars": "absent"
+  },
+  "response_format_json_schema": {
+   "status": 200,
+   "finish_reason": "stop",
+   "content": "{\n  \"capital\": \"Paris\"\n}",
+   "tool_calls": [],
+   "usage": {
+    "completion_tokens": 17,
+    "prompt_tokens": 17,
+    "total_tokens": 34,
+    "prompt_tokens_details": {
+     "cached_tokens": 1
+    }
+   },
+   "reasoning_content_chars": "absent"
+  }
+ },
+ "finished": "2026-11-17T23:31:31+0300"
+}

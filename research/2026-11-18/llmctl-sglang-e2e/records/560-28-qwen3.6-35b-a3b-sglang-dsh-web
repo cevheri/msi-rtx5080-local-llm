@@ -1,0 +1,8 @@
+{
+  "command": "dsh web --port 3182 --no-open",
+  "cwd": "$WORK/28-qwen3.6-35b-a3b-sglang-dsh-web",
+  "exit": 0,
+  "seconds": 4.5,
+  "stdout": "dsh web: <address withheld>\n",
+  "stderr": ""
+}

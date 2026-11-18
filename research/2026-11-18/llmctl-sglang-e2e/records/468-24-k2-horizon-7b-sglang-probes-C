@@ -1,0 +1,21 @@
+{
+  "request": {
+    "model": "k2-horizon-7b",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Reply with exactly the word OK."
+      }
+    ],
+    "reasoning_effort": "none",
+    "max_tokens": 256
+  },
+  "status": 200,
+  "reply": "{\"id\":\"a4af5ebbfd17417c8db58ad5e439b57e\",\"object\":\"chat.completion\",\"created\":1794970768,\"model\":\"k2-horizon-7b\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"OK\",\"reasoning_content\":\"The user says: \\\"Reply with exactly the word OK.\\\"\\n\\nWe must respond with exactly the word \\\"OK\\\". No extra punctuation, no extra characters, just \\\"OK\\\". Probably newline is okay? Usually we should just output \\\"OK\\\". Should we include a newline? The instruction: \\\"Reply with exactly the word OK.\\\" So the output should be exactly \\\"OK\\\". Let's comply.\\n\\nCheck: no extra spaces or punctuation. So final answer: OK.\"},\"logprobs\":null,\"finish_reason\":\"stop\",\"matched_stop\":250019}],\"usage\":{\"prompt_tokens\":17,\"total_tokens\":111,\"completion_tokens\":94,\"prompt_tokens_details\":null,\"reasoning_tokens\":92,\"completion_tokens_details\":{\"reasoning_tokens\":92}},\"metadata\":{\"weight_version\":\"default\",\"weight_versions\":[{\"version\":\"default\",\"start\":0,\"end\":94}]}}",
+  "record": {
+    "probe": "C",
+    "status": 200,
+    "content": true,
+    "reasoning": true
+  }
+}

@@ -1,0 +1,70 @@
+== at ready 21:00:11
+pid=1686545 name=python3 VmRSS_kB=1885412 RssAnon_kB=1218432 RssFile_kB=579520 RssShmem_kB=87460 VmLck_kB=16 VmPin_kB=0
+pid=1687893 name=sglang::schedul VmRSS_kB=21782008 RssAnon_kB=3104080 RssFile_kB=830036 RssShmem_kB=17847892 VmLck_kB=16 VmPin_kB=0
+pid=1687894 name=sglang::detoken VmRSS_kB=1450048 RssAnon_kB=992208 RssFile_kB=457840 RssShmem_kB=0 VmLck_kB=16 VmPin_kB=0
+pid=1705325 name=python3 VmRSS_kB=698860 RssAnon_kB=394088 RssFile_kB=304756 RssShmem_kB=16 VmLck_kB=0 VmPin_kB=0
+pid=1705577 name=python3 VmRSS_kB=402308 RssAnon_kB=394012 RssFile_kB=8276 RssShmem_kB=20 VmLck_kB=0 VmPin_kB=0
+pid=1705579 name=python3 VmRSS_kB=401980 RssAnon_kB=394012 RssFile_kB=7956 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1705581 name=python3 VmRSS_kB=401980 RssAnon_kB=394012 RssFile_kB=7956 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1705586 name=python3 VmRSS_kB=401980 RssAnon_kB=394012 RssFile_kB=7956 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1705591 name=python3 VmRSS_kB=401984 RssAnon_kB=394016 RssFile_kB=7956 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1705596 name=python3 VmRSS_kB=401984 RssAnon_kB=394016 RssFile_kB=7956 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1705598 name=python3 VmRSS_kB=401984 RssAnon_kB=394016 RssFile_kB=7956 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1705600 name=python3 VmRSS_kB=401984 RssAnon_kB=394016 RssFile_kB=7956 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1705602 name=python3 VmRSS_kB=401984 RssAnon_kB=394016 RssFile_kB=7956 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1705604 name=python3 VmRSS_kB=401984 RssAnon_kB=394016 RssFile_kB=7956 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1705606 name=python3 VmRSS_kB=401984 RssAnon_kB=394016 RssFile_kB=7956 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1705608 name=python3 VmRSS_kB=401988 RssAnon_kB=394020 RssFile_kB=7956 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1705610 name=python3 VmRSS_kB=401988 RssAnon_kB=394020 RssFile_kB=7956 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1705612 name=python3 VmRSS_kB=401988 RssAnon_kB=394020 RssFile_kB=7956 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1705614 name=python3 VmRSS_kB=401988 RssAnon_kB=394020 RssFile_kB=7956 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1705616 name=python3 VmRSS_kB=401992 RssAnon_kB=394024 RssFile_kB=7956 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1705618 name=python3 VmRSS_kB=401992 RssAnon_kB=394024 RssFile_kB=7956 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1705620 name=python3 VmRSS_kB=401992 RssAnon_kB=394024 RssFile_kB=7956 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1705622 name=python3 VmRSS_kB=401992 RssAnon_kB=394024 RssFile_kB=7956 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1705624 name=python3 VmRSS_kB=401992 RssAnon_kB=394024 RssFile_kB=7956 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1705626 name=python3 VmRSS_kB=401992 RssAnon_kB=394024 RssFile_kB=7956 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1705628 name=python3 VmRSS_kB=401992 RssAnon_kB=394024 RssFile_kB=7956 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1705630 name=python3 VmRSS_kB=401992 RssAnon_kB=394024 RssFile_kB=7956 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1705632 name=python3 VmRSS_kB=401992 RssAnon_kB=394024 RssFile_kB=7956 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+cgroup anon=5.509 GiB
+cgroup file=26.245 GiB
+cgroup shmem=16.973 GiB
+cgroup file_mapped=17.124 GiB
+cgroup unevictable=0.000 GiB
+cgroup memory.current=31.999 GiB memory.peak=32.000 GiB
+== at the end 21:00:46
+pid=1686545 name=python3 VmRSS_kB=1920228 RssAnon_kB=1253120 RssFile_kB=579648 RssShmem_kB=87460 VmLck_kB=16 VmPin_kB=0
+pid=1687893 name=sglang::schedul VmRSS_kB=21842772 RssAnon_kB=3160384 RssFile_kB=834496 RssShmem_kB=17847892 VmLck_kB=16 VmPin_kB=0
+pid=1687894 name=sglang::detoken VmRSS_kB=1450188 RssAnon_kB=992348 RssFile_kB=457840 RssShmem_kB=0 VmLck_kB=16 VmPin_kB=0
+pid=1705325 name=python3 VmRSS_kB=698860 RssAnon_kB=394088 RssFile_kB=304756 RssShmem_kB=16 VmLck_kB=0 VmPin_kB=0
+pid=1705577 name=python3 VmRSS_kB=402308 RssAnon_kB=394012 RssFile_kB=8276 RssShmem_kB=20 VmLck_kB=0 VmPin_kB=0
+pid=1705579 name=python3 VmRSS_kB=401980 RssAnon_kB=394012 RssFile_kB=7956 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1705581 name=python3 VmRSS_kB=401980 RssAnon_kB=394012 RssFile_kB=7956 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1705586 name=python3 VmRSS_kB=401980 RssAnon_kB=394012 RssFile_kB=7956 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1705591 name=python3 VmRSS_kB=401984 RssAnon_kB=394016 RssFile_kB=7956 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1705596 name=python3 VmRSS_kB=401984 RssAnon_kB=394016 RssFile_kB=7956 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1705598 name=python3 VmRSS_kB=401984 RssAnon_kB=394016 RssFile_kB=7956 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1705600 name=python3 VmRSS_kB=401984 RssAnon_kB=394016 RssFile_kB=7956 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1705602 name=python3 VmRSS_kB=401984 RssAnon_kB=394016 RssFile_kB=7956 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1705604 name=python3 VmRSS_kB=401984 RssAnon_kB=394016 RssFile_kB=7956 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1705606 name=python3 VmRSS_kB=401984 RssAnon_kB=394016 RssFile_kB=7956 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1705608 name=python3 VmRSS_kB=401988 RssAnon_kB=394020 RssFile_kB=7956 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1705610 name=python3 VmRSS_kB=401988 RssAnon_kB=394020 RssFile_kB=7956 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1705612 name=python3 VmRSS_kB=401988 RssAnon_kB=394020 RssFile_kB=7956 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1705614 name=python3 VmRSS_kB=401988 RssAnon_kB=394020 RssFile_kB=7956 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1705616 name=python3 VmRSS_kB=401992 RssAnon_kB=394024 RssFile_kB=7956 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1705618 name=python3 VmRSS_kB=401992 RssAnon_kB=394024 RssFile_kB=7956 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1705620 name=python3 VmRSS_kB=401992 RssAnon_kB=394024 RssFile_kB=7956 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1705622 name=python3 VmRSS_kB=401992 RssAnon_kB=394024 RssFile_kB=7956 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1705624 name=python3 VmRSS_kB=401992 RssAnon_kB=394024 RssFile_kB=7956 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1705626 name=python3 VmRSS_kB=401992 RssAnon_kB=394024 RssFile_kB=7956 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1705628 name=python3 VmRSS_kB=401992 RssAnon_kB=394024 RssFile_kB=7956 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1705630 name=python3 VmRSS_kB=401992 RssAnon_kB=394024 RssFile_kB=7956 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+pid=1705632 name=python3 VmRSS_kB=401992 RssAnon_kB=394024 RssFile_kB=7956 RssShmem_kB=12 VmLck_kB=0 VmPin_kB=0
+cgroup anon=5.595 GiB
+cgroup file=26.099 GiB
+cgroup shmem=16.973 GiB
+cgroup file_mapped=17.128 GiB
+cgroup unevictable=0.000 GiB
+cgroup memory.current=31.940 GiB memory.peak=32.000 GiB

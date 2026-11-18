@@ -1,0 +1,11 @@
+03:27:03.889 $ env LLMCTL_CLIENTS= ./llmctl up qwen3.5-9b --runtime sglang --replace
+03:27:34.591 qwen3.5-9b on sglang: shipped recipe, measured
+03:27:34.786 clients: none (LLMCTL_CLIENTS is empty)
+03:27:34.177 removing the stopped container 'sglang' from an earlier llmctl run
+03:27:34.194 wrote $HOME/.cache/llmctl/sglang/overlays/qwen3.5-9b: model overlay with 11 links into snapshot a4df85a20fb7 of RedHatAI/Qwen3.5-9B-NVFP4, and generation_config.json with temperature 0.6, top_p 0.95, top_k 20
+03:27:34.210 waiting for qwen3.5-9b to load (up to 900 s)
+03:27:34.224 memory: KV pool 140974 tokens for context 131072; 937 MiB of GPU memory free after the start, at least 768 MiB needed
+03:27:34.238 ready: http://127.0.0.1:30000/v1, served as 'qwen3.5-9b', context 131072, output 16384
+03:27:34.251 evidence: 93.7 tok/s decode with thinking off and 128k context over runs of 664 to 854 tokens, 140,981-token pool, 911 MiB free after ready and 545 MiB after a 124,499-token prompt and the first grammar request, 300 s of sustained load without error, 15,305 MiB GPU peak, smoke test and tool call passed (2026-11-17, research/2026-11-17/sglang-qwen3.5-9b/)
+03:27:34.264 stop with ./llmctl down
+03:27:34.281 exit 0

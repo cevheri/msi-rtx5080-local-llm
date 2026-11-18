@@ -1,0 +1,47 @@
+# Draft llama.cpp recipe for the SGLang work (2026-11-17), an estimate that a measurement lane finalizes.
+# [model] is exact, read from the Hugging Face API on 2026-11-17.
+# The args are those of recipes/llamacpp/groot-19b-a3b.toml (a small-active MoE held whole on the GPU, with the
+# same temperature 0.6, top_p 0.95 and top_k 20 as the vLLM mellum2.1-12b recipe) without --reasoning off,
+# because the vLLM recipe measured this model with thinking on by default.
+# memory_gib is copied from that recipe; gpu_mib is an estimate (see [needs]).
+# Whether b12407's chat template handling parses Mellum's tool calls and reasoning is not run.
+schema = 1
+id = "mellum2.1-12b"
+name = "Mellum2.1 12B-A2.5B Thinking Q6_K"
+aliases = ["mellum"]
+doc = "docs/superpowers/research/2026-11-17-sglang/research-report.md#4-per-model-and-engine"
+opencode = false
+
+[model]
+repo = "JetBrains/Mellum2.1-12B-A2.5B-Thinking-GGUF"
+revision = "4159d684ffdb09ba89dc2a58feb3e75c54eef036"
+# Mellum2.1-12B-A2.5B-Thinking-Q6_K.gguf: SHA-256 12aec619f6a2c82b1ea8998f03665b3b5fc5bb758af97efdf4b1ec7a822b8668, 10,879,834,400 bytes
+files = ["Mellum2.1-12B-A2.5B-Thinking-Q6_K.gguf"]
+size_bytes = 10879834400
+
+[container]
+memory_gib = 16
+
+[server]
+context = 131072
+args = [
+  "-ngl", "all", "-fa", "on", "-np", "1", "--jinja", "--temp", "0.6", "--top-p", "0.95",
+  "--top-k", "20", "--min-p", "0", "--presence-penalty", "0",
+]
+
+[clients]
+output = 16384
+thinking = "toggle"
+default = "on"
+
+[needs]
+# Estimate: 10.13 GiB of weights, 1.75 GiB of f16 KV at 128k on the 7 full-attention layers
+# (7 x 4 KV heads x (128 + 128) x 2 B), 0.06 GiB of sliding-window KV (21 layers, 1,536 cells) and about
+# 0.8 GiB of context and buffers, which matches the report's "128k at about 13 GiB".
+# Replace it with the measured peak minus the desktop's 112 MiB, and add ram_gib from the measurement.
+gpu_mib = 13312
+
+[evidence]
+kind = "estimate"
+summary = "Draft from the SGLang research report, section 4, with the args of the shipped groot-19b-a3b recipe less --reasoning off; not measured on this laptop"
+doc = "docs/superpowers/research/2026-11-17-sglang/research-report.md#4-per-model-and-engine"

@@ -1,0 +1,44 @@
+/sgl-workspace/sglang/python/sglang/launch_server.py:71: UserWarning: 'python -m sglang.launch_server' is still supported, but 'sglang serve' is the recommended entrypoint.
+[2026-11-17 20:37:40] mxfp4 quantization is not fully optimized yet. The speed can be slower than non-quantized models.
+[2026-11-17 20:37:40] Hybrid SWA model detected. architectures=['GptOssForCausalLM']
+[2026-11-17 20:37:42] server_args={'model_path': '/llmctl/model', 'tokenizer_path': '/llmctl/model', 'tokenizer_mode': 'auto', 'tokenizer_backend': 'huggingface', 'tokenizer_worker_num': 1, 'detokenizer_worker_num': 1, 'skip_tokenizer_init': False, 'load_format': 'auto', 'model_loader_extra_config': '{}', 'trust_remote_code': False, 'context_length': 131072, 'is_embedding': False, 'enable_multimodal': None, 'revision': None, 'model_impl': 'auto', 'model_config_parser': 'auto', 'json_model_override_args': '{}', 'dtype': 'bfloat16', 'quantization': None, 'quantization_param_path': None, 'kv_cache_dtype': 'fp8_e4m3', 'enable_fp32_lm_head': False, 'modelopt_quant': None, 'modelopt_checkpoint_restore_path': None, 'modelopt_checkpoint_save_path': None, 'modelopt_export_path': None, 'quantize_and_serve': False, 'rl_quant_profile': None, 'enable_tf32_matmul': False, 'mem_fraction_static': 0.9, 'max_running_requests': 1, 'max_queued_requests': None, 'max_total_tokens': None, 'chunked_prefill_size': 1024, 'prefill_decode_interval': 0, 'enable_dynamic_chunking': False, 'max_prefill_tokens': 16384, 'prefill_max_requests': None, 'schedule_policy': 'fcfs', 'enable_priority_scheduling': False, 'disable_priority_preemption': False, 'default_priority_value': None, 'abort_on_priority_when_disabled': False, 'schedule_low_priority_values_first': False, 'priority_scheduling_preemption_threshold': 10, 'retraction_policy': 'length', 'schedule_conservativeness': 1.0, 'page_size': 1, 'c128_page_size': 16, 'swa_full_tokens_ratio': 0.1, 'disable_hybrid_swa_memory': False, 'radix_eviction_policy': 'lru', 'radix_eviction_policy_config': None, 'prefill_only_disable_kv_cache': False, 'disable_radix_cache': False, 'enable_page_major_kv_layout': False, 'enable_unified_memory': False, 'disable_chunked_prefix_cache': False, 'disable_overlap_schedule': False, 'num_continuous_decode_steps': 1, 'scheduler_recv_interval': 1, 'enable_mixed_chunk': False, 'nccl_port': None, 'dist_timeout': None, 'dist_init
+[2026-11-17 20:37:42] mxfp4 quantization is not fully optimized yet. The speed can be slower than non-quantized models.
+[2026-11-17 20:37:46] Using default HuggingFace chat template with detected content format: string
+[2026-11-17 20:37:46] Auto-detected template features: reasoning_config=ReasoningToggleConfig(toggle_param=None, default_enabled=None, special_case='always', effort_kwarg=None), reasoning_parser=gpt-oss, tool_call_parser=gpt-oss
+[2026-11-17 20:37:47] mxfp4 quantization is not fully optimized yet. The speed can be slower than non-quantized models.
+[2026-11-17 20:37:47] Init parallel begin.
+[2026-11-17 20:37:47] Init parallel ends. elapsed=0.23 s
+[2026-11-17 20:37:51] mxfp4 quantization is not fully optimized yet. The speed can be slower than non-quantized models.
+[2026-11-17 20:37:51] Memory baseline taken. mem usage=0.00 GB
+[2026-11-17 20:37:53] Load weight begin. avail mem=15.06 GB
+[2026-11-17 20:38:14] Using FP8 KV cache but no scaling factors provided. Defaulting to scaling factors of 1.0.
+[2026-11-17 20:38:14] Load weight end. elapsed=20.77 s, type=GptOssForCausalLM, quant=mxfp4, avail mem=3.62 GB, mem usage=11.44 GB.
+[2026-11-17 20:38:18] Full KV Cache is allocated. dtype: torch.float8_e4m3fn, #tokens: 169835, K size: 0.97 GB, V size: 0.97 GB
+[2026-11-17 20:38:18] SWA KV Cache is allocated. dtype: torch.float8_e4m3fn, #tokens: 16983, K size: 0.10 GB, V size: 0.10 GB
+[2026-11-17 20:38:18] SWAKVPool mem usage: 2.14 GB, swa size: 16983, full size: 169835
+[2026-11-17 20:38:18] Memory pool end. avail mem=1.56 GB
+[2026-11-17 20:38:18] Disable prefill CUDA graph because cuda_graph_config resolved prefill.backend='disabled' (e.g. via --cuda-graph-backend-prefill=disabled or auto-disable rules).
+[2026-11-17 20:38:18] Capture target decode CUDA graph begin. backend=full, num_tokens_per_req=1, avail mem=1.52 GB
+[2026-11-17 20:38:19] Capture target decode CUDA graph end. bs=[1], elapsed=1.75 s, mem usage=0.06 GB, avail mem=1.46 GB.
+[2026-11-17 20:38:19] max_total_num_tokens=169835, chunked_prefill_size=1024, max_prefill_tokens=16384, max_running_requests=1, context_len=131072, available_gpu_mem=1.46 GB
+[2026-11-17 20:38:19] Init Unified Radix Cache. Components: (<ComponentType.FULL: 0>, <ComponentType.SWA: 1>). Tree Core: RustUnifiedTreeCore
+[2026-11-17 20:38:19] Tree cache initialized: source=default impl=UnifiedRadixCache hybrid_swa=True hybrid_ssm=False hicache_attached=False
+[2026-11-17 20:38:20] Engine startup timings (s): load_weight=20.77, kv_cache_allocation=0.29, scheduler_e2e=32.76, cuda_graph={prefill=0.00, decode=1.75, target_verify=0.00, draft_prefill=0.00, draft_decode=0.00, draft_extend=0.00}, tokenizer_e2e=38.18
+[2026-11-17 20:38:20] Using default chat sampling params from model generation config: {'temperature': 1.0, 'top_p': 1.0}
+[2026-11-17 20:38:20] INFO:     Uvicorn running on http://0.0.0.0:30000 (Press CTRL+C to quit)
+[2026-11-17 20:38:20] INFO:     172.17.0.1:42500 - "GET /ready HTTP/1.1" 503 Service Unavailable
+[2026-11-17 20:38:21] INFO:     172.17.0.1:42520 - "GET /ready HTTP/1.1" 503 Service Unavailable
+[2026-11-17 20:38:21] INFO:     172.17.0.1:42550 - "GET /ready HTTP/1.1" 503 Service Unavailable
+[2026-11-17 20:38:22] The server is fired up and ready to roll!
+[cut] HTTP access lines by method, path and status: GET /health 200 x1, GET /health_generate 200 x1, GET /model_info 200 x1, GET /ready 200 x2, GET /ready 503 x3, GET /server_info 200 x8, GET /v1/models 200 x13, POST /flush_cache 200 x1, POST /freeze_gc 200 x1, POST /generate 200 x1, POST /v1/chat/completions 200 x116, POST /v1/chat/completions 400 x1, POST /v1/tokenize 200 x6
+[cut] 1678 batch lines; first 3 and last 6:
+[2026-11-17 20:38:22] Prefill batch, #new-seq: 1, #new-token: 6, #cached-token: 0, full token usage: 0.00, swa token usage: 0.00, #running-req: 0, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 2.84
+[2026-11-17 20:38:24] Prefill batch, #new-seq: 1, #new-token: 1024, #cached-token: 0, full token usage: 0.01, swa token usage: 0.07, #running-req: 0, #queue-req: 0, #pending-token: 123433, cuda graph: False, input throughput (token/s): 506.97
+[2026-11-17 20:38:24] Prefill batch, #new-seq: 1, #new-token: 1024, #cached-token: 0, full token usage: 0.02, swa token usage: 0.07, #running-req: 0, #queue-req: 0, #pending-token: 122409, cuda graph: False, input throughput (token/s): 6273.30
+...
+[2026-11-17 20:46:06] Prefill batch, #new-seq: 1, #new-token: 1024, #cached-token: 0, full token usage: 0.72, swa token usage: 0.07, #running-req: 0, #queue-req: 0, #pending-token: 3564, cuda graph: False, input throughput (token/s): 1824.48
+[2026-11-17 20:46:07] Prefill batch, #new-seq: 1, #new-token: 1024, #cached-token: 0, full token usage: 0.72, swa token usage: 0.07, #running-req: 0, #queue-req: 0, #pending-token: 2540, cuda graph: False, input throughput (token/s): 1821.59
+[2026-11-17 20:46:07] Prefill batch, #new-seq: 1, #new-token: 1024, #cached-token: 0, full token usage: 0.73, swa token usage: 0.07, #running-req: 0, #queue-req: 0, #pending-token: 1516, cuda graph: False, input throughput (token/s): 1808.08
+[2026-11-17 20:46:08] Prefill batch, #new-seq: 1, #new-token: 1024, #cached-token: 0, full token usage: 0.73, swa token usage: 0.04, #running-req: 0, #queue-req: 0, #pending-token: 492, cuda graph: False, input throughput (token/s): 2908.65
+[2026-11-17 20:46:08] Prefill batch, #new-seq: 1, #new-token: 492, #cached-token: 0, full token usage: 0.73, swa token usage: 0.01, #running-req: 0, #queue-req: 0, #pending-token: 0, cuda graph: False, input throughput (token/s): 188063.04
+[2026-11-17 20:46:08] Decode batch, #running-req: 1, #full token: 124468, full token usage: 0.73, #swa token: 135, swa token usage: 0.01, cuda graph: True, gen throughput (token/s): 0.89, #queue-req: 0

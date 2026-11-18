@@ -1,0 +1,3 @@
+21:07:36 chain n1 stopped in its wait loop before any start, to queue the Qwen3.6 cap and cold starts first
+21:16:33 chain n1 rewritten before it ran: the Gemma 4 26B-A4B sweep (K 56, 64, 72) follows the Nemotron sweep
+21:35:57 chain n1 (and chain q4 that ran it) stopped by hand during the Gemma K 64 start: the K 56 start failed while loading (gptq_marlin_repack: size_n = 8608 is not divisible by tile_n_size = 64), so K 64 and K 72 would fail the same way

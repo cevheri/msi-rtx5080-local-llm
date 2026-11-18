@@ -24,6 +24,7 @@ from launcher.tests.fakes import REPO, FakeHost, fail, http, ok
 from launcher.tests.test_kimi_config import OWNER_TEXT
 from launcher.tests.ops_fixture import managed_line
 from launcher.tests.regen_golden import target_for
+from launcher.tests.sglang_fixture import fixture_catalog, gpu_line, recipes_with_sglang, registered
 
 FIXTURES = REPO / "launcher/tests/fixtures/e2e"
 
@@ -565,17 +566,18 @@ class PlanTest(unittest.TestCase):
             ("./llmctl", "up", "qwen3.8-27b", "--replace"),
             ("./llmctl", "up", "k2-horizon-7b", "--replace"),
             ("./llmctl", "up", "gpt-oss-20b", "--runtime", "vllm", "--replace"),
+            ("./llmctl", "up", "qwen3.5-9b", "--runtime", "sglang", "--replace"),
             ("./llmctl", "up", "qwen3.6-35b-a3b", "--replace"),
         ])
 
     def test_extended_matrix_ends_on_default_model(self):
-        self.assertEqual(len(e2e.EXTENDED_MATRIX), 12)
-        self.assertEqual(e2e.EXTENDED_MATRIX[:3], e2e.DEFAULT_MATRIX[:3])
-        self.assertEqual(e2e.EXTENDED_MATRIX[3:11], tuple((name, "llamacpp") for name in (
+        self.assertEqual(len(e2e.EXTENDED_MATRIX), 13)
+        self.assertEqual(e2e.EXTENDED_MATRIX[:4], e2e.DEFAULT_MATRIX[:4])
+        self.assertEqual(e2e.EXTENDED_MATRIX[4:12], tuple((name, "llamacpp") for name in (
             "nemotron-3.5-bolt", "qwen3-coder-next", "deepseek-r1-0528-qwen3-8b", "gemma-4-26b-a4b",
             "nemotron-3.5-lightning", "groot-19b-a3b", "k2-horizon-mova-36b", "gpt-oss-20b")))
         ups = up_steps(self.plan(e2e.EXTENDED_MATRIX))
-        self.assertEqual(len(ups), 12)
+        self.assertEqual(len(ups), 13)
         self.assertEqual(ups[-1], ("./llmctl", "up", "qwen3.6-35b-a3b", "--replace"))
 
     def test_steps_respect_safety_rules(self):
@@ -585,7 +587,12 @@ class PlanTest(unittest.TestCase):
                 self.assertNotIn("--set-default", step.argv)
                 self.assertNotIn("pull", step.argv)
                 self.assertNotEqual(step.argv[:2], ("hermes", "gateway"))
-                self.assertEqual(step.timeout_s, 900)
+                if step.argv[:2] == ("./llmctl", "up"):
+                    runtime = step.argv[step.argv.index("--runtime") + 1] if "--runtime" in step.argv else "llamacpp"
+                    wanted = max(900, self.catalog.runtimes[runtime].runtime.start_timeout_s + 120)
+                else:
+                    wanted = 900
+                self.assertEqual(step.timeout_s, wanted, step.name)
             client_steps = [step for step in steps if step.argv and step.argv[0] in ("opencode", "hermes", "pi")]
             self.assertTrue(client_steps)
             folders = [step.cwd for step in client_steps]
@@ -609,7 +616,8 @@ class PlanTest(unittest.TestCase):
         self.assertEqual(argvs[-1], ("./llmctl", "down"))
 
     def test_session_steps(self):
-        steps = [step for step in self.plan() if step.name.startswith("04-qwen3.6-35b-a3b-llamacpp ")]
+        prefix = f"{len(e2e.DEFAULT_MATRIX):02d}-qwen3.6-35b-a3b-llamacpp"
+        steps = [step for step in self.plan() if step.name.startswith(prefix + " ")]
         argvs = [step.argv for step in steps]
         self.assertIn(("opencode", "run", "--standalone", "--archived", "--auto", "--format", "json",
                        "--model", "llamacpp-docker/qwen3.6-35b-a3b", e2e.TASK), argvs)
@@ -733,7 +741,7 @@ class PlanTest(unittest.TestCase):
     DSH_WEB = ("dsh", "web", "--port", "3182", "--no-open")
 
     def test_dsh_steps_follow_pi(self):
-        prefix = "04-qwen3.6-35b-a3b-llamacpp"
+        prefix = f"{len(e2e.DEFAULT_MATRIX):02d}-qwen3.6-35b-a3b-llamacpp"
         steps = [step for step in self.plan(dsh=True) if step.name.startswith(prefix + " ")]
         self.assertEqual([step.name.split(" ", 1)[1] for step in steps[-5:]],
                          ["pi", "dsh-config", "dsh-headless", "dsh-web", "probes"])
@@ -823,19 +831,37 @@ class PlanTest(unittest.TestCase):
 
     def test_all_matrix_runs_every_recipe(self):
         matrix = e2e.ALL_MATRIX
-        self.assertEqual(len(matrix), 19)
+        self.assertEqual(len(matrix), 29)
         shipped = {(recipe_id, runtime) for runtime, entry in self.catalog.runtimes.items()
                    for recipe_id in entry.recipes}
         self.assertEqual(set(matrix), shipped)
         self.assertEqual(len(set(matrix)), len(matrix))
         self.assertEqual(matrix[0], ("qwen3.8-27b", "llamacpp"))
-        self.assertEqual({runtime for _, runtime in matrix[:10]}, {"llamacpp"})
-        self.assertEqual(matrix[10], ("gpt-oss-20b", "vllm"))
-        self.assertEqual({runtime for _, runtime in matrix[10:18]}, {"vllm"})
         self.assertEqual(matrix[-1], ("qwen3.6-35b-a3b", "llamacpp"))
+        # One block per runtime in the catalog's order, sized from the catalog; the default model ends the matrix.
+        start = 0
+        for runtime, entry in self.catalog.runtimes.items():
+            size = len(entry.recipes) - (runtime == "llamacpp")
+            with self.subTest(runtime=runtime):
+                self.assertEqual({name for name, _ in matrix[start:start + size]}, set(entry.recipes) - (
+                    {"qwen3.6-35b-a3b"} if runtime == "llamacpp" else set()))
+                self.assertEqual({r for _, r in matrix[start:start + size]}, {runtime})
+            start += size
+        self.assertEqual(start, len(matrix) - 1)
+        # The vLLM block starts after the llama.cpp recipes less the default model, which ends the matrix.
+        self.assertEqual(matrix[len(self.catalog.runtimes["llamacpp"].recipes) - 1], ("gpt-oss-20b", "vllm"))
+        # The four GGUF recipes follow the ten llama.cpp recipes measured first, before the default model.
+        self.assertEqual([name for name, runtime in matrix if runtime == "llamacpp"][-5:-1],
+                         ["qwen3.5-9b", "gemma-4-12b", "gemma-4-e4b", "mellum2.1-12b"])
+        self.assertEqual(matrix[len(matrix) - 1 - len(self.catalog.runtimes["sglang"].recipes)],
+                         ("qwen3.5-9b", "sglang"))
+        # The wave 2 Gemma recipes follow gpt-oss-20b in the SGLang block, and the wave 3 Paged Experts recipe them.
+        self.assertEqual([name for name, runtime in matrix if runtime == "sglang"],
+                         ["qwen3.5-9b", "k2-horizon-7b", "gpt-oss-20b", "gemma-4-12b", "gemma-4-e4b",
+                          "qwen3.6-35b-a3b"])
         self.assertIs(e2e.MATRICES["all"], matrix)
         self.assertEqual(e2e.build_parser().parse_args(["--out", "x", "--matrix", "all"]).matrix, "all")
-        self.assertEqual(len(up_steps(self.plan(matrix))), 19)
+        self.assertEqual(len(up_steps(self.plan(matrix))), 29)
 
     def test_chat_only_opencode_step(self):
         target = target_for("deepseek-r1-0528-qwen3-8b", "llamacpp", REPO / "recipes")
@@ -850,7 +876,7 @@ class PlanTest(unittest.TestCase):
     KIMI_TASK = ("kimi", "-p", e2e.TASK, "--output-format", "stream-json")
 
     def test_kimi_steps_follow_dsh_or_pi(self):
-        prefix = "04-qwen3.6-35b-a3b-llamacpp"
+        prefix = f"{len(e2e.DEFAULT_MATRIX):02d}-qwen3.6-35b-a3b-llamacpp"
         for kwargs, before in (({"dsh": True, "kimi": True}, "dsh-web"), ({"kimi": True}, "pi")):
             with self.subTest(**kwargs):
                 steps = [step for step in self.plan(**kwargs) if step.name.startswith(prefix + " ")]
@@ -944,6 +970,200 @@ class PlanTest(unittest.TestCase):
         self.assertIn("unset LLMCTL_CLIENTS: the e2e checks all five clients, or fewer with --skip-dsh and "
                       "--skip-kimi", written)
         self.assertFalse(Path("/nonexistent/never-created").exists())
+
+
+SGLANG_CHAT = "http://127.0.0.1:30000/v1/chat/completions"
+SGLANG_READY = "http://127.0.0.1:30000/ready"
+
+
+class SglangDriverTest(unittest.TestCase):
+    """The e2e driver with the fixture SGLang recipes registered (spec D15)."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+        patcher = registered()
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        self.catalog = fixture_catalog(self.root / "catalog")
+        self.recipes = recipes_with_sglang(self.root / "targets")
+        self.out = self.root / "out"
+        (self.out / "records").mkdir(parents=True)
+        self.host = FakeHost(env={})
+        self.free = iter(range(15000, 14000, -10))
+        self.host.on(("nvidia-smi",), lambda argv: gpu_line(next(self.free)))
+        self.bodies: list[dict] = []
+
+    def target(self, recipe_id, runtime="sglang"):
+        return target_for(recipe_id, runtime, self.recipes)
+
+    def run_long_grammar(self, recipe_id="qwen3.5-9b", **answers):
+        run = self.long_grammar_run(**answers)
+        step = e2e.Step(f"01-{recipe_id}-sglang long-grammar", e2e.IN_PROCESS, ".", 900)
+        return run.long_grammar(step, self.target(recipe_id))
+
+    def long_grammar_run(self, *, calibration=None, long=None, title=None, tool=None, ready=None):
+        """A run whose fake routes answer the five long-grammar requests."""
+        title_reply = {"choices": [{"message": {"content": json.dumps({"title": "Adding numbers"})}}],
+                       "usage": {"prompt_tokens": 30}}
+        answers = {
+            "calibration": calibration or http(200, json.dumps({"usage": {"prompt_tokens": 2000}}).encode()),
+            "long": long or http(200, json.dumps({"usage": {"prompt_tokens": 117000}}).encode()),
+            "title": title or http(200, json.dumps(title_reply).encode()),
+            "forced-tool": tool or http(200, json.dumps({"choices": [{"finish_reason": "stop", "message": {
+                "content": "It is sunny."}}], "usage": {"prompt_tokens": 200}}).encode()),
+        }
+
+        def answer(method, url, headers, body):
+            request = json.loads(body)
+            self.bodies.append(request)
+            if "response_format" in request:
+                return answers["title"]
+            if "tool_choice" in request:
+                return answers["forced-tool"]
+            return answers["calibration"] if request["max_tokens"] == 1 else answers["long"]
+
+        self.host.on_http("POST", SGLANG_CHAT, answer)
+        self.host.on_http("GET", SGLANG_READY, ready or http(200, b""))
+        return e2e._Run(self.out, None, self.host, {"HOME": str(self.root)}, self.root)
+
+    def records(self) -> list[tuple[str, dict]]:
+        return [(path.name, json.loads(path.read_text(encoding="utf-8")))
+                for path in sorted((self.out / "records").iterdir())]
+
+    def test_up_step_outlasts_llmctl_timeout(self):
+        matrix = (("gpt-oss-20b", "llamacpp"), ("gpt-oss-20b", "vllm"), ("qwen3.5-9b", "sglang"))
+        steps = e2e.plan_steps(self.catalog, matrix, round_trip=True, keep_running=False)
+        ups = {step.name: step.timeout_s for step in steps if step.argv[:2] == ("./llmctl", "up")}
+        self.assertEqual(ups, {"01-gpt-oss-20b-llamacpp up": 900, "02-gpt-oss-20b-vllm up": 1020,
+                               "03-qwen3.5-9b-sglang up": 1020, "round-trip up": 900})
+        self.assertEqual({step.timeout_s for step in steps if step.argv[:2] != ("./llmctl", "up")}, {900})
+
+    def test_long_grammar_step_follows_status(self):
+        matrix = (("qwen3.5-9b", "sglang"), ("gpt-oss-20b", "llamacpp"), ("gpt-oss-20b", "vllm"))
+        steps = e2e.plan_steps(self.catalog, matrix, round_trip=False, keep_running=False)
+        names = [step.name for step in steps]
+        self.assertEqual(names[:4], ["01-qwen3.5-9b-sglang up", "01-qwen3.5-9b-sglang status",
+                                     "01-qwen3.5-9b-sglang long-grammar", "01-qwen3.5-9b-sglang config"])
+        grammar = steps[2]
+        self.assertEqual((grammar.argv, grammar.cwd, grammar.timeout_s), (e2e.IN_PROCESS, ".", 900))
+        self.assertEqual([name for name in names if name.endswith(" long-grammar")],
+                         ["01-qwen3.5-9b-sglang long-grammar"])
+
+    def test_probe_d_on_sglang(self):
+        qwen = e2e.probe_bodies(self.target("qwen3.5-9b"))
+        self.assertIn("D", qwen)
+        self.assertEqual(qwen["D"]["model"], "qwen3.5-9b")
+        self.assertNotIn("D", e2e.probe_bodies(self.target("qwen3.5-9b", "vllm")))
+        self.assertIn("E", e2e.probe_bodies(self.target("k2-horizon-7b", "llamacpp")))
+        k2 = e2e.probe_bodies(self.target("k2-horizon-7b"))
+        self.assertIn("D", k2)
+        self.assertNotIn("E", k2)
+        self.assertNotIn("B", e2e.probe_bodies(self.target("deepseek-r1-0528-qwen3-8b")))
+        self.assertEqual(e2e.probe_bodies(self.target("deepseek-r1-0528-qwen3-8b"))["D"]["model"],
+                         "deepseek-r1-0528-qwen3-8b")
+
+    def test_long_grammar_copies(self):
+        self.assertEqual(e2e.long_grammar_copies(131072, 2000), 1179)
+        prompt = e2e.long_prompt("line", 3)
+        self.assertTrue(prompt.startswith("line\n"))
+        paragraph = prompt[len("line\n"):][:len(prompt[len("line\n"):]) // 3]
+        self.assertTrue(paragraph)
+        self.assertEqual(prompt, "line\n" + paragraph * 3)
+        self.assertEqual(e2e.long_prompt("line", 0), "line\n")
+
+    def test_long_grammar_requests_and_judging(self):
+        self.assertEqual(self.run_long_grammar(), [])
+        calibration, long, title, tool = self.bodies
+        paragraph = e2e.long_prompt("", 1)[1:]
+        for body, copies, max_tokens in ((calibration, 20, 1), (long, 1179, 32)):
+            self.assertEqual(body["model"], "qwen3.5-9b")
+            self.assertEqual(body["max_tokens"], max_tokens)
+            text = body["messages"][0]["content"]
+            line, rest = text.split("\n", 1)
+            self.assertRegex(line, "^[0-9a-f]{32}$")
+            self.assertEqual(rest, paragraph * copies)
+        self.assertNotEqual(calibration["messages"][0]["content"].split("\n")[0],
+                            long["messages"][0]["content"].split("\n")[0])
+        self.assertEqual(title, e2e.probe_bodies(self.target("qwen3.5-9b"))["A"])
+        self.assertEqual(tool["tools"], [e2e.WEATHER_TOOL])
+        self.assertEqual((tool["tool_choice"], tool["max_tokens"], tool["model"]), ("required", 256, "qwen3.5-9b"))
+        self.assertEqual(self.host.http_calls[-1][:2], ("GET", SGLANG_READY))
+        records = self.records()
+        self.assertEqual([name.split("long-grammar-", 1)[1] for name, _ in records],
+                         ["calibration", "long", "title", "forced-tool", "ready"])
+        for name, record in records:
+            with self.subTest(record=name):
+                self.assertLessEqual({"status", "prompt_tokens", "seconds", "free_mib_before", "free_mib_after"},
+                                     set(record))
+                self.assertNotIn("content", record)
+                self.assertEqual(record["status"], 200)
+                self.assertIsInstance(record["free_mib_before"], int)
+                self.assertIsInstance(record["free_mib_after"], int)
+        self.assertEqual([record["prompt_tokens"] for _, record in records], [2000, 117000, 30, 200, None])
+        text = "".join(path.read_text(encoding="utf-8") for path in (self.out / "records").iterdir())
+        self.assertNotIn(paragraph.strip().splitlines()[0], text)
+
+    def test_run_step_dispatches_long_grammar(self):
+        run = self.long_grammar_run(title=http(500, b"boom"))
+        step = e2e.Step("01-qwen3.5-9b-sglang long-grammar", e2e.IN_PROCESS, ".", 900)
+        reasons, _ = run.run_step(step, self.target("qwen3.5-9b"))
+        self.assertEqual(reasons, ["long-grammar title: status 500"])
+        self.assertEqual([name.split("long-grammar-", 1)[1] for name, _ in self.records()],
+                         ["calibration", "long", "title", "forced-tool", "ready"])
+
+    def test_long_grammar_failures(self):
+        self.assertEqual(self.run_long_grammar(title=http(500, b"boom")), ["long-grammar title: status 500"])
+        unparsable = json.dumps({"choices": [{"message": {"content": "Adding numbers"}}]}).encode()
+        self.assertEqual(self.run_long_grammar(title=http(200, unparsable)), ["long-grammar title: title_ok False"])
+        self.assertEqual(self.run_long_grammar(ready=http(503, b"")), [e2e.SERVER_STOPPED])
+        self.assertEqual(self.run_long_grammar(ready=ConnectionRefusedError("refused")), [e2e.SERVER_STOPPED])
+        self.assertEqual(e2e.SERVER_STOPPED,
+                         "the server stopped answering after the long-prompt-then-grammar requests")
+
+    def test_long_grammar_calibration_without_prompt_tokens_skips_to_ready(self):
+        reasons = self.run_long_grammar(calibration=http(200, b"{}"))
+        self.assertEqual(reasons, ["long-grammar calibration: no usage.prompt_tokens"])
+        self.assertEqual(len(self.bodies), 1)
+        self.assertEqual(self.host.http_calls[-1][:2], ("GET", SGLANG_READY))
+        reasons = self.run_long_grammar(calibration=http(500, b""), ready=http(503, b""))
+        self.assertEqual(reasons, ["long-grammar calibration: status 500", e2e.SERVER_STOPPED])
+
+    def test_long_grammar_survives_a_failing_nvidia_smi(self):
+        self.host.on(("nvidia-smi",), fail("NVIDIA-SMI has failed"))
+        self.assertEqual(self.run_long_grammar(), [])
+        for name, record in self.records():
+            with self.subTest(record=name):
+                self.assertIsNone(record["free_mib_before"])
+                self.assertIsNone(record["free_mib_after"])
+                self.assertIn("NVIDIA-SMI has failed", record["free_mib_before_error"])
+
+    def test_chat_only_sglang_gets_no_forced_tool_request(self):
+        self.assertEqual(self.run_long_grammar("deepseek-r1-0528-qwen3-8b"), [])
+        self.assertEqual(len(self.host.http_calls), 4)
+        self.assertFalse([body for body in self.bodies if "tools" in body])
+        self.assertEqual([name.split("long-grammar-", 1)[1] for name, _ in self.records()],
+                         ["calibration", "long", "title", "ready"])
+
+    def test_matrix_stops_after_a_dead_server(self):
+        matrix = (("qwen3.5-9b", "sglang"), ("k2-horizon-7b", "sglang"))
+        steps = e2e.plan_steps(self.catalog, matrix, round_trip=False, keep_running=False)
+        run = e2e._Run(self.out, self.catalog, self.host, {"HOME": str(self.root)}, self.root)
+        ran = []
+
+        def run_step(step, target):
+            ran.append(step.name)
+            dead = step.name == "01-qwen3.5-9b-sglang long-grammar"
+            return ([e2e.SERVER_STOPPED] if dead else []), 0.0
+
+        with unittest.mock.patch.object(run, "run_step", side_effect=run_step):
+            e2e._run_matrix(run, steps, self.catalog, matrix)
+        self.assertEqual(ran[:3], ["01-qwen3.5-9b-sglang up", "01-qwen3.5-9b-sglang status",
+                                   "01-qwen3.5-9b-sglang long-grammar"])
+        self.assertFalse([name for name in ran[3:] if name.startswith("01-")])
+        self.assertEqual([name for name in ran if name.startswith("02-")],
+                         [step.name for step in steps if step.name.startswith("02-")])
 
 
 class RestoreTest(unittest.TestCase):

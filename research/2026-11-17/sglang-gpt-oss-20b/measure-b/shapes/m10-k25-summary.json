@@ -1,0 +1,216 @@
+{
+ "run": "m10-k25",
+ "ready": {
+  "exit": "ready",
+  "ready_seen_s": 55.19,
+  "served_listed_s": 54.06,
+  "memory_usage": {
+   "weight": 11.779,
+   "kvcache": 1.796,
+   "startup_available": 1.445,
+   "token_capacity": 142701,
+   "token_capacity_swa": 14270,
+   "graph": {
+    "prefill": 0.0,
+    "decode": 0.059,
+    "target_verify": 0.0,
+    "draft_prefill": 0.0,
+    "draft_decode": 0.0,
+    "draft_extend": 0.0
+   }
+  },
+  "max_total_num_tokens": 142701,
+  "free_mib_right_after_ready": 1327,
+  "cgroup_at_ready": {
+   "anon_gib": 4.772,
+   "file_gib": 27.032,
+   "kernel_gib": 0.192,
+   "shmem_gib": 19.189,
+   "file_mapped_gib": 19.21,
+   "inactive_file_gib": 2.386,
+   "active_file_gib": 5.457,
+   "unevictable_gib": 0.0,
+   "current_gib": 31.999,
+   "peak_gib": 32.0
+  },
+  "first_200_s": {
+   "/ready": 55.06,
+   "/v1/models": 54.06,
+   "/server_info": 54.06
+  }
+ },
+ "ready_line_s": 54.6,
+ "log_lines": [
+  "[2026-11-17 19:34:23] mxfp4 quantization is not fully optimized yet. The speed can be slower than non-quantized models.",
+  "[2026-11-17 19:34:25] mxfp4 quantization is not fully optimized yet. The speed can be slower than non-quantized models.",
+  "[2026-11-17 19:34:29] Using default HuggingFace chat template with detected content format: string",
+  "[2026-11-17 19:34:29] Auto-detected template features: reasoning_config=ReasoningToggleConfig(toggle_param=None, default_enabled=None, special_case='always', effort_kwarg=None), reasoning_parser=gpt-oss, tool_call_parser=gpt-oss",
+  "[2026-11-17 19:34:30] mxfp4 quantization is not fully optimized yet. The speed can be slower than non-quantized models.",
+  "[2026-11-17 19:34:34] mxfp4 quantization is not fully optimized yet. The speed can be slower than non-quantized models.",
+  "[2026-11-17 19:34:58] Load weight end. elapsed=22.18 s, type=GptOssForCausalLM, quant=mxfp4, avail mem=3.28 GB, mem usage=11.78 GB.",
+  "[2026-11-17 19:35:02] Full KV Cache is allocated. dtype: torch.float8_e4m3fn, #tokens: 142701, K size: 0.82 GB, V size: 0.82 GB",
+  "[2026-11-17 19:35:02] SWA KV Cache is allocated. dtype: torch.float8_e4m3fn, #tokens: 14270, K size: 0.08 GB, V size: 0.08 GB",
+  "[2026-11-17 19:35:02] SWAKVPool mem usage: 1.80 GB, swa size: 14270, full size: 142701",
+  "[2026-11-17 19:35:02] Memory pool end. avail mem=1.55 GB",
+  "[2026-11-17 19:35:02] Capture target decode CUDA graph begin. backend=full, num_tokens_per_req=1, avail mem=1.50 GB",
+  "[2026-11-17 19:35:04] Capture target decode CUDA graph end. bs=[1], elapsed=1.56 s, mem usage=0.06 GB, avail mem=1.45 GB.",
+  "[2026-11-17 19:35:04] max_total_num_tokens=142701, chunked_prefill_size=1024, max_prefill_tokens=16384, max_running_requests=1, context_len=131072, available_gpu_mem=1.45 GB",
+  "[2026-11-17 19:35:04] Using default chat sampling params from model generation config: {'temperature': 1.0, 'top_p': 1.0}",
+  "[2026-11-17 19:35:06] The server is fired up and ready to roll!"
+ ],
+ "events": [
+  {
+   "event": "flush_cache",
+   "status": 200,
+   "used_mib": 14516,
+   "free_mib": 1327,
+   "total_mib": 16303
+  },
+  {
+   "event": "end",
+   "result": "completed",
+   "container": "running exit=0 oom=false",
+   "cgroup": {
+    "anon_gib": 4.946,
+    "file_gib": 26.798,
+    "shmem_gib": 19.189,
+    "unevictable_gib": 0.0,
+    "peak_gib": 32.0
+   },
+   "memory_usage": {
+    "weight": 11.779,
+    "kvcache": 1.796,
+    "startup_available": 1.445,
+    "token_capacity": 142701,
+    "token_capacity_swa": 14270,
+    "graph": {
+     "prefill": 0.0,
+     "decode": 0.059,
+     "target_verify": 0.0,
+     "draft_prefill": 0.0,
+     "draft_decode": 0.0,
+     "draft_extend": 0.0
+    }
+   },
+   "used_mib": 14868,
+   "free_mib": 975,
+   "total_mib": 16303
+  }
+ ],
+ "phases": [
+  {
+   "step": "probe",
+   "rc": 0,
+   "seconds": 44.7,
+   "free_mib_after": 975,
+   "cgroup": {
+    "anon_gib": 4.946,
+    "file_gib": 26.798,
+    "shmem_gib": 19.189,
+    "unevictable_gib": 0.0,
+    "peak_gib": 32.0
+   }
+  }
+ ],
+ "requests": [],
+ "probe": {
+  "decode_tok_s_median": 130.0,
+  "decode_runs": [
+   {
+    "tok_s": 131.2,
+    "completion_tokens": 1500
+   },
+   {
+    "tok_s": 130.0,
+    "completion_tokens": 1500
+   },
+   {
+    "tok_s": 129.3,
+    "completion_tokens": 1500
+   }
+  ],
+  "long": [
+   {
+    "prompt_tokens": 8058,
+    "ttft_first_s": 1.746,
+    "ttft_repeat_s": 0.061
+   },
+   {
+    "prompt_tokens": 30003,
+    "ttft_first_s": 4.835,
+    "ttft_repeat_s": 0.079
+   }
+  ],
+  "ok_test": {
+   "content": "OK",
+   "reasoning_chars": 218,
+   "finish": "stop",
+   "usage": {
+    "prompt_tokens": 72,
+    "total_tokens": 133,
+    "completion_tokens": 61,
+    "prompt_tokens_details": null,
+    "reasoning_tokens": 54,
+    "completion_tokens_details": {
+     "reasoning_tokens": 54
+    }
+   },
+   "seconds": 0.59
+  },
+  "tool_test": {
+   "finish": "tool_calls",
+   "calls": [
+    {
+     "name": "get_weather",
+     "arguments": "{\"city\": \"Paris\"}"
+    }
+   ],
+   "content": "",
+   "seconds": 0.4
+  }
+ },
+ "trace": {
+  "gpu_used_peak_mib": 14868.0,
+  "gpu_free_min_mib": 975.0,
+  "power_max_w": 144.52,
+  "temp_max_c": 66.0,
+  "cg_anon_peak_gib": 14.093,
+  "cg_shmem_peak_gib": 19.189,
+  "cg_file_peak_gib": 27.367,
+  "cg_peak_gib": 32.0,
+  "cg_unevictable_peak_gib": 0.0,
+  "samples": 101
+ },
+ "state.txt": [
+  "running exit=0 oom=false started=2026-11-17T19:34:11.428920007Z finished=0001-01-01T00:00:00Z"
+ ],
+ "meta": [
+  "gpu_used_before_mib=112",
+  "cmd=m10-k25.sh",
+  "docker_run_exit=0",
+  "poller_exit=0",
+  "seq_exit=0"
+ ],
+ "procmem.txt": [
+  "== at ready 19:35:06",
+  "pid=1523703 name=python3 VmRSS_kB=1749488 RssAnon_kB=1264624 RssFile_kB=465904 RssShmem_kB=18960 VmLck_kB=16 VmPin_kB=0",
+  "pid=1525099 name=sglang::schedul VmRSS_kB=23435716 RssAnon_kB=2568224 RssFile_kB=682832 RssShmem_kB=20184660 VmLck_kB=16 VmPin_kB=0",
+  "pid=1525100 name=sglang::detoken VmRSS_kB=1617308 RssAnon_kB=1164664 RssFile_kB=452644 RssShmem_kB=0 VmLck_kB=16 VmPin_kB=0",
+  "cgroup anon=4.772 GiB",
+  "cgroup file=27.032 GiB",
+  "cgroup shmem=19.189 GiB",
+  "cgroup file_mapped=19.210 GiB",
+  "cgroup unevictable=0.000 GiB",
+  "cgroup memory.current=31.999 GiB memory.peak=32.000 GiB",
+  "== at the end 19:35:51",
+  "pid=1523703 name=python3 VmRSS_kB=1822700 RssAnon_kB=1337808 RssFile_kB=465932 RssShmem_kB=18960 VmLck_kB=16 VmPin_kB=0",
+  "pid=1525099 name=sglang::schedul VmRSS_kB=23551628 RssAnon_kB=2677276 RssFile_kB=689692 RssShmem_kB=20184660 VmLck_kB=16 VmPin_kB=0",
+  "pid=1525100 name=sglang::detoken VmRSS_kB=1617520 RssAnon_kB=1164876 RssFile_kB=452644 RssShmem_kB=0 VmLck_kB=16 VmPin_kB=0",
+  "cgroup anon=4.946 GiB",
+  "cgroup file=26.798 GiB",
+  "cgroup shmem=19.189 GiB",
+  "cgroup file_mapped=19.213 GiB",
+  "cgroup unevictable=0.000 GiB",
+  "cgroup memory.current=31.938 GiB memory.peak=32.000 GiB"
+ ]
+}

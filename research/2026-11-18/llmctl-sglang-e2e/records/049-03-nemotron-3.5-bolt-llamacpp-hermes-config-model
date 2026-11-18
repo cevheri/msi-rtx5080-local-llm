@@ -1,0 +1,8 @@
+{
+  "command": "hermes -p llmctl config get model --json",
+  "cwd": "$WORK/03-nemotron-3.5-bolt-llamacpp-hermes-config-model",
+  "exit": 0,
+  "seconds": 0.4,
+  "stdout": "{\"provider\": \"custom:llmctl\", \"default\": \"local\"}\n",
+  "stderr": ""
+}

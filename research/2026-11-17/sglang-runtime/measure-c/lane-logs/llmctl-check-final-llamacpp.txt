@@ -1,0 +1,3 @@
+2026-11-17T23:40:05+03:00
+ok: 23 recipes (llamacpp 15, vllm 8); overrides: $SCRATCH/sglang/measure-c/overrides
+exit=0

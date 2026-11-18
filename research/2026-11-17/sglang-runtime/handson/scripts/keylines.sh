@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# Usage: keylines.sh <raw-log>  -- prints the startup and memory lines that matter, with line numbers.
+grep -n -i -E "server_args|attention backend|attention_backend=|Using .*backend|backend.*selected|Load weight (begin|end)|mem usage|avail mem|KV Cache is allocated|Memory pool end|max_total_num_tokens|max_running_requests|context_len|mem_fraction_static|chunked_prefill_size|Capture (cuda|prefill|decode)|cuda graph|fired up|Uvicorn running|Application startup|warmup|JIT|compil|ninja|out of memory|OutOfMemory|CUDA error|Traceback|Error|Exception|Killed|watchdog|WARNING|fp4|mxfp4|marlin|cutlass|flashinfer|triton|mamba|swa|sliding|tool.call.parser|reasoning.parser|Decode batch|Prefill batch" "$1" | cut -c1-400

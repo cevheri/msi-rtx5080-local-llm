@@ -6,7 +6,7 @@ import shlex
 from pathlib import Path
 
 from launcher import clients, docker_state, ops
-from launcher.catalog import load_catalog, override_dir, resolve
+from launcher.catalog import cache_dir, load_catalog, override_dir, resolve, runtime_choices
 from launcher.command import LABEL_PREFIX, docker_run_argv
 from launcher.errors import LlmctlError, PreflightError, UsageError
 from launcher.hfcache import hf_home
@@ -75,7 +75,7 @@ def _status(host, recipe, entry, running) -> str:
 
 def _list(host, catalog, runtime_name) -> int:
     if runtime_name is not None and runtime_name not in ADAPTERS:
-        raise UsageError(f"unknown runtime '{runtime_name}'; choose {' or '.join(ADAPTERS)}")
+        raise UsageError(f"unknown runtime '{runtime_name}'; choose {runtime_choices()}")
     home = hf_home(host.env)
     try:
         containers = [c for c in docker_state.managed(host) if c.state == "running"]
@@ -155,7 +155,8 @@ def _show(host, catalog, model, runtime_name, as_override) -> int:
     recipe, runtime = resolve(catalog, model, runtime_name)
     adapter = ADAPTERS[recipe.runtime]
     uid, gid = host.uid_gid()
-    argv = docker_run_argv(recipe, runtime, adapter.container_spec(recipe, runtime, HostEnv(hf_home(host.env), uid, gid)))
+    env = HostEnv(hf_home(host.env), uid, gid, cache_dir(host.env))
+    argv = docker_run_argv(recipe, runtime, adapter.container_spec(recipe, runtime, env))
     model_info = recipe.model
     lines = [
         f"{recipe.id} ({recipe.name}) on {recipe.runtime}",

@@ -1,0 +1,8 @@
+{
+  "command": "hermes -p llmctl config get platform_toolsets --json",
+  "cwd": "$WORK/22-deepseek-r1-0528-qwen3-8b-vllm-hermes-config-platform_toolsets",
+  "exit": 0,
+  "seconds": 0.4,
+  "stdout": "{\"cli\": []}\n",
+  "stderr": ""
+}

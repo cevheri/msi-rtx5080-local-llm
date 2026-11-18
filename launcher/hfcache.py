@@ -2,13 +2,19 @@
 
 download_file writes the same layout huggingface_hub does, from a pinned revision, and checks every file
 against the SHA-256 that Hugging Face publishes for it before linking it into the snapshot.
-The token is only ever sent in a request header; it is never printed.
+snapshot_problems and cli_download serve the runtimes that download a whole snapshot with an image's hf CLI.
+build_overlay builds, aside and then renamed into place, a folder of links into a snapshot plus a few real files,
+which SGLang mounts in the snapshot's place and vLLM mounts as the tokenizer folder it passes with --tokenizer.
+The token goes only into a request header (download_file) or into docker run's environment or --env-file
+(cli_download); it never appears in an argv and is never printed.
 """
 
+import errno
 import hashlib
 import http.client
 import os
 import re
+import shutil
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TextIO
@@ -41,6 +47,110 @@ def repo_dir(home: Path, repo: str) -> Path:
 
 def snapshot_dir(home: Path, repo: str, revision: str) -> Path:
     return repo_dir(home, repo) / "snapshots" / revision
+
+
+@dataclass(frozen=True)
+class HfRepoModel:
+    repo: str
+    revision: str
+    include: tuple[str, ...]
+    exclude: tuple[str, ...]
+    size_bytes: int
+    served_name: str
+
+
+def snapshot_problems(model: HfRepoModel, home: Path) -> list[str]:
+    """Complete means every link resolves and the files add up to the recipe's size; hf links small files first."""
+    snapshot = snapshot_dir(home, model.repo, model.revision)
+    if not snapshot.is_dir():
+        return [f"missing snapshot {model.revision} of {model.repo}"]
+    entries = [path for path in snapshot.rglob("*") if path.is_symlink() or path.is_file()]
+    dangling = sorted(path.name for path in entries if not path.exists())
+    if dangling:
+        return [f"the download is incomplete: {', '.join(dangling[:3])} missing in snapshot {model.revision}"]
+    if not (snapshot / "config.json").is_file():
+        return [f"missing config.json in snapshot {model.revision}"]
+    total = sum(path.stat().st_size for path in entries)
+    if total != model.size_bytes:
+        return [f"the snapshot holds {total} bytes, the recipe expects {model.size_bytes}; the download is incomplete"]
+    return []
+
+
+def cli_download(host, recipe_id: str, model: HfRepoModel, image: str, entrypoint: str, command: tuple[str, ...],
+                 home: Path, auth: HfAuth, out) -> None:
+    """Download the repository at its pinned revision with the hf CLI from a pinned runtime image."""
+    uid, gid = host.uid_gid()
+    argv = ["docker", "run", "--rm", "--user", f"{uid}:{gid}", "-e", "HOME=/tmp", "-e", "HF_HOME=/hf"]
+    env_extra = {}
+    if auth.env_file is not None:
+        argv += ["--env-file", str(auth.env_file)]
+    elif auth.token:
+        argv += ["-e", "HF_TOKEN"]
+        env_extra["HF_TOKEN"] = auth.token
+    argv += ["-v", f"{home}:/hf", "--memory", "8g", "--memory-swap", "8g",
+             "--entrypoint", entrypoint, image, *command, "download", model.repo, "--revision", model.revision]
+    for pattern in model.include:
+        argv += ["--include", pattern]
+    for pattern in model.exclude:
+        argv += ["--exclude", pattern]
+    out.write(f"{recipe_id}: downloading {model.repo} at {model.revision[:12]} with the hf CLI\n")
+    result = host.run(argv, env_extra=env_extra or None)
+    if result.returncode != 0:
+        tail = "\n".join((result.stderr or result.stdout).strip().splitlines()[-5:])
+        raise DownloadError(f"{recipe_id}: hf download exited {result.returncode}:\n{tail}")
+    problems = snapshot_problems(model, home)
+    if problems:
+        raise DownloadError(f"{recipe_id}: " + "; ".join(problems))
+
+
+def _remove(path: Path) -> None:
+    if path.is_dir() and not path.is_symlink():
+        shutil.rmtree(path)
+    elif os.path.lexists(path):
+        os.unlink(path)
+
+
+def _raise(error: OSError) -> None:
+    raise error
+
+
+def build_overlay(folder: Path, snapshot: Path, link_root: str, files: dict[str, bytes]) -> int:
+    """Rebuild folder so that each key of files is a real top-level file holding its bytes, in place of any
+    snapshot entry of that name, and every other file of snapshot is a link to f"{link_root}/<path>"; return the
+    number of links. The live folder is never edited in place, and every failure is the OSError that caused it."""
+    if not snapshot.is_dir():
+        raise FileNotFoundError(errno.ENOENT, "the snapshot folder does not exist", str(snapshot))
+    folder.parent.mkdir(parents=True, exist_ok=True)
+    tmp = folder.parent / f".{folder.name}.llmctl-tmp"
+    old = folder.parent / f".{folder.name}.llmctl-old"
+    _remove(tmp)
+    _remove(old)
+    tmp.mkdir()
+    links = 0
+    for dirpath, dirnames, filenames in os.walk(snapshot, onerror=_raise):
+        dirnames.sort()
+        filenames.sort()
+        relative = Path(dirpath).relative_to(snapshot)
+        for name in dirnames:
+            (tmp / relative / name).mkdir()
+        for name in filenames:
+            if relative == Path(".") and name in files:
+                continue
+            path = relative / name
+            os.symlink(f"{link_root}/{path.as_posix()}", tmp / path)
+            links += 1
+    for name in sorted(files):
+        path = tmp / name
+        with open(path, "wb") as handle:
+            handle.write(files[name])
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.chmod(path, 0o644)
+    if os.path.lexists(folder):
+        os.rename(folder, old)
+    os.rename(tmp, folder)
+    _remove(old)
+    return links
 
 
 def read_auth(env, env_file: Path | None) -> HfAuth:

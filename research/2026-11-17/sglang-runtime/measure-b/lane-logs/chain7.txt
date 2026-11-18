@@ -1,0 +1,20 @@
+chain7 start 19:41:36
+{"exit": "ready", "ready_seen_s": 34.75, "served_listed_s": 31.05, "memory_usage": {"weight": 8.773, "kvcache": 4.673, "startup_available": 1.504, "token_capacity": 139214, "token_capacity_swa": 8352, "graph": {"prefill": 0.0, "decode": 0.035, "target_verify": 0.0, "draft_prefill": 0.0, "draft_decode": 0.0, "draft_extend": 0.0}}, "gpu_right_after_ready": {"t": 1794944531.378, "used_mib": 14753, "free_mib": 1089, "total_mib": 16303}}
+{"event": "m13", "i": 18, "kind": "tool", "status": 200, "finish": "tool_calls", "content": "", "reasoning_chars": 0, "completion_tokens": 31, "answer": [{"name": "convert_currency", "arguments": {"amount": 250, "from_currency": "EUR", "to_currency": "JPY"}}], "correct": true, "t": 1794945294.108, "utc": "19:54:54"}
+{"event": "m13", "i": 19, "kind": "tool", "status": 200, "finish": "tool_calls", "content": "", "reasoning_chars": 0, "completion_tokens": 15, "answer": [{"name": "get_time", "arguments": {"city": "London"}}], "correct": true, "t": 1794945294.342, "utc": "19:54:54"}
+{"event": "m13_summary", "correct": 19, "total": 20, "t": 1794945294.342, "utc": "19:54:54"}
+{"event": "end", "result": "completed", "container": "running exit=0 oom=false", "cgroup": {"anon_gib": 5.736, "file_gib": 7.805, "shmem_gib": 0.067, "unevictable_gib": 0.0, "peak_gib": 13.687}, "memory_usage": {"weight": 8.773, "kvcache": 4.673, "startup_available": 1.504, "token_capacity": 139214, "token_capacity_swa": 8352, "graph": {"prefill": 0.0, "decode": 0.035, "target_verify": 0.0, "draft
+logs/m2-bf16.log 1043 -> 51 lines
+[2026-11-17 19:41:48] Hybrid SWA model detected. architectures=['Gemma4UnifiedForConditionalGeneration']
+[2026-11-17 19:41:54] Auto-detected template features: reasoning_config=ReasoningToggleConfig(toggle_param='enable_thinking', default_enabled=False, special_case=None, effort_kwarg=None), reasoning_parser=gemma4, tool_call_parser=gemma4
+[2026-11-17 19:42:00] Load weight end. elapsed=2.11 s, type=Gemma4UnifiedForConditionalGeneration, quant=compressed-tensors, avail mem=6.28 GB, mem usage=8.77 GB.
+[2026-11-17 19:42:01] Full KV Cache is allocated. dtype: torch.bfloat16, #tokens: 139214, K size: 1.06 GB, V size: 1.06 GB
+[2026-11-17 19:42:01] SWA KV Cache is allocated. dtype: torch.bfloat16, #tokens: 8352, K size: 1.27 GB, V size: 1.27 GB
+[2026-11-17 19:42:01] SWAKVPool mem usage: 4.67 GB, swa size: 8352, full size: 139214
+[2026-11-17 19:42:06] max_total_num_tokens=139214, chunked_prefill_size=2048, max_prefill_tokens=16384, max_running_requests=1, context_len=131072, available_gpu_mem=1.50 GB
+[2026-11-17 19:42:06] Init Unified Radix Cache. Components: (<ComponentType.FULL: 0>, <ComponentType.SWA: 1>). Tree Core: RustUnifiedTreeCore
+[2026-11-17 19:42:07] Using default chat sampling params from model generation config: {'temperature': 1.0, 'top_k': 64, 'top_p': 0.95}
+[2026-11-17 19:42:10] The server is fired up and ready to roll!
+running exit=0 oom=false started=2026-11-17T19:41:36.710112845Z finished=0001-01-01T00:00:00Z
+m2 bf16 done 19:54:57
+chain7 end 19:54:57

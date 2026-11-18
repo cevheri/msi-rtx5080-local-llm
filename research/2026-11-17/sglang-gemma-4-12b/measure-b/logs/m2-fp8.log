@@ -1,0 +1,29 @@
+/sgl-workspace/sglang/python/sglang/launch_server.py:71: UserWarning: 'python -m sglang.launch_server' is still supported, but 'sglang serve' is the recommended entrypoint.
+[2026-11-17 19:01:57] Hybrid SWA model detected. architectures=['Gemma4UnifiedForConditionalGeneration']
+[2026-11-17 19:01:57] Use triton as default attention backend for Gemma4
+[2026-11-17 19:01:59] server_args={'model_path': '/llmctl/model', 'tokenizer_path': '/llmctl/model', 'tokenizer_mode': 'auto', 'tokenizer_backend': 'huggingface', 'tokenizer_worker_num': 1, 'detokenizer_worker_num': 1, 'skip_tokenizer_init': False, 'load_format': 'auto', 'model_loader_extra_config': '{}', 'trust_remote_code': False, 'context_length': 131072, 'is_embedding': False, 'enable_multimodal': None, 'revision': None, 'model_impl': 'auto', 'model_config_parser': 'auto', 'json_model_override_args': '{}', 'dtype': 'auto', 'quantization': None, 'quantization_param_path': None, 'kv_cache_dtype': 'fp8_e4m3', 'enable_fp32_lm_head': False, 'modelopt_quant': None, 'modelopt_checkpoint_restore_path': None, 'modelopt_checkpoint_save_path': None, 'modelopt_export_path': None, 'quantize_and_serve': False, 'rl_quant_profile': None, 'enable_tf32_matmul': False, 'mem_fraction_static': 0.9, 'max_running_requests': 1, 'max_queued_requests': None, 'max_total_tokens': None, 'chunked_prefill_size': 2048, 'prefill_decode_interval': 0, 'enable_dynamic_chunking': False, 'max_prefill_tokens': 16384, 'prefill_max_requests': None, 'schedule_policy': 'fcfs', 'enable_priority_scheduling': False, 'disable_priority_preemption': False, 'default_priority_value': None, 'abort_on_priority_when_disabled': False, 'schedule_low_priority_values_first': False, 'priority_scheduling_preemption_threshold': 10, 'retraction_policy': 'length', 'schedule_conservativeness': 1.0, 'page_size': 1, 'c128_page_size': 16, 'swa_full_tokens_ratio': 0.1, 'disable_hybrid_swa_memory': False, 'radix_eviction_policy': 'lru', 'radix_eviction_policy_config': None, 'prefill_only_disable_kv_cache': False, 'disable_radix_cache': False, 'enable_page_major_kv_layout': False, 'enable_unified_memory': False, 'disable_chunked_prefix_cache': False, 'disable_overlap_schedule': False, 'num_continuous_decode_steps': 1, 'scheduler_recv_interval': 1, 'enable_mixed_chunk': False, 'nccl_port': None, 'dist_timeout': None, 'dist_init_add
+[2026-11-17 19:02:03] Using default HuggingFace chat template with detected content format: openai
+[2026-11-17 19:02:03] Auto-detected template features: reasoning_config=ReasoningToggleConfig(toggle_param='enable_thinking', default_enabled=False, special_case=None, effort_kwarg=None), reasoning_parser=gemma4, tool_call_parser=gemma4
+[2026-11-17 19:02:04] Init parallel begin.
+[2026-11-17 19:02:04] Init parallel ends. elapsed=0.22 s
+[2026-11-17 19:02:06] Memory baseline taken. mem usage=0.00 GB
+[2026-11-17 19:02:06] Load weight begin. avail mem=15.06 GB
+Multi-thread loading shards:   0% Completed | 0/1 [00:00<?, ?it/s][2026-11-17 19:02:07] Scheduler hit an exception: Traceback (most recent call last):
+  File managers/scheduler.py:6362 in run_scheduler_process
+  File managers/scheduler.py:568 in __init__
+  File managers/scheduler.py:1130 in init_model_worker
+  File managers/scheduler.py:1033 in init_tp_model_worker
+  File managers/tp_worker.py:319 in __init__
+  File managers/tp_worker.py:487 in _init_model_runner
+  File model_executor/model_runner.py:499 in __init__
+  File model_executor/model_runner.py:715 in initialize
+  File model_executor/model_runner.py:1312 in load_model
+  File model_executor/model_runner_components/load_model_utils.py:346 in load_model_with_memory_saver
+  File model_loader/loader.py:1020 in load_model
+  File model_loader/loader.py:1029 in load_weights_and_postprocess
+  File model_loader/loader.py:1063 in load_weights_only
+  File models/gemma4_unified.py:412 in load_weights
+  File model_loader/weight_utils.py:1582 in default_weight_loader
+AssertionError: Attempted to load weight (torch.Size([3840, 640])) into parameter (torch.Size([3840, 1536]))
+[2026-11-17 19:02:07] kill_process_tree called: parent_pid=1, include_parent=True, pid=1
+[2026-11-17 19:02:07] kill_process_tree called: parent_pid=1, include_parent=False, pid=1

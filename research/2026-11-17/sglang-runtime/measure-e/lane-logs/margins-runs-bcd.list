@@ -1,0 +1,14 @@
+$SCRATCH/sglang/measure-d/sglang-k2-horizon-7b/d1-f088
+$SCRATCH/sglang/measure-d/sglang-qwen3.5-9b/d2-env
+$SCRATCH/sglang/measure-d/sglang-gemma-4-12b/d2-env
+$SCRATCH/sglang/measure-d/sglang-gemma-4-e4b/d2-env
+$SCRATCH/sglang/measure-c/sglang-gpt-oss-20b/pe-round1
+$SCRATCH/sglang/measure-c/sglang-gpt-oss-20b/pe-round2-mem20
+$SCRATCH/sglang/measure-c/sglang-qwen3.6-35b-a3b/w3-k88-f088
+$SCRATCH/sglang/measure-c/sglang-qwen3.6-35b-a3b/w3-k88-f088-mem27
+$SCRATCH/sglang/measure-b/sglang-qwen3.5-9b/m12-a3
+$SCRATCH/sglang/measure-b/sglang-k2-horizon-7b/b0-a2
+$SCRATCH/sglang/measure-b/sglang-gpt-oss-20b/b0-a4
+$SCRATCH/sglang/measure-b/sglang-gpt-oss-20b/ld19-mem28
+$SCRATCH/sglang/measure-b/sglang-gemma-4-e4b/m5-a4-swa
+$SCRATCH/sglang/measure-b/sglang-gemma-4-12b/m2-fp8-b

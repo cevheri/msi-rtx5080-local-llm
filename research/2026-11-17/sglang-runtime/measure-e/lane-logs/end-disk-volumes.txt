@@ -1,0 +1,17 @@
+2026-11-18T02:07:33+03:00
+Filesystem         1B-blocks         Used    Available Use% Mounted on
+/dev/nvme0n1p10 984139923456 737758683136 196314148864  79% /home
+/dev/nvme0n1p7  589432963072 258227634176 301188530176  47% /
+flashinfer-cache
+ollama-models
+sglang-research-cache
+vllm-cache
+
+llamacpp	Up 11 seconds (health: starting)
+llamacpp-measured-2026-11-16	Exited (0) 41 hours ago
+ollama	Exited (0) 42 hours ago
+vllm-measured-2026-11-16	Exited (0) 2 days ago
+
+Filesystem       1B-blocks     Used   Available Use% Mounted on
+tmpfs          32869920768 18636800 32851283968   1% /dev/shm
+93

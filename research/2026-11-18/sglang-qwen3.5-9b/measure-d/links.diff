@@ -1,0 +1,11 @@
+--- $SCRATCH/sglang/measure-d/sglang-qwen3.5-9b/README.md
++++ sglang-qwen3.5-9b/measure-d/README.md
+@@ -29,7 +29,7 @@
+ | Peaks over this shorter protocol | 15,302 MiB of GPU memory, 144.9 W, 65 C; anon plus shmem 5.56 GiB (anon 5.46, shmem 0.10); `memory.peak` 14.73 GiB with page cache | 15,305 MiB; 5.60 GiB; 14.83 GiB over the whole protocol |
+ 
+ All figures are measured on the MSI Raider 18 Max HX, SGLang v0.5.23 ([shapes/d2-env-ready.json](shapes/d2-env-ready.json), [shapes/d2-env-seq.jsonl](shapes/d2-env-seq.jsonl), [shapes/d2-env-probe.json](shapes/d2-env-probe.json), [logs/d2-env-trace.csv](logs/d2-env-trace.csv), [logs/d2-env.log](logs/d2-env.log), [shapes/d2-env-summary.json](shapes/d2-env-summary.json); margins by `$SCRATCH/sglang/measure-d/scripts/margins_d.py`); B's column is from `$SCRATCH/sglang/measure-b/sglang-qwen3.5-9b/` and B's margin table.
+-- B's lowest is taken over the same requests (to the end of the probe) for a like-for-like drop; it equals B's lowest over the whole protocol with M12 (measured, [../lane-logs/margins-to-probe.txt](../lane-logs/margins-to-probe.txt)).
++- B's lowest is taken over the same requests (to the end of the probe) for a like-for-like drop; it equals B's lowest over the whole protocol with M12 (measured, [../lane-logs/margins-to-probe.txt](../../../2026-11-17/sglang-runtime/measure-d/lane-logs/margins-to-probe.txt)).
+ - The flush right after ready released 26 MiB of PyTorch's cache, as measurement A found on this model (1,013 to 1,039 MiB); the 26 MiB larger drop from the flushed reading is that release, not a change in the server (measured; the attribution is inferred from A and from B's own flush, which read 935 MiB).
+ - The variables changed nothing measurable here: the pool is 7 tokens smaller, the ready reading is equal, and shmem stayed at 0.10 GiB, so this model has no pinned store for `PYTORCH_ALLOC_CONF` to change (measured).
+ - Decode is 1.0% below B's, at a 140 W power limit against B's 145 W (measured; the cause is not established).
