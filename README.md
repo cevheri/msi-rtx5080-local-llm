@@ -26,6 +26,7 @@ Without `--runtime`, a name starts on llama.cpp when it has a llama.cpp recipe, 
 For `qwen3.5-9b` that trades speed for precision: its Q8_0 build decodes 66.0 tok/s on llama.cpp (measured on the MSI Raider 18 Max HX, llama.cpp b12407, 2026-11-17; [record](research/2026-11-17/llamacpp-qwen3.5-9b/README.md)) against 90.8 for the NVFP4 build on vLLM (measured on the MSI Raider 18 Max HX, vLLM v0.33.0, 2026-11-17; [record](research/2026-11-17/vllm-qwen3.5-9b/README.md)) and 93.7 on SGLang (measured on the MSI Raider 18 Max HX, SGLang v0.5.23, 2026-11-17; [record](research/2026-11-17/sglang-qwen3.5-9b/README.md)), so `--runtime vllm` or `--runtime sglang` is the faster choice for it.
 
 A model is named by its ID or an alias.
+The [runtime matrix](https://cevheri.github.io/msi-rtx5080-local-llm/) shows every model on every engine with its speed, context, client results and start command; GitHub Actions builds it from this repository on every push to `main`.
 Decode speeds are measured on this laptop (measured on the RTX 5080 Laptop, llama.cpp `server-cuda-b12407`, vLLM v0.33.0 or SGLang v0.5.23), a "-" after "Yes" marks a recipe with no measured speed, and "No | - | -" means the model has no recipe for that engine.
 
 <!-- recipe table: written by python3 -m launcher.site readme from recipes/; do not edit by hand -->
