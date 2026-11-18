@@ -21,6 +21,7 @@ The recipes were measured on an MSI Raider 18 Max HX A2WI with an RTX 5080 Lapto
 In the OpenCode screen, pick it with `/models` (or `ctrl+x m`); for a single prompt, pass it as `opencode run --model llamacpp-docker/qwen3.6-35b-a3b "..."`, because the interactive `opencode` command has no `-m` flag ([OpenCode models docs](https://opencode.ai/docs/models/)).
 It needs Linux, Docker Engine, the NVIDIA Container Toolkit with a CDI spec ([host-setup.md](host-setup.md)), and Python 3.11 or newer; it uses only Python's standard library, so there is nothing to install.
 Checked on the reference laptop on 2026-11-16: `up qwen3.6` was ready in 9 s and passed `test` and an OpenCode session, and `up gpt-oss --runtime vllm` was ready in 29 s with warm compile caches and passed `test` ([records](../research/2026-11-16/llmctl-e2e/)).
+The clients e2e of 2026-11-18 ran all 29 recipes, 15 on llama.cpp, 8 on vLLM and 6 on SGLang, with OpenCode, Hermes, Pi, dsh and Kimi: 490 of 510 steps passed, every `up`, `status`, config, long-grammar, probe, restore and `down` step among them, and the 20 failed client sessions were model behaviour, known model limitations, gpt-oss-20b's dropped tool call on SGLang and the vLLM DeepSeek-R1 OpenCode entry, which was then removed (measured on the MSI Raider 18 Max HX, llama.cpp b12407, vLLM v0.33.0 and SGLang v0.5.23, 2026-11-18; [record](../research/2026-11-18/llmctl-sglang-e2e/README.md)).
 
 ## Commands
 
