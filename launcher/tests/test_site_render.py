@@ -564,6 +564,32 @@ class SiteRenderTest(unittest.TestCase):
         self.assertEqual(render.inline_assets("@media (min-width: @SWITCH@) {}", '"use strict";\n', 3),
                          ("@media (min-width: 58rem) {}", '"use strict";\n'))
 
+    def test_stylesheet_keeps_hidden_elements_hidden(self):
+        css = re.sub(r"/\*.*?\*/", "", (REPO / "launcher/site/page.css").read_text(encoding="utf-8"), flags=re.S)
+        self.assertEqual(" ".join(css.split("}", 1)[0].split()) + " }", "[hidden] { display: none !important; }")
+        header = [body for selector, body in re.findall(r"([^{}]*)\{([^{}]*)\}", css) if "thead" in selector]
+        self.assertTrue(any("clip-path: inset(50%)" in " ".join(body.split()) for body in header))
+        self.assertFalse(any(re.search(r"display\s*:\s*none", body) for body in header))
+        self.assertEqual(css.count("@SWITCH@"), 1)
+        rules = [(" ".join(selector.split()), " ".join(body.split()))
+                 for selector, body in re.findall(r"([^{}]*)\{([^{}]*)\}", css)]
+        # D6: the Not supported diagonal runs from bottom left to top right, once, corner to corner.
+        lamp = " ".join(body for selector, body in rules if selector == ".lamp.not-supported")
+        self.assertIn("linear-gradient(to bottom right,", lamp)
+        self.assertIn("border-box no-repeat", lamp)
+        # A cut reason keeps the native disclosure marker of its summary.
+        self.assertFalse([body for selector, body in rules if "details.reason" in selector and "display" in body])
+        # The filter controls flow inside the open details' content box, not beside it.
+        self.assertFalse([body for selector, body in rules
+                          if selector.startswith("#filters[open]") and "::details-content" not in selector and "flex" in body])
+        self.assertTrue(any(selector == "#filters[open]::details-content" and "flex-wrap: wrap" in body
+                            for selector, body in rules))
+        # A tile keeps its status, pill, speed and unit whole, and a narrow tile puts the speed on its own line.
+        whole = [body for selector, body in rules if selector == ".tile .status, .tile .pill, .tile .speed, .tile .unit"]
+        self.assertEqual(whole, ["white-space: nowrap; overflow-wrap: normal;"])
+        self.assertTrue(any(selector == ".tile" and "container-type: inline-size" in body for selector, body in rules))
+        self.assertRegex(" ".join(css.split()), r"@container \(max-width: [0-9.]+rem\) \{ \.tile \.speed \{")
+
     def test_build_is_byte_identical_across_hash_seeds(self):
         code = ("import sys\nfrom pathlib import Path\nfrom launcher.site import cli\n"
                 "sys.exit(cli.main(['build', '--out', sys.argv[1], '--commit', 'a' * 40, '--commit-time', '0'], "
