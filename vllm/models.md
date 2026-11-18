@@ -1,6 +1,6 @@
 # vLLM model recipes for the RTX 5080 Laptop
 
-Last verified: 2026-11-18 (gpt-oss-20b measured on 2026-11-16; Groot, K2 Horizon 7B, Gemma 4 12B, Qwen3.5-9B, Mellum2.1 and Gemma 4 E4B measured on 2026-11-17; DeepSeek-R1-0528-Qwen3-8B failed on 2026-11-17 and was measured with llmctl's tokenizer overlay on 2026-11-18; K2 Horizon 7B client limits and the DeepSeek-R1 warm start from the clients e2e of 2026-11-17; Ornith note updated from the agent-harness review).
+Last verified: 2026-11-18 (gpt-oss-20b measured on 2026-11-16; Groot, K2 Horizon 7B, Gemma 4 12B, Qwen3.5-9B, Mellum2.1 and Gemma 4 E4B measured on 2026-11-17; DeepSeek-R1-0528-Qwen3-8B failed on 2026-11-17 and was measured with llmctl's tokenizer overlay on 2026-11-18; K2 Horizon 7B client limits and the DeepSeek-R1 warm start from the clients e2e of 2026-11-17; DeepSeek-R1 OpenCode entry removed after the e2e of 2026-11-18; Ornith note updated from the agent-harness review).
 
 Only small checkpoints run fully under vLLM v0.33.0 on this 16 GB GPU: Groot-19B-A3B NVFP4 and K2 Horizon 7B AWQ-INT4 from the ranked picks (DeepSeek-R1-0528-Qwen3-8B, chat only, runs only through llmctl's tokenizer overlay, [record](../research/2026-11-18/vllm-deepseek-r1-0528-qwen3-8b-cold-start/README.md)), plus Gemma 4 12B QAT W4A16, Qwen3.5-9B NVFP4 and Mellum2.1 as honorable mentions and Gemma 4 E4B as a stack smoke test.
 gpt-oss-20b starts only with `--enforce-eager` and 256 batched tokens, and then runs at half the llama.cpp speed (measured on 2026-11-16, [gpt-oss-20b](#gpt-oss-20b)).
@@ -454,16 +454,8 @@ Thinking and sampling:
 - Always on, with no official off switch; vLLM silently drops an `enable_thinking` kwarg for R1 distills ([reasoning_outputs.md](https://github.com/vllm-project/vllm/blob/v0.33.0/docs/features/reasoning_outputs.md)).
 - Card sampling temperature 0.6, top_p 0.95 ([README](https://huggingface.co/deepseek-ai/DeepSeek-R1-0528-Qwen3-8B/raw/main/README.md)).
 
-OpenCode entry (tools off; use it in plan or chat mode, never as the build agent):
-
-```json
-"deepseek-r1-0528-qwen3-8b": {
-  "modelID": "deepseek-r1-8b",
-  "name": "DeepSeek-R1-0528-Qwen3-8B, chat only (vLLM)",
-  "capabilities": { "tools": false, "input": ["text"], "output": ["text"], "reasoning": { "supported": true } },
-  "limit": { "context": 65536, "output": 16384 }
-}
-```
+This recipe has no OpenCode entry (`opencode = false`).
+OpenCode v2.3.0 sends `tool_choice` `"auto"` even for a model with `"tools": false`, and vLLM refuses that with HTTP 400 without a tool parser, so OpenCode users take the [llama.cpp DeepSeek-R1 recipe](../llamacpp/models.md#10-deepseek-r1-0528-qwen3-8b-chat-and-reasoning-only) ([record 411](../research/2026-11-18/llmctl-sglang-e2e/records/411-22-deepseek-r1-0528-qwen3-8b-vllm-opencode)) (measured on the MSI Raider 18 Max HX, vLLM v0.33.0, 2026-11-18).
 
 Caveats and open issues:
 

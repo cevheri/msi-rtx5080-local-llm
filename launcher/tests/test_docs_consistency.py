@@ -125,6 +125,11 @@ def opencode_providers() -> dict:
     return json.loads(block)["providers"]
 
 
+def opencode_cannot_talk_to(recipe, runtime) -> bool:
+    """OpenCode always sends tool_choice auto, which a runtime that refuses tools without a parser answers with HTTP 400."""
+    return recipe.chat_only and runtime.refuses_tools_without_parser
+
+
 def opencode_snippet(doc: str) -> dict | None:
     """The "OpenCode entry" JSON snippet of a recipe's document section, or None when it has none."""
     lines = section(doc)
@@ -291,6 +296,8 @@ class DocsConsistencyTest(unittest.TestCase):
         for name, entry in self.catalog.runtimes.items():
             models = providers[entry.runtime.opencode_provider]["models"]
             for recipe in entry.recipes.values():
+                if opencode_cannot_talk_to(recipe, entry.runtime):
+                    continue  # test_chat_only_recipes_on_refusing_runtimes_have_no_opencode_entry covers it
                 with self.subTest(runtime=name, recipe=recipe.id):
                     documented = []
                     if recipe.opencode:
@@ -315,10 +322,27 @@ class DocsConsistencyTest(unittest.TestCase):
         # Lead review L8 item 4: every measured recipe gets its entry in the validated config.
         for name, entry in self.catalog.runtimes.items():
             for recipe in entry.recipes.values():
-                if recipe.evidence.kind != "measured":
+                if recipe.evidence.kind != "measured" or opencode_cannot_talk_to(recipe, entry.runtime):
                     continue
                 with self.subTest(runtime=name, recipe=recipe.id):
                     self.assertTrue(recipe.opencode, "a measured recipe needs opencode = true and its entry")
+
+    def test_chat_only_recipes_on_refusing_runtimes_have_no_opencode_entry(self):
+        # Lead ruling after the e2e of 2026-11-18 (record 411): OpenCode v2.3.0 sends tool_choice auto even with
+        # tools false, and a runtime that refuses tools without a parser answers HTTP 400, so such a recipe has no entry.
+        providers = opencode_providers()
+        refused = set()
+        for name, entry in self.catalog.runtimes.items():
+            models = providers[entry.runtime.opencode_provider]["models"]
+            for recipe in entry.recipes.values():
+                if not opencode_cannot_talk_to(recipe, entry.runtime):
+                    continue
+                refused.add((name, recipe.id))
+                with self.subTest(runtime=name, recipe=recipe.id):
+                    self.assertFalse(recipe.opencode, "OpenCode cannot talk to this recipe, so opencode must be false")
+                    self.assertNotIn(recipe.id, models, "docs/opencode.md must not list this recipe")
+                    self.assertIsNone(opencode_snippet(recipe.doc), "the recipe's section must not show an OpenCode entry")
+        self.assertEqual(refused, {("vllm", "deepseek-r1-0528-qwen3-8b")})
 
     def test_clients_doc_examples_match_golden(self):
         lines = (REPO / "docs/clients.md").read_text().splitlines()

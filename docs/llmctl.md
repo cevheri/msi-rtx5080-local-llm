@@ -90,7 +90,7 @@ Without the flag, a default that already points at llmctl follows the running mo
 A default that points anywhere else never changes without the flag.
 To opt out, point OpenCode's default at a model that is not llmctl's, or leave OpenCode out with `LLMCTL_CLIENTS=hermes,pi,dsh`; the same works for Hermes and Pi, for dsh you delete the `agent-default-model` and `acp` lines from its block, and for Kimi you point its default at another model with `/model`, or leave Kimi out with `LLMCTL_CLIENTS=opencode,hermes,pi,dsh`.
 A default that dsh's model picker saved in a profile patch is not followed, because llmctl never edits the files the Web UI owns; `up` prints a note when it would go stale ([clients.md](clients.md#the-default-model-and-the-picker)).
-A recipe without an OpenCode entry, which only an estimate recipe can be, leaves OpenCode's default as it is and prints `OpenCode: <id> has no OpenCode entry in docs/opencode.md; its default stays <model>`; that is not an error.
+A recipe without an OpenCode entry, an estimate recipe or the chat-only vLLM DeepSeek-R1 recipe, leaves OpenCode's default as it is and prints `OpenCode: <id> has no OpenCode entry in docs/opencode.md; its default stays <model>`; that is not an error.
 
 `down` changes no client file: the entries and defaults stay and point at a stopped server, which fails loudly in each client, rather than vanish and let Pi or Hermes fall back to another model without a word.
 It stops the server first and reads the client files afterwards, so a client problem never keeps the GPU busy; it then names each client whose default points at llmctl:
@@ -402,7 +402,7 @@ Exit codes: 0 success; 1 a usage error, or a download you declined; 2 an invalid
 
 1. Measure the launch with the method in [llamacpp/benchmarking.md](../llamacpp/benchmarking.md), [vllm/benchmarking.md](../vllm/benchmarking.md) or [sglang/benchmarking.md](../sglang/benchmarking.md), and keep the records under `research/`.
 2. Write the launch into its section of [llamacpp/models.md](../llamacpp/models.md), [vllm/models.md](../vllm/models.md) or [sglang/models.md](../sglang/models.md), and the recipe file into `recipes/` with its `[clients]` table; set `opencode = true` only together with an entry in [opencode.md](opencode.md#the-validated-config), and otherwise put an "OpenCode entry" snippet in the model's section.
-   A measured recipe always gets `opencode = true` and its entry, and a chat-only one keeps `"tools": false` in it; only an estimate goes without.
+   A measured recipe always gets `opencode = true` and its entry, and a chat-only one keeps `"tools": false` in it; only an estimate goes without, and a chat-only recipe on vLLM, which refuses OpenCode's `tool_choice` `"auto"` without a tool parser, gets `opencode = false` and neither entry nor snippet ([opencode.md](opencode.md#the-validated-config)).
 3. Run `python3 -m launcher.tests.regen_golden`, which also writes the Hermes and Pi entries under `launcher/tests/golden/clients/`, read the diff of `launcher/tests/golden/`, and run `python3 -m unittest discover -s launcher/tests -t .`.
 
 The tests check that each recipe matches its document's launch, and that its `[clients]` table matches its OpenCode entry and the server args, so a recipe, its document and the OpenCode config change together or the tests fail.

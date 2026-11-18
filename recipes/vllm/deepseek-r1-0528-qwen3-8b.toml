@@ -4,7 +4,7 @@ id = "deepseek-r1-0528-qwen3-8b"
 name = "DeepSeek-R1-0528-Qwen3-8B FP8 per tensor (chat only)"
 aliases = ["deepseek-r1"]
 doc = "vllm/models.md#deepseek-r1-0528-qwen3-8b-chat-only"
-opencode = true
+opencode = false
 chat_only = true
 
 [model]

@@ -39,7 +39,7 @@ A custom openai-compatible model with neither `variants` nor `capabilities.reaso
 
 ## The validated config
 
-This is the three-provider config with one entry for every recipe of [llmctl](llmctl.md) that is measured on this laptop: the fifteen llama.cpp recipes, with Qwen3.6-35B-A3B as the default, gpt-oss-20b, Groot-19B-A3B-261023 NVFP4, K2 Horizon 7B, Gemma 4 12B, Qwen3.5-9B, Mellum2.1, Gemma 4 E4B and DeepSeek-R1-0528-Qwen3-8B (chat only) on vLLM, and Qwen3.5-9B, K2 Horizon 7B, gpt-oss-20b, Gemma 4 12B, Gemma 4 E4B and Qwen3.6-35B-A3B on SGLang.
+This is the three-provider config with one entry for every recipe of [llmctl](llmctl.md) that is measured on this laptop: the fifteen llama.cpp recipes, with Qwen3.6-35B-A3B as the default, gpt-oss-20b, Groot-19B-A3B-261023 NVFP4, K2 Horizon 7B, Gemma 4 12B, Qwen3.5-9B, Mellum2.1 and Gemma 4 E4B on vLLM, and Qwen3.5-9B, K2 Horizon 7B, gpt-oss-20b, Gemma 4 12B, Gemma 4 E4B and Qwen3.6-35B-A3B on SGLang.
 It extends the research-phase config with a `qwen3.8-27b` entry that uses `reasoning_effort` levels, as the audit asked.
 After the 2026-11-15 re-ranking, the default moved from Qwen3.6-35B-A3B to Qwen3.8-27B, the two K2 Horizon entries were added, and the Gemma 4 12B entry (now an honorable mention; its entry is in [vllm/models.md](../vllm/models.md)) was replaced by Groot, whose entry is copied from [vllm/models.md](../vllm/models.md).
 On 2026-11-16 the user made Qwen3.6-35B-A3B the default again, after it measured 122 tok/s with 128k context against 36 tok/s with 64k for Qwen3.8-27B ([model-selection.md](model-selection.md#decision-summary)).
@@ -47,7 +47,8 @@ The K2 Horizon entries have no variants because both models always think and the
 On 2026-11-17 the llama.cpp gpt-oss-20b and DeepSeek-R1-0528-Qwen3-8B entries and the vLLM K2 Horizon 7B, Gemma 4 12B, Qwen3.5-9B, Mellum2.1 and Gemma 4 E4B entries were added from their model sections, after the six vLLM recipes were measured ([records](../research/2026-11-17/README.md)), so that every measured recipe has its entry.
 Those measurements ran the reply and tool-call checks; the clients e2e of the same day then ran an OpenCode write-and-read session through the entry of each of the six measured vLLM recipes, and every one passed: Mellum2.1, K2 Horizon 7B, Qwen3.5-9B, Gemma 4 12B, Gemma 4 E4B and Groot (records [191](../research/2026-11-17/llmctl-dsh-e2e/records/191-12-mellum2.1-12b-vllm-opencode), [206](../research/2026-11-17/llmctl-dsh-e2e/records/206-13-k2-horizon-7b-vllm-opencode), [222](../research/2026-11-17/llmctl-dsh-e2e/records/222-14-qwen3.5-9b-vllm-opencode), [237](../research/2026-11-17/llmctl-dsh-e2e/records/237-15-gemma-4-12b-vllm-opencode), [252](../research/2026-11-17/llmctl-dsh-e2e/records/252-16-gemma-4-e4b-vllm-opencode) and [267](../research/2026-11-17/llmctl-dsh-e2e/records/267-17-groot-19b-a3b-vllm-opencode), [summary](../research/2026-11-17/llmctl-dsh-e2e/summary.md)) (measured on the MSI Raider 18 Max HX, vLLM v0.33.0, OpenCode v2.3.0, 2026-11-17).
 The vLLM DeepSeek-R1-0528-Qwen3-8B recipe failed that measurement, because vLLM v0.33.0 loads its tokenizer with the wrong class and garbles every reply, so it had no entry then ([vllm/models.md](../vllm/models.md#deepseek-r1-0528-qwen3-8b-chat-only)).
-On 2026-11-18 that recipe was measured running through llmctl's tokenizer overlay, and its `vllm-docker` entry, chat only with `"tools": false` like the llama.cpp DeepSeek-R1 entry, was added from its model section.
+On 2026-11-18 that recipe was measured running through llmctl's tokenizer overlay and got a chat-only `vllm-docker` entry with `"tools": false`, which the e2e of the same day removed again.
+OpenCode v2.3.0 sends `tool_choice` `"auto"` even for a model with `"tools": false`, and vLLM refuses that with HTTP 400 when it runs without a tool parser, so the chat-only vLLM recipe has no entry and OpenCode users take the llama.cpp DeepSeek-R1 recipe ([record 411](../research/2026-11-18/llmctl-sglang-e2e/records/411-22-deepseek-r1-0528-qwen3-8b-vllm-opencode), [summary](../research/2026-11-18/llmctl-sglang-e2e/summary.md)) (measured on the MSI Raider 18 Max HX, vLLM v0.33.0, 2026-11-18).
 I re-validated the result on 2026-11-16, after adding the Qwen3-Coder-Next entry, against a fresh copy of [https://opencode.ai/config.json](https://opencode.ai/config.json) (unchanged since 2026-11-15) with Python `jsonschema` 4.19.2 (Draft 2020-12): 0 errors, and negative tests with a V1 `npm` key and a string `tools` value are rejected.
 I re-validated it on 2026-11-17, after adding those seven entries, against a fresh copy of [https://opencode.ai/config.json](https://opencode.ai/config.json) (byte for byte the copy of 2026-11-15) with Python `jsonschema` 4.19.2 (Draft 2020-12): 0 errors for 18 models, and the same two negative tests are rejected.
 On 2026-11-18 the `sglang-docker` provider was added with the entries of the three SGLang recipes, whose model sections are in [sglang/models.md](../sglang/models.md): SGLang answers on `127.0.0.1:30000`, puts reasoning in `reasoning_content`, and keeps vLLM's served names, so the `qwen3.5-9b` and `k2-horizon-7b` entries equal their vLLM twins apart from the name, and the `gpt-oss-20b` entry also holds 131072 tokens of context against vLLM's 65536.
@@ -58,7 +59,7 @@ Later on 2026-11-18 the SGLang `qwen3.6-35b-a3b` entry was added, which equals t
 I re-validated it then against a fresh copy of the schema (the same sha256): 0 errors for 24 models, and the same two negative tests are rejected.
 Later on 2026-11-18 the llama.cpp `qwen3.5-9b`, `gemma-4-12b`, `gemma-4-e4b` and `mellum2.1-12b` entries were added from their model sections in [llamacpp/models.md](../llamacpp/models.md#gguf-builds-of-the-vllm-and-sglang-models), after their GGUF builds were measured ([records](../research/2026-11-17/README.md)); like every llama.cpp entry they use the `modelID` `local`.
 I re-validated it then against a fresh copy of the schema (the same sha256): 0 errors for 28 models, and the same two negative tests are rejected.
-After the vLLM `deepseek-r1-0528-qwen3-8b` entry was added, I re-validated it on 2026-11-18 against a fresh copy of the schema (the same sha256): 0 errors for 29 models, and the same two negative tests are rejected.
+After the vLLM `deepseek-r1-0528-qwen3-8b` entry was removed, I re-validated it on 2026-11-18 against the copy of the schema saved that day (the same sha256): 0 errors for 28 models, and the same two negative tests are rejected.
 On 2026-11-16 this config was installed as the global `~/.config/opencode/opencode.json` on this laptop, merged with the `mcp` block that file already held, and validated again with 0 errors against the live schema (unchanged).
 Measured the same day: `opencode run` without `-m` reached the default `qwen3.6-35b-a3b` entry and passed the write-and-read task in 9 s ([records](../research/2026-11-16/opencode-global-config/)).
 
@@ -270,12 +271,6 @@ Measured the same day: `opencode run` without `-m` reached the default `qwen3.6-
             { "id": "thinking", "body": { "chat_template_kwargs": { "enable_thinking": true } } },
             { "id": "none", "body": { "chat_template_kwargs": { "enable_thinking": false } } }
           ]
-        },
-        "deepseek-r1-0528-qwen3-8b": {
-          "modelID": "deepseek-r1-8b",
-          "name": "DeepSeek-R1-0528-Qwen3-8B, chat only (vLLM)",
-          "capabilities": { "tools": false, "input": ["text"], "output": ["text"], "reasoning": { "supported": true } },
-          "limit": { "context": 65536, "output": 16384 }
         }
       }
     },
@@ -380,7 +375,6 @@ The config above assumes these server settings; the full commands live in [vllm/
 | `vllm-docker/qwen3.5-9b` | vLLM :8000 | `--served-model-name qwen3.5-9b` | `--max-model-len 131072` |
 | `vllm-docker/mellum2.1-12b` | vLLM :8000 | `--served-model-name mellum2.1` | `--max-model-len 131072` |
 | `vllm-docker/gemma-4-e4b` | vLLM :8000 | `--served-model-name gemma-4-e4b` | `--max-model-len 65536` (needs `--enforce-eager`) |
-| `vllm-docker/deepseek-r1-0528-qwen3-8b` | vLLM :8000 | `--served-model-name deepseek-r1-8b` | `--max-model-len 65536` (chat only, `"tools": false`, llmctl's tokenizer overlay) |
 | `vllm-docker/gpt-oss-20b` | vLLM :8000 | `--served-model-name gpt-oss-20b` | `--max-model-len 65536` (needs `--gpu-memory-utilization 0.965`, `--enforce-eager`, `--max-num-batched-tokens 256`, FP8 KV and `TRITON_ATTN`) |
 | `sglang-docker/qwen3.5-9b` | SGLang :30000 | `--served-model-name qwen3.5-9b` | `--context-length 131072` (8 Mamba slots) |
 | `sglang-docker/k2-horizon-7b` | SGLang :30000 | `--served-model-name k2-horizon-7b` | `--context-length 65536` (FP8 KV, `--mem-fraction-static 0.88`) |

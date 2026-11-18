@@ -509,7 +509,7 @@ class VllmTokenizerOverlayTest(unittest.TestCase):
         recipe = vllm.parse_recipe(data, source, "deepseek-r1-0528-qwen3-8b")
         self.assertEqual(recipe.model.tokenizer_class, "PreTrainedTokenizerFast")
         self.assertEqual(recipe.evidence.kind, "measured")
-        self.assertTrue(recipe.opencode)
+        self.assertFalse(recipe.opencode)  # OpenCode sends tool_choice auto, which vLLM refuses without a parser
         self.assertNotIn("--tokenizer", recipe.args)
         self.assertTrue((REPO / recipe.evidence.record).is_dir(), recipe.evidence.record)
         others = sorted(path for path in RECIPES.glob("*.toml") if not path.name.startswith("_") and path != DEEPSEEK)
