@@ -210,17 +210,26 @@ class ThreeRuntimeTest(unittest.TestCase):
         self.assertEqual(str(ctx.exception), "unknown model 'mellum2.1-12b'; did you mean gemma4-12b, gemma-4-12b? "
                                              "(./llmctl list shows every recipe)")
 
-    def test_llamacpp_and_vllm_ignore_cache_dir(self):
+    def test_cache_dir_reaches_only_tokenizer_recipes(self):
         shipped = load_catalog(REPO / "recipes", None)
         with_cache = HostEnv(ENV.hf_home, ENV.uid, ENV.gid, Path("/x"))
+        with_key = []
         for name in ("llamacpp", "vllm"):
             entry = shipped.runtimes[name]
+            adapter = ADAPTERS[name]
             for recipe in entry.recipes.values():
+                spec = adapter.container_spec(recipe, entry.runtime, with_cache)
+                cached = docker_run_argv(recipe, entry.runtime, spec)
                 with self.subTest(recipe=f"{name}/{recipe.id}"):
-                    adapter = ADAPTERS[name]
-                    self.assertEqual(
-                        docker_run_argv(recipe, entry.runtime, adapter.container_spec(recipe, entry.runtime, with_cache)),
-                        docker_run_argv(recipe, entry.runtime, adapter.container_spec(recipe, entry.runtime, ENV)))
+                    if getattr(recipe.model, "tokenizer_class", None) is not None:
+                        with_key.append(recipe.id)
+                        self.assertIn(f"/x/vllm/tokenizers/{recipe.id}:/llmctl/tokenizer:ro", cached)
+                        with self.assertRaises(ValueError):
+                            adapter.container_spec(recipe, entry.runtime, ENV)
+                        continue
+                    plain = adapter.container_spec(recipe, entry.runtime, ENV)
+                    self.assertEqual(cached, docker_run_argv(recipe, entry.runtime, plain))
+        self.assertEqual(with_key, ["deepseek-r1-0528-qwen3-8b"])
 
 
 TOGGLE_OFF = (16384, "toggle", "off", (), ())

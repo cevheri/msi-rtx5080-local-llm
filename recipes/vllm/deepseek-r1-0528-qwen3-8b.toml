@@ -1,10 +1,10 @@
-# Recipe from vllm/models.md#deepseek-r1-0528-qwen3-8b-chat-only; it failed on the reference laptop on 2026-11-17.
+# Measured launch from vllm/models.md#deepseek-r1-0528-qwen3-8b-chat-only; llmctl adds the tokenizer overlay that tokenizer_class names (docs/llmctl.md#recipes).
 schema = 1
 id = "deepseek-r1-0528-qwen3-8b"
 name = "DeepSeek-R1-0528-Qwen3-8B FP8 per tensor (chat only)"
 aliases = ["deepseek-r1"]
 doc = "vllm/models.md#deepseek-r1-0528-qwen3-8b-chat-only"
-opencode = false
+opencode = true
 chat_only = true
 
 [model]
@@ -12,6 +12,7 @@ repo = "deepseek-ai/DeepSeek-R1-0528-Qwen3-8B"
 revision = "6e8885a6ff5c1dc5201574c8fd700323f23c25fa"
 size_bytes = 16388927770
 served_name = "deepseek-r1-8b"
+tokenizer_class = "PreTrainedTokenizerFast"
 
 [container]
 memory_gib = 32
@@ -22,6 +23,7 @@ args = [
   "--quantization", "fp8_per_tensor", "--max-num-seqs", "1", "--kv-cache-dtype", "fp8",
   "--attention-backend", "TRITON_ATTN", "--reasoning-parser", "deepseek_r1",
   "--override-generation-config", '{"temperature":0.6,"top_p":0.95}',
+  "--kv-cache-memory-bytes", "5153960755",
 ]
 
 [clients]
@@ -29,6 +31,9 @@ output = 16384
 thinking = "always"
 
 [evidence]
-kind = "estimate"
-summary = "The first start, with an empty torch.compile cache, failed at the default --gpu-memory-utilization 0.92 (3.83 GiB of the 4.5 GiB KV cache needed), later starts with the cache warm worked at 0.92, and either way vLLM v0.33.0 loads the tokenizer as a Metaspace LlamaTokenizer, so prompts lose their spaces and replies come back garbled (research/2026-11-17/vllm-deepseek-r1-0528-qwen3-8b/, research/2026-11-17/llmctl-dsh-e2e/)"
-doc = "vllm/models.md#deepseek-r1-0528-qwen3-8b-chat-only"
+kind = "measured"
+summary = "72.5 tok/s decode with 64k context, cold and warm starts with a 4.8 GiB KV cache (69,904 tokens) set by --kv-cache-memory-bytes, 15,036 MiB GPU peak, 1,105 MiB free after ready; with the tokenizer folder the prompts count as on llama.cpp and replies read correctly; tools get HTTP 400 as a chat-only recipe should"
+decode_tok_s = 72.5
+date = "2026-11-18"
+hardware = "MSI Raider 18 Max HX A2WI, RTX 5080 Laptop GPU 16 GB, 61 GiB RAM"
+record = "research/2026-11-18/vllm-deepseek-r1-0528-qwen3-8b-cold-start/"

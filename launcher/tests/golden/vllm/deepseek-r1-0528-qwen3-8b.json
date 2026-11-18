@@ -13,9 +13,9 @@
  "--label",
  "io.llmctl.source=shipped",
  "--label",
- "io.llmctl.sha256=3576ed8ba5018528f7324b93009792bb71cb23e8fd0f841f3956f2895309c344",
+ "io.llmctl.sha256=fea75b71595fcfda7c2ae49042d13cef2d8120b8c9828a9b163e26a431ca39a2",
  "--label",
- "io.llmctl.evidence=estimate",
+ "io.llmctl.evidence=measured",
  "--label",
  "io.llmctl.runtime-source=shipped",
  "--label",
@@ -39,6 +39,8 @@
  "-v",
  "/home/user/.cache/huggingface:/root/.cache/huggingface:ro",
  "-v",
+ "/home/user/.cache/llmctl/vllm/tokenizers/deepseek-r1-0528-qwen3-8b:/llmctl/tokenizer:ro",
+ "-v",
  "vllm-cache:/root/.cache/vllm",
  "-v",
  "flashinfer-cache:/root/.cache/flashinfer",
@@ -49,6 +51,8 @@
  "deepseek-r1-8b",
  "--max-model-len",
  "65536",
+ "--tokenizer",
+ "/llmctl/tokenizer",
  "--quantization",
  "fp8_per_tensor",
  "--max-num-seqs",
@@ -60,5 +64,7 @@
  "--reasoning-parser",
  "deepseek_r1",
  "--override-generation-config",
- "{\"temperature\":0.6,\"top_p\":0.95}"
+ "{\"temperature\":0.6,\"top_p\":0.95}",
+ "--kv-cache-memory-bytes",
+ "5153960755"
 ]

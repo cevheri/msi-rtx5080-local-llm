@@ -30,7 +30,7 @@ Checked on the reference laptop on 2026-11-16: `up qwen3.6` was ready in 9 s and
 | `./llmctl show <model> [--runtime R]` | The effective recipe, its file and SHA-256, and the exact `docker run` command `up` would run |
 | `./llmctl show <model> [--runtime R] --as-override` | A complete copy of the shipped recipe, marked as an estimate, to save as an override and edit; redirecting into an override that already exists loses what it held ([Overrides for another machine](#overrides-for-another-machine)) |
 | `./llmctl pull <model> [--runtime R] [--yes] [--hf-env-file F]` | Says how much it will download, asks, then pulls the image if it is missing and downloads the model files; without a terminal it needs `--yes` |
-| `./llmctl up <model> [--runtime R] [--replace] [--dry-run] [--set-default]` | Runs the checks below, starts the container, waits until the server answers (for SGLang it writes the model overlay before the start and checks the KV pool and the free GPU memory after it), writes the llmctl entries of the installed clients ([Clients](#clients)), and prints the endpoint, the served name, the context, the output cap, each client's model and thinking choices, and the evidence; with `--set-default` it also makes the model every installed client's default |
+| `./llmctl up <model> [--runtime R] [--replace] [--dry-run] [--set-default]` | Runs the checks below, starts the container, waits until the server answers (for SGLang it writes the model overlay before the start and checks the KV pool and the free GPU memory after it, and for a vLLM recipe with `[model] tokenizer_class` it writes the tokenizer overlay before the start), writes the llmctl entries of the installed clients ([Clients](#clients)), and prints the endpoint, the served name, the context, the output cap, each client's model and thinking choices, and the evidence; with `--set-default` it also makes the model every installed client's default |
 | `./llmctl status` | The container llmctl started: its recipe, source file and SHA-256, state, port, health, memory use and the GPU memory in use; then each client's llmctl entry and default, and whether they match the running model |
 | `./llmctl logs [-f] [--tail N]` | The server's log, the last 100 lines by default |
 | `./llmctl test` | Three requests against the running server: a reply that must be exactly OK (ignoring case and any whitespace, quotes, backticks, `*`, `_`, `.`, `!` or `,` around it); one tool call; and a decode of up to 512 tokens |
@@ -90,7 +90,7 @@ Without the flag, a default that already points at llmctl follows the running mo
 A default that points anywhere else never changes without the flag.
 To opt out, point OpenCode's default at a model that is not llmctl's, or leave OpenCode out with `LLMCTL_CLIENTS=hermes,pi,dsh`; the same works for Hermes and Pi, for dsh you delete the `agent-default-model` and `acp` lines from its block, and for Kimi you point its default at another model with `/model`, or leave Kimi out with `LLMCTL_CLIENTS=opencode,hermes,pi,dsh`.
 A default that dsh's model picker saved in a profile patch is not followed, because llmctl never edits the files the Web UI owns; `up` prints a note when it would go stale ([clients.md](clients.md#the-default-model-and-the-picker)).
-A recipe without an OpenCode entry, which today is only an estimate such as the vLLM DeepSeek-R1, leaves OpenCode's default as it is and prints `OpenCode: <id> has no OpenCode entry in docs/opencode.md; its default stays <model>`; that is not an error.
+A recipe without an OpenCode entry, which only an estimate recipe can be, leaves OpenCode's default as it is and prints `OpenCode: <id> has no OpenCode entry in docs/opencode.md; its default stays <model>`; that is not an error.
 
 `down` changes no client file: the entries and defaults stay and point at a stopped server, which fails loudly in each client, rather than vanish and let Pi or Hermes fall back to another model without a word.
 It stops the server first and reads the client files afterwards, so a client problem never keeps the GPU busy; it then names each client whose default points at llmctl:
@@ -190,6 +190,9 @@ The client lines follow with `on SGLang` and port 30000.
 A check that refuses prints the `memory:` line when it read one, then `error: <refusal>; llmctl stopped the container and kept it for its logs: ./llmctl logs, ./llmctl down --remove`, exits with code 4 and writes no client file; the refusals are in [When up refuses](#when-up-refuses).
 `up --dry-run` prints `would write <folder>: model overlay with links into snapshot ...` instead of the `wrote` line and builds nothing.
 
+A vLLM recipe with `[model] tokenizer_class` adds one line before the `waiting` line, `wrote <folder>: tokenizer overlay with <n> links into snapshot <revision> of <repo>, and tokenizer_config.json with tokenizer_class <class>`, such as `wrote /home/u/.cache/llmctl/vllm/tokenizers/deepseek-r1-0528-qwen3-8b: tokenizer overlay with 9 links into snapshot 6e8885a6ff5c of deepseek-ai/DeepSeek-R1-0528-Qwen3-8B, and tokenizer_config.json with tokenizer_class PreTrainedTokenizerFast` for `./llmctl up deepseek-r1 --runtime vllm`, whose snapshot gives the nine links of measurement C's folder ([record](../research/2026-11-18/vllm-deepseek-r1-0528-qwen3-8b-cold-start/README.md)).
+`up --dry-run` prints `would write <folder>: tokenizer overlay with links into snapshot ...` instead and builds nothing; vLLM has no post-ready check, so no `memory:` line follows.
+
 `status` and `list` end with the client lines (`list` without the paths), and warn when a default points at llmctl while no model runs, or when OpenCode's llmctl default is not the running model:
 
 ```text
@@ -252,6 +255,10 @@ A llama.cpp recipe has these keys:
 
 A vLLM recipe differs in three places: `[model]` has `include` and `exclude` patterns and a `served_name` instead of `files`; `args` are the flags after the model; and `[needs]` has only `ram_gib`, because the GPU need is the `--gpu-memory-utilization` share of the memory CUDA can use, which is vLLM's own start check.
 A vLLM recipe without that flag uses `default_gpu_memory_utilization` from `recipes/vllm/_runtime.toml`, 0.92 for vLLM v0.33.0.
+A vLLM recipe may also set `[model] tokenizer_class`, a Python class name such as `PreTrainedTokenizerFast`: `up` then builds the tokenizer overlay `<cache>/llmctl/vllm/tokenizers/<id>/`, a folder of links into the snapshot plus a real `tokenizer_config.json` that is the snapshot's own with `tokenizer_class` replaced, mounts it read-only at `/llmctl/tokenizer` and passes `--tokenizer /llmctl/tokenizer` right after `--max-model-len`.
+With the key set, `args` may not hold `--tokenizer`, because vLLM would take the last of the two; without it the recipe gets no overlay and `--tokenizer` stays allowed.
+The DeepSeek-R1 recipe sets it, because transformers 5.20.2 in the vLLM v0.33.0 image builds the model's `LlamaTokenizerFast` config as a Metaspace `LlamaTokenizer` and garbles every reply, while `PreTrainedTokenizerFast` reads the model's byte-level `tokenizer.json` as llama.cpp does ([vllm/models.md](../vllm/models.md#deepseek-r1-0528-qwen3-8b-chat-only)).
+A snapshot whose `tokenizer_config.json` is missing or is not a JSON object is refused by `up` with exit 3 before anything stops, and `pull` fails on it with exit 5 ([When up refuses](#when-up-refuses)).
 
 An SGLang recipe has the vLLM recipe's shape, with `args` the flags after llmctl's own, plus these keys:
 
@@ -279,7 +286,7 @@ llmctl sets some flags itself, and a recipe that contains them is refused:
 | Runtime | Flags llmctl owns | Flags refused because they would put a secret on the command line |
 |---|---|---|
 | llama.cpp | `-m`, `--model`, `-hf` and every `--hf-*` form, `-c`, `--ctx-size`, `-a`, `--alias`, `--host`, `--port` | `--api-key`, `--hf-token`, `-hft` |
-| vLLM | the model argument, `--model`, `--revision`, `--served-model-name`, `--max-model-len`, `--host`, `--port` | `--api-key`, `--hf-token` |
+| vLLM | the model argument, `--model`, `--revision`, `--served-model-name`, `--max-model-len`, `--host`, `--port`, and `--tokenizer` when `[model] tokenizer_class` is set | `--api-key`, `--hf-token` |
 | SGLang | `--model-path`, `--model`, `--served-model-name`, `--context-length`, `--host`, `--port`, `--revision`, and any abbreviation of them | `--api-key`, `--admin-api-key`, `--config` (its YAML file could carry a key) |
 
 A runtime file has `image`, `container_name`, `host_port`, `ready_path`, `start_timeout_s`, `opencode_provider`, and an `[env]` table; the llama.cpp file adds `served_name` (`local`), the vLLM file adds named `volumes` and `default_gpu_memory_utilization`, and the SGLang file adds named `volumes` and `min_free_at_ready_mib`.
@@ -308,7 +315,7 @@ On a GPU with less memory, lower `--moe-cache-mib` first and then raise `--n-cpu
 
 ## When up refuses
 
-`up` checks, in order: the clients, Docker, the CDI spec, the image, the model files, other containers and the port, free GPU memory, and available RAM; for SGLang it then builds the model overlay, and after the server is ready it checks the KV pool and the free GPU memory.
+`up` checks, in order: the clients, Docker, the CDI spec, the image, the model files, other containers and the port, free GPU memory, and available RAM; for SGLang it then builds the model overlay, and after the server is ready it checks the KV pool and the free GPU memory; for a vLLM recipe with `[model] tokenizer_class` it builds the tokenizer overlay before the start.
 Each refusal names what it found and exits with the code in its row: 1 for a usage error, 3 for a check that refused before anything started, 4 for an SGLang server that started but failed its post-ready check, which llmctl then stops and keeps for its logs, and 6 when the model is running but a client file or command failed.
 A client problem that appears only after the server is ready, such as a file that changed while the model loaded, is reported inside the exit 6 message instead of refusing.
 `status` and `list` stop with the same `LLMCTL_CLIENTS`, `HOME`, `~user`, relative `DSH_HOME` and empty or relative `KIMI_CODE_HOME` usage errors; `down` stops the server first and reports them afterwards, with exit code 1.
@@ -321,8 +328,11 @@ A client problem that appears only after the server is ready, such as a file tha
 | `the image ... is not on this machine` | 3 | Run the `./llmctl pull` command the message names (with `--runtime` for a vLLM or SGLang recipe) |
 | `the model files are not ready` | 3 | Run the `./llmctl pull` command the message names (with `--runtime` for a vLLM or SGLang recipe); for vLLM and SGLang this also finishes a download that stopped partway |
 | `generation_config.json in snapshot ... is not a JSON object` (inside `the model files are not ready` for SGLang) | 3 | The snapshot's sampling file is damaged, so llmctl cannot add the recipe's sampling to the model overlay: delete that file and its blob from the Hugging Face cache, then pull again; `pull` checks the same file and fails with exit 5 ([sglang/README.md](../sglang/README.md#sampling-and-the-model-overlay)) |
-| `llmctl's cache folder ... is not an absolute path` | 1 | Set `XDG_CACHE_HOME`, or `HOME` when it is unset, to an absolute path: llmctl builds the SGLang model overlay under `<cache>/llmctl/sglang/overlays/` and never relative to the working folder |
+| `llmctl's cache folder ... is not an absolute path` | 1 | Set `XDG_CACHE_HOME`, or `HOME` when it is unset, to an absolute path: llmctl builds the SGLang model overlay under `<cache>/llmctl/sglang/overlays/` and the vLLM tokenizer overlay under `<cache>/llmctl/vllm/tokenizers/`, never relative to the working folder |
 | `cannot write the model overlay` | 3 | Check the free space and permissions of llmctl's cache folder, which the message names; when it names a missing snapshot instead, run `./llmctl pull <model> --runtime sglang`, and when it names the snapshot's `generation_config.json`, delete that file and its blob from the Hugging Face cache, then pull again ([sglang/README.md](../sglang/README.md#sampling-and-the-model-overlay)) |
+| `tokenizer_config.json in snapshot ... is missing` (inside `the model files are not ready` for a vLLM recipe with `[model] tokenizer_class`) | 3 | The snapshot has no `tokenizer_config.json`, so the tokenizer overlay cannot set the class: remove `tokenizer_class` from the recipe, or make the download include that file, then pull again; `pull` checks the same file and fails with exit 5 |
+| `tokenizer_config.json in snapshot ... is not a JSON object` (inside `the model files are not ready` for a vLLM recipe with `[model] tokenizer_class`) | 3 | The snapshot's tokenizer config is damaged: delete that file and its blob from the Hugging Face cache, then pull again; `pull` checks the same file and fails with exit 5 |
+| `cannot write the tokenizer overlay` | 3 | Check the free space and permissions of llmctl's cache folder, which the message names; when it names a missing snapshot instead, run `./llmctl pull <model> --runtime vllm`, and when it names the snapshot's `tokenizer_config.json`, follow the two `tokenizer_config.json` rows above ([vllm/models.md](../vllm/models.md#deepseek-r1-0528-qwen3-8b-chat-only)) |
 | `another model server is running` | 3 | `./llmctl down`, or `./llmctl up <model> --replace` |
 | `a container named ... was not started by llmctl` | 3 | Check that you do not need it, then `docker rm -f <name>` |
 | `port 127.0.0.1:... is already in use` | 3 | Stop the program that holds the port |

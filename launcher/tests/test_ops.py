@@ -1035,11 +1035,11 @@ class SglangUpTest(unittest.TestCase):
         self.assertEqual(self.f.calls_starting("docker", "stop"), [])
         self.assertEqual(self.f.calls_starting("docker", "run"), [])
 
-    def test_llamacpp_and_vllm_define_no_hooks(self):
-        for adapter in (llamacpp, vllm):
+    def test_optional_members_per_adapter(self):
+        for adapter, members in ((llamacpp, ()), (vllm, ("prepare_start",))):
             for name in ("prepare_start", "check_started"):
                 with self.subTest(adapter=adapter.NAME, member=name):
-                    self.assertIsNone(getattr(adapter, name, None))
+                    self.assertEqual(getattr(adapter, name, None) is not None, name in members)
 
     def pull(self, name, runtime):
         start = len(self.f.host.out.getvalue())
@@ -1065,6 +1065,86 @@ class SglangUpTest(unittest.TestCase):
         self.assertEqual(self.pull("qwen3.6-35b-a3b", None)[0],
                          "qwen3.6-35b-a3b: the image ghcr.io/ggml-org/llama.cpp:server-cuda-b12407 "
                          "(see docs/host-setup.md#disk-budget for its size) to download")
+
+
+DS_ID = "deepseek-r1-0528-qwen3-8b"
+DS_TOKENIZER_LINE = ("tokenizer overlay with {} into snapshot 6e8885a6ff5c of deepseek-ai/DeepSeek-R1-0528-Qwen3-8B, "
+                     "and tokenizer_config.json with tokenizer_class PreTrainedTokenizerFast")
+
+
+class VllmTokenizerUpTest(unittest.TestCase):
+    def setUp(self):
+        self.f = OpsFixture()
+        self.addCleanup(self.f.cleanup)
+        self.folder = self.f.cache_dir / "vllm" / "tokenizers" / DS_ID
+
+    def up(self, name=DS_ID, replace=False, dry_run=False):
+        return ops.up(self.f.host, self.f.catalog, name, "vllm", replace=replace, dry_run=dry_run)
+
+    def lines(self):
+        return self.f.host.out.getvalue().splitlines()
+
+    def test_up_builds_the_tokenizer_overlay_before_docker_run(self):
+        self.f.use_vllm_tokenizer()
+        seen = []
+
+        def run(argv):
+            path = self.folder / "tokenizer_config.json"
+            seen.append(not path.is_symlink() and path.is_file()
+                        and json.loads(path.read_text(encoding="utf-8"))["tokenizer_class"])
+            return ok("0123456789ab\n")
+        self.f.host.on(("docker", "run"), run)
+        self.assertEqual(self.up(), 0)
+        self.assertEqual(seen, ["PreTrainedTokenizerFast"])
+        lines = self.lines()
+        waiting = lines.index(f"waiting for {DS_ID} to load (up to 900 s)")
+        self.assertEqual(lines[waiting - 1], f"wrote {self.folder}: " + DS_TOKENIZER_LINE.format("2 links"))
+        [run_argv] = self.f.calls_starting("docker", "run")
+        mount = run_argv.index(f"{self.folder}:/llmctl/tokenizer:ro")
+        self.assertEqual(run_argv[mount - 1], "-v")
+        flag = run_argv.index("--tokenizer")
+        self.assertEqual(run_argv[flag + 1], "/llmctl/tokenizer")
+        self.assertFalse(any(line.startswith("memory:") for line in lines))
+        self.assertFalse(any(url.endswith("/server_info") for _, url, _ in self.f.host.http_calls))
+
+    def test_dry_run_prints_the_tokenizer_line_and_writes_nothing(self):
+        self.f.use_vllm_tokenizer()
+        self.assertEqual(self.up(dry_run=True), 0)
+        lines = self.lines()
+        index = lines.index(f"would write {self.folder}: " + DS_TOKENIZER_LINE.format("links"))
+        self.assertTrue(lines[index + 1].startswith("docker run -d --name vllm"), lines[index + 1])
+        self.assertFalse(os.path.lexists(self.f.cache_dir))
+
+    def test_vllm_without_tokenizer_class_writes_no_overlay(self):
+        self.f.place_files("gpt-oss-20b", runtime="vllm")
+        self.f.host.on_http("GET", "http://127.0.0.1:8000/v1/models", http(200, b'{"data":[{"id":"gpt-oss-20b"}]}'))
+        self.assertEqual(self.up("gpt-oss-20b"), 0)
+        self.assertFalse(any("overlay" in line for line in self.lines()))
+        self.assertFalse(os.path.lexists(self.f.cache_dir))
+        self.assertEqual(self.f.calls_starting("docker", "run"), [self.f.golden("vllm", "gpt-oss-20b")])
+
+    def test_tokenizer_problem_refuses_before_anything_stops(self):
+        self.f.use_vllm_tokenizer(files={"config.json": b"{}"})
+        self.f.managed_lines = [managed_line("llamacpp", "running", "qwen3.6-35b-a3b")]
+        with self.assertRaises(PreflightError) as ctx:
+            self.up(replace=True)
+        self.assertEqual(ctx.exception.exit_code, 3)
+        self.assertIn(f"{DS_ID}: the model files are not ready", str(ctx.exception))
+        self.assertIn("tokenizer_config.json in snapshot 6e8885a6ff5c is missing", str(ctx.exception))
+        self.assertEqual(self.f.calls_starting("docker", "stop"), [])
+        self.assertEqual(self.f.calls_starting("docker", "run"), [])
+
+    def test_already_running_tokenizer_recipe_rebuilds_nothing(self):
+        self.f.use_vllm_tokenizer()
+        recipe, runtime = resolve(self.f.catalog, DS_ID, "vllm")
+        self.f.managed_lines = [managed_line("vllm", "running", DS_ID, runtime="vllm",
+                                             sha=recipe.source.sha256, runtime_sha=runtime.source.sha256)]
+        self.assertEqual(self.up(), 0)
+        self.assertEqual(self.f.calls_starting("docker", "run"), [])
+        self.assertFalse(os.path.lexists(self.f.cache_dir / "vllm" / "tokenizers"))
+        lines = self.lines()
+        self.assertIn(f"{DS_ID} is already running from this recipe file; nothing to start", lines)
+        self.assertFalse(any(line.startswith("note:") and "memory" in line for line in lines))
 
 
 class DownStatusLogsTest(unittest.TestCase):

@@ -8,7 +8,7 @@ Switch to Qwen3.8-27B (36 tok/s, 64k context) when a task needs the strongest mo
 vLLM is the second path, for the smaller models that fit fully in 16 GB of VRAM.
 GPU access from containers works on this laptop since 2026-11-15, and all ten picks were measured on llama.cpp on 2026-11-16, nine of them completing an OpenCode tool session: Qwen3.8-27B at 36 tok/s and K2 Horizon MoVA at 37 tok/s with 64k context, Qwen3.6-35B-A3B at 122 tok/s, Gemma 4 26B-A4B at 148 tok/s and Qwen3-Coder-Next at 72 tok/s with 128k, K2 Horizon 7B at 67 tok/s with 80k, Groot-19B-A3B at 170 tok/s and Nemotron 3.5 Bolt at 74 tok/s with 128k, and gpt-oss-20b at 166 tok/s; the chat-only DeepSeek-R1-0528-Qwen3-8B measured 71 tok/s and failed the OpenCode tool session when tools were enabled for a test, and Nemotron 3.5 Lightning, an honorable mention, measured 144 tok/s with 128k ([llamacpp/models.md](llamacpp/models.md)).
 On Ollama 0.40.16, the five small models from the user's LibreDB Studio list (qwen3.5:9b, gemma4:12b, ornith:9b, ministral-3:8b and qwen2.5:7b) fit fully on the GPU at 99-119 tok/s and passed the same OpenCode session ([docs/agent-harness-evidence.md](docs/agent-harness-evidence.md#try-here-first)).
-On vLLM v0.33.0, gpt-oss-20b was measured on 2026-11-16, and Mellum2.1, Qwen3.5-9B, Gemma 4 12B, Gemma 4 E4B, K2 Horizon 7B and Groot-19B-A3B on 2026-11-17 ([research/2026-11-17/](research/2026-11-17/README.md)), while DeepSeek-R1-0528-Qwen3-8B failed there on its tokenizer.
+On vLLM v0.33.0, gpt-oss-20b was measured on 2026-11-16, and Mellum2.1, Qwen3.5-9B, Gemma 4 12B, Gemma 4 E4B, K2 Horizon 7B and Groot-19B-A3B on 2026-11-17 ([research/2026-11-17/](research/2026-11-17/README.md)), while DeepSeek-R1-0528-Qwen3-8B failed there on its tokenizer and runs since 2026-11-18 through llmctl's tokenizer overlay at 72.5 tok/s with 64k (measured on the MSI Raider 18 Max HX, vLLM v0.33.0, 2026-11-18) ([research/2026-11-18/](research/2026-11-18/vllm-deepseek-r1-0528-qwen3-8b-cold-start/README.md)).
 On llama.cpp, the GGUF builds of Qwen3.5-9B, Gemma 4 12B, Gemma 4 E4B and Mellum2.1 ran with 128k context at 66.0, 77.1, 151.3 and 188.2 tok/s (measured on the MSI Raider 18 Max HX, llama.cpp b12407, 2026-11-17) ([llamacpp/models.md](llamacpp/models.md#gguf-builds-of-the-vllm-and-sglang-models)).
 SGLang v0.5.23 is the third engine: Qwen3.5-9B NVFP4, gpt-oss-20b, Gemma 4 12B QAT W4A16 and Qwen3.6-35B-A3B NVFP4 ran on it with 128k context and K2 Horizon 7B AWQ-INT4 and Gemma 4 E4B QAT W4A16 with 64k, at 93.7, 124.6, 70.4, 151.3, 89.6 and 141.3 tok/s (measured on the MSI Raider 18 Max HX, SGLang v0.5.23, 2026-11-17 and 2026-11-18) ([sglang/models.md](sglang/models.md)).
 One of them gains materially there: Qwen3.6-35B-A3B with `--runtime sglang`, 151.3 tok/s through Paged Experts against 122.5 on llama.cpp, 24% faster (measured on the MSI Raider 18 Max HX, llama.cpp b12407, 2026-11-16; [record](research/2026-11-16/llamacpp-qwen3.6-35b-a3b/README.md)).
@@ -30,7 +30,7 @@ Decode speeds are measured on this laptop (measured on the RTX 5080 Laptop, llam
 
 | Model ID | Aliases | llama.cpp | Context | Decode tok/s | vLLM | Context | Decode tok/s | SGLang | Context | Decode tok/s |
 |---|---|---|---|---|---|---|---|---|---|---|
-| `deepseek-r1-0528-qwen3-8b` | `deepseek-r1` | Yes | 64k | 70.6 | Yes | 64k | - | No | - | - |
+| `deepseek-r1-0528-qwen3-8b` | `deepseek-r1` | Yes | 64k | 70.6 | Yes | 64k | 72.5 | No | - | - |
 | `gemma-4-12b` | `gemma4-12b` | Yes | 128k | 77.1 | Yes | 128k | 69.5 | Yes | 128k | 70.4 |
 | `gemma-4-26b-a4b` | `gemma4-26b` | Yes | 128k | 148.2 | No | - | - | No | - | - |
 | `gemma-4-e4b` | `gemma4-e4b` | Yes | 128k | 151.3 | Yes | 64k | 45.2 | Yes | 64k | 141.3 |
@@ -46,7 +46,7 @@ Decode speeds are measured on this laptop (measured on the RTX 5080 Laptop, llam
 | `qwen3.6-35b-a3b` | `qwen3.6` | Yes | 128k | 122.5 | No | - | - | Yes | 128k | 151.3 |
 | `qwen3.8-27b` | `qwen3.8` | Yes | 64k | 36.4 | No | - | - | No | - | - |
 
-The vLLM recipe of `deepseek-r1-0528-qwen3-8b` failed on this laptop on 2026-11-17: vLLM v0.33.0 loads its tokenizer as a Metaspace LlamaTokenizer, so prompts lose their spaces and replies come back garbled; use its llama.cpp recipe ([vllm/models.md](vllm/models.md#deepseek-r1-0528-qwen3-8b-chat-only)).
+The vLLM recipe of `deepseek-r1-0528-qwen3-8b` runs through llmctl's tokenizer overlay, a folder that names the right tokenizer class for vLLM v0.33.0 ([vllm/models.md](vllm/models.md#deepseek-r1-0528-qwen3-8b-chat-only)).
 
 ```bash
 ./llmctl list                                # every recipe, its evidence, what is downloaded, and what runs
@@ -70,7 +70,7 @@ After `./llmctl up`, run the model from a client; `up` prints these lines for th
 
 | Client | What to run |
 |---|---|
-| OpenCode | `/models` (or `ctrl+x m`) in the OpenCode screen, or `opencode run --model llamacpp-docker/qwen3.6-35b-a3b "your prompt"` (`vllm-docker/<id>` on vLLM and `sglang-docker/<id>` on SGLang, where DeepSeek-R1 has no OpenCode entry on vLLM) |
+| OpenCode | `/models` (or `ctrl+x m`) in the OpenCode screen, or `opencode run --model llamacpp-docker/qwen3.6-35b-a3b "your prompt"` (`vllm-docker/<id>` on vLLM and `sglang-docker/<id>` on SGLang) |
 | Hermes Agent | `hermes -p llmctl` |
 | Pi | `pi --model llmctl/<served name>`, with `--no-tools` for the chat-only DeepSeek-R1 |
 | DeepSeek Harness (dsh) | `dsh web`, then pick `<id> on <engine> (llmctl)` in its model picker; while llmctl holds dsh's default, `dsh web` alone or `dsh --profile headless "your prompt"` |

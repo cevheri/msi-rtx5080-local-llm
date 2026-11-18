@@ -194,6 +194,13 @@ class CliTest(unittest.TestCase):
         self.assertIn(sha, out)
         self.assertIn("docker run -d --name llamacpp", out)
 
+    def test_show_vllm_deepseek_has_the_tokenizer_mount(self):
+        host = self.host()
+        self.assertEqual(main(["show", "deepseek-r1", "--runtime", "vllm"], host), 0, host.err.getvalue())
+        out = host.out.getvalue()
+        self.assertIn("-v /home/user/.cache/llmctl/vllm/tokenizers/deepseek-r1-0528-qwen3-8b:/llmctl/tokenizer:ro", out)
+        self.assertIn("--tokenizer /llmctl/tokenizer", out)
+
     def test_show_as_override_marks_estimate(self):
         host = self.host()
         self.assertEqual(main(["show", "qwen3.6", "--as-override"], host), 0)

@@ -97,9 +97,13 @@ def llamacpp_launch(doc: str) -> dict:
 
 def vllm_launch(doc: str) -> dict:
     tokens = last_run_block(section(doc))
-    server = tokens[next(i for i, t in enumerate(tokens) if t.startswith("vllm/vllm-openai:")) + 1:]
+    image = next(i for i, t in enumerate(tokens) if t.startswith("vllm/vllm-openai:"))
+    server = tokens[image + 1:]
+    mounts = [tokens[i + 1] for i in range(image)
+              if tokens[i] == "-v" and tokens[i + 1].endswith(":/llmctl/tokenizer:ro")]
     return {"memory": int(tokens[tokens.index("--memory") + 1].rstrip("g")), "repo": server.pop(0),
             "served": take(server, "--served-model-name"), "context": int(take(server, "--max-model-len")),
+            "tokenizer": take(server, "--tokenizer"), "tokenizer_mount": mounts[0] if mounts else None,
             "args": server}
 
 
@@ -196,6 +200,13 @@ SGLANG_ROWS = (
     "`POST http://127.0.0.1:30000/flush_cache answered`",
 )
 
+# The first cells of the vLLM tokenizer overlay rows in docs/llmctl.md "When up refuses" (plan rulings 36 and 37).
+VLLM_TOKENIZER_ROWS = (
+    "`cannot write the tokenizer overlay`",
+    "`tokenizer_config.json in snapshot ... is missing`",
+    "`tokenizer_config.json in snapshot ... is not a JSON object`",
+)
+
 # Ruling 11 of the Kimi plan: the documents cite only claims archived with a verdict that holds.
 KIMI_CLAIMS = REPO / "research/2026-11-17/llmctl-kimi-stub/research-claims.json"
 KIMI_CLAIM_DOCS = ("docs/clients.md", "docs/llmctl.md", "docs/sources.md", "README.md")
@@ -223,6 +234,8 @@ class DocsConsistencyTest(unittest.TestCase):
                 self.assertEqual((launch["repo"], launch["served"]), (recipe.model.repo, recipe.model.served_name))
                 self.assertEqual((launch["memory"], launch["context"]), (recipe.memory_gib, recipe.context))
                 self.assertEqual(launch["args"], list(recipe.args))
+                self.assertEqual(launch["tokenizer"], "/llmctl/tokenizer" if recipe.model.tokenizer_class else None)
+                self.assertEqual(launch["tokenizer_mount"] is not None, recipe.model.tokenizer_class is not None)
 
     def test_sglang_docs_match(self):
         for recipe in self.catalog.runtimes["sglang"].recipes.values():
@@ -357,6 +370,14 @@ class DocsConsistencyTest(unittest.TestCase):
         first_cells = [line.split("|")[1].strip() for line in section("docs/llmctl.md#when-up-refuses")
                        if line.startswith("|")]
         for start in KIMI_REFUSALS:
+            with self.subTest(start=start):
+                self.assertTrue(any(start in cell for cell in first_cells),
+                                f"no row of docs/llmctl.md#when-up-refuses starts with {start}")
+
+    def test_every_vllm_tokenizer_refusal_has_a_row(self):
+        first_cells = [line.split("|")[1].strip() for line in section("docs/llmctl.md#when-up-refuses")
+                       if line.startswith("|")]
+        for start in VLLM_TOKENIZER_ROWS:
             with self.subTest(start=start):
                 self.assertTrue(any(start in cell for cell in first_cells),
                                 f"no row of docs/llmctl.md#when-up-refuses starts with {start}")

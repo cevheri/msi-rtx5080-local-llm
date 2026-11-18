@@ -3,8 +3,8 @@
 download_file writes the same layout huggingface_hub does, from a pinned revision, and checks every file
 against the SHA-256 that Hugging Face publishes for it before linking it into the snapshot.
 snapshot_problems and cli_download serve the runtimes that download a whole snapshot with an image's hf CLI.
-build_overlay builds, aside and then renamed into place, a folder of links into a snapshot plus a few real files
-that a runtime mounts in the snapshot's place.
+build_overlay builds, aside and then renamed into place, a folder of links into a snapshot plus a few real files,
+which SGLang mounts in the snapshot's place and vLLM mounts as the tokenizer folder it passes with --tokenizer.
 The token goes only into a request header (download_file) or into docker run's environment or --env-file
 (cli_download); it never appears in an argv and is never printed.
 """

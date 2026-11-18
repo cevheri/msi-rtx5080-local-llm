@@ -1,15 +1,15 @@
 # vLLM model recipes for the RTX 5080 Laptop
 
-Last verified: 2026-11-17 (gpt-oss-20b measured on 2026-11-16; Groot, K2 Horizon 7B, Gemma 4 12B, Qwen3.5-9B, Mellum2.1 and Gemma 4 E4B measured on 2026-11-17; DeepSeek-R1-0528-Qwen3-8B failed on 2026-11-17; K2 Horizon 7B client limits and the DeepSeek-R1 warm start from the clients e2e of 2026-11-17; Ornith note updated from the agent-harness review).
+Last verified: 2026-11-18 (gpt-oss-20b measured on 2026-11-16; Groot, K2 Horizon 7B, Gemma 4 12B, Qwen3.5-9B, Mellum2.1 and Gemma 4 E4B measured on 2026-11-17; DeepSeek-R1-0528-Qwen3-8B failed on 2026-11-17 and was measured with llmctl's tokenizer overlay on 2026-11-18; K2 Horizon 7B client limits and the DeepSeek-R1 warm start from the clients e2e of 2026-11-17; Ornith note updated from the agent-harness review).
 
-Only small checkpoints run fully under vLLM v0.33.0 on this 16 GB GPU: Groot-19B-A3B NVFP4 and K2 Horizon 7B AWQ-INT4 from the ranked picks (DeepSeek-R1-0528-Qwen3-8B, chat only, starts but fails on v0.33.0 with garbled replies, [record](../research/2026-11-17/vllm-deepseek-r1-0528-qwen3-8b/)), plus Gemma 4 12B QAT W4A16, Qwen3.5-9B NVFP4 and Mellum2.1 as honorable mentions and Gemma 4 E4B as a stack smoke test.
+Only small checkpoints run fully under vLLM v0.33.0 on this 16 GB GPU: Groot-19B-A3B NVFP4 and K2 Horizon 7B AWQ-INT4 from the ranked picks (DeepSeek-R1-0528-Qwen3-8B, chat only, runs only through llmctl's tokenizer overlay, [record](../research/2026-11-18/vllm-deepseek-r1-0528-qwen3-8b-cold-start/README.md)), plus Gemma 4 12B QAT W4A16, Qwen3.5-9B NVFP4 and Mellum2.1 as honorable mentions and Gemma 4 E4B as a stack smoke test.
 gpt-oss-20b starts only with `--enforce-eager` and 256 batched tokens, and then runs at half the llama.cpp speed (measured on 2026-11-16, [gpt-oss-20b](#gpt-oss-20b)).
 The budget method behind the estimates below missed the measured KV pools in both directions: at the default 0.92 the 2026-11-17 pools came out from 1.44 GiB below (K2 Horizon 7B) to 1.48 GiB above (Gemma 4 12B) their estimates (measured on the MSI Raider 18 Max HX, vLLM v0.33.0, 2026-11-17; [README.md](README.md#memory-budget)).
 On 2026-11-17 every other recipe on this page started at its planned context, Groot NVFP4 included; K2 Horizon 7B needed `--gpu-memory-utilization 0.94` and Gemma 4 E4B needed `--enforce-eager` ([records](../research/2026-11-17/README.md)).
 None of the four highest-ranked models (Qwen3.8-27B, Qwen3.6-35B-A3B, K2 Horizon MoVA, Gemma 4 26B-A4B) fits the 14.65 GiB vLLM budget, and vLLM cannot offload MoE experts to RAM on this version ([#66264](https://github.com/vllm-project/vllm/issues/66264)), so they run on llama.cpp ([llamacpp/models.md](../llamacpp/models.md)).
 For every model below, llama.cpp is the primary runtime in the ranking ([model-selection.md](../docs/model-selection.md)); vLLM is the second path, useful mainly for gpt-oss-20b, Groot and the vLLM-native honorable mentions.
 Each card reports what the measurement found with its evidence label; the budget tables and speed ceilings in the cards are the estimates from config files and file sizes that came before it.
-DeepSeek-R1-0528-Qwen3-8B starts, but vLLM v0.33.0 loads its tokenizer with the wrong class and every reply comes back garbled, so it has no measured recipe and no OpenCode entry ([DeepSeek-R1-0528-Qwen3-8B](#deepseek-r1-0528-qwen3-8b-chat-only)).
+DeepSeek-R1-0528-Qwen3-8B runs, chat only, through llmctl's tokenizer overlay, because vLLM v0.33.0 loads its own tokenizer config with the wrong class: 65536 context, 69,904 KV tokens and 72.5 tok/s (measured on the MSI Raider 18 Max HX, vLLM v0.33.0, 2026-11-18) ([DeepSeek-R1-0528-Qwen3-8B](#deepseek-r1-0528-qwen3-8b-chat-only)).
 
 The image, run template, budget method, flag reference, parser table and smoke tests live in [README.md](README.md); this page only adds the per-model values.
 Load testing is in [benchmarking.md](benchmarking.md), host prerequisites (NVIDIA Container Toolkit with CDI, installed and verified on 2026-11-15) in [host-setup.md](../docs/host-setup.md), and the OpenCode provider in [opencode.md](../docs/opencode.md).
@@ -25,7 +25,7 @@ KV per token is 2 x full-attention layers x KV heads x head dim x bytes; sliding
 | [gpt-oss-20b](#gpt-oss-20b) | Rank 9 | `openai/gpt-oss-20b` (MXFP4) | 13.8 in GPU memory (12.82 on disk), measured | 24 KiB | Measured: 65536 only at util 0.965 with `--enforce-eager`, 81,504 FP8 KV tokens, 83.5 tok/s | Runtime comparison only; use llama.cpp (131072, 166 tok/s) |
 | [Groot-19B-A3B-261023](#groot-19b-a3b-261023-nvfp4) | Rank 8 | `GrootTeam/Groot-19B-A3B-261023-NVFP4`, `--language-model-only` | 10.99 loaded, measured | 20 KiB | Measured: 131072 with FP8 KV, 167,480 KV tokens, 193.4 tok/s over runs of 780 to 829 tokens | Fast all-in-VRAM agent, vendor claims only |
 | [K2 Horizon 7B](#k2-horizon-7b-awq-int4) | Rank 4 | `cyankiwi/K2-Horizon-7B-AWQ-INT4` | 7.72 loaded, measured | 144 KiB | Measured: 65536 with FP8 KV only at util 0.94, 95,168 KV tokens, 94.8 tok/s over full 1,500-token runs | Weak alternative; llama.cpp Q8_0 is primary |
-| [DeepSeek-R1-0528-Qwen3-8B](#deepseek-r1-0528-qwen3-8b-chat-only) | Rank 10, chat only | BF16 repo with online `fp8_per_tensor` | 9.12 loaded, measured | 144 KiB | Failed: 65536 with FP8 KV failed at util 0.92 on the first, cold start and worked at 0.92 with the compile cache warm, but replies are garbled by a tokenizer defect | Reasoning and Q&A on llama.cpp instead |
+| [DeepSeek-R1-0528-Qwen3-8B](#deepseek-r1-0528-qwen3-8b-chat-only) | Rank 10, chat only | BF16 repo with online `fp8_per_tensor` | 9.12 loaded, measured | 144 KiB | Measured: 65536 with FP8 KV and `--kv-cache-memory-bytes`, 69,904 KV tokens, 72.5 tok/s, cold and warm, through llmctl's tokenizer overlay | Reasoning and Q&A; llama.cpp Q8_0 is primary |
 | [Gemma 4 12B IT](#gemma-4-12b-it-qat-w4a16) | Honorable | `google/gemma-4-12B-it-qat-w4a16-ct` | 8.28 loaded, measured | 16 KiB global + sliding | Measured: 131072 with FP8 KV, 366,455 KV tokens, 69.5 tok/s over runs of 885 to 933 tokens | The vLLM-native Gemma |
 | [Qwen3.5-9B](#qwen35-9b-nvfp4) | Honorable | `RedHatAI/Qwen3.5-9B-NVFP4`, `--language-model-only` | 7.48 loaded, measured | 32 KiB | Measured: 131072 with BF16 KV, 147,663 KV tokens, 90.8 tok/s over runs of 676 to 791 tokens | Conservative vLLM-native 9B |
 | [Mellum2.1 12B-A2.5B Thinking](#mellum21-12b-a25b-thinking-awq-int4) | Honorable | `cyankiwi/Mellum2.1-12B-A2.5B-Thinking-AWQ-INT4` | 7.2 loaded, measured | 14 KiB | Measured: 131072 with BF16 KV, 426,946 KV tokens, 257.2 tok/s with thinking on over runs of 1,171 to 1,500 tokens | Fast sub-agent |
@@ -386,64 +386,75 @@ Caveats and open issues:
 ## DeepSeek-R1-0528-Qwen3-8B (chat only)
 
 Rank 10 through the required-family swap: chat and reasoning only, with no tool calling, so it is not an OpenCode agent model ([model-selection.md](../docs/model-selection.md)).
-llama.cpp Q8_0 is the ranking's primary path ([llamacpp/models.md](../llamacpp/models.md)), and on this laptop the only one that works: under vLLM v0.33.0 the model's tokenizer loads with the wrong class.
-`./llmctl up deepseek-r1 --runtime vllm` ([llmctl](../docs/llmctl.md)) runs the block below, which is still an estimate: on 2026-11-17 its first start failed, later starts worked, and every reply came back garbled ([record](../research/2026-11-17/vllm-deepseek-r1-0528-qwen3-8b/)).
+llama.cpp Q8_0 is the ranking's primary path ([llamacpp/models.md](../llamacpp/models.md)); under vLLM v0.33.0 the model runs only through the tokenizer overlay that llmctl builds, because the image loads the model's own tokenizer config with the wrong class.
+`./llmctl up deepseek-r1 --runtime vllm` ([llmctl](../docs/llmctl.md)) builds that overlay and runs the block below, measured cold and warm on 2026-11-18 ([record](../research/2026-11-18/vllm-deepseek-r1-0528-qwen3-8b-cold-start/README.md)).
 
 | Item | Value |
 |---|---|
 | Checkpoint | [`deepseek-ai/DeepSeek-R1-0528-Qwen3-8B`](https://huggingface.co/deepseek-ai/DeepSeek-R1-0528-Qwen3-8B), BF16, MIT, released 2025-05-29 |
 | Download | 16,381,516,796 B = 15.26 GiB ([HF API](https://huggingface.co/api/models/deepseek-ai/DeepSeek-R1-0528-Qwen3-8B?blobs=true)); too big for vLLM as BF16 |
-| Loaded weights | About 8.79 GiB after online FP8 (estimate: embeddings and lm_head stay BF16, linears go to FP8; it matches the 9.43 GB of a third-party FP8-Dynamic build) |
+| Loaded weights | About 8.79 GiB after online FP8 (estimate: embeddings and lm_head stay BF16, linears go to FP8; it matches the 9.43 GB of a third-party FP8-Dynamic build); 9.12 GiB (measured on the MSI Raider 18 Max HX, vLLM v0.33.0, 2026-11-17; [record](../research/2026-11-17/vllm-deepseek-r1-0528-qwen3-8b-retry/README.md)) |
 | Architecture | `Qwen3ForCausalLM`, 36 full-attention layers, 8 KV heads, head dim 128, 131072 max positions via YaRN ([config.json](https://huggingface.co/deepseek-ai/DeepSeek-R1-0528-Qwen3-8B/raw/main/config.json)) |
 | Quantization flag | `--quantization fp8_per_tensor`; plain `fp8` is deprecated for online use in v0.33.0 and is rewritten with a warning ([weight_utils.py](https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/model_executor/model_loader/weight_utils.py#L355-L361), [quantization/\_\_init\_\_.py](https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/model_executor/layers/quantization/__init__.py)) |
+| Tokenizer | `[model] tokenizer_class = "PreTrainedTokenizerFast"` in the recipe, because transformers 5.20.2 in the image builds the model's `LlamaTokenizerFast` config as a Metaspace `LlamaTokenizer` over its byte-level BPE `tokenizer.json`; with the class replaced, vLLM's own `get_tokenizer` counts llama.cpp's tokens (measured on the MSI Raider 18 Max HX, vLLM v0.33.0 image, offline, 2026-11-17; [offline table and record](../research/2026-11-17/vllm-deepseek-r1-0528-qwen3-8b-retry/README.md)) |
 | Parsers | `--reasoning-parser deepseek_r1`; no tool parser works, because the `deepseek_v3` parser raises at init when the tool tokens are missing from this tokenizer ([deepseekv3_tool_parser.py](https://github.com/vllm-project/vllm/blob/v0.33.0/vllm/tool_parsers/deepseekv3_tool_parser.py)) |
 
 Budget (estimate): 14.65 - 8.79 - 1.2 = 4.66 GiB of pool.
 KV per token is 2 x 36 x 8 x 128 x 2 B = 147,456 B BF16 or 73,728 B FP8, so the pool holds about 33.9k tokens BF16 and 67.8k FP8.
 The cold first start on 2026-11-17 measured a 3.83 GiB pool, which did not fit 65536 FP8 tokens (65,536 x 73,728 B = 4.5 GiB); 32768 BF16 tokens need the same 32,768 x 147,456 B = 4.5 GiB, so that fallback would fail the same way, and the measured cold pool holds about 27.9k BF16 or 55.8k FP8 tokens (arithmetic on the measured pool, estimate).
+`--kv-cache-memory-bytes 5153960755` therefore sets the 4.8 GiB that warm starts at the default 0.92 got, so a cold start gets it too (measured on the MSI Raider 18 Max HX, vLLM v0.33.0, 2026-11-18).
 For more room, [`Intel/DeepSeek-R1-0528-Qwen3-8B-int4-AutoRound`](https://huggingface.co/api/models/Intel/DeepSeek-R1-0528-Qwen3-8B-int4-AutoRound?blobs=true) is 5.68 GiB and would leave about 56.5k BF16 or 113k FP8 tokens (estimate; its Marlin path on sm_120 is not checked).
 
 ```bash
-docker run -d --rm --name vllm \
+docker run -d --name vllm \
   --device nvidia.com/gpu=all \
   --ipc=host \
   --memory 32g --memory-swap 32g \
   -p 127.0.0.1:8000:8000 \
-  -e HF_TOKEN \
-  -e VLLM_API_KEY \
+  -e HF_HUB_OFFLINE=1 \
   -e VLLM_NO_USAGE_STATS=1 \
   -e MAX_JOBS=2 \
-  -v "$HOME/.cache/huggingface:/root/.cache/huggingface" \
+  -e HF_MODULES_CACHE=/tmp/hf_modules \
+  -v "$HOME/.cache/huggingface:/root/.cache/huggingface:ro" \
+  -v "$HOME/.cache/llmctl/vllm/tokenizers/deepseek-r1-0528-qwen3-8b:/llmctl/tokenizer:ro" \
   -v vllm-cache:/root/.cache/vllm \
   -v flashinfer-cache:/root/.cache/flashinfer \
   vllm/vllm-openai:v0.33.0 \
   deepseek-ai/DeepSeek-R1-0528-Qwen3-8B \
   --served-model-name deepseek-r1-8b \
-  --quantization fp8_per_tensor \
   --max-model-len 65536 \
+  --tokenizer /llmctl/tokenizer \
+  --quantization fp8_per_tensor \
   --max-num-seqs 1 \
   --kv-cache-dtype fp8 \
   --attention-backend TRITON_ATTN \
   --reasoning-parser deepseek_r1 \
-  --override-generation-config '{"temperature":0.6,"top_p":0.95}'
+  --override-generation-config '{"temperature":0.6,"top_p":0.95}' \
+  --kv-cache-memory-bytes 5153960755
 ```
 
+`./llmctl up` writes the folder `$HOME/.cache/llmctl/vllm/tokenizers/deepseek-r1-0528-qwen3-8b/` (links into the snapshot plus a `tokenizer_config.json` that names `PreTrainedTokenizerFast`), and passes the snapshot path where this block names the repository ID.
+For a hand launch, run one `up` first and then the command that `./llmctl show deepseek-r1 --runtime vllm` prints, not this block: with `HF_HUB_OFFLINE=1` the repository ID resolves only through a `refs/main` entry in the Hugging Face cache, and `./llmctl pull` downloads by revision and writes none (inferred from huggingface_hub's offline revision lookup and this laptop's cache, which holds no `refs/` folder for this model).
 There is deliberately no `--enable-auto-tool-choice`.
 
-Failed on 2026-11-17 ([record](../research/2026-11-17/vllm-deepseek-r1-0528-qwen3-8b/), [attempt log](../research/2026-11-17/vllm-deepseek-r1-0528-qwen3-8b/attempts.md), [tokenizer check](../research/2026-11-17/vllm-deepseek-r1-0528-qwen3-8b/tokenizer-check.json)): do not use this recipe on vLLM v0.33.0.
-The first start of the block above, with an empty torch.compile cache, failed: 65536 tokens needed 4.5 GiB of KV cache and 3.83 GiB was available at vLLM's default utilization of 0.92.
-A second start with `--gpu-memory-utilization 0.965` added and the compile cache warm had 5.5 GiB of KV cache for 80,064 tokens, and both full e2e runs of 2026-11-17 later started the block as written at 0.92, in 25 s and 24 s (the first run's [record 277](../research/2026-11-17/llmctl-dsh-e2e-run1/records/277-18-deepseek-r1-0528-qwen3-8b-vllm-up), the second run's [record 276](../research/2026-11-17/llmctl-dsh-e2e/records/276-18-deepseek-r1-0528-qwen3-8b-vllm-up)) (measured on the MSI Raider 18 Max HX, vLLM v0.33.0, 2026-11-17), with the cache warm (inferred from its 24 s start; the records hold no server log), so a warm start fits and a cold one may not ([Known issues](README.md#known-issues)).
-Either way the transformers 5.20.2 in the image loads the model's `LlamaTokenizerFast` config as a Metaspace `LlamaTokenizer` over its byte-level BPE `tokenizer.json`, so the model reads "Say hello world." as "Sayhelloworld." and every reply carries raw byte-level markers such as `Ġ` for a space.
-No server flag fixes the tokenizer class, because llmctl mounts only the read-only Hugging Face cache, so the recipe keeps its arguments, stays an estimate and has no OpenCode entry; use the [llama.cpp recipe](../llamacpp/models.md#10-deepseek-r1-0528-qwen3-8b-chat-and-reasoning-only) instead.
-Decode speed does not depend on the tokenizer: 72.1 tok/s, the median of three full 1,500-token runs, with a GPU memory peak of 15,750 MiB (measured on the MSI Raider 18 Max HX, vLLM v0.33.0, 2026-11-17).
-`./llmctl test` still exited 0, because its reply check accepted the garbled reply `ĊOK`.
+Measured with the tokenizer folder:
+
+- Measurement B's retry 2, a read-only folder whose `tokenizer_config.json` names `PreTrainedTokenizerFast`, gave llama.cpp's chat token counts (8, 8,078 and 30,254), replies that read correctly with no byte markers (`Say hello world.` answered `Hello, World! ...` with its reasoning in `message.reasoning`, `What is 17 + 25?` answered `17 + 25 = 42`) and 73.1 tok/s decode (measured on the MSI Raider 18 Max HX, vLLM v0.33.0, 2026-11-17) ([record](../research/2026-11-17/vllm-deepseek-r1-0528-qwen3-8b-retry/README.md)).
+- Measurement C's cold start, with an empty compile cache, was ready in 44.2 s and its warm start in 20.3 s, both with the block above and the folder as llmctl builds it (measured on the MSI Raider 18 Max HX, vLLM v0.33.0, 2026-11-18) ([record](../research/2026-11-18/vllm-deepseek-r1-0528-qwen3-8b-cold-start/README.md)).
+- Decode 72.5 tok/s (72.3, 72.6 and 72.5 over three 1,500-token runs), and 1.410 s and 8.580 s to the first token for 8,078 and 30,254 prompt tokens, with the same counts and replies as retry 2 (measured on the MSI Raider 18 Max HX, vLLM v0.33.0, 2026-11-18).
+- 69,904 KV tokens for the 65,536 context, a GPU peak of 15,036 MiB and 1,105 MiB free after ready, cold and warm (measured on the MSI Raider 18 Max HX, vLLM v0.33.0, 2026-11-18).
+- A request with tools, `"tools": []` and a forced `tool_choice` each got HTTP 400, as a chat-only vLLM recipe should, and `json_schema` returned `{"capital": "Paris"}` (measured on the MSI Raider 18 Max HX, vLLM v0.33.0, 2026-11-18).
+
+The shipped recipe failed on 2026-11-17: its first start, with an empty compile cache, had 3.83 GiB of KV cache at the default 0.92 for the 4.5 GiB that 65536 tokens need, and every reply of the warm starts came back garbled, with `Ġ` for a space, because of the tokenizer class ([record](../research/2026-11-17/vllm-deepseek-r1-0528-qwen3-8b/), [attempt log](../research/2026-11-17/vllm-deepseek-r1-0528-qwen3-8b/attempts.md), [tokenizer check](../research/2026-11-17/vllm-deepseek-r1-0528-qwen3-8b/tokenizer-check.json)) (measured on the MSI Raider 18 Max HX, vLLM v0.33.0, 2026-11-17).
+Its decode was 72.1 tok/s, and `./llmctl test` exited 0 because its reply check accepted the garbled reply `ĊOK` (measured on the MSI Raider 18 Max HX, vLLM v0.33.0, 2026-11-17).
+The alternative with arguments only, measurement B's retry 1 with `--tokenizer-mode deepseek_v32`, was not taken: its replies read correctly, but vLLM's DeepSeek V3.2 encoder replaces the model's chat template, so every prompt is one token longer than llama.cpp's and each earlier assistant reply gains a `</think>` (measured on the MSI Raider 18 Max HX, vLLM v0.33.0, 2026-11-17).
 
 Thinking and sampling:
 
 - Always on, with no official off switch; vLLM silently drops an `enable_thinking` kwarg for R1 distills ([reasoning_outputs.md](https://github.com/vllm-project/vllm/blob/v0.33.0/docs/features/reasoning_outputs.md)).
 - Card sampling temperature 0.6, top_p 0.95 ([README](https://huggingface.co/deepseek-ai/DeepSeek-R1-0528-Qwen3-8B/raw/main/README.md)).
 
-OpenCode entry (tools off; use it in plan or chat mode, never as the build agent; it stays out of the validated config while the tokenizer defect above holds):
+OpenCode entry (tools off; use it in plan or chat mode, never as the build agent):
 
 ```json
 "deepseek-r1-0528-qwen3-8b": {

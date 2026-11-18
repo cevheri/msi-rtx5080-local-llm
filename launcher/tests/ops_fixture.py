@@ -1,5 +1,6 @@
 """A FakeHost on which `./llmctl up qwen3.6` succeeds; tests break one thing at a time."""
 
+import dataclasses
 import json
 import tempfile
 from pathlib import Path
@@ -14,6 +15,7 @@ GPU_QUERY = ("nvidia-smi", "--query-gpu=memory.total,memory.reserved,memory.used
              "--format=csv,noheader,nounits")
 GPU_APPS = ("nvidia-smi", "--query-compute-apps=pid,process_name,used_memory", "--format=csv,noheader,nounits")
 HEALTH = "http://127.0.0.1:8080/health"
+TOKENIZER_CONFIG = b'{"tokenizer_class": "LlamaTokenizerFast"}'
 
 
 def managed_line(name, state, recipe, runtime="llamacpp", sha="ab" * 32, source="shipped", runtime_sha="cd" * 32):
@@ -66,7 +68,7 @@ class OpsFixture:
                 return ok(f"{parts[1]}|{parts[2]}|{json.dumps(labels)}\n")
         return fail(f"Error: No such container: {name}")
 
-    def place_files(self, recipe_id, runtime="llamacpp", size=None):
+    def place_files(self, recipe_id, runtime="llamacpp", size=None, files: dict[str, bytes] | None = None):
         recipe = self.catalog.runtimes[runtime].recipes[recipe_id]
         if runtime == "sglang":
             place_snapshot(self.hf_home, recipe.model)
@@ -74,9 +76,14 @@ class OpsFixture:
         snapshot = snapshot_dir(self.hf_home, recipe.model.repo, recipe.model.revision)
         snapshot.mkdir(parents=True, exist_ok=True)
         if runtime == "vllm":
-            (snapshot / "config.json").write_text("{}")
+            if files is None:
+                files = {"config.json": b"{}"}
+                if recipe.model.tokenizer_class is not None:
+                    files["tokenizer_config.json"] = TOKENIZER_CONFIG
+            for name, data in files.items():
+                (snapshot / name).write_bytes(data)
             with open(snapshot / "model.safetensors", "wb") as handle:
-                handle.truncate(recipe.model.size_bytes - 2)  # sparse; config.json holds the other 2 bytes
+                handle.truncate(recipe.model.size_bytes - sum(len(data) for data in files.values()))  # sparse
             return
         each = (size if size is not None else recipe.model.size_bytes) // len(recipe.model.files)
         for name in recipe.model.files:
@@ -103,6 +110,15 @@ class OpsFixture:
         h.on_http("GET", f"{SGLANG}/v1/models", http(200, json.dumps({"data": [{"id": served}]}).encode()))
         h.on_http("GET", f"{SGLANG}/server_info", server_info(140976))
         h.on_http("POST", f"{SGLANG}/flush_cache", http(200))
+
+    def use_vllm_tokenizer(self, files: dict[str, bytes] | None = None) -> None:
+        """Give the catalog's vLLM DeepSeek recipe [model] tokenizer_class, place its files and answer its start."""
+        entry = self.catalog.runtimes["vllm"]
+        recipe = entry.recipes["deepseek-r1-0528-qwen3-8b"]
+        model = dataclasses.replace(recipe.model, tokenizer_class="PreTrainedTokenizerFast")
+        entry.recipes["deepseek-r1-0528-qwen3-8b"] = dataclasses.replace(recipe, model=model)
+        self.place_files("deepseek-r1-0528-qwen3-8b", runtime="vllm", files=files)
+        self.host.on_http("GET", "http://127.0.0.1:8000/v1/models", http(200, b'{"data":[{"id":"deepseek-r1-8b"}]}'))
 
     def calls_starting(self, *prefix):
         return [c for c in self.host.calls if tuple(c[: len(prefix)]) == prefix]
