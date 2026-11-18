@@ -7,7 +7,7 @@ The `nvidia-container-toolkit-base` package alone is enough for that CDI path, a
 Then publish every server port on `127.0.0.1` only, because Docker-published ports bypass ufw.
 Give every container its own memory cap, because the `heavy` wrapper does not reach containers.
 Start servers on demand with no restart policy, one at a time, and keep one Hugging Face cache under `/home` that vLLM, llama.cpp and SGLang share.
-The toolkit was installed and verified on this laptop on 2026-11-15, including a CUDA kernel run inside a container ([install record](../research/2026-11-15/probes/toolkit-install.md)); no model server has been run yet.
+The toolkit was installed and verified on this laptop on 2026-11-15, including a CUDA kernel run inside a container ([install record](../research/2026-11-15/probes/toolkit-install.md)); model servers have run on it since 2026-11-16 ([research/2026-11-16/](../research/2026-11-16/README.md)).
 
 ## Current host state (observed)
 
@@ -426,8 +426,8 @@ Current `huggingface_hub` documents `hf cache ls`, `hf cache verify <repo>`, `hf
 
 | Item | Size | Location |
 |---|---|---|
-| llama.cpp image `ghcr.io/ggml-org/llama.cpp:server-cuda-b12407` | 7.05 GB on disk as `docker image ls` reports it (measured on the MSI Raider 18 Max HX, Docker 29.9.3, 2026-11-18) | `/var/lib/docker` on `/` |
-| vLLM image `vllm/vllm-openai:v0.33.0` | 35.4 GB on disk as `docker image ls` reports it (measured on the MSI Raider 18 Max HX, Docker 29.9.3, 2026-11-18); 9.74 GB compressed; `v0.33.0-x86_64-zstd` is 7.70 GB compressed ([Docker Hub](https://hub.docker.com/r/vllm/vllm-openai/tags)) | `/var/lib/docker` on `/` (405 GB free) |
+| llama.cpp image `ghcr.io/ggml-org/llama.cpp:server-cuda-b12407` | 7.05 GB on disk as `docker image ls` reports it (measured on the MSI Raider 18 Max HX, Docker 29.9.3, 2026-11-18; [record](../research/2026-11-18/llmctl-sglang-e2e/lead-checks/image-sizes.txt)) | `/var/lib/docker` on `/` |
+| vLLM image `vllm/vllm-openai:v0.33.0` | 35.4 GB on disk as `docker image ls` reports it (measured on the MSI Raider 18 Max HX, Docker 29.9.3, 2026-11-18; [record](../research/2026-11-18/llmctl-sglang-e2e/lead-checks/image-sizes.txt)); 9.74 GB compressed; `v0.33.0-x86_64-zstd` is 7.70 GB compressed ([Docker Hub](https://hub.docker.com/r/vllm/vllm-openai/tags)) | `/var/lib/docker` on `/` (405 GB free) |
 | SGLang image `lmsysorg/sglang:v0.5.23-runtime` | 49.7 GB on disk as `docker image ls` reports it (measured on the MSI Raider 18 Max HX, Docker 29.9.3, 2026-11-18); 14.47 GB compressed for amd64 ([Docker Hub tag record](https://hub.docker.com/v2/repositories/lmsysorg/sglang/tags/v0.5.23-runtime), SG-04 in the [SGLang sources check](../research/2026-11-17/sglang-runtime/sources-check.md)) (vendor-reported) | `/var/lib/docker` on `/` |
 | vLLM compile cache volume | Unknown, grows per model and config | `/var/lib/docker` on `/` |
 | SGLang `sglang-cache` volume | 11 to 23 MB after the cold start of each shipped SGLang recipe, growing per model (measured on the MSI Raider 18 Max HX, SGLang v0.5.23, 2026-11-17; [SGLang cold starts](../sglang/benchmarking.md#cold-starts-without-the-network)) | `/var/lib/docker` on `/` |

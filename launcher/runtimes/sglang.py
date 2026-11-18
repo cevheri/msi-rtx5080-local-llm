@@ -89,7 +89,9 @@ _VOLUME = re.compile(r"[a-zA-Z0-9][a-zA-Z0-9_.-]*:/[^:]+(:ro)?")
 
 @dataclass(frozen=True)
 class SglangRuntimeConfig(RuntimeConfig):
-    min_free_at_ready_mib: int = 0  # free GPU memory the post-ready check requires; 0 switches the check off
+    # Free GPU memory the post-ready check requires; 0 switches off this threshold only, not the pool,
+    # flush and nvidia-smi steps of the check.
+    min_free_at_ready_mib: int = 0
 
 
 @dataclass(frozen=True)

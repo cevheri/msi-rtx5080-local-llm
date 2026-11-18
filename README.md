@@ -70,7 +70,7 @@ After `./llmctl up`, run the model from a client; `up` prints these lines for th
 
 | Client | What to run |
 |---|---|
-| OpenCode | `/models` (or `ctrl+x m`) in the OpenCode screen, or `opencode run --model llamacpp-docker/qwen3.6-35b-a3b "your prompt"` (`vllm-docker/<id>` on vLLM and `sglang-docker/<id>` on SGLang) |
+| OpenCode | `/models` (or `ctrl+x m`) in the OpenCode screen, or `opencode run --model llamacpp-docker/qwen3.6-35b-a3b "your prompt"` (`vllm-docker/<id>` on vLLM and `sglang-docker/<id>` on SGLang, where DeepSeek-R1 has no OpenCode entry on vLLM) |
 | Hermes Agent | `hermes -p llmctl` |
 | Pi | `pi --model llmctl/<served name>`, with `--no-tools` for the chat-only DeepSeek-R1 |
 | DeepSeek Harness (dsh) | `dsh web`, then pick `<id> on <engine> (llmctl)` in its model picker; while llmctl holds dsh's default, `dsh web` alone or `dsh --profile headless "your prompt"` |

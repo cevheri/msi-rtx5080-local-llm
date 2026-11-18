@@ -5,6 +5,7 @@ Last verified: 2026-11-18.
 These are the lead's checks of Lead step 10 of the SGLang plan, run on 2026-11-18 between 03:27 and 03:51 UTC on branch `llmctl-sglang` at commit 5790b4c, right after the [clients e2e](../summary.md).
 Every figure comes from this laptop (MSI Raider 18 Max HX, RTX 5080 Laptop GPU 16 GB) with SGLang v0.5.23, vLLM v0.33.0 and OpenCode v2.3.0, one model server at a time.
 Paths are written as `$HOME` and `$SCRATCH`, the session's scratch folder, and the scripts that made every record are in [scripts/](scripts/).
+[image-sizes.txt](image-sizes.txt) holds the `docker image ls` sizes of the three runtime images that the disk budget of [docs/host-setup.md](../../../../docs/host-setup.md#disk-budget) gives, read once at 07:55 +03:00 on 2026-11-18 with Docker 29.9.3 (measured on the MSI Raider 18 Max HX).
 
 | Check | Result | Evidence |
 |---|---|---|

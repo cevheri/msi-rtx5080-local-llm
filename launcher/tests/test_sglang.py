@@ -796,7 +796,7 @@ class SglangPullTest(OverlayTestCase):
 
 
 SHIPPED = REPO / "recipes" / "sglang"
-# The runtime file's [env]: D4's seven variables plus the lead's eighth (ledger: PYTORCH_ALLOC_CONF, measurement C).
+# The runtime file's [env]: D4's seven variables plus PYTORCH_ALLOC_CONF (sglang/README.md#paged-experts).
 SHIPPED_ENV = (
     ("HF_HUB_OFFLINE", "1"),
     ("HF_MODULES_CACHE", "/tmp/hf_modules"),
@@ -807,7 +807,7 @@ SHIPPED_ENV = (
     ("TIKTOKEN_ENCODINGS_BASE", "/opt/sglang/lib/python3.12/site-packages/tml_renderers/data"),
     ("PYTORCH_ALLOC_CONF", "pinned_max_round_threshold_mb:1"),
 )
-# D8's rule over every SGLang recipe this pull request ships: 64 x ceil((486 + 256) / 64) (ledger, Task 11 ruling).
+# D8's rule over every shipped SGLang recipe: 64 x ceil((486 + 256) / 64) (sglang/benchmarking.md#post-ready-margins).
 MIN_FREE = 768
 
 

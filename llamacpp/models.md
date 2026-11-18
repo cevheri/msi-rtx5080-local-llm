@@ -1,6 +1,6 @@
 # llama.cpp model recipes for the RTX 5080 Laptop
 
-Last verified: 2026-11-18 (all ten ranked picks and Nemotron 3.5 Lightning measured on this laptop on 2026-11-16, the four GGUF builds of the vLLM and SGLang models on 2026-11-17, and every measured recipe's OpenCode entry in the validated config since 2026-11-17; the other recipes are 2026-11-15 estimates).
+Last verified: 2026-11-18 (all ten ranked picks and Nemotron 3.5 Lightning measured on this laptop on 2026-11-16, the four GGUF builds of the vLLM and SGLang models on 2026-11-17 and in the clients e2e of 2026-11-18, and every measured recipe's OpenCode entry in the validated config since 2026-11-17; the other recipes are 2026-11-15 estimates).
 
 All ten ranked picks run on llama.cpp `ghcr.io/ggml-org/llama.cpp:server-cuda-b12407`, each with the exact GGUF file, `--n-cpu-moe` value, context, KV type, memory cap and thinking control below.
 The default is Qwen3.6-35B-A3B Q4_K_M (MoE, experts of blocks 0-24 in pinned RAM with a 3,200 MiB GPU cache for the most-used ones, 128k); use Qwen3.8-27B UD-Q3_K_XL (dense, all on the GPU, 64k) when a task needs the strongest model.
@@ -638,7 +638,7 @@ OpenCode entry (tools off; use it in plan or chat mode, never as the build agent
 These four models also have recipes on [vLLM](../vllm/models.md) and, except Mellum2.1, on [SGLang](../sglang/models.md); their GGUF builds were measured on 2026-11-17 so that every engine runs every model it can.
 With these recipes, `./llmctl up` without `--runtime` starts the four names on llama.cpp, and `--runtime vllm`, or `--runtime sglang` for the three with an SGLang recipe, starts another engine's build.
 Each one fits whole on the GPU at 131072 tokens with f16 KV.
-None of them has run an OpenCode session yet; the clients e2e covers that.
+The clients e2e of 2026-11-18 ran an OpenCode write-and-read session on each of the four, and all four passed, as did every other client session of the four except Kimi on Mellum2.1, which retried once after a thinking-only reply (measured on the MSI Raider 18 Max HX, llama.cpp b12407, OpenCode v2.3.0, 2026-11-18; [summary](../research/2026-11-18/llmctl-sglang-e2e/summary.md), [No rows](../research/2026-11-18/llmctl-sglang-e2e/README.md#the-no-rows), records [207](../research/2026-11-18/llmctl-sglang-e2e/records/207-11-qwen3.5-9b-llamacpp-opencode), [226](../research/2026-11-18/llmctl-sglang-e2e/records/226-12-gemma-4-12b-llamacpp-opencode), [245](../research/2026-11-18/llmctl-sglang-e2e/records/245-13-gemma-4-e4b-llamacpp-opencode) and [264](../research/2026-11-18/llmctl-sglang-e2e/records/264-14-mellum2.1-12b-llamacpp-opencode)).
 The measurements started each recipe through `./llmctl up` from a copy of llmctl, with the GGUF file already in the page cache and the K2 Horizon MoVA download of the same lane running beside it ([records](../research/2026-11-17/README.md)).
 
 ### Qwen3.5-9B Q8_0

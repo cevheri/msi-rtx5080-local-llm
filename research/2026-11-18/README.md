@@ -21,6 +21,7 @@ A script replaced local paths in these records with `$HOME` and `$SCRATCH`, and 
 - Measurement E's record: the same image the same way, with measurement C's command file and overlay for Qwen3.6, all eight variables of the runtime file and `--memory 27g --memory-swap 27g` ([sglang-runtime/measure-e/README.md](../2026-11-17/sglang-runtime/measure-e/README.md)).
 - vLLM record: `vllm/vllm-openai:v0.33.0` started by hand with `docker run` as llmctl's `container_spec` builds the shipped recipe, with the tokenizer folder and the changes the record names, GPU and cgroup memory traced every 1 s.
 - Full logs keep the request lines from Docker's bridge 172.17.0.1, which identifies no machine or person.
+- The `/dev/shm` listings (`*.devshm.txt`, `*.devshm-before.list`) of measurements C, D and E and of the vLLM record had the lines of two 10 MiB shared-memory files of a desktop application of the owner, unrelated to llmctl, removed before the commit, as unrelated Docker containers were removed from measurement E's lane logs; the `df` and `total` lines above them still count those two files.
 
 ## Folders
 

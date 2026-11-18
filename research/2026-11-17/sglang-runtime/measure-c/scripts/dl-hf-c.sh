@@ -22,9 +22,9 @@ if (( cache - bytes < floor || root - bytes < floor )); then
   echo "STOP: the download would leave less than 150 GiB free; nothing downloaded, nothing deleted" | tee -a "$log"; exit 9
 fi
 start=$(date +%s)
-echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) docker run --rm --name dl-$label --user \$(id -u):\$(id -g) -e HOME=/tmp -e HF_HOME=/hf -e HF_HUB_DISABLE_PROGRESS_BARS=1 --env-file \$HOME/.config/hf/hf.env -v \$HOME/.cache/huggingface:/hf --memory 8g --memory-swap 8g --entrypoint hf vllm/vllm-openai:v0.33.0 download $repo --revision $rev" >> "$log"
+echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) docker run --rm --name dl-$label --user \$(id -u):\$(id -g) -e HOME=/tmp -e HF_HOME=/hf -e HF_HUB_DISABLE_PROGRESS_BARS=1 --env-file <the owner's Hugging Face token env file> -v \$HOME/.cache/huggingface:/hf --memory 8g --memory-swap 8g --entrypoint hf vllm/vllm-openai:v0.33.0 download $repo --revision $rev" >> "$log"
 docker run --rm --name "dl-$label" --user "$(id -u):$(id -g)" -e HOME=/tmp -e HF_HOME=/hf \
-  -e HF_HUB_DISABLE_PROGRESS_BARS=1 --env-file "$HOME/.config/hf/hf.env" \
+  -e HF_HUB_DISABLE_PROGRESS_BARS=1 --env-file "<the owner's Hugging Face token env file>" \
   -v "$HOME/.cache/huggingface:/hf" --memory 8g --memory-swap 8g \
   --entrypoint hf vllm/vllm-openai:v0.33.0 download "$repo" --revision "$rev" >> "$log" 2>&1
 rc=$?

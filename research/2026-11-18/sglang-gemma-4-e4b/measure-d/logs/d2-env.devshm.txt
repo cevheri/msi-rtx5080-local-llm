@@ -4,8 +4,6 @@ tmpfs          32869920768 16519168 32853401600   1% /dev/shm
 total 1484
 drwxrwxrwt  2 root    root        1900 Nov 18 01:41 .
 drwxr-xr-x 24 root    root        5940 Nov 17 19:47 ..
--rw-------  1 <user> <user> 10485760 Nov 15 07:58 aomshm.29e627.fe028124.3
--rw-------  1 <user> <user> 10485760 Nov 16 17:30 aomshm.3caea7.f66909b2.3
 -rw-------  1 root    root          32 Nov 17 15:03 sem.mp-0s91z4xj
 -rw-------  1 root    root          32 Nov 17 22:36 sem.mp-0wu6djnp
 -rw-------  1 root    root          32 Nov 17 22:38 sem.mp-1r5wbs4t
@@ -103,8 +101,6 @@ tmpfs          32869920768 50798592 32819122176   1% /dev/shm
 total 1508
 drwxrwxrwt  2 root    root        1940 Nov 18 01:42 .
 drwxr-xr-x 24 root    root        5940 Nov 17 19:47 ..
--rw-------  1 <user> <user> 10485760 Nov 15 07:58 aomshm.29e627.fe028124.3
--rw-------  1 <user> <user> 10485760 Nov 16 17:30 aomshm.3caea7.f66909b2.3
 -rw-------  1 root    root          32 Nov 17 15:03 sem.mp-0s91z4xj
 -rw-------  1 root    root          32 Nov 17 22:36 sem.mp-0wu6djnp
 -rw-------  1 root    root          32 Nov 17 22:38 sem.mp-1r5wbs4t
@@ -204,8 +200,6 @@ tmpfs          32869920768 16539648 32853381120   1% /dev/shm
 total 1504
 drwxrwxrwt  2 root    root        1920 Nov 18 01:43 .
 drwxr-xr-x 24 root    root        5940 Nov 17 19:47 ..
--rw-------  1 <user> <user> 10485760 Nov 15 07:58 aomshm.29e627.fe028124.3
--rw-------  1 <user> <user> 10485760 Nov 16 17:30 aomshm.3caea7.f66909b2.3
 -rw-------  1 root    root          32 Nov 17 15:03 sem.mp-0s91z4xj
 -rw-------  1 root    root          32 Nov 17 22:36 sem.mp-0wu6djnp
 -rw-------  1 root    root          32 Nov 17 22:38 sem.mp-1r5wbs4t

@@ -168,5 +168,6 @@ The images were `ghcr.io/ggml-org/llama.cpp:server-cuda-b12407`, `vllm/vllm-open
 - [lead-checks/](lead-checks/README.md): the lead's checks of Lead step 10, a network snapshot of an SGLang start, OpenCode compaction on SGLang, the vLLM tokenizer overlay on the GPU, and the reproduction of gpt-oss-20b's SGLang OpenCode session, with the scripts that made every record.
 
 Privacy: every record shows the private work folder as `$WORK` and the home folder as `$HOME`, and the lead-checks write the session's scratch folder as `$SCRATCH`.
+In the 28 Pi records, the one installed agent skill that Pi's system prompt lists, which is unrelated to llmctl, was replaced with `<an installed agent skill unrelated to llmctl>` before the commit, its name, description and `SKILL.md` location included.
 The Docker logs keep the request lines from Docker's bridge, 172.17.0.1 and the container's own 172.17.0.x, which identify no machine or person.
 The work folders and the private Kimi and dsh homes stayed in the run's private temporary folder outside the repository and are not part of this folder.

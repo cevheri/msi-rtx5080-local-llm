@@ -3,7 +3,7 @@ Filesystem         1B-blocks         Used    Available Use% Mounted on
 /dev/nvme0n1p10 984139923456 713294925824 220777906176  77% /home
 /dev/nvme0n1p7  589432963072 258142556160 301273608192  47% /
 2026-11-17T20:18:30Z need 24272026244 B; /home (cache) avail 220777906176 B, after 196505879932 B; / avail 301273608192 B, after 277001581948 B; floor 161061273600 B
-2026-11-17T20:18:30Z docker run --rm --name dl-k2-horizon-mova-cyankiwi-int4 --user $(id -u):$(id -g) -e HOME=/tmp -e HF_HOME=/hf -e HF_HUB_DISABLE_PROGRESS_BARS=1 --env-file $HOME/.config/hf/hf.env -v $HOME/.cache/huggingface:/hf --memory 8g --memory-swap 8g --entrypoint hf vllm/vllm-openai:v0.33.0 download cyankiwi/K2-Horizon-MoVA-36B-A4B-AWQ-INT4 --revision 25ae29a9797a7eb613a40eeaf75a3f8db490836f
+2026-11-17T20:18:30Z docker run --rm --name dl-k2-horizon-mova-cyankiwi-int4 --user $(id -u):$(id -g) -e HOME=/tmp -e HF_HOME=/hf -e HF_HUB_DISABLE_PROGRESS_BARS=1 --env-file <the owner's Hugging Face token env file> -v $HOME/.cache/huggingface:/hf --memory 8g --memory-swap 8g --entrypoint hf vllm/vllm-openai:v0.33.0 download cyankiwi/K2-Horizon-MoVA-36B-A4B-AWQ-INT4 --revision 25ae29a9797a7eb613a40eeaf75a3f8db490836f
 OK Downloaded
   path: /hf/hub/models--cyankiwi--K2-Horizon-MoVA-36B-A4B-AWQ-INT4/snapshots/25ae29a9797a7eb613a40eeaf75a3f8db490836f
 2026-11-17T20:56:26Z exit 0 after 2276 s; disk after:

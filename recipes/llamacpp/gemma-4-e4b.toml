@@ -33,7 +33,7 @@ ram_gib = 7.9
 
 [evidence]
 kind = "measured"
-summary = "151.3 tok/s decode with 128k context, 5,422 MiB GPU peak, 7.9 GiB container RAM, llmctl test, a tool call with its second turn and a json_schema title request passed; OpenCode session not run"
+summary = "151.3 tok/s decode with 128k context, 5,422 MiB GPU peak, 7.9 GiB container RAM, llmctl test, a tool call with its second turn and a json_schema title request passed; the OpenCode session passed in the e2e of 2026-11-18"
 decode_tok_s = 151.3
 date = "2026-11-17"
 hardware = "MSI Raider 18 Max HX A2WI, RTX 5080 Laptop GPU 16 GB, 61 GiB RAM"

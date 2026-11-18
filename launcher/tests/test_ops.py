@@ -895,6 +895,14 @@ class SglangUpTest(unittest.TestCase):
         mount = run.index(f"{self.overlay}:/llmctl/model:ro")
         self.assertEqual(run[mount - 1], "-v")
 
+    def test_resource_refusal_writes_no_overlay(self):
+        self.f.gpu_free = [100]
+        with self.assertRaises(PreflightError) as ctx:
+            self.up()
+        self.assertEqual(ctx.exception.exit_code, 3)
+        self.assertFalse((self.f.cache_dir / "sglang" / "overlays").exists())
+        self.assertEqual(self.f.calls_starting("docker", "run"), [])
+
     def test_refusal_stops_the_container_and_writes_no_client(self):
         self.f.host.on_http("GET", "http://127.0.0.1:30000/server_info", server_info(120000))
         with mock.patch.object(ops.clients, "apply", side_effect=AssertionError("no client write after a refusal")):
