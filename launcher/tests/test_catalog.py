@@ -194,6 +194,22 @@ class ThreeRuntimeTest(unittest.TestCase):
             self.assertEqual(resolve(catalog, "gpt-oss-20b", None)[0].runtime, "llamacpp")
             self.assertEqual(resolve(catalog, "qwen3.5-9b", "sglang")[0].runtime, "sglang")
 
+    def test_gguf_names_start_on_llamacpp(self):
+        # The four GGUF recipes make these names start on llama.cpp without --runtime; the other engines still
+        # start with --runtime, and mellum2.1-12b has no SGLang recipe, because it does not load on SGLang.
+        catalog = load_catalog(REPO / "recipes", None)
+        for name in ("gemma-4-12b", "gemma-4-e4b", "mellum2.1-12b", "qwen3.5-9b"):
+            with self.subTest(name=name):
+                self.assertEqual(resolve(catalog, name, None)[0].runtime, "llamacpp")
+                self.assertEqual(resolve(catalog, name, "llamacpp")[0].runtime, "llamacpp")
+                self.assertEqual(resolve(catalog, name, "vllm")[0].runtime, "vllm")
+                if name != "mellum2.1-12b":
+                    self.assertEqual(resolve(catalog, name, "sglang")[0].runtime, "sglang")
+        with self.assertRaises(UsageError) as ctx:
+            resolve(catalog, "mellum2.1-12b", "sglang")
+        self.assertEqual(str(ctx.exception), "unknown model 'mellum2.1-12b'; did you mean gemma4-12b, gemma-4-12b? "
+                                             "(./llmctl list shows every recipe)")
+
     def test_llamacpp_and_vllm_ignore_cache_dir(self):
         shipped = load_catalog(REPO / "recipes", None)
         with_cache = HostEnv(ENV.hf_home, ENV.uid, ENV.gid, Path("/x"))
@@ -215,6 +231,9 @@ SHIPPED_CLIENTS = {
     ("llamacpp", "gemma-4-26b-a4b"): TOGGLE_OFF,
     ("llamacpp", "nemotron-3.5-lightning"): TOGGLE_OFF,
     ("llamacpp", "groot-19b-a3b"): TOGGLE_OFF,
+    ("llamacpp", "qwen3.5-9b"): TOGGLE_OFF,
+    ("llamacpp", "gemma-4-12b"): TOGGLE_OFF,
+    ("llamacpp", "gemma-4-e4b"): TOGGLE_OFF,
     ("vllm", "groot-19b-a3b"): TOGGLE_OFF,
     ("vllm", "gemma-4-12b"): TOGGLE_OFF,
     ("vllm", "gemma-4-e4b"): TOGGLE_OFF,
@@ -225,6 +244,7 @@ SHIPPED_CLIENTS = {
     ("sglang", "qwen3.6-35b-a3b"): TOGGLE_OFF,
     ("llamacpp", "nemotron-3.5-bolt"): (16384, "toggle", "off", (), (("medium_effort", True),)),
     ("vllm", "mellum2.1-12b"): (16384, "toggle", "on", (), ()),
+    ("llamacpp", "mellum2.1-12b"): (16384, "toggle", "on", (), ()),
     ("llamacpp", "qwen3.8-27b"): (16384, "effort", None, ("none", "low", "medium"), ()),
     ("llamacpp", "gpt-oss-20b"): EFFORT_LMH,
     ("vllm", "gpt-oss-20b"): EFFORT_LMH,
@@ -248,7 +268,7 @@ class ClientMetadataTest(unittest.TestCase):
     def test_shipped_client_metadata(self):
         expected = {key: model.ClientMeta(*value) for key, value in SHIPPED_CLIENTS.items()}
         shipped = load_catalog(REPO / "recipes", None)
-        self.assertEqual(len(expected), 25)
+        self.assertEqual(len(expected), 29)
         self.assertEqual(self.clients_of(shipped), expected)
 
         with_example = load_catalog(REPO / "recipes", REPO / "recipes" / "examples")

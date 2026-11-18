@@ -39,7 +39,7 @@ A custom openai-compatible model with neither `variants` nor `capabilities.reaso
 
 ## The validated config
 
-This is the three-provider config with one entry for every recipe of [llmctl](llmctl.md) that is measured on this laptop: the eleven llama.cpp recipes, with Qwen3.6-35B-A3B as the default, gpt-oss-20b, Groot-19B-A3B-261023 NVFP4, K2 Horizon 7B, Gemma 4 12B, Qwen3.5-9B, Mellum2.1 and Gemma 4 E4B on vLLM, and Qwen3.5-9B, K2 Horizon 7B, gpt-oss-20b, Gemma 4 12B, Gemma 4 E4B and Qwen3.6-35B-A3B on SGLang.
+This is the three-provider config with one entry for every recipe of [llmctl](llmctl.md) that is measured on this laptop: the fifteen llama.cpp recipes, with Qwen3.6-35B-A3B as the default, gpt-oss-20b, Groot-19B-A3B-261023 NVFP4, K2 Horizon 7B, Gemma 4 12B, Qwen3.5-9B, Mellum2.1 and Gemma 4 E4B on vLLM, and Qwen3.5-9B, K2 Horizon 7B, gpt-oss-20b, Gemma 4 12B, Gemma 4 E4B and Qwen3.6-35B-A3B on SGLang.
 It extends the research-phase config with a `qwen3.8-27b` entry that uses `reasoning_effort` levels, as the audit asked.
 After the 2026-11-15 re-ranking, the default moved from Qwen3.6-35B-A3B to Qwen3.8-27B, the two K2 Horizon entries were added, and the Gemma 4 12B entry (now an honorable mention; its entry is in [vllm/models.md](../vllm/models.md)) was replaced by Groot, whose entry is copied from [vllm/models.md](../vllm/models.md).
 On 2026-11-16 the user made Qwen3.6-35B-A3B the default again, after it measured 122 tok/s with 128k context against 36 tok/s with 64k for Qwen3.8-27B ([model-selection.md](model-selection.md#decision-summary)).
@@ -55,6 +55,8 @@ Later on 2026-11-18 the SGLang `gemma-4-12b` and `gemma-4-e4b` entries were adde
 I re-validated it then against a fresh copy of the schema (the same sha256): 0 errors for 23 models, and the same two negative tests are rejected.
 Later on 2026-11-18 the SGLang `qwen3.6-35b-a3b` entry was added, which equals the llama.cpp entry of the same model apart from the name and the `modelID`, because SGLang serves it under its own name rather than llama.cpp's `local`.
 I re-validated it then against a fresh copy of the schema (the same sha256): 0 errors for 24 models, and the same two negative tests are rejected.
+Later on 2026-11-18 the llama.cpp `qwen3.5-9b`, `gemma-4-12b`, `gemma-4-e4b` and `mellum2.1-12b` entries were added from their model sections in [llamacpp/models.md](../llamacpp/models.md#gguf-builds-of-the-vllm-and-sglang-models), after their GGUF builds were measured ([records](../research/2026-11-17/README.md)); like every llama.cpp entry they use the `modelID` `local`.
+I re-validated it then against a fresh copy of the schema (the same sha256): 0 errors for 28 models, and the same two negative tests are rejected.
 On 2026-11-16 this config was installed as the global `~/.config/opencode/opencode.json` on this laptop, merged with the `mcp` block that file already held, and validated again with 0 errors against the live schema (unchanged).
 Measured the same day: `opencode run` without `-m` reached the default `qwen3.6-35b-a3b` entry and passed the write-and-read task in 9 s ([records](../research/2026-11-16/opencode-global-config/)).
 
@@ -156,6 +158,46 @@ Measured the same day: `opencode run` without `-m` reached the default `qwen3.6-
           "name": "DeepSeek-R1-0528-Qwen3-8B Q8_0, chat only (llama.cpp)",
           "capabilities": { "tools": false, "input": ["text"], "output": ["text"], "reasoning": { "supported": true } },
           "limit": { "context": 65536, "output": 16384 }
+        },
+        "qwen3.5-9b": {
+          "modelID": "local",
+          "name": "Qwen3.5-9B Q8_0 (llama.cpp)",
+          "capabilities": { "tools": true, "input": ["text"], "output": ["text"], "reasoning": { "supported": true } },
+          "limit": { "context": 131072, "output": 16384 },
+          "variants": [
+            { "id": "thinking", "body": { "chat_template_kwargs": { "enable_thinking": true } } },
+            { "id": "none", "body": { "chat_template_kwargs": { "enable_thinking": false } } }
+          ]
+        },
+        "gemma-4-12b": {
+          "modelID": "local",
+          "name": "Gemma 4 12B QAT Q4_0 (llama.cpp)",
+          "capabilities": { "tools": true, "input": ["text"], "output": ["text"], "reasoning": { "supported": true } },
+          "limit": { "context": 131072, "output": 16384 },
+          "variants": [
+            { "id": "thinking", "body": { "chat_template_kwargs": { "enable_thinking": true } } },
+            { "id": "none", "body": { "chat_template_kwargs": { "enable_thinking": false } } }
+          ]
+        },
+        "gemma-4-e4b": {
+          "modelID": "local",
+          "name": "Gemma 4 E4B QAT Q4_0 (llama.cpp)",
+          "capabilities": { "tools": true, "input": ["text"], "output": ["text"], "reasoning": { "supported": true } },
+          "limit": { "context": 131072, "output": 16384 },
+          "variants": [
+            { "id": "thinking", "body": { "chat_template_kwargs": { "enable_thinking": true } } },
+            { "id": "none", "body": { "chat_template_kwargs": { "enable_thinking": false } } }
+          ]
+        },
+        "mellum2.1-12b": {
+          "modelID": "local",
+          "name": "Mellum2.1 12B-A2.5B Thinking Q6_K (llama.cpp)",
+          "capabilities": { "tools": true, "input": ["text"], "output": ["text"], "reasoning": { "supported": true } },
+          "limit": { "context": 131072, "output": 16384 },
+          "variants": [
+            { "id": "thinking", "body": { "chat_template_kwargs": { "enable_thinking": true } } },
+            { "id": "none", "body": { "chat_template_kwargs": { "enable_thinking": false } } }
+          ]
         }
       }
     },

@@ -1,11 +1,11 @@
 # llama.cpp server on the RTX 5080 Laptop
 
-Last verified: 2026-11-16.
+Last verified: 2026-11-18.
 
 Run llama.cpp as `ghcr.io/ggml-org/llama.cpp:server-cuda-b12407` (CUDA 12.8.1), with `-e GGML_CUDA_DISABLE_GRAPHS=1` placed before the image name, the port published on 127.0.0.1 only, and a container memory cap.
 llama.cpp is the main runtime on this laptop because it can keep MoE expert weights in system RAM (`--n-cpu-moe`), and that is what lets 30B-class MoE models run on 16 GiB of VRAM, which vLLM cannot do here (see [../vllm/README.md](../vllm/README.md)).
 It reads GGUF quants, including Unsloth Dynamic builds, and its `-hf` cache uses the Hugging Face hub layout, so it can share one cache with vLLM.
-Eleven models ran on this laptop with this image on 2026-11-16 (gpt-oss-20b, Qwen3.8-27B, Qwen3.6-35B-A3B, Gemma 4 26B-A4B, K2 Horizon 7B and MoVA, Qwen3-Coder-Next, Nemotron 3.5 Bolt and Lightning, Groot-19B-A3B and DeepSeek-R1-0528-Qwen3-8B, measured in [models.md](models.md)).
+Eleven models ran on this laptop with this image on 2026-11-16 (gpt-oss-20b, Qwen3.8-27B, Qwen3.6-35B-A3B, Gemma 4 26B-A4B, K2 Horizon 7B and MoVA, Qwen3-Coder-Next, Nemotron 3.5 Bolt and Lightning, Groot-19B-A3B and DeepSeek-R1-0528-Qwen3-8B), and the GGUF builds of Qwen3.5-9B, Gemma 4 12B, Gemma 4 E4B and Mellum2.1 on 2026-11-17, all measured in [models.md](models.md).
 The commands were checked against llama.cpp source at tag b12418, and a memory figure not marked as measured is an estimate.
 
 Per-model commands are in [models.md](models.md), and measurement procedures are in [benchmarking.md](benchmarking.md).

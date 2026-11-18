@@ -1,0 +1,40 @@
+{
+  "providers": {
+    "llmctl": {
+      "name": "llmctl",
+      "baseUrl": "http://127.0.0.1:8080/v1",
+      "api": "openai-completions",
+      "apiKey": "no-key-required",
+      "compat": {
+        "supportsStore": false,
+        "supportsDeveloperRole": false,
+        "maxTokensField": "max_tokens"
+      },
+      "models": [
+        {
+          "id": "local",
+          "name": "mellum2.1-12b on llama.cpp (llmctl)",
+          "reasoning": true,
+          "input": [
+            "text"
+          ],
+          "contextWindow": 131072,
+          "maxTokens": 16384,
+          "thinkingLevelMap": {
+            "minimal": null,
+            "low": null,
+            "high": null
+          },
+          "compat": {
+            "thinkingFormat": "chat-template",
+            "chatTemplateKwargs": {
+              "enable_thinking": {
+                "$var": "thinking.enabled"
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

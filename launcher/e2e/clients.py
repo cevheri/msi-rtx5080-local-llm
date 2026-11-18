@@ -83,7 +83,8 @@ EXTENDED_MATRIX = DEFAULT_MATRIX[:-1] + tuple((name, "llamacpp") for name in (
 # extended does
 ALL_MATRIX = tuple((name, "llamacpp") for name in (
     "qwen3.8-27b", "k2-horizon-7b", "nemotron-3.5-bolt", "qwen3-coder-next", "deepseek-r1-0528-qwen3-8b",
-    "gemma-4-26b-a4b", "nemotron-3.5-lightning", "groot-19b-a3b", "k2-horizon-mova-36b", "gpt-oss-20b")) + tuple(
+    "gemma-4-26b-a4b", "nemotron-3.5-lightning", "groot-19b-a3b", "k2-horizon-mova-36b", "gpt-oss-20b", "qwen3.5-9b",
+    "gemma-4-12b", "gemma-4-e4b", "mellum2.1-12b")) + tuple(
     (name, "vllm") for name in ("gpt-oss-20b", "mellum2.1-12b", "k2-horizon-7b", "qwen3.5-9b", "gemma-4-12b",
                                 "gemma-4-e4b", "groot-19b-a3b", "deepseek-r1-0528-qwen3-8b")) + tuple(
     (name, "sglang") for name in ("qwen3.5-9b", "k2-horizon-7b", "gpt-oss-20b", "gemma-4-12b", "gemma-4-e4b",

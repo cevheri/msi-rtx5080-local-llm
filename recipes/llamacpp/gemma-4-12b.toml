@@ -1,0 +1,40 @@
+# Measured launch from llamacpp/models.md#gemma-4-12b-it-qat-q4_0.
+schema = 1
+id = "gemma-4-12b"
+name = "Gemma 4 12B IT QAT Q4_0"
+aliases = ["gemma4-12b"]
+doc = "llamacpp/models.md#gemma-4-12b-it-qat-q4_0"
+opencode = true
+
+[model]
+repo = "google/gemma-4-12B-it-qat-q4_0-gguf"
+revision = "29d097773436b69ff9feafd636ab4cf873786537"
+files = ["gemma-4-12b-it-qat-q4_0.gguf"]
+size_bytes = 6975879296
+
+[container]
+memory_gib = 20
+
+[server]
+context = 131072
+args = [
+  "-ngl", "all", "-fa", "on", "-np", "1", "--jinja", "-ctxcp", "16", "--reasoning", "off",
+  "--temp", "1.0", "--top-p", "0.95", "--top-k", "64",
+]
+
+[clients]
+output = 16384
+thinking = "toggle"
+default = "off"
+
+[needs]
+gpu_mib = 9660
+ram_gib = 12.9
+
+[evidence]
+kind = "measured"
+summary = "77.1 tok/s decode with 128k context, 9,772 MiB GPU peak, 12.9 GiB container RAM, llmctl test, a tool call with its second turn and a json_schema title request passed; OpenCode session not run"
+decode_tok_s = 77.1
+date = "2026-11-17"
+hardware = "MSI Raider 18 Max HX A2WI, RTX 5080 Laptop GPU 16 GB, 61 GiB RAM"
+record = "research/2026-11-17/llamacpp-gemma-4-12b/"

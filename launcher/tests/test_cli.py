@@ -321,7 +321,7 @@ class CliTest(unittest.TestCase):
     def test_check_reports_problems(self):
         host = self.host()
         self.assertEqual(main(["check"], host), 0)
-        self.assertIn("ok: 25 recipes (llamacpp 11, vllm 8, sglang 6)", host.out.getvalue())
+        self.assertIn("ok: 29 recipes (llamacpp 15, vllm 8, sglang 6)", host.out.getvalue())
         path = self.break_override()
         host = self.host()
         self.assertEqual(main(["check"], host), 2)

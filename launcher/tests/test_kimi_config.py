@@ -314,7 +314,7 @@ class GenerateTest(unittest.TestCase):
 
     def test_every_recipe_describes_its_server(self):
         targets = all_targets()
-        self.assertEqual(len(targets), 25)
+        self.assertEqual(len(targets), 29)
         for target in targets:
             with self.subTest(recipe=f"{target.recipe.runtime}/{target.recipe.id}"):
                 provider = kimi_config.provider_table(target)
@@ -338,7 +338,7 @@ class GenerateTest(unittest.TestCase):
                 self.assertEqual("off_effort" in model, target.recipe.id == "qwen3.8-27b")
                 if target.recipe.id == "deepseek-r1-0528-qwen3-8b":
                     self.assertEqual(model["capabilities"], [])
-        self.assertEqual(kinds, {"toggle": 14, "effort": 4, "always": 6, "none": 1})
+        self.assertEqual(kinds, {"toggle": 18, "effort": 4, "always": 6, "none": 1})
 
     def test_tables_reparse(self):
         for target in all_targets():

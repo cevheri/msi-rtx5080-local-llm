@@ -9,8 +9,10 @@ vLLM is the second path, for the smaller models that fit fully in 16 GB of VRAM.
 GPU access from containers works on this laptop since 2026-11-15, and all ten picks were measured on llama.cpp on 2026-11-16, nine of them completing an OpenCode tool session: Qwen3.8-27B at 36 tok/s and K2 Horizon MoVA at 37 tok/s with 64k context, Qwen3.6-35B-A3B at 122 tok/s, Gemma 4 26B-A4B at 148 tok/s and Qwen3-Coder-Next at 72 tok/s with 128k, K2 Horizon 7B at 67 tok/s with 80k, Groot-19B-A3B at 170 tok/s and Nemotron 3.5 Bolt at 74 tok/s with 128k, and gpt-oss-20b at 166 tok/s; the chat-only DeepSeek-R1-0528-Qwen3-8B measured 71 tok/s and failed the OpenCode tool session when tools were enabled for a test, and Nemotron 3.5 Lightning, an honorable mention, measured 144 tok/s with 128k ([llamacpp/models.md](llamacpp/models.md)).
 On Ollama 0.40.16, the five small models from the user's LibreDB Studio list (qwen3.5:9b, gemma4:12b, ornith:9b, ministral-3:8b and qwen2.5:7b) fit fully on the GPU at 99-119 tok/s and passed the same OpenCode session ([docs/agent-harness-evidence.md](docs/agent-harness-evidence.md#try-here-first)).
 On vLLM v0.33.0, gpt-oss-20b was measured on 2026-11-16, and Mellum2.1, Qwen3.5-9B, Gemma 4 12B, Gemma 4 E4B, K2 Horizon 7B and Groot-19B-A3B on 2026-11-17 ([research/2026-11-17/](research/2026-11-17/README.md)), while DeepSeek-R1-0528-Qwen3-8B failed there on its tokenizer.
+On llama.cpp, the GGUF builds of Qwen3.5-9B, Gemma 4 12B, Gemma 4 E4B and Mellum2.1 ran with 128k context at 66.0, 77.1, 151.3 and 188.2 tok/s (measured on the MSI Raider 18 Max HX, llama.cpp b12407, 2026-11-17) ([llamacpp/models.md](llamacpp/models.md#gguf-builds-of-the-vllm-and-sglang-models)).
 SGLang v0.5.23 is the third engine: Qwen3.5-9B NVFP4, gpt-oss-20b, Gemma 4 12B QAT W4A16 and Qwen3.6-35B-A3B NVFP4 ran on it with 128k context and K2 Horizon 7B AWQ-INT4 and Gemma 4 E4B QAT W4A16 with 64k, at 93.7, 124.6, 70.4, 151.3, 89.6 and 141.3 tok/s (measured on the MSI Raider 18 Max HX, SGLang v0.5.23, 2026-11-17 and 2026-11-18) ([sglang/models.md](sglang/models.md)).
-Two of them gain materially there: Gemma 4 E4B, 141.3 tok/s against 45.2 on vLLM in eager mode (measured on the MSI Raider 18 Max HX, vLLM v0.33.0, 2026-11-17; [record](research/2026-11-17/vllm-gemma-4-e4b/README.md)), and Qwen3.6-35B-A3B with `--runtime sglang`, 151.3 tok/s through Paged Experts against 122.5 on llama.cpp, 24% faster (measured on the MSI Raider 18 Max HX, llama.cpp b12407, 2026-11-16; [record](research/2026-11-16/llamacpp-qwen3.6-35b-a3b/README.md)); the other four are no material speed gain over the fastest other recipe of the same model.
+One of them gains materially there: Qwen3.6-35B-A3B with `--runtime sglang`, 151.3 tok/s through Paged Experts against 122.5 on llama.cpp, 24% faster (measured on the MSI Raider 18 Max HX, llama.cpp b12407, 2026-11-16; [record](research/2026-11-16/llamacpp-qwen3.6-35b-a3b/README.md)).
+Gemma 4 E4B decodes 141.3 tok/s on SGLang against 45.2 on vLLM in eager mode (measured on the MSI Raider 18 Max HX, vLLM v0.33.0, 2026-11-17; [record](research/2026-11-17/vllm-gemma-4-e4b/README.md)), but its llama.cpp build is faster still, at 151.3 tok/s with twice the context (measured on the MSI Raider 18 Max HX, llama.cpp b12407, 2026-11-17; [record](research/2026-11-17/llamacpp-gemma-4-e4b/README.md)), so it and the other four are no material speed gain over the fastest other recipe of the same model.
 Figures for every other model and runtime are still estimates or third-party numbers until they are measured here.
 
 ## Quick start
@@ -20,7 +22,8 @@ It runs one model server at a time, published on 127.0.0.1 only: llama.cpp answe
 `up` refuses while another server runs, and `up --replace` stops that one first.
 
 Each recipe belongs to llama.cpp, vLLM or SGLang.
-Without `--runtime`, a name starts on llama.cpp when it has a llama.cpp recipe, else on vLLM, else on SGLang; every SGLang recipe shares its name with another engine's, so SGLang always needs `--runtime sglang`, and for a model that ships on more than one engine, `--runtime llamacpp`, `--runtime vllm` or `--runtime sglang` chooses.
+Without `--runtime`, a name starts on llama.cpp when it has a llama.cpp recipe, else on vLLM, else on SGLang; every SGLang recipe shares its name with another engine's, so SGLang always needs `--runtime sglang`, and for a model that ships on more than one engine, `--runtime llamacpp`, `--runtime vllm` or `--runtime sglang` chooses; since the GGUF recipes of `gemma-4-12b`, `gemma-4-e4b`, `mellum2.1-12b` and `qwen3.5-9b`, those four names start on llama.cpp unless `--runtime vllm` is given, or `--runtime sglang` for the three that ship an SGLang recipe (`gemma-4-12b`, `gemma-4-e4b` and `qwen3.5-9b`; `mellum2.1-12b` ships none).
+For `qwen3.5-9b` that trades speed for precision: its Q8_0 build decodes 66.0 tok/s on llama.cpp (measured on the MSI Raider 18 Max HX, llama.cpp b12407, 2026-11-17; [record](research/2026-11-17/llamacpp-qwen3.5-9b/README.md)) against 90.8 for the NVFP4 build on vLLM (measured on the MSI Raider 18 Max HX, vLLM v0.33.0, 2026-11-17; [record](research/2026-11-17/vllm-qwen3.5-9b/README.md)) and 93.7 on SGLang (measured on the MSI Raider 18 Max HX, SGLang v0.5.23, 2026-11-17; [record](research/2026-11-17/sglang-qwen3.5-9b/README.md)), so `--runtime vllm` or `--runtime sglang` is the faster choice for it.
 
 A model is named by its ID or an alias.
 Decode speeds are measured on this laptop (measured on the RTX 5080 Laptop, llama.cpp `server-cuda-b12407`, vLLM v0.33.0 or SGLang v0.5.23), a "-" after "Yes" marks a recipe with no measured speed, and "No | - | -" means the model has no recipe for that engine.
@@ -28,18 +31,18 @@ Decode speeds are measured on this laptop (measured on the RTX 5080 Laptop, llam
 | Model ID | Aliases | llama.cpp | Context | Decode tok/s | vLLM | Context | Decode tok/s | SGLang | Context | Decode tok/s |
 |---|---|---|---|---|---|---|---|---|---|---|
 | `deepseek-r1-0528-qwen3-8b` | `deepseek-r1` | Yes | 64k | 70.6 | Yes | 64k | - | No | - | - |
-| `gemma-4-12b` | `gemma4-12b` | No | - | - | Yes | 128k | 69.5 | Yes | 128k | 70.4 |
+| `gemma-4-12b` | `gemma4-12b` | Yes | 128k | 77.1 | Yes | 128k | 69.5 | Yes | 128k | 70.4 |
 | `gemma-4-26b-a4b` | `gemma4-26b` | Yes | 128k | 148.2 | No | - | - | No | - | - |
-| `gemma-4-e4b` | `gemma4-e4b` | No | - | - | Yes | 64k | 45.2 | Yes | 64k | 141.3 |
+| `gemma-4-e4b` | `gemma4-e4b` | Yes | 128k | 151.3 | Yes | 64k | 45.2 | Yes | 64k | 141.3 |
 | `gpt-oss-20b` | `gpt-oss` | Yes | 128k | 166.2 | Yes | 64k | 83.5 | Yes | 128k | 124.6 |
 | `groot-19b-a3b` | `groot` | Yes | 128k | 169.8 | Yes | 128k | 193.4 | No | - | - |
 | `k2-horizon-7b` | `k2-7b` | Yes | 80k | 66.9 | Yes | 64k | 94.8 | Yes | 64k | 89.6 |
 | `k2-horizon-mova-36b` | `mova`, `k2-mova` | Yes | 64k | 37.2 | No | - | - | No | - | - |
-| `mellum2.1-12b` | `mellum` | No | - | - | Yes | 128k | 257.2 | No | - | - |
+| `mellum2.1-12b` | `mellum` | Yes | 128k | 188.2 | Yes | 128k | 257.2 | No | - | - |
 | `nemotron-3.5-bolt` | `bolt` | Yes | 128k | 73.5 | No | - | - | No | - | - |
 | `nemotron-3.5-lightning` | `lightning` | Yes | 128k | 143.6 | No | - | - | No | - | - |
 | `qwen3-coder-next` | `coder-next` | Yes | 128k | 71.5 | No | - | - | No | - | - |
-| `qwen3.5-9b` | `qwen3.5` | No | - | - | Yes | 128k | 90.8 | Yes | 128k | 93.7 |
+| `qwen3.5-9b` | `qwen3.5` | Yes | 128k | 66 | Yes | 128k | 90.8 | Yes | 128k | 93.7 |
 | `qwen3.6-35b-a3b` | `qwen3.6` | Yes | 128k | 122.5 | No | - | - | Yes | 128k | 151.3 |
 | `qwen3.8-27b` | `qwen3.8` | Yes | 64k | 36.4 | No | - | - | No | - | - |
 
@@ -112,7 +115,7 @@ The bandwidth figure is NVIDIA's laptop specification ([NVIDIA](https://www.nvid
 | [sglang/models.md](sglang/models.md) | SGLang recipes for the models that run, and the models that do not |
 | [sglang/benchmarking.md](sglang/benchmarking.md) | The SGLang measurement method, post-ready margins, results and cold starts without the network |
 | [llamacpp/README.md](llamacpp/README.md) | llama.cpp `server-cuda-b12407`: CUDA-graph workaround, run template, MoE expert offload, KV quantization, thinking, prompt cache, known issues |
-| [llamacpp/models.md](llamacpp/models.md) | llama.cpp recipes for all ten picks |
+| [llamacpp/models.md](llamacpp/models.md) | llama.cpp recipes for all ten picks and for the GGUF builds of Qwen3.5-9B, Gemma 4 12B, Gemma 4 E4B and Mellum2.1 |
 | [llamacpp/benchmarking.md](llamacpp/benchmarking.md) | `llama-bench`, server metrics, offload sweeps and the results template |
 | [docs/community-benchmarks.md](docs/community-benchmarks.md) | Third-party measurements and calculators, labeled desktop or laptop and measured or estimated |
 | [docs/sources.md](docs/sources.md) | Source catalog, evidence classes and the 19 reviewed user-provided sources |
