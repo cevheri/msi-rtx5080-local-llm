@@ -28,6 +28,8 @@ For `qwen3.5-9b` that trades speed for precision: its Q8_0 build decodes 66.0 to
 A model is named by its ID or an alias.
 Decode speeds are measured on this laptop (measured on the RTX 5080 Laptop, llama.cpp `server-cuda-b12407`, vLLM v0.33.0 or SGLang v0.5.23), a "-" after "Yes" marks a recipe with no measured speed, and "No | - | -" means the model has no recipe for that engine.
 
+<!-- recipe table: written by python3 -m launcher.site readme from recipes/; do not edit by hand -->
+
 | Model ID | Aliases | llama.cpp | Context | Decode tok/s | vLLM | Context | Decode tok/s | SGLang | Context | Decode tok/s |
 |---|---|---|---|---|---|---|---|---|---|---|
 | `deepseek-r1-0528-qwen3-8b` | `deepseek-r1` | Yes | 64k | 70.6 | Yes | 64k | 72.5 | No | - | - |
@@ -45,6 +47,8 @@ Decode speeds are measured on this laptop (measured on the RTX 5080 Laptop, llam
 | `qwen3.5-9b` | `qwen3.5` | Yes | 128k | 66 | Yes | 128k | 90.8 | Yes | 128k | 93.7 |
 | `qwen3.6-35b-a3b` | `qwen3.6` | Yes | 128k | 122.5 | No | - | - | Yes | 128k | 151.3 |
 | `qwen3.8-27b` | `qwen3.8` | Yes | 64k | 36.4 | No | - | - | No | - | - |
+
+<!-- end of recipe table -->
 
 The vLLM recipe of `deepseek-r1-0528-qwen3-8b` runs through llmctl's tokenizer overlay, a folder that names the right tokenizer class for vLLM v0.33.0 ([vllm/models.md](vllm/models.md#deepseek-r1-0528-qwen3-8b-chat-only)).
 

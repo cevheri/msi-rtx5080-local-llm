@@ -10,6 +10,7 @@ from pathlib import Path
 
 from launcher.e2e.summary import SUMMARY_HEAD
 from launcher.runtimes import ADAPTERS
+from launcher.site.render import README_END, README_START
 from launcher.tests.fakes import REPO
 
 RECIPES = (("llamacpp", "qwen3.6-35b-a3b"), ("sglang", "qwen3.6-35b-a3b"), ("llamacpp", "gpt-oss-20b"),
@@ -104,8 +105,8 @@ class SiteFixture:
             self._write(path, "# Models\n\n" + "".join(f"## {name}\n\n" for name in names))
         for record in sorted(records):
             self._write(f"{record.rstrip('/')}/README.md", "# Record\n")
-        self._write("README.md", "# Fixture\n\n## Quick start\n\nRun a model with llmctl.\n\n## License\n\n"
-                    + "\n".join(LICENSE_LINES) + "\n")
+        self._write("README.md", "# Fixture\n\n## Quick start\n\nRun a model with llmctl.\n\n" + README_START + "\n\n"
+                    + README_END + "\n\n## License\n\n" + "\n".join(LICENSE_LINES) + "\n")
         self._write("LICENSE", "CC BY 4.0\n")
         self._write("LICENSE-CODE", "MIT\n")
         self._write_selection()

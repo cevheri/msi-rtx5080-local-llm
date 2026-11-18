@@ -406,8 +406,9 @@ class DocsConsistencyTest(unittest.TestCase):
                 self.assertIn(recipe_id, text)
 
     def test_readme_recipe_table_matches_the_catalog(self):
-        header = ("| Model ID | Aliases | llama.cpp | Context | Decode tok/s | vLLM | Context | Decode tok/s "
-                  "| SGLang | Context | Decode tok/s |")
+        header = "| Model ID | Aliases | " + " | ".join(f"{adapter.LABEL} | Context | Decode tok/s"
+                                                     for adapter in ADAPTERS.values()) + " |"
+        width = 2 + 3 * len(ADAPTERS)
         lines = section("README.md#quick-start")
         self.assertIn(header, lines, "README.md#quick-start has no recipe table")
         start = lines.index(header) + 2
@@ -416,7 +417,7 @@ class DocsConsistencyTest(unittest.TestCase):
             if not line.startswith("|"):
                 break
             cells = [cell.strip() for cell in line.strip("|").split("|")]
-            self.assertEqual(len(cells), 11, line)
+            self.assertEqual(len(cells), width, line)
             recipe_id = cells[0].strip("`")
             self.assertNotIn(recipe_id, rows, f"{recipe_id} has more than one row")
             rows[recipe_id] = cells
@@ -425,7 +426,7 @@ class DocsConsistencyTest(unittest.TestCase):
         for recipe_id, cells in rows.items():
             with self.subTest(recipe=recipe_id):
                 aliases = []
-                for column, name in ((2, "llamacpp"), (5, "vllm"), (8, "sglang")):
+                for column, name in ((2 + 3 * index, name) for index, name in enumerate(ADAPTERS)):
                     recipe = self.catalog.runtimes[name].recipes.get(recipe_id)
                     if recipe is None:
                         self.assertEqual(cells[column:column + 3], ["No", "-", "-"], name)
@@ -441,6 +442,10 @@ class DocsConsistencyTest(unittest.TestCase):
                 if not recipe.evidence.decode_tok_s:
                     with self.subTest(unmeasured=f"{recipe_id} on {name}"):
                         self.assertIn(f"`{recipe_id}`", prose, "an unmeasured recipe needs a note outside the table")
+        from launcher.site import render  # inside the test, so only this test errors while the module is missing
+        text = (REPO / "README.md").read_text(encoding="utf-8")
+        self.assertEqual(render.readme_block(text), "\n" + render.readme_table(self.catalog) + "\n",
+                         "README.md's recipe table is stale: run python3 -m launcher.site readme")
 
     def test_runtime_coverage_matches_the_catalog(self):
         # D17 of the SGLang design: every model of the README table has one cell per engine, and a cell starts Runs:
