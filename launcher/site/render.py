@@ -456,9 +456,11 @@ class _Page:
                       ("data-use", " ".join(cell.uses))]
             attrs += [(f"data-c-{result.client}", result.cls) for result in cell.clients]
             attrs += [(f"data-o-{key}", str(place)) for key, place in cell.positions]
-        attrs.append(("data-search", data.search_text(model, cell, self.labels[cell.runtime])))
+        label = self.labels[cell.runtime]
+        attrs.append(("data-search", data.search_text(model, cell, label)))
         return (_start("td", attrs) + self._tile(model, cell)
-                + ' <span class="out" hidden>Not in this view</span></td>')
+                + f' <span class="out" hidden><span class="engine" aria-hidden="true">{_e(label)}</span> '
+                + "Not in this view</span></td>")
 
     def matrix_table(self) -> str:
         found = data.view(self.matrix, "", data.Filters(), None)
@@ -780,7 +782,7 @@ class _Page:
             self.toolbar(), '<div id="notice" hidden>', '<p id="notice-text"></p>',
             '<button type="button" id="dismiss">Dismiss</button>', "</div>", self.legend(), self.matrix_table(),
             self.use_lists(), self.details(), '<p id="live" class="vh" aria-live="polite"></p>', "</main>",
-            self.footer(), '<dialog id="drawer" autofocus>', '<button type="button" id="close">Close</button>',
+            self.footer(), '<dialog id="drawer">', '<button type="button" id="close">Close</button>',
             '<div id="drawer-body"></div>', "</dialog>", self.template(), f"<script>{script}</script>", "</body>"])
 
 

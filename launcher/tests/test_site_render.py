@@ -324,6 +324,14 @@ class SiteRenderTest(unittest.TestCase):
                          {("col", "columnheader"), ("row", "rowheader")})
         self.assertEqual([node.attrs["aria-labelledby"] for node in tree.find_all("section")
                           if "aria-labelledby" in node.attrs], [])
+        # The lead's autofocus ruling: the markup carries no autofocus (Chrome logs a line for it on every load with
+        # a hash), and the script sets it before its first showModal(); Chrome 157 then focuses button#close.
+        drawer = tree.by_id("drawer")
+        self.assertEqual((drawer.tag, drawer.attrs), ("dialog", {"id": "drawer"}))
+        self.assertEqual([(node.tag, node.attrs.get("id")) for node in drawer.children if not isinstance(node, str)],
+                         [("button", "close"), ("div", "drawer-body")])
+        script = (REPO / "launcher/site/page.js").read_text(encoding="utf-8")
+        self.assertRegex(script, r"drawer\.autofocus = true;[^\0]*?drawer\.showModal\(\)")
         page = render.page(matrix, BUILD, self.fixture.root)
         self.assertIn("Filters and use cases need JavaScript; the full matrix and each use case as a list are below.",
                       page)
@@ -411,8 +419,13 @@ class SiteRenderTest(unittest.TestCase):
                                      (cell.status, data.search_text(model, cell, labels[cell.runtime])))
                     tile = tds[cell.runtime].find_all("a", "tile")[0]
                     self.assertEqual(tile.attrs["href"], f"#d-{cell.runtime}-{model.id}")
+                    # A card below the switch width names the engine of a cell out of view, as its tile does
+                    # (Cells: "In the stacked layout each cell starts with its engine label").
                     out = tds[cell.runtime].find_all("span", "out")[0]
-                    self.assertEqual((out.text(), "hidden" in out.attrs), ("Not in this view", True))
+                    self.assertEqual((squash(out), "hidden" in out.attrs),
+                                     (labels[cell.runtime] + " Not in this view", True))
+                    engine = out.find_all("span", "engine")[0]
+                    self.assertEqual((engine.text(), engine.attrs.get("aria-hidden")), (labels[cell.runtime], "true"))
                     if cell.status != "runs":
                         self.assertEqual(sorted(attrs), ["data-engine", "data-search", "data-status", "role"])
                         continue
@@ -589,6 +602,29 @@ class SiteRenderTest(unittest.TestCase):
         self.assertEqual(whole, ["white-space: nowrap; overflow-wrap: normal;"])
         self.assertTrue(any(selector == ".tile" and "container-type: inline-size" in body for selector, body in rules))
         self.assertRegex(" ".join(css.split()), r"@container \(max-width: [0-9.]+rem\) \{ \.tile \.speed \{")
+        # The engine label of a cell out of view shows in the stacked layout only, as the tile's does.
+        self.assertIn((".tile .engine, td .out .engine", "display: none;"), rules)
+        self.assertTrue(any(selector == "td .out .engine" and "display: block" in body for selector, body in rules))
+        # A section in the dialog keeps its title under the sticky Close bar when a load with its hash scrolls the
+        # dialog to it, and the :target outline is for the jump without JavaScript only.
+        drawn = " ".join(body for selector, body in rules if selector == "#drawer-body section.details")
+        self.assertRegex(drawn, r"scroll-margin-top: [0-9.]+rem;")
+        self.assertIn(("#drawer-body section.details:target", "outline: none;"), rules)
+
+    def test_script_keeps_no_state_outside_the_url(self):
+        js = (REPO / "launcher/site/page.js").read_text(encoding="utf-8")
+        for word in ("localStorage", "sessionStorage", "indexedDB", "document.cookie", ".style."):
+            self.assertNotIn(word, js)
+
+    def test_script_uses_only_safe_sinks(self):
+        js = (REPO / "launcher/site/page.js").read_text(encoding="utf-8")
+        for word in ("innerHTML", "outerHTML", "insertAdjacentHTML", "document.write"):
+            self.assertNotIn(word, js)
+        self.assertIsNone(re.search(r"\beval\s*\(|\bFunction\s*\(", js))
+        calls = re.findall(r"querySelector(?:All)?\(", js)
+        literal = re.findall(r"querySelector(?:All)?\(\s*(?:\"[^\"\\]*\"|'[^'\\]*')\s*\)", js)
+        self.assertEqual(len(calls), len(literal))
+        self.assertIsNone(re.search(r"set(?:Timeout|Interval)\(\s*[\"'`]", js))
 
     def test_build_is_byte_identical_across_hash_seeds(self):
         code = ("import sys\nfrom pathlib import Path\nfrom launcher.site import cli\n"

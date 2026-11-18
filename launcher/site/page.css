@@ -335,6 +335,7 @@ td[data-status="does-not-fit"] .tile {
 }
 td[data-status="does-not-fit"] .status, td[data-status="does-not-fit"] .label { color: var(--nofit); }
 td .out { display: block; padding: 0.5rem 0.625rem; color: var(--muted); }
+td .out .engine { display: block; font-size: 0.8125rem; font-weight: 650; color: var(--ink); }
 
 @media print, (min-width: @SWITCH@) {
   #matrix { display: table; width: 100%; table-layout: fixed; }
@@ -364,7 +365,7 @@ td .out { display: block; padding: 0.5rem 0.625rem; color: var(--muted); }
   #matrix tbody th { padding: 0.5rem 0.25rem; margin: 0; }
   #matrix tbody td { height: 1px; margin: 0; }
   #matrix tbody tr + tr th { border-top: 1px solid var(--rule); }
-  .tile .engine { display: none; }
+  .tile .engine, td .out .engine { display: none; }
 }
 
 /* Static sections without JavaScript */
@@ -432,7 +433,10 @@ section.details details.reason p { margin: 0.25rem 0; }
   font-weight: 650;
 }
 #drawer-body { padding: 0 var(--gutter) 1.5rem; }
-#drawer-body section.details { border-top: 0; margin-top: 0.5rem; }
+/* A load with a details hash scrolls the dialog to its section: the margin keeps the title under the sticky Close
+   bar, and the :target outline, meant for the jump without JavaScript, stays off inside the dialog. */
+#drawer-body section.details { border-top: 0; margin-top: 0.5rem; scroll-margin-top: 4rem; }
+#drawer-body section.details:target { outline: none; }
 
 @media (max-width: 47.99rem) {
   #drawer { width: 100vw; border-left: 0; }
