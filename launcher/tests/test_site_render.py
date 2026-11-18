@@ -18,7 +18,7 @@ from launcher import clients
 from launcher.runtimes import ADAPTERS
 from launcher.site import data, render
 from launcher.tests.fakes import REPO
-from launcher.tests.site_fixture import (RECIPES, TOP10_IDS, TOP10_ROW, DEFAULT_RUN, SiteFixture, default_rows,
+from launcher.tests.site_fixture import (RECIPES, TOP10_IDS, TOP10_ROW, DEFAULT_RUN, SiteFixture, cell_of, default_rows,
                                          parse, prefix, row, version_record, well_formed_problems)
 
 BUILD = data.Build("https://github.com/o/r", "a" * 40, 0)
@@ -672,6 +672,304 @@ class SiteRenderTest(unittest.TestCase):
                         self.assertFalse(module == "urllib" and "request" in names, module)
                         self.assertFalse(module == "http" and "client" in names, module)
                         self.assertFalse(module == "os" and names & {"environ", "getenv"}, module)
+
+    def test_details_texts(self):
+        tree = parse(render.page(self.fixture.load(), BUILD, self.fixture.root))
+        self.assertEqual(text(tree, "d-sglang-qwen3.6-35b-a3b", "status-line"),
+                         "Runs. Fastest of 2 engines, 24% ahead of llama.cpp (122.5 tok/s).")
+        self.assertEqual(text(tree, "d-llamacpp-qwen3.6-35b-a3b", "status-line"), "Runs. SGLang is faster: 151.3 tok/s.")
+        self.assertEqual(text(tree, "d-llamacpp-k2-horizon-7b", "status-line"), "Runs.")
+        for line in ("vLLM: Runs, 72.5 tok/s, 64k", "SGLang: Failed on 2026-11-17"):              # Other engines
+            self.assertIn(line, text(tree, "d-llamacpp-deepseek-r1-0528-qwen3-8b"))
+        others = tree.by_id("d-llamacpp-deepseek-r1-0528-qwen3-8b").find_all("ul", "others")[0]
+        self.assertEqual([(squash(a), a.attrs["href"]) for a in others.find_all("a")],
+                         [("vLLM: Runs, 72.5 tok/s, 64k", "#d-vllm-deepseek-r1-0528-qwen3-8b"),
+                          ("SGLang: Failed on 2026-11-17", "#d-sglang-deepseek-r1-0528-qwen3-8b")])
+        thinking = lines(tree, "d-vllm-deepseek-r1-0528-qwen3-8b", "thinking")
+        self.assertEqual(thinking[0], "Always on")
+        self.assertEqual([line.split(":")[0] for line in thinking[1:]], ["Hermes", "Pi", "dsh", "Kimi"])  # after the type line
+        self.assertEqual(lines(tree, "d-sglang-qwen3.6-35b-a3b", "thinking")[0], "Toggle, off by default")
+        self.assertEqual(lines(tree, "d-vllm-gpt-oss-20b", "thinking")[0], "Effort levels: low, medium, high")
+        self.assertEqual(lines(tree, "d-llamacpp-mellum2.1-12b", "thinking")[0], "Toggle, on by default")
+        self.assertEqual(lines(tree, "d-llamacpp-qwen3-coder-next", "thinking")[0], "No thinking")
+        self.assertEqual(text(tree, "d-llamacpp-gpt-oss-20b", "status-line"),              # the next fastest of three
+                         "Runs. Fastest of 3 engines, 33% ahead of SGLang (124.6 tok/s).")
+        self.assertIn("OpenCode: Not supported: llmctl writes no OpenCode entry for this recipe.",
+                      lines(tree, "d-vllm-deepseek-r1-0528-qwen3-8b", "clients"))
+        self.assertIn("Hermes: Passed, 1 of 1 runs passed (latest 2026-11-18).",
+                      lines(tree, "d-vllm-deepseek-r1-0528-qwen3-8b", "clients"))
+        for runtime, speed in (("llamacpp", "100.0"), ("vllm", "50.0"), ("sglang", "100.0")):
+            self.fixture.set_value(runtime, "gpt-oss-20b", "decode_tok_s", speed)
+        self.fixture.set_value("llamacpp", "deepseek-r1-0528-qwen3-8b", "decode_tok_s", "100.1")
+        self.fixture.set_value("vllm", "deepseek-r1-0528-qwen3-8b", "decode_tok_s", "100.0")
+        tree = parse(render.page(self.fixture.load(), BUILD, self.fixture.root))
+        self.assertEqual(text(tree, "d-llamacpp-gpt-oss-20b", "status-line"),
+                         "Runs. Tied fastest of 3 engines with SGLang, at 100 tok/s.")
+        self.assertEqual(text(tree, "d-vllm-gpt-oss-20b", "status-line"), "Runs. llama.cpp and SGLang are faster: 100 tok/s.")
+        self.assertEqual(text(tree, "d-llamacpp-deepseek-r1-0528-qwen3-8b", "status-line"),
+                         "Runs. Fastest of 2 engines, under 1% ahead of vLLM (100 tok/s).")
+        self.fixture.set_value("sglang", "gpt-oss-20b", "decode_tok_s", "50.0")                   # tied at the second speed
+        tree = parse(render.page(self.fixture.load(), BUILD, self.fixture.root))
+        self.assertEqual(text(tree, "d-llamacpp-gpt-oss-20b", "status-line"),
+                         "Runs. Fastest of 3 engines, 100% ahead of vLLM and SGLang (50 tok/s).")
+        self.fixture.set_value("vllm", "gpt-oss-20b", "decode_tok_s", None)
+        tree = parse(render.page(self.fixture.load(), BUILD, self.fixture.root))
+        self.assertEqual(text(tree, "d-vllm-gpt-oss-20b", "status-line"), "Runs.")
+        self.assertIn("Decode speed not recorded", text(tree, "d-vllm-gpt-oss-20b"))
+        self.assertIn("vLLM: Runs, speed not recorded, 64k", text(tree, "d-llamacpp-gpt-oss-20b"))
+
+    def rewrite_default_run(self, rows):
+        self.fixture.run(*DEFAULT_RUN, rows, readme="# e2e\n\n## The No rows\n\nNone.\n")
+
+    def test_client_lines(self):        # a 2026-11-19 run: default rows, except as the comments say
+        # hermes-z and pi fail for prefix("llamacpp", "qwen3.6-35b-a3b"); up fails for prefix("sglang", "gpt-oss-20b")
+        # with no row after it; the kimi row of prefix("llamacpp", "k2-horizon-7b") is left out; the qwen3.6 llama.cpp
+        # note ends "; e2e 2026-11-19: `hermes-z` wrote hello.py elsewhere"
+        k2_kimi = row(prefix("llamacpp", "k2-horizon-7b"), "kimi")
+        base = [line for line in default_rows() if line != k2_kimi]
+        self.rewrite_default_run(base)
+        qwen, gpt = prefix("llamacpp", "qwen3.6-35b-a3b"), prefix("sglang", "gpt-oss-20b")
+        rows = []
+        for line in base:
+            if line.startswith(f"| {gpt} | "):
+                if line == row(gpt, "up"):
+                    rows.append(row(gpt, "up", "the server did not start"))
+                continue
+            if line in (row(qwen, "hermes-z"), row(qwen, "pi")):
+                line = row(qwen, line.split(" | ")[1], "no answer")
+            rows.append(line)
+        self.fixture.run("2026-11-19", "llmctl-next-e2e", rows)
+        cell = ("qwen3.6-35b-a3b", "llamacpp")
+        self.fixture.coverage({cell: self.fixture._default_cell(*cell)
+                               + "; e2e 2026-11-19: `hermes-z` wrote hello.py elsewhere"})
+        tree = parse(render.page(self.fixture.load(), BUILD, self.fixture.root))
+        self.assertIn("Hermes: Known issue, 1 of 2 runs passed (latest 2026-11-19); the coverage note below describes it.",
+                      lines(tree, "d-llamacpp-qwen3.6-35b-a3b", "clients"))
+        self.assertIn("Pi: Failed, 1 of 2 runs passed (latest 2026-11-19); the runtime coverage table does not describe "
+                      "this failure yet.", lines(tree, "d-llamacpp-qwen3.6-35b-a3b", "clients"))
+        self.assertIn("OpenCode: Failed, 1 of 2 runs passed (latest 2026-11-19); the runtime coverage table does not "
+                      "describe this failure yet. Not reached: up failed.", lines(tree, "d-sglang-gpt-oss-20b", "clients"))
+        self.assertIn("Kimi: Not tested: no e2e run has covered this recipe with Kimi yet.",
+                      lines(tree, "d-llamacpp-k2-horizon-7b", "clients"))
+        self.assertIn("Setup checks in the e2e of 2026-11-19:", text(tree, "d-sglang-gpt-oss-20b"))
+        section = tree.by_id("d-sglang-gpt-oss-20b")
+        self.assertEqual([squash(li) for li in section.find_all("ul", "setup-checks")[0].find_all("li")],
+                         ["up failed: the server did not start (no record named after this step)"])
+        reached = next(li for li in section.find_all("ul", "clients")[0].find_all("li") if "Not reached" in li.text())
+        self.assertEqual([node.text() for node in reached.find_all("code")], ["up"])
+        for name, cls in (("hermes", "known-issue"), ("pi", "failed")):
+            item = next(li for li in tree.by_id("d-llamacpp-qwen3.6-35b-a3b").find_all("ul", "clients")[0].find_all("li")
+                        if _text_without_lamps(li).strip().startswith(clients.LABELS[name] + ":"))
+            lamp = item.find_all("span", "lamp")[0]
+            self.assertEqual((lamp.attrs["class"], lamp.text(), lamp.find_all("span")[0].attrs),
+                             (f"lamp {cls}", "H" if name == "hermes" else "P", {"aria-hidden": "true"}))
+        self.assertEqual(tree.by_id("d-llamacpp-qwen3.6-35b-a3b").find_all("ul", "setup-checks"), [])
+        cell = ("gpt-oss-20b", "sglang")                                       # the note names the setup step: Known issue
+        self.fixture.coverage({cell: self.fixture._default_cell(*cell) + "; e2e 2026-11-19: `up` failed on a busy GPU"})
+        tree = parse(render.page(self.fixture.load(), BUILD, self.fixture.root))
+        self.assertIn("OpenCode: Known issue, 1 of 2 runs passed (latest 2026-11-19); the coverage note below describes "
+                      "it. Not reached: up failed.", lines(tree, "d-sglang-gpt-oss-20b", "clients"))
+
+    def test_details_of_failed_and_does_not_fit_cells(self):
+        matrix = self.fixture.load()
+        tree = parse(render.page(matrix, BUILD, self.fixture.root))
+        hardware = "; ".join(sorted({cell.recipe.hardware for model in matrix.models for cell in model.cells
+                                     if cell.status == "runs"}))
+        coverage = BLOB + "/docs/model-selection.md#runtime-coverage"
+        for section_id, title, status, links in (
+                ("d-sglang-deepseek-r1-0528-qwen3-8b", "deepseek-r1-0528-qwen3-8b on SGLang",
+                 f"Failed on 2026-11-17 (measured on {hardware}, SGLang v0.5.23).",
+                 ["#d-llamacpp-deepseek-r1-0528-qwen3-8b", "#d-vllm-deepseek-r1-0528-qwen3-8b"]),
+                ("d-vllm-k2-horizon-7b", "k2-horizon-7b on vLLM", "Does not fit (estimate).",
+                 ["#d-llamacpp-k2-horizon-7b"])):
+            with self.subTest(section=section_id):
+                section = tree.by_id(section_id)
+                model_id, runtime = section.attrs["data-model"], section.attrs["data-engine"]
+                cell = next(c for c in next(m for m in matrix.models if m.id == model_id).cells if c.runtime == runtime)
+                self.assertEqual(squash(section.find_all("h3")[0]), title)
+                self.assertEqual(text(tree, section_id, "status-line"), status)
+                self.assertEqual([squash(h4) for h4 in section.find_all("h4")], ["Why it does not run", "Runs elsewhere"])
+                note = section.find_all("p", "note")[0]
+                html_note = render.inline(cell.note, "docs/model-selection.md", self.links)
+                self.assertEqual(squash(note), squash(parse(html_note)))
+                self.assertEqual([a.attrs["href"] for a in section.find_all("ul", "others")[0].find_all("a")], links)
+                self.assertIn(coverage, [a.attrs["href"] for a in section.find_all("a")])
+                self.assertEqual(section.find_all("button", "copy"), [])
+                self.assertEqual(section.find_all("code", "cmd"), [])
+                self.assertEqual(section.find_all("p", "recipe-name"), [])
+        self.assertIn(BLOB + "/research/2026-11-17/fixture-failure/README.md",
+                      [a.attrs["href"] for a in tree.by_id("d-sglang-deepseek-r1-0528-qwen3-8b").find_all("a")])
+        # k2-horizon-7b with an estimate recipe on llama.cpp: no engine runs it (the kind line also adds the doc
+        # that an estimate needs, since set_value writes one line per key)
+        self.fixture.set_value("llamacpp", "k2-horizon-7b", "decode_tok_s", None)
+        self.fixture.set_value("llamacpp", "k2-horizon-7b", "kind", '"estimate"\ndoc = "llamacpp/models.md"')
+        k2 = ("k2-horizon-7b", "llamacpp")
+        self.fixture.coverage({k2: "Does not fit: too large for the budget (estimate)"})
+        tree = parse(render.page(self.fixture.load(), BUILD, self.fixture.root))
+        self.assertIn("Runs elsewhere No engine runs this model on this laptop yet. Runtime coverage table",
+                      text(tree, "d-vllm-k2-horizon-7b"))
+        self.assertEqual(tree.by_id("d-vllm-k2-horizon-7b").find_all("ul", "others"), [])
+        qwen = ("qwen3.6-35b-a3b", "llamacpp")                     # a note outside the subset stops the build (D13)
+        self.fixture.coverage({qwen: self.fixture._default_cell(*qwen) + "; a **bold** word"})
+        column = cell_of(self.fixture.load(), *qwen).note.index("*") + 1
+        with self.assertRaises(data.SiteError) as caught:
+            render.page(self.fixture.load(), BUILD, self.fixture.root)
+        self.assertEqual(str(caught.exception),
+                         f"docs/model-selection.md: row qwen3.6-35b-a3b, llama.cpp, note: column {column}: emphasis")
+
+    def test_commands_wrap_only_at_spaces_and_copy_the_plain_command(self):
+        matrix = self.fixture.load()
+        tree = parse(render.page(matrix, BUILD, self.fixture.root))
+        facts = cell_of(matrix, "qwen3.6-35b-a3b", "sglang").recipe
+        section = tree.by_id("d-sglang-qwen3.6-35b-a3b")
+        self.assertEqual(squash(section.find_all("p", "recipe-name")[0]), facts.name)
+        commands = section.find_all("code", "cmd")
+        buttons = section.find_all("button", "copy")
+        self.assertEqual(len(commands), 2)
+        for command, button, expected in zip(commands, buttons, (facts.up, facts.pull)):
+            with self.subTest(command=expected):
+                self.assertEqual([node.text() for node in command.find_all("span")], expected.split(" "))
+                self.assertEqual(command.text(), expected)
+                self.assertEqual((button.attrs["data-copy"], "hidden" in button.attrs, button.text()),
+                                 (expected, True, "Copy command"))
+        self.assertIn("Without --runtime, ./llmctl up qwen3.6-35b-a3b starts the llama.cpp recipe.", text(tree, section.attrs["id"]))
+        self.assertNotIn("Without --runtime", text(tree, "d-llamacpp-qwen3.6-35b-a3b"))
+        self.assertIn("Add --replace to stop a running server first.", text(tree, "d-llamacpp-qwen3.6-35b-a3b"))
+        self.assertIn("It asks before it downloads the model files and the image.", text(tree, "d-llamacpp-qwen3.6-35b-a3b"))
+
+    def test_long_reasons_are_cut_before_escaping(self):
+        qwen = prefix("llamacpp", "qwen3.6-35b-a3b")
+        long_reason, exact = "x" * 118 + "<&" + "y" * 40, "z" * 119 + "&"
+        self.fixture.run("2026-11-19", "llmctl-long-e2e", [row(qwen, "up"), row(qwen, "pi", long_reason),
+                                                           row(qwen, "kimi", exact)])
+        page = render.page(self.fixture.load(), BUILD, self.fixture.root)
+        self.assertEqual(well_formed_problems(page), [])
+        section = parse(page).by_id("d-llamacpp-qwen3.6-35b-a3b")
+        reasons = section.find_all("details", "reason")
+        self.assertEqual(len(reasons), 1)
+        self.assertEqual(reasons[0].find_all("summary")[0].text(), "x" * 118 + "<&")
+        self.assertIn("x" * 118 + "&lt;&amp;</summary>", page)
+        self.assertEqual(reasons[0].find_all("p")[0].text(), long_reason)
+        kimi = next(li for li in section.find_all("ul", "history")[0].find_all("li") if li.text().startswith("kimi failed"))
+        self.assertEqual(squash(kimi), f"kimi failed: {exact} (no record named after this step)")
+        self.assertEqual(kimi.find_all("details"), [])
+
+    def test_e2e_history_lists_runs_by_date(self):
+        qwen = prefix("llamacpp", "qwen3.6-35b-a3b")
+        self.fixture.run("2026-11-17", "llmctl-a-e2e", default_rows(), readme=None, records=None)
+        failing = {"pi": "pi went quiet", "probes": "probe A and B failed", "opencode": "opencode stopped"}
+        rows = [row(qwen, line.split(" | ")[1], failing[line.split(" | ")[1]])
+                if line.startswith(f"| {qwen} | ") and line.split(" | ")[1] in failing else line for line in default_rows()]
+        names = ("012-01-qwen3.6-35b-a3b-llamacpp-pi", "020-01-qwen3.6-35b-a3b-llamacpp-probes-A",
+                 "021-01-qwen3.6-35b-a3b-llamacpp-probes-B")
+        self.fixture.run("2026-11-17", "llmctl-b-e2e", rows, readme="# e2e\n\n## The No rows\n\nThree.\n",
+                         records={name: "{}\n" for name in names})
+        steps = sum(1 for line in default_rows() if line.startswith(f"| {qwen} | ") and " | gateway | " not in line)
+        tree = parse(render.page(self.fixture.load(), BUILD, self.fixture.root))
+        history = tree.by_id("d-llamacpp-qwen3.6-35b-a3b").find_all("ul", "history")[0]
+        days = [node for node in history.children if not isinstance(node, str)]
+        self.assertEqual([node.find_all("span", "day")[0].text() for node in days], ["2026-11-18", "2026-11-17"])
+        order = "Runs of one date are listed by folder name; the summaries do not record which ran first."
+        self.assertEqual([order in squash(node) for node in days], [False, True])
+        runs = [node for node in days[1].find_all("ul")[0].children if not isinstance(node, str)]
+        self.assertEqual([squash(node).split(":")[0] for node in runs], ["llmctl-a-e2e", "llmctl-b-e2e"])
+        base = "/research/2026-11-17/"
+        a_links = [a.attrs["href"] for a in runs[0].find_all("a")]
+        b_links = [a.attrs["href"] for a in runs[1].find_all("a")]
+        self.assertTrue(squash(runs[0]).startswith(f"llmctl-a-e2e: {steps} of {steps} steps passed"), squash(runs[0]))
+        self.assertTrue(squash(runs[1]).startswith(f"llmctl-b-e2e: {steps - 3} of {steps} steps passed, records"),
+                        squash(runs[1]))
+        self.assertEqual(a_links, [BLOB + base + "llmctl-a-e2e/summary.md"])
+        self.assertEqual(b_links[:2], [BLOB + base + "llmctl-b-e2e/README.md#the-no-rows", TREE + base + "llmctl-b-e2e/records"])
+        failures = runs[1].find_all("ul")[0].find_all("li")
+        self.assertEqual([squash(li) for li in failures],
+                         ["opencode failed: opencode stopped (no record named after this step)",
+                          "pi failed: pi went quiet (record 012)",
+                          "probes failed: probe A and B failed (records 020, 021)"])
+        self.assertEqual([[code.text() for code in li.find_all("code")] for li in failures],
+                         [["opencode"], ["pi"], ["probes"]])
+        self.assertEqual([[(squash(a), a.attrs["href"]) for a in li.find_all("a")] for li in failures],
+                         [[], [("012", BLOB + base + "llmctl-b-e2e/records/" + names[0])],
+                          [("020", BLOB + base + "llmctl-b-e2e/records/" + names[1]),
+                           ("021", BLOB + base + "llmctl-b-e2e/records/" + names[2])]])
+        self.assertEqual(runs[0].find_all("ul"), [])
+
+    def test_runs_details_show_absent_facts_as_not_recorded(self):
+        for runtime in ("llamacpp", "vllm"):
+            self.fixture.set_value(runtime, "gpt-oss-20b", "ram_gib", None)            # absent, pinned
+            self.fixture.set_value(runtime, "gpt-oss-20b", "output", "16384")
+        self.fixture.set_value("llamacpp", "qwen3.6-35b-a3b", "ram_gib", "14.0")
+        matrix = self.fixture.load()
+        tree = parse(render.page(matrix, BUILD, self.fixture.root))
+        for runtime, context in (("llamacpp", "128k (131,072 tokens)"), ("vllm", "64k (65,536 tokens)")):
+            facts, body = cell_of(matrix, "gpt-oss-20b", runtime).recipe, text(tree, f"d-{runtime}-gpt-oss-20b")
+            self.assertIn(f"Container memory cap: {facts.memory_cap} GiB; ./llmctl up refuses to start when less RAM "
+                          "is available. Measured RAM peak: not recorded.", body)
+            self.assertIn(context, body)
+            self.assertIn("16,384 tokens", body)
+        gpu = cell_of(matrix, "gpt-oss-20b", "vllm").recipe.gpu
+        self.assertTrue(gpu.endswith("%"))
+        self.assertIn(gpu + " of the GPU memory CUDA reports", text(tree, "d-vllm-gpt-oss-20b"))
+        self.assertNotIn("of the GPU memory CUDA reports", text(tree, "d-llamacpp-gpt-oss-20b"))
+        self.assertIn("Measured RAM peak: 14 GiB.", text(tree, "d-llamacpp-qwen3.6-35b-a3b"))             # ruling 12
+        self.assertIn("No OpenCode entry", text(tree, "d-vllm-deepseek-r1-0528-qwen3-8b"))
+        facts = cell_of(matrix, "qwen3.6-35b-a3b", "llamacpp").recipe
+        body = text(tree, "d-llamacpp-qwen3.6-35b-a3b")
+        self.assertIn(f"Decode speed {facts.decode:g} tok/s (measured on {facts.hardware}, llama.cpp b12407, "
+                      f"{facts.date})", body)
+        self.assertIn(f"GPU need {facts.gpu}; ./llmctl up refuses to start when less is free.", body)
+        self.assertIn(f"{facts.repo} at {facts.revision[:12]}, {facts.size_bytes / 1e9:.1f} GB", body)
+        self.assertIn("Tools Yes", body)
+        self.assertIn("Tools No, chat only", text(tree, "d-vllm-deepseek-r1-0528-qwen3-8b"))
+        self.assertIn(f"OpenCode model {facts.opencode} Served name {facts.served}", body)
+        self.assertIn(f"Evidence {facts.summary}", body)
+        section = tree.by_id("d-llamacpp-qwen3.6-35b-a3b")
+        links = {squash(a): a.attrs["href"] for a in section.find_all("ul", "links")[0].find_all("a")}
+        doc, anchor = facts.doc.split("#")
+        self.assertEqual(links, {f"Recipe section in {doc}": f"{BLOB}/{facts.doc}", "Recipe file": f"{BLOB}/{facts.file}",
+                                 "Record folder": f"{TREE}/{facts.record.rstrip('/')}",
+                                 "Runtime coverage table": BLOB + "/docs/model-selection.md#runtime-coverage"})
+        self.assertIn(f"https://huggingface.co/{facts.repo}/tree/{facts.revision}",
+                      [a.attrs["href"] for a in section.find_all("a")])
+        h4 = [squash(node) for node in section.find_all("h4")]
+        self.assertEqual(h4, ["Start it", "First time on this machine", "Decode speed", "Context", "GPU need", "RAM",
+                              "Model files", "Thinking", "Tools", "Output cap", "OpenCode model", "Served name",
+                              "Evidence", "Links", "Clients", "e2e history", "Coverage note", "Other engines"])
+        self.assertEqual(squash(section.find_all("a")[-1]), "Back to the matrix")
+        k2 = prefix("llamacpp", "k2-horizon-7b")                                  # no e2e run covered the recipe
+        self.rewrite_default_run([line for line in default_rows() if not line.startswith(f"| {k2} | ")])
+        tree = parse(render.page(self.fixture.load(), BUILD, self.fixture.root))
+        self.assertIn("e2e history No e2e run has covered this recipe yet. Coverage note",
+                      text(tree, "d-llamacpp-k2-horizon-7b"))
+        self.assertEqual(tree.by_id("d-llamacpp-k2-horizon-7b").find_all("ul", "history"), [])
+        self.fixture.set_value("llamacpp", "k2-horizon-7b", "doc", '"llamacpp/models.md"')      # a doc without #anchor
+        with self.assertRaises(data.SiteError) as caught:
+            render.page(self.fixture.load(), BUILD, self.fixture.root)
+        self.assertEqual(str(caught.exception),
+                         "recipes/llamacpp/k2-horizon-7b.toml: doc llamacpp/models.md names no section anchor")
+
+
+def squash(node) -> str:
+    return " ".join(node.text().split())
+
+
+def _text_without_lamps(node) -> str:
+    return "".join(child if isinstance(child, str) else
+                   "" if "lamp" in (child.attrs.get("class") or "").split() else _text_without_lamps(child)
+                   for child in node.children)
+
+
+def text(tree, section_id: str, css: str | None = None) -> str:
+    """The squashed text of the first element with class `css` inside the section, or of the whole section."""
+    section = tree.by_id(section_id)
+    node = section if css is None else section.find_all(cls=css)[0]
+    return " ".join(node.text().split())
+
+
+def lines(tree, section_id: str, css: str) -> list[str]:
+    """The squashed li texts of the first list with class `css` inside the section, without the lamps' letters."""
+    found = tree.by_id(section_id).find_all(cls=css)[0]
+    return [" ".join(_text_without_lamps(li).split()) for li in found.find_all("li")]
 
 
 def tile_cell(tree, model_id, runtime):

@@ -517,12 +517,203 @@ class _Page:
         for model in self.matrix.models:
             for cell in model.cells:
                 name = f"{cell.runtime}-{model.id}"
+                body = self._runs_details(model, cell) if cell.status == "runs" else self._other_details(model, cell)
                 parts += [_start("section", [("class", "details"), ("id", f"d-{name}"), ("data-model", model.id),
                                              ("data-engine", cell.runtime)]),
-                          f'<h3 id="t-{_e(name)}">{_e(model.id)} on {_e(self.labels[cell.runtime])}</h3>',
+                          f'<h3 id="t-{_e(name)}">{_e(model.id)} on {_e(self.labels[cell.runtime])}</h3>', *body,
                           f'<p class="back"><a href="#m-{_e(model.id)}">Back to the matrix</a></p>', "</section>"]
         parts.append("</section>")
         return "\n".join(parts)
+
+    def _heading(self, runtime: str) -> str:
+        return next(item.heading for item in self.matrix.runtimes if item.id == runtime)
+
+    def _sibling(self, model: data.Model, cell: data.Cell) -> str:
+        """One line of Other engines or Runs elsewhere, linked to that cell's details."""
+        label = self.labels[cell.runtime]
+        if cell.status == "runs":
+            words = f"{label}: Runs, {data._speed_text(cell.recipe.decode)}, {cell.recipe.context // 1024}k"
+        elif cell.status == "failed":
+            words = f"{label}: Failed on {cell.measured}"
+        else:
+            words = f"{label}: Does not fit (estimate)"
+        return f'<li><a href="#d-{_e(cell.runtime)}-{_e(model.id)}">{_e(words)}</a></li>'
+
+    def _note(self, model: data.Model, cell: data.Cell) -> str:
+        where = f"row {model.id}, {self.labels[cell.runtime]}, note: "
+        return f'<p class="note">{inline(cell.note, data.SELECTION, self.links, where)}</p>'
+
+    def _coverage_link(self) -> str:
+        return f'<a href="{_e(self.links.repo_link(data.SELECTION, "runtime-coverage"))}">Runtime coverage table</a>'
+
+    def _other_details(self, model: data.Model, cell: data.Cell) -> list[str]:
+        """The details of a Failed or Does not fit cell: no commands, the note quoted whole (Details)."""
+        if cell.status == "failed":
+            status = (f"Failed on {cell.measured} (measured on {self.hardware}, {self._heading(cell.runtime)}).")
+        else:
+            status = "Does not fit (estimate)."
+        runs = [other for other in model.cells if other.status == "runs"]
+        elsewhere = (["<ul class=\"others\">", *(self._sibling(model, other) for other in runs), "</ul>"] if runs
+                     else ["<p>No engine runs this model on this laptop yet.</p>"])
+        return [f'<p class="status-line">{_e(status)}</p>', "<h4>Why it does not run</h4>", self._note(model, cell),
+                "<h4>Runs elsewhere</h4>", *elsewhere, f'<p class="links">{self._coverage_link()}</p>']
+
+    def _status_line(self, model: data.Model, cell: data.Cell) -> str:
+        """The Runs status line over the model's Runs cells with a speed (Details)."""
+        speeds = {other.runtime: other.recipe.decode for other in model.cells
+                  if other.status == "runs" and other.recipe.decode is not None}
+        own = cell.recipe.decode
+        if own is None or len(speeds) < 2:
+            return "Runs."
+        top = max(speeds.values())
+        leaders = [self.labels[runtime] for runtime, speed in speeds.items() if speed == top]
+        n = len(speeds)
+        if own != top:
+            verb = "is" if len(leaders) == 1 else "are"
+            return f"Runs. {data._joined(leaders)} {verb} faster: {top:g} tok/s."
+        if len(leaders) > 1:
+            others = [label for label in leaders if label != self.labels[cell.runtime]]
+            return f"Runs. Tied fastest of {n} engines with {data._joined(others)}, at {top:g} tok/s."
+        second = max(speed for speed in speeds.values() if speed != top)
+        behind = [self.labels[runtime] for runtime, speed in speeds.items() if speed == second]
+        ahead = cell.fastest.removeprefix("Fastest by ")
+        return f"Runs. Fastest of {n} engines, {ahead} ahead of {data._joined(behind)} ({second:g} tok/s)."
+
+    @staticmethod
+    def _command(command: str) -> str:
+        """A command as one span per space-separated token, and its copy button, which copies the plain command."""
+        tokens = " ".join(f"<span>{_e(token)}</span>" for token in command.split(" "))
+        return (f'<p><code class="cmd">{tokens}</code> '
+                f'{_start("button", [("type", "button"), ("class", "copy"), ("data-copy", command), ("hidden", None)])}'
+                "Copy command</button></p>")
+
+    def _thinking(self, cell: data.Cell) -> str:
+        facts = cell.recipe
+        if facts.thinking == "toggle":
+            kind = f"Toggle, {'on' if facts.default == 'on' else 'off'} by default"
+        elif facts.thinking == "effort":
+            kind = f"Effort levels: {', '.join(facts.efforts)}"
+        else:
+            kind = data.THINKING[facts.thinking]
+        supported = {result.client for result in cell.clients if result.cls != "not-supported"}
+        items = [f"<li>{_e(kind)}</li>"] + [f"<li>{_e(self.client_labels[client])}: {_e(line)}</li>"
+                                              for client, line in facts.thinking_texts if client in supported]
+        return '<ul class="thinking">\n' + "\n".join(items) + "\n</ul>"
+
+    def _client_line(self, cell: data.Cell, result: data.ClientResult) -> str:
+        letter = next(client.letter for client in self.matrix.clients if client.id == result.client)
+        label = self.client_labels[result.client]
+        counts = f"{result.passed_runs} of {result.runs} runs passed (latest {result.latest})"
+        words = {"passed": f"{label}: Passed, {counts}.",
+                 "known-issue": f"{label}: Known issue, {counts}; the coverage note below describes it.",
+                 "failed": f"{label}: Failed, {counts}; the runtime coverage table does not describe this failure yet.",
+                 "not-supported": f"{label}: Not supported: llmctl writes no {label} entry for this recipe.",
+                 "not-tested": f"{label}: Not tested: no e2e run has covered this recipe with {label} yet."}[result.cls]
+        line = _e(words)
+        if result.not_reached is not None and result.cls in ("known-issue", "failed"):
+            line += f" Not reached: <code>{_e(result.not_reached)}</code> failed."
+        lamp = f'<span class="lamp {_e(result.cls)}"><span aria-hidden="true">{_e(letter)}</span></span>'
+        return f"<li>{lamp} {line}</li>"
+
+    @staticmethod
+    def _reasons(reasons: str) -> str:
+        """A reason as escaped text; over 120 characters, its first 120 in a summary and the whole in a details."""
+        if len(reasons) <= 120:
+            return _e(reasons)
+        return (f'<details class="reason"><summary>{_e(reasons[:120])}</summary><p>{_e(reasons)}</p></details>')
+
+    def _failure(self, failure: data.Failure) -> str:
+        """`<step>` failed: <reasons>, then its records or the sentence that it has none."""
+        if not failure.records:
+            records = "(no record named after this step)"
+        else:
+            numbers = [f'<a href="{_e(self.links.repo_link(path))}">{_e(path.rsplit("/", 1)[1].split("-", 1)[0])}</a>'
+                       for path in failure.records]
+            records = f"({'record' if len(numbers) == 1 else 'records'} {', '.join(numbers)})"
+        return f"<li><code>{_e(failure.step)}</code> failed: {self._reasons(failure.reasons)} {records}</li>"
+
+    def _history(self, cell: data.Cell) -> str:
+        """The e2e history: one item per date, newest first, holding its runs in folder order (Details)."""
+        days: dict[str, list[data.CellRun]] = {}
+        for cell_run in cell.history:
+            days.setdefault(cell_run.run.date, []).append(cell_run)
+        parts = ['<ul class="history">']
+        for date, cell_runs in days.items():
+            parts += [f'<li><span class="day">{_e(date)}</span>', "<ul>"]
+            for cell_run in cell_runs:
+                run = cell_run.run
+                if run.readme is not None:
+                    target = self.links.repo_link(run.readme, "the-no-rows" if run.no_rows else None)
+                else:
+                    target = self.links.repo_link(f"{run.path}/summary.md")
+                passed = cell_run.steps - len(cell_run.failures)
+                line = (f'<li><a href="{_e(target)}">{_e(run.folder)}</a>: {passed} of {cell_run.steps} steps passed')
+                if run.records:
+                    line += f', <a href="{_e(self.links.repo_link(run.path + "/records"))}">records</a>'
+                if cell_run.failures:
+                    line += '\n<ul>\n' + "\n".join(self._failure(failure) for failure in cell_run.failures) + "\n</ul>"
+                parts.append(line + "</li>")
+            parts.append("</ul>")
+            if len(cell_runs) > 1:
+                parts.append('<p class="order">Runs of one date are listed by folder name; the summaries do not record '
+                             "which ran first.</p>")
+            parts.append("</li>")
+        parts.append("</ul>")
+        return "\n".join(parts)
+
+    def _runs_details(self, model: data.Model, cell: data.Cell) -> list[str]:
+        """The details of a Runs cell, in the order of the spec's Details table."""
+        facts = cell.recipe
+        label = self.labels[cell.runtime]
+        start = [self._command(facts.up), "<p>Add <code>--replace</code> to stop a running server first.</p>"]
+        if facts.plain_runtime != cell.runtime:
+            start.append(f"<p>Without <code>--runtime</code>, <code>./llmctl up {_e(model.id)}</code> starts the "
+                         f"{_e(self.labels[facts.plain_runtime])} recipe.</p>")
+        if facts.decode is None:
+            speed = "not recorded"
+        else:
+            speed = f"{facts.decode:g} tok/s (measured on {facts.hardware}, {self._heading(cell.runtime)}, {facts.date})"
+        gpu = facts.gpu + (" of the GPU memory CUDA reports" if facts.gpu.endswith("%") else "")
+        peak = "not recorded" if facts.ram_peak is None else f"{facts.ram_peak:g} GiB"
+        files = f"https://huggingface.co/{facts.repo}/tree/{facts.revision}"
+        doc, _, anchor = facts.doc.partition("#")
+        if not anchor:
+            raise SiteError(f"{facts.file}: doc {facts.doc} names no section anchor")
+        links = [(f"Recipe section in {doc}", self.links.repo_link(doc, anchor)),
+                 ("Recipe file", self.links.repo_link(facts.file)), ("Record folder", self.links.repo_link(facts.record)),
+                 ("Runtime coverage table", self.links.repo_link(data.SELECTION, "runtime-coverage"))]
+        parts = [f'<p class="recipe-name">{_e(facts.name)}</p>',
+                 f'<p class="status-line">{_e(self._status_line(model, cell))}</p>',
+                 "<h4>Start it</h4>", *start,
+                 "<h4>First time on this machine</h4>", self._command(facts.pull),
+                 "<p>It asks before it downloads the model files and the image.</p>",
+                 "<h4>Decode speed</h4>", f"<p>{_e(speed)}</p>",
+                 "<h4>Context</h4>", f"<p>{facts.context // 1024}k ({facts.context:,} tokens)</p>",
+                 "<h4>GPU need</h4>", f"<p>{_e(gpu)}; ./llmctl up refuses to start when less is free.</p>",
+                 "<h4>RAM</h4>", f"<p>Container memory cap: {facts.memory_cap} GiB; ./llmctl up refuses to start when "
+                                 f"less RAM is available. Measured RAM peak: {_e(peak)}.</p>",
+                 "<h4>Model files</h4>", f'<p><a href="{_e(files)}">{_e(facts.repo)} at {_e(facts.revision[:12])}, '
+                                         f"{facts.size_bytes / 1e9:.1f} GB</a></p>",
+                 "<h4>Thinking</h4>", self._thinking(cell),
+                 "<h4>Tools</h4>", f"<p>{'No, chat only' if facts.chat_only else 'Yes'}</p>",
+                 "<h4>Output cap</h4>", f"<p>{facts.output:,} tokens</p>",
+                 "<h4>OpenCode model</h4>",
+                 f"<p><code>{_e(facts.opencode)}</code></p>" if facts.opencode else "<p>No OpenCode entry</p>",
+                 "<h4>Served name</h4>", f"<p><code>{_e(facts.served)}</code></p>",
+                 "<h4>Evidence</h4>", f"<p>{_e(facts.summary)}</p>",
+                 "<h4>Links</h4>", '<ul class="links">',
+                 *(f'<li><a href="{_e(url)}">{_e(words)}</a></li>' for words, url in links), "</ul>",
+                 "<h4>Clients</h4>", '<ul class="clients">',
+                 *(self._client_line(cell, result) for result in cell.clients), "</ul>"]
+        if cell.setup:
+            parts += ["<h4>Setup checks</h4>", f"<p>Setup checks in the e2e of {_e(cell.covered)}:</p>",
+                      '<ul class="setup-checks">', *(self._failure(failure) for failure in cell.setup), "</ul>"]
+        parts += ["<h4>e2e history</h4>", self._history(cell) if cell.history else "<p>No e2e run has covered this "
+                  "recipe yet.</p>",
+                  "<h4>Coverage note</h4>", self._note(model, cell),
+                  "<h4>Other engines</h4>", '<ul class="others">',
+                  *(self._sibling(model, other) for other in model.cells if other.runtime != cell.runtime), "</ul>"]
+        return parts
 
     def _run_line(self, run: data.Run) -> str:
         if run.readme is not None:
