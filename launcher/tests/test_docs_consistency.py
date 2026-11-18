@@ -8,49 +8,19 @@ import re
 import shlex
 import unittest
 
-from launcher import dsh_config, kimi_config, opencode_config
+from launcher import dsh_config, kimi_config, markdown, opencode_config
 from launcher.catalog import load_catalog
 from launcher.hfcache import repo_dirname
+from launcher.markdown import heading_slugs
 from launcher.runtimes import ADAPTERS
 from launcher.tests.fakes import REPO
 
 
-def slug(heading: str) -> str:
-    """GitHub's anchor rule, as the knowledge base's link checker applies it."""
-    text = re.sub(r"`|\*\*|\*", "", heading)
-    text = re.sub(r"\[([^\]]*)\]\([^)]*\)", r"\1", text)
-    return re.sub(r"[^\w\- ]", "", text.lower()).replace(" ", "-")
-
-
 def section(doc: str) -> list[str]:
-    path, anchor = doc.split("#", 1)
-    lines, found, depth = [], False, 0
-    for line in (REPO / path).read_text().splitlines():
-        heading = re.match(r"^(#{2,6})\s+(.*?)\s*$", line)
-        if heading:
-            if found and len(heading.group(1)) <= depth:
-                break
-            if slug(heading.group(2)) == anchor:
-                found, depth = True, len(heading.group(1))
-                continue
-        if found:
-            lines.append(line)
-    if not found:
-        raise AssertionError(f"no section #{anchor} in {path}")
-    return lines
-
-
-def heading_slugs(path) -> set[str]:
-    """The anchors of every Markdown heading in a file, outside fenced blocks."""
-    slugs, inside = set(), False
-    for line in path.read_text().splitlines():
-        if line.startswith("```"):
-            inside = not inside
-            continue
-        heading = None if inside else re.match(r"^#{1,6}\s+(.*?)\s*$", line)
-        if heading:
-            slugs.add(slug(heading.group(1)))
-    return slugs
+    try:
+        return markdown.section(REPO, doc)
+    except LookupError as exc:
+        raise AssertionError(str(exc)) from None
 
 
 def last_run_block(lines: list[str]) -> list[str] | None:
@@ -436,8 +406,9 @@ class DocsConsistencyTest(unittest.TestCase):
                 self.assertIn(recipe_id, text)
 
     def test_readme_recipe_table_matches_the_catalog(self):
-        header = ("| Model ID | Aliases | llama.cpp | Context | Decode tok/s | vLLM | Context | Decode tok/s "
-                  "| SGLang | Context | Decode tok/s |")
+        header = "| Model ID | Aliases | " + " | ".join(f"{adapter.LABEL} | Context | Decode tok/s"
+                                                     for adapter in ADAPTERS.values()) + " |"
+        width = 2 + 3 * len(ADAPTERS)
         lines = section("README.md#quick-start")
         self.assertIn(header, lines, "README.md#quick-start has no recipe table")
         start = lines.index(header) + 2
@@ -446,7 +417,7 @@ class DocsConsistencyTest(unittest.TestCase):
             if not line.startswith("|"):
                 break
             cells = [cell.strip() for cell in line.strip("|").split("|")]
-            self.assertEqual(len(cells), 11, line)
+            self.assertEqual(len(cells), width, line)
             recipe_id = cells[0].strip("`")
             self.assertNotIn(recipe_id, rows, f"{recipe_id} has more than one row")
             rows[recipe_id] = cells
@@ -455,7 +426,7 @@ class DocsConsistencyTest(unittest.TestCase):
         for recipe_id, cells in rows.items():
             with self.subTest(recipe=recipe_id):
                 aliases = []
-                for column, name in ((2, "llamacpp"), (5, "vllm"), (8, "sglang")):
+                for column, name in ((2 + 3 * index, name) for index, name in enumerate(ADAPTERS)):
                     recipe = self.catalog.runtimes[name].recipes.get(recipe_id)
                     if recipe is None:
                         self.assertEqual(cells[column:column + 3], ["No", "-", "-"], name)
@@ -471,6 +442,10 @@ class DocsConsistencyTest(unittest.TestCase):
                 if not recipe.evidence.decode_tok_s:
                     with self.subTest(unmeasured=f"{recipe_id} on {name}"):
                         self.assertIn(f"`{recipe_id}`", prose, "an unmeasured recipe needs a note outside the table")
+        from launcher.site import render  # inside the test, so only this test errors while the module is missing
+        text = (REPO / "README.md").read_text(encoding="utf-8")
+        self.assertEqual(render.readme_block(text), "\n" + render.readme_table(self.catalog) + "\n",
+                         "README.md's recipe table is stale: run python3 -m launcher.site readme")
 
     def test_runtime_coverage_matches_the_catalog(self):
         # D17 of the SGLang design: every model of the README table has one cell per engine, and a cell starts Runs:

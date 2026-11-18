@@ -1,5 +1,6 @@
 """The opt-in e2e driver: its parsers, its step plan and its restore of the defaults, without running anything."""
 
+import ast
 import dataclasses
 import io
 import json
@@ -2306,6 +2307,32 @@ class RunnerTest(unittest.TestCase):
         self.assertEqual(record["stdout"], expected)
         self.assertEqual(record["stderr"], "")
         self.assertEqual(self.row("01-qwen3.6-35b-a3b-llamacpp", "opencode"), ("Yes", ""))
+
+
+class SummaryVocabularyTest(unittest.TestCase):
+    def test_every_planned_step_is_in_the_vocabulary(self):
+        from launcher.e2e import summary
+        catalog = load_catalog(REPO / "recipes", None)
+        for runtime, entry in catalog.runtimes.items():
+            for recipe_id in entry.recipes:
+                for step in e2e.plan_steps(catalog, [(recipe_id, runtime)], round_trip=True, keep_running=False,
+                                           dsh=True, kimi=True):
+                    with self.subTest(step=step.name):
+                        summary.step_client(step.name.split(" ")[-1], clients.NAMES)   # raises outside the vocabulary
+
+    def test_every_step_the_driver_adds_is_in_the_vocabulary(self):
+        from launcher.e2e import summary
+        tree = ast.parse((REPO / "launcher/e2e/clients.py").read_text(encoding="utf-8"))
+        found = {node.args[1].value for node in ast.walk(tree)
+                 if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) and node.func.attr == "add"
+                 and isinstance(node.func.value, ast.Name) and node.func.value.id == "run" and len(node.args) >= 2
+                 and isinstance(node.args[1], ast.Constant) and isinstance(node.args[1].value, str)}
+        self.assertGreaterEqual(found, {"gateway", "check", "restore", "down"})
+        self.assertLessEqual(found, set(summary.SETUP_STEPS))
+
+    def test_summary_writes_the_shared_head(self):
+        from launcher.e2e import summary
+        self.assertEqual(e2e._summary([]), "\n".join(summary.SUMMARY_HEAD) + "\n")
 
 if __name__ == "__main__":
     unittest.main()

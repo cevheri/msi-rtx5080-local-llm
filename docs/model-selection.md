@@ -39,6 +39,12 @@ A failed e2e session is named by its client step in the summary (`opencode`, `he
 `Failed:` gives the error or failed check of a measured run, its date and its record, and `Does not fit:` gives the arithmetic of [vllm/models.md](../vllm/models.md#models-that-do-not-fit-in-vllm) or [sglang/models.md](../sglang/models.md#models-that-do-not-run-on-sglang), which is an estimate.
 The vLLM cells keep the 14.65 GiB budget of the earlier estimate, and the measured 14.23 GiB of the runtime rules above only makes each shortfall larger.
 
+The [runtime matrix page](https://cevheri.github.io/msi-rtx5080-local-llm/) shows this table with each recipe's facts and client results, and quotes every cell whole.
+Write a cell in plain text, code spans and links to files of this repository or to https pages, because the page build stops on any other Markdown.
+It also stops on text that GitHub shows as plain text: `*`, `~`, `<`, `>`, a backslash, an HTML entity, a bare URL or e-mail address and an `_` at the edge of a word outside a code span, so put such text in a code span.
+`python3 -m unittest discover -s launcher/tests -t .` renders every cell and names the row, engine and column of a stop, so run it before you push a change to this table.
+The page shows a failed e2e session as a known issue when its cell names the session's step in a code span after the `e2e <date>:` of that session's date, and as Failed until then.
+
 | Model ID | llama.cpp b12407 | vLLM v0.33.0 | SGLang v0.5.23 |
 |---|---|---|---|
 | `deepseek-r1-0528-qwen3-8b` | Runs: 64k, 70.6 tok/s, measured 2026-11-16 ([recipe](../llamacpp/models.md#10-deepseek-r1-0528-qwen3-8b-chat-and-reasoning-only)); e2e 2026-11-18: every session passed ([summary](../research/2026-11-18/llmctl-sglang-e2e/summary.md)) | Runs: 64k, 72.5 tok/s through llmctl's tokenizer overlay, measured 2026-11-18 ([recipe](../vllm/models.md#deepseek-r1-0528-qwen3-8b-chat-only)), with no OpenCode entry, because OpenCode v2.3.0 sends `tool_choice` `auto`, which vLLM refuses with HTTP 400 without a tool parser; e2e 2026-11-18: `opencode` failed with that HTTP 400 before the entry was removed, and every other session passed ([summary](../research/2026-11-18/llmctl-sglang-e2e/summary.md), [No rows](../research/2026-11-18/llmctl-sglang-e2e/README.md#the-no-rows)) | Failed: out of GPU memory in the BF16 `lm_head`, because SGLang creates the BF16 weights before it quantizes them to FP8 (inferred from the source), measured 2026-11-17 ([record](../research/2026-11-17/sglang-deepseek-r1-0528-qwen3-8b/README.md)) |

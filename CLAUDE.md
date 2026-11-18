@@ -38,3 +38,4 @@ Read README.md first: it indexes the documents and lists the rules that apply to
 - Ollama runs as `ollama/ollama:0.40.16` with its models in the `ollama-models` volume; a fresh container compiles CUDA kernels for about 25 s before its first answer, so keep `/root/.nv` in a volume too (docs/opencode.md, Ollama notes).
 - Anything that needs sudo is the user's to run: `sudo` through the `!` prefix has no terminal and fails, so hand over a script for a separate terminal (or `pkexec`), and never pipe `sudo apt-get` through `tee` (it stalled once).
 - Ask the user before installs, Docker restarts or large image and model downloads.
+- The runtime matrix page (https://cevheri.github.io/msi-rtx5080-local-llm/) is built by `.github/workflows/pages.yml` on every push to `main`; never commit its output (`_site/` is ignored), and after a recipe change run `python3 -m launcher.site readme`, or the README test fails.
