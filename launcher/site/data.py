@@ -13,11 +13,13 @@ from dataclasses import dataclass, replace
 from fractions import Fraction
 from pathlib import Path
 
-from launcher import clients, markdown, ops, preflight
+import launcher
+from launcher import (clients, dsh_config, hermes_config, kimi_config, markdown, ops, pi_config, preflight,
+                      validate)
 from launcher.catalog import Catalog, load_catalog, resolve
 from launcher.e2e.summary import SUMMARY_HEAD, SummaryRow, is_summary, read_summary, recipe_key, step_client
 from launcher.errors import LlmctlError
-from launcher.model import Recipe, RuntimeConfig
+from launcher.model import Recipe, RuntimeConfig, Target
 from launcher.runtimes import ADAPTERS
 
 SELECTION = "docs/model-selection.md"
@@ -43,6 +45,11 @@ _DATE = re.compile(r"\d{4}-\d{2}-\d{2}")
 _E2E_DATE = re.compile(r"e2e \d{4}-\d{2}-\d{2}:")
 _CODE_SPAN = re.compile(r"`([^`]*)`")
 _VERSION_RECORD = re.compile(r"\d{3,}-(.+)-version")
+OFFLOAD_FLAGS = ("--n-cpu-moe", "--moe-cache-mib", "--enable-paged-experts")
+# The first word of a recipe name that names the build, not the model (spec 6, D1): a quantization, a checkpoint size or
+# a packaging word.
+BUILD_TOKEN = re.compile(r"^(?:UD-)?(?:I?Q\d|MXFP|NVFP|AWQ|W\d+A\d+|FP\d|QAT$|IT$|GGUF$|\d+GB$)")
+LICENSES = ("CC BY 4.0", "MIT")
 
 
 class SiteError(Exception):
@@ -63,6 +70,41 @@ class Runtime:
     heading: str
     image: str
     recipes: int
+    port: int
+    image_gb: str  # as docs/host-setup.md#disk-budget writes it, such as "7.05"
+
+
+@dataclass(frozen=True)
+class Launch:
+    """The names each agent uses for one recipe, as llmctl writes them (spec 6, D4); None where the agent has none."""
+    opencode: str | None
+    hermes: str
+    pi: str
+    dsh: str
+    kimi: str | None
+    kimi_file: str
+
+
+@dataclass(frozen=True)
+class Maker:
+    """A ranked model's Vendor, Params and License cells in the Top 10 (spec 6, D8)."""
+    vendor: str
+    params: str
+    license: str
+
+
+@dataclass(frozen=True)
+class Laptop:
+    """The one test machine every Runs cell was measured on, and the dates of the first and last measurement (D10)."""
+    name: str
+    gpu_name: str
+    gpu_gb: int
+    ram_gib: int
+    ram_free_gib: int
+    power_w: int
+    os: str
+    first: str
+    last: str
 
 
 @dataclass(frozen=True)
@@ -151,6 +193,8 @@ class RecipeFacts:
     pull: str
     plain_runtime: str
     thinking_texts: tuple[tuple[str, str], ...]
+    offload: bool
+    launch: Launch
 
 
 @dataclass(frozen=True)
@@ -178,6 +222,9 @@ class Model:
     chat_only: bool
     cells: tuple[Cell, ...]
     positions: tuple[tuple[str, int], ...]
+    name: str
+    honorable: bool
+    maker: Maker | None
 
 
 @dataclass(frozen=True)
@@ -191,6 +238,8 @@ class Matrix:
     top: int
     opencode_default: str
     default: tuple[str, str]
+    laptop: Laptop
+    licenses: tuple[str, str]
 
 
 @dataclass(frozen=True)
@@ -339,18 +388,88 @@ def rank_of(lines: list[str], repos: Mapping[str, tuple[str, ...]]) -> tuple[dic
     return ranks, tuple(unmatched)
 
 
-def _runtimes(header: list[str], catalog: Catalog) -> tuple[Runtime, ...]:
+def makers(lines: list[str]) -> dict[int, Maker]:
+    """Each Top 10 rank's Vendor, Params and License cells (spec 6, D8); rank_of checks the ranks themselves."""
+    source = f"{SELECTION}#top-10"
+    header, rows = _table(lines, "Rank", source)
+    for column in ("Vendor", "Params", "License"):
+        if column not in header:
+            raise SiteError(f"{source}: no {column} column")
+    vendor, params, license_ = (header.index(column) for column in ("Vendor", "Params", "License"))
+    for cells in rows:
+        for column, index in (("Vendor", vendor), ("Params", params), ("License", license_)):
+            if not cells[index]:
+                raise SiteError(f"{source}: row {cells[0]}: the {column} cell is empty")
+    return {int(cells[0]): Maker(cells[vendor], cells[params], cells[license_]) for cells in rows}
+
+
+def honorable_names(lines: list[str]) -> tuple[str, ...]:
+    """The link text of each Model cell in the honorable mentions table (spec 6, D7)."""
+    source = f"{SELECTION}#honorable-mentions"
+    _, rows = _table(lines, "Model", source)
+    names = []
+    for cells in rows:
+        match = re.match(r"^\[([^\]]+)\]", cells[0])
+        if match is None:
+            raise SiteError(f"{source}: row {cells[0]!r}: the Model cell must start with a link")
+        names.append(match.group(1))
+    return tuple(names)
+
+
+def display_name(name: str, source: str) -> str:
+    """The model's name on the page from a recipe name (spec 6, D1): one trailing parenthesis dropped, then the words
+    before the first build word."""
+    words = re.sub(r"\s*\([^()]*\)$", "", name).split()
+    kept = []
+    for word in words:
+        if BUILD_TOKEN.match(word):
+            break
+        kept.append(word)
+    if not kept:
+        raise SiteError(f"{source}: no display name in the recipe name {name!r}")
+    return " ".join(kept)
+
+
+def default_cell(model_id: str, cells: Sequence[Cell]) -> Cell:
+    """The model's one Runs cell on its default engine, the recipe's plain_runtime (spec 6, D1)."""
+    found = [cell for cell in cells if cell.status == "runs" and cell.runtime == cell.recipe.plain_runtime]
+    if len(found) != 1:
+        raise SiteError(f"{SELECTION}: row {model_id}: no setup runs on its default engine, so the page has no name "
+                        "for it")
+    return found[0]
+
+
+def _image_sizes(root: Path, labels: Mapping[str, str], images: Mapping[str, str]) -> dict[str, str]:
+    """Each runtime's image size in GB from docs/host-setup.md#disk-budget (spec 6, D5): the row whose Item cell holds
+    the image in a code span."""
+    source = "docs/host-setup.md#disk-budget"
+    _, rows = _table(_section(root, source), "Item", source)
+    sizes: dict[str, str] = {}
+    for name, image in images.items():
+        for cells in rows:
+            size = re.match(r"^(\d+(?:\.\d+)?) GB on disk", cells[1]) if len(cells) > 1 else None
+            if image in _CODE_SPAN.findall(cells[0]) and size is not None:
+                sizes[name] = size.group(1)
+                break
+    missing = [labels[name] for name in images if name not in sizes]
+    if missing:
+        raise SiteError(f"{source}: no measured image size for {_joined(missing)}")
+    return sizes
+
+
+def _runtimes(root: Path, header: list[str], catalog: Catalog) -> tuple[Runtime, ...]:
     if len(header) != 1 + len(ADAPTERS):
         raise SiteError(f"{SELECTION}: runtime coverage: the header has {len(header)} columns; it needs Model ID and "
                         f"one column per engine: {', '.join(adapter.LABEL for adapter in ADAPTERS.values())}")
-    runtimes = []
     for (name, adapter), heading in zip(ADAPTERS.items(), header[1:]):
         if heading != adapter.LABEL and not heading.startswith(adapter.LABEL + " "):
             raise SiteError(f"{SELECTION}: runtime coverage: the column heading {heading!r} must be {adapter.LABEL} "
                             f"or start with {adapter.LABEL + ' '!r}")
-        entry = catalog.runtimes[name]
-        runtimes.append(Runtime(name, adapter.LABEL, heading, entry.runtime.image, len(entry.recipes)))
-    return tuple(runtimes)
+    sizes = _image_sizes(root, {name: adapter.LABEL for name, adapter in ADAPTERS.items()},
+                         {name: catalog.runtimes[name].runtime.image for name in ADAPTERS})
+    return tuple(Runtime(name, adapter.LABEL, heading, catalog.runtimes[name].runtime.image,
+                         len(catalog.runtimes[name].recipes), catalog.runtimes[name].runtime.host_port, sizes[name])
+                 for (name, adapter), heading in zip(ADAPTERS.items(), header[1:]))
 
 
 def _coverage_rows(rows: list[list[str]], shipped: list[str]) -> dict[str, list[str]]:
@@ -391,6 +510,8 @@ def _recipe_facts(root: Path, catalog: Catalog, recipe: Recipe, runtime: Runtime
     except LlmctlError as exc:
         raise SiteError(f"{file}: {exc}") from None
     evidence = recipe.evidence
+    opencode = f"{runtime.opencode_provider}/{recipe.id}" if recipe.opencode else None
+    up = ops.up_command(recipe)
     return RecipeFacts(
         name=recipe.name, file=file, doc=recipe.doc, context=recipe.context, decode=evidence.decode_tok_s,
         date=evidence.date, hardware=evidence.hardware, record=evidence.record, summary=evidence.summary,
@@ -398,9 +519,29 @@ def _recipe_facts(root: Path, catalog: Catalog, recipe: Recipe, runtime: Runtime
         memory_cap=recipe.memory_gib, repo=recipe.model.repo, revision=recipe.model.revision,
         size_bytes=recipe.model.size_bytes, thinking=meta.thinking, default=meta.default, efforts=meta.efforts,
         output=meta.output, chat_only=recipe.chat_only,
-        opencode=f"{runtime.opencode_provider}/{recipe.id}" if recipe.opencode else None, served=target.served,
-        up=ops.up_command(recipe), pull=preflight.pull_hint(recipe), plain_runtime=plain_runtime,
-        thinking_texts=texts)
+        opencode=opencode, served=target.served, up=up, pull=preflight.pull_hint(recipe), plain_runtime=plain_runtime,
+        thinking_texts=texts, offload=any(validate.flag_present(recipe.args, flag) for flag in OFFLOAD_FLAGS),
+        launch=_launch(file, recipe, target, opencode, up))
+
+
+def _launch(file: str, recipe: Recipe, target: Target, opencode: str | None, up: str) -> Launch:
+    """The agents' names for the recipe (spec 6, D4), read from the lines up prints, so the page never drifts."""
+    lines = dsh_config.usage_lines(target, held=False, up_command=up)
+    line = lines[1] if len(lines) > 1 else ""
+    dsh = re.fullmatch(r"\s+dsh web, then pick (.+) in its model picker", line)
+    if dsh is None:
+        raise SiteError(f"{file}: dsh's up line changed: {line!r}")
+    kimi = None
+    if not recipe.chat_only:
+        lines = kimi_config.usage_lines(target, is_default=False, up_command=up)
+        line = lines[1] if len(lines) > 1 else ""
+        match = re.match(r"\s+kimi -m (\S+),", line)
+        if match is None:
+            raise SiteError(f"{file}: Kimi's up line changed: {line!r}")
+        kimi = match.group(1)
+    kimi_file = kimi_config.AGENT_FILE.resolve().relative_to(Path(launcher.__file__).resolve().parent.parent)
+    return Launch(opencode=opencode, hermes=hermes_config.PROFILE, pi=f"{pi_config.PROVIDER}/{target.served}",
+                  dsh=dsh.group(1), kimi=kimi, kimi_file=kimi_file.as_posix())
 
 
 def _cell(root: Path, catalog: Catalog, model_id: str, runtime: Runtime, text: str) -> Cell:
@@ -1098,12 +1239,50 @@ def view(matrix: Matrix, use: str, filters: Filters, sort: str | None) -> View:
     return View(rows, cells, count, picks(matrix, use, cells, key), _key(matrix, runs), divider)
 
 
+def licenses(lines: Sequence[str]) -> tuple[str, str]:
+    """The two licenses README.md#license names (spec 6, D11)."""
+    text = "\n".join(lines)
+    if not all(re.search(rf"(?<![\w.]){re.escape(name)}(?!\w|\.\w)", text) for name in LICENSES):
+        raise SiteError(f"README.md#license: expected {' and '.join(LICENSES)}")
+    return LICENSES
+
+
+def laptop(root: Path, models: Sequence[Model]) -> Laptop:
+    """The one test machine of every Runs cell, with README.md#machine's power limit, free RAM and OS (spec 6, D10)."""
+    facts = [cell.recipe for model in models for cell in model.cells if cell.status == "runs"]
+    machines = sorted({recipe.hardware for recipe in facts})
+    if len(machines) != 1:
+        raise SiteError(f"recipes name {len(machines)} different test machines; the page assumes one: "
+                        f"{'; '.join(machines)}")
+    parts = machines[0].split(", ")
+    gpu = next((match for part in parts if (match := re.fullmatch(r"(.+ GPU) (\d+) GB", part))), None)
+    ram = next((match for part in parts if (match := re.fullmatch(r"(\d+) GiB RAM", part))), None)
+    if len(parts) != 3 or gpu is None or ram is None:
+        first = next(recipe.file for recipe in facts)
+        raise SiteError(f"{first}: the hardware {machines[0]!r} must read '<laptop>, <GPU name> <N> GB, <M> GiB RAM'")
+    source = "README.md#machine"
+    _, rows = _table(_section(root, source), "Item", source)
+    values = {cells[0]: cells[1] for cells in rows if len(cells) > 1}
+    free = re.search(r"(\d+) GiB usable, about (\d+) GiB free", values.get("RAM", ""))
+    if free is None or int(free.group(1)) != int(ram.group(1)):
+        raise SiteError(f"{source}: the RAM row must read '<N> GiB usable, about <M> GiB free' with N as in the "
+                        "recipes")
+    power = re.search(r"(\d+) W power limit", values.get("GPU", ""))
+    system = values.get("Software", "").split(",")[0].strip()
+    if power is None or not system:
+        raise SiteError(f"{source}: the GPU row needs '<N> W power limit' and the Software row an OS first")
+    dates = sorted(recipe.date for recipe in facts)
+    return Laptop(name=parts[0], gpu_name=gpu.group(1), gpu_gb=int(gpu.group(2)), ram_gib=int(ram.group(1)),
+                  ram_free_gib=int(free.group(2)), power_w=int(power.group(1)), os=system, first=dates[0],
+                  last=dates[-1])
+
+
 def load(root: Path) -> Matrix:
     """The page's data model from the repository at `root`."""
     catalog = shipped_catalog(root)
     shipped = sorted({recipe_id for entry in catalog.runtimes.values() for recipe_id in entry.recipes})
     header, rows = _table(_section(root, f"{SELECTION}#runtime-coverage"), "Model ID", SELECTION)
-    runtimes = _runtimes(header, catalog)
+    runtimes = _runtimes(root, header, catalog)
     coverage = _coverage_rows(rows, shipped)
     repos: dict[str, list[str]] = {}
     for entry in catalog.runtimes.values():
@@ -1111,8 +1290,9 @@ def load(root: Path) -> Matrix:
             ids = repos.setdefault(recipe.model.repo, [])
             if recipe.id not in ids:
                 ids.append(recipe.id)
-    ranks, ranked_without_recipe = rank_of(_section(root, f"{SELECTION}#top-10"),
-                                           {repo: tuple(sorted(ids)) for repo, ids in sorted(repos.items())})
+    top_lines = _section(root, f"{SELECTION}#top-10")
+    ranks, ranked_without_recipe = rank_of(top_lines, {repo: tuple(sorted(ids)) for repo, ids in sorted(repos.items())})
+    made = makers(top_lines)
     letters = client_letters(clients.NAMES, clients.LABELS, LETTERS)
     runs = _runs(root, catalog)
     models = []
@@ -1127,9 +1307,17 @@ def load(root: Path) -> Matrix:
                       if cell.status == "runs" else cell for cell in cells)
         tags = fastest_tags({cell.runtime: cell.recipe.decode for cell in cells if cell.status == "runs"})
         cells = tuple(replace(cell, fastest=tags.get(cell.runtime)) for cell in cells)
-        model = Model(id=model_id, aliases=tuple(aliases), rank=ranks.get(model_id),
-                      chat_only=any(recipe.chat_only for recipe in recipes), cells=cells, positions=())
+        default = default_cell(model_id, cells).recipe
+        name = display_name(default.name, default.file)
+        rank = ranks.get(model_id)
+        model = Model(id=model_id, aliases=tuple(aliases), rank=rank,
+                      chat_only=any(recipe.chat_only for recipe in recipes), cells=cells, positions=(), name=name,
+                      honorable=False, maker=None if rank is None else made[rank])
         models.append(replace(model, cells=tuple(replace(cell, uses=use_cases_of(model, cell)) for cell in cells)))
+    honorable = honorable_names(_section(root, f"{SELECTION}#honorable-mentions"))
+    models = [replace(model, honorable=any(text == model.name or text.startswith(model.name + " ")
+                                           for text in honorable))
+              for model in models]
     places = cell_positions(models, list(ADAPTERS))
     row_places = row_positions(models)
     models = [replace(model, positions=row_places[model.id],
@@ -1139,6 +1327,7 @@ def load(root: Path) -> Matrix:
     license_lines = tuple(line for line in _section(root, "README.md#license") if line.strip())
     if not license_lines:
         raise SiteError("README.md: the License section has no text")
+    named = licenses(license_lines)
     default_model = opencode_default(root)
     pairs = [(model.id, cell.runtime) for model in models for cell in model.cells
              if cell.status == "runs" and cell.recipe.opencode == default_model]
@@ -1152,4 +1341,4 @@ def load(root: Path) -> Matrix:
                                 for name in clients.NAMES),
                   models=tuple(models), runs=run_list, ranked_without_recipe=ranked_without_recipe,
                   license=license_lines, top=len(ranks) + len(ranked_without_recipe),
-                  opencode_default=default_model, default=pairs[0])
+                  opencode_default=default_model, default=pairs[0], laptop=laptop(root, models), licenses=named)

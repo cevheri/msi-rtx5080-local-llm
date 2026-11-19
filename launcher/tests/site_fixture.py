@@ -23,18 +23,33 @@ CONTEXTS = dict(zip(RECIPES, ("131072", "131072", "131072", "65536", "131072", "
                               "131072")))
 # Memory caps the RAM filter tests count; pinned, so re-measuring a real recipe never breaks a page test (ruling 13).
 MEMORY = dict(zip(RECIPES, ("20", "27", "16", "32", "20", "16", "32", "16", "35", "16")))
+# The [needs] gpu_mib (None: the recipe has no such line, so none is pinned), the [needs] ram_gib (None removes the
+# line) and the [model] size_bytes the page's rules read, pinned like SPEEDS.
+GPU_MIB = dict(zip(RECIPES, ("15078", "15266", "13296", None, "14724", "13174", None, "14896", "14964", "12562")))
+RAM_PEAK = dict(zip(RECIPES, ("14.9", "23.0", None, None, "16.0", "3.0", None, "5.5", "31.9", "13.2")))
+SIZE = dict(zip(RECIPES, ("20542732576", "23462477857", "12109566624", "13789264674", "13789264674", "8709519872",
+                          "16388927770", "9573973280", "38429272064", "10879834400")))
 COVERAGE_HEADER = "| Model ID | llama.cpp b12407 | vLLM v0.33.0 | SGLang v0.5.23 |"
 RUNS_CELL = "Runs: {k}k, {speed} tok/s, measured {date} ([recipe](../{doc}))"
 FAILED_CELL = ("Failed: out of memory, measured 2026-11-17 "
                "([record](../research/2026-11-17/fixture-failure/README.md))")
 FAILED_AT = ("deepseek-r1-0528-qwen3-8b", "sglang")
 DOES_NOT_FIT_CELL = "Does not fit: too large for the budget (estimate)"
-TOP10_HEADER = "| Rank | Model | Runtime |"
-TOP10_ROW = "| {rank} | [{id}](https://huggingface.co/{repo}) | llama.cpp |"
+TOP10_HEADER = "| Rank | Model | Vendor | Params | Runtime | License |"
+TOP10_ROW = ("| {rank} | [{id}](https://huggingface.co/{repo}) | Vendor {rank} | 35B / 3B active MoE | llama.cpp "
+             "| Apache-2.0 |")
 TOP10_IDS = ("qwen3.6-35b-a3b", "gpt-oss-20b", "deepseek-r1-0528-qwen3-8b")
 LICENSE_LINES = ("The documentation is licensed under CC BY 4.0 ([LICENSE](LICENSE)); the code under MIT "
                  "([LICENSE-CODE](LICENSE-CODE)).", "Third-party material keeps its own license.")
 OPENCODE_DEFAULT = "llamacpp-docker/qwen3.6-35b-a3b"
+MACHINE_LINES = ("| Item | Value |", "|---|---|",
+                 "| GPU | NVIDIA GeForce RTX 5080 Laptop GPU, 16303 MiB, 140 W power limit |",
+                 "| RAM | 61 GiB usable, about 40 GiB free with the desktop running |",
+                 "| Software | Ubuntu 26.04.1, Docker 29.9.3 |")
+IMAGE_GB = dict(zip(ADAPTERS, ("7.05", "35.4", "49.7")))
+HONORABLE_LINES = ("| Model | Role | Reason |", "|---|---|---|",
+                   "| [Mellum2.1 12B-A2.5B Thinking](https://huggingface.co/JetBrains/Mellum2.1-12B-A2.5B-Thinking) "
+                   "| Fast sub-agent | Fixture row |")
 
 
 DEFAULT_RUN = ("2026-11-18", "llmctl-fixture-e2e")
@@ -101,6 +116,10 @@ class SiteFixture:
             self.set_value(runtime, recipe_id, "decode_tok_s", SPEEDS[runtime, recipe_id])
             self.set_value(runtime, recipe_id, "context", CONTEXTS[runtime, recipe_id])
             self.set_value(runtime, recipe_id, "memory_gib", MEMORY[runtime, recipe_id])
+            if GPU_MIB[runtime, recipe_id] is not None:
+                self.set_value(runtime, recipe_id, "gpu_mib", GPU_MIB[runtime, recipe_id])
+            self.set_value(runtime, recipe_id, "ram_gib", RAM_PEAK[runtime, recipe_id])
+            self.set_value(runtime, recipe_id, "size_bytes", SIZE[runtime, recipe_id])
         self._cells: dict[tuple[str, str], str] = {}
         self._table: list[str] | None = None
         self._top10 = [TOP10_ROW.format(rank=rank, id=recipe_id, repo=self._read("llamacpp", recipe_id)["model"]["repo"])
@@ -117,13 +136,19 @@ class SiteFixture:
         for record in sorted(records):
             self._write(f"{record.rstrip('/')}/README.md", "# Record\n")
         self._write("README.md", "# Fixture\n\n## Quick start\n\nRun a model with llmctl.\n\n" + README_START + "\n\n"
-                    + README_END + "\n\n## License\n\n" + "\n".join(LICENSE_LINES) + "\n")
+                    + README_END + "\n\n## Machine\n\n" + "\n".join(MACHINE_LINES) + "\n\n## License\n\n"
+                    + "\n".join(LICENSE_LINES) + "\n")
         self._write("LICENSE", "CC BY 4.0\n")
         self._write("LICENSE-CODE", "MIT\n")
         self._write_selection()
         self.opencode(config_section())
         self._write("docs/clients.md", "# Clients\n")
-        self._write("docs/host-setup.md", "# Host setup\n")
+        disk = ["| Item | Size | Location |", "|---|---|---|"]
+        for runtime, adapter in ADAPTERS.items():
+            image = tomllib.loads((root / "recipes" / runtime / "_runtime.toml").read_text(encoding="utf-8"))["image"]
+            disk.append(f"| {adapter.LABEL} image `{image}` | {IMAGE_GB[runtime]} GB on disk as docker image ls "
+                        "reports it | /var/lib/docker |")
+        self._write("docs/host-setup.md", "# Host setup\n\n### Disk budget\n\n" + "\n".join(disk) + "\n")
         self.run(*DEFAULT_RUN, default_rows(), readme="# e2e\n\n## The No rows\n\nNone.\n",
                  records={name: version_record(stdout) for name, stdout in DEFAULT_VERSIONS})
 
@@ -187,7 +212,8 @@ class SiteFixture:
     def _write_selection(self) -> None:
         lines = ["# Model selection", "", "## Decision summary", "", "Pick a model by its role.", "",
                  "## Runtime coverage", "", "Every model has one cell per engine.", "",
-                 *self._coverage_lines(), "", "## Top 10", "", TOP10_HEADER, _separator(TOP10_HEADER), *self._top10]
+                 *self._coverage_lines(), "", "## Top 10", "", TOP10_HEADER, _separator(TOP10_HEADER), *self._top10, "",
+                 "## Honorable mentions", "", *HONORABLE_LINES]
         self._write("docs/model-selection.md", "\n".join(lines) + "\n")
 
     def coverage(self, cells: Mapping[tuple[str, str], str]) -> None:

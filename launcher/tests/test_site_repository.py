@@ -50,6 +50,13 @@ class SiteRepositoryTest(unittest.TestCase):
                  if cell.status == "runs" and cell.recipe.opencode == matrix.opencode_default]
         self.assertEqual(pairs, [matrix.default])
 
+    def test_every_setup_names_its_model_alike(self):
+        for model in data.load(REPO).models:
+            for cell in model.cells:
+                if cell.status == "runs":
+                    with self.subTest(model=model.id, runtime=cell.runtime):
+                        self.assertEqual(data.display_name(cell.recipe.name, cell.recipe.file), model.name)
+
     def test_no_view_names_a_pair_twice(self):
         matrix = data.load(REPO)
         for use in data.USE_CASES:

@@ -198,7 +198,8 @@ class SiteDataTest(unittest.TestCase):
         catalog = data.shipped_catalog(self.fixture.root)
         rows = [TOP10_ROW.format(rank=rank, id=model_id, repo=catalog.runtimes["llamacpp"].recipes[model_id].model.repo)
                 for rank, model_id in enumerate(TOP10_IDS, start=1)]
-        self.fixture.top10([*rows, "| 4 | [Unshipped](https://huggingface.co/org/unshipped) | llama.cpp |"])
+        self.fixture.top10([*rows, "| 4 | [Unshipped](https://huggingface.co/org/unshipped) | Vendor 4 | 1B dense "
+                                   "| llama.cpp | MIT |"])
         self.assertEqual(self.fixture.load().top, 4)
 
     def test_opencode_default_is_read_from_the_validated_config(self):
@@ -1004,6 +1005,170 @@ class SiteDataTest(unittest.TestCase):
         self.assertIn("The practical minimum for OpenCode is 64k tokens", text,
                       "docs/opencode.md#context-budget changed: update data.OPENCODE_MINIMUM")
         self.assertEqual(data.OPENCODE_MINIMUM, 64 * 1024, "update data.OPENCODE_MINIMUM")
+
+    def test_display_names_follow_the_build_token_rule(self):
+        cases = {"Qwen3.6-35B-A3B Q4_K_M": "Qwen3.6-35B-A3B", "Qwen3.8-27B UD-Q3_K_XL": "Qwen3.8-27B",
+                 "Qwen3-Coder-Next UD-IQ4_XS": "Qwen3-Coder-Next",
+                 "NVIDIA Nemotron 3.5 Bolt 74B-A9B 24GB GGUF": "NVIDIA Nemotron 3.5 Bolt 74B-A9B",
+                 "Gemma 4 E4B IT QAT W4A16 (smoke-test model)": "Gemma 4 E4B",
+                 "DeepSeek-R1-0528-Qwen3-8B FP8 per tensor (chat only)": "DeepSeek-R1-0528-Qwen3-8B",
+                 "Mellum2.1 12B-A2.5B Thinking AWQ-INT4": "Mellum2.1 12B-A2.5B Thinking",
+                 "gpt-oss-20b MXFP4 (vLLM, eager mode)": "gpt-oss-20b",
+                 "K2 Horizon MoVA 36B A4B Q4_K_M": "K2 Horizon MoVA 36B A4B", "Qwen3.5-9B NVFP4": "Qwen3.5-9B",
+                 "Qwen3.5-9B (chat only)": "Qwen3.5-9B"}
+        for name, shown in cases.items():
+            with self.subTest(name=name):
+                self.assertEqual(data.display_name(name, "recipes/x.toml"), shown)
+        with self.assertRaisesRegex(data.SiteError, r"^recipes/x\.toml: no display name in the recipe name 'Q8_0 only'$"):
+            data.display_name("Q8_0 only", "recipes/x.toml")
+
+    def test_models_carry_their_name_mention_and_maker(self):
+        m = self.fixture.load()
+        got = {model.id: (model.name, model.honorable, model.maker) for model in m.models}
+        self.assertEqual(got["qwen3.6-35b-a3b"], ("Qwen3.6-35B-A3B", False,
+                                                  data.Maker("Vendor 1", "35B / 3B active MoE", "Apache-2.0")))
+        self.assertEqual(got["mellum2.1-12b"], ("Mellum2.1 12B-A2.5B Thinking", True, None))
+        self.assertEqual(got["k2-horizon-7b"], ("K2 Horizon 7B", False, None))
+        self.assertEqual(got["deepseek-r1-0528-qwen3-8b"][0], "DeepSeek-R1-0528-Qwen3-8B")
+
+    def test_a_model_without_a_default_engine_setup_stops_the_build(self):
+        model = model_of(self.fixture.load(), "qwen3.6-35b-a3b")
+        cells = [dataclasses.replace(c, status="failed", recipe=None) if c.runtime == "llamacpp" else c for c in model.cells]
+        with self.assertRaisesRegex(data.SiteError, r"^docs/model-selection\.md: row qwen3\.6-35b-a3b: no setup runs on "
+                                                    r"its default engine, so the page has no name for it$"):
+            data.default_cell("qwen3.6-35b-a3b", cells)
+
+    def test_setups_know_their_expert_offload_and_launch_lines(self):
+        m = self.fixture.load()
+        self.assertEqual([(c.model, c.runtime) for mo in m.models for c in mo.cells if c.status == "runs" and c.recipe.offload],
+                         [("gpt-oss-20b", "sglang"), ("qwen3-coder-next", "llamacpp"), ("qwen3.6-35b-a3b", "llamacpp"),
+                          ("qwen3.6-35b-a3b", "sglang")])
+        self.assertEqual(cell_of(m, "qwen3.6-35b-a3b", "llamacpp").recipe.launch,
+                         data.Launch("llamacpp-docker/qwen3.6-35b-a3b", "llmctl", "llmctl/local",
+                                     "qwen3.6-35b-a3b on llama.cpp (llmctl)", "llmctl/local", "launcher/kimi-chat-only.md"))
+        self.assertEqual(cell_of(m, "qwen3.6-35b-a3b", "sglang").recipe.launch,   # SGLang serves the recipe's served_name
+                         data.Launch("sglang-docker/qwen3.6-35b-a3b", "llmctl", "llmctl/qwen3.6-35b-a3b",
+                                     "qwen3.6-35b-a3b on SGLang (llmctl)", "llmctl/qwen3.6-35b-a3b",
+                                     "launcher/kimi-chat-only.md"))
+        chat = cell_of(m, "deepseek-r1-0528-qwen3-8b", "vllm").recipe.launch
+        self.assertEqual((chat.opencode, chat.kimi, chat.dsh), (None, None, "deepseek-r1-0528-qwen3-8b on vLLM (llmctl)"))
+        with mock.patch("launcher.dsh_config.usage_lines", return_value=["dsh: x", "  dsh web"]), \
+                self.assertRaisesRegex(data.SiteError, r"^recipes/llamacpp/[a-z0-9.-]+\.toml: dsh's up line changed: '  dsh web'$"):
+            self.fresh().load()
+        with mock.patch("launcher.kimi_config.usage_lines", return_value=["Kimi: x", "  kimi"]), \
+                self.assertRaisesRegex(data.SiteError, r"^recipes/llamacpp/[a-z0-9.-]+\.toml: Kimi's up line changed: '  kimi'$"):
+            self.fresh().load()
+
+    def test_runtimes_carry_their_port_and_image_size(self):
+        m = self.fixture.load()
+        self.assertEqual([(r.id, r.port, r.image_gb) for r in m.runtimes],
+                         [("llamacpp", 8080, "7.05"), ("vllm", 8000, "35.4"), ("sglang", 30000, "49.7")])
+        path = self.fixture.root / "docs/host-setup.md"
+        path.write_text("\n".join(line for line in path.read_text(encoding="utf-8").splitlines() if "vLLM image" not in line)
+                        + "\n", encoding="utf-8")
+        self.assertStops(self.fixture, "docs/host-setup.md#disk-budget: no measured image size for vLLM")
+
+    def test_laptop_facts_come_from_the_recipes_and_the_readme(self):
+        m = self.fixture.load()
+        dates = sorted(self.fixture._read(r, i)["evidence"]["date"] for r, i in RECIPES)
+        self.assertEqual(m.laptop, data.Laptop("MSI Raider 18 Max HX A2WI", "RTX 5080 Laptop GPU", 16, 61, 40, 140,
+                                               "Ubuntu 26.04.1", dates[0], dates[-1]))
+        self.assertEqual(m.licenses, ("CC BY 4.0", "MIT"))
+        readme = self.fixture.root / "README.md"
+        text = readme.read_text(encoding="utf-8")
+        for old, new, message in (
+                ("61 GiB usable", "62 GiB usable", "README.md#machine: the RAM row must read '<N> GiB usable, about <M> GiB "
+                                                   "free' with N as in the recipes"),
+                ("140 W power limit", "no limit", "README.md#machine: the GPU row needs '<N> W power limit' and the "
+                                                  "Software row an OS first"),
+                ("under MIT", "under Apache-2.0", "README.md#license: expected CC BY 4.0 and MIT")):
+            with self.subTest(old=old):
+                readme.write_text(text.replace(old, new), encoding="utf-8")
+                self.assertStops(self.fixture, message)
+        readme.write_text(text, encoding="utf-8")
+        self.fixture.set_value("llamacpp", "k2-horizon-7b", "hardware", '"Another laptop, RTX 4090 Laptop GPU 16 GB, 32 GiB RAM"')
+        self.assertStops(self.fixture, "recipes name 2 different test machines; the page assumes one")
+
+    def test_top_10_and_honorable_mentions_are_required(self):
+        fixture = self.fresh()
+        path = fixture.root / "docs/model-selection.md"
+        text = path.read_text(encoding="utf-8")
+        path.write_text(text.replace(" | License |", " | Licence |"), encoding="utf-8")
+        self.assertStops(fixture, "docs/model-selection.md#top-10: no License column")
+        path.write_text(text.replace("## Honorable mentions", "## Mentions"), encoding="utf-8")
+        self.assertStops(fixture, "docs/model-selection.md: no section #honorable-mentions")
+
+    def test_an_honorable_mention_is_the_name_alone_or_the_name_and_more_words(self):
+        path = self.fixture.root / "docs/model-selection.md"
+        text = path.read_text(encoding="utf-8")
+        for link, honorable in (("Mellum2.1 12B-A2.5B Thinking AWQ", True), ("Mellum2.1 12B-A2.5B ThinkingX", False)):
+            with self.subTest(link=link):
+                path.write_text(text.replace("[Mellum2.1 12B-A2.5B Thinking]", f"[{link}]"), encoding="utf-8")
+                self.assertEqual(model_of(self.fixture.load(), "mellum2.1-12b").honorable, honorable)
+
+    def test_an_honorable_mention_without_a_link_stops_the_build(self):
+        path = self.fixture.root / "docs/model-selection.md"
+        path.write_text(path.read_text(encoding="utf-8") + "| Plain text model | Fast sub-agent | Fixture row |\n",
+                        encoding="utf-8")
+        self.assertStops(self.fixture, "docs/model-selection.md#honorable-mentions: row 'Plain text model': the Model "
+                                       "cell must start with a link")
+
+    def test_a_broken_coverage_cell_is_reported_before_a_broken_mention(self):
+        self.fixture.coverage({("gpt-oss-20b", "vllm"): "Maybe: later"})
+        path = self.fixture.root / "docs/model-selection.md"
+        path.write_text(path.read_text(encoding="utf-8") + "| Plain text model | Fast sub-agent | Fixture row |\n",
+                        encoding="utf-8")
+        self.assertStops(self.fixture, "docs/model-selection.md: row gpt-oss-20b, column vLLM: the cell must start with")
+
+    def test_runtime_ports_follow_the_runtime_files(self):
+        path = self.fixture.root / "recipes/llamacpp/_runtime.toml"
+        path.write_text(path.read_text(encoding="utf-8").replace("host_port = 8080", "host_port = 8081"),
+                        encoding="utf-8")
+        self.assertEqual([r.port for r in self.fixture.load().runtimes], [8081, 8000, 30000])
+
+    def test_laptop_facts_follow_the_readme_and_the_recipes(self):
+        readme = self.fixture.root / "README.md"
+        readme.write_text(readme.read_text(encoding="utf-8").replace("140 W", "150 W")
+                          .replace("about 40 GiB free", "about 39 GiB free").replace("Ubuntu 26.04.1", "Debian 13.2"),
+                          encoding="utf-8")
+        for runtime, recipe_id in RECIPES:
+            self.fixture.set_value(runtime, recipe_id, "hardware", '"Other Laptop 17, RTX 4090 Laptop GPU 24 GB, 61 GiB RAM"')
+        laptop = self.fixture.load().laptop
+        self.assertEqual((laptop.name, laptop.gpu_name, laptop.gpu_gb, laptop.ram_free_gib, laptop.power_w, laptop.os),
+                         ("Other Laptop 17", "RTX 4090 Laptop GPU", 24, 39, 150, "Debian 13.2"))
+
+    def test_a_hardware_string_not_in_three_parts_stops_the_build(self):
+        for hardware in ("MSI Raider 18 Max HX A2WI, RTX 5080 Laptop GPU 16 GB",
+                         "MSI Raider 18 Max HX A2WI, Ryzen 9, RTX 5080 Laptop GPU 16 GB, 61 GiB RAM"):
+            with self.subTest(hardware=hardware):
+                fixture = self.fresh()
+                for runtime, recipe_id in RECIPES:
+                    fixture.set_value(runtime, recipe_id, "hardware", f'"{hardware}"')
+                message = self.assertStops(fixture, f": the hardware {hardware!r} must read '<laptop>, <GPU name> <N> GB, "
+                                                    "<M> GiB RAM'")
+                self.assertRegex(message, r"^recipes/[a-z]+/[a-z0-9.-]+\.toml: ")
+
+    def test_license_names_count_at_a_sentence_end_but_not_inside_a_word(self):
+        readme = self.fixture.root / "README.md"
+        text = readme.read_text(encoding="utf-8")
+        readme.write_text(text.replace("under MIT ([LICENSE-CODE](LICENSE-CODE)).", "under MIT."), encoding="utf-8")
+        self.assertEqual(self.fixture.load().licenses, ("CC BY 4.0", "MIT"))
+        readme.write_text(text.replace("under CC BY 4.0 ([LICENSE](LICENSE))", "under CC BY 4.0."), encoding="utf-8")
+        self.assertEqual(self.fixture.load().licenses, ("CC BY 4.0", "MIT"))
+        for old, new in (("under MIT", "under MITRE"), ("CC BY 4.0", "CC BY 4.0.1")):
+            with self.subTest(new=new):
+                readme.write_text(text.replace(old, new), encoding="utf-8")
+                self.assertStops(self.fixture, "README.md#license: expected CC BY 4.0 and MIT")
+
+    def test_an_empty_maker_cell_or_a_malformed_image_size_stops_the_build(self):
+        fixture = self.fresh()
+        path = fixture.root / "docs/model-selection.md"
+        path.write_text(path.read_text(encoding="utf-8").replace("| Vendor 2 |", "|  |"), encoding="utf-8")
+        self.assertStops(fixture, "docs/model-selection.md#top-10: row 2: the Vendor cell is empty")
+        path = self.fixture.root / "docs/host-setup.md"
+        path.write_text(path.read_text(encoding="utf-8").replace("| 7.05 GB on disk", "| 7..05 GB on disk"),
+                        encoding="utf-8")
+        self.assertStops(self.fixture, "docs/host-setup.md#disk-budget: no measured image size for llama.cpp")
 
 
 if __name__ == "__main__":

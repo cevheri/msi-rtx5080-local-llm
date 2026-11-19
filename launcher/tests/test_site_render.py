@@ -854,24 +854,6 @@ class SiteRenderTest(unittest.TestCase):
         rows = body(tree)
         self.assertEqual([node.attrs["id"] for node in rows], [*(f"m-{model_id}" for model_id in ids), "grp"])
         self.assertEqual(("hidden" in rows[-1].attrs, squash(rows[-1])), (True, "Not in the Top 6"))
-        # The divider follows View.divider: a ranked model without a Runs cell sorts last, so no unranked row
-        # follows a ranked one and the divider stays hidden at the end (R-D16).
-        target = self.fixture.root / "recipes/llamacpp/k2-horizon-7b.toml"
-        text = target.read_text(encoding="utf-8")
-        target.write_text("".join(line + "\n" for line in text.splitlines() if not line.startswith("decode_tok_s = "))
-                          .replace('kind = "measured"', f'kind = "estimate"\ndoc = "{tomllib.loads(text)["doc"]}"'),
-                          encoding="utf-8")
-        self.fixture.coverage({("k2-horizon-7b", "llamacpp"): "Failed: out of memory, measured 2026-11-17 "
-                               "([record](../research/2026-11-17/fixture-failure/README.md))"})
-        ranked = ("qwen3.6-35b-a3b", "gpt-oss-20b", "deepseek-r1-0528-qwen3-8b", "k2-horizon-7b")
-        self.fixture.top10([TOP10_ROW.format(rank=rank, id=model_id,
-                                             repo=self.fixture._read("llamacpp", model_id)["model"]["repo"])
-                            for rank, model_id in enumerate(ranked, start=1)])
-        rows = body(parse(self.page()))
-        self.assertEqual([(node.attrs["id"], "hidden" in node.attrs) for node in rows],
-                         [("m-qwen3.6-35b-a3b", False), ("m-gpt-oss-20b", False), ("m-deepseek-r1-0528-qwen3-8b", False),
-                          ("m-mellum2.1-12b", False), ("m-qwen3-coder-next", False), ("m-k2-horizon-7b", False),
-                          ("grp", True)])
 
     def tile(self, tree, model_id, runtime):
         return tile_cell(tree, model_id, runtime).find_all("a", "tile")[0]
@@ -1043,7 +1025,8 @@ class SiteRenderTest(unittest.TestCase):
         catalog = data.shipped_catalog(self.fixture.root)
         rows = [TOP10_ROW.format(rank=rank, id=recipe_id, repo=catalog.runtimes["llamacpp"].recipes[recipe_id].model.repo)
                 for rank, recipe_id in enumerate(TOP10_IDS, start=1)]
-        self.fixture.top10([*rows, "| 4 | [Unshipped](https://huggingface.co/org/unshipped) | llama.cpp |"])
+        self.fixture.top10([*rows, "| 4 | [Unshipped](https://huggingface.co/org/unshipped) | Vendor 4 | 1B dense "
+                                   "| llama.cpp | MIT |"])
         self.fixture.run("2026-11-17", "llmctl-old-e2e", default_rows() + [row("03-removed-model-llamacpp", "up"),
                                                                             row("04-qwen3.6-35b-a3b-oldengine", "up")],
                          readme=None, records=None)
@@ -1058,11 +1041,6 @@ class SiteRenderTest(unittest.TestCase):
                          [f"2026-11-17, llmctl-old-e2e: {n + 2} of {n + 2} rows passed over 12 recipes, 2 rows of recipes "
                           "or engines that no longer ship; clients OpenCode, Hermes, Pi, dsh, Kimi; versions not recorded.",
                           line.replace("Kimi 2.5.3.", "Kimi not recorded.")])
-        first = next(cell for model in matrix.models for cell in model.cells if cell.status == "runs")
-        rig = "Test rig, RTX 5080 Laptop GPU 16 GB"
-        self.fixture.set_value(first.runtime, first.model, "hardware", f'"{rig}"')
-        hardware = "; ".join(sorted({hardware, rig}))
-        self.assertNotEqual(hardware.split("; ")[0], rig)
         qwen = prefix("llamacpp", "qwen3.6-35b-a3b")
         gpt = prefix("llamacpp", "gpt-oss-20b")
         self.fixture.run("2026-11-16", "llmctl-kimi-e2e", [row(gpt, "up"), row(gpt, "kimi")],
@@ -1100,7 +1078,7 @@ class SiteRenderTest(unittest.TestCase):
             record.unlink()
         tree = parse(self.page())
         self.assertEqual(versions(tree), "Client versions: not recorded.")
-        self.fixture.top10([*rows, "| 4 | *Unshipped* | llama.cpp |"])
+        self.fixture.top10([*rows, "| 4 | *Unshipped* | Vendor 4 | 1B dense | llama.cpp | MIT |"])
         with self.assertRaises(data.SiteError) as raised:
             self.page()
         self.assertEqual(str(raised.exception), "docs/model-selection.md: row 4, Model: column 1: emphasis")
@@ -1626,14 +1604,6 @@ class SiteRenderTest(unittest.TestCase):
                 self.assertEqual(section.find_all("p", "recipe-name"), [])
         self.assertIn(BLOB + "/research/2026-11-17/fixture-failure/README.md",
                       [a.attrs["href"] for a in tree.by_id("d-sglang-deepseek-r1-0528-qwen3-8b").find_all("a")])
-        # k2-horizon-7b with an estimate recipe on llama.cpp: no engine runs it (the kind line also adds the doc
-        # that an estimate needs, since set_value writes one line per key)
-        self.fixture.set_value("llamacpp", "k2-horizon-7b", "decode_tok_s", None)
-        self.fixture.set_value("llamacpp", "k2-horizon-7b", "kind", '"estimate"\ndoc = "llamacpp/models.md"')
-        k2 = ("k2-horizon-7b", "llamacpp")
-        self.fixture.coverage({k2: "Does not fit: too large for the budget (estimate)"})
-        tree = parse(render.page(self.fixture.load(), BUILD, self.fixture.root))
-        self.assertIn("No engine runs this model on this laptop yet. Runtime coverage table", text(tree, "d-vllm-k2-horizon-7b"))
         qwen = ("qwen3.6-35b-a3b", "llamacpp")                     # a note outside the subset stops the build (D13)
         self.fixture.coverage({qwen: self.fixture._default_cell(*qwen) + "; a **bold** word"})
         column = cell_of(self.fixture.load(), *qwen).note.index("*") + 1
