@@ -4,6 +4,7 @@ commit (design D12), and the README recipe table (D-README)."""
 import ast
 import base64
 import contextlib
+import dataclasses
 import hashlib
 import io
 import os
@@ -16,13 +17,15 @@ import tempfile
 import tomllib
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from launcher import clients
 from launcher.runtimes import ADAPTERS
 from launcher.site import data, render
 from launcher.tests.fakes import REPO
-from launcher.tests.site_fixture import (RECIPES, TOP10_IDS, TOP10_ROW, DEFAULT_RUN, SiteFixture, cell_of, config_section,
-                                         default_rows, parse, prefix, row, version_record, well_formed_problems)
+from launcher.tests.site_fixture import (RECIPES, TOP10_IDS, TOP10_ROW, DEFAULT_RUN, DOES_NOT_FIT_CELL, SiteFixture, cell_of,
+                                         config_section, default_rows, parse, prefix, row, version_record,
+                                         well_formed_problems)
 
 BUILD = data.Build("https://github.com/o/r", "a" * 40, 0)
 BLOB = "https://github.com/o/r/blob/" + "a" * 40
@@ -229,8 +232,25 @@ class SiteRenderTest(unittest.TestCase):
         page_text = render.page(matrix, BUILD, self.fixture.root)
         self.assertIn('<html lang="en" class="no-js">', page_text)
         self.assertEqual((tree.by_id("notice").tag, "hidden" in tree.by_id("notice").attrs), ("div", True))
-        self.assertEqual([node.text() for node in tree.find_all("p", "only-no-js")],
-                         ["Filters and use cases need JavaScript; the full matrix and each use case as a list are below."])
+        self.assertEqual(render.NO_JS,
+                         "Views and filters need JavaScript; each view as a list and every pair's details follow.")
+        self.assertEqual([node.text() for node in tree.find_all("p", "only-no-js")], [render.NO_JS])
+        element = lambda node: (node.tag, node.attrs.get("id"), node.attrs.get("class"))
+        body = tree.find_all("body")[0]
+        self.assertEqual([element(node) for node in body.children if not isinstance(node, str)],
+                         [("a", None, "skip"), ("header", None, None), ("main", None, None), ("footer", None, None),
+                          ("dialog", "sheet", None), ("dialog", "drawer", None), ("template", "phrases", None),
+                          ("template", "cards", None), ("script", None, None)])
+        main = tree.find_all("main")[0]
+        self.assertEqual([element(node) for node in main.children if not isinstance(node, str)],
+                         [("p", "print-view", "print-only"), ("section", "picks", None), ("p", "key", "key"),
+                          ("h2", None, "vh"), ("div", None, "tbl"), ("p", None, "only-no-js"), ("section", "use-cases", None),
+                          ("section", "details", None), ("p", "live", "vh")])
+        self.assertEqual([squash(node) for node in main.children if not isinstance(node, str) and node.tag == "h2"],
+                         ["Models and engines"])
+        self.assertTrue("hidden" in tree.by_id("controls").attrs)
+        self.assertEqual([squash(tree.by_id(i)) for i in ("open-filters", "show")], ["Filters", "Show 6 models"])
+        self.assertEqual(table.attrs.get("data-pairs"), "18")
         self.assertEqual((table.tag, table.attrs.get("tabindex")), ("table", "-1"))
         self.assertEqual(tree.find_all("a", "skip")[0].attrs["href"], "#matrix")
         self.assertEqual((tree.by_id("answer").tag, tree.by_id("answer").attrs.get("role")), ("span", "status"))
@@ -318,7 +338,10 @@ class SiteRenderTest(unittest.TestCase):
         check_lists(matrix, tree)
         self.assertEqual(squash(tree.by_id("caption")), "Decode speed, context and client results of each model on each engine. "
                          "View: All models; sorted by: Top 3 rank, then speed.")
+        self.assertEqual(squash(tree.by_id("caption")), data.caption_line(data.USE_CASES[0], "rank", matrix))
         self.assertEqual(squash(tree.by_id("print-view")), "View: All models; sorted by: Top 3 rank, then speed.")
+        self.assertEqual(squash(tree.by_id("print-view")),
+                         data.print_line(data.USE_CASES[0], "rank", data.Filters(), matrix))
         live = tree.by_id("live")
         self.assertEqual((live.tag, live.attrs, live.text()), ("p", {"id": "live", "class": "vh", "aria-live": "polite"}, ""))
         self.assertEqual(table.attrs["role"], "table")
@@ -327,8 +350,8 @@ class SiteRenderTest(unittest.TestCase):
         self.assertEqual({node.attrs.get("role") for node in table.find_all("tr")}, {"row"})
         self.assertEqual({(node.attrs["scope"], node.attrs.get("role")) for node in table.find_all("th")},
                          {("col", "columnheader"), ("row", "rowheader"), ("rowgroup", "rowheader")})
-        self.assertEqual([node.attrs["aria-labelledby"] for node in tree.find_all("section")
-                          if "aria-labelledby" in node.attrs], [])
+        self.assertEqual([(node.attrs.get("id"), node.attrs["aria-labelledby"]) for node in tree.find_all("section")
+                          if "aria-labelledby" in node.attrs], [("picks", "picks-title")])
         # The lead's autofocus ruling: the markup carries no autofocus (Chrome logs a line for it on every load with
         # a hash), and the script sets it before its first showModal(); Chrome 157 then focuses button#close.
         drawer = tree.by_id("drawer")
@@ -344,9 +367,6 @@ class SiteRenderTest(unittest.TestCase):
         self.assertRegex(script, r"drawer\.autofocus = true;[^\0]*?drawer\.showModal\(\)")
         # The modal dialog makes #live inert, so a copy inside it is announced in the dialog's own live region.
         self.assertRegex(script, r"\(drawer\.open \? drawerLive : live\)\.textContent = text;")
-        page = render.page(matrix, BUILD, self.fixture.root)
-        self.assertIn("Filters and use cases need JavaScript; the full matrix and each use case as a list are below.",
-                      page)
         self.assertEqual([squash(node) for node in table.find_all("th", "mh")], ["Top 3 rank and model"])
         heads = [node for node in table.find_all("thead")[0].find_all("th") if node.attrs.get("data-engine")]
         self.assertEqual([tuple(squash(head.find_all("span", cls)[0]) for cls in ("en", "ver", "n")) for head in heads],
@@ -382,6 +402,177 @@ class SiteRenderTest(unittest.TestCase):
                           [("en", "vLLM"), ("ver", "v0.33.0"), ("n", ", 2 of 6 run")],
                           [("en", "SGLang"), ("ver", "v0.5.23"), ("n", ", 2 of 6 run")]])
         self.assertEqual(spoken(heads[0]), "llama.cpp, 6 of 6 run")
+
+    def card_texts(self, card):
+        """The class and squashed text of each p of a card, which the built and the template copy share."""
+        return [(node.attrs.get("class"), squash(node)) for node in card.find_all("p")]
+
+    def test_pick_cards_of_the_default_view(self):
+        matrix = self.fixture.load()
+        tree = parse(render.page(matrix, BUILD, self.fixture.root))
+        facts = cell_of(matrix, "qwen3.6-35b-a3b", "sglang").recipe
+        section = tree.by_id("picks")
+        self.assertEqual((section.tag, section.attrs.get("aria-labelledby")), ("section", "picks-title"))
+        title = tree.by_id("picks-title")
+        self.assertEqual((title.tag, title.attrs.get("class"), squash(title)), ("h2", "vh", "Picks for this view"))
+        listing = tree.by_id("pick-list")
+        self.assertEqual((listing.tag, listing.attrs.get("class"), listing.attrs.get("data-long")), ("ol", "picks", "128"))
+        cards = [node for node in listing.children if not isinstance(node, str)]
+        self.assertEqual([(node.tag, node.attrs.get("class"), node.attrs.get("data-for")) for node in cards],
+                         [("li", "pick", "d-sglang-qwen3.6-35b-a3b"), ("li", "pick", "d-llamacpp-mellum2.1-12b"),
+                          ("li", "pick", "d-llamacpp-gpt-oss-20b")])
+        first, mellum, gpt = cards
+        h3 = first.find_all("h3")[0]
+        self.assertEqual((squash(h3), squash(h3.find_all("span", "role")[0])), ("Highest ranked: qwen3.6-35b-a3b on SGLang", "Highest ranked"))
+        self.assertEqual([(squash(n), n.attrs.get("class")) for n in h3.find_all("span", "vh")], [(":", "vh")])
+        self.assertEqual([(a.attrs["href"], squash(a), squash(a.find_all("span", "pid")[0])) for a in h3.find_all("a")],
+                         [("#d-sglang-qwen3.6-35b-a3b", "qwen3.6-35b-a3b on SGLang", "qwen3.6-35b-a3b")])
+        pn = first.find_all("p", "pn")[0]
+        self.assertEqual((squash(pn), squash(pn.find_all("span", "ps")[0]), pn.find_all("i")[0].attrs["class"]),
+                         ("151.3 tok/s, 128k context", "151.3", "w-80"))
+        self.assertEqual(pn.find_all("span", "bar")[0].attrs.get("aria-hidden"), "true")
+        pg = first.find_all("p", "pg")[0]
+        self.assertEqual(("hidden" in pg.attrs, squash(pg)), (True, "SGLang 24% ahead of llama.cpp"))
+        self.assertEqual(squash(first.find_all("p", "pcl")[0]), "All 5 clients passed.")
+        pq = first.find_all("p", "pq")[0]
+        self.assertEqual(squash(pq), f"Needs GPU {facts.gpu}, RAM {facts.memory_cap} GiB; download {facts.size_bytes / 1e9:.1f} GB.")
+        # Each number keeps its unit on one line (2026-11-19 plan ruling 15).
+        self.assertEqual([n.text() for n in pq.find_all("span", "nw")],
+                         [facts.gpu, f"{facts.memory_cap} GiB", f"{facts.size_bytes / 1e9:.1f} GB"])
+        pst = first.find_all("details", "pst")[0]
+        self.assertEqual(("open" in pst.attrs, squash(pst.find_all("summary")[0])), (False, "Start commands"))
+        self.assertEqual([(squash(li.find_all("p", "step")[0]), li.find_all("code", "cmd")[0].text(),
+                           li.find_all("button", "copy")[0].attrs.get("data-copy"), "hidden" in li.find_all("button", "copy")[0].attrs)
+                          for li in pst.find_all("ol", "steps")[0].find_all("li")],
+                         [("Download once", facts.pull, facts.pull, True), ("Start", facts.up, facts.up, True)])
+        dialog_pre = tree.by_id("d-sglang-qwen3.6-35b-a3b").find_all("p", "pre")[0]
+        card_pre = pst.find_all("p", "pre")
+        self.assertEqual([(squash(n), [(a.attrs["href"], squash(a)) for a in n.find_all("a")]) for n in card_pre],
+                         [(squash(dialog_pre), [(a.attrs["href"], squash(a)) for a in dialog_pre.find_all("a")])])
+        self.assertEqual(len(dialog_pre.find_all("a")), 2)
+        self.assertEqual(squash(mellum.find_all("h3")[0]), "Fastest: mellum2.1-12b on llama.cpp")
+        self.assertEqual(mellum.find_all("p", "pg"), [])
+        self.assertEqual(squash(gpt.find_all("h3")[0]), "Fastest in the Top 3: gpt-oss-20b on llama.cpp")
+        self.assertEqual([("hidden" in n.attrs, squash(n)) for n in gpt.find_all("p", "pg")],
+                         [(True, "llama.cpp 99% ahead of vLLM")])
+        no_picks = tree.by_id("no-picks")
+        self.assertEqual((no_picks.tag, "hidden" in no_picks.attrs, squash(no_picks)), ("p", True, data.NO_PICKS))
+
+    def test_card_templates_cover_every_runs_pair(self):
+        matrix = self.fixture.load()
+        tree = parse(render.page(matrix, BUILD, self.fixture.root))
+        template = tree.by_id("cards")
+        self.assertEqual(template.tag, "template")
+        cards = [node for node in template.children if not isinstance(node, str)]
+        self.assertEqual([(node.tag, node.attrs.get("class")) for node in cards], [("li", "pick")] * len(cards))
+        self.assertEqual([node.attrs["data-for"] for node in cards],
+                         [f"d-{c.runtime}-{m.id}" for m in matrix.models for c in m.cells if c.status == "runs"])
+        self.assertEqual({node.text() for card in cards for node in card.find_all("span", "role")}, {""})
+        self.assertEqual([len(card.find_all("span", "role")) for card in cards], [1] * len(cards))
+        self.assertEqual([node.attrs["id"] for node in template.iter() if "id" in node.attrs], [])
+        buttons = template.find_all("button", "copy")
+        self.assertEqual((len(buttons), [b for b in buttons if "hidden" in b.attrs]), (2 * len(cards), []))
+        labels = {runtime.id: runtime.label for runtime in matrix.runtimes}
+        gaps = {f"d-{c.runtime}-{m.id}": data.gap_text(m, labels) for m in matrix.models for c in m.cells
+                if c.status == "runs" and data.gap_text(m, labels) is not None}
+        self.assertEqual(sorted(gaps), sorted(f"d-{runtime}-{model_id}" for model_id, runtimes in (
+            ("deepseek-r1-0528-qwen3-8b", ("llamacpp", "vllm")), ("gpt-oss-20b", ("llamacpp", "vllm", "sglang")),
+            ("qwen3.6-35b-a3b", ("llamacpp", "sglang"))) for runtime in runtimes))
+        self.assertEqual({card.attrs["data-for"]: [("hidden" in n.attrs, squash(n)) for n in card.find_all("p", "pg")]
+                          for card in cards if card.find_all("p", "pg")},
+                         {key: [(True, words)] for key, words in gaps.items()})
+        by_for = {card.attrs["data-for"]: card for card in cards}
+        self.assertEqual(squash(by_for["d-vllm-deepseek-r1-0528-qwen3-8b"].find_all("p", "pcl")[0]),
+                         "4 of 5 clients; OpenCode: not supported.")
+        # A GPU need in percent stands alone; the RAM and the download keep their units (2026-11-19 plan ruling 15).
+        facts = cell_of(matrix, "deepseek-r1-0528-qwen3-8b", "vllm").recipe
+        self.assertTrue(facts.gpu.endswith("%"), facts.gpu)
+        self.assertEqual([n.text() for n in by_for["d-vllm-deepseek-r1-0528-qwen3-8b"].find_all("p", "pq")[0]
+                          .find_all("span", "nw")], [f"{facts.memory_cap} GiB", f"{facts.size_bytes / 1e9:.1f} GB"])
+        for card in tree.by_id("pick-list").find_all("li", "pick"):
+            with self.subTest(card=card.attrs["data-for"]):
+                self.assertEqual(self.card_texts(card), self.card_texts(by_for[card.attrs["data-for"]]))
+        # A pair without a speed: no speed span, its words in its place.
+        self.fixture.set_value("vllm", "gpt-oss-20b", "decode_tok_s", None)
+        tree = parse(render.page(self.fixture.load(), BUILD, self.fixture.root))
+        card = next(node for node in tree.by_id("cards").find_all("li", "pick")
+                    if node.attrs["data-for"] == "d-vllm-gpt-oss-20b")
+        pn = card.find_all("p", "pn")[0]
+        self.assertEqual((squash(pn), pn.find_all("i")[0].attrs["class"]), ("Speed not recorded, 64k context", "w-0"))
+
+    def test_key_names_only_the_marks_present(self):
+        tree = parse(self.page())
+        key = tree.by_id("key")
+        parts = [n for n in key.children if not isinstance(n, str)]
+        self.assertEqual(([p.attrs["data-k"] for p in parts], key.attrs.get("class")),
+                         (["counts", "not-supported", "letters", "fastest", "bars"], "key"))
+        self.assertEqual(visible(key), "4/5: clients whose latest session passed; boxed: O not supported (O OpenCode, H Hermes, "
+                                       "P Pi, D dsh, K Kimi). * fastest engine and its lead over the next. Bars: 0 to 188.2 tok/s.")
+        seps = [(n.attrs["class"], squash(n), "hidden" in n.attrs) for p in parts for n in p.find_all("span")
+                if n.attrs.get("class", "").startswith("sep")]
+        self.assertEqual(seps, [("sep-more", "; boxed:", False), ("sep-end", ".", True), ("sep", ",", True)])
+        self.assertEqual([squash(n) for n in parts[0].find_all("b")], ["4/5"])
+        marked = parts[1]
+        self.assertEqual(("data-cls" in marked.attrs, [(n.attrs["class"], n.text(), n.attrs.get("aria-hidden"))
+                                                       for n in marked.find_all("span", "lamp")], spoken(marked)),
+                         (True, [("lamp not-supported", "O", "true")], "a letter in a box with its corner struck: not supported"))
+        self.assertEqual(spoken(parts[3]), "An asterisk: fastest engine and its lead over the next.")
+        # Every class, a failed setup step: the default run without K2's kimi row, and a 2026-11-19 run of the
+        # qwen3.6 llama.cpp pair whose status, hermes-z and pi fail, the note naming hermes-z.
+        k2_kimi = row(prefix("llamacpp", "k2-horizon-7b"), "kimi")
+        self.fixture.run(*DEFAULT_RUN, [line for line in default_rows() if line != k2_kimi],
+                         readme="# e2e\n\n## The No rows\n\nNone.\n")
+        qwen = prefix("llamacpp", "qwen3.6-35b-a3b")
+        # The sample is the client with the most results of the class, ties to the earlier client (plan ruling 9):
+        # known issue OpenCode 1, Hermes 2 gives H; failed Pi 1, Kimi 1 gives P.
+        gpt, gpt_vllm, gpt_sglang = (prefix(runtime, "gpt-oss-20b") for runtime in ("llamacpp", "vllm", "sglang"))
+        self.fixture.run("2026-11-19", "llmctl-next-e2e", [row(qwen, "up"), row(qwen, "status", "no answer"),
+                                                           row(qwen, "hermes-z", "no answer"), row(qwen, "pi", "no answer"),
+                                                           row(gpt, "up"), row(gpt, "opencode", "no answer"),
+                                                           row(gpt_vllm, "up"), row(gpt_vllm, "hermes-z", "no answer"),
+                                                           row(gpt_sglang, "up"), row(gpt_sglang, "kimi", "no answer")])
+        self.fixture.coverage({cell: self.fixture._default_cell(*cell)
+                               + f"; e2e 2026-11-19: `{step}` wrote hello.py elsewhere"
+                               for cell, step in ((("qwen3.6-35b-a3b", "llamacpp"), "hermes-z"),
+                                                  (("gpt-oss-20b", "llamacpp"), "opencode"),
+                                                  (("gpt-oss-20b", "vllm"), "hermes-z"))})
+        key = parse(self.page()).by_id("key")
+        parts = [n for n in key.children if not isinstance(n, str)]
+        self.assertEqual([p.attrs["data-k"] for p in parts], list(data.KEY_PARTS))
+        classes = [p for p in parts if "data-cls" in p.attrs]
+        self.assertEqual([[n.text() for n in p.find_all("span", "lamp")] for p in classes], [["H"], ["P"], ["K"], ["O"]])
+        self.assertEqual([[("hidden" in n.attrs) for n in p.find_all("span", "sep")] for p in classes],
+                         [[False], [False], [False], [True]])
+        self.assertEqual(visible(key), "4/5: clients whose latest session passed; boxed: H known issue, P failed, no note yet, "
+                                       "K not tested, O not supported (O OpenCode, H Hermes, P Pi, D dsh, K Kimi). Setup check "
+                                       "failed: a setup step failed in the pair's newest e2e run; the details list it. * fastest "
+                                       "engine and its lead over the next. Bars: 0 to 188.2 tok/s.")
+        self.assertEqual([squash(n) for n in parts[6].find_all("span", "su")], ["Setup check failed"])
+        # A part the key does not know stops the build instead of printing the bars sentence.
+        real_view = data.view
+        with mock.patch.object(data, "view", lambda *args: dataclasses.replace(real_view(*args), key=("counts", "size"))):
+            with self.assertRaisesRegex(ValueError, "^unknown key part 'size'$"):
+                self.page()
+        # No exception class in the default view, and a whole-number top speed: a fresh fixture without the DeepSeek
+        # vLLM pair, the only one OpenCode does not support, and mellum2.1-12b at 200.0.
+        plain = tempfile.TemporaryDirectory()
+        self.addCleanup(plain.cleanup)
+        fixture = SiteFixture(Path(plain.name))
+        (fixture.root / "recipes/vllm/deepseek-r1-0528-qwen3-8b.toml").unlink()
+        fixture.coverage({("deepseek-r1-0528-qwen3-8b", "vllm"): DOES_NOT_FIT_CELL})
+        fixture.set_value("llamacpp", "mellum2.1-12b", "decode_tok_s", "200.0")
+        tree = parse(render.page(fixture.load(), BUILD, fixture.root))
+        key = tree.by_id("key")
+        parts = [n for n in key.children if not isinstance(n, str)]
+        self.assertEqual([p.attrs["data-k"] for p in parts], ["counts", "fastest", "bars"])
+        self.assertEqual(visible(key), "4/5: clients whose latest session passed. * fastest engine and its lead over the "
+                                       "next. Bars: 0 to 200.0 tok/s.")
+        self.assertEqual([(n.attrs["class"], "hidden" in n.attrs) for n in key.find_all("span")
+                          if n.attrs.get("class", "").startswith("sep")], [("sep-more", True), ("sep-end", False)])
+        self.assertEqual([squash(n) for n in parts[0].find_all("b")], ["4/5"])
+        mellum = next(card for card in tree.by_id("pick-list").find_all("li", "pick")
+                      if card.attrs["data-for"] == "d-llamacpp-mellum2.1-12b")
+        self.assertEqual(squash(mellum.find_all("p", "pn")[0]), "200.0 tok/s, 128k context")
 
     def test_page_loads_nothing_from_other_sites(self):
         page = self.page()

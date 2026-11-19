@@ -220,7 +220,7 @@ def rewrite_readme(text: str, table: str) -> str:
 
 HEAD_SCRIPT = 'document.documentElement.className = "js";'
 TITLE = "Local LLMs on one laptop"
-NO_JS = "Filters and use cases need JavaScript; the full matrix and each use case as a list are below."
+NO_JS = "Views and filters need JavaScript; each view as a list and every pair's details follow."
 PRIVACY = "This page sets no cookies, has no analytics and loads nothing from other sites."
 STATUS_LABELS = {"runs": "Runs", "failed": "Failed", "does-not-fit": "Does not fit"}
 CLASS_WORDS = {"passed": "passed", "known-issue": "known issue", "failed": "failed", "not-tested": "not tested",
@@ -231,6 +231,10 @@ CLASS_MEANINGS = {"passed": "the latest e2e session passed",
                   "not-tested": "no e2e run has covered this pair with this client yet",
                   "not-supported": "llmctl writes no entry for this client on this pair"}
 SETUP_MARK = "Setup check failed"
+KEY_SHAPES = {"known-issue": "a letter in a box with a corner triangle:", "failed": "a letter in a filled box:",
+              "not-tested": "a letter in a dashed box:", "not-supported": "a letter in a box with its corner struck:"}
+KEY_WORDS = {"known-issue": "known issue", "failed": "failed, no note yet", "not-tested": "not tested",
+             "not-supported": "not supported"}
 SEARCH_LABEL = "Search models"
 SEARCH_PLACEHOLDER = "Search models"
 SEARCH_SHORT = "Search"
@@ -565,6 +569,88 @@ class _Page:
             parts += ["</ol>", "</section>"]
         parts.append("</section>")
         return "\n".join(parts)
+
+    @staticmethod
+    def _needs(facts: data.RecipeFacts) -> str:
+        """A card's needs line (Copy, card needs): each number kept on one line with its unit, a GPU need in percent
+        alone (2026-11-19 plan ruling 15)."""
+        gpu = _e(facts.gpu) if facts.gpu.endswith("%") else f'<span class="nw">{_e(facts.gpu)}</span>'
+        return (f'Needs GPU {gpu}, RAM <span class="nw">{facts.memory_cap} GiB</span>; download '
+                f'<span class="nw">{facts.size_bytes / 1e9:.1f} GB</span>.')
+
+    def _card(self, model: data.Model, cell: data.Cell, label: str, live: bool) -> str:
+        """One pick card (Pick cards): built with its role words and hidden Copy buttons, or, when `live`, the script's
+        copy in template#cards with an empty role and Copy buttons shown."""
+        facts = cell.recipe
+        did = f"d-{cell.runtime}-{model.id}"
+        context = f"{facts.context // 1024}k context"
+        if facts.decode is None:
+            numbers = f'<span class="none">Speed not recorded</span>, {context}'
+        else:
+            numbers = f'<span class="ps">{_e(data.speed_text(facts.decode))}</span> tok/s, {context}'
+        gap = data.gap_text(model, self.labels)
+        return "\n".join([
+            _start("li", [("class", "pick"), ("data-for", did)]),
+            f'<h3><span class="role">{_e(label)}</span><span class="vh">: </span><a href="#{_e(did)}"><span class="pid">'
+            f"{_e(model.id)}</span> on {_e(self.labels[cell.runtime])}</a></h3>",
+            f'<p class="pn"><span>{numbers}</span>{_bar(data.bar_width(facts.decode, self.top))}</p>',
+            *([f'<p class="pg" hidden>{_e(gap)}</p>'] if gap is not None else []),
+            f'<p class="pcl">{_e(client_sentence(cell.clients, self.client_labels))}</p>',
+            f'<p class="pq">{self._needs(facts)}</p>',
+            '<details class="pst"><summary>Start commands</summary>', '<ol class="steps">',
+            f'<li><p class="step">Download once</p>{self._command(facts.pull, hidden=not live)}</li>',
+            f'<li><p class="step">Start</p>{self._command(facts.up, hidden=not live)}</li>', "</ol>",
+            self._prerequisites(), "</details>", "</li>"])
+
+    def picks(self) -> str:
+        """The cards of the default view (R-D2) and the line shown when a view's rows hold no pair that runs."""
+        found = data.view(self.matrix, "", data.Filters(), None)
+        cells = {(model.id, cell.runtime): (model, cell) for model, cell in self.runs}
+        cards = [self._card(*cells[pick.model, pick.runtime], pick.label, live=False) for pick in found.picks]
+        return "\n".join([
+            '<section id="picks" aria-labelledby="picks-title">', '<h2 id="picks-title" class="vh">Picks for this view</h2>',
+            _start("ol", [("id", "pick-list"), ("class", "picks"), ("data-long", str(data.LONG_CONTEXT // 1024))]),
+            *cards, "</ol>", f'<p id="no-picks" class="rule" hidden>{_e(data.NO_PICKS)}</p>', "</section>"])
+
+    def _sample(self, cls: str) -> str:
+        """The key's sample letter of a class: the client with the most results of that class over the page's Runs
+        cells, ties to the earlier client in NAMES (2026-11-19 plan ruling 9)."""
+        tally = [(sum(1 for _, cell in self.runs for result in cell.clients
+                      if result.client == client.id and result.cls == cls), client.letter) for client in self.matrix.clients]
+        most = max(count for count, _ in tally)
+        return next(letter for count, letter in tally if count == most)
+
+    def key(self) -> str:
+        """The key (Key): the parts the default view shows, with their built separators shown or hidden for it."""
+        found = data.view(self.matrix, "", data.Filters(), None)
+        classes = [part for part in found.key if part in KEY_SHAPES]
+        hide = lambda hidden: [("hidden", None)] if hidden else []
+        clients = self.matrix.clients
+        parts = []
+        for part in found.key:
+            if part == "counts":
+                words = (f"<b>{len(clients) - 1}/{len(clients)}</b>: clients whose latest session passed"
+                         + _start("span", [("class", "sep-more")] + hide(not classes)) + "; boxed:</span>"
+                         + _start("span", [("class", "sep-end")] + hide(bool(classes))) + ".</span>")
+            elif part in KEY_SHAPES:
+                words = (_lamp(part, self._sample(part)) + f'<span class="vh">{_e(KEY_SHAPES[part])}</span> '
+                         f"{_e(KEY_WORDS[part])}" + _start("span", [("class", "sep")] + hide(part == classes[-1]))
+                         + ",</span>")
+            elif part == "letters":
+                words = "(" + ", ".join(f"{_e(client.letter)} {_e(client.label)}" for client in clients) + ")."
+            elif part == "setup":
+                words = (f'<span class="su">{_e(SETUP_MARK)}</span>: a setup step failed in the pair\'s newest e2e run; '
+                         "the details list it.")
+            elif part == "fastest":
+                words = ('<span aria-hidden="true">*</span><span class="vh">An asterisk:</span> fastest engine and its '
+                         "lead over the next.")
+            elif part == "bars":
+                words = f"Bars: 0 to {_e(data.speed_text(self.top))} tok/s."
+            else:
+                raise ValueError(f"unknown key part {part!r}")
+            attrs = [("data-k", part)] + ([("data-cls", None)] if part in KEY_SHAPES else [])
+            parts.append(_start("span", attrs) + words + "</span>")
+        return '<p id="key" class="key">' + " ".join(parts) + "</p>"
 
     def details(self) -> str:
         parts = ['<section id="details">', '<h2 id="details-title">Details</h2>']
@@ -917,16 +1003,23 @@ class _Page:
                                          ("data-mid", words[:1].lower() + words[1:])]) + _e(words) + "</span>")
         return '<template id="phrases">\n' + "\n".join(spans) + "\n</template>"
 
+    def cards(self) -> str:
+        """The card the script clones for each pair that runs, in model and engine order (Pick cards)."""
+        return ('<template id="cards">\n' + "\n".join(self._card(model, cell, "", live=True) for model, cell in self.runs)
+                + "\n</template>")
+
     def body(self, script: str) -> str:
         default = data.USE_CASES[0]
         print_line = data.print_line(default, default.sort, data.Filters(), self.matrix)
         return "\n".join([
             "<body>", '<a class="skip" href="#matrix">Skip to the table</a>', self.header(), "<main>",
-            f'<p class="only-no-js">{_e(NO_JS)}</p>', f'<p id="print-view" class="print-only">{_e(print_line)}</p>',
-            self.matrix_table(), self.use_lists(), self.details(), '<p id="live" class="vh" aria-live="polite"></p>',
+            f'<p id="print-view" class="print-only">{_e(print_line)}</p>', self.picks(), self.key(), self.matrix_table(),
+            f'<p class="only-no-js">{_e(NO_JS)}</p>', self.use_lists(), self.details(),
+            '<p id="live" class="vh" aria-live="polite"></p>',
             "</main>", self.footer(), self.sheet(), '<dialog id="drawer">',
             '<div id="drawer-bar"><button type="button" id="close">Close</button></div>', '<div id="drawer-body"></div>',
-            '<p id="drawer-live" class="vh" aria-live="polite"></p>', "</dialog>", self.template(), f"<script>{script}</script>", "</body>"])
+            '<p id="drawer-live" class="vh" aria-live="polite"></p>', "</dialog>", self.template(), self.cards(), f"<script>{script}</script>",
+            "</body>"])
 
 
 def page(matrix: data.Matrix, build: Build, root: Path) -> str:
