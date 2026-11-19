@@ -873,27 +873,58 @@ class SiteDataTest(unittest.TestCase):
         self.assertEqual(cards(m2, "fastest", F(engines=("vllm",), search="gpt-oss")),      # an engine pick needs a speed
                          [("Next by speed", "gpt-oss-20b", "vllm")])
 
+    def test_view_key_and_divider(self):
+        m, F = self.fixture.load(), data.Filters
+        v = lambda use="", sort=None, matrix=m, **f: data.view(matrix, use, F(**f), sort)
+        self.assertEqual(v().key, ("counts", "not-supported", "letters", "fastest", "bars"))
+        self.assertEqual((v("opencode").key, v(search="mellum").key), (("counts", "fastest", "bars"), ("counts", "bars")))
+        self.assertEqual((v(statuses=("failed", "does-not-fit")).key, v(search="zzz").key), ((), ()))
+        self.assertEqual([v(sort=key).divider for key, _ in data.SORTS], ["mellum2.1-12b", None, None, None, None, None])
+        self.assertEqual((v("quality").divider, v(engines=("vllm",)).divider, v(search="mellum").divider,
+                          v(statuses=("failed", "does-not-fit")).divider), (None, None, "mellum2.1-12b", None))
+        k2_kimi = row(prefix("llamacpp", "k2-horizon-7b"), "kimi")                       # Not tested
+        self.fixture.run("2026-11-18", "llmctl-fixture-e2e", [line for line in default_rows() if line != k2_kimi],
+                         readme="# e2e\n\n## The No rows\n\nNone.\n")
+        self.fixture.run("2026-11-19", "llmctl-key-e2e", [row(QWEN, "up"), row(QWEN, "status", "no answer"),
+                                                          row(QWEN, "hermes-z", "no answer"), row(QWEN, "pi", "no answer")])
+        self.note(self.fixture, "qwen3.6-35b-a3b", "llamacpp", "e2e 2026-11-19: `hermes-z` wrote hello.py elsewhere")
+        every = ("counts", "known-issue", "failed", "not-tested", "not-supported", "letters", "setup", "fastest", "bars")
+        self.assertEqual(data.KEY_PARTS, every)
+        self.assertEqual((v(matrix=self.fixture.load()).key, v(matrix=self.fixture.load(), search="mellum").key),
+                         (every, ("counts", "bars")))
+        for runtime, recipe_id in RECIPES:
+            self.fixture.set_value(runtime, recipe_id, "decode_tok_s", None)
+        self.assertEqual(v(matrix=self.fixture.load()).key, every[:7])                  # no fastest tag, no top speed
+
+    def test_count_line(self):
+        self.assertEqual(data.count_line(15, 45, 29, 45, True), "15 models; 29 of 45 pairs run.")
+        self.assertEqual(data.count_line(14, 26, 26, 45, False), "14 models; 26 pairs match.")
+        self.assertEqual(data.count_line(1, 1, 1, 45, False), "1 model; 1 pair matches.")
+        self.assertEqual(data.count_line(1, 3, 2, 3, True), "1 model; 2 of 3 pairs run.")                 # ruling 7
+        self.assertEqual((data.count_line(0, 0, 0, 45, False), data.count_line(0, 0, 0, 45, True)), ("", ""))
+        m, F = self.fixture.load(), data.Filters
+        self.assertEqual([data.view(m, "", F(search=s), None).count for s in ("", " \t\n ", "gpt-oss", "\xa0gpt")],
+                         ["6 models; 10 of 18 pairs run.", "6 models; 10 of 18 pairs run.", "1 model; 3 pairs match.", ""])
+        self.assertEqual([data.view(m, use, F(), None).count for use in ("opencode", "compare")],
+                         ["5 models; 8 pairs match.", "3 models; 7 pairs match."])
+        self.assertEqual(data.view(m, "", F(ram=16), None).count, "4 models; 4 pairs match.")
+
     def test_view_orders_by_in_view_cells(self):
         m = self.fixture.load()
         v = data.view(m, "", data.Filters(engines=("vllm",)), "speed")
         self.assertEqual(v.rows, ("gpt-oss-20b", "deepseek-r1-0528-qwen3-8b", "k2-horizon-7b", "mellum2.1-12b",
                                   "qwen3-coder-next", "qwen3.6-35b-a3b"))
-        self.assertEqual(v.answer, "All models: 6 models, 2 recipes that run. Best quality: gpt-oss-20b on vLLM "
-                         "(rank 2), 83.5 tok/s, 64k. Fastest: gpt-oss-20b on vLLM, 83.5 tok/s, 64k.")
-        self.assertEqual(data.view(m, "", data.Filters(), None).answer, "All models: 6 models, 10 recipes that run. "
-                         "Best quality: qwen3.6-35b-a3b on SGLang (rank 1), 151.3 tok/s, 128k. "
-                         "Fastest: mellum2.1-12b on llama.cpp, 188.2 tok/s, 128k.")
-        self.assertEqual(data.view(m, "", data.Filters(engines=("llamacpp",), search=" K2 "), None).answer,
-                         "All models: 1 model, 1 recipe that runs. Best quality: no ranked model is in this view. "
-                         "Fastest: k2-horizon-7b on llama.cpp, 66.9 tok/s, 80k.")
-        self.assertEqual(data.view(m, "", data.Filters(statuses=("failed",)), None).answer,
-                         "All models: 1 model, 0 recipes that run. Best quality: no ranked model is in this view.")
+        picked = lambda found: [(p.label, p.model, p.runtime) for p in found.picks]
+        self.assertEqual((v.count, picked(v)), ("6 models; 6 pairs match.",
+                                                [("Highest ranked and fastest", "gpt-oss-20b", "vllm"),
+                                                 ("Next by speed", "deepseek-r1-0528-qwen3-8b", "vllm")]))
+        self.assertEqual(data.view(m, "", data.Filters(), None).count, "6 models; 10 of 18 pairs run.")
+        k2 = data.view(m, "", data.Filters(engines=("llamacpp",), search=" K2 "), None)
+        self.assertEqual((k2.count, picked(k2)), ("1 model; 1 pair matches.", [("Fastest", "k2-horizon-7b", "llamacpp")]))
+        failed = data.view(m, "", data.Filters(statuses=("failed",)), None)
+        self.assertEqual((failed.count, failed.picks), ("1 model; 1 pair matches.", ()))
         empty = data.view(m, "", data.Filters(search="no such model"), None)
-        self.assertEqual((empty.rows, empty.answer), ((), "No recipe matches this view."))
-        self.assertEqual(data.view(m, "compare", data.Filters(), None).answer, "Compare engines: 3 models. "
-                         "Biggest difference: gpt-oss-20b, 166.2 tok/s on llama.cpp against 83.5 on vLLM.")
-        best = data.view(m, "", data.Filters(), None).phrases[0]
-        self.assertEqual((best.kind, best.target, best.link), ("best", "d-sglang-qwen3.6-35b-a3b", "qwen3.6-35b-a3b on SGLang"))
+        self.assertEqual(empty, data.View((), (), "", (), (), None))
         cells = lambda **f: data.view(m, "", data.Filters(**f), None).cells
         deepseek = ("deepseek-r1-0528-qwen3-8b", "vllm")
         self.assertEqual(cells(tools="no"), (deepseek, ("deepseek-r1-0528-qwen3-8b", "llamacpp")))  # the Failed cell leaves
@@ -916,25 +947,23 @@ class SiteDataTest(unittest.TestCase):
         gpt = lambda use, sort: [c[1] for c in data.view(m, use, data.Filters(), sort).cells if c[0] == "gpt-oss-20b"]
         self.assertEqual(gpt("", "speed"), ["llamacpp", "sglang", "vllm"])
         self.assertEqual(gpt("compare", None), ["llamacpp", "vllm", "sglang"])
-        self.assertEqual(data.view(m, "", data.Filters(), "gap").answer, data.view(m, "", data.Filters(), None).answer)
-        self.assertTrue(data.view(m, "compare", data.Filters(), "rank").answer.startswith("Compare engines: 3 models. "))
+        self.assertEqual(data.view(m, "", data.Filters(), "gap").picks, data.view(m, "", data.Filters(), None).picks)
+        self.assertEqual(picked(data.view(m, "compare", data.Filters(), "rank")),
+                         [("Biggest engine difference and fastest", "gpt-oss-20b", "llamacpp"),
+                          ("Highest ranked", "qwen3.6-35b-a3b", "sglang"),
+                          ("Next by Top 3 rank", "qwen3.6-35b-a3b", "llamacpp")])
+        self.assertEqual(picked(data.view(m, "compare", data.Filters(), None))[2],
+                         ("Next by engine difference", "deepseek-r1-0528-qwen3-8b", "vllm"))
+        for use in data.USE_CASES:
+            for sort in (None, *(key for key, _ in data.SORTS)):
+                with self.subTest(use=use.id, sort=sort):
+                    found = data.view(m, use.id, data.Filters(), sort)
+                    self.assertEqual(found.picks, data.picks(m, use.id, found.cells, sort or use.sort))
         for use, sort, filters in (("bogus", None, data.Filters()), ("", "bogus", data.Filters()),
                                    ("", None, data.Filters(must_pass="bogus")), ("", None, data.Filters(tools="maybe"))):
             with self.subTest(use=use, sort=sort, filters=filters):
                 with self.assertRaises(ValueError):
                     data.view(m, use, filters, sort)
-        found = data.phrases(m)
-        kinds = [p.kind for p in found]
-        self.assertEqual((kinds.count("best"), kinds.count("fastest"), kinds.count("gap")), (7, 10, 3))
-        self.assertEqual([p.target for p in found if p.kind == "gap"],
-                         ["m-deepseek-r1-0528-qwen3-8b", "m-gpt-oss-20b", "m-qwen3.6-35b-a3b"])
-        self.assertEqual(kinds[-2:], ["no-best", "empty"])
-        runs = {f"d-{c.runtime}-{model.id}" for model in m.models for c in model.cells if c.status == "runs"}
-        self.assertTrue(all(p.target in runs for p in found if p.kind in ("best", "fastest")))
-        self.assertIn(best, found)
-        self.fixture.set_value("vllm", "gpt-oss-20b", "decode_tok_s", "124.6")  # a tie for slowest: the last engine
-        gap = [p.text for p in data.phrases(self.fixture.load()) if p.target == "m-gpt-oss-20b"]
-        self.assertEqual(gap, ["Biggest difference: gpt-oss-20b, 166.2 tok/s on llama.cpp against 124.6 on SGLang."])
 
     def test_missing_speed_is_shown_as_absent(self):
         self.fixture.set_value("vllm", "gpt-oss-20b", "decode_tok_s", None)
@@ -945,12 +974,15 @@ class SiteDataTest(unittest.TestCase):
         speeds = {c.runtime: c.recipe.decode for c in model_of(m, "gpt-oss-20b").cells if c.recipe}
         self.assertEqual(data.fastest_tags(speeds), {"llamacpp": "Fastest by 33%"})
         self.assertEqual(cell_of(m, "gpt-oss-20b", "llamacpp").fastest, "Fastest by 33%")
-        fastest = [p for p in data.view(m, "", data.Filters(engines=("vllm",)), "speed").phrases if p.kind == "fastest"]
-        self.assertEqual([p.link for p in fastest], ["deepseek-r1-0528-qwen3-8b on vLLM"])
-        self.assertEqual(data.view(m, "", data.Filters(engines=("vllm",), search="gpt-oss"), None).answer,
-                         "All models: 1 model, 1 recipe that runs. "
-                         "Best quality: gpt-oss-20b on vLLM (rank 2), speed not recorded, 64k.")
-        self.assertNotIn("d-vllm-gpt-oss-20b", [p.target for p in data.phrases(m) if p.kind == "fastest"])
+        self.assertEqual(data.bar_width(cell.recipe.decode, data.top_speed(m)), 0)
+        picked = lambda found: [(p.label, p.model, p.runtime) for p in found.picks]
+        self.assertEqual(picked(data.view(m, "fastest", data.Filters(engines=("vllm",)), None)),
+                         [("Fastest on vLLM", "deepseek-r1-0528-qwen3-8b", "vllm"),
+                          ("Next by speed", "gpt-oss-20b", "vllm")])
+        found = data.view(m, "", data.Filters(engines=("vllm",), search="gpt-oss"), None)
+        self.assertEqual((found.count, picked(found)),
+                         ("1 model; 1 pair matches.", [("Highest ranked", "gpt-oss-20b", "vllm")]))
+        self.assertEqual(found.key, ("counts", "bars"))
 
     def test_opencode_use_case_follows_the_context_budget(self):
         text = "\n".join(markdown.section(REPO, "docs/opencode.md#context-budget"))

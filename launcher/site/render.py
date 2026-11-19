@@ -272,16 +272,6 @@ def inline_assets(css: str, js: str, engines: int) -> tuple[str, str]:
     return css.replace("@SWITCH@", switch_width(engines)), js
 
 
-def _phrase(phrase: data.Phrase) -> str:
-    if not phrase.link:
-        return _e(phrase.text)
-    return f'{_e(phrase.before)}<a href="#{_e(phrase.target)}">{_e(phrase.link)}</a>{_e(phrase.after)}'
-
-
-def _answer(found: data.View) -> str:
-    return " ".join(part for part in (_e(found.head), *(_phrase(phrase) for phrase in found.phrases)) if part)
-
-
 def _count(n: int, one: str, many: str) -> str:
     return f"{n} {one if n == 1 else many}"
 
@@ -343,10 +333,15 @@ class _Page:
     def header(self) -> str:
         dates = [cell.recipe.date for _, cell in self.runs]
         tree = self.links.repo_link("")
-        commit = self.build.commit
-        facts = (f"Measured on {_e(self.hardware)} from {_e(min(dates))} to {_e(max(dates))}; clients last tested "
-                 f"{_e(max(run.date for run in self.matrix.runs))}. Built from commit "
-                 f'<a href="{_e(tree)}">{_e(commit[:7])}</a>, committed {_e(self.committed)} UTC.')
+        found = data.view(self.matrix, "", data.Filters(), None)
+        picks = data.picks_line(found.picks, self.matrix)
+        facts = (f'<span id="answer" role="status">{_e(found.count)}<span id="answer-picks" class="vh">'
+                 f'{_e(" " + picks if picks else "")}</span></span> '
+                 f"{_count(len(self.matrix.runtimes), 'engine', 'engines')} and "
+                 f"{_count(len(self.matrix.clients), 'agent client', 'agent clients')}. "
+                 f"Measured on {_e(self.hardware)}, "
+                 f'<span class="nw">{_e(min(dates))}</span> to <span class="nw">{_e(max(dates))}</span>. '
+                 '<a href="#about">About the data</a>')
         return "\n".join([
             "<header>", f"<h1>{_e(TITLE)}</h1>", f'<p class="lead">{_e(LEAD)}</p>', f'<p class="facts">{facts}</p>',
             '<details id="versions" open>', "<summary>Versions</summary>", self.versions(), "</details>",
@@ -489,26 +484,38 @@ class _Page:
             '<thead role="rowgroup"><tr role="row">' + "".join(heads) + "</tr></thead>", '<tbody role="rowgroup">',
             *rows, "</tbody>", "</table>"])
 
+    def _pair_link(self, model_id: str, runtime: str, words: str) -> str:
+        return f'<a href="#d-{_e(runtime)}-{_e(model_id)}">{_e(words)}</a>'
+
     def use_lists(self) -> str:
+        """Each view but All models as a list (2026-11-19 plan ruling 11): its rule, its count and picks lines, and its rows."""
         models = {model.id: model for model in self.matrix.models}
-        parts = ['<section id="use-cases">', '<h2 id="use-cases-title">Use cases</h2>']
+        default = f", default in the {self.client_labels['opencode']} config"
+        parts = ['<section id="use-cases">', '<h2 id="use-cases-title">Each view as a list</h2>']
         for use in data.USE_CASES[1:]:
             found = data.view(self.matrix, use.id, data.Filters(), None)
             parts += [f'<section class="use" data-use="{_e(use.id)}">', f"<h3>{_e(data.view_name(use, self.matrix))}</h3>",
-                      f'<p class="rule">{_e(data.rule_line(use, self.matrix))}</p>', f'<p class="answer">{_answer(found)}</p>']
-            if found.rows:
-                parts.append("<ol>")
-                for model_id in found.rows:
-                    cells = {cell.runtime: cell for cell in models[model_id].cells}
-                    links = []
-                    for _, runtime in (key for key in found.cells if key[0] == model_id):
-                        facts = cells[runtime].recipe
-                        links.append(f'<a href="#d-{_e(runtime)}-{_e(model_id)}">{_e(self.labels[runtime])} '
-                                     f"{_e(data._speed_text(facts.decode))}, "
-                                     f"{facts.context // 1024}k</a>")
-                    parts.append(f"<li>{_e(model_id)}: {'; '.join(links)}</li>")
-                parts.append("</ol>")
-            parts.append("</section>")
+                      f'<p class="rule">{_e(data.rule_line(use, self.matrix))}</p>']
+            if not found.rows:
+                parts += [f"<p>{_e(data.EMPTY)}</p>", "</section>"]
+                continue
+            picks = "; ".join(f"{_e(pick.label)}: " + self._pair_link(pick.model, pick.runtime,
+                                                                      f"{pick.model} on {self.labels[pick.runtime]}")
+                              for pick in found.picks)
+            parts += [f'<p class="count">{_e(found.count)}' + (f" Picks: {picks}." if picks else "") + "</p>", "<ol>"]
+            for model_id in found.rows:
+                cells = {cell.runtime: cell for cell in models[model_id].cells}
+                links = []
+                for _, runtime in (key for key in found.cells if key[0] == model_id):
+                    facts = cells[runtime].recipe
+                    speed = "speed not recorded" if facts.decode is None else f"{data.speed_text(facts.decode)} tok/s"
+                    words = f"{self.labels[runtime]} {speed}, {facts.context // 1024}k"
+                    link = self._pair_link(model_id, runtime, words)
+                    if use.id == "opencode" and (model_id, runtime) == self.matrix.default:
+                        link += _e(default)
+                    links.append(link)
+                parts.append(f"<li>{_e(model_id)}: {'; '.join(links)}</li>")
+            parts += ["</ol>", "</section>"]
         parts.append("</section>")
         return "\n".join(parts)
 
@@ -739,7 +746,7 @@ class _Page:
         links = self.links
         tree = links.repo_link("")
         parts = [
-            "<footer>", "<h2>About the data</h2>",
+            "<footer>", '<h2 id="about">About the data</h2>',
             f'<p>Built from the repository at commit <a href="{_e(tree)}"><code>{_e(self.build.commit)}</code></a>, '
             f"committed {_e(self.committed)} UTC.</p>",
             f'<p>Data: the recipes in <a href="{_e(links.repo_link("recipes"))}">recipes/</a>, the '
@@ -758,15 +765,15 @@ class _Page:
         return "\n".join(parts)
 
     def template(self) -> str:
-        spans = []
-        for phrase in data.phrases(self.matrix):
-            content = _phrase(phrase)
-            if phrase.kind == "empty":
-                content += ' <button type="button" class="clear">Clear filters</button>'
-            spans.append(_start("span", [("data-kind", phrase.kind), ("data-for", phrase.target or "")]) + content
-                         + "</span>")
-        spans += [_start("span", [("data-kind", "rule"), ("data-for", use.id)]) + _e(data.rule_line(use, self.matrix))
-                  + "</span>" for use in data.USE_CASES]
+        """The built text the script copies: a rule span per view, the empty line and a role span per role key."""
+        spans = [_start("span", [("data-kind", "rule"), ("data-for", use.id)]) + _e(data.rule_line(use, self.matrix))
+                 + "</span>" for use in data.USE_CASES]
+        spans.append(_start("span", [("data-kind", "empty"), ("data-for", "")]) + _e(data.EMPTY)
+                     + ' <button type="button" class="clear">Clear filters</button></span>')
+        for role in [*data.ROLES, *(f"engine-{runtime.id}" for runtime in self.matrix.runtimes)]:
+            words = data.role_words(role, self.matrix)
+            spans.append(_start("span", [("data-kind", "role"), ("data-for", role),
+                                         ("data-mid", words[:1].lower() + words[1:])]) + _e(words) + "</span>")
         return '<template id="phrases">\n' + "\n".join(spans) + "\n</template>"
 
     def body(self, script: str) -> str:
@@ -775,8 +782,7 @@ class _Page:
         return "\n".join([
             "<body>", '<a class="skip" href="#matrix">Skip to the matrix</a>', self.header(), "<main>",
             f'<p class="only-no-js">{_e(NO_JS)}</p>', f'<p id="print-view" class="print-only">{_e(print_line)}</p>',
-            self.uses(), f'<p id="answer" role="status">{_answer(data.view(self.matrix, "", data.Filters(), None))}</p>',
-            self.toolbar(), '<div id="notice" hidden>', '<p id="notice-text"></p>',
+            self.uses(), self.toolbar(), '<div id="notice" hidden>', '<p id="notice-text"></p>',
             '<button type="button" id="dismiss">Dismiss</button>', "</div>", self.legend(), self.matrix_table(),
             self.use_lists(), self.details(), '<p id="live" class="vh" aria-live="polite"></p>', "</main>",
             self.footer(), '<dialog id="drawer">', '<button type="button" id="close">Close</button>',

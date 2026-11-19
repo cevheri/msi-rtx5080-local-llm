@@ -50,6 +50,15 @@ class SiteRepositoryTest(unittest.TestCase):
                  if cell.status == "runs" and cell.recipe.opencode == matrix.opencode_default]
         self.assertEqual(pairs, [matrix.default])
 
+    def test_no_view_names_a_pair_twice(self):
+        matrix = data.load(REPO)
+        for use in data.USE_CASES:
+            for sort, _ in data.SORTS:
+                with self.subTest(use=use.id, sort=sort):
+                    picks = data.view(matrix, use.id, data.Filters(), sort).picks
+                    self.assertLessEqual(len(picks), 3)
+                    self.assertEqual(len({(pick.model, pick.runtime) for pick in picks}), len(picks))
+
 
 if __name__ == "__main__":
     unittest.main()

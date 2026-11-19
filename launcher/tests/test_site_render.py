@@ -233,7 +233,7 @@ class SiteRenderTest(unittest.TestCase):
                          ["Filters and use cases need JavaScript; the full matrix and each use case as a list are below."])
         self.assertEqual((table.tag, table.attrs.get("tabindex")), ("table", "-1"))
         self.assertEqual(tree.find_all("a", "skip")[0].attrs["href"], "#matrix")
-        self.assertEqual(tree.by_id("answer").attrs.get("role"), "status")
+        self.assertEqual((tree.by_id("answer").tag, tree.by_id("answer").attrs.get("role")), ("span", "status"))
         self.assertEqual(tree.by_id("uses").attrs.get("aria-describedby"), "use-rule")
         self.assertEqual(tree.by_id("ram").attrs.get("aria-describedby"), "ram-help")
         self.assertEqual(squash(tree.by_id("ram-help")), "./llmctl up refuses to start a recipe when less RAM than its "
@@ -255,46 +255,65 @@ class SiteRenderTest(unittest.TestCase):
                     self.assertIn("details", section.attrs["class"].split())
                     self.assertEqual((section.attrs["data-model"], section.attrs["data-engine"]),
                                      (model.id, cell.runtime))
-        self.assertEqual(squash(tree.by_id("answer")), data.view(matrix, "", data.Filters(), None).answer)
+        v = data.view(matrix, "", data.Filters(), None)
+        self.assertEqual(squash(tree.by_id("answer")), v.count + " " + data.picks_line(v.picks, matrix))
+        answer_picks = tree.by_id("answer-picks")
+        self.assertEqual((answer_picks.attrs.get("class"), answer_picks.text()),
+                         ("vh", " " + data.picks_line(v.picks, matrix)))
 
-        def check_uses(matrix, tree):
-            """The static use-case lists (ruling 10) and the phrase template (rulings 5 and 6) of one page."""
+        def check_lists(matrix, tree):
+            """The static view lists (2026-11-19 plan ruling 11) and the phrase template of one page."""
             engine_labels = {runtime.id: runtime.label for runtime in matrix.runtimes}
             models = {model.id: model for model in matrix.models}
-            uses = {node.attrs["data-use"]: node for node in tree.find_all("section", "use")}
+            lists = tree.by_id("use-cases")
+            self.assertEqual(squash(lists.find_all("h2")[0]), "Each view as a list")
+            uses = {node.attrs["data-use"]: node for node in lists.find_all("section", "use")}
             self.assertEqual(list(uses), [use.id for use in data.USE_CASES[1:]])
             for use in data.USE_CASES[1:]:
                 with self.subTest(use=use.id):
                     section, found = uses[use.id], data.view(matrix, use.id, data.Filters(), None)
                     self.assertEqual(squash(section.find_all("h3")[0]), data.view_name(use, matrix))
-                    self.assertEqual(squash(section.find_all("p", "rule")[0]), data.rule_line(use, matrix))
-                    self.assertEqual(squash(section.find_all("p", "answer")[0]), found.answer)
+                    paragraphs = [(node.attrs.get("class"), squash(node)) for node in section.find_all("p")]
+                    if not found.rows:
+                        self.assertEqual(paragraphs, [("rule", data.rule_line(use, matrix)),
+                                                      (None, "No model matches this view.")])
+                        self.assertEqual((section.find_all("ol"), section.find_all("button")), ([], []))
+                        continue
+                    self.assertEqual(paragraphs, [("rule", data.rule_line(use, matrix)),
+                                                  ("count", found.count + " " + data.picks_line(found.picks, matrix))])
+                    self.assertEqual([a.attrs["href"] for a in section.find_all("p", "count")[0].find_all("a")],
+                                     [f"#d-{p.runtime}-{p.model}" for p in found.picks])
                     expected = []
                     for model_id in found.rows:
                         cells = {cell.runtime: cell for cell in models[model_id].cells}
                         runtimes = [runtime for cell_model, runtime in found.cells if cell_model == model_id]
-                        items = []
+                        items, links = [], []
                         for runtime in runtimes:
                             facts = cells[runtime].recipe
-                            speed = "speed not recorded" if facts.decode is None else f"{facts.decode:g} tok/s"
-                            items.append(f"{engine_labels[runtime]} {speed}, {facts.context // 1024}k")
-                        expected.append((f"{model_id}: " + "; ".join(items),
-                                         [f"#d-{runtime}-{model_id}" for runtime in runtimes]))
-                    self.assertEqual([(squash(li), [a.attrs["href"] for a in li.find_all("a")])
+                            speed = ("speed not recorded" if facts.decode is None
+                                     else f"{data.speed_text(facts.decode)} tok/s")
+                            default = (", default in the OpenCode config"
+                                       if use.id == "opencode" and (model_id, runtime) == matrix.default else "")
+                            words = f"{engine_labels[runtime]} {speed}, {facts.context // 1024}k"
+                            items.append(words + default)
+                            links.append((words, f"#d-{runtime}-{model_id}"))
+                        expected.append((f"{model_id}: " + "; ".join(items), links))
+                    self.assertEqual([(squash(li), [(squash(a), a.attrs["href"]) for a in li.find_all("a")])
                                       for li in section.find_all("li")], expected)
-                    self.assertEqual(len(section.find_all("ol")), 1 if found.rows else 0)
+                    self.assertEqual(len(section.find_all("ol")), 1)
             spans = tree.by_id("phrases").find_all("span")
-            expected = [(phrase.kind, phrase.target or "",
-                         phrase.text + (" Clear filters" if phrase.kind == "empty" else ""),
-                         ["#" + phrase.target] if phrase.link else []) for phrase in data.phrases(matrix)]
-            expected += [("rule", use.id, data.rule_line(use, matrix), []) for use in data.USE_CASES]
-            self.assertEqual([(span.attrs["data-kind"], span.attrs["data-for"], squash(span),
-                               [a.attrs["href"] for a in span.find_all("a")]) for span in spans], expected)
+            roles = [*data.ROLES, *(f"engine-{runtime}" for runtime in ADAPTERS)]
+            expected = [("rule", use.id, data.rule_line(use, matrix), None) for use in data.USE_CASES]
+            expected.append(("empty", "", "No model matches this view. Clear filters", None))
+            expected += [("role", key, data.role_words(key, matrix),
+                          data.role_words(key, matrix)[:1].lower() + data.role_words(key, matrix)[1:]) for key in roles]
+            self.assertEqual([(span.attrs["data-kind"], span.attrs["data-for"], squash(span), span.attrs.get("data-mid"))
+                              for span in spans], expected)
             empty = next(span for span in spans if span.attrs["data-kind"] == "empty")
             self.assertEqual([(node.attrs, node.text()) for node in empty.find_all("button")],
                              [({"type": "button", "class": "clear"}, "Clear filters")])
 
-        check_uses(matrix, tree)
+        check_lists(matrix, tree)
         self.assertEqual(squash(tree.by_id("caption")), "Decode speed, context and client results of each model on each engine. "
                          "View: All models; sorted by: Top 3 rank, then speed.")
         self.assertEqual(squash(tree.by_id("print-view")), "View: All models; sorted by: Top 3 rank, then speed.")
@@ -376,8 +395,8 @@ class SiteRenderTest(unittest.TestCase):
                                                                       row(prefix(runtime, recipe_id), "pi", "no answer"))])
         matrix = self.fixture.load()
         tree = parse(render.page(matrix, BUILD, self.fixture.root))
-        self.assertEqual(data.view(matrix, "every-client", data.Filters(), None).answer, "No recipe matches this view.")
-        check_uses(matrix, tree)
+        self.assertEqual(data.view(matrix, "every-client", data.Filters(), None).rows, ())
+        check_lists(matrix, tree)
 
     def test_page_loads_nothing_from_other_sites(self):
         page = self.page()
@@ -563,10 +582,15 @@ class SiteRenderTest(unittest.TestCase):
         oldest, newest = min(recipe.date for recipe in facts), max(recipe.date for recipe in facts)
         tree = parse(render.page(matrix, BUILD, self.fixture.root))
         squash = lambda node: " ".join(node.text().split())
+        picks = ("Picks: Highest ranked: qwen3.6-35b-a3b on SGLang; Fastest: mellum2.1-12b on llama.cpp; Fastest in the "
+                 "Top 3: gpt-oss-20b on llama.cpp.")
         self.assertEqual(squash(tree.find_all("p", "facts")[0]),
-                         f"Measured on {hardware} from {oldest} to {newest}; clients last tested 2026-11-18. "
-                         "Built from commit aaaaaaa, committed 1970-01-01 00:00 UTC.")
-        self.assertEqual([node.attrs["href"] for node in tree.find_all("p", "facts")[0].find_all("a")], [TREE])
+                         f"6 models; 10 of 18 pairs run. {picks} 3 engines and 5 agent clients. Measured on {hardware}, "
+                         f"{oldest} to {newest}. About the data")
+        self.assertEqual([(squash(node), node.attrs["href"]) for node in tree.find_all("p", "facts")[0].find_all("a")],
+                         [("About the data", "#about")])
+        self.assertEqual([squash(node) for node in tree.find_all("p", "facts")[0].find_all("span", "nw")], [oldest, newest])
+        self.assertEqual((tree.by_id("about").tag, squash(tree.by_id("about"))), ("h2", "About the data"))
         images = ", ".join(f"{runtime.label} {runtime.image}" for runtime in matrix.runtimes)
         versions = tree.by_id("versions")
         self.assertIn("open", versions.attrs)
@@ -646,8 +670,8 @@ class SiteRenderTest(unittest.TestCase):
                          records={"001-hermes-version": version_record("Hermes Agent v0.24.0")})
         tree = parse(self.page())
         self.assertEqual(squash(tree.find_all("p", "facts")[0]),
-                         f"Measured on {hardware} from {oldest} to {newest}; clients last tested 2026-11-18. "
-                         "Built from commit aaaaaaa, committed 1970-01-01 00:00 UTC.")
+                         f"6 models; 10 of 18 pairs run. {picks.replace('Top 3', 'Top 4')} 3 engines and 5 agent clients. "
+                         f"Measured on {hardware}, {oldest} to {newest}. About the data")
         self.assertEqual(squash(tree.by_id("versions").find_all("p")[0]),
                          f"Images llmctl starts: {images}. Clients, as the e2e of 2026-11-18 recorded them: OpenCode "
                          "opencode v2.3.0, Hermes Hermes Agent v0.23.1 (llmctl-fixture-e2e), Hermes Hermes Agent v0.24.0 "

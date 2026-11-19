@@ -227,29 +227,15 @@ class Pick:
 
 
 @dataclass(frozen=True)
-class Phrase:
-    """One part of an answer line; render wraps `link` in a link to `target`."""
-    kind: str
-    target: str | None
-    before: str
-    link: str
-    after: str
-
-    @property
-    def text(self) -> str:
-        return self.before + self.link + self.after
-
-
-@dataclass(frozen=True)
 class View:
+    """One view: its rows and cells in order, the count line ("" when empty), the pick cards, the data-k of the key
+    parts it shows in KEY_PARTS order (() hides the key) and the model ID the divider row precedes (None hides it)."""
     rows: tuple[str, ...]
     cells: tuple[tuple[str, str], ...]
-    head: str
-    phrases: tuple[Phrase, ...]
-
-    @property
-    def answer(self) -> str:
-        return " ".join(part for part in (self.head, *(phrase.text for phrase in self.phrases)) if part)
+    count: str
+    picks: tuple[Pick, ...]
+    key: tuple[str, ...]
+    divider: str | None
 
 
 def _relative(root: Path, path: Path) -> str:
@@ -679,8 +665,9 @@ ROLES = {
 ENGINE_ROLE = "Fastest on {engine}"
 CELL_KEYS = ("rank", "speed", "context", "size")
 ROW_KEYS = ("gap", "name")
-NO_BEST = Phrase("no-best", None, "Best quality: no ranked model is in this view.", "", "")
-EMPTY = Phrase("empty", None, "No recipe matches this view.", "", "")
+KEY_PARTS = ("counts", "known-issue", "failed", "not-tested", "not-supported", "letters", "setup", "fastest", "bars")
+EMPTY = "No model matches this view."
+NO_PICKS = "No pair that runs is in this view, so there is nothing to start."
 
 
 def fastest_tags(speeds: Mapping[str, float | None]) -> dict[str, str]:
@@ -1043,45 +1030,35 @@ def _speed_text(decode: float | None) -> str:
     return "speed not recorded" if decode is None else f"{decode:g} tok/s"
 
 
-def _best(model: Model, cell: Cell, label: str) -> Phrase:
-    return Phrase("best", f"d-{cell.runtime}-{model.id}", "Best quality: ", f"{model.id} on {label}",
-                  f" (rank {model.rank}), {_speed_text(cell.recipe.decode)}, {cell.recipe.context // 1024}k.")
-
-
-def _fastest(model: Model, cell: Cell, label: str) -> Phrase:
-    return Phrase("fastest", f"d-{cell.runtime}-{model.id}", "Fastest: ", f"{model.id} on {label}",
-                  f", {_speed_text(cell.recipe.decode)}, {cell.recipe.context // 1024}k.")
-
-
-def _gap_phrase(model: Model, labels: Mapping[str, str]) -> Phrase:
-    """The Biggest difference phrase of a row with two speeds: the fastest engine first in engine order on a tie, the
-    slowest last."""
-    speeds = [(cell.recipe.decode, cell.runtime) for cell in model.cells
-              if cell.status == "runs" and cell.recipe.decode is not None]
-    fast = max(speeds, key=lambda pair: pair[0])
-    slow = min(reversed(speeds), key=lambda pair: pair[0])
-    return Phrase("gap", f"m-{model.id}", "Biggest difference: ", model.id,
-                  f", {fast[0]:g} tok/s on {labels[fast[1]]} against {slow[0]:g} on {labels[slow[1]]}.")
-
-
-def phrases(matrix: Matrix) -> tuple[Phrase, ...]:
-    """The answer-line phrases the script copies: best per Runs cell of a ranked model, then fastest per Runs cell with
-    a speed (models in order, engines in ADAPTERS order), then gap per row with two speeds, then no-best and empty."""
-    labels = {runtime.id: runtime.label for runtime in matrix.runtimes}
-    runs = [(model, cell) for model in matrix.models for cell in model.cells if cell.status == "runs"]
-    return (*(_best(model, cell, labels[cell.runtime]) for model, cell in runs if model.rank is not None),
-            *(_fastest(model, cell, labels[cell.runtime]) for model, cell in runs if cell.recipe.decode is not None),
-            *(_gap_phrase(model, labels) for model in matrix.models if _gap(model) is not None),
-            NO_BEST, EMPTY)
-
-
 def _counted(n: int, one: str, many: str) -> str:
     return f"{n} {one if n == 1 else many}"
 
 
+def count_line(rows: int, cells: int, runs: int, pairs: int, plain: bool) -> str:
+    """The count line: the plain form names the Runs cells of all pairs, the other form the cells in view; "" without
+    rows."""
+    if not rows:
+        return ""
+    if plain:
+        return f"{_counted(rows, 'model', 'models')}; {runs} of {pairs} pairs run."
+    return f"{_counted(rows, 'model', 'models')}; {_counted(cells, 'pair matches', 'pairs match')}."
+
+
+def _key(matrix: Matrix, runs: Sequence[Cell]) -> tuple[str, ...]:
+    """The key parts a view with these in-view Runs cells shows, in KEY_PARTS order (Key)."""
+    if not runs:
+        return ()
+    held = {result.cls for cell in runs for result in cell.clients}
+    classes = [cls for cls in CLASSES if cls != "passed" and cls in held]
+    shown = {"counts": True, **{cls: True for cls in classes}, "letters": bool(classes),
+             "setup": any(cell.setup for cell in runs), "fastest": any(cell.fastest is not None for cell in runs),
+             "bars": top_speed(matrix) is not None}
+    return tuple(part for part in KEY_PARTS if shown.get(part, False))
+
+
 def view(matrix: Matrix, use: str, filters: Filters, sort: str | None) -> View:
-    """The rows, cells and answer line of one view, as the page script computes them (design D9); sort None means
-    the use case's own."""
+    """The rows, cells, count line, picks, key parts and divider of one view, as the page script computes them
+    (design D9, R-D3, R-D16); sort None means the view's own."""
     cases = {case.id: case for case in USE_CASES}
     if use not in cases:
         raise ValueError(f"unknown use case {use!r}")
@@ -1097,7 +1074,7 @@ def view(matrix: Matrix, use: str, filters: Filters, sort: str | None) -> View:
         if cells:
             shown.append((model, cells))
     if not shown:
-        return View((), (), "", (EMPTY,))
+        return View((), (), "", (), (), None)
 
     if key in CELL_KEYS:
         def row_order(entry: tuple[Model, list[Cell]]) -> tuple[int, int]:
@@ -1109,23 +1086,18 @@ def view(matrix: Matrix, use: str, filters: Filters, sort: str | None) -> View:
                  for model, cells in shown]
     else:
         shown.sort(key=lambda entry: _place(entry[0], key))
-    runs = [(model, cell) for model, cells in shown for cell in cells if cell.status == "runs"]
+    runs = [cell for _, cells in shown for cell in cells if cell.status == "runs"]
     rows = tuple(model.id for model, _ in shown)
     cells = tuple((model.id, cell.runtime) for model, cells in shown for cell in cells)
-    if case.sort == "gap":
-        head = f"{view_name(case, matrix)}: {_counted(len(rows), 'model', 'models')}."
-        gapped = sorted((model for model, _ in shown if _gap(model) is not None), key=lambda model: _place(model, "gap"))
-        return View(rows, cells, head, (_gap_phrase(gapped[0], labels),) if gapped else ())
-    head = (f"{view_name(case, matrix)}: {_counted(len(rows), 'model', 'models')}, "
-            f"{_counted(len(runs), 'recipe that runs', 'recipes that run')}.")
-    if not runs:
-        return View(rows, cells, head, (NO_BEST,))
-    best = min(runs, key=lambda pair: _place(pair[1], "rank"))
-    fastest = min(runs, key=lambda pair: _place(pair[1], "speed"))
-    found = [_best(best[0], best[1], labels[best[1].runtime]) if best[0].rank is not None else NO_BEST]
-    if fastest[1].recipe.decode is not None:
-        found.append(_fastest(fastest[0], fastest[1], labels[fastest[1].runtime]))
-    return View(rows, cells, head, tuple(found))
+    plain = not use and filter_count(filters) == 0 and not filters.search.strip(ASCII_SPACE)
+    count = count_line(len(rows), len(cells), len(runs), len(matrix.models) * len(matrix.runtimes), plain)
+    divider = None
+    if key == "rank":
+        ranks = [model.rank for model, _ in shown]
+        first = next((n for n, rank in enumerate(ranks) if rank is None), None)
+        if first is not None and all(rank is None for rank in ranks[first:]):
+            divider = rows[first]
+    return View(rows, cells, count, picks(matrix, use, cells, key), _key(matrix, runs), divider)
 
 
 def load(root: Path) -> Matrix:
