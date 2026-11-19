@@ -7,7 +7,7 @@ from launcher import clients
 from launcher.catalog import load_catalog
 from launcher.e2e import summary
 from launcher.runtimes import ADAPTERS
-from launcher.site import data, render
+from launcher.site import data, fit, render
 from launcher.tests.fakes import REPO
 from launcher.tests.site_fixture import well_formed_problems
 
@@ -65,6 +65,18 @@ class SiteRepositoryTest(unittest.TestCase):
                     picks = data.view(matrix, use.id, data.Filters(), sort).picks
                     self.assertLessEqual(len(picks), 3)
                     self.assertEqual(len({(pick.model, pick.runtime) for pick in picks}), len(picks))
+
+    def test_every_state_has_a_pick_that_agrees_with_its_row(self):
+        b = fit.bench(data.load(REPO))
+        for m in fit.machines():
+            for agent in (*b.agents, fit.NONE):
+                with self.subTest(machine=m, agent=agent):
+                    pick = fit.hero_pick(b, m, agent)
+                    row = fit.row_setup(b, pick.setup.model, m)
+                    if row == pick.setup:
+                        self.assertEqual(fit.verdict(row, m, b.test_gpu).key, pick.verdict.key)
+                    if pick.verdict.key == "ok":
+                        self.assertEqual(fit.verdict(row, m, b.test_gpu).key, "ok")
 
 
 if __name__ == "__main__":
