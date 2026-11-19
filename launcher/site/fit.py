@@ -308,14 +308,15 @@ def more_memory(bench: Bench, machine: Machine) -> tuple[More, ...]:
 
 def change(setup: Setup, verdict: Verdict) -> Change | None:
     """The change plan of fix 5 (spec 5.7); None unless the verdict is change. A smaller context is never the plan
-    when the model files alone are larger than the usable card."""
+    when the model files alone are larger than the usable card, compared in the units the page prints: the download
+    in GB of 10**9 bytes, the card in GiB counted as GB."""
     if verdict.key != "change":
         return None
     if verdict.short is None:
         gpu = None
     elif setup.offload:
         gpu = "experts" if setup.runtime == "llamacpp" else "resident"
-    elif Fraction(setup.size_bytes, 2 ** 30) > Fraction(verdict.usable_mib, 1024):
+    elif Fraction(setup.size_bytes, 10 ** 9) > Fraction(verdict.usable_mib, 1024):
         gpu = "layers" if setup.runtime == "llamacpp" else "impossible"
     else:
         gpu = "context"

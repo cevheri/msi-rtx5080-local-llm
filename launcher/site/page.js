@@ -310,7 +310,9 @@
     const f = x.fit[mi];
     const panel = document.getElementById("your-machine");
     panel.querySelector("h2").textContent = text(D.panel[laptop ? 0 : 1]);
-    panel.querySelector(".verdict .on").textContent = text(x.label[laptop ? 0 : 1]);
+    const on = panel.querySelector(".verdict .on");
+    const label = text(x.label[laptop ? 0 : 1]);
+    if (on.textContent !== label) on.textContent = label;   // a live region: an unchanged label keeps its text node
     say(panel.querySelector(".verdict .vt"), D.verdict[f[0]], animate);
     const lap = x.fitLap;
     map(panel.querySelector(".hmap"), [f[1], f[2], laptop ? lap[0] : f[3], laptop ? lap[1] : f[4], f[5], x.rl,
@@ -365,7 +367,7 @@
     state.bad = "";   // the bad-value line shows until the next change (spec 4.1)
     if (key === "engine") {
       state.engine = D.setups.findIndex((x) => x.rt === input.value);
-      history.replaceState(history.state, "", location.pathname + location.search + "#engine-" + input.value);
+      history.replaceState(history.state, "", location.pathname + query() + "#engine-" + input.value);
       render(true);
       return;
     }

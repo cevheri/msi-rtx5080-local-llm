@@ -182,6 +182,86 @@ class SiteStateTest(unittest.TestCase):
         laptop = [text_of(S[i]) for s in st["setups"] for i in s["fitLap"]] + [text_of(S[i]) for i in st["pickLap"] if i >= 0]
         self.assertFalse([t for t in laptop if re.search(r"\byour\b", t, re.I)])
 
+    def assert_terminal(self, st, s, setup, matrix, labels, here):
+        """A setup's terminal parts, per agent where they depend on it, are words' for its own engine and agent."""
+        pack = state._Pack(render.Links(self.fixture.root, BUILD), here)
+        want = lambda value: state._Pack.text(pack, value)
+        got = lambda i: None if i < 0 else st["S"][i]
+        exp = lambda value: None if want(value) < 0 else pack.tables["S"][want(value)]
+        facts = cell_of(matrix, *setup.key).recipe
+        runtime = next(r for r in matrix.runtimes if r.id == setup.runtime)
+        engine = labels.engines[setup.runtime]
+        self.assertEqual(got(s["hd"]), exp(words.terminal_title(labels.models[setup.model], engine)))
+        self.assertEqual([got(i) for i in s["pull"]], [exp(x) for x in words.pull_lines(facts, engine, runtime.image_gb)])
+        self.assertEqual([got(i) for i in s["up"]], [exp(x) for x in words.up_lines(facts)])
+        self.assertEqual([got(i) for i in s["tail"]], [exp(x) for x in words.tail_lines(facts)])
+        for ai, agent in enumerate(st["agents"]):
+            self.assertEqual([got(i) for i in s["agent"][ai]],
+                             [exp(x) for x in words.agent_lines(facts, labels, setup.runtime, agent)])
+            self.assertEqual([got(i) for i in s["notes"][ai]],
+                             [exp(x) for x in words.terminal_notes(facts, labels, agent)])
+        if "ep" in s:
+            self.assertEqual(got(s["ep"]), exp(words.endpoint(runtime.port, facts.served)))
+            self.assertEqual(got(s["disk"]), exp(words.disk_check(facts.size_bytes, runtime.image_gb, engine)[0]))
+        return exp
+
+    def test_home_commands_and_change_plans_follow_their_setup_machine_and_agent(self):
+        # the pick's terminal parts and the override lines of fix 5 on every machine (spec 7.6, T1 to T9)
+        # our default needs 50 GiB of RAM on llama.cpp, so the hero picks it on SGLang, whose port and title differ
+        self.fixture.set_value("llamacpp", "qwen3.6-35b-a3b", "memory_gib", "50")
+        matrix = self.fixture.load()
+        b, labels = fit.bench(matrix), words.labels(matrix)
+        st = state.home_state(matrix, b, labels, render.Links(self.fixture.root, BUILD))
+        ids = [m.id for m in matrix.models]
+        picked = {r[1] for row in st["hero"] for r in row} | {r[1] for r in st["heroLap"]}
+        self.assertIn("sglang", {st["setups"][i]["rt"] for i in picked})
+        overs = 0
+        for i in sorted(picked):
+            s = st["setups"][i]
+            setup = next(x for x in b.setups if x.key == (ids[s["m"]], s["rt"]))
+            with self.subTest(setup=setup.key):
+                exp = self.assert_terminal(st, s, setup, matrix, labels, render.HOME)
+                for mi, m in enumerate(fit.machines()):
+                    verdict = fit.verdict(setup, m, b.test_gpu)
+                    lines = words.override_lines(setup, verdict, fit.change(setup, verdict), labels.first_engine)
+                    self.assertEqual([st["S"][j] for j in s["over"][mi]], [exp(x) for x in lines])
+                    overs += len(lines)
+        self.assertGreater(overs, 0)
+
+    def test_model_commands_notes_and_picks_follow_their_setup_machine_and_agent(self):
+        matrix = self.fixture.load()
+        b, labels = fit.bench(matrix), words.labels(matrix)
+        links = render.Links(self.fixture.root, BUILD)
+        seen, overs, notes = set(), 0, 0
+        for model in matrix.models:
+            st = state.model_state(matrix, b, labels, model, links)
+            here = render._model_path(model.id)
+            for s in st["setups"]:
+                setup = next(x for x in b.setups if x.key == (model.id, s["rt"]))
+                seen.add(s["rt"])
+                with self.subTest(setup=setup.key):
+                    exp = self.assert_terminal(st, s, setup, matrix, labels, here)
+                    for mi, m in enumerate(fit.machines()):
+                        verdict = fit.verdict(setup, m, b.test_gpu)
+                        lines = words.override_lines(setup, verdict, fit.change(setup, verdict), labels.first_engine)
+                        self.assertEqual([st["S"][j] for j in s["fit"][mi][9]], [exp(x) for x in lines])
+                        note = words.fit_note(labels, setup, verdict, setup.runtime)
+                        self.assertEqual(None if s["fit"][mi][8] < 0 else st["S"][s["fit"][mi][8]], exp(note))
+                        overs, notes = overs + len(lines), notes + (note is not None)
+            for mi, m in enumerate(fit.machines()):
+                for ai, agent in enumerate(st["agents"]):
+                    with self.subTest(model=model.id, machine=m, agent=agent):
+                        found = fit.recommend(b, m, agent)
+                        expected = -1 if found is None else exp(words.agent_pick(labels, found, agent, False))
+                        self.assertEqual(-1 if st["pick"][mi][ai] < 0 else st["S"][st["pick"][mi][ai]], expected)
+            for ai, agent in enumerate(st["agents"]):
+                found = fit.recommend(b, b.home, agent)
+                expected = -1 if found is None else exp(words.agent_pick(labels, found, agent, True))
+                self.assertEqual(-1 if st["pickLap"][ai] < 0 else st["S"][st["pickLap"][ai]], expected)
+        self.assertEqual(seen, {"llamacpp", "vllm", "sglang"})
+        self.assertGreater(overs, 0)
+        self.assertGreater(notes, 0)
+
     def test_pages_embed_the_state_the_script_reads(self):
         matrix = self.fixture.load()
         pages = self.pages(matrix)
@@ -364,6 +444,34 @@ class SiteStateTest(unittest.TestCase):
         reset = re.search(r'reset\.addEventListener\("click", .*?\n    }\);', js, re.S).group(0)
         self.assertRegex(reset, r'render\(true\);\n      '
                                 r'document\.querySelector\("\[data-k=gpu\]:checked"\)\.focus\(\);')
+
+    def test_script_pins_the_address_rules(self):
+        # spec 4.1 to 4.4, Review Focus 2: only a value the state lists is used, a repeated parameter is a bad value, only
+        # a fragment that names a running engine changes the engine, links to other pages carry the shown state, and
+        # "Use this engine" writes the shown state, not the address it arrived with
+        js = PAGE_JS.read_text(encoding="utf-8")
+        body = lambda name: re.search(r"\n  function " + name + r"\(.*?\n  }\n", js, re.S).group(0)
+        read = body("readURL")
+        self.assertIn('return all.length === 0 ? null : all.length === 1 ? all[0] : "";', read)
+        self.assertIn("if ((gpu === null || gpus.includes(gpu)) && (ram === null || rams.includes(ram))) {", read)
+        self.assertIn("if (agent !== null && D.agents.includes(agent)) {", read)
+        self.assertRegex(read, r'} else {\n      state\.mi = D\.home;\n      state\.described = false;\n'
+                               r'      state\.bad = "machine";')
+        self.assertIn("if (engine !== null) state.engine = engine;", body("followHash"))
+        self.assertIn('if (a.origin === location.origin && !a.getAttribute("href").startsWith("#")) a.search = qs;',
+                      body("carry"))
+        self.assertIn("const qs = query();", body("carry"))
+        handler = re.search(r'document\.addEventListener\("change", .*?\n  }\);', js, re.S).group(0)
+        engine = re.search(r'if \(key === "engine"\) \{.*?\n    }', handler, re.S).group(0)
+        self.assertIn('history.replaceState(history.state, "", location.pathname + query() + "#engine-" + input.value);',
+                      engine)
+        self.assertNotIn("location.search", engine)
+
+    def test_script_rewrites_the_live_verdict_label_only_when_it_changes(self):
+        # p.verdict is a live region: an unchanged label must keep its text node, or a screen reader may read it again
+        js = PAGE_JS.read_text(encoding="utf-8")
+        self.assertNotIn('querySelector(".verdict .on").textContent =', js)
+        self.assertIn("if (on.textContent !== label) on.textContent = label;", js)
 
     def test_script_constants_match_draw(self):
         js = (REPO / "launcher/site/page.js").read_text(encoding="utf-8")

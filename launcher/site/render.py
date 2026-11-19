@@ -239,6 +239,14 @@ def _e(text: object) -> str:
     return html.escape(str(text), quote=True)
 
 
+def _vh(text: str) -> str:
+    """A visually hidden text: a space at its edge is a no-break space, because the absolutely positioned span would
+    collapse a plain one and join its words to the visible ones ("Rank1")."""
+    core = text.strip(" ")
+    lead, trail = len(text) - len(text.lstrip(" ")), len(text) - len(text.rstrip(" "))
+    return "&#160;" * lead + _e(core) + "&#160;" * trail
+
+
 def _sha(text: str) -> str:
     return "'sha256-" + base64.b64encode(hashlib.sha256(text.encode("utf-8")).digest()).decode("ascii") + "'"
 
@@ -488,7 +496,7 @@ def _row_html(home: _Home, model: data.Model, scale: int) -> str:
         tags.append(f'<span class="tag">{_e(words.TAGS["chat"])}</span>')
     tags.append(f'<span class="tag pick-tag"{"" if pick else " hidden"}>{_e(words.TAGS["pick"])}</span>')
     hidden = words.ROW_HIDDEN
-    rank = "" if model.rank is None else f'<span class="vh">{_e(hidden["rank"])}</span>{model.rank}'
+    rank = "" if model.rank is None else f'<span class="vh">{_vh(hidden["rank"])}</span>{model.rank}'
     engine = words.row_engine(labels, setup) or ""
     strip = draw.strip(setup, machine, bench.test_gpu, scale)
     return (
@@ -499,12 +507,12 @@ def _row_html(home: _Home, model: data.Model, scale: int) -> str:
         f'<span class="vh galt">{_e(words.uses(labels, setup))}</span></div>'
         f'<div class="facts"><span class="num n sp"><b>{_e(words.speed(facts.decode))}</b>{_speed_unit(facts.decode)}'
         f'</span><span class="sep">, </span><span class="num n cx"><b>{_e(words.context_k(facts.context))}</b>'
-        f'<span class="vh">{_e(hidden["context"])}</span></span><span class="sep">, </span>'
+        f'<span class="vh">{_vh(hidden["context"])}</span></span><span class="sep">, </span>'
         f'<span class="num n dl"><b>{_e(words.gb_bytes(facts.size_bytes))}</b> <span class="unit">{_e(words.GB_UNIT)}'
-        f'</span><span class="vh">{_e(hidden["download"])}</span></span></div>'
-        f'<div class="more"><span class="vh"><span class="agp">{_e(words.agents_head(agent, labels))}</span>: </span>'
+        f'</span><span class="vh">{_vh(hidden["download"])}</span></span></div>'
+        f'<div class="more"><span class="vh"><span class="agp">{_e(words.agents_head(agent, labels))}</span>:&#160;</span>'
         f'<span class="ag">{_e(words.agents_cell(cell.clients, labels, setup.chat_only, agent))}</span>'
-        f'<span class="dot">. </span><span class="vh"><span class="vdp">{_e(words.machine_head(True))}</span>: </span>'
+        f'<span class="dot">. </span><span class="vh"><span class="vdp">{_e(words.machine_head(True))}</span>:&#160;</span>'
         f'<span class="vd{" ok" if verdict.key == "ok" else ""}">{_e(words.verdict_word(verdict.key, labels))}</span>'
         '<span class="dot">.</span></div></li>')
 
@@ -556,7 +564,7 @@ def get_started_html(home: _Home) -> str:
              *words.up_lines(facts), *words.agent_lines(facts, labels, setup.runtime, agent), *words.tail_lines(facts)]
     title = words.terminal_title(labels.models[setup.model], engine)
     notes = "".join(f"<li>{rich_html(note, links, HOME)}</li>" for note in words.terminal_notes(facts, labels, agent))
-    refusals = "".join(f"<div><dt><code>{_e(message)}</code></dt><dd>{_e(fix)}</dd></div>"
+    refusals = "".join(f"<div><dt><code>{_e(message)}</code></dt><dd>{rich_html(fix, links, HOME)}</dd></div>"
                        for message, fix in words.REFUSALS)
     more = "".join(f"<li>{rich_html(item, links, HOME)}</li>" for item in words.REFUSE_LINKS)
     return (
@@ -569,7 +577,7 @@ def get_started_html(home: _Home) -> str:
         f'{terminal_html(title, words.COMMANDS_LABEL, lines)}<ul class="tnotes">{notes}</ul>'
         f'<p class="ep">{rich_html(words.endpoint(runtime.port, facts.served), links, HOME)}</p></div>'
         f'<div class="sub" id="if-llmctl-refuses"><h3>{_e(words.REFUSE_HEADING)}</h3>'
-        f'<p class="prose">{_e(words.REFUSE_LEAD)}</p><dl class="refuse">{refusals}</dl><ul class="links">{more}</ul>'
+        f'<p class="prose">{rich_html(words.REFUSE_LEAD, links, HOME)}</p><dl class="refuse">{refusals}</dl><ul class="links">{more}</ul>'
         "</div></section>")
 
 
@@ -600,7 +608,8 @@ def compare_html(home: _Home) -> str:
                 f'<span class="sub2 ags">'
                 f'{_e(words.compare_agents(cell.clients, labels, setup.chat_only, runtime.id, agent))}</span>'
                 + ("" if lead is None else f'<span class="lead2">{_e(lead)}</span>')
-                + f'<span class="stripbox" aria-hidden="true">{draw.strip_html(strip)}</span></a></td>')
+                + f'<span class="stripbox" aria-hidden="true">{draw.strip_html(strip)}</span>'
+                f'<span class="vh">{_e(words.uses(labels, setup))}</span></a></td>')
 
     def row_html(model: data.Model) -> str:
         chat = f' <span class="tag">{_e(words.TAGS["chat"])}</span>' if model.chat_only else ""
@@ -704,7 +713,7 @@ def _per_html(page: _ModelPage, cell: data.Cell, inner: str) -> str:
     sub-heading without (spec 3.3 and 3.4)."""
     cur = " cur" if cell.runtime == page.chosen.runtime else ""
     return (f'<div class="per{cur}" data-rt="{_e(cell.runtime)}">'
-            f'<p class="per-h">{_e(words.on_engine(page.labels.engines[cell.runtime]))}</p>{inner}</div>')
+            f'<h3 class="per-h">{_e(words.on_engine(page.labels.engines[cell.runtime]))}</h3>{inner}</div>')
 
 
 def _model_top_html(page: _ModelPage) -> str:
@@ -716,7 +725,7 @@ def _model_top_html(page: _ModelPage) -> str:
     maker = words.maker_line(model)
     summary = words.summary(model, data.default_cell(model.id, model.cells), labels)
     speed, context, download = words.FACT_LABELS
-    figures = (f'<div class="figs" aria-label="{_e(words.FIGURES_ARIA)}">'
+    figures = (f'<div class="figs" role="group" aria-label="{_e(words.FIGURES_ARIA)}">'
                f'<p class="fe">{_e(words.figures_label(labels, setup.runtime, setup.default_engine))}</p><dl>'
                f'<div><dt>{_e(speed)}</dt><dd><b class="f-sp">{_e(words.speed(facts.decode))}</b>'
                f'{_speed_unit(facts.decode)}</dd></div>'
@@ -731,9 +740,9 @@ def _model_top_html(page: _ModelPage) -> str:
     verdict = fit.verdict(setup, machine, page.bench.test_gpu)
     chips = ('<div class="mchips" data-js-only hidden>'
              + chips_html("gpu", fit.GPUS, {g: words.gpu_chip(g) for g in fit.GPUS}, machine.gpu,
-                          words.GPU_CHIPS_LEGEND, cls="chipset")
+                          words.GPU_LEGEND, cls="chipset")
              + chips_html("ram", fit.RAMS, {r: words.ram_chip(r) for r in fit.RAMS}, machine.ram,
-                          words.RAM_CHIPS_LEGEND, cls="chipset") + "</div>")
+                          words.RAM_LEGEND, cls="chipset") + "</div>")
     title = words.title(labels, model.id, setup.runtime, False)            # M12 names the engine, default or not
     moe = words.moe_paragraph(setup)
     panel = (f'<section class="m-mach" id="your-machine" aria-labelledby="h-machine">'
@@ -849,8 +858,8 @@ def _agents_html(page: _ModelPage) -> str:
         for agent in page.bench.agents:
             result = next(item for item in cell.clients if item.client == agent)
             command = words.agent_command(facts, agent)
-            rows.append(f'<div class="ar" data-a="{_e(agent)}"><h3>{_e(labels.agents[agent])}'
-                        f'<span class="mine-tag">{_e(words.YOUR_AGENT)}</span></h3><div>'
+            rows.append(f'<div class="ar" data-a="{_e(agent)}"><h4>{_e(labels.agents[agent])}'
+                        f'<span class="mine-tag">{_e(words.YOUR_AGENT)}</span></h4><div>'
                         f'<p class="res">{_e(words.result_sentence(result, labels, facts.chat_only, cell.runtime))}</p>'
                         + ("" if command is None else f'<p class="ln">{rich_html(command, links, here)}</p>')
                         + f'<p class="th2">{_e(words.thinking_line(texts[agent]))}</p></div></div>')

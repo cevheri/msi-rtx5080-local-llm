@@ -193,11 +193,17 @@ def ram_chip(ram: int) -> str:
     return f"{ram} GB" + (" or more" if ram == fit.RAMS[-1] else "")
 
 
+def article(number: str) -> str:
+    """"a" or "an" before a number written in digits: "an" when it is read starting with eight, eleven or eighteen."""
+    whole = number.split(".")[0]
+    group = whole[:len(whole) % 3 or 3]
+    return "an" if group.startswith("8") or group in ("11", "18") else "a"
+
+
 def gpu_phrase(gpu: int) -> str:
     if gpu == fit.GPUS[-1]:
         return f"a GPU of {gpu} GB or more"
-    article = "an" if str(gpu).startswith("8") or gpu in (11, 18) else "a"
-    return f"{article} {gpu} GB GPU"
+    return f"{article(str(gpu))} {gpu} GB GPU"
 
 
 def ram_phrase(ram: int) -> str:
@@ -473,15 +479,27 @@ def map_text(labels: Labels, setup: fit.Setup, verdict: fit.Verdict, machine: fi
         ram_right, ram_short = f"{gb(setup.ram_peak - verdict.free)} GB short", True
     elif verdict.ram in ("cap", "cap-unmeasured"):
         where = "on our laptop" if laptop else "on yours"
-        ram_right, ram_short = f"about {half_up(verdict.free, 0)} GB free {where} (estimate)", True
+        ram_right, ram_short = f"about {_free_gb(verdict, laptop)} GB free {where} (estimate)", True
     else:
         by = "the" if laptop else "your"
-        ram_right = f"about {half_up(machine.ram - verdict.free, 0)} GB in use by {by} desktop and apps (estimate)"
+        ram_right = f"about {_in_use_gb(machine, verdict, laptop)} GB in use by {by} desktop and apps (estimate)"
         ram_short = False
     owner = "Our laptop" if laptop else "Your machine"
-    machine_alt = f"{owner}: {gpu_phrase(machine.gpu)} and about {half_up(verdict.free, 0)} GB of free RAM (estimate)."
+    machine_alt = (f"{owner}: {gpu_phrase(machine.gpu)} and about {_free_gb(verdict, laptop)} GB of free RAM "
+                   "(estimate).")
     alt = " ".join([_setup_alt(labels, setup), machine_alt, verdict_sentence(verdict.key, labels)])
     return MapText(gpu_left, gpu_right, gpu_short, ram_left, ram_right, ram_short, alt)
+
+
+def _free_gb(verdict: fit.Verdict, laptop: bool) -> str:
+    """The free RAM printed beside a peak: our laptop's own figure from README.md#machine in the laptop wording, else
+    the estimate rounded down, so a peak that is too big never reads as smaller than the free RAM beside it."""
+    return str(fit.FREE_RAM_GIB) if laptop else str(math.floor(verdict.free))
+
+
+def _in_use_gb(machine: fit.Machine, verdict: fit.Verdict, laptop: bool) -> str:
+    """The RAM in use by the desktop and apps: our laptop's usable RAM less its free RAM in the laptop wording."""
+    return str(fit.USABLE_RAM_GIB - fit.FREE_RAM_GIB) if laptop else half_up(machine.ram - verdict.free, 0)
 
 
 def _moe_fits(setup: fit.Setup) -> bool:
@@ -493,7 +511,9 @@ def moe_question(setup: fit.Setup) -> str | None:
     """M8's summary, when an offloading setup's download is larger than its GPU need."""
     if not _moe_fits(setup):
         return None
-    return f"Why does a {gb_bytes(setup.size_bytes)} GB download fit in {gb_mib(setup.gpu_mib)} GB of GPU memory?"
+    download = gb_bytes(setup.size_bytes)
+    return (f"Why does {article(download)} {download} GB download fit in {gb_mib(setup.gpu_mib)} GB of GPU "
+            "memory?")
 
 
 def _moe_link(runtime: str) -> tuple[str, str, str]:
@@ -512,7 +532,8 @@ def moe_paragraph(setup: fit.Setup) -> Rich | None:
     if not _moe_fits(setup):
         return None
     answer = _MOE_ANSWER[0].lower() + _MOE_ANSWER[1:]
-    return (f"Why a {gb_bytes(setup.size_bytes)} GB download fits in {gb_mib(setup.gpu_mib)} GB of GPU memory: "
+    download = gb_bytes(setup.size_bytes)
+    return (f"Why {article(download)} {download} GB download fits in {gb_mib(setup.gpu_mib)} GB of GPU memory: "
             f"{answer} ", _moe_link(setup.runtime))
 
 
@@ -614,16 +635,19 @@ COMMANDS_LABEL = "Commands for the model we picked"
 UI = {"copy": "Copy", "copied": "Copied", "selected": "Selected", "copiedLive": "Copied: ",
       "copyFailed": "Couldn't copy it for you. The command is selected; press Ctrl+C to copy it."}
 REFUSE_HEADING = "If llmctl refuses"
-REFUSE_LEAD = ("up checks your machine before it starts anything, and says what it found. The messages you're most "
-               "likely to see:")
-REFUSALS: tuple[tuple[str, str], ...] = (
+REFUSE_LEAD: Rich = (code("./llmctl up"), " checks your machine before it starts anything, and says what it found. "
+                                          "The messages you're most likely to see:")
+REFUSALS: tuple[tuple[str, Rich], ...] = (
     ("... may use up to N GiB of RAM",
-     "Close programs and run up again. Still short? Make your own copy of the setup with a lower memory_gib."),
+     ("Close programs and run ", code("./llmctl up"), " again. Still short? Make your own copy of the setup with a "
+                                                     "lower memory_gib.")),
     ("... needs N MiB of free GPU memory",
-     "Close programs that use the GPU, or make your own copy of the setup that uses less GPU memory."),
-    ("no CDI spec for nvidia.com/gpu", "Install the NVIDIA Container Toolkit and generate the spec."),
-    ("Docker refused the connection (permission denied", "Add yourself to the docker group, then log out and back in."),
-    ("another model server is running", "Run ./llmctl down, or add --replace to up."),
+     ("Close programs that use the GPU, or make your own copy of the setup that uses less GPU memory.",)),
+    ("no CDI spec for nvidia.com/gpu", ("Install the NVIDIA Container Toolkit and generate the spec.",)),
+    ("Docker refused the connection (permission denied",
+     ("Add yourself to the docker group, then log out and back in.",)),
+    ("another model server is running",
+     ("Run ", code("./llmctl down"), ", or add ", code("--replace"), " to the up line.")),
 )
 REFUSE_LINKS: tuple[Rich, ...] = (
     (link("Every message and its fix", "docs/llmctl.md#when-up-refuses"),),
@@ -721,7 +745,8 @@ def agent_lines(facts: data.RecipeFacts, labels: Labels, runtime: str, agent: st
         return [f"# Open {label} in your browser, then pick {launch.dsh} in its model picker", "$ dsh web"]
     if client == "kimi":
         if facts.chat_only:
-            return [f"# {label} always sends its tools, so make this chat-only model {label}'s default first",
+            return [f"# {label} always sends its tools, so make this chat-only model the default first; --set-default "
+                    "does that for every agent llmctl set up",
                     f"$ {facts.up} --set-default", f'$ kimi -p "your prompt" --agent-file {launch.kimi_file}']
         return [f"# Open {label} on the model llmctl added", f"$ kimi -m {launch.kimi}"]
     raise ValueError(f"{SOURCE}: unknown agent {agent}")
@@ -729,7 +754,8 @@ def agent_lines(facts: data.RecipeFacts, labels: Labels, runtime: str, agent: st
 
 def tail_lines(facts: data.RecipeFacts) -> list[str]:
     ours = "" if facts.decode is None else f" (ours: {speed(facts.decode)} tok/s)"
-    return [f"# Check: a reply, a tool call and your speed{ours}", "$ ./llmctl test",
+    checks = "a reply" if facts.chat_only else "a reply, a tool call"   # ./llmctl test skips the tool call (smoke.py)
+    return [f"# Check: {checks} and your speed{ours}", "$ ./llmctl test",
             "# Stop it when you're done, so your GPU can rest", "$ ./llmctl down"]
 
 
@@ -859,7 +885,7 @@ def questions(labels: Labels, contexts: Sequence[int]) -> tuple[tuple[str, Rich]
           code("./llmctl test"), " prints your speed, so you can compare it with ours.")),
         ("What does “passed the agent test” mean?",
          ("llmctl starts the model, then the agent writes a small file, hello.py, and reads it back. It shows the "
-          "agent can use the model's tools; it doesn't grade how well the model codes.",)),
+          "model can call the agent's tools; it doesn't grade how well the model codes.",)),
         ("How were the models ranked?",
          ("Three reviews, one for quality, one for practicality and one for coverage, voted on each model; one swap "
           f"keeps the DeepSeek family in the Top {labels.top}. Some ranks rest on scores the vendors published "
@@ -928,8 +954,6 @@ def footer(repository: str, commit: str, commit_time: int, licenses: tuple[str, 
 
 BACK = "All models"
 FIGURES_ARIA = "Key numbers"
-GPU_CHIPS_LEGEND = "Your GPU"
-RAM_CHIPS_LEGEND = "Your RAM"
 RUN_HEADING = "Run it"
 AGENT_SELECT = "Your agent"
 ENGINES_HEADING = "Engines"
@@ -1064,7 +1088,7 @@ def fit_note(labels: Labels, setup: fit.Setup, verdict: fit.Verdict, runtime: st
     """M13's fit note above the terminal, for a setup too big for the RAM or measured on the test card only."""
     if verdict.key == "ram":
         return (bold("Too big for your RAM:"), f" it used {gb(setup.ram_peak)} GB at peak; you have about "
-                f"{half_up(verdict.free, 0)} GB free (estimate). ", code("up"),
+                f"{_free_gb(verdict, False)} GB free (estimate). ", code("up"),
                 " checks free RAM first, so it will stop before it starts anything.")
     if verdict.key == "only16":
         return (bold(f"Measured on {labels.test_gpu} GB cards only:"), f" {labels.engines[runtime]} takes a share of "
@@ -1154,7 +1178,7 @@ def agent_command(facts: data.RecipeFacts, agent: str) -> Rich | None:
     if client == "kimi":
         if facts.chat_only:
             return (code(f'kimi -p "your prompt" --agent-file {launch.kimi_file}'), ", after ",
-                    code(f"{facts.up} --set-default"))
+                    code(f"{facts.up} --set-default"), ", which makes it the default in every agent llmctl set up")
         return (code(f"kimi -m {launch.kimi}"),)
     raise ValueError(f"{SOURCE}: unknown agent {agent}")
 

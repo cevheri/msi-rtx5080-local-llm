@@ -187,6 +187,8 @@ class SiteFitTest(unittest.TestCase):
         s = {x.key: x for x in b.setups}
         cases = {(("qwen3.8-27b", "llamacpp"), 8, 16): fit.Change("layers", "cap-unmeasured"),
                  (("k2-horizon-7b", "llamacpp"), 12, 32): fit.Change("context", None),
+                 (("groot-19b-a3b", "llamacpp"), 12, 32): fit.Change("layers", None),
+                 (("gemma-4-e4b", "sglang"), 12, 64): fit.Change("impossible", None),
                  (("qwen3.6-35b-a3b", "llamacpp"), 12, 32): fit.Change("experts", None),
                  (("gpt-oss-20b", "sglang"), 12, 64): fit.Change("resident", None),
                  (("gemma-4-e4b", "sglang"), 8, 64): fit.Change("impossible", None),
@@ -289,10 +291,11 @@ class SiteFitTest(unittest.TestCase):
         got = fit.verdict(s[("qwen3.6-35b-a3b", "llamacpp")], fit.Machine(8, 16), 16)
         self.assertEqual((got.key, got.short, got.ram), ("ram", Fraction(3955, 512), "too-big"))
 
-    def test_change_compares_the_download_in_gib(self):
-        # 8 GB leaves 7168 MiB, 7 GiB: 7.5e9 bytes are 6.98 GiB, 7.6e9 bytes are 7.08 GiB
+    def test_change_compares_the_download_in_the_gb_the_page_prints(self):
+        # 8 GB leaves 7168 MiB, which the page prints as 7 GB; the download prints in GB of 10**9 bytes, so 7.5e9
+        # bytes ("7.5 GB") are more than the usable card and 6.9e9 bytes ("6.9 GB") are not
         m = fit.Machine(8, 64)
-        for size, plan in ((7_500_000_000, "context"), (7_600_000_000, "layers")):
+        for size, plan in ((6_900_000_000, "context"), (7_500_000_000, "layers")):
             with self.subTest(size=size):
                 s = hand_setup(size_bytes=size)
                 self.assertEqual(fit.change(s, fit.verdict(s, m, 16)), fit.Change(plan, None))

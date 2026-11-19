@@ -6,6 +6,7 @@ import base64
 import contextlib
 import hashlib
 import io
+import json
 import os
 import posixpath
 import re
@@ -292,7 +293,7 @@ class SiteRenderTest(unittest.TestCase):
                   s.attrs.get("class") in ("gl", "rl")] for p in answer.find_all("p", "ch-notes")]
         self.assertEqual(notes, [["14.7 GB used of our 16 GB", "about 1 GB for the desktop (estimate)"],
                                  ["14.9 GB used at peak. llmctl asks for 20 GB free to start it.",
-                                  "about 22 GB in use by the desktop and apps (estimate)"]])
+                                  "about 21 GB in use by the desktop and apps (estimate)"]])
         self.assertEqual(len(answer.find_all("i", "hb")), 16)
         self.assertEqual(squash_text(answer.find_all("summary")[0]), "Why does a 20.5 GB download fit in 14.7 GB of GPU memory?")
         self.assertEqual(answer.find_all("a", "btn")[0].attrs["href"], "#get-started")
@@ -547,15 +548,67 @@ class SiteRenderTest(unittest.TestCase):
                         "kimi -m llmctl/qwen3.6-35b-a3b", "hermes -p llmctl"):
             self.assertIn(command, agents)                               # M16, from RecipeFacts.launch
         self.assertEqual(len(tree.find_all("div", "term")), 1)
-        self.assertEqual([squash_text(h) for h in tree.find_all("p", "per-h")][:2], ["On llama.cpp", "On SGLang"])
+        self.assertEqual([squash_text(h) for h in tree.find_all("h3", "per-h")][:2], ["On llama.cpp", "On SGLang"])
         pager = tree.find_all("nav", "pager")[0]
         self.assertEqual([a.attrs["href"] for a in pager.find_all("a")], ["../gpt-oss-20b/"])
+
+    def test_every_compare_cell_says_in_text_what_its_strip_draws(self):
+        # WCAG 2.1 1.1.1: the strip is aria-hidden, so the cell carries the GPU need it draws as hidden text
+        matrix = self.fixture.load()
+        b, labels = fit.bench(matrix), words.labels(matrix)
+        ids = [model.id for model in matrix.models]
+        st = json.loads(re.search(r'<script type="application/json" id="state">(.*?)</script>',
+                                  self.pages()["index.html"], re.S).group(1))
+        cells = parse(self.pages()["index.html"]).by_id("compare").find_all("a", "cell")
+        self.assertTrue(cells)
+        for a in cells:
+            s = st["setups"][int(a.attrs["data-s"])]
+            setup = next(x for x in b.setups if x.key == (ids[s["m"]], s["rt"]))
+            with self.subTest(setup=setup.key):
+                self.assertEqual([squash_text(n) for n in a.find_all("span", "vh")], [words.uses(labels, setup)])
+
+    def test_hidden_texts_keep_their_spaces(self):
+        # a .vh span is absolutely positioned, so a plain space at its edge collapses and "Rank 1" reads "Rank1"; the
+        # space at an edge is a no-break space, which does not collapse
+        for path, page in self.pages().items():
+            for node in parse(page).find_all("span", "vh"):
+                with self.subTest(page=path, text=node.text()):
+                    self.assertFalse(node.text().startswith(" ") or node.text().endswith(" "))
+        rows = parse(self.pages()["index.html"]).find_all("li", "row")
+        self.assertIn("Rank\u00a01", rows[0].text())
+        self.assertIn("\u00a0of context", rows[0].text())
+
+    def test_the_key_numbers_are_a_named_group(self):
+        # ARIA 1.2 forbids a name on a generic div; role=group makes "Key numbers" valid and announced
+        for path, page in self.pages().items():
+            if path.startswith("models/"):
+                figs = parse(page).find_all("div", "figs")
+                with self.subTest(page=path):
+                    self.assertEqual([(n.attrs.get("role"), n.attrs.get("aria-label")) for n in figs],
+                                     [("group", words.FIGURES_ARIA)])
+
+    def test_each_engine_block_has_a_heading_above_its_agents_and_links(self):
+        # WCAG 2.1 1.3.1 and 2.4.4 without script: every running engine's block opens with an h3 sub-heading, the agent
+        # names under it are h4, and a link name repeated in Evidence gets its context from that heading
+        tree = parse(self.pages()["models/qwen3.6-35b-a3b/index.html"])
+        for section in ("agents", "good-to-know", "evidence"):
+            blocks = tree.by_id(section).find_all("div", "per")
+            with self.subTest(section=section):
+                self.assertEqual(len(blocks), 2)
+                for block in blocks:
+                    first = next(node for node in block.iter() if node is not block)
+                    self.assertEqual((first.tag, first.attrs.get("class")), ("h3", "per-h"))
+        agents = tree.by_id("agents")
+        self.assertEqual(len(agents.find_all("h3")), 2)
+        self.assertEqual([squash_text(h) for h in agents.find_all("h4")][:2], ["OpenCodeYour agent", "HermesYour agent"])
+        self.assertEqual(tree.find_all("p", "per-h"), [])
 
     def test_model_page_holds_no_your_before_input(self):
         for path, page in self.pages().items():
             if path.startswith("models/"):
                 panel = parse(page).by_id("your-machine")
-                said = " ".join(squash_text(n) for n in (*panel.find_all("h2"), *panel.find_all("p"), *panel.find_all("figure")))
+                said = " ".join(squash_text(n) for n in (*panel.find_all("h2"), *panel.find_all("p"), *panel.find_all("figure"),
+                                                         *panel.find_all("legend")))
                 with self.subTest(page=path):
                     self.assertIsNone(re.search(r"\byour\b", said, re.I))
 

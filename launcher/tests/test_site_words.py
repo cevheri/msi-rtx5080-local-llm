@@ -2,8 +2,10 @@
 pinned snapshot of test_site_fit.py and on the fixture repository."""
 
 import dataclasses
+import os
 import re
 import tempfile
+import time
 import unittest
 from unittest import mock
 from fractions import Fraction
@@ -241,13 +243,13 @@ class SiteWordsTest(unittest.TestCase):
         self.assertEqual(text(("qwen3.6-35b-a3b", "llamacpp"), 16, 64, laptop=True), words.MapText(
             gpu_left=("14.7 GB used of our 16 GB",), gpu_right="about 1 GB for the desktop (estimate)", gpu_short=False,
             ram_left=("14.9 GB used at peak. llmctl asks for 20 GB free to start it.",),
-            ram_right="about 22 GB in use by the desktop and apps (estimate)", ram_short=False,
+            ram_right="about 21 GB in use by the desktop and apps (estimate)", ram_short=False,
             alt="Qwen3.6-35B-A3B used 14.7 GB of GPU memory and 14.9 GB of RAM at its peak on our laptop. llmctl asks for "
-                "20 GB of free RAM before it starts it. Our laptop: a 16 GB GPU and about 42 GB of free RAM (estimate). Runs "
+                "20 GB of free RAM before it starts it. Our laptop: a 16 GB GPU and about 40 GB of free RAM (estimate). Runs "
                 "as measured."))
         e4b = text(("gemma-4-e4b", "llamacpp"), 8, 16)
-        self.assertEqual((e4b.ram_right, e4b.ram_short), ("about 11 GB free on yours (estimate)", True))
-        self.assertTrue(e4b.alt.endswith("Your machine: an 8 GB GPU and about 11 GB of free RAM (estimate). Needs a change "
+        self.assertEqual((e4b.ram_right, e4b.ram_short), ("about 10 GB free on yours (estimate)", True))
+        self.assertTrue(e4b.alt.endswith("Your machine: an 8 GB GPU and about 10 GB of free RAM (estimate). Needs a change "
                                          "we haven't measured."))
         coder = text(("qwen3-coder-next", "llamacpp"), 16, 32)
         self.assertEqual((coder.ram_right, coder.ram_short), ("10.9 GB short", True))
@@ -283,6 +285,13 @@ class SiteWordsTest(unittest.TestCase):
         self.assertEqual(words.moe_paragraph(s["qwen3.6-35b-a3b", "sglang"]), (
             "Why a 23.5 GB download fits in 14.9 GB of GPU memory: it's a mixture-of-experts model, so most of its "
             "experts wait in RAM and the busiest stay on the GPU. ", ("a", "How that works", "sglang/README.md#paged-experts")))
+        eighteen = dataclasses.replace(qwen, size_bytes=18_900_000_000)
+        self.assertEqual(words.moe_question(eighteen), "Why does an 18.9 GB download fit in 14.7 GB of GPU memory?")
+        self.assertTrue(words.moe_paragraph(eighteen)[0].startswith("Why an 18.9 GB download fits in 14.7 GB"))
+        eight = dataclasses.replace(qwen, size_bytes=8_700_000_000, gpu_mib=7000)
+        self.assertEqual(words.moe_question(eight), "Why does an 8.7 GB download fit in 6.8 GB of GPU memory?")
+        eleven = dataclasses.replace(qwen, size_bytes=11_200_000_000, gpu_mib=7000)
+        self.assertEqual(words.moe_question(eleven), "Why does an 11.2 GB download fit in 6.8 GB of GPU memory?")
         for key in (("gemma-4-12b", "llamacpp"), ("gemma-4-26b-a4b", "llamacpp")):
             with self.subTest(key=key):   # not offloaded; offloaded, but its 14.4 GB download is under its 14.6 GB need
                 self.assertIsNone(words.moe_question(s[key]))
@@ -388,11 +397,17 @@ class SiteWordsTest(unittest.TestCase):
                           "# Stop it when you're done, so your GPU can rest", "$ ./llmctl down"])
         self.assertEqual(words.tail_lines(dataclasses.replace(facts, decode=None))[0],
                          "# Check: a reply, a tool call and your speed")
+        # ./llmctl test skips the tool call for a chat-only recipe (launcher/smoke.py)
+        self.assertEqual(words.tail_lines(dataclasses.replace(facts, chat_only=True))[0],
+                         "# Check: a reply and your speed (ours: 122.5 tok/s)")
+        self.assertEqual(words.tail_lines(dataclasses.replace(facts, chat_only=True, decode=None))[0],
+                         "# Check: a reply and your speed")
         self.assertEqual(words.agent_lines(self.facts("deepseek-r1-0528-qwen3-8b", "vllm"), LABELS, "vllm", "opencode"),
                          ["# llmctl doesn't set up OpenCode for this model on vLLM; pick another agent above"])
         chat = self.facts("deepseek-r1-0528-qwen3-8b", "llamacpp")
         self.assertEqual(words.agent_lines(chat, LABELS, "llamacpp", "kimi"),
-                         ["# Kimi always sends its tools, so make this chat-only model Kimi's default first",
+                         ["# Kimi always sends its tools, so make this chat-only model the default first; "
+                          "--set-default does that for every agent llmctl set up",
                           "$ ./llmctl up deepseek-r1-0528-qwen3-8b --set-default",
                           '$ kimi -p "your prompt" --agent-file launcher/kimi-chat-only.md'])
         self.assertEqual(words.agent_lines(chat, LABELS, "llamacpp", "pi"),
@@ -462,6 +477,8 @@ class SiteWordsTest(unittest.TestCase):
         self.assertEqual([q for q, _ in questions], [
             "Does it work on Windows or a Mac?", "Will I get the same speed?", "What does “passed the agent test” mean?",
             "How were the models ranked?", "Why not just use Ollama?", "What do tok/s, context and thinking mean?"])
+        self.assertIn("It shows the model can call the agent's tools; it doesn't grade how well the model codes.",
+                      words.plain(questions[2][1]))
         self.assertIn("one swap keeps the DeepSeek family in the Top 10.", words.plain(questions[3][1]))
         self.assertIn("with 64k to 128k of context, tool calls tested in five agents,", words.plain(questions[4][1]))
         self.assertIn("OpenCode needs at least 64k.", words.plain(questions[5][1]))
@@ -617,7 +634,8 @@ class SiteWordsTest(unittest.TestCase):
         self.assertEqual(words.agent_command(chat, "pi"), (("code", "pi --model llmctl/deepseek-r1-8b --no-tools"),))
         self.assertEqual(words.agent_command(chat, "kimi"), (
             ("code", 'kimi -p "your prompt" --agent-file launcher/kimi-chat-only.md'), ", after ",
-            ("code", "./llmctl up deepseek-r1-0528-qwen3-8b --runtime vllm --set-default")))
+            ("code", "./llmctl up deepseek-r1-0528-qwen3-8b --runtime vllm --set-default"),
+            ", which makes it the default in every agent llmctl set up"))
         qwen = model_of(self.matrix(), "qwen3.6-35b-a3b")
         good = words.good_to_know(qwen, qwen.cells[2], LABELS, 30000, "faster")
         self.assertEqual(good[0], ("faster",))
@@ -635,9 +653,46 @@ class SiteWordsTest(unittest.TestCase):
         coder = dataclasses.replace(setups()["qwen3-coder-next", "llamacpp"], memory_cap=48)
         m = fit.Machine(16, 64)
         got = words.map_text(LABELS, coder, fit.verdict(coder, m, 16), m, True, False)
-        self.assertEqual((got.ram_right, got.ram_short), ("about 42 GB free on our laptop (estimate)", True))
+        self.assertEqual((got.ram_right, got.ram_short), ("about 40 GB free on our laptop (estimate)", True))
+
+    def test_the_laptop_wording_gives_our_laptops_own_ram(self):
+        # README.md#machine: 61 GiB usable, about 40 GiB free; the laptop machine is the 64 GB chip, whose estimate is 42
+        m = fit.Machine(16, 64)
+        for setup in setups().values():
+            verdict = fit.verdict(setup, m, 16)
+            if verdict.key == "ram" or (setup.gpu_mib is None and setup.ram_peak is not None):
+                continue
+            with self.subTest(setup=setup.key):
+                got = words.map_text(LABELS, setup, verdict, m, True, False)
+                self.assertIn("Our laptop: a 16 GB GPU and about 40 GB of free RAM (estimate).", got.alt)
+                if verdict.ram == "ok":
+                    self.assertEqual(got.ram_right, "about 21 GB in use by the desktop and apps (estimate)")
+
+    def test_the_free_ram_beside_a_peak_never_reads_above_a_peak_it_rejects(self):
+        # 16 GB of RAM leaves about 10.5 GB free; a peak of 10.6 GB must not sit beside "about 11 GB free"
+        for key, setup in setups().items():
+            for g in fit.GPUS:
+                for r in fit.RAMS:
+                    m = fit.Machine(g, r)
+                    verdict = fit.verdict(setup, m, 16)
+                    if verdict.key != "ram":
+                        continue
+                    with self.subTest(key=key, gpu=g, ram=r):
+                        peak = Fraction(words.gb(setup.ram_peak))
+                        note = "".join(part if isinstance(part, str) else part[1]
+                                       for part in words.fit_note(LABELS, setup, verdict, key[1]))
+                        free = int(re.search(r"you have about (\d+) GB free", note).group(1))
+                        self.assertGreater(peak, free)
+                        alt = words.map_text(LABELS, setup, verdict, m, False, False).alt
+                        self.assertGreater(peak, int(re.search(r"about (\d+) GB of free RAM", alt).group(1)))
 
     def test_the_footer_date_is_the_commit_day_in_utc(self):
+        # the test runs in a zone 14 hours east of UTC, so a footer in local time fails here even where CI runs at UTC
+        old = os.environ.get("TZ")
+        os.environ["TZ"] = "Pacific/Kiritimati"
+        time.tzset()
+        self.addCleanup(time.tzset)
+        self.addCleanup(lambda: os.environ.__setitem__("TZ", old) if old is not None else os.environ.pop("TZ", None))
         rich, _, _ = words.footer("https://github.com/o/r", "a" * 40, 1763510399, ("CC BY 4.0", "MIT"))
         self.assertEqual(rich[3][1], "Updated 18 November 2025")   # 23:59:59 UTC; 19 November east of Greenwich
 
@@ -763,13 +818,15 @@ class SiteWordsTest(unittest.TestCase):
                           {"copy": "Copy", "copied": "Copied", "selected": "Selected", "copiedLive": "Copied: ",
                            "copyFailed": "Couldn't copy it for you. The command is selected; press Ctrl+C to copy it."}))
         self.assertEqual((words.REFUSE_HEADING, words.REFUSE_LEAD),
-                         ("If llmctl refuses", "up checks your machine before it starts anything, and says what it found. "
-                          "The messages you're most likely to see:"))
+                         ("If llmctl refuses", (("code", "./llmctl up"), " checks your machine before it starts anything, "
+                                                "and says what it found. The messages you're most likely to see:")))
         self.assertEqual([fix for _, fix in words.REFUSALS], [
-            "Close programs and run up again. Still short? Make your own copy of the setup with a lower memory_gib.",
-            "Close programs that use the GPU, or make your own copy of the setup that uses less GPU memory.",
-            "Install the NVIDIA Container Toolkit and generate the spec.",
-            "Add yourself to the docker group, then log out and back in.", "Run ./llmctl down, or add --replace to up."])
+            ("Close programs and run ", ("code", "./llmctl up"), " again. Still short? Make your own copy of the setup "
+                                                                 "with a lower memory_gib."),
+            ("Close programs that use the GPU, or make your own copy of the setup that uses less GPU memory.",),
+            ("Install the NVIDIA Container Toolkit and generate the spec.",),
+            ("Add yourself to the docker group, then log out and back in.",),
+            ("Run ", ("code", "./llmctl down"), ", or add ", ("code", "--replace"), " to the up line.")])
         self.assertEqual([words.plain(x) for x in words.REFUSE_LINKS],
                          ["Every message and its fix", "Making your own copy of a setup"])
         self.assertEqual((words.COMPARE_HEADING, words.MODEL_HEAD, words.engine_cell_label("vLLM")),
@@ -791,10 +848,10 @@ class SiteWordsTest(unittest.TestCase):
             "Before it first changes an agent's config file that holds your settings, it saves a backup next to it."))
         self.assertEqual(words.HOW_LINK, (("a", "Everything llmctl does, command by command", "docs/llmctl.md"),))
         self.assertEqual((words.QUESTIONS_HEADING, words.TESTED_HEADING), ("Questions", "How we tested"))
-        self.assertEqual((words.BACK, words.FIGURES_ARIA, words.GPU_CHIPS_LEGEND, words.RAM_CHIPS_LEGEND, words.RUN_HEADING,
+        self.assertEqual((words.BACK, words.FIGURES_ARIA, words.RUN_HEADING,
                           words.AGENT_SELECT, words.ENGINES_HEADING, words.USE_ENGINE, words.WHY, words.AGENTS_HEADING,
                           words.YOUR_AGENT, words.GOOD_HEADING, words.EVIDENCE_HEADING, words.PAGER, words.HOME_TITLE),
-                         ("All models", "Key numbers", "Your GPU", "Your RAM", "Run it", "Your agent", "Engines",
+                         ("All models", "Key numbers", "Run it", "Your agent", "Engines",
                           "Use this engine", "Why", "In your coding agent", "Your agent", "Good to know", "Evidence",
                           {"label": "More models", "previous": "Previous", "next": "Next"},
                           "Open coding models for your own GPU, llmctl"))
