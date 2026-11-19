@@ -378,8 +378,12 @@ class SiteRenderTest(unittest.TestCase):
         drawer = tree.by_id("drawer")
         self.assertEqual((drawer.tag, drawer.attrs), ("dialog", {"id": "drawer"}))
         self.assertEqual([(node.tag, node.attrs) for node in drawer.children if not isinstance(node, str)],
-                         [("button", {"type": "button", "id": "close"}), ("div", {"id": "drawer-body"}),
+                         [("div", {"id": "drawer-bar"}), ("div", {"id": "drawer-body"}),
                           ("p", {"id": "drawer-live", "class": "vh", "aria-live": "polite"})])
+        bar = tree.by_id("drawer-bar")
+        self.assertEqual([(node.tag, node.attrs, squash(node)) for node in bar.children if not isinstance(node, str)],
+                         [("button", {"type": "button", "id": "close"}, "Close")])
+        self.assertEqual([node for node in bar.children if isinstance(node, str) and node.strip()], [])
         script = (REPO / "launcher/site/page.js").read_text(encoding="utf-8")
         self.assertRegex(script, r"drawer\.autofocus = true;[^\0]*?drawer\.showModal\(\)")
         # The modal dialog makes #live inert, so a copy inside it is announced in the dialog's own live region.
@@ -1009,16 +1013,23 @@ class SiteRenderTest(unittest.TestCase):
 
     def test_details_texts(self):
         tree = parse(render.page(self.fixture.load(), BUILD, self.fixture.root))
-        self.assertEqual(text(tree, "d-sglang-qwen3.6-35b-a3b", "status-line"),
-                         "Runs. Fastest of 2 engines, 24% ahead of llama.cpp (122.5 tok/s).")
-        self.assertEqual(text(tree, "d-llamacpp-qwen3.6-35b-a3b", "status-line"), "Runs. SGLang is faster: 151.3 tok/s.")
-        self.assertEqual(text(tree, "d-llamacpp-k2-horizon-7b", "status-line"), "Runs.")
-        for line in ("vLLM: Runs, 72.5 tok/s, 64k", "SGLang: Failed on 2026-11-17"):              # Other engines
-            self.assertIn(line, text(tree, "d-llamacpp-deepseek-r1-0528-qwen3-8b"))
-        others = tree.by_id("d-llamacpp-deepseek-r1-0528-qwen3-8b").find_all("ul", "others")[0]
-        self.assertEqual([(squash(a), a.attrs["href"]) for a in others.find_all("a")],
-                         [("vLLM: Runs, 72.5 tok/s, 64k", "#d-vllm-deepseek-r1-0528-qwen3-8b"),
-                          ("SGLang: Failed on 2026-11-17", "#d-sglang-deepseek-r1-0528-qwen3-8b")])
+        status = lambda i: text(tree, i, "status-line")
+        self.assertEqual([status(i) for i in ("d-sglang-qwen3.6-35b-a3b", "d-llamacpp-qwen3.6-35b-a3b", "d-llamacpp-k2-horizon-7b",
+                                              "d-llamacpp-gpt-oss-20b")],
+                         ["151.3 tok/s with 128k context. Fastest of 2 engines, 24% ahead of llama.cpp (122.5 tok/s).",
+                          "122.5 tok/s with 128k context. SGLang is faster: 151.3 tok/s.",
+                          "66.9 tok/s with 80k context. Runs only on llama.cpp.",
+                          "166.2 tok/s with 128k context. Fastest of 3 engines, 33% ahead of SGLang (124.6 tok/s)."])
+        engines = tree.by_id("d-llamacpp-deepseek-r1-0528-qwen3-8b").find_all("ul", "engines")[0]
+        self.assertEqual([(squash(li), li.attrs, [a.attrs["href"] for a in li.find_all("a")])
+                          for li in engines.children if not isinstance(li, str)],
+                         [("llama.cpp 70.6 tok/s 64k", {"class": "cur", "aria-current": "true"}, []),
+                          ("vLLM 72.5 tok/s 64k Fastest, 3% ahead", {}, ["#d-vllm-deepseek-r1-0528-qwen3-8b"]),
+                          ("SGLang Failed 2026-11-17", {}, ["#d-sglang-deepseek-r1-0528-qwen3-8b"])])
+        self.assertEqual([i.attrs["class"] for i in engines.find_all("i")], ["w-38", "w-39"])
+        self.assertEqual([a.attrs["class"] for a in engines.find_all("a")], ["eg", "eg"])
+        self.assertEqual(text(tree, "d-llamacpp-deepseek-r1-0528-qwen3-8b", "scale"),
+                         "Decode speed on the page's scale, 0 to 188.2 tok/s.")
         thinking = lines(tree, "d-vllm-deepseek-r1-0528-qwen3-8b", "thinking")
         self.assertEqual(thinking[0], "Always on")
         self.assertEqual([line.split(":")[0] for line in thinking[1:]], ["Hermes", "Pi", "dsh", "Kimi"])  # after the type line
@@ -1026,11 +1037,13 @@ class SiteRenderTest(unittest.TestCase):
         self.assertEqual(lines(tree, "d-vllm-gpt-oss-20b", "thinking")[0], "Effort levels: low, medium, high")
         self.assertEqual(lines(tree, "d-llamacpp-mellum2.1-12b", "thinking")[0], "Toggle, on by default")
         self.assertEqual(lines(tree, "d-llamacpp-qwen3-coder-next", "thinking")[0], "No thinking")
-        self.assertEqual(text(tree, "d-llamacpp-gpt-oss-20b", "status-line"),              # the next fastest of three
-                         "Runs. Fastest of 3 engines, 33% ahead of SGLang (124.6 tok/s).")
-        self.assertIn("OpenCode: Not supported: llmctl writes no OpenCode entry for this recipe.",
+        for section_id in ("d-vllm-deepseek-r1-0528-qwen3-8b", "d-llamacpp-qwen3-coder-next"):  # inside Recipe settings
+            settings = next(node for node in tree.by_id(section_id).find_all("details", "more")
+                            if squash(node.find_all("summary")[0]) == "Recipe settings")
+            self.assertEqual(len(settings.find_all("ul", "thinking")), 1)
+        self.assertIn("OpenCode: not supported; llmctl writes no OpenCode entry for this pair.",
                       lines(tree, "d-vllm-deepseek-r1-0528-qwen3-8b", "clients"))
-        self.assertIn("Hermes: Passed, 1 of 1 runs passed (latest 2026-11-18).",
+        self.assertIn("Hermes: passed, 1 of 1 runs (latest 2026-11-18).",
                       lines(tree, "d-vllm-deepseek-r1-0528-qwen3-8b", "clients"))
         for runtime, speed in (("llamacpp", "100.0"), ("vllm", "50.0"), ("sglang", "100.0")):
             self.fixture.set_value(runtime, "gpt-oss-20b", "decode_tok_s", speed)
@@ -1038,19 +1051,35 @@ class SiteRenderTest(unittest.TestCase):
         self.fixture.set_value("vllm", "deepseek-r1-0528-qwen3-8b", "decode_tok_s", "100.0")
         tree = parse(render.page(self.fixture.load(), BUILD, self.fixture.root))
         self.assertEqual(text(tree, "d-llamacpp-gpt-oss-20b", "status-line"),
-                         "Runs. Tied fastest of 3 engines with SGLang, at 100 tok/s.")
-        self.assertEqual(text(tree, "d-vllm-gpt-oss-20b", "status-line"), "Runs. llama.cpp and SGLang are faster: 100 tok/s.")
+                         "100.0 tok/s with 128k context. Tied fastest with SGLang at 100.0 tok/s.")
+        self.assertEqual(text(tree, "d-vllm-gpt-oss-20b", "status-line"),
+                         "50.0 tok/s with 64k context. llama.cpp and SGLang are faster: 100.0 tok/s.")
+        self.assertIn("llama.cpp 100.0 tok/s 128k Tied fastest", lines(tree, "d-vllm-gpt-oss-20b", "engines"))
+        decode = next(div for div in tree.by_id("d-llamacpp-gpt-oss-20b").find_all("dl", "kv")[0].find_all("div")
+                      if squash(div.find_all("dt")[0]) == "Decode speed")
+        self.assertEqual(squash(decode.find_all("dd")[0]), "100.0 tok/s")
         self.assertEqual(text(tree, "d-llamacpp-deepseek-r1-0528-qwen3-8b", "status-line"),
-                         "Runs. Fastest of 2 engines, under 1% ahead of vLLM (100 tok/s).")
+                         "100.1 tok/s with 64k context. Fastest of 2 engines, under 1% ahead of vLLM (100.0 tok/s).")
         self.fixture.set_value("sglang", "gpt-oss-20b", "decode_tok_s", "50.0")                   # tied at the second speed
         tree = parse(render.page(self.fixture.load(), BUILD, self.fixture.root))
         self.assertEqual(text(tree, "d-llamacpp-gpt-oss-20b", "status-line"),
-                         "Runs. Fastest of 3 engines, 100% ahead of vLLM and SGLang (50 tok/s).")
+                         "100.0 tok/s with 128k context. Fastest of 3 engines, 100% ahead of vLLM and SGLang (50.0 tok/s).")
         self.fixture.set_value("vllm", "gpt-oss-20b", "decode_tok_s", None)
         tree = parse(render.page(self.fixture.load(), BUILD, self.fixture.root))
-        self.assertEqual(text(tree, "d-vllm-gpt-oss-20b", "status-line"), "Runs.")
+        self.assertEqual(text(tree, "d-vllm-gpt-oss-20b", "status-line"), "Speed not recorded; 64k context.")
         self.assertIn("Decode speed not recorded", text(tree, "d-vllm-gpt-oss-20b"))
-        self.assertIn("vLLM: Runs, speed not recorded, 64k", text(tree, "d-llamacpp-gpt-oss-20b"))
+        self.assertEqual(text(tree, "d-llamacpp-gpt-oss-20b", "status-line"),
+                         "100.0 tok/s with 128k context. Fastest of 2 engines, 100% ahead of SGLang (50.0 tok/s).")
+        engines = tree.by_id("d-llamacpp-gpt-oss-20b").find_all("ul", "engines")[0]
+        item = next(li for li in engines.find_all("li") if squash(li).startswith("vLLM"))
+        self.assertEqual((squash(item), [i.attrs["class"] for i in item.find_all("i")]),
+                         ("vLLM speed not recorded 64k", ["w-0"]))
+        self.fixture.set_value("sglang", "gpt-oss-20b", "decode_tok_s", None)
+        tree = parse(render.page(self.fixture.load(), BUILD, self.fixture.root))
+        self.assertEqual(text(tree, "d-llamacpp-gpt-oss-20b", "status-line"), "100.0 tok/s with 128k context.")
+        self.fixture.set_value("llamacpp", "mellum2.1-12b", "decode_tok_s", "200.0")          # the page's top
+        tree = parse(render.page(self.fixture.load(), BUILD, self.fixture.root))
+        self.assertEqual(text(tree, "d-llamacpp-gpt-oss-20b", "scale"), "Decode speed on the page's scale, 0 to 200.0 tok/s.")
 
     def rewrite_default_run(self, rows):
         self.fixture.run(*DEFAULT_RUN, rows, readme="# e2e\n\n## The No rows\n\nNone.\n")
@@ -1073,35 +1102,44 @@ class SiteRenderTest(unittest.TestCase):
                 line = row(qwen, line.split(" | ")[1], "no answer")
             rows.append(line)
         self.fixture.run("2026-11-19", "llmctl-next-e2e", rows)
+        self.fixture.run("2026-11-17", "llmctl-old-e2e", [row(qwen, "up"), row(qwen, "dsh-headless", "no answer")])
         cell = ("qwen3.6-35b-a3b", "llamacpp")
         self.fixture.coverage({cell: self.fixture._default_cell(*cell)
                                + "; e2e 2026-11-19: `hermes-z` wrote hello.py elsewhere"})
         tree = parse(render.page(self.fixture.load(), BUILD, self.fixture.root))
-        self.assertIn("Hermes: Known issue, 1 of 2 runs passed (latest 2026-11-19); the coverage note below describes it.",
-                      lines(tree, "d-llamacpp-qwen3.6-35b-a3b", "clients"))
-        self.assertIn("Pi: Failed, 1 of 2 runs passed (latest 2026-11-19); the runtime coverage table does not describe "
-                      "this failure yet.", lines(tree, "d-llamacpp-qwen3.6-35b-a3b", "clients"))
-        self.assertIn("OpenCode: Failed, 1 of 2 runs passed (latest 2026-11-19); the runtime coverage table does not "
-                      "describe this failure yet. Not reached: up failed.", lines(tree, "d-sglang-gpt-oss-20b", "clients"))
-        self.assertIn("Kimi: Not tested: no e2e run has covered this recipe with Kimi yet.",
-                      lines(tree, "d-llamacpp-k2-horizon-7b", "clients"))
+        qwen_lines = lines(tree, "d-llamacpp-qwen3.6-35b-a3b", "clients")
+        for line in ("Hermes: known issue, 1 of 2 runs passed (latest 2026-11-19); the coverage note below describes it.",
+                     "Pi: failed, 1 of 2 runs passed (latest 2026-11-19); the runtime coverage table does not describe it "
+                     "yet.", "dsh: passed, 2 of 3 runs passed (latest 2026-11-19).",
+                     "Kimi: passed, 2 of 2 runs (latest 2026-11-19)."):
+            with self.subTest(line=line):
+                self.assertIn(line, qwen_lines)
+        self.assertIn("OpenCode: failed, 1 of 2 runs passed (latest 2026-11-19); the runtime coverage table does not "
+                      "describe it yet. Not reached: up failed.", lines(tree, "d-sglang-gpt-oss-20b", "clients"))
+        self.assertEqual([squash(h4) for h4 in tree.by_id("d-sglang-gpt-oss-20b").find_all("h4")],
+                         ["Start it", "Engines", "Clients", "Setup checks", "Coverage note", "e2e history"])
+        self.assertIn("Kimi: not tested yet.", lines(tree, "d-llamacpp-k2-horizon-7b", "clients"))
+        self.assertIn("OpenCode: not supported; llmctl writes no OpenCode entry for this pair.",
+                      lines(tree, "d-vllm-deepseek-r1-0528-qwen3-8b", "clients"))
         self.assertIn("Setup checks in the e2e of 2026-11-19:", text(tree, "d-sglang-gpt-oss-20b"))
         section = tree.by_id("d-sglang-gpt-oss-20b")
         self.assertEqual([squash(li) for li in section.find_all("ul", "setup-checks")[0].find_all("li")],
                          ["up failed: the server did not start (no record named after this step)"])
         reached = next(li for li in section.find_all("ul", "clients")[0].find_all("li") if "Not reached" in li.text())
         self.assertEqual([node.text() for node in reached.find_all("code")], ["up"])
+        self.assertEqual([(node.tag, node.attrs.get("class")) for node in reached.children if not isinstance(node, str)],
+                         [("span", "lamp failed"), ("span", None)])          # one flex item for the sentence, as in v2
         for name, cls in (("hermes", "known-issue"), ("pi", "failed")):
             item = next(li for li in tree.by_id("d-llamacpp-qwen3.6-35b-a3b").find_all("ul", "clients")[0].find_all("li")
                         if _text_without_lamps(li).strip().startswith(clients.LABELS[name] + ":"))
             lamp = item.find_all("span", "lamp")[0]
-            self.assertEqual((lamp.attrs["class"], lamp.text(), lamp.find_all("span")[0].attrs),
-                             (f"lamp {cls}", "H" if name == "hermes" else "P", {"aria-hidden": "true"}))
+            self.assertEqual((lamp.attrs["class"], lamp.text(), lamp.attrs["aria-hidden"]),
+                             (f"lamp {cls}", "H" if name == "hermes" else "P", "true"))
         self.assertEqual(tree.by_id("d-llamacpp-qwen3.6-35b-a3b").find_all("ul", "setup-checks"), [])
         cell = ("gpt-oss-20b", "sglang")                                       # the note names the setup step: Known issue
         self.fixture.coverage({cell: self.fixture._default_cell(*cell) + "; e2e 2026-11-19: `up` failed on a busy GPU"})
         tree = parse(render.page(self.fixture.load(), BUILD, self.fixture.root))
-        self.assertIn("OpenCode: Known issue, 1 of 2 runs passed (latest 2026-11-19); the coverage note below describes "
+        self.assertIn("OpenCode: known issue, 1 of 2 runs passed (latest 2026-11-19); the coverage note below describes "
                       "it. Not reached: up failed.", lines(tree, "d-sglang-gpt-oss-20b", "clients"))
 
     def test_details_of_failed_and_does_not_fit_cells(self):
@@ -1110,23 +1148,26 @@ class SiteRenderTest(unittest.TestCase):
         hardware = "; ".join(sorted({cell.recipe.hardware for model in matrix.models for cell in model.cells
                                      if cell.status == "runs"}))
         coverage = BLOB + "/docs/model-selection.md#runtime-coverage"
-        for section_id, title, status, links in (
+        for section_id, title, status, links, current in (
                 ("d-sglang-deepseek-r1-0528-qwen3-8b", "deepseek-r1-0528-qwen3-8b on SGLang",
                  f"Failed on 2026-11-17 (measured on {hardware}, SGLang v0.5.23).",
-                 ["#d-llamacpp-deepseek-r1-0528-qwen3-8b", "#d-vllm-deepseek-r1-0528-qwen3-8b"]),
+                 ["#d-llamacpp-deepseek-r1-0528-qwen3-8b", "#d-vllm-deepseek-r1-0528-qwen3-8b"], "SGLang Failed 2026-11-17"),
                 ("d-vllm-k2-horizon-7b", "k2-horizon-7b on vLLM", "Does not fit (estimate).",
-                 ["#d-llamacpp-k2-horizon-7b"])):
+                 ["#d-llamacpp-k2-horizon-7b", "#d-sglang-k2-horizon-7b"], "vLLM Does not fit (estimate)")):
             with self.subTest(section=section_id):
                 section = tree.by_id(section_id)
                 model_id, runtime = section.attrs["data-model"], section.attrs["data-engine"]
                 cell = next(c for c in next(m for m in matrix.models if m.id == model_id).cells if c.runtime == runtime)
                 self.assertEqual(squash(section.find_all("h3")[0]), title)
                 self.assertEqual(text(tree, section_id, "status-line"), status)
-                self.assertEqual([squash(h4) for h4 in section.find_all("h4")], ["Why it does not run", "Runs elsewhere"])
+                self.assertEqual([squash(h4) for h4 in section.find_all("h4")], ["Why it does not run", "Engines"])
+                self.assertEqual(len(section.find_all("p", "scale")), 1)
                 note = section.find_all("p", "note")[0]
                 html_note = render.inline(cell.note, "docs/model-selection.md", self.links)
                 self.assertEqual(squash(note), squash(parse(html_note)))
-                self.assertEqual([a.attrs["href"] for a in section.find_all("ul", "others")[0].find_all("a")], links)
+                engines = section.find_all("ul", "engines")[0]
+                self.assertEqual([a.attrs["href"] for a in engines.find_all("a")], links)
+                self.assertEqual([squash(li) for li in engines.find_all("li", "cur")], [current])
                 self.assertIn(coverage, [a.attrs["href"] for a in section.find_all("a")])
                 self.assertEqual(section.find_all("button", "copy"), [])
                 self.assertEqual(section.find_all("code", "cmd"), [])
@@ -1140,9 +1181,7 @@ class SiteRenderTest(unittest.TestCase):
         k2 = ("k2-horizon-7b", "llamacpp")
         self.fixture.coverage({k2: "Does not fit: too large for the budget (estimate)"})
         tree = parse(render.page(self.fixture.load(), BUILD, self.fixture.root))
-        self.assertIn("Runs elsewhere No engine runs this model on this laptop yet. Runtime coverage table",
-                      text(tree, "d-vllm-k2-horizon-7b"))
-        self.assertEqual(tree.by_id("d-vllm-k2-horizon-7b").find_all("ul", "others"), [])
+        self.assertIn("No engine runs this model on this laptop yet. Runtime coverage table", text(tree, "d-vllm-k2-horizon-7b"))
         qwen = ("qwen3.6-35b-a3b", "llamacpp")                     # a note outside the subset stops the build (D13)
         self.fixture.coverage({qwen: self.fixture._default_cell(*qwen) + "; a **bold** word"})
         column = cell_of(self.fixture.load(), *qwen).note.index("*") + 1
@@ -1157,19 +1196,35 @@ class SiteRenderTest(unittest.TestCase):
         facts = cell_of(matrix, "qwen3.6-35b-a3b", "sglang").recipe
         section = tree.by_id("d-sglang-qwen3.6-35b-a3b")
         self.assertEqual(squash(section.find_all("p", "recipe-name")[0]), facts.name)
+        self.assertEqual([squash(node) for node in section.find_all("p", "step")], ["Download once", "Start"])
+        self.assertEqual([squash(node) for node in section.find_all("ol", "steps")[0].find_all("p", "step")],
+                         ["Download once", "Start"])
         commands = section.find_all("code", "cmd")
         buttons = section.find_all("button", "copy")
-        self.assertEqual(len(commands), 2)
-        for command, button, expected in zip(commands, buttons, (facts.up, facts.pull)):
+        self.assertEqual((len(commands), len(buttons)), (2, 2))
+        for command, button, expected in zip(commands, buttons, (facts.pull, facts.up)):
             with self.subTest(command=expected):
                 self.assertEqual([node.text() for node in command.find_all("span")], expected.split(" "))
                 self.assertEqual(command.text(), expected)
                 self.assertEqual((button.attrs["data-copy"], "hidden" in button.attrs, button.text()),
-                                 (expected, True, "Copy command"))
-        self.assertIn("Without --runtime, ./llmctl up qwen3.6-35b-a3b starts the llama.cpp recipe.", text(tree, section.attrs["id"]))
+                                 (expected, True, "Copy"))
+        self.assertEqual([line.find_all("code", "cmd")[0].text() for line in section.find_all("span", "cmdline")],
+                         [facts.pull, facts.up])
+        for line in section.find_all("span", "cmdline"):
+            self.assertEqual([node.tag for node in line.children], ["code", "button"])
+        body = text(tree, section.attrs["id"])
+        for words in ("It asks before it downloads the model files and the image.",
+                      "Add --replace to stop a running server first; ./llmctl up refuses to start when less GPU memory or "
+                      "RAM is free.", "Without --runtime, ./llmctl up qwen3.6-35b-a3b starts the llama.cpp recipe."):
+            with self.subTest(words=words):
+                self.assertIn(words, body)
         self.assertNotIn("Without --runtime", text(tree, "d-llamacpp-qwen3.6-35b-a3b"))
-        self.assertIn("Add --replace to stop a running server first.", text(tree, "d-llamacpp-qwen3.6-35b-a3b"))
-        self.assertIn("It asks before it downloads the model files and the image.", text(tree, "d-llamacpp-qwen3.6-35b-a3b"))
+        pre = section.find_all("p", "pre")[0]
+        self.assertEqual(squash(pre), "Run both in a clone of this repository; llmctl needs Docker and the NVIDIA "
+                                      "Container Toolkit: How to start a model, Host setup.")
+        self.assertEqual([(squash(a), a.attrs["href"]) for a in pre.find_all("a")],
+                         [("How to start a model", BLOB + "/README.md#quick-start"),
+                          ("Host setup", BLOB + "/docs/host-setup.md")])
 
     def test_long_reasons_are_cut_before_escaping(self):
         qwen = prefix("llamacpp", "qwen3.6-35b-a3b")
@@ -1235,46 +1290,65 @@ class SiteRenderTest(unittest.TestCase):
         self.fixture.set_value("llamacpp", "qwen3.6-35b-a3b", "ram_gib", "14.0")
         matrix = self.fixture.load()
         tree = parse(render.page(matrix, BUILD, self.fixture.root))
-        for runtime, context in (("llamacpp", "128k (131,072 tokens)"), ("vllm", "64k (65,536 tokens)")):
-            facts, body = cell_of(matrix, "gpt-oss-20b", runtime).recipe, text(tree, f"d-{runtime}-gpt-oss-20b")
-            self.assertIn(f"Container memory cap: {facts.memory_cap} GiB; ./llmctl up refuses to start when less RAM "
-                          "is available. Measured RAM peak: not recorded.", body)
-            self.assertIn(context, body)
-            self.assertIn("16,384 tokens", body)
+
+        def kv(section_id):
+            found = tree.by_id(section_id).find_all("dl", "kv")[0]
+            return {squash(div.find_all("dt")[0]): squash(div.find_all("dd")[0]) for div in found.find_all("div")}
+
+        def settings(section_id):
+            found = tree.by_id(section_id).find_all("dl", "settings")[0]
+            return dict(zip([squash(dt) for dt in found.find_all("dt")], [squash(dd) for dd in found.find_all("dd")]))
+
+        for runtime, context in (("llamacpp", "128k 131,072 tokens"), ("vllm", "64k 65,536 tokens")):
+            with self.subTest(runtime=runtime):
+                facts, found = cell_of(matrix, "gpt-oss-20b", runtime).recipe, kv(f"d-{runtime}-gpt-oss-20b")
+                self.assertEqual(found["Free RAM to start"], f"{facts.memory_cap} GiB peak not recorded")
+                self.assertEqual(found["Context"], context)
+                self.assertEqual(settings(f"d-{runtime}-gpt-oss-20b")["Output cap"], "16,384 tokens")
         gpu = cell_of(matrix, "gpt-oss-20b", "vllm").recipe.gpu
         self.assertTrue(gpu.endswith("%"))
-        self.assertIn(gpu + " of the GPU memory CUDA reports", text(tree, "d-vllm-gpt-oss-20b"))
-        self.assertNotIn("of the GPU memory CUDA reports", text(tree, "d-llamacpp-gpt-oss-20b"))
-        self.assertIn("Measured RAM peak: 14 GiB.", text(tree, "d-llamacpp-qwen3.6-35b-a3b"))             # ruling 12
-        self.assertIn("No OpenCode entry", text(tree, "d-vllm-deepseek-r1-0528-qwen3-8b"))
+        self.assertEqual(kv("d-vllm-gpt-oss-20b")["GPU memory needed"], f"{gpu} of what CUDA reports")
+        self.assertEqual(kv("d-llamacpp-gpt-oss-20b")["GPU memory needed"], cell_of(matrix, "gpt-oss-20b", "llamacpp").recipe.gpu)
         facts = cell_of(matrix, "qwen3.6-35b-a3b", "llamacpp").recipe
-        body = text(tree, "d-llamacpp-qwen3.6-35b-a3b")
-        self.assertIn(f"Decode speed {facts.decode:g} tok/s (measured on {facts.hardware}, llama.cpp b12407, "
-                      f"{facts.date})", body)
-        self.assertIn(f"GPU need {facts.gpu}; ./llmctl up refuses to start when less is free.", body)
-        self.assertIn(f"{facts.repo} at {facts.revision[:12]}, {facts.size_bytes / 1e9:.1f} GB", body)
-        self.assertIn("Tools Yes", body)
-        self.assertIn("Tools No, chat only", text(tree, "d-vllm-deepseek-r1-0528-qwen3-8b"))
-        self.assertIn(f"OpenCode model {facts.opencode} Served name {facts.served}", body)
-        self.assertIn(f"Evidence {facts.summary}", body)
+        found = kv("d-llamacpp-qwen3.6-35b-a3b")
+        self.assertEqual(list(found), ["Decode speed", "Context", "GPU memory needed", "Free RAM to start"])
+        self.assertEqual((found["Free RAM to start"], found["Decode speed"]), ("20 GiB measured peak 14 GiB", "122.5 tok/s"))
+        small = [squash(node) for node in tree.by_id("d-llamacpp-qwen3.6-35b-a3b").find_all("dl", "kv")[0].find_all("small")]
+        self.assertEqual(small, ["131,072 tokens"] + (["of what CUDA reports"] if facts.gpu.endswith("%") else [])
+                         + ["measured peak 14 GiB"])
+        self.assertEqual(text(tree, "d-llamacpp-qwen3.6-35b-a3b", "ev"),
+                         f"(measured on {facts.hardware}, llama.cpp b12407, {facts.date})")
+        self.assertEqual({key: value for key, value in settings("d-llamacpp-qwen3.6-35b-a3b").items() if key != "Thinking"},
+                         {"Model files": f"{facts.repo} at {facts.revision[:12]}, {facts.size_bytes / 1e9:.1f} GB",
+                          "Aliases": "qwen3.6", "Tools": "Yes", "Output cap": f"{facts.output:,} tokens",
+                          "OpenCode model": facts.opencode, "Served name": facts.served})
+        self.assertEqual(list(settings("d-llamacpp-qwen3.6-35b-a3b")),
+                         ["Model files", "Aliases", "Thinking", "Tools", "Output cap", "OpenCode model", "Served name"])
+        deepseek = settings("d-vllm-deepseek-r1-0528-qwen3-8b")
+        self.assertEqual((deepseek["Tools"], deepseek["OpenCode model"]), ("No, chat only", "No OpenCode entry"))
         section = tree.by_id("d-llamacpp-qwen3.6-35b-a3b")
-        links = {squash(a): a.attrs["href"] for a in section.find_all("ul", "links")[0].find_all("a")}
+        self.assertEqual([squash(node.find_all("summary")[0]) for node in section.find_all("details", "more")],
+                         ["Recipe settings", "Evidence and links"])
+        self.assertEqual(["open" in node.attrs for node in section.find_all("details", "more")], [False, False])
+        evidence = section.find_all("details", "more")[1]
+        self.assertIn(facts.summary, squash(evidence))
+        links = {squash(a): a.attrs["href"] for a in evidence.find_all("ul", "links")[0].find_all("a")}
         doc, anchor = facts.doc.split("#")
         self.assertEqual(links, {f"Recipe section in {doc}": f"{BLOB}/{facts.doc}", "Recipe file": f"{BLOB}/{facts.file}",
                                  "Record folder": f"{TREE}/{facts.record.rstrip('/')}",
                                  "Runtime coverage table": BLOB + "/docs/model-selection.md#runtime-coverage"})
-        self.assertIn(f"https://huggingface.co/{facts.repo}/tree/{facts.revision}",
-                      [a.attrs["href"] for a in section.find_all("a")])
-        h4 = [squash(node) for node in section.find_all("h4")]
-        self.assertEqual(h4, ["Start it", "First time on this machine", "Decode speed", "Context", "GPU need", "RAM",
-                              "Model files", "Thinking", "Tools", "Output cap", "OpenCode model", "Served name",
-                              "Evidence", "Links", "Clients", "e2e history", "Coverage note", "Other engines"])
-        self.assertEqual(squash(section.find_all("a")[-1]), "Back to the matrix")
-        k2 = prefix("llamacpp", "k2-horizon-7b")                                  # no e2e run covered the recipe
+        files = next(a for a in section.find_all("dl", "settings")[0].find_all("a")
+                     if a.attrs["href"].startswith("https://huggingface.co/"))
+        self.assertEqual(files.attrs["href"], f"https://huggingface.co/{facts.repo}/tree/{facts.revision}")
+        self.assertEqual([squash(node) for node in section.find_all("h4")],
+                         ["Start it", "Engines", "Clients", "Coverage note", "e2e history"])
+        self.assertEqual(squash(section.find_all("a")[-1]), "Back to the table")
+        k2 = prefix("llamacpp", "k2-horizon-7b")                                  # no e2e run covered the pair
         self.rewrite_default_run([line for line in default_rows() if not line.startswith(f"| {k2} | ")])
+        self.fixture.set_value("llamacpp", "k2-horizon-7b", "aliases", None)
         tree = parse(render.page(self.fixture.load(), BUILD, self.fixture.root))
-        self.assertIn("e2e history No e2e run has covered this recipe yet. Coverage note",
-                      text(tree, "d-llamacpp-k2-horizon-7b"))
+        self.assertEqual(settings("d-llamacpp-k2-horizon-7b")["Aliases"], "no alias")
+        self.assertIn("e2e history No e2e run has covered this pair yet.", text(tree, "d-llamacpp-k2-horizon-7b"))
         self.assertEqual(tree.by_id("d-llamacpp-k2-horizon-7b").find_all("ul", "history"), [])
         self.fixture.set_value("llamacpp", "k2-horizon-7b", "doc", '"llamacpp/models.md"')      # a doc without #anchor
         with self.assertRaises(data.SiteError) as caught:

@@ -1026,10 +1026,6 @@ def _keeps(model: Model, cell: Cell, label: str, filters: Filters) -> bool:
     return filters.ram is None or recipe.memory_cap <= filters.ram
 
 
-def _speed_text(decode: float | None) -> str:
-    return "speed not recorded" if decode is None else f"{decode:g} tok/s"
-
-
 def _counted(n: int, one: str, many: str) -> str:
     return f"{n} {one if n == 1 else many}"
 
