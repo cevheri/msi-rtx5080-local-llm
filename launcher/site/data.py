@@ -668,6 +668,71 @@ def fastest_tags(speeds: Mapping[str, float | None]) -> dict[str, str]:
     return {leaders[0]: f"Fastest by {n}%" if n else "Fastest by under 1%"}
 
 
+def speed_text(decode: float) -> str:
+    """A speed as the page writes it: `:g`, with ".0" added when that has no point, so at least one decimal (R-D6)."""
+    text = f"{decode:g}"
+    return text if "." in text else text + ".0"
+
+
+def top_speed(matrix: Matrix) -> float | None:
+    """The page's top speed over every Runs cell with a speed; None when no Runs cell has one."""
+    speeds = [cell.recipe.decode for model in matrix.models for cell in model.cells
+              if cell.status == "runs" and cell.recipe.decode is not None]
+    return max(speeds) if speeds else None
+
+
+def bar_width(decode: float | None, top: float | None) -> int:
+    """A bar's width in percent of the page's top speed, rounded half up and clamped to 0 to 100; 0 without a speed."""
+    if decode is None or top is None:
+        return 0
+    n = math.floor(100 * Fraction(str(decode)) / Fraction(str(top)) + Fraction(1, 2))
+    return max(0, min(100, n))
+
+
+def _speeds(model: Model) -> list[tuple[Fraction, str]]:
+    """The model's Runs cells with a speed, as (speed, runtime) in the order of its cells."""
+    return [(Fraction(str(cell.recipe.decode)), cell.runtime) for cell in model.cells
+            if cell.status == "runs" and cell.recipe.decode is not None]
+
+
+def lead(model: Model, cell: Cell, labels: Mapping[str, str]) -> tuple[str, str] | None:
+    """The visible lead of a cell with the fastest tag and its spoken words, from D7's tag: ("24%", "fastest, 24% ahead
+    of llama.cpp") or ("tied", "tied fastest with SGLang"), the engines in the order of the model's cells, which is
+    ADAPTERS order; None without the tag."""
+    if cell.fastest is None:
+        return None
+    speeds = _speeds(model)
+    top = max(speed for speed, _ in speeds)
+    if cell.fastest == "Tied fastest":
+        others = [labels[runtime] for speed, runtime in speeds if speed == top and runtime != cell.runtime]
+        return "tied", f"tied fastest with {_joined(others)}"
+    if not cell.fastest.startswith("Fastest by "):
+        raise ValueError(f"unknown fastest tag {cell.fastest!r}")
+    visible = cell.fastest.removeprefix("Fastest by ")
+    second = max(speed for speed, _ in speeds if speed != top)
+    behind = [labels[runtime] for speed, runtime in speeds if speed == second]
+    return visible, f"fastest, {visible} ahead of {_joined(behind)}"
+
+
+def gap_text(model: Model, labels: Mapping[str, str]) -> str | None:
+    """The gap words of a model over its Runs cells with a speed (Copy): the engines at the top speed against those at
+    the lowest, each group in the order of the model's cells, which is ADAPTERS order, rounded as D7 does; None below
+    two speeds."""
+    speeds = _speeds(model)
+    if len(speeds) < 2:
+        return None
+
+    def group(value: Fraction) -> str:
+        return _joined([labels[runtime] for speed, runtime in speeds if speed == value])
+
+    top, lowest = max(speed for speed, _ in speeds), min(speed for speed, _ in speeds)
+    if top == lowest:
+        return f"the same speed on {group(top)}"
+    n = math.floor(100 * (top / lowest - 1) + Fraction(1, 2))
+    amount = f"{n}%" if n else "under 1%"
+    return f"{group(top)} {amount} ahead of {group(lowest)}"
+
+
 def _joined(items: Sequence[str]) -> str:
     if not items:
         raise ValueError("nothing to join")

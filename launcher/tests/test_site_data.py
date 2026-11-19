@@ -590,6 +590,53 @@ class SiteDataTest(unittest.TestCase):
         self.assertEqual(data.fastest_tags({"a": 166.2, "b": 83.5, "c": 124.6}), {"a": "Fastest by 33%"})
         self.assertEqual((data.fastest_tags({"a": 90.0}), data.fastest_tags({"a": 90.0, "b": None})), ({}, {}))
 
+    def test_speed_text_keeps_at_least_one_decimal(self):
+        self.assertEqual([data.speed_text(x) for x in (66.0, 257.2, 70.55, 100.0, 36.4)],
+                         ["66.0", "257.2", "70.55", "100.0", "36.4"])
+
+    def test_lead_gap_and_bar(self):
+        m = self.fixture.load()
+        labels = {runtime.id: runtime.label for runtime in m.runtimes}
+        lead = lambda matrix, model_id, runtime: data.lead(model_of(matrix, model_id), cell_of(matrix, model_id, runtime), labels)
+        gap = lambda matrix, model_id: data.gap_text(model_of(matrix, model_id), labels)
+        self.assertEqual((lead(m, "qwen3.6-35b-a3b", "sglang"), lead(m, "gpt-oss-20b", "llamacpp"),
+                          lead(m, "qwen3.6-35b-a3b", "llamacpp")),
+                         (("24%", "fastest, 24% ahead of llama.cpp"), ("33%", "fastest, 33% ahead of SGLang"), None))
+        self.assertEqual([gap(m, i) for i in ("qwen3.6-35b-a3b", "gpt-oss-20b", "deepseek-r1-0528-qwen3-8b", "k2-horizon-7b")],
+                         ["SGLang 24% ahead of llama.cpp", "llama.cpp 99% ahead of vLLM", "vLLM 3% ahead of llama.cpp", None])
+        self.assertEqual(data.top_speed(m), 188.2)
+        self.assertEqual([data.bar_width(x, 188.2) for x in (188.2, 151.3, 122.5, 83.5, None)], [100, 80, 65, 44, 0])
+        self.assertEqual([data.bar_width(1.0, 8.0), data.bar_width(3.0, 8.0), data.bar_width(50.0, None),
+                          data.bar_width(250.0, 200.0), data.bar_width(33.8, 104.0)],
+                         [13, 38, 0, 100, 33])                    # half up, clamped, exact (32 in floats)
+        with self.assertRaisesRegex(ValueError, "unknown fastest tag 'Quickest'"):
+            data.lead(model_of(m, "gpt-oss-20b"),
+                      dataclasses.replace(cell_of(m, "gpt-oss-20b", "llamacpp"), fastest="Quickest"), labels)
+        cases = (  # gpt-oss-20b's speeds on llama.cpp, vLLM and SGLang; its gap words; the lead of each engine
+            (("100.0", "112.0", "112.0"), "vLLM and SGLang 12% ahead of llama.cpp",
+             (None, ("tied", "tied fastest with SGLang"), ("tied", "tied fastest with vLLM"))),
+            (("150.0", "100.0", "100.0"), "llama.cpp 50% ahead of vLLM and SGLang",
+             (("50%", "fastest, 50% ahead of vLLM and SGLang"), None, None)),
+            (("100.4", "100.0", "100.2"), "llama.cpp under 1% ahead of vLLM",
+             (("under 1%", "fastest, under 1% ahead of SGLang"), None, None)),
+            (("90.0", "90.0", "90.0"), "the same speed on llama.cpp, vLLM and SGLang",
+             (("tied", "tied fastest with vLLM and SGLang"), ("tied", "tied fastest with llama.cpp and SGLang"),
+              ("tied", "tied fastest with llama.cpp and vLLM"))),
+            (("112.5", "100.0", None), "llama.cpp 13% ahead of vLLM", (("13%", "fastest, 13% ahead of vLLM"), None, None)),
+            (("51.0", "40.0", "45.0"), "llama.cpp 28% ahead of vLLM",    # exact: 27% in floats
+             (("13%", "fastest, 13% ahead of SGLang"), None, None)))
+        for speeds, words, leads in cases:
+            fixture = self.fresh()
+            for runtime, speed in zip(("llamacpp", "vllm", "sglang"), speeds):
+                fixture.set_value(runtime, "gpt-oss-20b", "decode_tok_s", speed)
+            matrix = fixture.load()
+            with self.subTest(speeds=speeds):
+                self.assertEqual(gap(matrix, "gpt-oss-20b"), words)
+                self.assertEqual(tuple(lead(matrix, "gpt-oss-20b", r) for r in ("llamacpp", "vllm", "sglang")), leads)
+        for runtime, recipe_id in RECIPES:
+            self.fixture.set_value(runtime, recipe_id, "decode_tok_s", None)
+        self.assertIsNone(data.top_speed(self.fixture.load()))
+
     def test_cell_and_row_orders(self):
         matrix = self.fixture.load()
         self.assertEqual(order(matrix, "rank"), [("qwen3.6-35b-a3b", "sglang"), ("qwen3.6-35b-a3b", "llamacpp"),
