@@ -1,13 +1,16 @@
 """A small repository for the runtime matrix page's tests: real recipe files with pinned values, and the documents the
 page reads, each written so that a test can change one fact and load the page model again."""
 
+import contextlib
+import fractions
 import html.parser
 import json
 import re
 import shutil
 import tomllib
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterator, Mapping, Sequence
 from pathlib import Path
+from unittest import mock
 
 from launcher.e2e.summary import SUMMARY_HEAD
 from launcher.runtimes import ADAPTERS
@@ -247,6 +250,19 @@ class SiteFixture:
     def load(self):
         from launcher.site import data
         return data.load(self.root)
+
+
+@contextlib.contextmanager
+def py311_fraction_format() -> Iterator[None]:
+    """Fraction formatting as Python 3.11 has it: an empty spec gives str(self), any other spec raises TypeError
+    (3.12 added Fraction.__format__), so a test on 3.14 sees what CI's 3.11 would refuse."""
+    def refuse(self, spec: str) -> str:
+        if spec:
+            raise TypeError(f"unsupported format string passed to {type(self).__name__}.__format__")
+        return str(self)
+
+    with mock.patch.object(fractions.Fraction, "__format__", refuse):
+        yield
 
 
 def cell_of(matrix, model_id: str, runtime: str):
