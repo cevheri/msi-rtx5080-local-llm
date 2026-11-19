@@ -1146,43 +1146,66 @@ class SiteRenderTest(unittest.TestCase):
                           "show it."])
 
     def test_assets_are_checked_before_inlining(self):
-        self.assertEqual((render.switch_width(3), render.switch_width(4)), ("58rem", "72.25rem"))
-        for css, js in (("a {}", ""), ("@SWITCH@ @SWITCH@", ""), ("@SWITCH@ </style>", ""), ("@SWITCH@", "a</script>")):
+        self.assertFalse(hasattr(render, "switch_width"))
+        for css, js in (("a {}", ""), ("@ENGINES@ @ENGINES@", ""), ("@ENGINES@ </style>", ""), ("@ENGINES@", "a</script>")):
             with self.subTest(css=css, js=js), self.assertRaises(data.SiteError):
-                render.inline_assets(css, js, 3)
-        self.assertEqual(render.inline_assets("@media (min-width: @SWITCH@) {}", '"use strict";\n', 3),
-                         ("@media (min-width: 58rem) {}", '"use strict";\n'))
+                render.inline_assets(css, js, 3, [0])
+        self.assertEqual(render.inline_assets("a { b: repeat(@ENGINES@, 1fr); }\n", '"use strict";\n', 3, [65, 0, 100, 65]),
+                         ("a { b: repeat(3, 1fr); }\n\n" + render.WIDTHS_NOTE + "\n.w-0 { width: 0%; }\n.w-65 { width: 65%; }\n"
+                          ".w-100 { width: 100%; }\n", '"use strict";\n'))
+        self.assertEqual(render.inline_assets("@ENGINES@", "", 4, []), ("4\n" + render.WIDTHS_NOTE + "\n", ""))
+        # The page appends one rule per bar class it uses, ascending, so every bar with a speed has its width.
+        tree = parse(self.page())
+        used = sorted({int(i.attrs["class"][2:]) for bar in tree.find_all("span", "bar") for i in bar.find_all("i")})
+        self.assertGreater(len(used), 2)
+        style = tree.find_all("style")[0].text()
+        self.assertTrue(style.endswith("\n" + render.WIDTHS_NOTE + "\n"
+                                       + "".join(f".w-{n} {{ width: {n}%; }}\n" for n in used)), style[-300:])
 
     def test_stylesheet_keeps_hidden_elements_hidden(self):
         css = re.sub(r"/\*.*?\*/", "", (REPO / "launcher/site/page.css").read_text(encoding="utf-8"), flags=re.S)
         self.assertEqual(" ".join(css.split("}", 1)[0].split()) + " }", "[hidden] { display: none !important; }")
         header = [body for selector, body in re.findall(r"([^{}]*)\{([^{}]*)\}", css) if "thead" in selector]
-        self.assertTrue(any("clip-path: inset(50%)" in " ".join(body.split()) for body in header))
+        self.assertTrue(header)
         self.assertFalse(any(re.search(r"display\s*:\s*none", body) for body in header))
-        self.assertEqual(css.count("@SWITCH@"), 1)
+        # Phone layout: the model head is visually hidden by clipping, never removed.
+        self.assertTrue(any(re.search(r"clip-path\s*:\s*inset\(50%\)", body) for selector, body in
+                            re.findall(r"([^{}]*)\{([^{}]*)\}", css) if "thead" in selector and "th.mh" in selector))
+        # Print keeps the table with its repeating head: the phone lines (max-width: 47.99rem) apply to screens only,
+        # since a printed A4 or Letter page is narrower than 48rem.
+        phones = re.findall(r"@media ([^{]*max-width: 47\.99rem[^{]*)\{", css)
+        self.assertTrue(phones)
+        self.assertEqual([query for query in phones if not query.startswith("screen and ")], [])
+        lines = css.index("#matrix, #matrix caption, #matrix thead, #matrix tbody, #matrix tr, #matrix th, #matrix td")
+        self.assertTrue(re.findall(r"@media ([^{]*)\{", css[:lines])[-1].startswith("screen and (max-width: 47.99rem)"))
+        # R-D12: the phone line's engine columns come from the one engine-count token.
+        self.assertEqual(css.count("@ENGINES@"), 1)
+        self.assertIn("repeat(@ENGINES@, minmax(0, 1fr))", css)
         rules = [(" ".join(selector.split()), " ".join(body.split()))
                  for selector, body in re.findall(r"([^{}]*)\{([^{}]*)\}", css)]
-        # D6: the Not supported diagonal runs from bottom left to top right, once, corner to corner.
-        lamp = " ".join(body for selector, body in rules if selector == ".lamp.not-supported")
-        self.assertIn("linear-gradient(to bottom right,", lamp)
-        self.assertIn("border-box no-repeat", lamp)
+        # R-D13: tiles and cards choose their layout by their own content box.
+        self.assertTrue(any(selector in ("a.tile", ".tile") and "container: tile / inline-size" in body
+                            for selector, body in rules))
+        self.assertTrue(any(selector in ("li.pick", ".pick") and "container: card / inline-size" in body
+                            for selector, body in rules))
+        flat = " ".join(css.split())
+        for query in ("@container tile (min-width: 16.5rem)", "@container tile (min-width: 18.5rem)",
+                      "@container card (min-width: 23rem)"):
+            self.assertIn(query, flat)
+        self.assertTrue(any(selector == "#drawer-bar" and "position: sticky" in body for selector, body in rules))
+        for token in ("--on-runs", "--failed-tint", "--nofit", "--hatch-a", "--hatch-b"):
+            self.assertNotIn(token, css)
         # A cut reason keeps the native disclosure marker of its summary.
         self.assertFalse([body for selector, body in rules if "details.reason" in selector and "display" in body])
-        # The filter controls flow inside the open details' content box, not beside it.
-        self.assertFalse([body for selector, body in rules
-                          if selector.startswith("#filters[open]") and "::details-content" not in selector and "flex" in body])
-        self.assertTrue(any(selector == "#filters[open]::details-content" and "flex-wrap: wrap" in body
-                            for selector, body in rules))
-        # A tile keeps its status, pill, speed and unit whole, and a narrow tile puts the speed on its own line.
-        whole = [body for selector, body in rules if selector == ".tile .status, .tile .pill, .tile .speed, .tile .unit"]
-        self.assertEqual(whole, ["white-space: nowrap; overflow-wrap: normal;"])
-        self.assertTrue(any(selector == ".tile" and "container-type: inline-size" in body for selector, body in rules))
-        self.assertRegex(" ".join(css.split()), r"@container \(max-width: [0-9.]+rem\) \{ \.tile \.speed \{")
-        # The engine label of a cell out of view shows in the stacked layout only, as the tile's does.
-        self.assertIn((".tile .engine, td .out .engine", "display: none;"), rules)
-        self.assertTrue(any(selector == "td .out .engine" and "display: block" in body for selector, body in rules))
-        # A section in the dialog keeps its title under the sticky Close bar when a load with its hash scrolls the
-        # dialog to it, and the :target outline is for the jump without JavaScript only.
+        # The key's setup words take the key's type, not the tile's smaller setup mark, and an engine head's run
+        # count never leaves one word on a line of its own.
+        self.assertIn(".key .su", [selector for selector, body in rules if "font-size: inherit;" in body])
+        self.assertIn("th[data-engine] .n", [selector for selector, body in rules if "white-space: nowrap;" in body])
+        # A Failed tile's date never breaks at its hyphens where it shows (from 48rem and in print).
+        self.assertIn((".miss .dt", "white-space: nowrap;"), rules)
+        # A section in the dialog sits right under the zero-height sticky Close bar, so a load with its hash scrolls
+        # its sticky title to the dialog's top with a zero margin, and the :target outline is for the jump without
+        # JavaScript only.
         drawn = " ".join(body for selector, body in rules if selector == "#drawer-body section.details")
         self.assertRegex(drawn, r"scroll-margin-top: [0-9.]+rem;")
         self.assertIn(("#drawer-body section.details:target", "outline: none;"), rules)
@@ -1193,6 +1216,26 @@ class SiteRenderTest(unittest.TestCase):
         self.assertIn(("h2, h3, h4", "break-after: avoid-page;"),
                       [(" ".join(sel.split()), " ".join(body.split()))
                        for sel, body in re.findall(r"([^{}]*)\{([^{}]*)\}", printed)])
+
+    def test_bars_without_any_speed(self):
+        # R-D6: without any speed every bar is w-0, the build appends only that rule, and the key's bars part and the
+        # dialog's scale line are left out.
+        for runtime, recipe_id in RECIPES:
+            self.fixture.set_value(runtime, recipe_id, "decode_tok_s", None)
+        tree = parse(self.page())
+        bars = [i for bar in tree.find_all("span", "bar") for i in bar.find_all("i")]
+        self.assertTrue(bars)
+        self.assertEqual({i.attrs.get("class") for i in bars}, {"w-0"})
+        style = tree.find_all("style")[0].text()
+        self.assertTrue(style.endswith("\n" + render.WIDTHS_NOTE + "\n.w-0 { width: 0%; }\n"), style[-200:])
+        self.assertEqual(re.findall(r"\.w-\d+ \{", style), [".w-0 {"])
+        self.assertEqual([node.attrs["data-k"] for node in tree.by_id("key").children
+                          if not isinstance(node, str) and "data-k" in node.attrs],
+                         ["counts", "not-supported", "letters"])
+        self.assertEqual(tree.find_all("p", "scale"), [])
+        self.assertEqual(text(tree, "d-llamacpp-qwen3.6-35b-a3b", "status-line"), "Speed not recorded; 128k context.")
+        first = tree.by_id("pick-list").find_all("li", "pick")[0]
+        self.assertEqual(squash(first.find_all("p", "pn")[0]), "Speed not recorded, 128k context")
 
     def test_script_keeps_no_state_outside_the_url(self):
         js = (REPO / "launcher/site/page.js").read_text(encoding="utf-8")
@@ -1634,6 +1677,8 @@ class SiteRenderTest(unittest.TestCase):
                          + ["measured peak 14 GiB"])
         self.assertEqual(text(tree, "d-llamacpp-qwen3.6-35b-a3b", "ev"),
                          f"(measured on {facts.hardware}, llama.cpp b12407, {facts.date})")
+        evidence = tree.by_id("d-llamacpp-qwen3.6-35b-a3b").find_all("p", "ev")[0]
+        self.assertEqual([squash(node) for node in evidence.find_all("span", "nw")], [facts.date])
         self.assertEqual({key: value for key, value in settings("d-llamacpp-qwen3.6-35b-a3b").items() if key != "Thinking"},
                          {"Model files": f"{facts.repo} at {facts.revision[:12]}, {facts.size_bytes / 1e9:.1f} GB",
                           "Aliases": "qwen3.6", "Tools": "Yes", "Output cap": f"{facts.output:,} tokens",

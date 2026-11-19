@@ -7,7 +7,7 @@ import hashlib
 import html
 import posixpath
 import re
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from fractions import Fraction
 from pathlib import Path
 from urllib.parse import quote, unquote
@@ -255,22 +255,21 @@ def _sha(text: str) -> str:
     return "'sha256-" + base64.b64encode(hashlib.sha256(text.encode("utf-8")).digest()).decode("ascii") + "'"
 
 
-def switch_width(engines: int) -> str:
-    """The width from which the matrix is a table: 12 + 14 x engines + 0.25 x (engines + 1) + 3 rem."""
-    width = 12 + 14 * engines + Fraction(1, 4) * (engines + 1) + 3
-    return f"{float(width):g}rem"
+WIDTHS_NOTE = "/* Bar widths, written by the build: decode speed as a share of the page's top speed. */"
 
 
-def inline_assets(css: str, js: str, engines: int) -> tuple[str, str]:
-    """The stylesheet with its one @SWITCH@ token replaced, and the script; either may not end its own element."""
-    count = css.count("@SWITCH@")
+def inline_assets(css: str, js: str, engines: int, widths: Iterable[int]) -> tuple[str, str]:
+    """The stylesheet with its one @ENGINES@ token replaced and one rule per bar width appended, and the script;
+    either may not end its own element."""
+    count = css.count("@ENGINES@")
     if count != 1:
-        raise SiteError(f"launcher/site/page.css: the token @SWITCH@ appears {count} times, not once")
+        raise SiteError(f"launcher/site/page.css: the token @ENGINES@ appears {count} times, not once")
     if "</style" in css.lower():
         raise SiteError("launcher/site/page.css: it holds </style, which would end the inline style")
     if "</script" in js.lower():
         raise SiteError("launcher/site/page.js: it holds </script, which would end the inline script")
-    return css.replace("@SWITCH@", switch_width(engines)), js
+    rules = "".join(f".w-{width} {{ width: {width}%; }}\n" for width in sorted(set(widths)))
+    return css.replace("@ENGINES@", str(engines)) + "\n" + WIDTHS_NOTE + "\n" + rules, js
 
 
 def _count(n: int, one: str, many: str) -> str:
@@ -875,7 +874,8 @@ class _Page:
         parts = [f'<p class="recipe-name">{_e(facts.name)}</p>',
                  f'<p class="status-line">{_e(self._status_line(model, cell))}</p>',
                  f'<dl class="kv">{grid}</dl>',
-                 f'<p class="ev">(measured on {_e(facts.hardware)}, {_e(self._heading(cell.runtime))}, {_e(facts.date)})</p>',
+                 f'<p class="ev">(measured on {_e(facts.hardware)}, {_e(self._heading(cell.runtime))}, '
+                 f'<span class="nw">{_e(facts.date)}</span>)</p>',
                  "<h4>Start it</h4>", '<ol class="steps">', *start, "</ol>", self._prerequisites(),
                  *self._engines(model, cell),
                  "<h4>Clients</h4>", '<ul class="clients">', *(self._client_line(result) for result in cell.clients), "</ul>"]
@@ -1024,8 +1024,11 @@ class _Page:
 
 def page(matrix: data.Matrix, build: Build, root: Path) -> str:
     """The whole page: one self-contained document with its style and scripts inline under a hash-based policy."""
+    top = data.top_speed(matrix)
+    widths = [data.bar_width(cell.recipe.decode, top) for model in matrix.models for cell in model.cells
+              if cell.status == "runs"]
     style, script = inline_assets((_ASSETS / "page.css").read_text(encoding="utf-8"),
-                                  (_ASSETS / "page.js").read_text(encoding="utf-8"), len(matrix.runtimes))
+                                  (_ASSETS / "page.js").read_text(encoding="utf-8"), len(matrix.runtimes), widths)
     parts = _Page(matrix, build, root)
     return "\n".join(["<!doctype html>", '<html lang="en" class="no-js">', parts.head(style, script),
                       parts.body(script), "</html>"]) + "\n"
