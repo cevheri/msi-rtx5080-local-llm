@@ -363,7 +363,7 @@ class _Page:
             f'<span class="q"><label for="q" class="vh">{_e(SEARCH_LABEL)}</label>'
             + _start("input", [("id", "q"), ("type", "search"), ("placeholder", SEARCH_PLACEHOLDER),
                                ("data-short", SEARCH_SHORT)]) + "</span>",
-            '<button type="button" id="open-filters" aria-haspopup="dialog">Filters</button>',
+            f'<button type="button" id="open-filters" aria-haspopup="dialog">{_e(data.filters_label(data.Filters()))}</button>',
             f'<span id="sortc" class="pair"><label for="sort">Sort</label><select id="sort">{sorts}</select></span>',
             '<button type="button" id="copy-link">Copy link</button>', "</div>", "</div>"])
 
@@ -636,7 +636,8 @@ class _Page:
                          f"{_e(KEY_WORDS[part])}" + _start("span", [("class", "sep")] + hide(part == classes[-1]))
                          + ",</span>")
             elif part == "letters":
-                words = "(" + ", ".join(f"{_e(client.letter)} {_e(client.label)}" for client in clients) + ")."
+                words = "(" + ", ".join(f'<span class="nw">{_e(client.letter)} {_e(client.label)}</span>'
+                                        for client in clients) + ")."
             elif part == "setup":
                 words = (f'<span class="su">{_e(SETUP_MARK)}</span>: a setup step failed in the pair\'s newest e2e run; '
                          "the details list it.")
@@ -644,7 +645,7 @@ class _Page:
                 words = ('<span aria-hidden="true">*</span><span class="vh">An asterisk:</span> fastest engine and its '
                          "lead over the next.")
             elif part == "bars":
-                words = f"Bars: 0 to {_e(data.speed_text(self.top))} tok/s."
+                words = f'Bars: 0 to <span class="nw">{_e(data.speed_text(self.top))} tok/s</span>.'
             else:
                 raise ValueError(f"unknown key part {part!r}")
             attrs = [("data-k", part)] + ([("data-cls", None)] if part in KEY_SHAPES else [])
@@ -682,7 +683,7 @@ class _Page:
                 words = "Tied fastest" if marker[0] == "tied" else f"Fastest, {marker[0]} ahead"
                 parts.append(f'<span class="el">{_e(words)}</span>')
         elif cell.status == "failed":
-            parts.append(f'<span class="miss"><b>Failed</b> {_e(cell.measured)}</span>')
+            parts.append(f'<span class="miss"><b>Failed</b> <span class="nw">{_e(cell.measured)}</span></span>')
         else:
             parts.append('<span class="miss">Does not fit (estimate)</span>')
         body = " ".join(parts)
@@ -694,7 +695,8 @@ class _Page:
         """The Engines heading, the scale line (left out when no Runs cell has a speed, as the key's bars part is) and the
         model's engines in ADAPTERS order."""
         scale = ([] if self.top is None else
-                 [f"<p class=\"scale\">Decode speed on the page's scale, 0 to {_e(data.speed_text(self.top))} tok/s.</p>"])
+                 [f"<p class=\"scale\">Decode speed on the page's scale, 0 to "
+                  f'<span class="nw">{_e(data.speed_text(self.top))} tok/s</span>.</p>'])
         return ["<h4>Engines</h4>", *scale, '<ul class="engines">',
                 *(self._engine_item(model, other, cell) for other in model.cells), "</ul>"]
 
@@ -787,7 +789,7 @@ class _Page:
                  "failed": f"{label}: failed, {tally}; the runtime coverage table does not describe it yet.",
                  "not-tested": f"{label}: not tested yet.",
                  "not-supported": f"{label}: not supported; llmctl writes no {label} entry for this pair."}[result.cls]
-        line = _e(words)
+        line = _e(words).replace(_e(latest), f'(latest <span class="nw">{_e(result.latest)}</span>)', 1)
         if result.not_reached is not None and result.cls in ("known-issue", "failed"):
             line += f" Not reached: <code>{_e(result.not_reached)}</code> failed."
         return f"<li>{_lamp(result.cls, letter)} <span>{line}</span></li>"
@@ -854,8 +856,8 @@ class _Page:
                  "<p>Add <code>--replace</code> to stop a running server first; <code>./llmctl up</code> refuses to "
                  "start when less GPU memory or RAM is free.</p>"]
         if facts.plain_runtime != cell.runtime:
-            start.append(f"<p>Without <code>--runtime</code>, <code>./llmctl up {_e(model.id)}</code> starts the "
-                         f"{_e(self.labels[facts.plain_runtime])} recipe.</p>")
+            start.append(f'<p>Without <code>--runtime</code>, <code>./llmctl up <span class="nw">{_e(model.id)}</span></code> '
+                         f"starts the {_e(self.labels[facts.plain_runtime])} recipe.</p>")
         start.append("</li>")
         files = f"https://huggingface.co/{facts.repo}/tree/{facts.revision}"
         doc, _, anchor = facts.doc.partition("#")
@@ -880,7 +882,7 @@ class _Page:
                  *self._engines(model, cell),
                  "<h4>Clients</h4>", '<ul class="clients">', *(self._client_line(result) for result in cell.clients), "</ul>"]
         if cell.setup:
-            parts += ["<h4>Setup checks</h4>", f"<p>Setup checks in the e2e of {_e(cell.covered)}:</p>",
+            parts += ["<h4>Setup checks</h4>", f'<p>Setup checks in the e2e of <span class="nw">{_e(cell.covered)}</span>:</p>',
                       '<ul class="setup-checks">', *(self._failure(failure) for failure in cell.setup), "</ul>"]
         parts += ["<h4>Coverage note</h4>", self._note(model, cell),
                   '<details class="more"><summary>Recipe settings</summary><dl class="settings">',

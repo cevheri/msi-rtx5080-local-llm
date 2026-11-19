@@ -334,6 +334,8 @@ def rank_of(lines: list[str], repos: Mapping[str, tuple[str, ...]]) -> tuple[dic
         if ids[0] in ranks:
             raise SiteError(f"{where}, column Model: {ids[0]} is ranked twice, also at rank {ranks[ids[0]]}")
         ranks[ids[0]] = rank
+    if sorted(seen) != list(range(1, len(seen) + 1)):
+        raise SiteError(f"{SELECTION}: the Top 10 table's ranks must run from 1 to {len(seen)} without a gap")
     return ranks, tuple(unmatched)
 
 

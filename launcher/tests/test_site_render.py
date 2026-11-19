@@ -250,6 +250,26 @@ class SiteRenderTest(unittest.TestCase):
                          ["Models and engines"])
         self.assertTrue("hidden" in tree.by_id("controls").attrs)
         self.assertEqual([squash(tree.by_id(i)) for i in ("open-filters", "show")], ["Filters", "Show 6 models"])
+        self.assertEqual(squash(tree.by_id("open-filters")), data.filters_label(data.Filters()))
+        with mock.patch.object(data, "filters_label", lambda filters: "Filters probe"):
+            self.assertEqual(squash(parse(render.page(matrix, BUILD, self.fixture.root)).by_id("open-filters")),
+                             "Filters probe")
+
+        # No script runs to unhide what this page must show: none of it, nor any ancestor, carries hidden.
+        def with_ancestors(node, chain=()):
+            for child in node.children:
+                if not isinstance(child, str):
+                    yield child, chain
+                    yield from with_ancestors(child, (*chain, child))
+
+        shown = {"matrix", "pick-list", "key", "use-cases", "details"}
+        shown_classes = {"pick", "facts", "only-no-js", "details"}
+        checked = [(node, chain) for node, chain in with_ancestors(tree)
+                   if node.attrs.get("id") in shown or _classes(node) & shown_classes]
+        self.assertGreater(len(checked), len(shown) + len(matrix.models))
+        for node, chain in checked:
+            with self.subTest(shown=node.attrs.get("id") or node.attrs.get("class")):
+                self.assertEqual([(n.tag, n.attrs.get("id")) for n in (*chain, node) if "hidden" in n.attrs], [])
         self.assertEqual(table.attrs.get("data-pairs"), "18")
         self.assertEqual((table.tag, table.attrs.get("tabindex")), ("table", "-1"))
         self.assertEqual(tree.find_all("a", "skip")[0].attrs["href"], "#matrix")
@@ -512,6 +532,10 @@ class SiteRenderTest(unittest.TestCase):
                 if n.attrs.get("class", "").startswith("sep")]
         self.assertEqual(seps, [("sep-more", "; boxed:", False), ("sep-end", ".", True), ("sep", ",", True)])
         self.assertEqual([squash(n) for n in parts[0].find_all("b")], ["4/5"])
+        # A letter never ends a line apart from its client, nor the top speed apart from its unit.
+        self.assertEqual([n.text() for n in parts[2].find_all("span", "nw")],
+                         ["O OpenCode", "H Hermes", "P Pi", "D dsh", "K Kimi"])
+        self.assertEqual([n.text() for n in parts[4].find_all("span", "nw")], ["188.2 tok/s"])
         marked = parts[1]
         self.assertEqual(("data-cls" in marked.attrs, [(n.attrs["class"], n.text(), n.attrs.get("aria-hidden"))
                                                        for n in marked.find_all("span", "lamp")], spoken(marked)),
@@ -723,6 +747,12 @@ class SiteRenderTest(unittest.TestCase):
         self.assertEqual([visible(self.tile(tree, *key)) for key in (("deepseek-r1-0528-qwen3-8b", "sglang"),
                                                                     ("k2-horizon-7b", "vllm"))],
                          ["Failed 2026-11-17", "Does not fit (estimate)"])
+        # The stylesheet's hooks: the failed word in b, the date in span.dt (visually hidden on phones), the evidence
+        # label kept whole.
+        hooks = lambda key: [(node.tag, node.attrs.get("class"), squash(node)) for node in
+                             self.tile(tree, *key).find_all("span", "miss")[0].children if not isinstance(node, str)]
+        self.assertEqual(hooks(("deepseek-r1-0528-qwen3-8b", "sglang")), [("b", None, "Failed"), ("span", "dt", "2026-11-17")])
+        self.assertEqual(hooks(("k2-horizon-7b", "vllm")), [("span", "nw", "(estimate)")])
         # A failed setup step, a known issue and a failure, and a Runs cell without a speed.
         cell = ("qwen3.6-35b-a3b", "llamacpp")
         self.fixture.coverage({cell: self.fixture._default_cell(*cell)
@@ -743,6 +773,11 @@ class SiteRenderTest(unittest.TestCase):
         qwen_tile = self.tile(tree, "qwen3.6-35b-a3b", "llamacpp")
         su = qwen_tile.find_all("span", "su")
         self.assertEqual([(visible(node), spoken(node)) for node in su], [("Setup check failed", "Setup check failed,")])
+        self.assertEqual([node.attrs["class"] for node in qwen_tile.find_all("span", "g")[0].children
+                          if not isinstance(node, str)], ["sp", "dm", "su", "cx", "sz", "pc", "bar", "vh"])
+        self.assertTrue(tile_name(qwen_tile, drop=("sz",)).startswith(
+            "122.5 tok/s, default in the OpenCode config, Setup check failed, 128k context, llama.cpp: "),
+            tile_name(qwen_tile, drop=("sz",)))
         pc = qwen_tile.find_all("span", "pc")[0]
         self.assertEqual((squash(pc.find_all("span", "pcn")[0]),
                           [(n.attrs["class"], n.text()) for n in pc.find_all("span", "lamp")]),
@@ -758,6 +793,25 @@ class SiteRenderTest(unittest.TestCase):
                          "k2-horizon-7b k2-7b horizon k2 horizon q4 llama.cpp")
         self.assertEqual(tile_cell(tree, "k2-horizon-7b", "vllm").attrs["data-search"],
                          "k2-horizon-7b k2-7b horizon vllm")
+        # The tied and the under 1% forms of the fastest marker: the visible words hidden from readers, the spoken
+        # words visually hidden.
+        for runtime in ("llamacpp", "sglang"):                                   # vLLM has no speed since above
+            self.fixture.set_value(runtime, "gpt-oss-20b", "decode_tok_s", "100.0")
+        self.fixture.set_value("llamacpp", "deepseek-r1-0528-qwen3-8b", "decode_tok_s", "100.1")
+        self.fixture.set_value("vllm", "deepseek-r1-0528-qwen3-8b", "decode_tok_s", "100.0")
+        tree = parse(self.page())
+        marks = lambda key: [(node.attrs.get("class"), node.attrs.get("aria-hidden"), node.text())
+                             for node in self.tile(tree, *key).find_all("span", "mk")[0].children if not isinstance(node, str)]
+        tied = self.tile(tree, "gpt-oss-20b", "llamacpp")
+        self.assertEqual(marks(("gpt-oss-20b", "llamacpp")),
+                         [(None, "true", "* tied"), ("vh", None, "tied fastest with SGLang,")])
+        self.assertEqual((visible(tied.find_all("span", "mk")[0]), tile_name(tied)),
+                         ("* tied", "100.0 tok/s, tied fastest with SGLang, 128k context, llama.cpp: All 5 clients passed."))
+        under = self.tile(tree, "deepseek-r1-0528-qwen3-8b", "llamacpp")
+        self.assertEqual(visible(under.find_all("span", "mk")[0]), "* under 1%")
+        self.assertEqual(marks(("deepseek-r1-0528-qwen3-8b", "llamacpp"))[0], (None, "true", "* "))
+        self.assertTrue(tile_name(under).startswith("100.1 tok/s, fastest, under 1% ahead of vLLM, 64k context, "),
+                        tile_name(under))
 
     def test_sort_values_are_in_the_markup(self):
         matrix = self.fixture.load()
@@ -1045,10 +1099,10 @@ class SiteRenderTest(unittest.TestCase):
             record.unlink()
         tree = parse(self.page())
         self.assertEqual(versions(tree), "Client versions: not recorded.")
-        self.fixture.top10([*rows, "| 5 | *Unshipped* | llama.cpp |"])
+        self.fixture.top10([*rows, "| 4 | *Unshipped* | llama.cpp |"])
         with self.assertRaises(data.SiteError) as raised:
             self.page()
-        self.assertEqual(str(raised.exception), "docs/model-selection.md: row 5, Model: column 1: emphasis")
+        self.assertEqual(str(raised.exception), "docs/model-selection.md: row 4, Model: column 1: emphasis")
 
     def test_filters_sheet_markup(self):
         matrix = self.fixture.load()
@@ -1203,6 +1257,31 @@ class SiteRenderTest(unittest.TestCase):
         self.assertIn("th[data-engine] .n", [selector for selector, body in rules if "white-space: nowrap;" in body])
         # A Failed tile's date never breaks at its hyphens where it shows (from 48rem and in print).
         self.assertIn((".miss .dt", "white-space: nowrap;"), rules)
+        # A tile shows the OpenCode default tag in Coding in OpenCode only (R-D11), its size under the size sort only
+        # and its gap words under the gap sort only; hidden parts follow these rules, so the tile's name does too.
+        for selector in ('#matrix:not([data-use="opencode"]) .dm', '#matrix:not([data-sort="size"]) .sz',
+                         '#matrix:not([data-sort="gap"]) .gv'):
+            self.assertIn((selector, "display: none;"), rules)
+        # The engine name of the dialog's Engines list never breaks inside the word, and the phone grid gives it the
+        # desktop label width.
+        self.assertIn((".eg .en", "font-weight: 650; white-space: nowrap; overflow-wrap: normal;"), rules)
+        phone_rules = [(" ".join(sel.split()), " ".join(body.split())) for query in
+                       re.findall(r"@media screen and \(max-width: 47\.99rem\) \{(.*?)\n\}", css, flags=re.S)
+                       for sel, body in re.findall(r"([^{}]*)\{([^{}]*)\}", query)]
+        self.assertIn((".eg", "grid-template-columns: 5.25rem minmax(0, 1fr) auto; column-gap: 0.5rem;"), phone_rules)
+        # The search placeholder is the field's only visible label, so it takes the muted text colour (4.5:1 and up).
+        self.assertIn(("#q::placeholder", "color: var(--muted); opacity: 1;"), rules)
+        # The card's Start commands summary stays inside the 9rem the role and the name keep free, and wraps under
+        # larger text spacing (WCAG 1.4.12) instead of covering them.
+        summary = " ".join(body for selector, body in rules if selector == ".pst > summary")
+        self.assertIn("max-width: 9rem;", summary)
+        self.assertIn("white-space: normal;", summary)
+        self.assertNotIn("white-space: nowrap;", summary)
+        # The title wraps rather than push the page sideways at 320 px with larger text.
+        self.assertIn((".top h1", "flex: 0 1 auto; min-width: 0;"), rules)
+        # Forced colors draw the Not supported box's border in the system text colour too.
+        forced = re.search(r"@media \(forced-colors: active\) \{(.*?)\n\}", css, flags=re.S).group(1)
+        self.assertIn("--edge: CanvasText;", forced)
         # A section in the dialog sits right under the zero-height sticky Close bar, so a load with its hash scrolls
         # its sticky title to the dialog's top with a zero margin, and the :target outline is for the jump without
         # JavaScript only.
@@ -1241,6 +1320,8 @@ class SiteRenderTest(unittest.TestCase):
         js = (REPO / "launcher/site/page.js").read_text(encoding="utf-8")
         for word in ("localStorage", "sessionStorage", "indexedDB", "document.cookie", ".style."):
             self.assertNotIn(word, js)
+        # It never sets a style: no style property, no style attribute, no cssText.
+        self.assertIsNone(re.search(r"\.style\b|[\"']style[\"']|cssText", js))
 
     def test_script_uses_only_safe_sinks(self):
         js = (REPO / "launcher/site/page.js").read_text(encoding="utf-8")
@@ -1389,7 +1470,10 @@ class SiteRenderTest(unittest.TestCase):
         self.assertEqual([a.attrs["class"] for a in engines.find_all("a")], ["eg", "eg"])
         self.assertEqual(text(tree, "d-llamacpp-deepseek-r1-0528-qwen3-8b", "scale"),
                          "Decode speed on the page's scale, 0 to 188.2 tok/s.")
-        thinking = lines(tree, "d-vllm-deepseek-r1-0528-qwen3-8b", "thinking")
+        scale = tree.by_id("d-llamacpp-deepseek-r1-0528-qwen3-8b").find_all("p", "scale")[0]
+        self.assertEqual([node.text() for node in scale.find_all("span", "nw")], ["188.2 tok/s"])
+        self.assertEqual([node.text() for node in engines.find_all("span", "nw")], ["2026-11-17"])
+        thinking =lines(tree, "d-vllm-deepseek-r1-0528-qwen3-8b", "thinking")
         self.assertEqual(thinking[0], "Always on")
         self.assertEqual([line.split(":")[0] for line in thinking[1:]], ["Hermes", "Pi", "dsh", "Kimi"])  # after the type line
         self.assertEqual(lines(tree, "d-sglang-qwen3.6-35b-a3b", "thinking")[0], "Toggle, off by default")
@@ -1481,6 +1565,14 @@ class SiteRenderTest(unittest.TestCase):
         self.assertIn("OpenCode: not supported; llmctl writes no OpenCode entry for this pair.",
                       lines(tree, "d-vllm-deepseek-r1-0528-qwen3-8b", "clients"))
         self.assertIn("Setup checks in the e2e of 2026-11-19:", text(tree, "d-sglang-gpt-oss-20b"))
+        # Dates never break at their hyphens on phones: each is one span.nw.
+        for li in tree.by_id("d-llamacpp-qwen3.6-35b-a3b").find_all("ul", "clients")[0].find_all("li"):
+            with self.subTest(line=squash(li)):
+                self.assertEqual([node.text() for node in li.find_all("span", "nw")],
+                                 re.findall(r"\d{4}-\d\d-\d\d", _text_without_lamps(li)))
+        setup_line = next(p for p in tree.by_id("d-sglang-gpt-oss-20b").find_all("p")
+                          if squash(p).startswith("Setup checks in the e2e of"))
+        self.assertEqual([node.text() for node in setup_line.find_all("span", "nw")], ["2026-11-19"])
         section = tree.by_id("d-sglang-gpt-oss-20b")
         self.assertEqual([squash(li) for li in section.find_all("ul", "setup-checks")[0].find_all("li")],
                          ["up failed: the server did not start (no record named after this step)"])
@@ -1578,6 +1670,8 @@ class SiteRenderTest(unittest.TestCase):
             with self.subTest(words=words):
                 self.assertIn(words, body)
         self.assertNotIn("Without --runtime", text(tree, "d-llamacpp-qwen3.6-35b-a3b"))
+        plain = next(p for p in section.find_all("p") if squash(p).startswith("Without --runtime"))
+        self.assertEqual([node.text() for node in plain.find_all("code")[1].find_all("span", "nw")], ["qwen3.6-35b-a3b"])
         pre = section.find_all("p", "pre")[0]
         self.assertEqual(squash(pre), "Run both in a clone of this repository; llmctl needs Docker and the NVIDIA "
                                       "Container Toolkit: How to start a model, Host setup.")

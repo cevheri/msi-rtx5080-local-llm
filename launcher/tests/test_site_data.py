@@ -187,6 +187,13 @@ class SiteDataTest(unittest.TestCase):
                          repos)
         with self.assertRaisesRegex(data.SiteError, "^docs/model-selection.md: a row with an empty Rank cell: "):
             data.rank_of(head + ["|  | [B](https://huggingface.co/org/B) | x |"], repos)
+        # The page says "Top <n>" from the row count, so the ranks must run from 1 to n (a gap stops the build, D13).
+        for gapped in ([rows[0], "| 3 | [B](https://huggingface.co/org/B) | x |"],
+                       ["| 2 | [B](https://huggingface.co/org/B) | x |"]):
+            with self.subTest(gapped=gapped), self.assertRaisesRegex(
+                    data.SiteError, "^docs/model-selection.md: the Top 10 table's ranks must run from 1 to "
+                                    f"{len(gapped)} without a gap$"):
+                data.rank_of(head + gapped, repos)
         self.assertEqual(self.fixture.load().top, 3)
         catalog = data.shipped_catalog(self.fixture.root)
         rows = [TOP10_ROW.format(rank=rank, id=model_id, repo=catalog.runtimes["llamacpp"].recipes[model_id].model.repo)
@@ -872,6 +879,14 @@ class SiteDataTest(unittest.TestCase):
                           ("Next by engine difference", "deepseek-r1-0528-qwen3-8b", "vllm")])
         self.assertEqual(cards(m2, "fastest", F(engines=("vllm",), search="gpt-oss")),      # an engine pick needs a speed
                          [("Next by speed", "gpt-oss-20b", "vllm")])
+        # The gap card names the gap row's fastest in-view cell, not its first in engine order.
+        self.assertEqual(cards(m, "compare", F(engines=("vllm", "sglang")))[0],
+                         ("Biggest engine difference", "gpt-oss-20b", "sglang"))
+        # Smallest download takes every Runs cell, one without a speed too.
+        fixture = self.fresh()
+        fixture.set_value("llamacpp", "deepseek-r1-0528-qwen3-8b", "decode_tok_s", None)
+        self.assertEqual(cards(fixture.load(), "every-client")[2],
+                         ("Smallest download", "deepseek-r1-0528-qwen3-8b", "llamacpp"))
 
     def test_view_key_and_divider(self):
         m, F = self.fixture.load(), data.Filters

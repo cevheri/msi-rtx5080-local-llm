@@ -39,6 +39,7 @@
   const classParts = keyParts.filter((part) => part.hasAttribute("data-cls"));
   const pickList = byId("pick-list");
   const noPicks = byId("no-picks");
+  const picksSection = byId("picks");
   const longContext = Number(pickList.dataset.long);
   const checkboxes = [...sheet.querySelectorAll('input[type="checkbox"]')];
   const boxes = (name) => checkboxes.filter((box) => box.name === name);
@@ -311,24 +312,31 @@
     });
     pickList.hidden = cards.length === 0;
     noPicks.hidden = cards.length > 0 || !anyRows;
+    // An empty view leaves no named region holding only its hidden heading; #answer says that nothing matches.
+    picksSection.hidden = !anyRows;
     const words = wanted.map((card, n) => card.label + ": " + shownCards[n].querySelector("h3 a").textContent);
     return words.length ? " Picks: " + words.join("; ") + "." : "";
   }
 
-  // The count line and the picks words are a live region: the view changes at once, its words after a pause.
+  // The count line and the picks words are a live region: the view changes at once, its words after a pause. The
+  // open sheet makes #answer inert, so there its words wait for the close and #sheet-live gets the match line.
   let quietTimer = null;
   let pending = null;
+  let unsaid = null;
 
   function flushWords() {
     clearTimeout(quietTimer);
     quietTimer = null;
-    if (!pending) {
-      return;
+    if (pending) {
+      sheetLive.textContent = pending.match;
+      unsaid = pending;
+      pending = null;
     }
-    answerPicks.textContent = pending.picks;
-    answer.replaceChildren(...pending.count, answerPicks);
-    sheetLive.textContent = pending.match;
-    pending = null;
+    if (unsaid && !sheet.open) {
+      answerPicks.textContent = unsaid.picks;
+      answer.replaceChildren(...unsaid.count, answerPicks);
+      unsaid = null;
+    }
   }
 
   // The key (data.view's key): the parts of the in-view Runs cells, and the built separators shown or hidden.
@@ -599,8 +607,19 @@
 
   function moveControls() {
     const target = narrow.matches ? byId("sheet-slot") : byId("ctl");
-    target.append(byId("sortc"), byId("copy-link"));
+    const moved = [byId("sortc"), byId("copy-link")];
+    const held = document.activeElement;
+    const had = moved.some((node) => node.contains(held));
+    target.append(...moved);
     search.placeholder = narrow.matches ? search.dataset.short : longPlaceholder;
+    // A move drops focus; it returns to the moved control where that can take it (shown and not inert), else to the
+    // open sheet's Close button or the Filters button.
+    if (had && document.activeElement !== held) {
+      held.focus();
+      if (document.activeElement !== held) {
+        (sheet.open ? byId("sheet-close") : filtersButton).focus();
+      }
+    }
   }
 
   // The Filters sheet: a modal dialog that writes no history entry; Close, Show, Escape and a backdrop click close
