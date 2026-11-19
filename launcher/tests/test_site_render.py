@@ -7,6 +7,7 @@ import contextlib
 import hashlib
 import io
 import os
+import posixpath
 import re
 import shutil
 import socket
@@ -20,8 +21,7 @@ from launcher.runtimes import ADAPTERS
 from launcher.site import data, draw, fit, render, words
 from launcher.tests.fakes import REPO
 from launcher.tests.site_fixture import (DEFAULT_RUN, RECIPES, Node, SiteFixture, cell_of, default_rows, parse,
-                                         py311_fraction_format,
-                                         well_formed_problems)
+                                         prefix, py311_fraction_format, row, well_formed_problems)
 
 BUILD = data.Build("https://github.com/o/r", "a" * 40, 0)
 BLOB = "https://github.com/o/r/blob/" + "a" * 40
@@ -453,6 +453,162 @@ class SiteRenderTest(unittest.TestCase):
         self.assertEqual(squash_text(tree.by_id("get-started").find_all("p", "ep")[0]),
                          "Other tools: http://127.0.0.1:8080/v1 with the model name local.")
 
+    def test_site_writes_a_page_per_model(self):
+        matrix = self.fixture.load()
+        self.assertEqual(list(render.site(matrix, BUILD, self.fixture.root)),
+                         ["index.html", *(f"models/{m.id}/index.html" for m in matrix.models)])
+
+    def test_every_internal_link_resolves(self):
+        pages = self.pages()
+        ids = {path: {n.attrs["id"] for n in parse(page).iter() if "id" in n.attrs} for path, page in pages.items()}
+        for path, page in pages.items():
+            for node in parse(page).find_all("a"):
+                href = node.attrs.get("href", "")
+                if href.startswith("https://"):
+                    continue
+                part, _, anchor = href.partition("#")
+                with self.subTest(page=path, href=href):
+                    if part:
+                        self.assertTrue(part.endswith("/"), href)
+                        target = posixpath.normpath(posixpath.join(posixpath.dirname(path), part))
+                        file = "index.html" if target == "." else f"{target}/index.html"
+                    else:
+                        file = path
+                    self.assertIn(file, pages)
+                    if anchor:
+                        self.assertIn(anchor, ids[file])
+
+    def test_cli_refuses_a_stale_model_page(self):
+        out = Path(self._tmp.name) / "out"
+        (out / "models" / "gone").mkdir(parents=True)
+        (out / "models" / "gone" / "index.html").write_text("old\n", encoding="utf-8")
+        self.assertEqual(self.build(out), (1, "", f"site: --out {out}: the folder holds files the build does not write: "
+                                                  "models/gone\n"))
+        shutil.rmtree(out / "models" / "gone")
+        elsewhere = Path(self._tmp.name) / "elsewhere"
+        elsewhere.mkdir()
+        (out / "models").rmdir()
+        for kind, make in (("a file", lambda p: p.write_text("x\n", encoding="utf-8")), ("a link", lambda p: p.symlink_to(elsewhere))):
+            with self.subTest(models=kind):
+                make(out / "models")
+                self.assertEqual(self.build(out), (1, "", f"site: --out {out}: {out / 'models'} is not a folder\n"))
+                self.assertEqual(list(elsewhere.iterdir()), [])            # nothing written through the link
+                (out / "models").unlink()
+        code, stdout, _ = self.build(out)
+        self.assertEqual(code, 0)
+        self.assertRegex(stdout, rf"^wrote {re.escape(str(out))}: 7 pages, ")
+        self.assertTrue((out / "models" / "qwen3.6-35b-a3b" / "index.html").is_file())
+        self.assertEqual((out / "models" / "qwen3.6-35b-a3b" / "index.html").stat().st_mode & 0o7777, 0o644)
+
+    def test_every_page_has_one_terminal(self):
+        for path, page in self.pages().items():
+            with self.subTest(page=path):
+                self.assertEqual(len(parse(page).find_all("div", "term")), 1)
+
+    def test_in_page_links_of_a_model_page_keep_the_address(self):
+        for path, page in self.pages().items():
+            if path.startswith("models/"):
+                jumps = [a for a in parse(page).find_all("a") if a.attrs.get("href", "").startswith("#")]
+                with self.subTest(page=path):
+                    self.assertEqual(sorted(a.attrs["href"] for a in jumps), ["#model", "#run"])
+                    self.assertTrue(all("data-scroll" in a.attrs for a in jumps))
+
+    def test_model_page_texts(self):
+        tree = parse(self.pages()["models/qwen3.6-35b-a3b/index.html"])
+        self.assertEqual(tree.find_all("title")[0].text(), "Qwen3.6-35B-A3B, llmctl")
+        self.assertEqual(squash_text(tree.by_id("model")), "Qwen3.6-35B-A3B")
+        self.assertEqual(squash_text(tree.find_all("p", "role")[0]), "Ranked 1 of 3 in our review, and our default.")
+        self.assertEqual(squash_text(tree.find_all("p", "maker")[0]), "Vendor 1, Apache-2.0, 35B / 3B active MoE.")
+        self.assertTrue(squash_text(tree.find_all("p", "summary")[0]).startswith(
+            "A mixture-of-experts model: 35B parameters, 3B of them active for each token. On our 16 GB laptop GPU it writes "
+            "122.5 tokens a second and keeps 128k of context in view. It uses 14.7 GB of GPU memory and keeps part of itself "
+            "in RAM, 14.9 GB at peak."))
+        panel = tree.by_id("your-machine")
+        self.assertEqual(squash_text(panel.find_all("h2")[0]), "Our test laptop")
+        verdict = panel.find_all("p", "verdict")[0]
+        self.assertEqual([squash_text(verdict.find_all("span", c)[0]) for c in ("on", "vt")],
+                         ["Qwen3.6-35B-A3B on llama.cpp, on our test laptop:", "Runs as measured."])
+        engines = tree.by_id("engines")
+        self.assertEqual([n.attrs["id"] for n in engines.iter() if n.attrs.get("id", "").startswith("engine-")],
+                         ["engine-llamacpp", "engine-vllm", "engine-sglang"])
+        self.assertIn("Doesn't fit on 16 GB with vLLM (our arithmetic, not a test run).", squash_text(engines))
+        why = engines.find_all("details", "why")[0]
+        self.assertEqual(squash_text(why.find_all("p")[0]), "Too large for the budget (estimate). Engine notes")
+        self.assertEqual(why.find_all("a")[0].attrs["href"], "https://github.com/o/r/blob/" + "a" * 40 + "/vllm/models.md")
+        good = squash_text(tree.by_id("good-to-know"))
+        self.assertIn("24% faster on SGLang (151.3 tok/s), but llmctl asks for 27 GB of free RAM and SGLang's engine is a "
+                      "49.7 GB image.", good)
+        self.assertIn("Other tools can use it like OpenAI's API: http://127.0.0.1:8080/v1 with the model name local.", good)
+        self.assertIn("Other tools can use it like OpenAI's API: http://127.0.0.1:30000/v1 with the model name "
+                      "qwen3.6-35b-a3b.", good)                          # SGLang serves the recipe's served_name
+        agents = squash_text(tree.by_id("agents"))
+        for command in ("pi --model llmctl/local", "kimi -m llmctl/local", "pi --model llmctl/qwen3.6-35b-a3b",
+                        "kimi -m llmctl/qwen3.6-35b-a3b", "hermes -p llmctl"):
+            self.assertIn(command, agents)                               # M16, from RecipeFacts.launch
+        self.assertEqual(len(tree.find_all("div", "term")), 1)
+        self.assertEqual([squash_text(h) for h in tree.find_all("p", "per-h")][:2], ["On llama.cpp", "On SGLang"])
+        pager = tree.find_all("nav", "pager")[0]
+        self.assertEqual([a.attrs["href"] for a in pager.find_all("a")], ["../gpt-oss-20b/"])
+
+    def test_model_page_holds_no_your_before_input(self):
+        for path, page in self.pages().items():
+            if path.startswith("models/"):
+                panel = parse(page).by_id("your-machine")
+                said = " ".join(squash_text(n) for n in (*panel.find_all("h2"), *panel.find_all("p"), *panel.find_all("figure")))
+                with self.subTest(page=path):
+                    self.assertIsNone(re.search(r"\byour\b", said, re.I))
+
+    def test_model_page_marks_the_chosen_engine_and_hides_the_controls(self):
+        tree = parse(self.pages()["models/qwen3.6-35b-a3b/index.html"])
+        classes = lambda node: node.attrs.get("class", "").split()
+        self.assertEqual([n.attrs["id"] for n in tree.find_all("div", "er") if "cur" in classes(n)], ["engine-llamacpp"])
+        self.assertEqual({n.attrs["data-rt"] for n in tree.find_all("div", "per") if "cur" in classes(n)}, {"llamacpp"})
+        self.assertEqual(len([n for n in tree.find_all("div", "per") if "cur" not in classes(n)]), 3)   # SGLang's blocks
+        controls = [*tree.find_all("div", "mchips"), *tree.find_all("div", "runsel"), *tree.find_all("label", "usebtn")]
+        self.assertEqual(len(controls), 4)                                # the chips, the select, two radios
+        for node in controls:
+            with self.subTest(control=node.attrs["class"]):
+                self.assertIn("hidden", node.attrs)
+                self.assertIn("data-js-only", node.attrs)
+        self.assertEqual(squash_text(tree.find_all("p", "moe")[0]),      # M9
+                         "Why a 20.5 GB download fits in 14.7 GB of GPU memory: it's a mixture-of-experts model, so most "
+                         "of its experts wait in RAM and the busiest stay on the GPU. How that works")
+        self.assertEqual(tree.find_all("p", "agent-note")[0].attrs.get("hidden", "shown"), None)  # OpenCode passed
+        evidence = [a.attrs["href"] for a in tree.by_id("evidence").find_all("a")]
+        self.assertEqual(evidence[2], BLOB + "/research/2026-11-18/llmctl-fixture-e2e/summary.md")   # M18
+        self.assertEqual([n.attrs["class"] for n in tree.by_id("engines").find_all("p", "vw")], ["vw ok", "vw ok"])
+
+    def test_model_page_chooses_the_row_setup(self):
+        # spec 4.4: the chosen engine is the model's row setup on the laptop, not its default engine
+        self.fixture.set_value("llamacpp", "gpt-oss-20b", "memory_gib", "50")
+        tree = parse(self.pages()["models/gpt-oss-20b/index.html"])
+        classes = lambda node: node.attrs.get("class", "").split()
+        self.assertEqual(squash_text(tree.find_all("p", "fe")[0]), "On SGLang")
+        self.assertEqual([n.attrs["id"] for n in tree.find_all("div", "er") if "cur" in classes(n)], ["engine-sglang"])
+        self.assertEqual({n.attrs["data-rt"] for n in tree.find_all("div", "per") if "cur" in classes(n)}, {"sglang"})
+        verdict = tree.find_all("p", "verdict")[0]
+        self.assertEqual([squash_text(verdict.find_all("span", c)[0]) for c in ("on", "vt")],
+                         ["gpt-oss-20b on SGLang, on our test laptop:", "Runs as measured."])
+        self.assertTrue(squash_text(tree.find_all("div", "term")[0]).startswith("Commands for gpt-oss-20b on SGLang"))
+
+    def test_model_page_names_the_agent_to_try_after_a_failed_test(self):
+        # M13: the agent note shows without script when our default agent failed the latest test
+        k2 = prefix("llamacpp", "k2-horizon-7b")
+        self.fixture.run("2026-11-19", "llmctl-k2-e2e",
+                         [row(k2, "up"), row(k2, "status"), row(k2, "config"), row(k2, "opencode", "no tool call")])
+        note = parse(self.pages()["models/k2-horizon-7b/index.html"]).find_all("p", "agent-note")[0]
+        self.assertNotIn("hidden", note.attrs)
+        self.assertEqual(squash_text(note), "Failed the latest test in OpenCode. In OpenCode, Qwen3.6-35B-A3B passed the "
+                                            "agent test and runs on our laptop as measured.")
+        self.assertEqual([a.attrs["href"] for a in note.find_all("a")], ["../qwen3.6-35b-a3b/"])
+
+    def test_evidence_links_the_latest_run(self):
+        # M18: the latest run by date, then folder, as How we tested names it (spec 7.10)
+        self.fixture.run(DEFAULT_RUN[0], "llmctl-a-e2e", default_rows()[:2])
+        tree = parse(self.pages()["models/qwen3.6-35b-a3b/index.html"])
+        summaries = [a.attrs["href"] for a in tree.by_id("evidence").find_all("a") if a.attrs["href"].endswith("summary.md")]
+        self.assertEqual(summaries, [BLOB + f"/research/{DEFAULT_RUN[0]}/{DEFAULT_RUN[1]}/summary.md"] * 2)
+
     def test_repository_text_is_escaped(self):
         self.fixture.set_value("llamacpp", "k2-horizon-7b", "name", '"K2 <b>&\\" Horizon Q8_0"')
         home = self.pages()["index.html"]
@@ -597,7 +753,7 @@ class SiteRenderTest(unittest.TestCase):
         (out / "index.html").write_text("old\n", encoding="utf-8")
         code, stdout, stderr = self.build(out)
         self.assertEqual((code, stderr), (0, ""))
-        self.assertRegex(stdout, rf"^wrote {re.escape(str(out))}: 1 page, \d+ bytes, 6 models, 3 engines, 5 clients, 1 e2e runs\n$")
+        self.assertRegex(stdout, rf"^wrote {re.escape(str(out))}: 7 pages, \d+ bytes, 6 models, 3 engines, 5 clients, 1 e2e runs\n$")
         self.assertNotEqual((out / "index.html").read_text(encoding="utf-8"), "old\n")
         fresh = Path(self._tmp.name) / "fresh" / "out"      # a new page is 0644 whatever the umask; a replaced one keeps
         self.assertEqual(self.build(fresh)[0], 0)           # its mode (files.write_atomic), so only a fresh folder says

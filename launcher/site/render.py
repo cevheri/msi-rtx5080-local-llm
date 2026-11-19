@@ -665,16 +665,262 @@ def _home_main(home: _Home) -> str:
             f"{compare_html(home)}{how_it_works_html(home)}{questions_html(home)}{tested_html(home)}</main>")
 
 
+def _nav(build: Build) -> tuple[tuple[str, str], ...]:
+    return ((words.NAV["models"], "/#models"), (words.NAV["get-started"], "/#get-started"),
+            (words.NAV["how-we-tested"], "/#how-we-tested"), (words.NAV["github"], build.repository))
+
+
+def _model_path(model: str) -> str:
+    """The path of a model's page under --out (spec 3.1)."""
+    return f"models/{model}/index.html"
+
+
+@dataclass(frozen=True)
+class _ModelPage:
+    """What the blocks of one model's page share: the repository, the rules' bench, the names, the model, its page's
+    path, the laptop and the setup chosen there (the model's row, spec 4.4)."""
+    matrix: data.Matrix
+    links: Links
+    bench: fit.Bench
+    labels: words.Labels
+    model: data.Model
+    here: str
+    chosen: fit.Setup
+
+    @property
+    def runs(self) -> tuple[data.Cell, ...]:
+        """The model's Runs cells, in engine order."""
+        return tuple(cell for cell in self.model.cells if cell.status == "runs")
+
+    def setup(self, runtime: str) -> fit.Setup:
+        return next(setup for setup in self.bench.setups if setup.key == (self.model.id, runtime))
+
+
+def _per_html(page: _ModelPage, cell: data.Cell, inner: str) -> str:
+    """One running engine's block of a section: shown for the chosen engine with script, every one under its
+    sub-heading without (spec 3.3 and 3.4)."""
+    cur = " cur" if cell.runtime == page.chosen.runtime else ""
+    return (f'<div class="per{cur}" data-rt="{_e(cell.runtime)}">'
+            f'<p class="per-h">{_e(words.on_engine(page.labels.engines[cell.runtime]))}</p>{inner}</div>')
+
+
+def _model_top_html(page: _ModelPage) -> str:
+    """The page's top (spec 3.3, M10 to M12): the name, role, maker, summary, figures and the button on the left; the
+    laptop's panel with its chips (script only), verdict, memory map and mixture-of-experts paragraph on the right."""
+    model, labels, links, here, setup = page.model, page.labels, page.links, page.here, page.chosen
+    machine = page.bench.home
+    facts = _cell(page.matrix, setup.key).recipe
+    maker = words.maker_line(model)
+    summary = words.summary(model, data.default_cell(model.id, model.cells), labels)
+    speed, context, download = words.FACT_LABELS
+    figures = (f'<div class="figs" aria-label="{_e(words.FIGURES_ARIA)}">'
+               f'<p class="fe">{_e(words.figures_label(labels, setup.runtime, setup.default_engine))}</p><dl>'
+               f'<div><dt>{_e(speed)}</dt><dd><b class="f-sp">{_e(words.speed(facts.decode))}</b>'
+               f'{_speed_unit(facts.decode)}</dd></div>'
+               f'<div><dt>{_e(context)}</dt><dd><b class="f-cx">{_e(words.context_k(facts.context))}</b></dd></div>'
+               f'<div><dt>{_e(download)}</dt><dd><b class="f-dl">{_e(words.gb_bytes(facts.size_bytes))}</b> '
+               f'{_e(words.GB_UNIT)}</dd></div></dl></div>')
+    left = (f'<div><h1 id="model" tabindex="-1">{_e(model.name)}</h1>'
+            f'<p class="role">{_e(words.role_line(model, labels))}</p>'
+            + ("" if maker is None else f'<p class="maker">{_e(maker)}</p>')
+            + f'<p class="summary">{_e(summary)}</p>{figures}'
+            f'<p class="cta"><a class="btn" href="#run" data-scroll>{_e(words.CTA)}</a></p></div>')
+    verdict = fit.verdict(setup, machine, page.bench.test_gpu)
+    chips = ('<div class="mchips" data-js-only hidden>'
+             + chips_html("gpu", fit.GPUS, {g: words.gpu_chip(g) for g in fit.GPUS}, machine.gpu,
+                          words.GPU_CHIPS_LEGEND, cls="chipset")
+             + chips_html("ram", fit.RAMS, {r: words.ram_chip(r) for r in fit.RAMS}, machine.ram,
+                          words.RAM_CHIPS_LEGEND, cls="chipset") + "</div>")
+    title = words.title(labels, model.id, setup.runtime, False)            # M12 names the engine, default or not
+    moe = words.moe_paragraph(setup)
+    panel = (f'<section class="m-mach" id="your-machine" aria-labelledby="h-machine">'
+             f'<h2 id="h-machine">{_e(words.panel_heading(True))}</h2>{chips}'
+             f'<p class="verdict" aria-live="polite"><span class="on">{_e(words.panel_label(title, True))}</span>'
+             f'<span class="vt">{_e(words.verdict_sentence(verdict.key, labels))}</span></p>'
+             + map_html(words.map_text(labels, setup, verdict, machine, True, True),
+                        draw.track(setup, machine, page.bench.test_gpu), draw.ram_bar(setup, machine), None, links, here)
+             + ('<p class="moe" hidden></p>' if moe is None else f'<p class="moe">{rich_html(moe, links, here)}</p>')
+             + "</section>")
+    return f'<div class="m-top">{left}{panel}</div>'
+
+
+def _run_html(page: _ModelPage) -> str:
+    """Run it (spec 3.3, M13): the agent select (script only), the fit and agent notes, the terminal and its notes for
+    the chosen setup on the laptop and our default agent."""
+    labels, links, here, setup, agent = page.labels, page.links, page.here, page.chosen, fit.DEFAULT_AGENT
+    machine = page.bench.home
+    cell = _cell(page.matrix, setup.key)
+    facts = cell.recipe
+    runtime = _runtime(page.matrix, setup.runtime)
+    engine = labels.engines[setup.runtime]
+    verdict = fit.verdict(setup, machine, page.bench.test_gpu)
+    options = "".join(f'<option value="{_e(a)}"{" selected" if a == agent else ""}>{_e(labels.agents[a])}</option>'
+                      for a in (*page.bench.agents, fit.NONE))
+    select = (f'<div class="runsel" data-js-only hidden><label class="sel"><span class="lbl">{_e(words.AGENT_SELECT)}'
+              f'</span><select name="agent" data-k="agent">{options}</select></label></div>')
+    note = words.fit_note(labels, setup, verdict, setup.runtime)
+    result = next(item for item in cell.clients if item.client == agent)
+    pick = fit.recommend(page.bench, machine, agent)
+    agent_note = words.agent_note(result, labels, setup.chat_only, setup.runtime,
+                                  None if pick is None else words.agent_pick(labels, pick, agent, True))
+
+    def pre(value: words.Rich | None, cls: str) -> str:
+        if value is None:
+            return f'<p class="{cls}" hidden></p>'
+        return f'<p class="{cls}">{rich_html(value, links, here)}</p>'
+    lines = [*words.head_lines(links.build.repository), *words.pull_lines(facts, engine, runtime.image_gb),
+             *words.override_lines(setup, verdict, fit.change(setup, verdict), labels.first_engine),
+             *words.up_lines(facts), *words.agent_lines(facts, labels, setup.runtime, agent), *words.tail_lines(facts)]
+    name = labels.models[setup.model]
+    notes = "".join(f"<li>{rich_html(item, links, here)}</li>" for item in words.terminal_notes(facts, labels, agent))
+    return (f'<section class="m-sec" aria-labelledby="run"><div class="hd">'
+            f'<h2 id="run" tabindex="-1">{_e(words.RUN_HEADING)}</h2>{select}</div>'
+            f'{pre(note, "pre-note")}{pre(agent_note, "pre-note agent-note")}'
+            f'{terminal_html(words.terminal_title(name, engine), words.commands_label(name), lines)}'
+            f'<ul class="tnotes">{notes}</ul></section>')
+
+
+def _fact_html(fact: words.Rich) -> str:
+    """One fact of an engine row: its numbers bold, its words as units (M15)."""
+    return "<span>" + "".join(f"<b>{_e(part[1])}</b>" if isinstance(part, tuple) else f'<span class="unit">{_e(part)}'
+                              "</span>" for part in fact) + "</span>"
+
+
+def _why_html(page: _ModelPage, cell: data.Cell) -> str:
+    """M15's Why: the note's first clause through render.inline and the note's first link (D12, P19)."""
+    where = f"row {page.model.id}, {page.labels.engines[cell.runtime]}, note: "
+    found = _LINK.search(cell.note)
+    if found is None:
+        raise SiteError(f"{data.SELECTION}: {where}a {cell.status} note needs a link to its source")
+    url = _target(found.group(2), data.SELECTION, page.links)
+    clause = inline(words.why_clause(cell.note), data.SELECTION, page.links, where)
+    return (f'<details class="why"><summary>{_e(words.WHY)}</summary><p>{clause} '
+            f'<a href="{_e(url)}">{_e(words.why_label(url))}</a></p></details>')
+
+
+def _engines_html(page: _ModelPage) -> str:
+    """Engines (spec 3.3, M15): one row per engine, the chosen one marked, the ones that don't run saying why."""
+    model, labels, machine = page.model, page.labels, page.bench.home
+    scale = draw.scale(page.bench, machine)
+    rows = []
+    for cell in model.cells:
+        runtime = _runtime(page.matrix, cell.runtime)
+        label, detail = words.engine_head(runtime, runtime.id == labels.first_engine)
+        head = f'<div class="en"><b>{_e(label)}</b><span>{_e(detail)}</span></div>'
+        anchor = f"engine-{runtime.id}"
+        if cell.status != "runs":
+            rows.append(f'<div class="er no" id="{_e(anchor)}">{head}<div>'
+                        f'<p class="nrtext">{_e(words.not_run_sentence(cell, runtime, labels))}</p>'
+                        f"{_why_html(page, cell)}</div><div></div></div>")
+            continue
+        setup = page.setup(cell.runtime)
+        verdict = fit.verdict(setup, machine, page.bench.test_gpu)
+        cur = setup.key == page.chosen.key
+        lead = words.lead_words(model, cell, labels)
+        facts = "".join(_fact_html(fact) for fact in words.engine_facts(labels, setup, cell.recipe.context))
+        strip = draw.strip(setup, machine, page.bench.test_gpu, scale)
+        rows.append(
+            f'<div class="er{" cur" if cur else ""}" id="{_e(anchor)}" data-rt="{_e(runtime.id)}">{head}'
+            f'<div><div class="fx">{facts}</div>' + ("" if lead is None else f'<p class="ld">{_e(lead)}</p>')
+            + f'<span class="stripbox" aria-hidden="true">{draw.strip_html(strip)}</span></div>'
+            f'<div class="use"><label class="usebtn" data-js-only hidden><input type="radio" name="engine" '
+            f'value="{_e(runtime.id)}" data-k="engine" aria-label="{_e(words.use_engine_label(label))}"'
+            f'{" checked" if cur else ""}><span>{_e(words.USE_ENGINE)}</span></label>'
+            f'<p class="vw{" ok" if verdict.key == "ok" else ""}">{_e(words.verdict_word(verdict.key, labels))}</p>'
+            "</div></div>")
+    return (f'<section class="m-sec" id="engines" aria-labelledby="h-engines">'
+            f'<h2 id="h-engines">{_e(words.ENGINES_HEADING)}</h2>'
+            f'<div class="engs" role="radiogroup" aria-labelledby="h-engines">{"".join(rows)}</div></section>')
+
+
+def _agents_html(page: _ModelPage) -> str:
+    """In your coding agent (spec 3.3, M16): per running engine, one row per agent with its result, its command and
+    its thinking line."""
+    labels, links, here = page.labels, page.links, page.here
+    blocks = []
+    for cell in page.runs:
+        facts = cell.recipe
+        texts = dict(facts.thinking_texts)
+        rows = []
+        for agent in page.bench.agents:
+            result = next(item for item in cell.clients if item.client == agent)
+            command = words.agent_command(facts, agent)
+            rows.append(f'<div class="ar" data-a="{_e(agent)}"><h3>{_e(labels.agents[agent])}'
+                        f'<span class="mine-tag">{_e(words.YOUR_AGENT)}</span></h3><div>'
+                        f'<p class="res">{_e(words.result_sentence(result, labels, facts.chat_only, cell.runtime))}</p>'
+                        + ("" if command is None else f'<p class="ln">{rich_html(command, links, here)}</p>')
+                        + f'<p class="th2">{_e(words.thinking_line(texts[agent]))}</p></div></div>')
+        blocks.append(_per_html(page, cell, f'<div class="agl">{"".join(rows)}</div>'))
+    return (f'<section class="m-sec" id="agents" aria-labelledby="h-agents">'
+            f'<h2 id="h-agents">{_e(words.AGENTS_HEADING)}</h2>{"".join(blocks)}</section>')
+
+
+def _good_html(page: _ModelPage) -> str:
+    """Good to know (spec 3.3, M17), per running engine."""
+    image_gb = {runtime.id: runtime.image_gb for runtime in page.matrix.runtimes}
+    blocks = []
+    for cell in page.runs:
+        faster = words.faster_sentence(page.model, cell, page.labels, image_gb)
+        items = words.good_to_know(page.model, cell, page.labels, _runtime(page.matrix, cell.runtime).port, faster)
+        blocks.append(_per_html(page, cell, '<ul class="facts-list">' + "".join(
+            f"<li>{rich_html(item, page.links, page.here)}</li>" for item in items) + "</ul>"))
+    return (f'<section class="m-sec" id="good-to-know" aria-labelledby="h-good">'
+            f'<h2 id="h-good">{_e(words.GOOD_HEADING)}</h2>{"".join(blocks)}</section>')
+
+
+def _evidence_html(page: _ModelPage) -> str:
+    """Evidence (spec 3.3, M18), per running engine: the setup notes, the measurement record and the latest run's
+    summary, the latest by date, then folder, as How we tested names it (spec 7.10)."""
+    blocks = []
+    for cell in page.runs:
+        latest = max(cell.history, key=lambda item: (item.run.date, item.run.folder), default=None)
+        summary = None if latest is None else f"{latest.run.path}/summary.md"
+        items = words.evidence_links(cell.recipe, summary)
+        blocks.append(_per_html(page, cell, '<ul class="links">' + "".join(
+            f"<li>{rich_html(item, page.links, page.here)}</li>" for item in items) + "</ul>"))
+    return (f'<section class="m-sec ev" id="evidence" aria-labelledby="h-evidence">'
+            f'<h2 id="h-evidence">{_e(words.EVIDENCE_HEADING)}</h2>{"".join(blocks)}</section>')
+
+
+def _pager_html(page: _ModelPage) -> str:
+    """Previous and Next in our ranking (spec 3.3, M19), only the neighbours that exist."""
+    order = fit.model_order(page.bench)
+    n = order.index(page.model.id)
+    links = []
+    for cls, key, at in (("pv", "previous", n - 1), ("nx", "next", n + 1)):
+        if 0 <= at < len(order):
+            href = _page_href(f"/models/{order[at]}/", page.here)
+            links.append(f'<a class="{cls}" href="{_e(href)}"><span>{_e(words.PAGER[key])}</span>'
+                         f"<b>{_e(page.labels.models[order[at]])}</b></a>")
+    return f'<nav class="pager" aria-label="{_e(words.PAGER["label"])}">{"".join(links)}</nav>'
+
+
+def model_html(matrix: data.Matrix, bench: fit.Bench, labels: words.Labels, model: data.Model, links: Links) -> str:
+    """The body of a model's page (spec 3.3): the skip link, the header, the blocks of the laptop state with every
+    running engine's blocks, and the footer."""
+    here = _model_path(model.id)
+    page = _ModelPage(matrix, links, bench, labels, model, here, fit.row_setup(bench, model.id, bench.home))
+    main = (f'<main id="main" class="wrap m-page"><p class="back">'
+            f'<a href="{_e(_page_href("/#models", here))}">{_e(words.BACK)}</a></p>'
+            f"{_model_top_html(page)}{_run_html(page)}{_engines_html(page)}{_agents_html(page)}{_good_html(page)}"
+            f"{_evidence_html(page)}{_pager_html(page)}</main>")
+    skip = f'<a class="skip" href="#model" data-scroll>{_e(words.SKIP_TO_MODEL)}</a>'
+    return "\n".join([skip, header_html(here, _nav(links.build)), main, footer_html(matrix, links.build, links, here)])
+
+
 def site(matrix: data.Matrix, build: Build, root: Path) -> dict[str, str]:
-    """Every page of the site by its path under --out, the home first (spec 3.1 and 10)."""
+    """Every page of the site by its path under --out: the home, then one page per model (spec 3.1 and 10)."""
     links = Links(root, build)
     check_notes(matrix, links)
     labels = words.labels(matrix)
     style = check_asset("page.css", (_ASSETS / "page.css").read_text(encoding="utf-8"), "style")
     bench = fit.bench(matrix)
     home = _Home(matrix, build, links, bench, labels, fit.hero_pick(bench, bench.home, fit.DEFAULT_AGENT))
-    nav = ((words.NAV["models"], "/#models"), (words.NAV["get-started"], "/#get-started"),
-           (words.NAV["how-we-tested"], "/#how-we-tested"), (words.NAV["github"], build.repository))
     skip = f'<a class="skip" href="#models">{_e(words.SKIP_TO_MODELS)}</a>'
-    body = "\n".join([skip, header_html(HOME, nav), _home_main(home), footer_html(matrix, build, links, HOME)])
-    return {HOME: document(title=words.HOME_TITLE, description=words.home_description(labels), body=body, style=style)}
+    body = "\n".join([skip, header_html(HOME, _nav(build)), _home_main(home), footer_html(matrix, build, links, HOME)])
+    pages = {HOME: document(title=words.HOME_TITLE, description=words.home_description(labels), body=body, style=style)}
+    for model in matrix.models:
+        pages[_model_path(model.id)] = document(title=words.model_title(model.name),
+                                               description=words.model_description(model.name, labels),
+                                               body=model_html(matrix, bench, labels, model, links), style=style)
+    return pages
