@@ -17,9 +17,10 @@ import unittest
 from pathlib import Path
 
 from launcher.runtimes import ADAPTERS
-from launcher.site import data, render
+from launcher.site import data, draw, fit, render, words
 from launcher.tests.fakes import REPO
-from launcher.tests.site_fixture import (RECIPES, Node, SiteFixture, cell_of, parse, py311_fraction_format,
+from launcher.tests.site_fixture import (DEFAULT_RUN, RECIPES, Node, SiteFixture, cell_of, default_rows, parse,
+                                         py311_fraction_format,
                                          well_formed_problems)
 
 BUILD = data.Build("https://github.com/o/r", "a" * 40, 0)
@@ -259,7 +260,7 @@ class SiteRenderTest(unittest.TestCase):
     def test_home_blocks_in_order(self):
         main = parse(self.pages()["index.html"]).by_id("main")
         self.assertEqual([n.attrs.get("id") or n.attrs.get("class") for n in main.children if isinstance(n, Node) and n.tag == "section"],
-                         ["fh", "models", "more-models", "get-started"])
+                         ["fh", "models", "more-models", "get-started", "compare", "how-it-works", "questions", "how-we-tested"])
 
     def test_home_skip_link_nav_and_script_only_controls(self):
         tree = parse(self.pages()["index.html"])
@@ -268,7 +269,10 @@ class SiteRenderTest(unittest.TestCase):
                          ("skip", "#models", "Skip to the models"))
         self.assertEqual([(squash_text(a), a.attrs["href"]) for a in tree.find_all("header")[0].find_all("li")
                           for a in a.find_all("a")],
-                         [("Models", "#models"), ("Get started", "#get-started"), ("GitHub", "https://github.com/o/r")])
+                         [("Models", "#models"), ("Get started", "#get-started"), ("How we tested", "#how-we-tested"),
+                          ("GitHub", "https://github.com/o/r")])
+        self.assertEqual([li.attrs.get("class") for li in tree.find_all("header")[0].find_all("li")],
+                         [None, "wide", "wide", None])        # spec 3.2: the middle two hide on phones
         sortbox = tree.by_id("models").find_all("div", "sortbox")[0]
         self.assertIn("hidden", sortbox.attrs)                   # spec 3.4: the sort is the script's
         self.assertIn("data-js-only", sortbox.attrs)
@@ -293,6 +297,131 @@ class SiteRenderTest(unittest.TestCase):
         self.assertEqual(answer.find_all("a", "btn")[0].attrs["href"], "#get-started")
         self.assertIsNone(re.search(r"\byour\b", squash_text(answer), re.I))
         self.assertIsNone(re.search(r"\bsetups\b", squash_text(tree.find_all("section", "fh")[0])))
+
+    def test_memory_map_keeps_its_controls_out_of_the_image(self):
+        # the lead's ruling on Task 5's deferred minor: role=img makes its children presentational, so the
+        # mixture-of-experts question and the key sit outside the element that carries the M7 name
+        matrix = self.fixture.load()
+        b = fit.bench(matrix)
+        pick = fit.hero_pick(b, b.home, fit.DEFAULT_AGENT)
+        alt = words.map_text(words.labels(matrix), pick.setup, pick.verdict, b.home, True, False).alt
+        figure = parse(self.pages(matrix)["index.html"]).by_id("answer").find_all("figure", "hmap")[0]
+        self.assertNotIn("role", figure.attrs)
+        self.assertNotIn("aria-label", figure.attrs)
+        images = [n for n in figure.iter() if n.attrs.get("role") == "img"]
+        self.assertEqual(len(images), 1)
+        image = images[0]
+        self.assertEqual(image.attrs["aria-label"], alt)
+        self.assertEqual([n.attrs.get("class") for n in image.children if isinstance(n, Node)], ["ch", "ch"])
+        self.assertEqual([n.tag for n in image.iter() if n.tag in ("a", "summary", "button", "input", "select", "details")
+                          or "tabindex" in n.attrs], [])
+        self.assertEqual(len(figure.find_all("summary")), 1)
+        self.assertEqual(len(figure.find_all("figcaption", "hkey")), 1)
+
+    def test_compare_engines_lists_every_combination(self):
+        tree = parse(self.pages()["index.html"])
+        table = tree.by_id("compare")
+        self.assertEqual(squash_text(table.find_all("p", "sec-lead")[0]), "Every model on every engine we tried. 10 of the 18 "
+                         "combinations run on our 16 GB laptop GPU; the others don't fit (our arithmetic) or didn't start (we tried).")
+        self.assertEqual(len(table.find_all("td")), 18)
+        links = [a.attrs["href"] for a in table.find_all("a", "cell")]
+        self.assertEqual(len(links), 10)
+        self.assertIn("models/qwen3.6-35b-a3b/#engine-sglang", links)
+
+        def cell(model, i):
+            row = next(r for r in table.find_all("tr") if r.find_all("th") and r.find_all("th")[0].find_all("a")
+                       and r.find_all("th")[0].find_all("a")[0].attrs["href"] == f"models/{model}/")
+            return row.find_all("td")[i]
+        failed = cell("deepseek-r1-0528-qwen3-8b", 2)
+        self.assertIn("Didn't start", squash_text(failed))
+        self.assertEqual(squash_text(failed.find_all("span", "t2")[0]), "tried 17 Nov 2026")
+        fast = cell("qwen3.6-35b-a3b", 2)
+        self.assertEqual([squash_text(fast.find_all("span", c)[0]) for c in ("sp", "ags", "lead2")],
+                         ["151.3 tok/s, 128k", "Passed the agent test in OpenCode (1 of 1 run).",
+                          "Fastest for this model, 24% ahead"])
+        self.assertEqual([squash_text(th) for th in table.find_all("thead")[0].find_all("th")],
+                         ["Model", "llama.cpp b12407, the default engine", "vLLM 0.33.0", "SGLang 0.5.23"])
+        self.assertEqual(len(table.find_all("span", "strip")), 10)
+        # C3: a cell that doesn't run reads "<engine>: <what> <why>" with an outline or a hatched swatch
+        self.assertEqual(squash_text(failed), "SGLang: Didn't start tried 17 Nov 2026")
+        self.assertEqual(failed.find_all("i", "sw")[0].attrs["class"], "sw o")
+        too_big = cell("qwen3.6-35b-a3b", 1)
+        self.assertEqual(squash_text(too_big), "vLLM: Doesn't fit on 16 GB (our arithmetic)")
+        self.assertEqual(too_big.find_all("i", "sw")[0].attrs["class"], "sw h")
+        # the ranked rows with their rank and Chat only tag, the group row, then the unranked rows
+        self.assertEqual([squash_text(r.find_all("th")[0]) for r in table.find_all("tbody")[0].find_all("tr")], [
+            "Qwen3.6-35B-A3BRanked 1", "gpt-oss-20bRanked 2", "DeepSeek-R1-0528-Qwen3-8B Chat onlyRanked 3",
+            "Not in our Top 3", "Qwen3-Coder-Next", "K2 Horizon 7B", "Mellum2.1 12B-A2.5B Thinking"])
+        self.assertEqual([squash_text(s) for s in table.find_all("span", "tag")], ["Chat only"])
+        self.assertEqual([squash_text(s) for s in table.find_all("span", "rk")], ["Ranked 1", "Ranked 2", "Ranked 3"])
+        self.assertEqual(table.find_all("tr", "grp")[0].find_all("th")[0].attrs["scope"], "rowgroup")
+        # a Runs cell draws its strip on our laptop, at the bench's scale
+        matrix = self.fixture.load()
+        b = fit.bench(matrix)
+        setup = next(s for s in b.setups if s.key == ("qwen3.6-35b-a3b", "sglang"))
+        page = self.pages(matrix)["index.html"]
+        start = page.index('href="models/qwen3.6-35b-a3b/#engine-sglang"')
+        self.assertIn(draw.strip_html(draw.strip(setup, b.home, b.test_gpu, draw.scale(b, b.home))),
+                      page[start:page.index("</a>", start)])
+
+    def test_how_it_works_questions_and_how_we_tested(self):
+        tree = parse(self.pages()["index.html"])
+        self.assertEqual([squash_text(s) for s in tree.by_id("questions").find_all("summary")], [
+            "Does it work on Windows or a Mac?", "Will I get the same speed?", "What does \u201cpassed the agent test\u201d mean?",
+            "How were the models ranked?", "Why not just use Ollama?", "What do tok/s, context and thinking mean?"])
+        tested = [squash_text(p) for p in tree.by_id("how-we-tested").find_all("p")]
+        self.assertTrue(tested[0].startswith("Every number on this page comes from one laptop: an MSI Raider 18 Max HX A2WI "
+                                             "with an RTX 5080 Laptop GPU (16 GB) and 61 GB of RAM, measured between "))
+        self.assertTrue(tested[0].endswith("It ran Ubuntu 26.04.1, with the GPU at its 140 W power limit."))
+        self.assertIn("the page assumes about 1 GB of GPU memory goes to your desktop and that the same share of your RAM is "
+                      "free as on our laptop (40 of 61 GB).", tested[3])
+        self.assertEqual(tested[4], "Engines: llama.cpp b12407, vLLM 0.33.0 and SGLang 0.5.23. Agents: OpenCode 2.3.0, "
+                         "Hermes 0.23.1, Pi 1.5.2, dsh 0.2.2-rc.3 and Kimi 2.5.3.")
+        self.assertEqual(len(tree.by_id("how-it-works").find_all("svg", "ram-bar")), 1)
+
+    def test_how_it_works_and_the_answers_follow_words(self):
+        matrix = self.fixture.load()
+        b, labels = fit.bench(matrix), words.labels(matrix)
+        page = self.pages(matrix)["index.html"]
+        tree = parse(page)
+        flat = lambda rich: " ".join(words.plain(rich).split())
+        # spec 7.9: the Ollama answer's contexts are the smallest and the largest of every Runs cell
+        contexts = [cell.recipe.context for model in matrix.models for cell in model.cells if cell.status == "runs"]
+        self.assertEqual((min(contexts), max(contexts)), (64 * 1024, 128 * 1024))
+        answers = [squash_text(d.find_all("div")[0]) for d in tree.by_id("questions").find_all("details")]
+        self.assertEqual(answers, [flat(answer) for _, answer in words.questions(labels, contexts)])
+        self.assertIn("with 64k to 128k of context", answers[4])
+        # spec 7.8: the prose, the five rules and the guide's link
+        how = tree.by_id("how-it-works")
+        self.assertEqual([squash_text(p) for p in how.find_all("p")],
+                         [flat(words.HOW_PROSE), words.RULES_INTRO])
+        self.assertEqual([squash_text(li) for li in how.find_all("ul", "rules")[0].find_all("li")], list(words.RULES))
+        self.assertEqual(len(words.RULES), 5)
+        self.assertEqual([(squash_text(a), a.attrs["href"]) for a in how.find_all("ul", "links")[0].find_all("a")],
+                         [("Everything llmctl does, command by command", BLOB + "/docs/llmctl.md")])
+        # the mini map is our default on our laptop, with the RAM bar at the diagram's 10 px
+        default = next(setup for setup in b.setups if setup.key == b.default)
+        mini = page[page.index('<span class="mini"'):]
+        mini = mini[:mini.index("</svg>")]
+        self.assertIn(draw.strip_html(draw.strip(default, b.home, b.test_gpu, draw.scale(b, b.home))), mini)
+        self.assertIn(draw.ram_svg(draw.ram_bar(default, b.home), "mini"), mini + "</svg>")
+        self.assertEqual(how.find_all("svg", "ram-bar")[0].attrs["height"], "10")
+        # spec 7.10: the four links under How we tested
+        self.assertEqual([(squash_text(a), a.attrs["href"]) for a in tree.by_id("how-we-tested").find_all("ul", "links")[0]
+                          .find_all("a")], [("How we ranked the models", BLOB + "/docs/model-selection.md#decision-summary"),
+                                            ("Measurement records", TREE + "/research"),
+                                            ("llmctl's guide", BLOB + "/docs/llmctl.md"),
+                                            ("The knowledge base on GitHub", "https://github.com/o/r")])
+
+    def test_how_we_tested_names_the_latest_run(self):
+        # spec 7.10: the latest run by date, then folder; the two older runs hold fewer steps than the latest
+        self.fixture.run("2026-11-17", "llmctl-z-e2e", default_rows()[:3])
+        self.fixture.run(DEFAULT_RUN[0], "llmctl-a-e2e", default_rows()[:2])
+        matrix = self.fixture.load()
+        self.assertEqual([run.folder for run in matrix.runs], ["llmctl-z-e2e", "llmctl-a-e2e", DEFAULT_RUN[1]])
+        tested = [squash_text(p) for p in parse(self.pages(matrix)["index.html"]).by_id("how-we-tested").find_all("p")]
+        rows = len(default_rows())
+        self.assertIn(f"In the latest run, on 18 November 2026, {rows} of {rows} steps passed across 10 setups", tested[2])
 
     def test_shelf_rows_follow_our_ranking(self):
         tree = parse(self.pages()["index.html"])

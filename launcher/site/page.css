@@ -337,6 +337,60 @@ html:not(.js) .hint-copy { display: none; }
 .refuse dd { font-size: 16px; color: var(--ink-2); }
 .links { display: flex; flex-wrap: wrap; gap: 8px 28px; margin-top: 20px; list-style: none; font-size: 16px; }
 
+/* Compare engines */
+.cmp { width: 100%; margin-top: 28px; border-collapse: collapse; }
+.cmp th, .cmp td { padding: 14px 16px 14px 0; border-bottom: 1px solid var(--rule); text-align: left; vertical-align: top; font-weight: 400; }
+.cmp thead th { padding-bottom: 10px; border-bottom: 1px solid var(--ink); font-size: var(--t-small); line-height: 1.35; color: var(--ink-3); vertical-align: bottom; }
+.cmp thead th b { display: block; font-size: 16px; font-weight: 600; color: var(--ink); }
+.cmp tbody th { width: 26%; }
+.cmp tbody th a { font-weight: 600; text-decoration: none; }
+.cmp tbody th a:hover { text-decoration: underline; }
+.cmp tbody th .rk { display: block; font-size: var(--t-small); color: var(--ink-3); }
+.cmp td { width: 24.6%; }
+.cmp .grp th { padding-top: 28px; font-size: var(--t-small); font-weight: 600; color: var(--ink-2); border-bottom: 1px solid var(--ink); }
+.cell { display: block; text-decoration: none; color: var(--ink); border-radius: 4px; }
+a.cell:hover .sp { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.cell .sp { font-weight: 600; }
+.cell .sp .unit { font-weight: 400; color: var(--ink-3); }
+.cell .sp .cx2 { font-weight: 400; color: var(--ink-2); }
+.cell .sub2 { display: block; font-size: var(--t-small); line-height: 1.4; color: var(--ink-2); margin-top: 2px; }
+.cell .lead2 { display: block; font-size: var(--t-small); line-height: 1.4; color: var(--ink-3); margin-top: 2px; }
+.cell .strip { margin-top: 8px; max-width: 100%; }
+.cell .stripbox { display: block; width: 136px; max-width: 100%; }
+.nr { display: flex; gap: 10px; align-items: flex-start; font-size: var(--t-small); line-height: 1.4; color: var(--ink-2); }
+.nr .sw { flex: none; width: 14px; height: 14px; margin-top: 2px; border-radius: 2px; }
+.sw.h { border: 1px solid var(--track); background: repeating-linear-gradient(135deg, var(--track) 0 1px, transparent 1px 4px); }
+.sw.o { border: 1.5px solid var(--ink-3); }
+.nr .t2 { display: block; color: var(--ink-3); }
+.cmp .el { display: none; }
+
+/* What llmctl does */
+.flow { display: grid; grid-template-columns: minmax(0, 1fr) 48px minmax(0, 1.4fr) 48px minmax(0, 1fr); align-items: stretch; margin-top: 32px; list-style: none; max-width: 1000px; }
+.flow .nd { padding: 18px 20px; border: 1px solid var(--track); border-radius: 8px; font-size: 16px; line-height: 1.45; }
+.flow .nd b { display: block; font-weight: 600; }
+.flow .nd > span:not(.mini) { display: block; color: var(--ink-2); font-size: var(--t-small); margin-top: 4px; }
+.flow .ln { position: relative; }
+.flow .ln::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; border-top: 1.5px solid var(--ink-3); }
+.mini { margin-top: 12px; display: grid; gap: 8px; }
+.mini .strip { height: 10px; }
+.flow + .prose { margin-top: 32px; }
+.prose + .prose { margin-top: 16px; }
+.rules { list-style: none; margin-top: 16px; max-width: 46em; }
+.rules li { position: relative; padding: 10px 0 10px 22px; border-bottom: 1px solid var(--rule); font-size: 17px; }
+.rules li::before { content: ""; position: absolute; left: 2px; top: 1.15em; width: 8px; height: 8px; border-radius: 2px; background: var(--gpu); }
+
+/* Questions */
+.qa { margin-top: 24px; max-width: 52em; border-top: 1px solid var(--rule); }
+.qa details { border-bottom: 1px solid var(--rule); }
+.qa summary { display: flex; justify-content: space-between; align-items: center; gap: 24px; padding: 18px 0; cursor: pointer; font-weight: 600; list-style: none; }
+.qa summary::-webkit-details-marker { display: none; }
+.qa summary::after { content: ""; flex: none; width: 9px; height: 9px; margin-right: 6px; border-right: 2px solid var(--ink-2); border-bottom: 2px solid var(--ink-2); transform: rotate(45deg) translateY(-3px); }
+.qa details[open] summary::after { transform: rotate(-135deg) translateY(-2px); }
+.qa details > div { padding: 0 0 20px; max-width: 40em; color: var(--ink-2); }
+
+/* How we tested */
+h2 + .prose { margin-top: 20px; }
+
 /* Footer */
 .foot { margin-top: var(--section); padding: 32px 0 56px; border-top: 1px solid var(--rule); font-size: var(--t-small); line-height: 1.6; color: var(--ink-3); }
 .foot p + p { margin-top: 6px; }
@@ -411,6 +465,19 @@ html:not(.js) .hint-copy { display: none; }
   .refuse > div { grid-template-columns: minmax(0, 1fr); }
   .checks li { grid-template-columns: 1.6em minmax(0, 1fr); }
   .checks .how { grid-column: 2; }
+  .flow { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 28px auto 28px auto; }
+  .flow .ln::before { left: 50%; right: auto; top: 0; bottom: 0; border-top: 0; border-left: 1.5px solid var(--ink-3); }
+  .cmp thead { display: none; }
+  .cmp, .cmp tbody, .cmp tr, .cmp th, .cmp td { display: block; width: auto; }
+  .cmp tr { padding: 14px 0; border-bottom: 1px solid var(--rule); }
+  .cmp tbody th, .cmp td { padding: 0; border: 0; }
+  .cmp td { margin-top: 8px; }
+  .cmp .el { display: inline; font-weight: 600; }
+  .cmp .grp { padding: 24px 0 8px; border-bottom: 1px solid var(--ink); }
+  .cmp .grp th { padding: 0; border: 0; }
+  .cmp .stripbox { display: none; }
+  .cmp tbody th, .cmp tbody td { width: auto; }
+  .cmp .grp th { width: auto; }
 }
 @media (min-width: 768px) {
   .row .facts, .row .more { display: contents; }

@@ -78,6 +78,10 @@ class SiteRepositoryTest(unittest.TestCase):
         starts = {span for row in rows for span in re.findall(r"`([^`]+)`", row[0])}
         self.assertEqual([message for message, _ in words.REFUSALS if message not in starts], [])
 
+    def test_the_ranking_answer_rests_on_the_decision_summary(self):
+        summary = " ".join(markdown.section(REPO, "docs/model-selection.md#decision-summary"))
+        self.assertIn("one forced swap so that the DeepSeek family is represented", summary)
+
 
 if __name__ == "__main__":
     unittest.main()

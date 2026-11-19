@@ -365,7 +365,8 @@ def chips_html(name: str, values: Sequence, labels: Mapping, selected, legend: s
 def map_html(text: words.MapText, track: str, bar: tuple[tuple[str, str, str | None], ...],
              moe: tuple[str, words.Rich] | None, links: Links, here: str) -> str:
     """The memory map (spec 7.4 and 8.3): the GPU track and the RAM bar with their notes, the mixture-of-experts
-    question when there is one (hidden otherwise, for the script) and the key; one figure named by its sentence."""
+    question when there is one (hidden otherwise, for the script) and the key. The two drawings are one image named by
+    the map's sentence; the question and the key stay outside it, so assistive technology still reaches them."""
     def notes(left: words.Rich, right: str, short: bool, side: str) -> str:
         return (f'<p class="ch-notes"><span class="{side}l">{rich_html(left, links, here)}</span>'
                 f'<span class="ch-r {side}r{" short" if short else ""}">{_e(right)}</span></p>')
@@ -376,13 +377,13 @@ def map_html(text: words.MapText, track: str, bar: tuple[tuple[str, str, str | N
                     "</details>")
     key = " ".join(f'<span><i class="k k-{kind}"></i>{_e(caption)}</span>'
                    for kind, caption in zip(("solid", "line", "hatch"), words.CAPTION))
-    return (f'<figure class="hmap" aria-label="{_e(text.alt)}" role="img">'
+    return (f'<figure class="hmap"><div class="hdraw" role="img" aria-label="{_e(text.alt)}">'
             f'<div class="ch"><p class="ch-label" aria-hidden="true"><i class="sw gpu"></i>{_e(words.GPU_TRACK)}</p>'
             f'<div class="ch-body"><div class="htrack" aria-hidden="true">{draw.track_html(track)}</div>'
             f'{notes(text.gpu_left, text.gpu_right, text.gpu_short, "g")}</div></div>'
             f'<div class="ch"><p class="ch-label" aria-hidden="true"><i class="sw ram"></i>{_e(words.RAM_TRACK)}</p>'
             f'<div class="ch-body">{draw.ram_svg(bar, "map")}'
-            f'{notes(text.ram_left, text.ram_right, text.ram_short, "r")}</div></div>'
+            f'{notes(text.ram_left, text.ram_right, text.ram_short, "r")}</div></div></div>'
             f'{question}<figcaption class="hkey">{key}</figcaption></figure>')
 
 
@@ -570,8 +571,98 @@ def get_started_html(home: _Home) -> str:
         "</div></section>")
 
 
+def compare_html(home: _Home) -> str:
+    """Compare engines (spec 7.7): every model on every engine, a Runs cell linking to its engine on the model's page
+    with its speed, agents, lead and strip on the laptop, the others saying why they don't run."""
+    matrix, bench, labels, machine, agent = home.matrix, home.bench, home.labels, home.bench.home, fit.DEFAULT_AGENT
+    setups = {setup.key: setup for setup in bench.setups}
+    scale = draw.scale(bench, machine)
+    heads = (words.engine_head(runtime, n == 0) for n, runtime in enumerate(matrix.runtimes))
+    head = "".join(f'<th scope="col"><b>{_e(label)}</b> {_e(detail)}</th>' for label, detail in heads)
+
+    def cell_html(model: data.Model, runtime: data.Runtime) -> str:
+        cell = next(item for item in model.cells if item.runtime == runtime.id)
+        label = f'<span class="el">{_e(words.engine_cell_label(labels.engines[runtime.id]))}</span>'
+        if cell.status != "runs":
+            swatch, (what, why) = (("h", words.does_not_fit(labels)) if cell.status == "does-not-fit"
+                                   else ("o", words.did_not_start(cell.measured)))
+            return (f'<td><span class="nr"><i class="sw {swatch}" aria-hidden="true"></i><span>{label}{_e(what)} '
+                    f'<span class="t2">{_e(why)}</span></span></span></td>')
+        setup, facts = setups[model.id, runtime.id], cell.recipe
+        lead = words.lead_words(model, cell, labels)
+        strip = draw.strip(setup, machine, bench.test_gpu, scale)
+        href = _page_href(f"/models/{model.id}/#engine-{runtime.id}", HOME)
+        return (f'<td><a class="cell" href="{_e(href)}">{label}<span class="sp">{_e(words.speed(facts.decode))}'
+                f'{_speed_unit(facts.decode)}<span class="cx2">, {_e(words.context_k(facts.context))}</span></span>'
+                f'<span class="sub2 ags">'
+                f'{_e(words.compare_agents(cell.clients, labels, setup.chat_only, runtime.id, agent))}</span>'
+                + ("" if lead is None else f'<span class="lead2">{_e(lead)}</span>')
+                + f'<span class="stripbox" aria-hidden="true">{draw.strip_html(strip)}</span></a></td>')
+
+    def row_html(model: data.Model) -> str:
+        chat = f' <span class="tag">{_e(words.TAGS["chat"])}</span>' if model.chat_only else ""
+        rank = "" if model.rank is None else f'<span class="rk">{_e(words.ranked(model.rank))}</span>'
+        href = _page_href(f"/models/{model.id}/", HOME)
+        return (f'<tr><th scope="row"><a href="{_e(href)}">{_e(model.name)}</a>{chat}{rank}</th>'
+                + "".join(cell_html(model, runtime) for runtime in matrix.runtimes) + "</tr>")
+
+    models = {model.id: model for model in matrix.models}
+    order = [models[model] for model in fit.model_order(bench)]
+    body = "".join(row_html(model) for model in order if model.rank is not None)
+    body += (f'<tr class="grp"><th colspan="{len(matrix.runtimes) + 1}" scope="rowgroup">{_e(words.not_top(labels))}'
+             "</th></tr>" + "".join(row_html(model) for model in order if model.rank is None))
+    runs = len(bench.setups)
+    lead = words.compare_lead(labels, runs, len(matrix.models) * len(matrix.runtimes))
+    return (f'<section class="sec" id="compare" aria-labelledby="h-cmp">'
+            f'<h2 id="h-cmp" tabindex="-1">{_e(words.COMPARE_HEADING)}</h2><p class="sec-lead">{_e(lead)}</p>'
+            f'<table class="cmp"><thead><tr><th scope="col">{_e(words.MODEL_HEAD)}</th>{head}</tr></thead>'
+            f"<tbody>{body}</tbody></table></section>")
+
+
+def how_it_works_html(home: _Home) -> str:
+    """What llmctl does on your machine (spec 7.8): the diagram with the mini map of our default on the laptop, what
+    up and down do, the rules and the guide's link."""
+    bench, machine = home.bench, home.bench.home
+    default = next(setup for setup in bench.setups if setup.key == bench.default)
+    mini = (f'<span class="mini" aria-hidden="true">'
+            f'{draw.strip_html(draw.strip(default, machine, bench.test_gpu, draw.scale(bench, machine)))}'
+            f'{draw.ram_svg(draw.ram_bar(default, machine), "mini")}</span>')
+    nodes = words.flow(home.labels)
+    flow = '<li class="ln" aria-hidden="true"></li>'.join(
+        f'<li class="nd"><b>{_e(name)}</b>' + (f"<span>{_e(detail)}</span>" if detail else mini) + "</li>"
+        for name, detail in nodes)
+    rules = "".join(f"<li>{_e(rule)}</li>" for rule in words.RULES)
+    return (f'<section class="sec" id="how-it-works" aria-labelledby="h-how">'
+            f'<h2 id="h-how" tabindex="-1">{_e(words.HOW_HEADING)}</h2>'
+            f'<ol class="flow" aria-label="{_e(words.FLOW_LABEL)}">{flow}</ol>'
+            f'<p class="prose">{rich_html(words.HOW_PROSE, home.links, HOME)}</p>'
+            f'<p class="prose">{_e(words.RULES_INTRO)}</p><ul class="rules">{rules}</ul>'
+            f'<ul class="links"><li>{rich_html(words.HOW_LINK, home.links, HOME)}</li></ul></section>')
+
+
+def questions_html(home: _Home) -> str:
+    """Questions (spec 7.9): six closed details."""
+    contexts = [_cell(home.matrix, setup.key).recipe.context for setup in home.bench.setups]
+    items = "".join(f"<details><summary>{_e(question)}</summary><div><p>{rich_html(answer, home.links, HOME)}</p>"
+                    "</div></details>" for question, answer in words.questions(home.labels, contexts))
+    return (f'<section class="sec" id="questions" aria-labelledby="h-qa">'
+            f'<h2 id="h-qa" tabindex="-1">{_e(words.QUESTIONS_HEADING)}</h2><div class="qa">{items}</div></section>')
+
+
+def tested_html(home: _Home) -> str:
+    """How we tested (spec 7.10): five paragraphs on the latest run, then the links."""
+    run = max(home.matrix.runs, key=lambda item: (item.date, item.folder))
+    paragraphs = "".join(f"<p>{rich_html(p, home.links, HOME)}</p>" for p in words.tested(home.matrix, run))
+    items = "".join(f"<li>{rich_html(item, home.links, HOME)}</li>"
+                    for item in words.tested_links(home.build.repository))
+    return (f'<section class="sec" id="how-we-tested" aria-labelledby="h-tested">'
+            f'<h2 id="h-tested" tabindex="-1">{_e(words.TESTED_HEADING)}</h2><div class="prose">{paragraphs}</div>'
+            f'<ul class="links">{items}</ul></section>')
+
+
 def _home_main(home: _Home) -> str:
-    return f'<main id="main" class="wrap">{hero_html(home)}{shelf_html(home)}{get_started_html(home)}</main>'
+    return (f'<main id="main" class="wrap">{hero_html(home)}{shelf_html(home)}{get_started_html(home)}'
+            f"{compare_html(home)}{how_it_works_html(home)}{questions_html(home)}{tested_html(home)}</main>")
 
 
 def site(matrix: data.Matrix, build: Build, root: Path) -> dict[str, str]:
@@ -583,7 +674,7 @@ def site(matrix: data.Matrix, build: Build, root: Path) -> dict[str, str]:
     bench = fit.bench(matrix)
     home = _Home(matrix, build, links, bench, labels, fit.hero_pick(bench, bench.home, fit.DEFAULT_AGENT))
     nav = ((words.NAV["models"], "/#models"), (words.NAV["get-started"], "/#get-started"),
-           (words.NAV["github"], build.repository))
+           (words.NAV["how-we-tested"], "/#how-we-tested"), (words.NAV["github"], build.repository))
     skip = f'<a class="skip" href="#models">{_e(words.SKIP_TO_MODELS)}</a>'
     body = "\n".join([skip, header_html(HOME, nav), _home_main(home), footer_html(matrix, build, links, HOME)])
     return {HOME: document(title=words.HOME_TITLE, description=words.home_description(labels), body=body, style=style)}
