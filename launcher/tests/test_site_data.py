@@ -40,6 +40,13 @@ def order(matrix, key):
     return sorted(places, key=places.get)
 
 
+def cards(matrix, use, filters=data.Filters(), sort=None):
+    """(label, model, runtime) of each pick of a view, computed over that view's cells and its effective sort."""
+    key = sort or next(u.sort for u in data.USE_CASES if u.id == use)
+    found = data.view(matrix, use, filters, sort)
+    return [(p.label, p.model, p.runtime) for p in data.picks(matrix, use, found.cells, key)]
+
+
 class SiteDataTest(unittest.TestCase):
     def setUp(self):
         self._tmp = tempfile.TemporaryDirectory()
@@ -777,6 +784,94 @@ class SiteDataTest(unittest.TestCase):
         self.assertEqual(data.picks_line(two, m), "Picks: Highest ranked and fastest: qwen3.6-35b-a3b on SGLang; "
                                                   "Next by Top 3 rank: qwen3.6-35b-a3b on llama.cpp.")
         self.assertEqual(data.picks_line((), m), "")
+
+    def test_picks_follow_the_roles_of_each_view(self):
+        m = self.fixture.load()
+        best = ("Highest ranked", "qwen3.6-35b-a3b", "sglang")
+        fast = ("Fastest", "mellum2.1-12b", "llamacpp")
+        top = ("Fastest in the Top 3", "gpt-oss-20b", "llamacpp")
+        runs = [k for k in data.view(m, "every-client", data.Filters(), None).cells if cell_of(m, *k).status == "runs"]
+        smallest = min(runs, key=lambda k: dict(cell_of(m, *k).positions)["size"])        # ruling 20
+        self.assertEqual(cards(m, ""), [best, fast, top])
+        self.assertEqual(cards(m, "opencode"), [("Default in the OpenCode config", "qwen3.6-35b-a3b", "llamacpp"), best, fast])
+        self.assertEqual(cards(m, "quality"), [best, top, ("Next by Top 3 rank", "qwen3.6-35b-a3b", "llamacpp")])
+        self.assertEqual(cards(m, "fastest"), [("Fastest on llama.cpp", "mellum2.1-12b", "llamacpp"),
+                                               ("Fastest on SGLang", "qwen3.6-35b-a3b", "sglang"), ("Fastest on vLLM", "gpt-oss-20b", "vllm")])
+        self.assertEqual(cards(m, "long-context"), [best, fast, top])                       # ruling 6
+        self.assertEqual(cards(m, "every-client"), [best, fast, ("Smallest download", *smallest)])
+        self.assertEqual(cards(m, "compare"), [("Biggest engine difference and fastest", "gpt-oss-20b", "llamacpp"), best,
+                                               ("Next by engine difference", "deepseek-r1-0528-qwen3-8b", "vllm")])
+        self.assertEqual(len({frozenset(card[1:] for card in cards(m, use)) for use in ("", "opencode", "quality")}), 3)
+        roles = lambda use: [p.roles for p in data.picks(m, use, data.view(m, use, data.Filters(), None).cells,
+                                                          next(u.sort for u in data.USE_CASES if u.id == use))]
+        self.assertEqual(roles("quality"), [("rank", "rank-long"), ("fastest-top",), ("next-rank",)])
+        self.assertEqual(roles("compare"), [("gap", "fastest"), ("rank",), ("next-gap",)])
+        self.assertEqual(roles("fastest"), [("engine-llamacpp",), ("engine-sglang",), ("engine-vllm",)])
+
+    def test_picks_merge_roles_and_fill_from_the_view_order(self):
+        m, F = self.fixture.load(), data.Filters
+        gpt = data.picks(m, "", data.view(m, "", F(search="gpt-oss"), None).cells, "rank")
+        self.assertEqual([(p.roles, p.label, p.runtime) for p in gpt],
+                         [(("rank", "fastest", "fastest-top"), "Highest ranked and fastest", "llamacpp"),
+                          (("next-rank",), "Next by Top 3 rank", "sglang"), (("next-rank",), "Next by Top 3 rank", "vllm")])
+        cells = data.view(m, "compare", F(search="gpt-oss"), None).cells
+        self.assertEqual([(p.roles, p.label, p.model, p.runtime) for p in data.picks(m, "compare", cells, "gap")],
+                         [(("gap", "rank", "fastest"), "Biggest engine difference, highest ranked and fastest", "gpt-oss-20b",
+                           "llamacpp")])                                                  # next-gap: one cell per model
+        self.assertEqual([(p.roles, p.runtime) for p in data.picks(m, "compare", cells, "rank")][1:],
+                         [(("next-rank",), "sglang"), (("next-rank",), "vllm")])
+        self.assertEqual(cards(m, "quality", sort="name")[2], ("Next by model ID", "deepseek-r1-0528-qwen3-8b", "vllm"))
+        self.assertEqual(cards(m, "every-client", sort="gap"), cards(m, "every-client"))
+        best, fast = ("Highest ranked", "qwen3.6-35b-a3b", "sglang"), ("Fastest", "mellum2.1-12b", "llamacpp")
+        sized = tuple(dataclasses.replace(u, roles=("size", "rank", "fastest", "fastest-top")) if not u.id else u
+                      for u in data.USE_CASES)
+        with mock.patch.object(data, "USE_CASES", sized):
+            found = cards(m, "")
+        self.assertEqual((len(found), found[0][0], found[1:]), (3, "Smallest download", [best, fast]))
+        for use in data.USE_CASES:
+            for key, _ in data.SORTS:
+                with self.subTest(use=use.id, sort=key):
+                    found = cards(m, use.id, sort=key)
+                    self.assertLessEqual(len(found), 3)
+                    self.assertEqual(len({card[1:] for card in found}), len(found))
+        for use, sort in (("bogus", "rank"), ("", "bogus")):
+            with self.subTest(use=use, sort=sort):
+                with self.assertRaises(ValueError):
+                    data.picks(m, use, (), sort)
+        bogus = tuple(dataclasses.replace(u, roles=("bogus",)) if not u.id else u for u in data.USE_CASES)
+        with mock.patch.object(data, "USE_CASES", bogus):
+            with self.assertRaises(ValueError):
+                data.picks(m, "", (), "rank")                                             # the role loop runs without cells
+
+    def test_picks_of_filtered_views(self):
+        m, F = self.fixture.load(), data.Filters
+        self.assertEqual(cards(m, "", F(search="qwen3.6")), [("Highest ranked and fastest", "qwen3.6-35b-a3b", "sglang"),
+                                                              ("Next by Top 3 rank", "qwen3.6-35b-a3b", "llamacpp")])
+        self.assertEqual(cards(m, "", F(search="mellum")), [("Fastest", "mellum2.1-12b", "llamacpp")])  # unranked, one pair
+        self.assertEqual(cards(m, "fastest", F(engines=("llamacpp",))), [("Fastest on llama.cpp", "mellum2.1-12b", "llamacpp"),
+                         ("Next by speed", "gpt-oss-20b", "llamacpp"), ("Next by speed", "qwen3.6-35b-a3b", "llamacpp")])
+        self.assertEqual(cards(m, "opencode", F(engines=("sglang",))),                      # the default pair out of view
+                         [("Highest ranked and fastest", "qwen3.6-35b-a3b", "sglang"), ("Next by Top 3 rank", "gpt-oss-20b", "sglang")])
+        self.assertEqual(cards(m, "", F(engines=("vllm",))), [("Highest ranked and fastest", "gpt-oss-20b", "vllm"),
+                                                               ("Next by Top 3 rank", "deepseek-r1-0528-qwen3-8b", "vllm")])
+        self.assertEqual(cards(m, "", F(statuses=("failed", "does-not-fit"))), [])
+        self.assertEqual(cards(m, "", F(search="zzz")), [])
+        self.assertEqual(cards(m, "compare", F(engines=("llamacpp",))),                    # no row has two in-view speeds
+                         [("Highest ranked", "qwen3.6-35b-a3b", "llamacpp"), ("Fastest", "gpt-oss-20b", "llamacpp"),
+                          ("Next by engine difference", "deepseek-r1-0528-qwen3-8b", "llamacpp")])
+        self.assertEqual(cards(m, "", F(engines=("llamacpp",), search="qwen3"), sort="gap"),  # fill in the row order
+                         [("Highest ranked and fastest", "qwen3.6-35b-a3b", "llamacpp"),
+                          ("Next by engine difference", "deepseek-r1-0528-qwen3-8b", "llamacpp"),
+                          ("Next by engine difference", "qwen3-coder-next", "llamacpp")])
+        fixture = self.fresh()
+        fixture.set_value("vllm", "gpt-oss-20b", "decode_tok_s", None)
+        m2 = fixture.load()
+        self.assertEqual(cards(m2, "compare", F(engines=("vllm", "sglang"))),               # a gap needs two speeds
+                         [("Highest ranked and fastest", "qwen3.6-35b-a3b", "sglang"),
+                          ("Next by engine difference", "gpt-oss-20b", "sglang"),
+                          ("Next by engine difference", "deepseek-r1-0528-qwen3-8b", "vllm")])
+        self.assertEqual(cards(m2, "fastest", F(engines=("vllm",), search="gpt-oss")),      # an engine pick needs a speed
+                         [("Next by speed", "gpt-oss-20b", "vllm")])
 
     def test_view_orders_by_in_view_cells(self):
         m = self.fixture.load()

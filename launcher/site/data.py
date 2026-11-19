@@ -816,6 +816,84 @@ def role_label(roles: Sequence[str], matrix: Matrix) -> str:
     return _joined([words[0], *(word[:1].lower() + word[1:] for word in words[1:])])
 
 
+def _place(item: Model | Cell, name: str) -> int:
+    """The item's place, from 0, in the named order of its positions."""
+    return dict(item.positions)[name]
+
+
+def picks(matrix: Matrix, use: str, cells: Sequence[tuple[str, str]], sort: str) -> tuple[Pick, ...]:
+    """The pick cards of a view (Pick cards): each of the view's roles names the Runs cell among `cells` with the
+    smallest place in its order among the cells it admits, a role whose cell a card already holds adds its key to
+    that card, and the next cells of `sort` that no card holds fill the empty places, at most three cards."""
+    cases = {case.id: case for case in USE_CASES}
+    if use not in cases:
+        raise ValueError(f"unknown use case {use!r}")
+    if sort not in dict(SORTS):
+        raise ValueError(f"unknown sort {sort!r}")
+    models = {model.id: model for model in matrix.models}
+    found = [(models[model_id], {cell.runtime: cell for cell in models[model_id].cells}[runtime])
+             for model_id, runtime in cells]
+    runs = [(model, cell) for model, cell in found if cell.status == "runs"]
+    timed = [(model, cell) for model, cell in runs if cell.recipe.decode is not None]
+    ranked = [(model, cell) for model, cell in runs if model.rank is not None]
+
+    def first(pairs: list[tuple[Model, Cell]], key: str) -> tuple[Model, Cell] | None:
+        return min(pairs, key=lambda pair: _place(pair[1], key)) if pairs else None
+
+    named: list[tuple[str, tuple[Model, Cell] | None]] = []
+    for role in cases[use].roles:
+        if role == "engines":
+            per = [first([pair for pair in timed if pair[1].runtime == runtime.id], "speed")
+                   for runtime in matrix.runtimes]
+            named += [(f"engine-{pair[1].runtime}", pair)
+                      for pair in sorted((pair for pair in per if pair), key=lambda pair: _place(pair[1], "speed"))]
+        elif role == "rank":
+            named.append((role, first(ranked, "rank")))
+        elif role == "fastest":
+            named.append((role, first(timed, "speed")))
+        elif role == "fastest-top":
+            named.append((role, first([pair for pair in timed if pair[0].rank is not None], "speed")))
+        elif role == "rank-long":
+            named.append((role, first([pair for pair in ranked if pair[1].recipe.context >= LONG_CONTEXT], "rank")))
+        elif role == "default":
+            named.append((role, next((pair for pair in runs if (pair[0].id, pair[1].runtime) == matrix.default), None)))
+        elif role == "size":
+            named.append((role, first(runs, "size")))
+        elif role == "gap":
+            rows: dict[str, list[tuple[Model, Cell]]] = {}
+            for pair in timed:
+                rows.setdefault(pair[0].id, []).append(pair)
+            gapped = sorted((pairs for pairs in rows.values() if len(pairs) >= 2),
+                            key=lambda pairs: _place(pairs[0][0], "gap"))
+            named.append((role, first(gapped[0], "speed") if gapped else None))
+        else:
+            raise ValueError(f"unknown role {role!r}")
+    held: list[tuple[list[str], tuple[Model, Cell]]] = []
+    for role, pair in named:
+        if pair is None:
+            continue
+        card = next((card for card in held if card[1][1] is pair[1]), None)
+        if card:
+            card[0].append(role)
+        else:
+            held.append(([role], pair))
+    if sort in CELL_KEYS:
+        fill = sorted(runs, key=lambda pair: _place(pair[1], sort))
+    else:
+        fill, seen = [], set()
+        for pair in sorted(runs, key=lambda pair: (_place(pair[0], sort), _place(pair[1], "speed"))):
+            if pair[0].id not in seen:
+                seen.add(pair[0].id)
+                fill.append(pair)
+    for pair in fill:
+        if len(held) >= 3:
+            break
+        if not any(card[1][1] is pair[1] for card in held):
+            held.append(([f"next-{sort}"], pair))
+    return tuple(Pick(tuple(roles), role_label(roles, matrix), model.id, cell.runtime)
+                 for roles, (model, cell) in held[:3])
+
+
 def picks_line(picks: Sequence[Pick], matrix: Matrix) -> str:
     """The picks after the count line and in the static lists; "" without cards."""
     if not picks:
@@ -1021,32 +1099,29 @@ def view(matrix: Matrix, use: str, filters: Filters, sort: str | None) -> View:
     if not shown:
         return View((), (), "", (EMPTY,))
 
-    def place(item: Model | Cell, name: str) -> int:
-        return dict(item.positions)[name]
-
     if key in CELL_KEYS:
         def row_order(entry: tuple[Model, list[Cell]]) -> tuple[int, int]:
-            found = [place(cell, key) for cell in entry[1] if cell.positions]
-            return (0, min(found)) if found else (1, place(entry[0], "name"))
+            found = [_place(cell, key) for cell in entry[1] if cell.positions]
+            return (0, min(found)) if found else (1, _place(entry[0], "name"))
 
         shown.sort(key=row_order)
-        shown = [(model, sorted(cells, key=lambda cell: (0, place(cell, key)) if cell.positions else (1, 0)))
+        shown = [(model, sorted(cells, key=lambda cell: (0, _place(cell, key)) if cell.positions else (1, 0)))
                  for model, cells in shown]
     else:
-        shown.sort(key=lambda entry: place(entry[0], key))
+        shown.sort(key=lambda entry: _place(entry[0], key))
     runs = [(model, cell) for model, cells in shown for cell in cells if cell.status == "runs"]
     rows = tuple(model.id for model, _ in shown)
     cells = tuple((model.id, cell.runtime) for model, cells in shown for cell in cells)
     if case.sort == "gap":
         head = f"{view_name(case, matrix)}: {_counted(len(rows), 'model', 'models')}."
-        gapped = sorted((model for model, _ in shown if _gap(model) is not None), key=lambda model: place(model, "gap"))
+        gapped = sorted((model for model, _ in shown if _gap(model) is not None), key=lambda model: _place(model, "gap"))
         return View(rows, cells, head, (_gap_phrase(gapped[0], labels),) if gapped else ())
     head = (f"{view_name(case, matrix)}: {_counted(len(rows), 'model', 'models')}, "
             f"{_counted(len(runs), 'recipe that runs', 'recipes that run')}.")
     if not runs:
         return View(rows, cells, head, (NO_BEST,))
-    best = min(runs, key=lambda pair: place(pair[1], "rank"))
-    fastest = min(runs, key=lambda pair: place(pair[1], "speed"))
+    best = min(runs, key=lambda pair: _place(pair[1], "rank"))
+    fastest = min(runs, key=lambda pair: _place(pair[1], "speed"))
     found = [_best(best[0], best[1], labels[best[1].runtime]) if best[0].rank is not None else NO_BEST]
     if fastest[1].recipe.decode is not None:
         found.append(_fastest(fastest[0], fastest[1], labels[fastest[1].runtime]))
