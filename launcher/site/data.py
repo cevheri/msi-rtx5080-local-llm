@@ -21,6 +21,7 @@ from launcher.model import Recipe, RuntimeConfig
 from launcher.runtimes import ADAPTERS
 
 SELECTION = "docs/model-selection.md"
+OPENCODE_CONFIG = "docs/opencode.md#the-validated-config"
 THINKING = {"toggle": "Toggle", "effort": "Effort levels", "always": "Always on", "none": "No thinking"}
 LETTERS: dict[str, str] = {}
 STATUS_WORDS = (("Runs:", "runs"), ("Failed:", "failed"), ("Does not fit:", "does-not-fit"))
@@ -187,14 +188,20 @@ class Matrix:
     runs: tuple[Run, ...]
     ranked_without_recipe: tuple[tuple[int, str], ...]
     license: tuple[str, ...]
+    top: int
+    opencode_default: str
+    default: tuple[str, str]
 
 
 @dataclass(frozen=True)
 class UseCase:
+    """A view; name and rule are templates that view_name and rule_line fill from the Matrix, and roles are the role
+    keys of its pick cards in card order ("engines" expands to one engine role per engine)."""
     id: str
-    chip: str
+    name: str
     sort: str
     rule: str
+    roles: tuple[str, ...]
 
 
 @dataclass(frozen=True)
@@ -211,29 +218,24 @@ class Filters:
 
 
 @dataclass(frozen=True)
-class Phrase:
-    """One part of an answer line; render wraps `link` in a link to `target`."""
-    kind: str
-    target: str | None
-    before: str
-    link: str
-    after: str
-
-    @property
-    def text(self) -> str:
-        return self.before + self.link + self.after
+class Pick:
+    """One pick card: the role keys it holds in role order ("next-<sort>" for a fill card), its words and its pair."""
+    roles: tuple[str, ...]
+    label: str
+    model: str
+    runtime: str
 
 
 @dataclass(frozen=True)
 class View:
+    """One view: its rows and cells in order, the count line ("" when empty), the pick cards, the data-k of the key
+    parts it shows in KEY_PARTS order (() hides the key) and the model ID the divider row precedes (None hides it)."""
     rows: tuple[str, ...]
     cells: tuple[tuple[str, str], ...]
-    head: str
-    phrases: tuple[Phrase, ...]
-
-    @property
-    def answer(self) -> str:
-        return " ".join(part for part in (self.head, *(phrase.text for phrase in self.phrases)) if part)
+    count: str
+    picks: tuple[Pick, ...]
+    key: tuple[str, ...]
+    divider: str | None
 
 
 def _relative(root: Path, path: Path) -> str:
@@ -263,6 +265,23 @@ def _section(root: Path, doc: str) -> list[str]:
         raise SiteError(f"{path}: not valid UTF-8: {exc}") from None
     except LookupError:
         raise SiteError(f"{path}: no section #{anchor}") from None
+
+
+def opencode_default(root: Path) -> str:
+    """The top-level "model" of the first json block in the validated OpenCode config section."""
+    lines = _section(root, OPENCODE_CONFIG)
+    start = next((n for n, line in enumerate(lines) if line == "```json"), None)
+    end = None if start is None else next((n for n in range(start + 1, len(lines)) if lines[n].startswith("```")), None)
+    if start is None or end is None:
+        raise SiteError(f"{OPENCODE_CONFIG}: the section has no complete json block")
+    try:
+        config = json.loads("\n".join(lines[start + 1:end]))
+    except json.JSONDecodeError as exc:
+        raise SiteError(f"{OPENCODE_CONFIG}: the validated config is not JSON: {exc}") from None
+    model = config.get("model") if isinstance(config, dict) else None
+    if not isinstance(model, str) or not model:
+        raise SiteError(f'{OPENCODE_CONFIG}: the validated config has no top-level "model" string')
+    return model
 
 
 def _table(lines: list[str], first_cell: str, source: str) -> tuple[list[str], list[list[str]]]:
@@ -315,6 +334,8 @@ def rank_of(lines: list[str], repos: Mapping[str, tuple[str, ...]]) -> tuple[dic
         if ids[0] in ranks:
             raise SiteError(f"{where}, column Model: {ids[0]} is ranked twice, also at rank {ranks[ids[0]]}")
         ranks[ids[0]] = rank
+    if sorted(seen) != list(range(1, len(seen) + 1)):
+        raise SiteError(f"{SELECTION}: the Top 10 table's ranks must run from 1 to {len(seen)} without a gap")
     return ranks, tuple(unmatched)
 
 
@@ -612,24 +633,43 @@ OPENCODE_MINIMUM = 65_536  # docs/opencode.md#context-budget: "The practical min
 LONG_CONTEXT = 131_072
 ASCII_SPACE = " \t\n\r\f\v"  # the search trims these only, as page.js does (str.strip and String.trim differ)
 USE_CASES = (
-    UseCase("", "All results", "rank", "Every model on every engine; best quality first, then fastest."),
-    UseCase("opencode", "Coding in OpenCode", "rank",
-            "Recipes with tool calling and at least 64k of context, OpenCode's practical minimum, whose latest OpenCode "
-            "session passed; best quality first, then fastest."),
-    UseCase("quality", "Best quality", "rank", "The ranked picks that run here; rank 1 first, then fastest."),
-    UseCase("fastest", "Fastest", "speed", "Every recipe that runs, fastest decode first."),
-    UseCase("long-context", "Long context", "rank", "Recipes that hold 128k tokens; best quality first, then fastest."),
-    UseCase("every-client", "Every client", "rank",
-            "Recipes whose latest session passed in every client: {clients}; best quality first, then fastest."),
+    UseCase("", "All models", "rank", "", ("rank", "fastest", "fastest-top")),
+    UseCase("opencode", "Coding in {opencode}", "rank",
+            "Tool calling, at least {minimum}k of context ({opencode}'s practical minimum), and the latest {opencode} "
+            "session passed.", ("default", "rank", "fastest")),
+    UseCase("quality", "Top {top} models", "rank", "Models in the Top {top} that run here.",
+            ("rank", "rank-long", "fastest-top")),
+    UseCase("fastest", "Fastest decode", "speed", "Every pair that runs, fastest decode first.", ("engines",)),
+    UseCase("long-context", "{long}k context", "rank", "Pairs that hold {long}k tokens.",
+            ("rank", "fastest", "fastest-top")),
+    UseCase("every-client", "Passed in all {client_count} clients", "rank",
+            "Pairs whose latest session passed in {clients}.", ("rank", "fastest", "size")),
     UseCase("compare", "Compare engines", "gap",
-            "Models that run on two or more engines; biggest speed difference first."),
+            "Models that run on two or more engines, biggest speed difference first.", ("gap", "rank", "fastest")),
 )
-SORTS = (("rank", "Quality rank, then speed"), ("speed", "Fastest first"), ("context", "Longest context first"),
+SORTS = (("rank", "Top {top} rank, then speed"), ("speed", "Fastest first"), ("context", "Longest context first"),
          ("size", "Smallest download first"), ("gap", "Biggest engine difference first"), ("name", "Model ID, A to Z"))
+ROLES = {
+    "rank": "Highest ranked",
+    "fastest": "Fastest",
+    "fastest-top": "Fastest in the Top {top}",
+    "rank-long": "Highest ranked at {long}k",
+    "default": "Default in the {opencode} config",
+    "size": "Smallest download",
+    "gap": "Biggest engine difference",
+    "next-rank": "Next by Top {top} rank",
+    "next-speed": "Next by speed",
+    "next-context": "Next by context",
+    "next-size": "Next by download size",
+    "next-gap": "Next by engine difference",
+    "next-name": "Next by model ID",
+}
+ENGINE_ROLE = "Fastest on {engine}"
 CELL_KEYS = ("rank", "speed", "context", "size")
 ROW_KEYS = ("gap", "name")
-NO_BEST = Phrase("no-best", None, "Best quality: no ranked model is in this view.", "", "")
-EMPTY = Phrase("empty", None, "No recipe matches this view.", "", "")
+KEY_PARTS = ("counts", "known-issue", "failed", "not-tested", "not-supported", "letters", "setup", "fastest", "bars")
+EMPTY = "No model matches this view."
+NO_PICKS = "No pair that runs is in this view, so there is nothing to start."
 
 
 def fastest_tags(speeds: Mapping[str, float | None]) -> dict[str, str]:
@@ -647,15 +687,239 @@ def fastest_tags(speeds: Mapping[str, float | None]) -> dict[str, str]:
     return {leaders[0]: f"Fastest by {n}%" if n else "Fastest by under 1%"}
 
 
+def speed_text(decode: float) -> str:
+    """A speed as the page writes it: `:g`, with ".0" added when that has no point, so at least one decimal (R-D6)."""
+    text = f"{decode:g}"
+    return text if "." in text else text + ".0"
+
+
+def top_speed(matrix: Matrix) -> float | None:
+    """The page's top speed over every Runs cell with a speed; None when no Runs cell has one."""
+    speeds = [cell.recipe.decode for model in matrix.models for cell in model.cells
+              if cell.status == "runs" and cell.recipe.decode is not None]
+    return max(speeds) if speeds else None
+
+
+def bar_width(decode: float | None, top: float | None) -> int:
+    """A bar's width in percent of the page's top speed, rounded half up and clamped to 0 to 100; 0 without a speed."""
+    if decode is None or top is None:
+        return 0
+    n = math.floor(100 * Fraction(str(decode)) / Fraction(str(top)) + Fraction(1, 2))
+    return max(0, min(100, n))
+
+
+def _speeds(model: Model) -> list[tuple[Fraction, str]]:
+    """The model's Runs cells with a speed, as (speed, runtime) in the order of its cells."""
+    return [(Fraction(str(cell.recipe.decode)), cell.runtime) for cell in model.cells
+            if cell.status == "runs" and cell.recipe.decode is not None]
+
+
+def lead(model: Model, cell: Cell, labels: Mapping[str, str]) -> tuple[str, str] | None:
+    """The visible lead of a cell with the fastest tag and its spoken words, from D7's tag: ("24%", "fastest, 24% ahead
+    of llama.cpp") or ("tied", "tied fastest with SGLang"), the engines in the order of the model's cells, which is
+    ADAPTERS order; None without the tag."""
+    if cell.fastest is None:
+        return None
+    speeds = _speeds(model)
+    top = max(speed for speed, _ in speeds)
+    if cell.fastest == "Tied fastest":
+        others = [labels[runtime] for speed, runtime in speeds if speed == top and runtime != cell.runtime]
+        return "tied", f"tied fastest with {_joined(others)}"
+    if not cell.fastest.startswith("Fastest by "):
+        raise ValueError(f"unknown fastest tag {cell.fastest!r}")
+    visible = cell.fastest.removeprefix("Fastest by ")
+    second = max(speed for speed, _ in speeds if speed != top)
+    behind = [labels[runtime] for speed, runtime in speeds if speed == second]
+    return visible, f"fastest, {visible} ahead of {_joined(behind)}"
+
+
+def gap_text(model: Model, labels: Mapping[str, str]) -> str | None:
+    """The gap words of a model over its Runs cells with a speed (Copy): the engines at the top speed against those at
+    the lowest, each group in the order of the model's cells, which is ADAPTERS order, rounded as D7 does; None below
+    two speeds."""
+    speeds = _speeds(model)
+    if len(speeds) < 2:
+        return None
+
+    def group(value: Fraction) -> str:
+        return _joined([labels[runtime] for speed, runtime in speeds if speed == value])
+
+    top, lowest = max(speed for speed, _ in speeds), min(speed for speed, _ in speeds)
+    if top == lowest:
+        return f"the same speed on {group(top)}"
+    n = math.floor(100 * (top / lowest - 1) + Fraction(1, 2))
+    amount = f"{n}%" if n else "under 1%"
+    return f"{group(top)} {amount} ahead of {group(lowest)}"
+
+
 def _joined(items: Sequence[str]) -> str:
     if not items:
         raise ValueError("nothing to join")
     return items[0] if len(items) == 1 else ", ".join(items[:-1]) + " and " + items[-1]
 
 
-def rule_line(use: UseCase, labels: Sequence[str]) -> str:
-    """The rule line of a use case, with the client labels joined into the Every client rule."""
-    return use.rule.replace("{clients}", _joined(list(labels))) if "{clients}" in use.rule else use.rule
+def _fill(template: str, matrix: Matrix, **extra: str) -> str:
+    """A name, rule, sort or role template filled from the matrix: the Top table's size, LONG_CONTEXT and the
+    OpenCode minimum in k, the OpenCode label and the client labels and count."""
+    labels = [client.label for client in matrix.clients]
+    return template.format(top=matrix.top, long=LONG_CONTEXT // 1024, minimum=OPENCODE_MINIMUM // 1024,
+                           opencode={client.id: client.label for client in matrix.clients}["opencode"],
+                           clients=_joined(labels), client_count=len(labels), **extra)
+
+
+def view_name(use: UseCase, matrix: Matrix) -> str:
+    return _fill(use.name, matrix)
+
+
+def rule_line(use: UseCase, matrix: Matrix) -> str:
+    """The rule line of a view; "" for All models."""
+    return _fill(use.rule, matrix)
+
+
+def sort_label(key: str, matrix: Matrix) -> str:
+    labels = dict(SORTS)
+    if key not in labels:
+        raise ValueError(f"unknown sort {key!r}")
+    return _fill(labels[key], matrix)
+
+
+def role_words(role: str, matrix: Matrix) -> str:
+    """The words of one role key; "engine-<runtime>" names that engine."""
+    if role.startswith("engine-"):
+        engines = {runtime.id: runtime.label for runtime in matrix.runtimes}
+        if role[len("engine-"):] not in engines:
+            raise ValueError(f"unknown role {role!r}")
+        return _fill(ENGINE_ROLE, matrix, engine=engines[role[len("engine-"):]])
+    if role not in ROLES:
+        raise ValueError(f"unknown role {role!r}")
+    return _fill(ROLES[role], matrix)
+
+
+def role_label(roles: Sequence[str], matrix: Matrix) -> str:
+    """A pick card's label: fastest-top and the engine roles drop beside fastest, rank-long beside rank; the first
+    kept role's words, then the others' with a lower-case first letter, joined with ", " and " and "."""
+    kept = [role for role in roles
+            if not ((role == "fastest-top" or role.startswith("engine-")) and "fastest" in roles)
+            and not (role == "rank-long" and "rank" in roles)]
+    words = [role_words(role, matrix) for role in kept]
+    return _joined([words[0], *(word[:1].lower() + word[1:] for word in words[1:])])
+
+
+def _place(item: Model | Cell, name: str) -> int:
+    """The item's place, from 0, in the named order of its positions."""
+    return dict(item.positions)[name]
+
+
+def picks(matrix: Matrix, use: str, cells: Sequence[tuple[str, str]], sort: str) -> tuple[Pick, ...]:
+    """The pick cards of a view (Pick cards): each of the view's roles names the Runs cell among `cells` with the
+    smallest place in its order among the cells it admits, a role whose cell a card already holds adds its key to
+    that card, and the next cells of `sort` that no card holds fill the empty places, at most three cards."""
+    cases = {case.id: case for case in USE_CASES}
+    if use not in cases:
+        raise ValueError(f"unknown use case {use!r}")
+    if sort not in dict(SORTS):
+        raise ValueError(f"unknown sort {sort!r}")
+    models = {model.id: model for model in matrix.models}
+    found = [(models[model_id], {cell.runtime: cell for cell in models[model_id].cells}[runtime])
+             for model_id, runtime in cells]
+    runs = [(model, cell) for model, cell in found if cell.status == "runs"]
+    timed = [(model, cell) for model, cell in runs if cell.recipe.decode is not None]
+    ranked = [(model, cell) for model, cell in runs if model.rank is not None]
+
+    def first(pairs: list[tuple[Model, Cell]], key: str) -> tuple[Model, Cell] | None:
+        return min(pairs, key=lambda pair: _place(pair[1], key)) if pairs else None
+
+    named: list[tuple[str, tuple[Model, Cell] | None]] = []
+    for role in cases[use].roles:
+        if role == "engines":
+            per = [first([pair for pair in timed if pair[1].runtime == runtime.id], "speed")
+                   for runtime in matrix.runtimes]
+            named += [(f"engine-{pair[1].runtime}", pair)
+                      for pair in sorted((pair for pair in per if pair), key=lambda pair: _place(pair[1], "speed"))]
+        elif role == "rank":
+            named.append((role, first(ranked, "rank")))
+        elif role == "fastest":
+            named.append((role, first(timed, "speed")))
+        elif role == "fastest-top":
+            named.append((role, first([pair for pair in timed if pair[0].rank is not None], "speed")))
+        elif role == "rank-long":
+            named.append((role, first([pair for pair in ranked if pair[1].recipe.context >= LONG_CONTEXT], "rank")))
+        elif role == "default":
+            named.append((role, next((pair for pair in runs if (pair[0].id, pair[1].runtime) == matrix.default), None)))
+        elif role == "size":
+            named.append((role, first(runs, "size")))
+        elif role == "gap":
+            rows: dict[str, list[tuple[Model, Cell]]] = {}
+            for pair in timed:
+                rows.setdefault(pair[0].id, []).append(pair)
+            gapped = sorted((pairs for pairs in rows.values() if len(pairs) >= 2),
+                            key=lambda pairs: _place(pairs[0][0], "gap"))
+            named.append((role, first(gapped[0], "speed") if gapped else None))
+        else:
+            raise ValueError(f"unknown role {role!r}")
+    held: list[tuple[list[str], tuple[Model, Cell]]] = []
+    for role, pair in named:
+        if pair is None:
+            continue
+        card = next((card for card in held if card[1][1] is pair[1]), None)
+        if card:
+            card[0].append(role)
+        else:
+            held.append(([role], pair))
+    if sort in CELL_KEYS:
+        fill = sorted(runs, key=lambda pair: _place(pair[1], sort))
+    else:
+        fill, seen = [], set()
+        for pair in sorted(runs, key=lambda pair: (_place(pair[0], sort), _place(pair[1], "speed"))):
+            if pair[0].id not in seen:
+                seen.add(pair[0].id)
+                fill.append(pair)
+    for pair in fill:
+        if len(held) >= 3:
+            break
+        if not any(card[1][1] is pair[1] for card in held):
+            held.append(([f"next-{sort}"], pair))
+    return tuple(Pick(tuple(roles), role_label(roles, matrix), model.id, cell.runtime)
+                 for roles, (model, cell) in held[:3])
+
+
+def picks_line(picks: Sequence[Pick], matrix: Matrix) -> str:
+    """The picks after the count line and in the static lists; "" without cards."""
+    if not picks:
+        return ""
+    engines = {runtime.id: runtime.label for runtime in matrix.runtimes}
+    return "Picks: " + "; ".join(f"{pick.label}: {pick.model} on {engines[pick.runtime]}" for pick in picks) + "."
+
+
+def filter_count(filters: Filters) -> int:
+    """The filters that are set; the search does not count."""
+    return sum(1 for value in (filters.engines, filters.statuses, filters.must_pass, filters.context, filters.thinking,
+                               filters.tools, filters.ram) if value is not None)
+
+
+def filters_label(filters: Filters) -> str:
+    n = filter_count(filters)
+    return f"Filters ({n})" if n else "Filters"
+
+
+def show_label(rows: int) -> str:
+    return f"Show {_counted(rows, 'model', 'models')}"
+
+
+def match_line(rows: int) -> str:
+    return f"{_counted(rows, 'model matches', 'models match')}."
+
+
+def caption_line(use: UseCase, sort: str, matrix: Matrix) -> str:
+    return (f"Decode speed, context and client results of each model on each engine. View: {view_name(use, matrix)}; "
+            f"sorted by: {sort_label(sort, matrix)}.")
+
+
+def print_line(use: UseCase, sort: str, filters: Filters, matrix: Matrix) -> str:
+    """The print line; a search that is not empty once trimmed of ASCII_SPACE counts as a filter here."""
+    n = filter_count(filters) + (1 if filters.search.strip(ASCII_SPACE) else 0)
+    active = f"; {_counted(n, 'filter', 'filters')} active" if n else ""
+    return f"View: {view_name(use, matrix)}; sorted by: {sort_label(sort, matrix)}{active}."
 
 
 def _classes(cell: Cell) -> dict[str, str]:
@@ -764,49 +1028,35 @@ def _keeps(model: Model, cell: Cell, label: str, filters: Filters) -> bool:
     return filters.ram is None or recipe.memory_cap <= filters.ram
 
 
-def _speed_text(decode: float | None) -> str:
-    return "speed not recorded" if decode is None else f"{decode:g} tok/s"
-
-
-def _best(model: Model, cell: Cell, label: str) -> Phrase:
-    return Phrase("best", f"d-{cell.runtime}-{model.id}", "Best quality: ", f"{model.id} on {label}",
-                  f" (rank {model.rank}), {_speed_text(cell.recipe.decode)}, {cell.recipe.context // 1024}k.")
-
-
-def _fastest(model: Model, cell: Cell, label: str) -> Phrase:
-    return Phrase("fastest", f"d-{cell.runtime}-{model.id}", "Fastest: ", f"{model.id} on {label}",
-                  f", {_speed_text(cell.recipe.decode)}, {cell.recipe.context // 1024}k.")
-
-
-def _gap_phrase(model: Model, labels: Mapping[str, str]) -> Phrase:
-    """The Biggest difference phrase of a row with two speeds: the fastest engine first in engine order on a tie, the
-    slowest last."""
-    speeds = [(cell.recipe.decode, cell.runtime) for cell in model.cells
-              if cell.status == "runs" and cell.recipe.decode is not None]
-    fast = max(speeds, key=lambda pair: pair[0])
-    slow = min(reversed(speeds), key=lambda pair: pair[0])
-    return Phrase("gap", f"m-{model.id}", "Biggest difference: ", model.id,
-                  f", {fast[0]:g} tok/s on {labels[fast[1]]} against {slow[0]:g} on {labels[slow[1]]}.")
-
-
-def phrases(matrix: Matrix) -> tuple[Phrase, ...]:
-    """The answer-line phrases the script copies: best per Runs cell of a ranked model, then fastest per Runs cell with
-    a speed (models in order, engines in ADAPTERS order), then gap per row with two speeds, then no-best and empty."""
-    labels = {runtime.id: runtime.label for runtime in matrix.runtimes}
-    runs = [(model, cell) for model in matrix.models for cell in model.cells if cell.status == "runs"]
-    return (*(_best(model, cell, labels[cell.runtime]) for model, cell in runs if model.rank is not None),
-            *(_fastest(model, cell, labels[cell.runtime]) for model, cell in runs if cell.recipe.decode is not None),
-            *(_gap_phrase(model, labels) for model in matrix.models if _gap(model) is not None),
-            NO_BEST, EMPTY)
-
-
 def _counted(n: int, one: str, many: str) -> str:
     return f"{n} {one if n == 1 else many}"
 
 
+def count_line(rows: int, cells: int, runs: int, pairs: int, plain: bool) -> str:
+    """The count line: the plain form names the Runs cells of all pairs, the other form the cells in view; "" without
+    rows."""
+    if not rows:
+        return ""
+    if plain:
+        return f"{_counted(rows, 'model', 'models')}; {runs} of {pairs} pairs run."
+    return f"{_counted(rows, 'model', 'models')}; {_counted(cells, 'pair matches', 'pairs match')}."
+
+
+def _key(matrix: Matrix, runs: Sequence[Cell]) -> tuple[str, ...]:
+    """The key parts a view with these in-view Runs cells shows, in KEY_PARTS order (Key)."""
+    if not runs:
+        return ()
+    held = {result.cls for cell in runs for result in cell.clients}
+    classes = [cls for cls in CLASSES if cls != "passed" and cls in held]
+    shown = {"counts": True, **{cls: True for cls in classes}, "letters": bool(classes),
+             "setup": any(cell.setup for cell in runs), "fastest": any(cell.fastest is not None for cell in runs),
+             "bars": top_speed(matrix) is not None}
+    return tuple(part for part in KEY_PARTS if shown.get(part, False))
+
+
 def view(matrix: Matrix, use: str, filters: Filters, sort: str | None) -> View:
-    """The rows, cells and answer line of one view, as the page script computes them (design D9); sort None means
-    the use case's own."""
+    """The rows, cells, count line, picks, key parts and divider of one view, as the page script computes them
+    (design D9, R-D3, R-D16); sort None means the view's own."""
     cases = {case.id: case for case in USE_CASES}
     if use not in cases:
         raise ValueError(f"unknown use case {use!r}")
@@ -822,38 +1072,30 @@ def view(matrix: Matrix, use: str, filters: Filters, sort: str | None) -> View:
         if cells:
             shown.append((model, cells))
     if not shown:
-        return View((), (), "", (EMPTY,))
-
-    def place(item: Model | Cell, name: str) -> int:
-        return dict(item.positions)[name]
+        return View((), (), "", (), (), None)
 
     if key in CELL_KEYS:
         def row_order(entry: tuple[Model, list[Cell]]) -> tuple[int, int]:
-            found = [place(cell, key) for cell in entry[1] if cell.positions]
-            return (0, min(found)) if found else (1, place(entry[0], "name"))
+            found = [_place(cell, key) for cell in entry[1] if cell.positions]
+            return (0, min(found)) if found else (1, _place(entry[0], "name"))
 
         shown.sort(key=row_order)
-        shown = [(model, sorted(cells, key=lambda cell: (0, place(cell, key)) if cell.positions else (1, 0)))
+        shown = [(model, sorted(cells, key=lambda cell: (0, _place(cell, key)) if cell.positions else (1, 0)))
                  for model, cells in shown]
     else:
-        shown.sort(key=lambda entry: place(entry[0], key))
-    runs = [(model, cell) for model, cells in shown for cell in cells if cell.status == "runs"]
+        shown.sort(key=lambda entry: _place(entry[0], key))
+    runs = [cell for _, cells in shown for cell in cells if cell.status == "runs"]
     rows = tuple(model.id for model, _ in shown)
     cells = tuple((model.id, cell.runtime) for model, cells in shown for cell in cells)
-    if case.sort == "gap":
-        head = f"{case.chip}: {_counted(len(rows), 'model', 'models')}."
-        gapped = sorted((model for model, _ in shown if _gap(model) is not None), key=lambda model: place(model, "gap"))
-        return View(rows, cells, head, (_gap_phrase(gapped[0], labels),) if gapped else ())
-    head = (f"{case.chip}: {_counted(len(rows), 'model', 'models')}, "
-            f"{_counted(len(runs), 'recipe that runs', 'recipes that run')}.")
-    if not runs:
-        return View(rows, cells, head, (NO_BEST,))
-    best = min(runs, key=lambda pair: place(pair[1], "rank"))
-    fastest = min(runs, key=lambda pair: place(pair[1], "speed"))
-    found = [_best(best[0], best[1], labels[best[1].runtime]) if best[0].rank is not None else NO_BEST]
-    if fastest[1].recipe.decode is not None:
-        found.append(_fastest(fastest[0], fastest[1], labels[fastest[1].runtime]))
-    return View(rows, cells, head, tuple(found))
+    plain = not use and filter_count(filters) == 0 and not filters.search.strip(ASCII_SPACE)
+    count = count_line(len(rows), len(cells), len(runs), len(matrix.models) * len(matrix.runtimes), plain)
+    divider = None
+    if key == "rank":
+        ranks = [model.rank for model, _ in shown]
+        first = next((n for n, rank in enumerate(ranks) if rank is None), None)
+        if first is not None and all(rank is None for rank in ranks[first:]):
+            divider = rows[first]
+    return View(rows, cells, count, picks(matrix, use, cells, key), _key(matrix, runs), divider)
 
 
 def load(root: Path) -> Matrix:
@@ -897,10 +1139,17 @@ def load(root: Path) -> Matrix:
     license_lines = tuple(line for line in _section(root, "README.md#license") if line.strip())
     if not license_lines:
         raise SiteError("README.md: the License section has no text")
+    default_model = opencode_default(root)
+    pairs = [(model.id, cell.runtime) for model in models for cell in model.cells
+             if cell.status == "runs" and cell.recipe.opencode == default_model]
+    if len(pairs) != 1:
+        raise SiteError(f"{OPENCODE_CONFIG}: the default model {default_model} names {len(pairs)} OpenCode entries of "
+                        "pairs that run; it must name exactly one")
     run_list = tuple(data.run for data in runs)
     versions = _client_versions(run_list)
     return Matrix(runtimes=runtimes,
                   clients=tuple(Client(name, clients.LABELS[name], letters[name], versions[name])
                                 for name in clients.NAMES),
                   models=tuple(models), runs=run_list, ranked_without_recipe=ranked_without_recipe,
-                  license=license_lines)
+                  license=license_lines, top=len(ranks) + len(ranked_without_recipe),
+                  opencode_default=default_model, default=pairs[0])

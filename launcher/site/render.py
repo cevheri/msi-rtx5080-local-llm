@@ -7,7 +7,7 @@ import hashlib
 import html
 import posixpath
 import re
-from collections.abc import Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from fractions import Fraction
 from pathlib import Path
 from urllib.parse import quote, unquote
@@ -219,24 +219,25 @@ def rewrite_readme(text: str, table: str) -> str:
 
 
 HEAD_SCRIPT = 'document.documentElement.className = "js";'
-TITLE = "Local LLM runtime matrix"
-LEAD = "Which open-weight models run on this laptop, on which engine, how fast, and with which agent clients."
-NO_JS = "Filters and use cases need JavaScript; the full matrix and each use case as a list are below."
+TITLE = "Local LLMs on one laptop"
+NO_JS = "Views and filters need JavaScript; each view as a list and every pair's details follow."
 PRIVACY = "This page sets no cookies, has no analytics and loads nothing from other sites."
 STATUS_LABELS = {"runs": "Runs", "failed": "Failed", "does-not-fit": "Does not fit"}
-STATUS_MEANINGS = {"runs": "a measured recipe ships for this engine; the cell gives its decode speed and context",
-                   "failed": "the model was tried on this engine and did not run; the details say why",
-                   "does-not-fit": "an estimate says the model does not fit this engine on this laptop"}
 CLASS_WORDS = {"passed": "passed", "known-issue": "known issue", "failed": "failed", "not-tested": "not tested",
                "not-supported": "not supported"}
-CLASS_MEANINGS = {"passed": "the newest e2e session passed",
-                  "known-issue": "the newest session failed, and the runtime coverage table describes the failure",
-                  "failed": "the newest session failed, and the runtime coverage table does not describe it yet",
-                  "not-tested": "no e2e run has covered this recipe with this client",
-                  "not-supported": "llmctl writes no entry for this client and recipe"}
+CLASS_MEANINGS = {"passed": "the latest e2e session passed",
+                  "known-issue": "the latest session failed, and the runtime coverage table describes the failure",
+                  "failed": "the latest session failed, and the runtime coverage table does not describe it yet",
+                  "not-tested": "no e2e run has covered this pair with this client yet",
+                  "not-supported": "llmctl writes no entry for this client on this pair"}
 SETUP_MARK = "Setup check failed"
+KEY_SHAPES = {"known-issue": "a letter in a box with a corner triangle:", "failed": "a letter in a filled box:",
+              "not-tested": "a letter in a dashed box:", "not-supported": "a letter in a box with its corner struck:"}
+KEY_WORDS = {"known-issue": "known issue", "failed": "failed, no note yet", "not-tested": "not tested",
+             "not-supported": "not supported"}
 SEARCH_LABEL = "Search models"
-SEARCH_PLACEHOLDER = "ID, alias or build"
+SEARCH_PLACEHOLDER = "Search models"
+SEARCH_SHORT = "Search"
 RAM_HELP = "./llmctl up refuses to start a recipe when less RAM than its container's memory cap is available."
 _ASSETS = Path(__file__).resolve().parent
 
@@ -254,36 +255,48 @@ def _sha(text: str) -> str:
     return "'sha256-" + base64.b64encode(hashlib.sha256(text.encode("utf-8")).digest()).decode("ascii") + "'"
 
 
-def switch_width(engines: int) -> str:
-    """The width from which the matrix is a table: 12 + 14 x engines + 0.25 x (engines + 1) + 3 rem."""
-    width = 12 + 14 * engines + Fraction(1, 4) * (engines + 1) + 3
-    return f"{float(width):g}rem"
+WIDTHS_NOTE = "/* Bar widths, written by the build: decode speed as a share of the page's top speed. */"
 
 
-def inline_assets(css: str, js: str, engines: int) -> tuple[str, str]:
-    """The stylesheet with its one @SWITCH@ token replaced, and the script; either may not end its own element."""
-    count = css.count("@SWITCH@")
+def inline_assets(css: str, js: str, engines: int, widths: Iterable[int]) -> tuple[str, str]:
+    """The stylesheet with its one @ENGINES@ token replaced and one rule per bar width appended, and the script;
+    either may not end its own element."""
+    count = css.count("@ENGINES@")
     if count != 1:
-        raise SiteError(f"launcher/site/page.css: the token @SWITCH@ appears {count} times, not once")
+        raise SiteError(f"launcher/site/page.css: the token @ENGINES@ appears {count} times, not once")
     if "</style" in css.lower():
         raise SiteError("launcher/site/page.css: it holds </style, which would end the inline style")
     if "</script" in js.lower():
         raise SiteError("launcher/site/page.js: it holds </script, which would end the inline script")
-    return css.replace("@SWITCH@", switch_width(engines)), js
-
-
-def _phrase(phrase: data.Phrase) -> str:
-    if not phrase.link:
-        return _e(phrase.text)
-    return f'{_e(phrase.before)}<a href="#{_e(phrase.target)}">{_e(phrase.link)}</a>{_e(phrase.after)}'
-
-
-def _answer(found: data.View) -> str:
-    return " ".join(part for part in (_e(found.head), *(_phrase(phrase) for phrase in found.phrases)) if part)
+    rules = "".join(f".w-{width} {{ width: {width}%; }}\n" for width in sorted(set(widths)))
+    return css.replace("@ENGINES@", str(engines)) + "\n" + WIDTHS_NOTE + "\n" + rules, js
 
 
 def _count(n: int, one: str, many: str) -> str:
     return f"{n} {one if n == 1 else many}"
+
+
+def client_sentence(results: Sequence[data.ClientResult], labels: Mapping[str, str]) -> str:
+    """The client result in words (Copy, card clients): the count the cell shows, then each client that did not pass,
+    with its run count for Known issue and Failed."""
+    passed = sum(1 for result in results if result.cls == "passed")
+    if passed == len(results):
+        return f"All {len(results)} clients passed."
+    rest = [f"{labels[result.client]}: {CLASS_WORDS[result.cls]}"
+            + (f", {result.passed_runs} of {result.runs} runs passed" if result.cls in ("known-issue", "failed") else "")
+            for result in results if result.cls != "passed"]
+    return f"{passed} of {len(results)} clients; " + "; ".join(rest) + "."
+
+
+def _lamp(cls: str, letter: str, hidden: bool = True) -> str:
+    """A client mark: span.lamp.<class> holding the letter; hidden from readers unless its container is."""
+    attrs = [("class", f"lamp {cls}")] + ([("aria-hidden", "true")] if hidden else [])
+    return _start("span", attrs) + f"<span>{_e(letter)}</span></span>"
+
+
+def _bar(width: int) -> str:
+    """A speed bar on the page's one scale, its width a w-<n> class the build styles."""
+    return f'<span class="bar" aria-hidden="true"><i class="w-{width}"></i></span>'
 
 
 class _Page:
@@ -295,11 +308,11 @@ class _Page:
         self.links = Links(root, build)
         self.labels = {runtime.id: runtime.label for runtime in matrix.runtimes}
         self.client_labels = {client.id: client.label for client in matrix.clients}
+        self.top = data.top_speed(matrix)
         self.runs = [(model, cell) for model in matrix.models for cell in model.cells if cell.status == "runs"]
         if not self.runs:
             raise SiteError(f"{data.SELECTION}: runtime coverage: no Runs: cell, so the page has no measurement")
         self.hardware = "; ".join(sorted({cell.recipe.hardware for _, cell in self.runs}))
-        self.sort_labels = dict(data.SORTS)
         self.committed = datetime.datetime.fromtimestamp(build.commit_time, datetime.timezone.utc).strftime(
             "%Y-%m-%d %H:%M")
 
@@ -319,50 +332,40 @@ class _Page:
             f'<meta name="description" content="{_e(description)}">', '<meta name="color-scheme" content="light dark">',
             '<link rel="icon" href="data:,">', f"<script>{HEAD_SCRIPT}</script>", f"<style>{style}</style>", "</head>"])
 
-    def versions(self) -> str:
-        images = ", ".join(f"{_e(runtime.label)} <code>{_e(runtime.image)}</code>" for runtime in self.matrix.runtimes)
-        found = [path for client in self.matrix.clients for _, path in client.versions]
-        if not found:
-            clients_text = "Clients: versions not recorded."
-        else:
-            newest = max(path.split("/")[1] for path in found)
-            items = []
-            for client in self.matrix.clients:
-                if not client.versions:
-                    items.append(f"{_e(client.label)} not recorded")
-                for version, path in client.versions:
-                    _, date, folder = path.split("/")
-                    item = f"{_e(client.label)} <code>{_e(version)}</code>"
-                    if len(client.versions) > 1:
-                        item += f" ({_e(folder)})"
-                    if date != newest:
-                        item += f" ({_e(date)})"
-                    items.append(item)
-            clients_text = f"Clients, as the e2e of {_e(newest)} recorded them: {', '.join(items)}."
-        return f"<p>Images llmctl starts: {images}. {clients_text}</p>"
-
     def header(self) -> str:
         dates = [cell.recipe.date for _, cell in self.runs]
-        tree = self.links.repo_link("")
-        commit = self.build.commit
-        facts = (f"Measured on {_e(self.hardware)} from {_e(min(dates))} to {_e(max(dates))}; clients last tested "
-                 f"{_e(max(run.date for run in self.matrix.runs))}. Built from commit "
-                 f'<a href="{_e(tree)}">{_e(commit[:7])}</a>, committed {_e(self.committed)} UTC.')
+        found = data.view(self.matrix, "", data.Filters(), None)
+        picks = data.picks_line(found.picks, self.matrix)
+        facts = (f'<span id="answer" role="status">{_e(found.count)}<span id="answer-picks" class="vh">'
+                 f'{_e(" " + picks if picks else "")}</span></span> '
+                 f"{_count(len(self.matrix.runtimes), 'engine', 'engines')} and "
+                 f"{_count(len(self.matrix.clients), 'agent client', 'agent clients')}. "
+                 f"Measured on {_e(self.hardware)}, "
+                 f'<span class="nw">{_e(min(dates))}</span> to <span class="nw">{_e(max(dates))}</span>. '
+                 '<a href="#about">About the data</a>')
         return "\n".join([
-            "<header>", f"<h1>{_e(TITLE)}</h1>", f'<p class="lead">{_e(LEAD)}</p>', f'<p class="facts">{facts}</p>',
-            '<details id="versions" open>', "<summary>Versions</summary>", self.versions(), "</details>",
-            f'<p class="links"><a href="{_e(tree)}">Repository</a> '
-            f'<a href="{_e(self.links.repo_link(README, "quick-start"))}">How to start a model</a></p>', "</header>"])
+            "<header>", '<div class="top">', f"<h1>{_e(TITLE)}</h1>", self.controls(), "</div>",
+            f'<p class="facts">{facts}</p>', '<p id="use-rule" class="rule" hidden></p>',
+            '<div id="notice" hidden>', '<p id="notice-text"></p>', '<button type="button" id="dismiss">Dismiss</button>',
+            "</div>", "</header>"])
 
-    def uses(self) -> str:
-        labels = [client.label for client in self.matrix.clients]
-        parts = ['<fieldset id="uses" hidden aria-describedby="use-rule">', "<legend>Use case</legend>"]
-        for use in data.USE_CASES:
-            attrs = [("type", "radio"), ("name", "use"), ("value", use.id), ("data-sort", use.sort)]
-            parts.append(f"<label>{_start('input', attrs + ([('checked', None)] if not use.id else []))} "
-                         f"{_e(use.chip)}</label>")
-        parts += [f'<p id="use-rule">{_e(data.rule_line(data.USE_CASES[0], labels))}</p>', "</fieldset>"]
-        return "\n".join(parts)
+    def controls(self) -> str:
+        """The control row (Header and controls): View, Search, Filters, Sort and Copy link, shown by the script."""
+        views = "".join(_start("option", [("value", use.id), ("data-sort", use.sort), ("data-roles", " ".join(use.roles))]
+                               + ([("selected", None)] if not use.id else []))
+                        + f"{_e(data.view_name(use, self.matrix))}</option>" for use in data.USE_CASES)
+        sorts = "".join(_start("option", [("value", key)] + ([("selected", None)] if key == data.USE_CASES[0].sort else []))
+                        + f"{_e(data.sort_label(key, self.matrix))}</option>" for key, _ in data.SORTS)
+        return "\n".join([
+            '<div id="controls" hidden>', '<div id="ctl" class="ctl">',
+            f'<span id="usec" class="pair"><label for="use">View</label><select id="use" aria-describedby="use-rule">{views}</select>'
+            "</span>",
+            f'<span class="q"><label for="q" class="vh">{_e(SEARCH_LABEL)}</label>'
+            + _start("input", [("id", "q"), ("type", "search"), ("placeholder", SEARCH_PLACEHOLDER),
+                               ("data-short", SEARCH_SHORT)]) + "</span>",
+            f'<button type="button" id="open-filters" aria-haspopup="dialog">{_e(data.filters_label(data.Filters()))}</button>',
+            f'<span id="sortc" class="pair"><label for="sort">Sort</label><select id="sort">{sorts}</select></span>',
+            '<button type="button" id="copy-link">Copy link</button>', "</div>", "</div>"])
 
     def _checkboxes(self, legend: str, name: str, values: Sequence[tuple[str, str]]) -> str:
         boxes = "\n".join(f"<label>{_start('input', [('type', 'checkbox'), ('name', name), ('value', value), ('checked', None)])} "
@@ -378,15 +381,18 @@ class _Page:
         return (f'<div class="control">\n<label for="{name}">{_e(label)}</label>\n{_start("select", attrs)}\n{options}\n'
                 f"</select>{help_line}\n</div>")
 
-    def toolbar(self) -> str:
+    def sheet(self) -> str:
+        """The Filters sheet (Filters sheet): the shipped controls in the shipped order, the slot Sort and Copy link move
+        into on phones, and the Show and Clear buttons."""
         facts = [cell.recipe for _, cell in self.runs]
         contexts = sorted({recipe.context // 1024 for recipe in facts})
         caps = sorted({recipe.memory_cap for recipe in facts})
         present = {recipe.thinking for recipe in facts}
+        found = data.view(self.matrix, "", data.Filters(), None)
         return "\n".join([
-            '<div id="toolbar" hidden>', '<div class="control">', f'<label for="q">{_e(SEARCH_LABEL)}</label>',
-            f'<input id="q" type="search" placeholder="{_e(SEARCH_PLACEHOLDER)}">', "</div>",
-            '<details id="filters">', '<summary><span id="filters-label">Filters</span></summary>',
+            '<dialog id="sheet" aria-labelledby="sheet-title">', '<div class="sheet-head">',
+            '<h2 id="sheet-title">Filters</h2>', '<button type="button" id="sheet-close">Close</button>', "</div>",
+            '<div class="sheet-body">',
             self._checkboxes("Engines", "engine", [(runtime.id, runtime.label) for runtime in self.matrix.runtimes]),
             self._checkboxes("Status", "status", list(STATUS_LABELS.items())),
             self._select("pass", "Must pass in", [("", "Any client"),
@@ -398,51 +404,56 @@ class _Page:
             self._select("tools", "Tools", [("", "Any"), ("yes", "Tool calling"), ("no", "Chat only")]),
             self._select("ram", "Free RAM", [("", "Any"), *((str(cap), f"{cap} GiB") for cap in caps)],
                          help_text=RAM_HELP),
-            self._select("sort", "Sort", data.SORTS, selected=data.USE_CASES[0].sort),
-            '<button type="button" id="clear">Clear filters</button>',
-            '<button type="button" id="copy-link">Copy link to this view</button>', "</details>", "</div>"])
+            '<div id="sheet-slot"></div>', "</div>", '<div class="sheet-foot">',
+            f'<button type="button" id="show">{_e(data.show_label(len(found.rows)))}</button>',
+            '<button type="button" id="clear">Clear filters</button>', "</div>",
+            '<p id="sheet-live" class="vh" aria-live="polite"></p>', "</dialog>"])
 
-    def legend(self) -> str:
-        letters = ", ".join(f"{client.letter} {client.label}" for client in self.matrix.clients)
-        classes = "\n".join(f'<li><span class="lamp {cls}" aria-hidden="true"></span> {_e(word.capitalize())}: '
-                            f"{_e(CLASS_MEANINGS[cls])}.</li>" for cls, word in CLASS_WORDS.items())
-        statuses = "\n".join(f'<li><span class="status">{_e(label)}</span>: {_e(STATUS_MEANINGS[status])}.</li>'
-                             for status, label in STATUS_LABELS.items())
-        return "\n".join([
-            '<details id="legend" open>', f"<summary>{_e('Legend: ' + letters)}</summary>",
-            '<ul class="legend-classes">', classes, "</ul>", '<ul class="legend-statuses">', statuses,
-            '<li><span class="tag"><span aria-hidden="true">*</span> Fastest by n%</span>: the fastest engine of a '
-            "model that runs on two or more, ahead of the next fastest by that much decode speed.</li>",
-            f'<li><span class="setup">{_e(SETUP_MARK)}</span>: a setup step of the recipe failed in an e2e run of '
-            "its newest date; the details list it.</li>", "</ul>", f"<p>{self.speeds_line()}</p>",
-            "<p>Client results count every e2e run of the same model ID on the same engine, so they can span changes "
-            "to a recipe.</p>", "</details>"])
-
-    def _tile(self, model: data.Model, cell: data.Cell) -> str:
+    def _runs_tile(self, model: data.Model, cell: data.Cell) -> str:
+        """A Runs tile: span.g with its parts in the tile table's order (Table and cells)."""
+        facts = cell.recipe
         label = self.labels[cell.runtime]
-        parts = [f'<span class="engine">{_e(label)}</span>',
-                 f'<span class="status">{_e(STATUS_LABELS[cell.status])}</span>']
-        if cell.status == "failed":
-            parts.append(f'<span class="date">on {_e(cell.measured)}</span>')
-        elif cell.status == "does-not-fit":
-            parts.append('<span class="label">(estimate)</span>')
+        if facts.decode is None:
+            parts = ['<span class="sp"><span class="vh">speed </span><span class="none">not recorded</span>'
+                     '<span class="vh">,</span></span>']
         else:
-            facts = cell.recipe
-            if cell.fastest is not None:
-                parts.append(f'<span class="tag"><span aria-hidden="true">*</span> {_e(cell.fastest)}</span>')
-            if facts.decode is None:
-                parts.append('<span class="speed">speed not recorded</span>')
+            parts = [f'<span class="sp">{_e(data.speed_text(facts.decode))}<span class="vh"> tok/s,</span></span>']
+        marker = data.lead(model, cell, self.labels)
+        if marker is not None:
+            shown, words = marker
+            if shown == "tied":
+                parts.append(f'<span class="mk"><span aria-hidden="true">* tied</span><span class="vh">{_e(words)},'
+                             "</span></span>")
             else:
-                parts.append(f'<span class="speed">{facts.decode:g}</span> <span class="unit">tok/s</span>')
-            parts.append(f'<span class="pill">{facts.context // 1024}k</span>')
-            letters = {client.id: client.letter for client in self.matrix.clients}
-            lamps = " ".join(f'<span class="lamp {_e(result.cls)}"><span aria-hidden="true">{_e(letters[result.client])}'
-                            f'</span><span class="vh">{_e(self.client_labels[result.client])} '
-                            f"{_e(CLASS_WORDS[result.cls])},</span></span>" for result in cell.clients)
-            parts.append(f'<span class="lamps">{lamps}</span>')
-            if cell.setup:
-                parts.append(f'<span class="setup">{_e(SETUP_MARK)}</span>')
-        return f'<a class="tile" href="#d-{_e(cell.runtime)}-{_e(model.id)}">' + " ".join(parts) + "</a>"
+                first, _, rest = words.partition(shown)
+                parts.append(f'<span class="mk"><span aria-hidden="true">* </span><span class="vh">{_e(first)}</span>'
+                             f'{_e(shown)}<span class="vh">{_e(rest)},</span></span>')
+        if (model.id, cell.runtime) == self.matrix.default:
+            words = data.role_words("default", self.matrix)
+            parts.append(f'<span class="dm"><span class="tag" aria-hidden="true">{_e(self.client_labels["opencode"])} '
+                         f'default</span><span class="vh">{_e(words[:1].lower() + words[1:])},</span></span>')
+        if cell.setup:
+            parts.append(f'<span class="su">{_e(SETUP_MARK)}<span class="vh">,</span></span>')
+        parts.append(f'<span class="cx">{facts.context // 1024}k<span class="vh"> context,</span></span>')
+        parts.append(f'<span class="sz">{facts.size_bytes / 1e9:.1f} GB<span class="vh"> download,</span></span>')
+        letters = {client.id: client.letter for client in self.matrix.clients}
+        passed = sum(1 for result in cell.clients if result.cls == "passed")
+        parts.append(f'<span class="pc" aria-hidden="true"><span class="pcn">{passed}/{len(cell.clients)}</span>'
+                     + "".join(_lamp(result.cls, letters[result.client], hidden=False)
+                               for result in cell.clients if result.cls != "passed") + "</span>")
+        parts.append(_bar(data.bar_width(facts.decode, self.top)))
+        parts.append(f'<span class="vh">{_e(label)}: {_e(client_sentence(cell.clients, self.client_labels))}</span>')
+        return (f'<a class="tile" href="#d-{_e(cell.runtime)}-{_e(model.id)}"><span class="g">' + "".join(parts)
+                + "</span></a>")
+
+    @staticmethod
+    def _other_tile(model: data.Model, cell: data.Cell) -> str:
+        """A Failed or Does not fit tile: its status word and the date or the evidence label."""
+        if cell.status == "failed":
+            words = f'<span class="miss"><b>Failed</b> <span class="dt">{_e(cell.measured)}</span></span>'
+        else:
+            words = '<span class="miss">Does not fit <span class="nw">(estimate)</span></span>'
+        return f'<a class="tile x" href="#d-{_e(cell.runtime)}-{_e(model.id)}">{words}</a>'
 
     def _cell(self, model: data.Model, cell: data.Cell) -> str:
         attrs: list[tuple[str, str | None]] = [("role", "cell"), ("data-engine", cell.runtime),
@@ -454,65 +465,192 @@ class _Page:
             attrs += [("data-ctx", str(facts.context // 1024)), ("data-cap", str(facts.memory_cap)),
                       ("data-think", facts.thinking), ("data-tools", "no" if facts.chat_only else "yes"),
                       ("data-use", " ".join(cell.uses))]
+            if cell.fastest is not None:
+                attrs.append(("data-fast", None))
+            if (model.id, cell.runtime) == self.matrix.default:
+                attrs.append(("data-default", None))
+            if cell.setup:
+                attrs.append(("data-setup", None))
             attrs += [(f"data-c-{result.client}", result.cls) for result in cell.clients]
             attrs += [(f"data-o-{key}", str(place)) for key, place in cell.positions]
-        label = self.labels[cell.runtime]
-        attrs.append(("data-search", data.search_text(model, cell, label)))
-        return (_start("td", attrs) + self._tile(model, cell)
-                + f' <span class="out" hidden><span class="engine" aria-hidden="true">{_e(label)}</span> '
-                + "Not in this view</span></td>")
+        attrs.append(("data-search", data.search_text(model, cell, self.labels[cell.runtime])))
+        tile = self._runs_tile(model, cell) if cell.status == "runs" else self._other_tile(model, cell)
+        return _start("td", attrs) + tile + '<span class="out" hidden>Not in this view</span></td>'
+
+    def _row(self, model: data.Model) -> str:
+        positions = dict(model.positions)
+        attrs = [("id", f"m-{model.id}"), ("role", "row"), ("data-model", model.id),
+                 ("data-o-name", str(positions["name"])), ("data-o-gap", str(positions["gap"]))]
+        if model.rank is not None:
+            attrs.append(("data-rank", str(model.rank)))
+        header = (f'<th scope="row" role="rowheader"><span class="rk">{"" if model.rank is None else model.rank}</span> '
+                  f'<span class="id">{_e(model.id)}</span>')
+        if model.chat_only:
+            header += ' <span class="tag">Chat only<span class="vh">, no tool calling</span></span>'
+        gap = data.gap_text(model, self.labels)
+        if gap is not None:
+            header += f'<span class="gv"><span class="vh">; </span>{_e(gap)}</span>'
+        return (_start("tr", attrs) + header + "</th>" + "".join(self._cell(model, cell) for cell in model.cells)
+                + "</tr>")
+
+    def _head(self, runtime: data.Runtime) -> str:
+        """An engine's column head: its label, the version its heading gives after the label, and its Runs count."""
+        runs = sum(1 for model in self.matrix.models for cell in model.cells
+                   if cell.runtime == runtime.id and cell.status == "runs")
+        version = runtime.heading.removeprefix(runtime.label).strip()
+        return (f'<th scope="col" role="columnheader" data-engine="{_e(runtime.id)}"><span class="en">{_e(runtime.label)}'
+                "</span>" + (f' <span class="ver">{_e(version)}</span>' if version else "")
+                + f'<span class="n"><span class="vh">, </span>{runs} of {len(self.matrix.models)} run</span></th>')
 
     def matrix_table(self) -> str:
         found = data.view(self.matrix, "", data.Filters(), None)
         models = {model.id: model for model in self.matrix.models}
-        heads = ['<th scope="col" role="columnheader">Model</th>'] + [
-            f'<th scope="col" role="columnheader" data-engine="{_e(runtime.id)}">{_e(runtime.heading)} '
-            f'<span class="count">{_count(runtime.recipes, "recipe", "recipes")}</span></th>'
-            for runtime in self.matrix.runtimes]
+        heads = [f'<th scope="col" role="columnheader" class="mh">Top {self.matrix.top} rank and model</th>',
+                 *(self._head(runtime) for runtime in self.matrix.runtimes)]
+        divider = (_start("tr", [("id", "grp"), ("class", "grp"), ("role", "row")]
+                          + ([("hidden", None)] if found.divider is None else []))
+                   + f'<th colspan="{len(self.matrix.runtimes) + 1}" scope="rowgroup" role="rowheader">'
+                   + f"Not in the Top {self.matrix.top}</th></tr>")
         rows = []
         for model_id in found.rows:
-            model = models[model_id]
-            positions = dict(model.positions)
-            attrs = [("id", f"m-{model.id}"), ("role", "row"), ("data-model", model.id),
-                     ("data-o-name", str(positions["name"])), ("data-o-gap", str(positions["gap"]))]
-            if model.rank is not None:
-                attrs.append(("data-rank", str(model.rank)))
-            meta = ([f"Rank {model.rank}"] if model.rank is not None else []) + (["Chat only"] if model.chat_only else [])
-            if model.aliases:
-                meta.append(("alias " if len(model.aliases) == 1 else "aliases ") + ", ".join(model.aliases))
-            header = (f'<th scope="row" role="rowheader"><span class="id">{_e(model.id)}</span>'
-                      + "".join(f' <span class="meta">{_e(line)}</span>' for line in meta) + "</th>")
-            rows.append(_start("tr", attrs) + header + "".join(self._cell(model, cell) for cell in model.cells) + "</tr>")
-        caption = f"Each model on each engine, sorted by: {self.sort_labels[data.USE_CASES[0].sort]}."
+            if model_id == found.divider:
+                rows.append(divider)
+            rows.append(self._row(models[model_id]))
+        if found.divider is None:
+            rows.append(divider)
+        caption = data.caption_line(data.USE_CASES[0], data.USE_CASES[0].sort, self.matrix)
+        pairs = len(self.matrix.models) * len(self.matrix.runtimes)
         return "\n".join([
-            '<h2 class="vh">Models and engines</h2>', '<table id="matrix" tabindex="-1" role="table">',
+            '<h2 class="vh">Models and engines</h2>',
+            _start("div", [("class", "tbl")]) + _start("table", [
+                ("id", "matrix"), ("role", "table"), ("tabindex", "-1"), ("data-pairs", str(pairs)), ("data-use", ""),
+                ("data-sort", data.USE_CASES[0].sort)]),
             f'<caption id="caption" class="vh">{_e(caption)}</caption>',
             '<thead role="rowgroup"><tr role="row">' + "".join(heads) + "</tr></thead>", '<tbody role="rowgroup">',
-            *rows, "</tbody>", "</table>"])
+            *rows, "</tbody>", "</table></div>"])
+
+    def _rule(self, use: data.UseCase) -> str:
+        """A view's rule line; the Top 10 rule ends with a link to the footer's rank line (2026-11-19 plan ruling 11)."""
+        rule = _e(data.rule_line(use, self.matrix))
+        return rule + ' <a href="#top10">What the rank means</a>' if use.id == "quality" else rule
+
+    def _pair_link(self, model_id: str, runtime: str, words: str) -> str:
+        return f'<a href="#d-{_e(runtime)}-{_e(model_id)}">{_e(words)}</a>'
 
     def use_lists(self) -> str:
-        labels = [client.label for client in self.matrix.clients]
+        """Each view but All models as a list (2026-11-19 plan ruling 11): its rule, its count and picks lines, and its rows."""
         models = {model.id: model for model in self.matrix.models}
-        parts = ['<section id="use-cases">', '<h2 id="use-cases-title">Use cases</h2>']
+        default = f", default in the {self.client_labels['opencode']} config"
+        parts = ['<section id="use-cases">', '<h2 id="use-cases-title">Each view as a list</h2>']
         for use in data.USE_CASES[1:]:
             found = data.view(self.matrix, use.id, data.Filters(), None)
-            parts += [f'<section class="use" data-use="{_e(use.id)}">', f"<h3>{_e(use.chip)}</h3>",
-                      f'<p class="rule">{_e(data.rule_line(use, labels))}</p>', f'<p class="answer">{_answer(found)}</p>']
-            if found.rows:
-                parts.append("<ol>")
-                for model_id in found.rows:
-                    cells = {cell.runtime: cell for cell in models[model_id].cells}
-                    links = []
-                    for _, runtime in (key for key in found.cells if key[0] == model_id):
-                        facts = cells[runtime].recipe
-                        links.append(f'<a href="#d-{_e(runtime)}-{_e(model_id)}">{_e(self.labels[runtime])} '
-                                     f"{_e(data._speed_text(facts.decode))}, "
-                                     f"{facts.context // 1024}k</a>")
-                    parts.append(f"<li>{_e(model_id)}: {'; '.join(links)}</li>")
-                parts.append("</ol>")
-            parts.append("</section>")
+            parts += [f'<section class="use" data-use="{_e(use.id)}">', f"<h3>{_e(data.view_name(use, self.matrix))}</h3>",
+                      f'<p class="rule">{self._rule(use)}</p>']
+            if not found.rows:
+                parts += [f"<p>{_e(data.EMPTY)}</p>", "</section>"]
+                continue
+            picks = "; ".join(f"{_e(pick.label)}: " + self._pair_link(pick.model, pick.runtime,
+                                                                      f"{pick.model} on {self.labels[pick.runtime]}")
+                              for pick in found.picks)
+            parts += [f'<p class="count">{_e(found.count)}' + (f" Picks: {picks}." if picks else "") + "</p>", "<ol>"]
+            for model_id in found.rows:
+                cells = {cell.runtime: cell for cell in models[model_id].cells}
+                links = []
+                for _, runtime in (key for key in found.cells if key[0] == model_id):
+                    facts = cells[runtime].recipe
+                    speed = "speed not recorded" if facts.decode is None else f"{data.speed_text(facts.decode)} tok/s"
+                    words = f"{self.labels[runtime]} {speed}, {facts.context // 1024}k"
+                    link = self._pair_link(model_id, runtime, words)
+                    if use.id == "opencode" and (model_id, runtime) == self.matrix.default:
+                        link += _e(default)
+                    links.append(link)
+                parts.append(f"<li>{_e(model_id)}: {'; '.join(links)}</li>")
+            parts += ["</ol>", "</section>"]
         parts.append("</section>")
         return "\n".join(parts)
+
+    @staticmethod
+    def _needs(facts: data.RecipeFacts) -> str:
+        """A card's needs line (Copy, card needs): each number kept on one line with its unit, a GPU need in percent
+        alone (2026-11-19 plan ruling 15)."""
+        gpu = _e(facts.gpu) if facts.gpu.endswith("%") else f'<span class="nw">{_e(facts.gpu)}</span>'
+        return (f'Needs GPU {gpu}, RAM <span class="nw">{facts.memory_cap} GiB</span>; download '
+                f'<span class="nw">{facts.size_bytes / 1e9:.1f} GB</span>.')
+
+    def _card(self, model: data.Model, cell: data.Cell, label: str, live: bool) -> str:
+        """One pick card (Pick cards): built with its role words and hidden Copy buttons, or, when `live`, the script's
+        copy in template#cards with an empty role and Copy buttons shown."""
+        facts = cell.recipe
+        did = f"d-{cell.runtime}-{model.id}"
+        context = f"{facts.context // 1024}k context"
+        if facts.decode is None:
+            numbers = f'<span class="none">Speed not recorded</span>, {context}'
+        else:
+            numbers = f'<span class="ps">{_e(data.speed_text(facts.decode))}</span> tok/s, {context}'
+        gap = data.gap_text(model, self.labels)
+        return "\n".join([
+            _start("li", [("class", "pick"), ("data-for", did)]),
+            f'<h3><span class="role">{_e(label)}</span><span class="vh">: </span><a href="#{_e(did)}"><span class="pid">'
+            f"{_e(model.id)}</span> on {_e(self.labels[cell.runtime])}</a></h3>",
+            f'<p class="pn"><span>{numbers}</span>{_bar(data.bar_width(facts.decode, self.top))}</p>',
+            *([f'<p class="pg" hidden>{_e(gap)}</p>'] if gap is not None else []),
+            f'<p class="pcl">{_e(client_sentence(cell.clients, self.client_labels))}</p>',
+            f'<p class="pq">{self._needs(facts)}</p>',
+            '<details class="pst"><summary>Start commands</summary>', '<ol class="steps">',
+            f'<li><p class="step">Download once</p>{self._command(facts.pull, hidden=not live)}</li>',
+            f'<li><p class="step">Start</p>{self._command(facts.up, hidden=not live)}</li>', "</ol>",
+            self._prerequisites(), "</details>", "</li>"])
+
+    def picks(self) -> str:
+        """The cards of the default view (R-D2) and the line shown when a view's rows hold no pair that runs."""
+        found = data.view(self.matrix, "", data.Filters(), None)
+        cells = {(model.id, cell.runtime): (model, cell) for model, cell in self.runs}
+        cards = [self._card(*cells[pick.model, pick.runtime], pick.label, live=False) for pick in found.picks]
+        return "\n".join([
+            '<section id="picks" aria-labelledby="picks-title">', '<h2 id="picks-title" class="vh">Picks for this view</h2>',
+            _start("ol", [("id", "pick-list"), ("class", "picks"), ("data-long", str(data.LONG_CONTEXT // 1024))]),
+            *cards, "</ol>", f'<p id="no-picks" class="rule" hidden>{_e(data.NO_PICKS)}</p>', "</section>"])
+
+    def _sample(self, cls: str) -> str:
+        """The key's sample letter of a class: the client with the most results of that class over the page's Runs
+        cells, ties to the earlier client in NAMES (2026-11-19 plan ruling 9)."""
+        tally = [(sum(1 for _, cell in self.runs for result in cell.clients
+                      if result.client == client.id and result.cls == cls), client.letter) for client in self.matrix.clients]
+        most = max(count for count, _ in tally)
+        return next(letter for count, letter in tally if count == most)
+
+    def key(self) -> str:
+        """The key (Key): the parts the default view shows, with their built separators shown or hidden for it."""
+        found = data.view(self.matrix, "", data.Filters(), None)
+        classes = [part for part in found.key if part in KEY_SHAPES]
+        hide = lambda hidden: [("hidden", None)] if hidden else []
+        clients = self.matrix.clients
+        parts = []
+        for part in found.key:
+            if part == "counts":
+                words = (f"<b>{len(clients) - 1}/{len(clients)}</b>: clients whose latest session passed"
+                         + _start("span", [("class", "sep-more")] + hide(not classes)) + "; boxed:</span>"
+                         + _start("span", [("class", "sep-end")] + hide(bool(classes))) + ".</span>")
+            elif part in KEY_SHAPES:
+                words = (_lamp(part, self._sample(part)) + f'<span class="vh">{_e(KEY_SHAPES[part])}</span> '
+                         f"{_e(KEY_WORDS[part])}" + _start("span", [("class", "sep")] + hide(part == classes[-1]))
+                         + ",</span>")
+            elif part == "letters":
+                words = "(" + ", ".join(f'<span class="nw">{_e(client.letter)} {_e(client.label)}</span>'
+                                        for client in clients) + ")."
+            elif part == "setup":
+                words = (f'<span class="su">{_e(SETUP_MARK)}</span>: a setup step failed in the pair\'s newest e2e run; '
+                         "the details list it.")
+            elif part == "fastest":
+                words = ('<span aria-hidden="true">*</span><span class="vh">An asterisk:</span> fastest engine and its '
+                         "lead over the next.")
+            elif part == "bars":
+                words = f'Bars: 0 to <span class="nw">{_e(data.speed_text(self.top))} tok/s</span>.'
+            else:
+                raise ValueError(f"unknown key part {part!r}")
+            attrs = [("data-k", part)] + ([("data-cls", None)] if part in KEY_SHAPES else [])
+            parts.append(_start("span", attrs) + words + "</span>")
+        return '<p id="key" class="key">' + " ".join(parts) + "</p>"
 
     def details(self) -> str:
         parts = ['<section id="details">', '<h2 id="details-title">Details</h2>']
@@ -523,23 +661,44 @@ class _Page:
                 parts += [_start("section", [("class", "details"), ("id", f"d-{name}"), ("data-model", model.id),
                                              ("data-engine", cell.runtime)]),
                           f'<h3 id="t-{_e(name)}">{_e(model.id)} on {_e(self.labels[cell.runtime])}</h3>', *body,
-                          f'<p class="back"><a href="#m-{_e(model.id)}">Back to the matrix</a></p>', "</section>"]
+                          f'<p class="back"><a href="#m-{_e(model.id)}">Back to the table</a></p>', "</section>"]
         parts.append("</section>")
         return "\n".join(parts)
 
     def _heading(self, runtime: str) -> str:
         return next(item.heading for item in self.matrix.runtimes if item.id == runtime)
 
-    def _sibling(self, model: data.Model, cell: data.Cell) -> str:
-        """One line of Other engines or Runs elsewhere, linked to that cell's details."""
-        label = self.labels[cell.runtime]
+    def _engine_item(self, model: data.Model, cell: data.Cell, current: data.Cell) -> str:
+        """One engine of the model on the page's one speed scale, linked to its details unless it is this one (2026-11-19
+        plan ruling 12: the parts separated by single spaces)."""
+        parts = [f'<span class="en">{_e(self.labels[cell.runtime])}</span>']
         if cell.status == "runs":
-            words = f"{label}: Runs, {data._speed_text(cell.recipe.decode)}, {cell.recipe.context // 1024}k"
+            facts = cell.recipe
+            parts.append(_bar(data.bar_width(facts.decode, self.top)))
+            parts.append('<span class="es none">speed not recorded</span>' if facts.decode is None
+                         else f'<span class="es">{_e(data.speed_text(facts.decode))} tok/s</span>')
+            parts.append(f'<span class="ec">{facts.context // 1024}k</span>')
+            marker = data.lead(model, cell, self.labels)
+            if marker is not None:
+                words = "Tied fastest" if marker[0] == "tied" else f"Fastest, {marker[0]} ahead"
+                parts.append(f'<span class="el">{_e(words)}</span>')
         elif cell.status == "failed":
-            words = f"{label}: Failed on {cell.measured}"
+            parts.append(f'<span class="miss"><b>Failed</b> <span class="nw">{_e(cell.measured)}</span></span>')
         else:
-            words = f"{label}: Does not fit (estimate)"
-        return f'<li><a href="#d-{_e(cell.runtime)}-{_e(model.id)}">{_e(words)}</a></li>'
+            parts.append('<span class="miss">Does not fit (estimate)</span>')
+        body = " ".join(parts)
+        if cell is current:
+            return f'<li class="cur" aria-current="true"><span class="eg">{body}</span></li>'
+        return f'<li><a class="eg" href="#d-{_e(cell.runtime)}-{_e(model.id)}">{body}</a></li>'
+
+    def _engines(self, model: data.Model, cell: data.Cell) -> list[str]:
+        """The Engines heading, the scale line (left out when no Runs cell has a speed, as the key's bars part is) and the
+        model's engines in ADAPTERS order."""
+        scale = ([] if self.top is None else
+                 [f"<p class=\"scale\">Decode speed on the page's scale, 0 to "
+                  f'<span class="nw">{_e(data.speed_text(self.top))} tok/s</span>.</p>'])
+        return ["<h4>Engines</h4>", *scale, '<ul class="engines">',
+                *(self._engine_item(model, other, cell) for other in model.cells), "</ul>"]
 
     def _note(self, model: data.Model, cell: data.Cell) -> str:
         where = f"row {model.id}, {self.labels[cell.runtime]}, note: "
@@ -554,40 +713,56 @@ class _Page:
             status = (f"Failed on {cell.measured} (measured on {self.hardware}, {self._heading(cell.runtime)}).")
         else:
             status = "Does not fit (estimate)."
-        runs = [other for other in model.cells if other.status == "runs"]
-        elsewhere = (["<ul class=\"others\">", *(self._sibling(model, other) for other in runs), "</ul>"] if runs
-                     else ["<p>No engine runs this model on this laptop yet.</p>"])
+        engines = self._engines(model, cell)
+        if not any(other.status == "runs" for other in model.cells):
+            engines.append("<p>No engine runs this model on this laptop yet.</p>")
         return [f'<p class="status-line">{_e(status)}</p>', "<h4>Why it does not run</h4>", self._note(model, cell),
-                "<h4>Runs elsewhere</h4>", *elsewhere, f'<p class="links">{self._coverage_link()}</p>']
+                *engines, f'<p class="links">{self._coverage_link()}</p>']
 
     def _status_line(self, model: data.Model, cell: data.Cell) -> str:
-        """The Runs status line over the model's Runs cells with a speed (Details)."""
-        speeds = {other.runtime: other.recipe.decode for other in model.cells
-                  if other.status == "runs" and other.recipe.decode is not None}
-        own = cell.recipe.decode
-        if own is None or len(speeds) < 2:
-            return "Runs."
-        top = max(speeds.values())
-        leaders = [self.labels[runtime] for runtime, speed in speeds.items() if speed == top]
-        n = len(speeds)
-        if own != top:
+        """The Runs status line over the model's Runs cells with a speed (Details dialog)."""
+        facts = cell.recipe
+        context = f"{facts.context // 1024}k"
+        if facts.decode is None:
+            return f"Speed not recorded; {context} context."
+        head = f"{data.speed_text(facts.decode)} tok/s with {context} context."
+        runs = [other for other in model.cells if other.status == "runs"]
+        if len(runs) == 1:
+            return f"{head} Runs only on {self.labels[cell.runtime]}."
+        speeds = [(Fraction(str(other.recipe.decode)), other.recipe.decode, other.runtime) for other in runs
+                  if other.recipe.decode is not None]
+        if len(speeds) < 2:
+            return head
+        top = max(exact for exact, _, _ in speeds)
+        top_text = data.speed_text(next(value for exact, value, _ in speeds if exact == top))
+        leaders = [self.labels[runtime] for exact, _, runtime in speeds if exact == top]
+        marker = data.lead(model, cell, self.labels)
+        if marker is None:
             verb = "is" if len(leaders) == 1 else "are"
-            return f"Runs. {data._joined(leaders)} {verb} faster: {top:g} tok/s."
-        if len(leaders) > 1:
+            return f"{head} {data._joined(leaders)} {verb} faster: {top_text} tok/s."
+        if marker[0] == "tied":
             others = [label for label in leaders if label != self.labels[cell.runtime]]
-            return f"Runs. Tied fastest of {n} engines with {data._joined(others)}, at {top:g} tok/s."
-        second = max(speed for speed in speeds.values() if speed != top)
-        behind = [self.labels[runtime] for runtime, speed in speeds.items() if speed == second]
-        ahead = cell.fastest.removeprefix("Fastest by ")
-        return f"Runs. Fastest of {n} engines, {ahead} ahead of {data._joined(behind)} ({second:g} tok/s)."
+            return f"{head} Tied fastest with {data._joined(others)} at {top_text} tok/s."
+        second = max(exact for exact, _, _ in speeds if exact != top)
+        second_text = data.speed_text(next(value for exact, value, _ in speeds if exact == second))
+        behind = [self.labels[runtime] for exact, _, runtime in speeds if exact == second]
+        return (f"{head} Fastest of {len(speeds)} engines, {marker[0]} ahead of {data._joined(behind)} "
+                f"({second_text} tok/s).")
 
     @staticmethod
-    def _command(command: str) -> str:
-        """A command as one span per space-separated token, and its copy button, which copies the plain command."""
+    def _command(command: str, hidden: bool = True) -> str:
+        """A command as one span per space-separated token, its copy button directly after it, which copies the plain
+        command; the script shows the button."""
         tokens = " ".join(f"<span>{_e(token)}</span>" for token in command.split(" "))
-        return (f'<p><code class="cmd">{tokens}</code> '
-                f'{_start("button", [("type", "button"), ("class", "copy"), ("data-copy", command), ("hidden", None)])}'
-                "Copy command</button></p>")
+        button = _start("button", [("type", "button"), ("class", "copy"), ("data-copy", command)]
+                        + ([("hidden", None)] if hidden else []))
+        return f'<span class="cmdline"><code class="cmd">{tokens}</code>{button}Copy</button></span>'
+
+    def _prerequisites(self) -> str:
+        """The prerequisites line under the commands, in the dialog and on the cards (Copy)."""
+        return (f'<p class="pre">Run both in a clone of this repository; llmctl needs Docker and the NVIDIA Container '
+                f'Toolkit: <a href="{_e(self.links.repo_link(README, "quick-start"))}">How to start a model</a>, '
+                f'<a href="{_e(self.links.repo_link("docs/host-setup.md"))}">Host setup</a>.</p>')
 
     def _thinking(self, cell: data.Cell) -> str:
         facts = cell.recipe
@@ -602,20 +777,22 @@ class _Page:
                                               for client, line in facts.thinking_texts if client in supported]
         return '<ul class="thinking">\n' + "\n".join(items) + "\n</ul>"
 
-    def _client_line(self, cell: data.Cell, result: data.ClientResult) -> str:
+    def _client_line(self, result: data.ClientResult) -> str:
+        """A client's result in words (Copy, dialog client lines) in one span after its mark, as in v2."""
         letter = next(client.letter for client in self.matrix.clients if client.id == result.client)
         label = self.client_labels[result.client]
-        counts = f"{result.passed_runs} of {result.runs} runs passed (latest {result.latest})"
-        words = {"passed": f"{label}: Passed, {counts}.",
-                 "known-issue": f"{label}: Known issue, {counts}; the coverage note below describes it.",
-                 "failed": f"{label}: Failed, {counts}; the runtime coverage table does not describe this failure yet.",
-                 "not-supported": f"{label}: Not supported: llmctl writes no {label} entry for this recipe.",
-                 "not-tested": f"{label}: Not tested: no e2e run has covered this recipe with {label} yet."}[result.cls]
-        line = _e(words)
+        latest = f"(latest {result.latest})"
+        tally = f"{result.passed_runs} of {result.runs} runs passed {latest}"
+        words = {"passed": f"{label}: passed, " + (f"{result.runs} of {result.runs} runs {latest}"
+                                                    if result.passed_runs == result.runs else tally) + ".",
+                 "known-issue": f"{label}: known issue, {tally}; the coverage note below describes it.",
+                 "failed": f"{label}: failed, {tally}; the runtime coverage table does not describe it yet.",
+                 "not-tested": f"{label}: not tested yet.",
+                 "not-supported": f"{label}: not supported; llmctl writes no {label} entry for this pair."}[result.cls]
+        line = _e(words).replace(_e(latest), f'(latest <span class="nw">{_e(result.latest)}</span>)', 1)
         if result.not_reached is not None and result.cls in ("known-issue", "failed"):
             line += f" Not reached: <code>{_e(result.not_reached)}</code> failed."
-        lamp = f'<span class="lamp {_e(result.cls)}"><span aria-hidden="true">{_e(letter)}</span></span>'
-        return f"<li>{lamp} {line}</li>"
+        return f"<li>{_lamp(result.cls, letter)} <span>{line}</span></li>"
 
     @staticmethod
     def _reasons(reasons: str) -> str:
@@ -664,19 +841,24 @@ class _Page:
         return "\n".join(parts)
 
     def _runs_details(self, model: data.Model, cell: data.Cell) -> list[str]:
-        """The details of a Runs cell, in the order of the spec's Details table."""
+        """The details of a Runs cell, in the order of the spec's Details dialog (R-D10)."""
         facts = cell.recipe
-        label = self.labels[cell.runtime]
-        start = [self._command(facts.up), "<p>Add <code>--replace</code> to stop a running server first.</p>"]
+        gpu = "of what CUDA reports" if facts.gpu.endswith("%") else ""
+        peak = "peak not recorded" if facts.ram_peak is None else f"measured peak {facts.ram_peak:g} GiB"
+        speed = "not recorded" if facts.decode is None else f"{data.speed_text(facts.decode)} tok/s"
+        kv = [("Decode speed", speed, ""), ("Context", f"{facts.context // 1024}k", f"{facts.context:,} tokens"),
+              ("GPU memory needed", facts.gpu, gpu), ("Free RAM to start", f"{facts.memory_cap} GiB", peak)]
+        grid = "".join(f"<div><dt>{_e(name)}</dt> <dd>{_e(value)}" + (f" <small>{_e(small)}</small>" if small else "")
+                       + "</dd></div>" for name, value, small in kv)
+        start = ['<li><p class="step">Download once</p>', self._command(facts.pull),
+                 "<p>It asks before it downloads the model files and the image.</p></li>",
+                 '<li><p class="step">Start</p>', self._command(facts.up),
+                 "<p>Add <code>--replace</code> to stop a running server first; <code>./llmctl up</code> refuses to "
+                 "start when less GPU memory or RAM is free.</p>"]
         if facts.plain_runtime != cell.runtime:
-            start.append(f"<p>Without <code>--runtime</code>, <code>./llmctl up {_e(model.id)}</code> starts the "
-                         f"{_e(self.labels[facts.plain_runtime])} recipe.</p>")
-        if facts.decode is None:
-            speed = "not recorded"
-        else:
-            speed = f"{facts.decode:g} tok/s (measured on {facts.hardware}, {self._heading(cell.runtime)}, {facts.date})"
-        gpu = facts.gpu + (" of the GPU memory CUDA reports" if facts.gpu.endswith("%") else "")
-        peak = "not recorded" if facts.ram_peak is None else f"{facts.ram_peak:g} GiB"
+            start.append(f'<p>Without <code>--runtime</code>, <code>./llmctl up <span class="nw">{_e(model.id)}</span></code> '
+                         f"starts the {_e(self.labels[facts.plain_runtime])} recipe.</p>")
+        start.append("</li>")
         files = f"https://huggingface.co/{facts.repo}/tree/{facts.revision}"
         doc, _, anchor = facts.doc.partition("#")
         if not anchor:
@@ -684,37 +866,32 @@ class _Page:
         links = [(f"Recipe section in {doc}", self.links.repo_link(doc, anchor)),
                  ("Recipe file", self.links.repo_link(facts.file)), ("Record folder", self.links.repo_link(facts.record)),
                  ("Runtime coverage table", self.links.repo_link(data.SELECTION, "runtime-coverage"))]
+        aliases = ", ".join(f"<code>{_e(alias)}</code>" for alias in model.aliases) or "no alias"
+        settings = [("Model files", f'<a href="{_e(files)}">{_e(facts.repo)} at {_e(facts.revision[:12])}, '
+                                    f"{facts.size_bytes / 1e9:.1f} GB</a>"),
+                    ("Aliases", aliases), ("Thinking", self._thinking(cell)),
+                    ("Tools", "No, chat only" if facts.chat_only else "Yes"), ("Output cap", f"{facts.output:,} tokens"),
+                    ("OpenCode model", f"<code>{_e(facts.opencode)}</code>" if facts.opencode else "No OpenCode entry"),
+                    ("Served name", f"<code>{_e(facts.served)}</code>")]
         parts = [f'<p class="recipe-name">{_e(facts.name)}</p>',
                  f'<p class="status-line">{_e(self._status_line(model, cell))}</p>',
-                 "<h4>Start it</h4>", *start,
-                 "<h4>First time on this machine</h4>", self._command(facts.pull),
-                 "<p>It asks before it downloads the model files and the image.</p>",
-                 "<h4>Decode speed</h4>", f"<p>{_e(speed)}</p>",
-                 "<h4>Context</h4>", f"<p>{facts.context // 1024}k ({facts.context:,} tokens)</p>",
-                 "<h4>GPU need</h4>", f"<p>{_e(gpu)}; ./llmctl up refuses to start when less is free.</p>",
-                 "<h4>RAM</h4>", f"<p>Container memory cap: {facts.memory_cap} GiB; ./llmctl up refuses to start when "
-                                 f"less RAM is available. Measured RAM peak: {_e(peak)}.</p>",
-                 "<h4>Model files</h4>", f'<p><a href="{_e(files)}">{_e(facts.repo)} at {_e(facts.revision[:12])}, '
-                                         f"{facts.size_bytes / 1e9:.1f} GB</a></p>",
-                 "<h4>Thinking</h4>", self._thinking(cell),
-                 "<h4>Tools</h4>", f"<p>{'No, chat only' if facts.chat_only else 'Yes'}</p>",
-                 "<h4>Output cap</h4>", f"<p>{facts.output:,} tokens</p>",
-                 "<h4>OpenCode model</h4>",
-                 f"<p><code>{_e(facts.opencode)}</code></p>" if facts.opencode else "<p>No OpenCode entry</p>",
-                 "<h4>Served name</h4>", f"<p><code>{_e(facts.served)}</code></p>",
-                 "<h4>Evidence</h4>", f"<p>{_e(facts.summary)}</p>",
-                 "<h4>Links</h4>", '<ul class="links">',
-                 *(f'<li><a href="{_e(url)}">{_e(words)}</a></li>' for words, url in links), "</ul>",
-                 "<h4>Clients</h4>", '<ul class="clients">',
-                 *(self._client_line(cell, result) for result in cell.clients), "</ul>"]
+                 f'<dl class="kv">{grid}</dl>',
+                 f'<p class="ev">(measured on {_e(facts.hardware)}, {_e(self._heading(cell.runtime))}, '
+                 f'<span class="nw">{_e(facts.date)}</span>)</p>',
+                 "<h4>Start it</h4>", '<ol class="steps">', *start, "</ol>", self._prerequisites(),
+                 *self._engines(model, cell),
+                 "<h4>Clients</h4>", '<ul class="clients">', *(self._client_line(result) for result in cell.clients), "</ul>"]
         if cell.setup:
-            parts += ["<h4>Setup checks</h4>", f"<p>Setup checks in the e2e of {_e(cell.covered)}:</p>",
+            parts += ["<h4>Setup checks</h4>", f'<p>Setup checks in the e2e of <span class="nw">{_e(cell.covered)}</span>:</p>',
                       '<ul class="setup-checks">', *(self._failure(failure) for failure in cell.setup), "</ul>"]
-        parts += ["<h4>e2e history</h4>", self._history(cell) if cell.history else "<p>No e2e run has covered this "
-                  "recipe yet.</p>",
-                  "<h4>Coverage note</h4>", self._note(model, cell),
-                  "<h4>Other engines</h4>", '<ul class="others">',
-                  *(self._sibling(model, other) for other in model.cells if other.runtime != cell.runtime), "</ul>"]
+        parts += ["<h4>Coverage note</h4>", self._note(model, cell),
+                  '<details class="more"><summary>Recipe settings</summary><dl class="settings">',
+                  *(f"<dt>{_e(name)}</dt> <dd>{value}</dd>" for name, value in settings), "</dl></details>",
+                  '<details class="more"><summary>Evidence and links</summary>', f"<p>{_e(facts.summary)}</p>",
+                  '<ul class="links">', *(f'<li><a href="{_e(url)}">{_e(words)}</a></li>' for words, url in links), "</ul>",
+                  "</details>",
+                  "<h4>e2e history</h4>",
+                  self._history(cell) if cell.history else "<p>No e2e run has covered this pair yet.</p>"]
         return parts
 
     def _run_line(self, run: data.Run) -> str:
@@ -737,60 +914,125 @@ class _Page:
             versions = "not recorded"
         return f"<li>{line}; clients {names}; versions {versions}.</li>"
 
+    def versions(self) -> str:
+        """The footer's client versions line (Footer, line 4)."""
+        found = [path for client in self.matrix.clients for _, path in client.versions]
+        if not found:
+            return "<p>Client versions: not recorded.</p>"
+        newest = max(path.split("/")[1] for path in found)
+        items = []
+        for client in self.matrix.clients:
+            if not client.versions:
+                items.append(f"{_e(client.label)} not recorded")
+            for version, path in client.versions:
+                _, date, folder = path.split("/")
+                item = f"{_e(client.label)} <code>{_e(version)}</code>"
+                if len(client.versions) > 1:
+                    item += f" ({_e(folder)})"
+                if date != newest:
+                    item += f" ({_e(date)})"
+                items.append(item)
+        return f"<p>Client versions in the e2e of {_e(newest)}: {data._joined(items)}.</p>"
+
+    def classes(self) -> str:
+        """How to read the client results: per class a sample mark, its word and its meaning; the sample is the first
+        client in NAMES with that class on a Runs cell, else the first client (2026-11-19 plan ruling 9)."""
+        items = []
+        for cls in data.CLASSES:
+            client = next((client for client in self.matrix.clients
+                           if any(result.client == client.id and result.cls == cls
+                                  for _, cell in self.runs for result in cell.clients)), self.matrix.clients[0])
+            items.append(f"<li>{_lamp(cls, client.letter)}<span><b>{_e(CLASS_WORDS[cls].capitalize())}</b>: "
+                         f"{_e(CLASS_MEANINGS[cls])}.</span></li>")
+        return "\n".join(['<ul class="classes">', *items, "</ul>"])
+
     def footer(self) -> str:
         links = self.links
         tree = links.repo_link("")
+        top = self.matrix.top
+        images = data._joined([f"{_e(runtime.label)} <code>{_e(runtime.image)}</code>" for runtime in self.matrix.runtimes])
+        labels = data._joined([_e(client.label) for client in self.matrix.clients])
+        config, anchor = data.OPENCODE_CONFIG.split("#")
+        coding = data.view_name(next(use for use in data.USE_CASES if use.id == "opencode"), self.matrix)
         parts = [
-            "<footer>", "<h2>About the data</h2>",
+            "<footer>", '<h2 id="about">About the data</h2>',
             f'<p>Built from the repository at commit <a href="{_e(tree)}"><code>{_e(self.build.commit)}</code></a>, '
             f"committed {_e(self.committed)} UTC.</p>",
+            "<p>A pair is one model on one engine: one cell of the table.</p>",
+            f"<p>Images llmctl starts: {images}.</p>", self.versions(), f"<p>{self.speeds_line()}</p>",
+            '<h3 id="read-clients">How to read the client results</h3>', self.classes(),
+            "<p>An e2e (end-to-end) run starts each recipe with llmctl and runs every agent client's session against "
+            "it.</p>",
+            "<p>Run counts in the client lines count every e2e run of the same model on the same engine, so they can "
+            "span changes to the pair's settings.</p>",
+            f"<p>The {len(self.matrix.clients)} agent clients ({labels}) are the coding agents llmctl points at the "
+            f'running model; <a href="{_e(links.repo_link("docs/clients.md"))}">docs/clients.md</a> and '
+            f'<a href="{_e(links.repo_link(config))}">{_e(config)}</a> describe each one.</p>',
+            f"<p>{_e(data.role_words('default', self.matrix))}: <code>{_e(self.matrix.opencode_default)}</code>, the "
+            f'top-level model of the <a href="{_e(links.repo_link(config, anchor))}">validated config</a>; '
+            + (f"the {_e(coding)} view marks it.</p>"
+               if self.matrix.default in data.view(self.matrix, "opencode", data.Filters(), None).cells
+               else f"it does not meet the {_e(coding)} rule today, so that view does not show it.</p>"),
+            '<h3 id="top10">What the rank means</h3>',
+            f"<p>Rank is the model's place in the Top {top} of "
+            f'<a href="{_e(links.repo_link(data.SELECTION, "top-10"))}">{_e(data.SELECTION)}</a>, whose '
+            f'<a href="{_e(links.repo_link(data.SELECTION, "decision-summary"))}">decision summary</a> says how the '
+            "ranking is made.</p>",
+            "<h3>Sources</h3>",
             f'<p>Data: the recipes in <a href="{_e(links.repo_link("recipes"))}">recipes/</a>, the '
             f'<a href="{_e(links.repo_link(data.SELECTION, "runtime-coverage"))}">runtime coverage</a> and '
-            f'<a href="{_e(links.repo_link(data.SELECTION, "top-10"))}">Top 10</a> of {_e(data.SELECTION)}, and the '
-            f'llmctl clients e2e summaries in <a href="{_e(links.repo_link("research"))}">research/</a>.</p>',
-            f"<p>{self.speeds_line()}</p>", "<p>The e2e runs:</p>", '<ul id="runs">',
-            *(self._run_line(run) for run in self.matrix.runs), "</ul>"]
+            f'<a href="{_e(links.repo_link(data.SELECTION, "top-10"))}">Top {top}</a> of {_e(data.SELECTION)}, the '
+            f'llmctl clients e2e summaries in <a href="{_e(links.repo_link("research"))}">research/</a>, and the '
+            f'<a href="{_e(links.repo_link(config, anchor))}">validated config</a> of {_e(config)}.</p>',
+            "<p>The e2e runs:</p>", '<ul id="runs">', *(self._run_line(run) for run in self.matrix.runs), "</ul>"]
         if self.matrix.ranked_without_recipe:
             ranked = "; ".join(f"rank {rank}, " + inline(cell, data.SELECTION, links, f"row {rank}, Model: ")
                                for rank, cell in self.matrix.ranked_without_recipe)
-            parts.append(f'<p id="ranked-without-recipe">Ranked in the Top 10, without a shipped recipe yet: {ranked}.</p>')
+            parts.append(f'<p id="ranked-without-recipe">Ranked in the Top {top}, without a shipped recipe yet: '
+                         f"{ranked}.</p>")
         parts += [f"<p>License, as {README} states it:</p>", '<div id="license">',
                   *(f"<p>{inline(line, README, links)}</p>" for line in self.matrix.license), "</div>",
                   f"<p>{_e(PRIVACY)}</p>", "</footer>"]
         return "\n".join(parts)
 
     def template(self) -> str:
-        labels = [client.label for client in self.matrix.clients]
-        spans = []
-        for phrase in data.phrases(self.matrix):
-            content = _phrase(phrase)
-            if phrase.kind == "empty":
-                content += ' <button type="button" class="clear">Clear filters</button>'
-            spans.append(_start("span", [("data-kind", phrase.kind), ("data-for", phrase.target or "")]) + content
-                         + "</span>")
-        spans += [_start("span", [("data-kind", "rule"), ("data-for", use.id)]) + _e(data.rule_line(use, labels))
-                  + "</span>" for use in data.USE_CASES]
+        """The built text the script copies: a rule span per view, the empty line and a role span per role key."""
+        spans = [_start("span", [("data-kind", "rule"), ("data-for", use.id)]) + self._rule(use) + "</span>"
+                 for use in data.USE_CASES]
+        spans.append(_start("span", [("data-kind", "empty"), ("data-for", "")]) + _e(data.EMPTY)
+                     + ' <button type="button" class="clear">Clear filters</button></span>')
+        for role in [*data.ROLES, *(f"engine-{runtime.id}" for runtime in self.matrix.runtimes)]:
+            words = data.role_words(role, self.matrix)
+            spans.append(_start("span", [("data-kind", "role"), ("data-for", role),
+                                         ("data-mid", words[:1].lower() + words[1:])]) + _e(words) + "</span>")
         return '<template id="phrases">\n' + "\n".join(spans) + "\n</template>"
+
+    def cards(self) -> str:
+        """The card the script clones for each pair that runs, in model and engine order (Pick cards)."""
+        return ('<template id="cards">\n' + "\n".join(self._card(model, cell, "", live=True) for model, cell in self.runs)
+                + "\n</template>")
 
     def body(self, script: str) -> str:
         default = data.USE_CASES[0]
-        print_line = f"View: {default.chip}; sorted by: {self.sort_labels[default.sort]}."
+        print_line = data.print_line(default, default.sort, data.Filters(), self.matrix)
         return "\n".join([
-            "<body>", '<a class="skip" href="#matrix">Skip to the matrix</a>', self.header(), "<main>",
-            f'<p class="only-no-js">{_e(NO_JS)}</p>', f'<p id="print-view" class="print-only">{_e(print_line)}</p>',
-            self.uses(), f'<p id="answer" role="status">{_answer(data.view(self.matrix, "", data.Filters(), None))}</p>',
-            self.toolbar(), '<div id="notice" hidden>', '<p id="notice-text"></p>',
-            '<button type="button" id="dismiss">Dismiss</button>', "</div>", self.legend(), self.matrix_table(),
-            self.use_lists(), self.details(), '<p id="live" class="vh" aria-live="polite"></p>', "</main>",
-            self.footer(), '<dialog id="drawer">', '<button type="button" id="close">Close</button>',
-            '<div id="drawer-body"></div>',
-            '<p id="drawer-live" class="vh" aria-live="polite"></p>', "</dialog>", self.template(), f"<script>{script}</script>", "</body>"])
+            "<body>", '<a class="skip" href="#matrix">Skip to the table</a>', self.header(), "<main>",
+            f'<p id="print-view" class="print-only">{_e(print_line)}</p>', self.picks(), self.key(), self.matrix_table(),
+            f'<p class="only-no-js">{_e(NO_JS)}</p>', self.use_lists(), self.details(),
+            '<p id="live" class="vh" aria-live="polite"></p>',
+            "</main>", self.footer(), self.sheet(), '<dialog id="drawer">',
+            '<div id="drawer-bar"><button type="button" id="close">Close</button></div>', '<div id="drawer-body"></div>',
+            '<p id="drawer-live" class="vh" aria-live="polite"></p>', "</dialog>", self.template(), self.cards(), f"<script>{script}</script>",
+            "</body>"])
 
 
 def page(matrix: data.Matrix, build: Build, root: Path) -> str:
     """The whole page: one self-contained document with its style and scripts inline under a hash-based policy."""
+    top = data.top_speed(matrix)
+    widths = [data.bar_width(cell.recipe.decode, top) for model in matrix.models for cell in model.cells
+              if cell.status == "runs"]
     style, script = inline_assets((_ASSETS / "page.css").read_text(encoding="utf-8"),
-                                  (_ASSETS / "page.js").read_text(encoding="utf-8"), len(matrix.runtimes))
+                                  (_ASSETS / "page.js").read_text(encoding="utf-8"), len(matrix.runtimes), widths)
     parts = _Page(matrix, build, root)
     return "\n".join(["<!doctype html>", '<html lang="en" class="no-js">', parts.head(style, script),
                       parts.body(script), "</html>"]) + "\n"
