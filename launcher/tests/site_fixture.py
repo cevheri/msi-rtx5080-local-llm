@@ -1,5 +1,5 @@
-"""A small repository for the runtime matrix page's tests: real recipe files with pinned values, and the documents the
-page reads, each written so that a test can change one fact and load the page model again."""
+"""A small repository for the model guide's tests: real recipe files with pinned values, and the documents the pages
+read and link, each written so that a test can change one fact and load the page model again."""
 
 import contextlib
 import fractions
@@ -37,7 +37,7 @@ RUNS_CELL = "Runs: {k}k, {speed} tok/s, measured {date} ([recipe](../{doc}))"
 FAILED_CELL = ("Failed: out of memory, measured 2026-11-17 "
                "([record](../research/2026-11-17/fixture-failure/README.md))")
 FAILED_AT = ("deepseek-r1-0528-qwen3-8b", "sglang")
-DOES_NOT_FIT_CELL = "Does not fit: too large for the budget (estimate)"
+DOES_NOT_FIT_CELL = "Does not fit: too large for the budget (estimate), from [vllm/models.md](../vllm/models.md)"
 TOP10_HEADER = "| Rank | Model | Vendor | Params | Runtime | License |"
 TOP10_ROW = ("| {rank} | [{id}](https://huggingface.co/{repo}) | Vendor {rank} | 35B / 3B active MoE | llama.cpp "
              "| Apache-2.0 |")
@@ -145,13 +145,17 @@ class SiteFixture:
         self._write("LICENSE-CODE", "MIT\n")
         self._write_selection()
         self.opencode(config_section())
-        self._write("docs/clients.md", "# Clients\n")
+        self._write("docs/clients.md", "# Clients\n\n### Chat-only recipes\n")
+        self._write("docs/llmctl.md", "# llmctl\n\n## Overrides for another machine\n\n## When up refuses\n")
+        self._write("llamacpp/README.md", "# llama.cpp\n\n## MoE expert offload\n")
+        self._write("sglang/README.md", "# SGLang\n\n## Paged Experts\n")
         disk = ["| Item | Size | Location |", "|---|---|---|"]
         for runtime, adapter in ADAPTERS.items():
             image = tomllib.loads((root / "recipes" / runtime / "_runtime.toml").read_text(encoding="utf-8"))["image"]
             disk.append(f"| {adapter.LABEL} image `{image}` | {IMAGE_GB[runtime]} GB on disk as docker image ls "
                         "reports it | /var/lib/docker |")
-        self._write("docs/host-setup.md", "# Host setup\n\n### Disk budget\n\n" + "\n".join(disk) + "\n")
+        self._write("docs/host-setup.md", "# Host setup\n\n## Install the NVIDIA Container Toolkit\n\n### Disk budget\n\n"
+                    + "\n".join(disk) + "\n\n## Commands that need sudo\n")
         self.run(*DEFAULT_RUN, default_rows(), readme="# e2e\n\n## The No rows\n\nNone.\n",
                  records={name: version_record(stdout) for name, stdout in DEFAULT_VERSIONS})
 
@@ -245,7 +249,8 @@ class SiteFixture:
         """Write docs/opencode.md with `section` under "The validated config", or without that section for None."""
         validated = "" if section is None else "## The validated config\n\n" + section + "\n"
         self._write("docs/opencode.md", "# OpenCode\n\n" + validated
-                    + "## Context budget\n\nThe practical minimum for OpenCode is 64k tokens.\n")
+                    + "## Context budget\n\nThe practical minimum for OpenCode is 64k tokens.\n\n## Ollama notes\n\n"
+                    + "## Trying a model remotely first with OpenRouter\n")
 
     def load(self):
         from launcher.site import data

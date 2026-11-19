@@ -1,4 +1,4 @@
-"""The runtime matrix page built from the real repository: invariants only, never today's values (design D14)."""
+"""The model guide built from the real repository: invariants only, never today's values (design D14)."""
 
 import json
 import unittest
@@ -26,9 +26,12 @@ class SiteRepositoryTest(unittest.TestCase):
                         self.assertIsNotNone(cell.recipe, cell.runtime)
                     else:
                         self.assertIsNone(cell.recipe, cell.runtime)
-        page = render.page(matrix, data.Build("https://github.com/cevheri/msi-rtx5080-local-llm", "0" * 40, 0), REPO)
-        self.assertEqual(well_formed_problems(page), [])
-        self.assertNotIn(str(REPO), page)
+        pages = render.site(matrix, data.Build("https://github.com/cevheri/msi-rtx5080-local-llm", "0" * 40, 0), REPO)
+        self.assertGreater(len(pages), 0)
+        for path, page in pages.items():
+            with self.subTest(page=path):
+                self.assertEqual(well_formed_problems(page), [])
+                self.assertNotIn(str(REPO), page)
 
     def test_supported_rule_matches_the_e2e_plan(self):
         from launcher.e2e import clients as e2e
@@ -56,15 +59,6 @@ class SiteRepositoryTest(unittest.TestCase):
                 if cell.status == "runs":
                     with self.subTest(model=model.id, runtime=cell.runtime):
                         self.assertEqual(data.display_name(cell.recipe.name, cell.recipe.file), model.name)
-
-    def test_no_view_names_a_pair_twice(self):
-        matrix = data.load(REPO)
-        for use in data.USE_CASES:
-            for sort, _ in data.SORTS:
-                with self.subTest(use=use.id, sort=sort):
-                    picks = data.view(matrix, use.id, data.Filters(), sort).picks
-                    self.assertLessEqual(len(picks), 3)
-                    self.assertEqual(len({(pick.model, pick.runtime) for pick in picks}), len(picks))
 
     def test_every_state_has_a_pick_that_agrees_with_its_row(self):
         b = fit.bench(data.load(REPO))

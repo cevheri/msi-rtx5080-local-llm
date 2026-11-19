@@ -1,4 +1,4 @@
-"""Markdown helpers shared by the docs tests and the runtime matrix page: heading anchors, sections and table rows."""
+"""Markdown helpers shared by the docs tests and the model guide: heading anchors, sections and table rows."""
 
 import re
 from pathlib import Path

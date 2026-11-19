@@ -1,5 +1,5 @@
-"""The runtime matrix page's data model: every source of design D4 read into frozen dataclasses, and every rule that
-decides what the page shows computed here, so that render.py reads nothing else.
+"""The model guide's data model: every source of design D4 and spec 6 read into frozen dataclasses; the machine rules
+live in fit.py and the sentences in words.py.
 
 A missing or malformed source, or any disagreement design D5 and D13 list, raises SiteError naming the source.
 """
@@ -25,14 +25,12 @@ from launcher.runtimes import ADAPTERS
 SELECTION = "docs/model-selection.md"
 OPENCODE_CONFIG = "docs/opencode.md#the-validated-config"
 THINKING = {"toggle": "Toggle", "effort": "Effort levels", "always": "Always on", "none": "No thinking"}
-LETTERS: dict[str, str] = {}
 STATUS_WORDS = (("Runs:", "runs"), ("Failed:", "failed"), ("Does not fit:", "does-not-fit"))
 # The clients llmctl writes an entry for only on some recipes; every other client is supported for every recipe.
 SUPPORTED: dict[str, Callable[[Recipe], bool]] = {"opencode": lambda recipe: recipe.opencode}
 # The driver's stand-in for output that named a private value (launcher/e2e/clients.py WITHHELD); the page may not
 # import the driver, and test_versions_are_read_from_client_records_only holds the two equal.
 WITHHELD = "[withheld: the output named a private value after redaction]"
-CLASSES = ("passed", "known-issue", "failed", "not-tested", "not-supported")
 # The setup steps of a recipe whose failure marks its cell (design D6); gateway, check, restore and down are not.
 CELL_SETUP_STEPS = ("up", "status", "long-grammar", "config", "probes")
 # The setup steps after whose failure the driver runs no more steps of the recipe.
@@ -42,6 +40,7 @@ _MEASURED = re.compile(r"measured (\d{4}-\d{2}-\d{2})")
 _HF_LINK = re.compile(r"\]\(https://huggingface\.co/([^)\s]+)\)")
 _ID_CELL = re.compile(r"`([^`]+)`")
 _DATE = re.compile(r"\d{4}-\d{2}-\d{2}")
+_SOURCE_LINK = re.compile(r"\[([^\]]+)\]\(([^)\s]+)\)")
 _E2E_DATE = re.compile(r"e2e \d{4}-\d{2}-\d{2}:")
 _CODE_SPAN = re.compile(r"`([^`]*)`")
 _VERSION_RECORD = re.compile(r"\d{3,}-(.+)-version")
@@ -111,7 +110,6 @@ class Laptop:
 class Client:
     id: str
     label: str
-    letter: str
     versions: tuple[tuple[str, str], ...]  # (version, run path)
 
 
@@ -210,8 +208,6 @@ class Cell:
     history: tuple[CellRun, ...]
     covered: str | None
     setup: tuple[Failure, ...]
-    uses: tuple[str, ...]
-    positions: tuple[tuple[str, int], ...]
 
 
 @dataclass(frozen=True)
@@ -221,7 +217,6 @@ class Model:
     rank: int | None
     chat_only: bool
     cells: tuple[Cell, ...]
-    positions: tuple[tuple[str, int], ...]
     name: str
     honorable: bool
     maker: Maker | None
@@ -233,58 +228,12 @@ class Matrix:
     clients: tuple[Client, ...]
     models: tuple[Model, ...]
     runs: tuple[Run, ...]
-    ranked_without_recipe: tuple[tuple[int, str], ...]
     license: tuple[str, ...]
     top: int
     opencode_default: str
     default: tuple[str, str]
     laptop: Laptop
     licenses: tuple[str, str]
-
-
-@dataclass(frozen=True)
-class UseCase:
-    """A view; name and rule are templates that view_name and rule_line fill from the Matrix, and roles are the role
-    keys of its pick cards in card order ("engines" expands to one engine role per engine)."""
-    id: str
-    name: str
-    sort: str
-    rule: str
-    roles: tuple[str, ...]
-
-
-@dataclass(frozen=True)
-class Filters:
-    """The filters of one view; None means no filter, context is in k and must_pass a client ID or "every"."""
-    search: str = ""
-    engines: tuple[str, ...] | None = None
-    statuses: tuple[str, ...] | None = None
-    must_pass: str | None = None
-    context: int | None = None
-    thinking: tuple[str, ...] | None = None
-    tools: str | None = None
-    ram: int | None = None
-
-
-@dataclass(frozen=True)
-class Pick:
-    """One pick card: the role keys it holds in role order ("next-<sort>" for a fill card), its words and its pair."""
-    roles: tuple[str, ...]
-    label: str
-    model: str
-    runtime: str
-
-
-@dataclass(frozen=True)
-class View:
-    """One view: its rows and cells in order, the count line ("" when empty), the pick cards, the data-k of the key
-    parts it shows in KEY_PARTS order (() hides the key) and the model ID the divider row precedes (None hides it)."""
-    rows: tuple[str, ...]
-    cells: tuple[tuple[str, str], ...]
-    count: str
-    picks: tuple[Pick, ...]
-    key: tuple[str, ...]
-    divider: str | None
 
 
 def _relative(root: Path, path: Path) -> str:
@@ -338,19 +287,6 @@ def _table(lines: list[str], first_cell: str, source: str) -> tuple[list[str], l
         return markdown.table(lines, first_cell)
     except (LookupError, ValueError) as exc:
         raise SiteError(f"{source}: {exc}") from None
-
-
-def client_letters(names: Sequence[str], labels: Mapping[str, str], overrides: Mapping[str, str]) -> dict[str, str]:
-    """Each client's lamp letter: its override, else the first letter of its label; a shared letter stops the build."""
-    letters: dict[str, str] = {}
-    for name in names:
-        letter = overrides.get(name, labels[name][0].upper())
-        other = next((known for known, used in letters.items() if used == letter), None)
-        if other is not None:
-            raise SiteError(f"launcher/site/data.py: clients {other} and {name} share the letter {letter}; "
-                            f"give one of them its own letter in LETTERS")
-        letters[name] = letter
-    return letters
 
 
 def rank_of(lines: list[str], repos: Mapping[str, tuple[str, ...]]) -> tuple[dict[str, int], tuple[tuple[int, str], ...]]:
@@ -567,9 +503,11 @@ def _cell(root: Path, catalog: Catalog, model_id: str, runtime: Runtime, text: s
         measured = date.group(1)
     if status == "does-not-fit" and "(estimate)" not in note:
         raise SiteError(f"{where}: a Does not fit: cell needs the label (estimate)")
+    if status != "runs" and _SOURCE_LINK.search(note) is None:          # the source a Why shows (spec 6, D12)
+        raise SiteError(f"{where}: a {word} cell needs a link to its source")
     facts = _recipe_facts(root, catalog, recipe, entry.runtime) if status == "runs" else None
     return Cell(model=model_id, runtime=runtime.id, status=status, note=note, measured=measured, recipe=facts,
-                fastest=None, clients=(), history=(), covered=None, setup=(), uses=(), positions=())
+                fastest=None, clients=(), history=(), covered=None, setup=())
 
 
 def known_steps(note: str, date: str) -> frozenset[str]:
@@ -771,46 +709,6 @@ def _client_versions(runs: Sequence[Run]) -> dict[str, tuple[tuple[str, str], ..
 
 
 OPENCODE_MINIMUM = 65_536  # docs/opencode.md#context-budget: "The practical minimum for OpenCode is 64k tokens"
-LONG_CONTEXT = 131_072
-ASCII_SPACE = " \t\n\r\f\v"  # the search trims these only, as page.js does (str.strip and String.trim differ)
-USE_CASES = (
-    UseCase("", "All models", "rank", "", ("rank", "fastest", "fastest-top")),
-    UseCase("opencode", "Coding in {opencode}", "rank",
-            "Tool calling, at least {minimum}k of context ({opencode}'s practical minimum), and the latest {opencode} "
-            "session passed.", ("default", "rank", "fastest")),
-    UseCase("quality", "Top {top} models", "rank", "Models in the Top {top} that run here.",
-            ("rank", "rank-long", "fastest-top")),
-    UseCase("fastest", "Fastest decode", "speed", "Every pair that runs, fastest decode first.", ("engines",)),
-    UseCase("long-context", "{long}k context", "rank", "Pairs that hold {long}k tokens.",
-            ("rank", "fastest", "fastest-top")),
-    UseCase("every-client", "Passed in all {client_count} clients", "rank",
-            "Pairs whose latest session passed in {clients}.", ("rank", "fastest", "size")),
-    UseCase("compare", "Compare engines", "gap",
-            "Models that run on two or more engines, biggest speed difference first.", ("gap", "rank", "fastest")),
-)
-SORTS = (("rank", "Top {top} rank, then speed"), ("speed", "Fastest first"), ("context", "Longest context first"),
-         ("size", "Smallest download first"), ("gap", "Biggest engine difference first"), ("name", "Model ID, A to Z"))
-ROLES = {
-    "rank": "Highest ranked",
-    "fastest": "Fastest",
-    "fastest-top": "Fastest in the Top {top}",
-    "rank-long": "Highest ranked at {long}k",
-    "default": "Default in the {opencode} config",
-    "size": "Smallest download",
-    "gap": "Biggest engine difference",
-    "next-rank": "Next by Top {top} rank",
-    "next-speed": "Next by speed",
-    "next-context": "Next by context",
-    "next-size": "Next by download size",
-    "next-gap": "Next by engine difference",
-    "next-name": "Next by model ID",
-}
-ENGINE_ROLE = "Fastest on {engine}"
-CELL_KEYS = ("rank", "speed", "context", "size")
-ROW_KEYS = ("gap", "name")
-KEY_PARTS = ("counts", "known-issue", "failed", "not-tested", "not-supported", "letters", "setup", "fastest", "bars")
-EMPTY = "No model matches this view."
-NO_PICKS = "No pair that runs is in this view, so there is nothing to start."
 
 
 def fastest_tags(speeds: Mapping[str, float | None]) -> dict[str, str]:
@@ -832,21 +730,6 @@ def speed_text(decode: float) -> str:
     """A speed as the page writes it: `:g`, with ".0" added when that has no point, so at least one decimal (R-D6)."""
     text = f"{decode:g}"
     return text if "." in text else text + ".0"
-
-
-def top_speed(matrix: Matrix) -> float | None:
-    """The page's top speed over every Runs cell with a speed; None when no Runs cell has one."""
-    speeds = [cell.recipe.decode for model in matrix.models for cell in model.cells
-              if cell.status == "runs" and cell.recipe.decode is not None]
-    return max(speeds) if speeds else None
-
-
-def bar_width(decode: float | None, top: float | None) -> int:
-    """A bar's width in percent of the page's top speed, rounded half up and clamped to 0 to 100; 0 without a speed."""
-    if decode is None or top is None:
-        return 0
-    n = math.floor(100 * Fraction(str(decode)) / Fraction(str(top)) + Fraction(1, 2))
-    return max(0, min(100, n))
 
 
 def _speeds(model: Model) -> list[tuple[Fraction, str]]:
@@ -874,369 +757,10 @@ def lead(model: Model, cell: Cell, labels: Mapping[str, str]) -> tuple[str, str]
     return visible, f"fastest, {visible} ahead of {_joined(behind)}"
 
 
-def gap_text(model: Model, labels: Mapping[str, str]) -> str | None:
-    """The gap words of a model over its Runs cells with a speed (Copy): the engines at the top speed against those at
-    the lowest, each group in the order of the model's cells, which is ADAPTERS order, rounded as D7 does; None below
-    two speeds."""
-    speeds = _speeds(model)
-    if len(speeds) < 2:
-        return None
-
-    def group(value: Fraction) -> str:
-        return _joined([labels[runtime] for speed, runtime in speeds if speed == value])
-
-    top, lowest = max(speed for speed, _ in speeds), min(speed for speed, _ in speeds)
-    if top == lowest:
-        return f"the same speed on {group(top)}"
-    n = math.floor(100 * (top / lowest - 1) + Fraction(1, 2))
-    amount = f"{n}%" if n else "under 1%"
-    return f"{group(top)} {amount} ahead of {group(lowest)}"
-
-
 def _joined(items: Sequence[str]) -> str:
     if not items:
         raise ValueError("nothing to join")
     return items[0] if len(items) == 1 else ", ".join(items[:-1]) + " and " + items[-1]
-
-
-def _fill(template: str, matrix: Matrix, **extra: str) -> str:
-    """A name, rule, sort or role template filled from the matrix: the Top table's size, LONG_CONTEXT and the
-    OpenCode minimum in k, the OpenCode label and the client labels and count."""
-    labels = [client.label for client in matrix.clients]
-    return template.format(top=matrix.top, long=LONG_CONTEXT // 1024, minimum=OPENCODE_MINIMUM // 1024,
-                           opencode={client.id: client.label for client in matrix.clients}["opencode"],
-                           clients=_joined(labels), client_count=len(labels), **extra)
-
-
-def view_name(use: UseCase, matrix: Matrix) -> str:
-    return _fill(use.name, matrix)
-
-
-def rule_line(use: UseCase, matrix: Matrix) -> str:
-    """The rule line of a view; "" for All models."""
-    return _fill(use.rule, matrix)
-
-
-def sort_label(key: str, matrix: Matrix) -> str:
-    labels = dict(SORTS)
-    if key not in labels:
-        raise ValueError(f"unknown sort {key!r}")
-    return _fill(labels[key], matrix)
-
-
-def role_words(role: str, matrix: Matrix) -> str:
-    """The words of one role key; "engine-<runtime>" names that engine."""
-    if role.startswith("engine-"):
-        engines = {runtime.id: runtime.label for runtime in matrix.runtimes}
-        if role[len("engine-"):] not in engines:
-            raise ValueError(f"unknown role {role!r}")
-        return _fill(ENGINE_ROLE, matrix, engine=engines[role[len("engine-"):]])
-    if role not in ROLES:
-        raise ValueError(f"unknown role {role!r}")
-    return _fill(ROLES[role], matrix)
-
-
-def role_label(roles: Sequence[str], matrix: Matrix) -> str:
-    """A pick card's label: fastest-top and the engine roles drop beside fastest, rank-long beside rank; the first
-    kept role's words, then the others' with a lower-case first letter, joined with ", " and " and "."""
-    kept = [role for role in roles
-            if not ((role == "fastest-top" or role.startswith("engine-")) and "fastest" in roles)
-            and not (role == "rank-long" and "rank" in roles)]
-    words = [role_words(role, matrix) for role in kept]
-    return _joined([words[0], *(word[:1].lower() + word[1:] for word in words[1:])])
-
-
-def _place(item: Model | Cell, name: str) -> int:
-    """The item's place, from 0, in the named order of its positions."""
-    return dict(item.positions)[name]
-
-
-def picks(matrix: Matrix, use: str, cells: Sequence[tuple[str, str]], sort: str) -> tuple[Pick, ...]:
-    """The pick cards of a view (Pick cards): each of the view's roles names the Runs cell among `cells` with the
-    smallest place in its order among the cells it admits, a role whose cell a card already holds adds its key to
-    that card, and the next cells of `sort` that no card holds fill the empty places, at most three cards."""
-    cases = {case.id: case for case in USE_CASES}
-    if use not in cases:
-        raise ValueError(f"unknown use case {use!r}")
-    if sort not in dict(SORTS):
-        raise ValueError(f"unknown sort {sort!r}")
-    models = {model.id: model for model in matrix.models}
-    found = [(models[model_id], {cell.runtime: cell for cell in models[model_id].cells}[runtime])
-             for model_id, runtime in cells]
-    runs = [(model, cell) for model, cell in found if cell.status == "runs"]
-    timed = [(model, cell) for model, cell in runs if cell.recipe.decode is not None]
-    ranked = [(model, cell) for model, cell in runs if model.rank is not None]
-
-    def first(pairs: list[tuple[Model, Cell]], key: str) -> tuple[Model, Cell] | None:
-        return min(pairs, key=lambda pair: _place(pair[1], key)) if pairs else None
-
-    named: list[tuple[str, tuple[Model, Cell] | None]] = []
-    for role in cases[use].roles:
-        if role == "engines":
-            per = [first([pair for pair in timed if pair[1].runtime == runtime.id], "speed")
-                   for runtime in matrix.runtimes]
-            named += [(f"engine-{pair[1].runtime}", pair)
-                      for pair in sorted((pair for pair in per if pair), key=lambda pair: _place(pair[1], "speed"))]
-        elif role == "rank":
-            named.append((role, first(ranked, "rank")))
-        elif role == "fastest":
-            named.append((role, first(timed, "speed")))
-        elif role == "fastest-top":
-            named.append((role, first([pair for pair in timed if pair[0].rank is not None], "speed")))
-        elif role == "rank-long":
-            named.append((role, first([pair for pair in ranked if pair[1].recipe.context >= LONG_CONTEXT], "rank")))
-        elif role == "default":
-            named.append((role, next((pair for pair in runs if (pair[0].id, pair[1].runtime) == matrix.default), None)))
-        elif role == "size":
-            named.append((role, first(runs, "size")))
-        elif role == "gap":
-            rows: dict[str, list[tuple[Model, Cell]]] = {}
-            for pair in timed:
-                rows.setdefault(pair[0].id, []).append(pair)
-            gapped = sorted((pairs for pairs in rows.values() if len(pairs) >= 2),
-                            key=lambda pairs: _place(pairs[0][0], "gap"))
-            named.append((role, first(gapped[0], "speed") if gapped else None))
-        else:
-            raise ValueError(f"unknown role {role!r}")
-    held: list[tuple[list[str], tuple[Model, Cell]]] = []
-    for role, pair in named:
-        if pair is None:
-            continue
-        card = next((card for card in held if card[1][1] is pair[1]), None)
-        if card:
-            card[0].append(role)
-        else:
-            held.append(([role], pair))
-    if sort in CELL_KEYS:
-        fill = sorted(runs, key=lambda pair: _place(pair[1], sort))
-    else:
-        fill, seen = [], set()
-        for pair in sorted(runs, key=lambda pair: (_place(pair[0], sort), _place(pair[1], "speed"))):
-            if pair[0].id not in seen:
-                seen.add(pair[0].id)
-                fill.append(pair)
-    for pair in fill:
-        if len(held) >= 3:
-            break
-        if not any(card[1][1] is pair[1] for card in held):
-            held.append(([f"next-{sort}"], pair))
-    return tuple(Pick(tuple(roles), role_label(roles, matrix), model.id, cell.runtime)
-                 for roles, (model, cell) in held[:3])
-
-
-def picks_line(picks: Sequence[Pick], matrix: Matrix) -> str:
-    """The picks after the count line and in the static lists; "" without cards."""
-    if not picks:
-        return ""
-    engines = {runtime.id: runtime.label for runtime in matrix.runtimes}
-    return "Picks: " + "; ".join(f"{pick.label}: {pick.model} on {engines[pick.runtime]}" for pick in picks) + "."
-
-
-def filter_count(filters: Filters) -> int:
-    """The filters that are set; the search does not count."""
-    return sum(1 for value in (filters.engines, filters.statuses, filters.must_pass, filters.context, filters.thinking,
-                               filters.tools, filters.ram) if value is not None)
-
-
-def filters_label(filters: Filters) -> str:
-    n = filter_count(filters)
-    return f"Filters ({n})" if n else "Filters"
-
-
-def show_label(rows: int) -> str:
-    return f"Show {_counted(rows, 'model', 'models')}"
-
-
-def match_line(rows: int) -> str:
-    return f"{_counted(rows, 'model matches', 'models match')}."
-
-
-def caption_line(use: UseCase, sort: str, matrix: Matrix) -> str:
-    return (f"Decode speed, context and client results of each model on each engine. View: {view_name(use, matrix)}; "
-            f"sorted by: {sort_label(sort, matrix)}.")
-
-
-def print_line(use: UseCase, sort: str, filters: Filters, matrix: Matrix) -> str:
-    """The print line; a search that is not empty once trimmed of ASCII_SPACE counts as a filter here."""
-    n = filter_count(filters) + (1 if filters.search.strip(ASCII_SPACE) else 0)
-    active = f"; {_counted(n, 'filter', 'filters')} active" if n else ""
-    return f"View: {view_name(use, matrix)}; sorted by: {sort_label(sort, matrix)}{active}."
-
-
-def _classes(cell: Cell) -> dict[str, str]:
-    return {result.client: result.cls for result in cell.clients}
-
-
-def use_cases_of(model: Model, cell: Cell) -> tuple[str, ...]:
-    """The IDs of the use cases whose rule keeps the cell, in USE_CASES order; only Runs cells match any."""
-    if cell.status != "runs" or cell.recipe is None:
-        return ()
-    recipe, classes = cell.recipe, _classes(cell)
-    matches = {
-        "opencode": (not recipe.chat_only and classes.get("opencode") == "passed"
-                     and recipe.context >= OPENCODE_MINIMUM),
-        "quality": model.rank is not None,
-        "fastest": True,
-        "long-context": recipe.context >= LONG_CONTEXT,
-        "every-client": bool(cell.clients) and all(cls == "passed" for cls in classes.values()),
-        "compare": sum(1 for other in model.cells if other.status == "runs") >= 2,
-    }
-    return tuple(use.id for use in USE_CASES if use.id and matches[use.id])
-
-
-def _speed_order(cell: Cell) -> tuple[bool, float]:
-    decode = cell.recipe.decode
-    return decode is None, -(decode or 0.0)
-
-
-def cell_positions(models: Sequence[Model], engines: Sequence[str]) -> dict[tuple[str, str], tuple[tuple[str, int], ...]]:
-    """Each Runs cell's place, from 0, in the rank, speed, context and size cell orders (Filters and sort); every order
-    ends with the model ID and then the engine order."""
-    order = list(engines)
-    runs = [(model, cell) for model in models for cell in model.cells if cell.status == "runs"]
-
-    def tail(model: Model, cell: Cell) -> tuple[str, int]:
-        return model.id, order.index(cell.runtime)
-
-    keys: dict[str, Callable[[Model, Cell], tuple]] = {
-        "rank": lambda model, cell: (model.rank is None, model.rank or 0, *_speed_order(cell), *tail(model, cell)),
-        "speed": lambda model, cell: (*_speed_order(cell), *tail(model, cell)),
-        "context": lambda model, cell: (-cell.recipe.context, *_speed_order(cell), *tail(model, cell)),
-        "size": lambda model, cell: (cell.recipe.size_bytes, *tail(model, cell)),
-    }
-    places: dict[tuple[str, str], list[tuple[str, int]]] = {(model.id, cell.runtime): [] for model, cell in runs}
-    for key in CELL_KEYS:
-        ranked = sorted(runs, key=lambda pair: keys[key](*pair))
-        for place, (model, cell) in enumerate(ranked):
-            places[model.id, cell.runtime].append((key, place))
-    return {key: tuple(value) for key, value in places.items()}
-
-
-def _gap(model: Model) -> Fraction | None:
-    """The ratio of the model's fastest to its slowest speed over its Runs cells with a speed; None below two."""
-    speeds = [Fraction(str(cell.recipe.decode)) for cell in model.cells
-              if cell.status == "runs" and cell.recipe.decode is not None]
-    return max(speeds) / min(speeds) if len(speeds) >= 2 else None
-
-
-def row_positions(models: Sequence[Model]) -> dict[str, tuple[tuple[str, int], ...]]:
-    """Each row's place, from 0, in the gap order (biggest ratio first, rows without one after, then the model ID) and
-    the name order."""
-    gaps = {model.id: _gap(model) for model in models}
-    by_gap = sorted(gaps, key=lambda model_id: (gaps[model_id] is None, -(gaps[model_id] or 0), model_id))
-    by_name = sorted(gaps)
-    return {model_id: (("gap", by_gap.index(model_id)), ("name", by_name.index(model_id))) for model_id in by_name}
-
-
-def search_text(model: Model, cell: Cell, label: str) -> str:
-    """The lower-case text the search filter looks in: model ID, aliases, recipe name and engine label."""
-    return " ".join([model.id, *model.aliases, *([cell.recipe.name] if cell.recipe else []), label]).lower()
-
-
-def _keeps(model: Model, cell: Cell, label: str, filters: Filters) -> bool:
-    """Whether every active filter keeps the cell; a filter that needs a running cell drops every other cell."""
-    search = filters.search.strip(ASCII_SPACE).lower()
-    if search and search not in search_text(model, cell, label):
-        return False
-    if filters.engines is not None and cell.runtime not in filters.engines:
-        return False
-    if filters.statuses is not None and cell.status not in filters.statuses:
-        return False
-    running = (filters.must_pass, filters.context, filters.thinking, filters.tools, filters.ram)
-    if all(value is None for value in running):
-        return True
-    recipe = cell.recipe
-    if cell.status != "runs" or recipe is None:
-        return False
-    classes = _classes(cell)
-    if filters.must_pass == "every":
-        if not all(cls == "passed" for cls in classes.values()):
-            return False
-    elif filters.must_pass is not None:
-        if filters.must_pass not in classes:
-            raise ValueError(f"unknown client {filters.must_pass!r}")
-        if classes[filters.must_pass] != "passed":
-            return False
-    if filters.context is not None and recipe.context < filters.context * 1024:
-        return False
-    if filters.thinking is not None and recipe.thinking not in filters.thinking:
-        return False
-    if filters.tools is not None:
-        if filters.tools not in ("yes", "no"):
-            raise ValueError(f"unknown tools value {filters.tools!r}")
-        if recipe.chat_only != (filters.tools == "no"):
-            return False
-    return filters.ram is None or recipe.memory_cap <= filters.ram
-
-
-def _counted(n: int, one: str, many: str) -> str:
-    return f"{n} {one if n == 1 else many}"
-
-
-def count_line(rows: int, cells: int, runs: int, pairs: int, plain: bool) -> str:
-    """The count line: the plain form names the Runs cells of all pairs, the other form the cells in view; "" without
-    rows."""
-    if not rows:
-        return ""
-    if plain:
-        return f"{_counted(rows, 'model', 'models')}; {runs} of {pairs} pairs run."
-    return f"{_counted(rows, 'model', 'models')}; {_counted(cells, 'pair matches', 'pairs match')}."
-
-
-def _key(matrix: Matrix, runs: Sequence[Cell]) -> tuple[str, ...]:
-    """The key parts a view with these in-view Runs cells shows, in KEY_PARTS order (Key)."""
-    if not runs:
-        return ()
-    held = {result.cls for cell in runs for result in cell.clients}
-    classes = [cls for cls in CLASSES if cls != "passed" and cls in held]
-    shown = {"counts": True, **{cls: True for cls in classes}, "letters": bool(classes),
-             "setup": any(cell.setup for cell in runs), "fastest": any(cell.fastest is not None for cell in runs),
-             "bars": top_speed(matrix) is not None}
-    return tuple(part for part in KEY_PARTS if shown.get(part, False))
-
-
-def view(matrix: Matrix, use: str, filters: Filters, sort: str | None) -> View:
-    """The rows, cells, count line, picks, key parts and divider of one view, as the page script computes them
-    (design D9, R-D3, R-D16); sort None means the view's own."""
-    cases = {case.id: case for case in USE_CASES}
-    if use not in cases:
-        raise ValueError(f"unknown use case {use!r}")
-    case = cases[use]
-    key = case.sort if sort is None else sort
-    if key not in dict(SORTS):
-        raise ValueError(f"unknown sort {key!r}")
-    labels = {runtime.id: runtime.label for runtime in matrix.runtimes}
-    shown: list[tuple[Model, list[Cell]]] = []
-    for model in matrix.models:
-        cells = [cell for cell in model.cells
-                 if (not use or use in cell.uses) and _keeps(model, cell, labels[cell.runtime], filters)]
-        if cells:
-            shown.append((model, cells))
-    if not shown:
-        return View((), (), "", (), (), None)
-
-    if key in CELL_KEYS:
-        def row_order(entry: tuple[Model, list[Cell]]) -> tuple[int, int]:
-            found = [_place(cell, key) for cell in entry[1] if cell.positions]
-            return (0, min(found)) if found else (1, _place(entry[0], "name"))
-
-        shown.sort(key=row_order)
-        shown = [(model, sorted(cells, key=lambda cell: (0, _place(cell, key)) if cell.positions else (1, 0)))
-                 for model, cells in shown]
-    else:
-        shown.sort(key=lambda entry: _place(entry[0], key))
-    runs = [cell for _, cells in shown for cell in cells if cell.status == "runs"]
-    rows = tuple(model.id for model, _ in shown)
-    cells = tuple((model.id, cell.runtime) for model, cells in shown for cell in cells)
-    plain = not use and filter_count(filters) == 0 and not filters.search.strip(ASCII_SPACE)
-    count = count_line(len(rows), len(cells), len(runs), len(matrix.models) * len(matrix.runtimes), plain)
-    divider = None
-    if key == "rank":
-        ranks = [model.rank for model, _ in shown]
-        first = next((n for n, rank in enumerate(ranks) if rank is None), None)
-        if first is not None and all(rank is None for rank in ranks[first:]):
-            divider = rows[first]
-    return View(rows, cells, count, picks(matrix, use, cells, key), _key(matrix, runs), divider)
 
 
 def licenses(lines: Sequence[str]) -> tuple[str, str]:
@@ -1291,9 +815,12 @@ def load(root: Path) -> Matrix:
             if recipe.id not in ids:
                 ids.append(recipe.id)
     top_lines = _section(root, f"{SELECTION}#top-10")
-    ranks, ranked_without_recipe = rank_of(top_lines, {repo: tuple(sorted(ids)) for repo, ids in sorted(repos.items())})
+    ranks, unshipped = rank_of(top_lines, {repo: tuple(sorted(ids)) for repo, ids in sorted(repos.items())})
+    if unshipped:
+        rank, cell = unshipped[0]
+        raise SiteError(f"{SELECTION}#top-10: rank {rank} ({cell}) has no shipped recipe; the page lists only models "
+                        "llmctl can start")
     made = makers(top_lines)
-    letters = client_letters(clients.NAMES, clients.LABELS, LETTERS)
     runs = _runs(root, catalog)
     models = []
     for model_id in shipped:
@@ -1311,18 +838,12 @@ def load(root: Path) -> Matrix:
         name = display_name(default.name, default.file)
         rank = ranks.get(model_id)
         model = Model(id=model_id, aliases=tuple(aliases), rank=rank,
-                      chat_only=any(recipe.chat_only for recipe in recipes), cells=cells, positions=(), name=name,
+                      chat_only=any(recipe.chat_only for recipe in recipes), cells=cells, name=name,
                       honorable=False, maker=None if rank is None else made[rank])
-        models.append(replace(model, cells=tuple(replace(cell, uses=use_cases_of(model, cell)) for cell in cells)))
+        models.append(model)
     honorable = honorable_names(_section(root, f"{SELECTION}#honorable-mentions"))
     models = [replace(model, honorable=any(text == model.name or text.startswith(model.name + " ")
                                            for text in honorable))
-              for model in models]
-    places = cell_positions(models, list(ADAPTERS))
-    row_places = row_positions(models)
-    models = [replace(model, positions=row_places[model.id],
-                      cells=tuple(replace(cell, positions=places.get((model.id, cell.runtime), ()))
-                                  for cell in model.cells))
               for model in models]
     license_lines = tuple(line for line in _section(root, "README.md#license") if line.strip())
     if not license_lines:
@@ -1337,8 +858,8 @@ def load(root: Path) -> Matrix:
     run_list = tuple(data.run for data in runs)
     versions = _client_versions(run_list)
     return Matrix(runtimes=runtimes,
-                  clients=tuple(Client(name, clients.LABELS[name], letters[name], versions[name])
+                  clients=tuple(Client(name, clients.LABELS[name], versions[name])
                                 for name in clients.NAMES),
-                  models=tuple(models), runs=run_list, ranked_without_recipe=ranked_without_recipe,
-                  license=license_lines, top=len(ranks) + len(ranked_without_recipe),
+                  models=tuple(models), runs=run_list,
+                  license=license_lines, top=len(ranks),
                   opencode_default=default_model, default=pairs[0], laptop=laptop(root, models), licenses=named)
