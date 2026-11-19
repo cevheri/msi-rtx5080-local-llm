@@ -111,6 +111,7 @@ The bandwidth figure is NVIDIA's laptop specification ([NVIDIA](https://www.nvid
 | [docs/llmctl.md](docs/llmctl.md) | `./llmctl`: start a measured recipe by name, the client entries it writes, the rules it enforces, the recipe format, overrides for another machine |
 | [docs/clients.md](docs/clients.md) | Hermes Agent v0.23.1, Pi 1.5.2, DeepSeek Harness 0.2.2-rc.3 and Kimi Code CLI 2.5.3 with the local servers: the entries llmctl writes, thinking per type, the gateway and sticky-profile side effects, dsh's home patch and default, Kimi's `[providers.llmctl]` and `[models."llmctl/<served name>"]` tables and `default_model`, silent fallbacks |
 | [docs/model-selection.md](docs/model-selection.md) | Ranked picks with evidence, capability lists, new candidates, exclusions and what to measure first |
+| [docs/site.md](docs/site.md) | The model guide on GitHub Pages: how it is built from this repository, where each part lives, and how to preview and check a change |
 | [docs/host-setup.md](docs/host-setup.md) | NVIDIA Container Toolkit, CDI, Compose GPU syntax, localhost-only ports, memory caps, laptop power, model cache |
 | [docs/opencode.md](docs/opencode.md) | OpenCode v2.3.0 config with three providers, llama.cpp, vLLM and SGLang (schema-validated), thinking variants, context budget, known issues, remote trials |
 | [vllm/README.md](vllm/README.md) | vLLM v0.33.0 on sm_120: image, run template, memory budget, flags, parsers, quantization paths, known issues, smoke tests |
