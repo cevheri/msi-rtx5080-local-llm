@@ -366,7 +366,7 @@ class SiteRenderTest(unittest.TestCase):
         script = (REPO / "launcher/site/page.js").read_text(encoding="utf-8")
         self.assertRegex(script, r"drawer\.autofocus = true;[^\0]*?drawer\.showModal\(\)")
         # The modal dialog makes #live inert, so a copy inside it is announced in the dialog's own live region.
-        self.assertRegex(script, r"\(drawer\.open \? drawerLive : live\)\.textContent = text;")
+        self.assertRegex(script, r"\(drawer\.open \? drawerLive : sheet\.open \? sheetLive : live\)\.textContent = text;")
         self.assertEqual([squash(node) for node in table.find_all("th", "mh")], ["Top 3 rank and model"])
         heads = [node for node in table.find_all("thead")[0].find_all("th") if node.attrs.get("data-engine")]
         self.assertEqual([tuple(squash(head.find_all("span", cls)[0]) for cls in ("en", "ver", "n")) for head in heads],
