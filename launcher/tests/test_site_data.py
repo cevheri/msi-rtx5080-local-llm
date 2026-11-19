@@ -697,26 +697,102 @@ class SiteDataTest(unittest.TestCase):
         self.assertEqual(uses(recipe(context=65536), dataclasses.replace(model, rank=None)),
                          ("opencode", "fastest", "every-client", "compare"))
         self.assertEqual(cell.uses, uses(cell))
-        self.assertEqual(data.rule_line(data.USE_CASES[5], ["OpenCode", "Hermes", "Pi", "dsh", "Kimi"]),
-                         "Recipes whose latest session passed in every client: OpenCode, Hermes, Pi, dsh and Kimi; "
-                         "best quality first, then fastest.")
-        self.assertEqual(data.rule_line(data.USE_CASES[3], ["A"]), "Every recipe that runs, fastest decode first.")
+        self.assertEqual(data.rule_line(data.USE_CASES[5], matrix),
+                         "Pairs whose latest session passed in OpenCode, Hermes, Pi, dsh and Kimi.")
+        self.assertEqual(data.rule_line(data.USE_CASES[3], matrix), "Every pair that runs, fastest decode first.")
+
+    def test_view_names_rules_and_sort_labels_come_from_the_data(self):
+        m = self.fixture.load()
+        self.assertEqual([data.view_name(u, m) for u in data.USE_CASES],
+                         ["All models", "Coding in OpenCode", "Top 3 models", "Fastest decode", "128k context",
+                          "Passed in all 5 clients", "Compare engines"])
+        self.assertEqual([data.rule_line(u, m) for u in data.USE_CASES],
+                         ["", "Tool calling, at least 64k of context (OpenCode's practical minimum), and the latest OpenCode "
+                          "session passed.", "Models in the Top 3 that run here.", "Every pair that runs, fastest decode first.",
+                          "Pairs that hold 128k tokens.", "Pairs whose latest session passed in OpenCode, Hermes, Pi, dsh and Kimi.",
+                          "Models that run on two or more engines, biggest speed difference first."])
+        self.assertEqual([(u.id, u.sort, u.roles) for u in data.USE_CASES],
+                         [("", "rank", ("rank", "fastest", "fastest-top")), ("opencode", "rank", ("default", "rank", "fastest")),
+                          ("quality", "rank", ("rank", "rank-long", "fastest-top")), ("fastest", "speed", ("engines",)),
+                          ("long-context", "rank", ("rank", "fastest", "fastest-top")),
+                          ("every-client", "rank", ("rank", "fastest", "size")), ("compare", "gap", ("gap", "rank", "fastest"))])
+        self.assertEqual([data.sort_label(key, m) for key, _ in data.SORTS],
+                         ["Top 3 rank, then speed", "Fastest first", "Longest context first", "Smallest download first",
+                          "Biggest engine difference first", "Model ID, A to Z"])
+        self.assertEqual({role: data.role_words(role, m) for role in data.ROLES},
+                         {"rank": "Highest ranked", "fastest": "Fastest", "fastest-top": "Fastest in the Top 3",
+                          "rank-long": "Highest ranked at 128k", "default": "Default in the OpenCode config",
+                          "size": "Smallest download", "gap": "Biggest engine difference", "next-rank": "Next by Top 3 rank",
+                          "next-speed": "Next by speed", "next-context": "Next by context", "next-size": "Next by download size",
+                          "next-gap": "Next by engine difference", "next-name": "Next by model ID"})
+        self.assertEqual(list(data.ROLES), ["rank", "fastest", "fastest-top", "rank-long", "default", "size", "gap", "next-rank",
+                                            "next-speed", "next-context", "next-size", "next-gap", "next-name"])
+        self.assertEqual([data.role_words(f"engine-{r.id}", m) for r in m.runtimes],
+                         ["Fastest on llama.cpp", "Fastest on vLLM", "Fastest on SGLang"])
+        for roles, label in ((("rank", "fastest", "fastest-top"), "Highest ranked and fastest"), (("rank", "rank-long"), "Highest ranked"),
+                             (("gap", "rank", "fastest"), "Biggest engine difference, highest ranked and fastest"),
+                             (("fastest", "engine-vllm"), "Fastest"), (("default", "rank"), "Default in the OpenCode config and highest ranked"),
+                             (("next-gap",), "Next by engine difference"),
+                             (("rank-long", "fastest-top"), "Highest ranked at 128k and fastest in the Top 3"),
+                             (("engine-vllm",), "Fastest on vLLM")):
+            self.assertEqual(data.role_label(roles, m), label)
+        for bad in (lambda: data.role_words("bogus", m), lambda: data.role_words("engine-bogus", m),
+                    lambda: data.sort_label("bogus", m)):
+            with self.assertRaises(ValueError):
+                bad()
+        twelve = dataclasses.replace(m, top=12)
+        self.assertEqual((data.view_name(data.USE_CASES[2], twelve), data.rule_line(data.USE_CASES[2], twelve),
+                          data.sort_label("rank", twelve), data.role_words("fastest-top", twelve), data.role_words("next-rank", twelve)),
+                         ("Top 12 models", "Models in the Top 12 that run here.", "Top 12 rank, then speed", "Fastest in the Top 12",
+                          "Next by Top 12 rank"))
+        six = dataclasses.replace(m, clients=m.clients + (data.Client("zed", "Zed", "Z", ()),))
+        self.assertEqual((data.view_name(data.USE_CASES[5], six), data.rule_line(data.USE_CASES[5], six)),
+                         ("Passed in all 6 clients", "Pairs whose latest session passed in OpenCode, Hermes, Pi, dsh, Kimi and Zed."))
+        oc = dataclasses.replace(m, clients=tuple(dataclasses.replace(c, label="OC") if c.id == "opencode" else c for c in m.clients))
+        self.assertEqual((data.view_name(data.USE_CASES[1], oc), data.rule_line(data.USE_CASES[1], oc), data.role_words("default", oc)),
+                         ("Coding in OC", "Tool calling, at least 64k of context (OC's practical minimum), and the latest OC session "
+                          "passed.", "Default in the OC config"))
+
+    def test_script_strings(self):
+        m, F = self.fixture.load(), data.Filters
+        each = (F(engines=("vllm",)), F(engines=()), F(statuses=("runs",)), F(must_pass="kimi"), F(context=128),
+                F(thinking=("toggle",)), F(tools="yes"), F(ram=20))
+        self.assertEqual([data.filter_count(f) for f in (F(), F(search="qwen"), F(search=" \t "), *each)], [0, 0, 0] + [1] * 8)
+        self.assertEqual(data.filter_count(F(search="q", engines=("vllm",), statuses=("runs",), must_pass="every", context=64,
+                                             thinking=(), tools="no", ram=16)), 7)
+        self.assertEqual((data.filters_label(F()), data.filters_label(F(ram=20, tools="no"))), ("Filters", "Filters (2)"))
+        self.assertEqual([data.show_label(n) for n in (15, 1, 0)], ["Show 15 models", "Show 1 model", "Show 0 models"])
+        self.assertEqual([data.match_line(n) for n in (10, 1, 0)], ["10 models match.", "1 model matches.", "0 models match."])
+        head = "Decode speed, context and client results of each model on each engine. View: "
+        self.assertEqual(data.caption_line(data.USE_CASES[0], "rank", m), head + "All models; sorted by: Top 3 rank, then speed.")
+        self.assertEqual(data.caption_line(data.USE_CASES[6], "name", m), head + "Compare engines; sorted by: Model ID, A to Z.")
+        for filters, tail in ((F(), "."), (F(search=" \t "), "."), (F(search="qwen"), "; 1 filter active."),
+                              (F(search="\xa0"), "; 1 filter active."), (F(ram=20), "; 1 filter active."),
+                              (F(search="qwen", ram=20, tools="no"), "; 3 filters active.")):
+            with self.subTest(filters=filters):
+                self.assertEqual(data.print_line(data.USE_CASES[3], "speed", filters, m),
+                                 "View: Fastest decode; sorted by: Fastest first" + tail)
+        two = (data.Pick(("rank", "fastest"), "Highest ranked and fastest", "qwen3.6-35b-a3b", "sglang"),
+               data.Pick(("next-rank",), "Next by Top 3 rank", "qwen3.6-35b-a3b", "llamacpp"))
+        self.assertEqual(data.picks_line(two, m), "Picks: Highest ranked and fastest: qwen3.6-35b-a3b on SGLang; "
+                                                  "Next by Top 3 rank: qwen3.6-35b-a3b on llama.cpp.")
+        self.assertEqual(data.picks_line((), m), "")
 
     def test_view_orders_by_in_view_cells(self):
         m = self.fixture.load()
         v = data.view(m, "", data.Filters(engines=("vllm",)), "speed")
         self.assertEqual(v.rows, ("gpt-oss-20b", "deepseek-r1-0528-qwen3-8b", "k2-horizon-7b", "mellum2.1-12b",
                                   "qwen3-coder-next", "qwen3.6-35b-a3b"))
-        self.assertEqual(v.answer, "All results: 6 models, 2 recipes that run. Best quality: gpt-oss-20b on vLLM "
+        self.assertEqual(v.answer, "All models: 6 models, 2 recipes that run. Best quality: gpt-oss-20b on vLLM "
                          "(rank 2), 83.5 tok/s, 64k. Fastest: gpt-oss-20b on vLLM, 83.5 tok/s, 64k.")
-        self.assertEqual(data.view(m, "", data.Filters(), None).answer, "All results: 6 models, 10 recipes that run. "
+        self.assertEqual(data.view(m, "", data.Filters(), None).answer, "All models: 6 models, 10 recipes that run. "
                          "Best quality: qwen3.6-35b-a3b on SGLang (rank 1), 151.3 tok/s, 128k. "
                          "Fastest: mellum2.1-12b on llama.cpp, 188.2 tok/s, 128k.")
         self.assertEqual(data.view(m, "", data.Filters(engines=("llamacpp",), search=" K2 "), None).answer,
-                         "All results: 1 model, 1 recipe that runs. Best quality: no ranked model is in this view. "
+                         "All models: 1 model, 1 recipe that runs. Best quality: no ranked model is in this view. "
                          "Fastest: k2-horizon-7b on llama.cpp, 66.9 tok/s, 80k.")
         self.assertEqual(data.view(m, "", data.Filters(statuses=("failed",)), None).answer,
-                         "All results: 1 model, 0 recipes that run. Best quality: no ranked model is in this view.")
+                         "All models: 1 model, 0 recipes that run. Best quality: no ranked model is in this view.")
         empty = data.view(m, "", data.Filters(search="no such model"), None)
         self.assertEqual((empty.rows, empty.answer), ((), "No recipe matches this view."))
         self.assertEqual(data.view(m, "compare", data.Filters(), None).answer, "Compare engines: 3 models. "
@@ -777,15 +853,15 @@ class SiteDataTest(unittest.TestCase):
         fastest = [p for p in data.view(m, "", data.Filters(engines=("vllm",)), "speed").phrases if p.kind == "fastest"]
         self.assertEqual([p.link for p in fastest], ["deepseek-r1-0528-qwen3-8b on vLLM"])
         self.assertEqual(data.view(m, "", data.Filters(engines=("vllm",), search="gpt-oss"), None).answer,
-                         "All results: 1 model, 1 recipe that runs. "
+                         "All models: 1 model, 1 recipe that runs. "
                          "Best quality: gpt-oss-20b on vLLM (rank 2), speed not recorded, 64k.")
         self.assertNotIn("d-vllm-gpt-oss-20b", [p.target for p in data.phrases(m) if p.kind == "fastest"])
 
     def test_opencode_use_case_follows_the_context_budget(self):
         text = "\n".join(markdown.section(REPO, "docs/opencode.md#context-budget"))
         self.assertIn("The practical minimum for OpenCode is 64k tokens", text,
-                      "docs/opencode.md#context-budget changed: update data.USE_CASES and data.OPENCODE_MINIMUM")
-        self.assertEqual(data.OPENCODE_MINIMUM, 64 * 1024, "update data.USE_CASES and data.OPENCODE_MINIMUM together")
+                      "docs/opencode.md#context-budget changed: update data.OPENCODE_MINIMUM")
+        self.assertEqual(data.OPENCODE_MINIMUM, 64 * 1024, "update data.OPENCODE_MINIMUM")
 
 
 if __name__ == "__main__":

@@ -299,7 +299,6 @@ class _Page:
         if not self.runs:
             raise SiteError(f"{data.SELECTION}: runtime coverage: no Runs: cell, so the page has no measurement")
         self.hardware = "; ".join(sorted({cell.recipe.hardware for _, cell in self.runs}))
-        self.sort_labels = dict(data.SORTS)
         self.committed = datetime.datetime.fromtimestamp(build.commit_time, datetime.timezone.utc).strftime(
             "%Y-%m-%d %H:%M")
 
@@ -355,13 +354,12 @@ class _Page:
             f'<a href="{_e(self.links.repo_link(README, "quick-start"))}">How to start a model</a></p>', "</header>"])
 
     def uses(self) -> str:
-        labels = [client.label for client in self.matrix.clients]
         parts = ['<fieldset id="uses" hidden aria-describedby="use-rule">', "<legend>Use case</legend>"]
         for use in data.USE_CASES:
             attrs = [("type", "radio"), ("name", "use"), ("value", use.id), ("data-sort", use.sort)]
             parts.append(f"<label>{_start('input', attrs + ([('checked', None)] if not use.id else []))} "
-                         f"{_e(use.chip)}</label>")
-        parts += [f'<p id="use-rule">{_e(data.rule_line(data.USE_CASES[0], labels))}</p>', "</fieldset>"]
+                         f"{_e(data.view_name(use, self.matrix))}</label>")
+        parts += [f'<p id="use-rule">{_e(data.rule_line(data.USE_CASES[0], self.matrix))}</p>', "</fieldset>"]
         return "\n".join(parts)
 
     def _checkboxes(self, legend: str, name: str, values: Sequence[tuple[str, str]]) -> str:
@@ -398,7 +396,8 @@ class _Page:
             self._select("tools", "Tools", [("", "Any"), ("yes", "Tool calling"), ("no", "Chat only")]),
             self._select("ram", "Free RAM", [("", "Any"), *((str(cap), f"{cap} GiB") for cap in caps)],
                          help_text=RAM_HELP),
-            self._select("sort", "Sort", data.SORTS, selected=data.USE_CASES[0].sort),
+            self._select("sort", "Sort", [(key, data.sort_label(key, self.matrix)) for key, _ in data.SORTS],
+                         selected=data.USE_CASES[0].sort),
             '<button type="button" id="clear">Clear filters</button>',
             '<button type="button" id="copy-link">Copy link to this view</button>', "</details>", "</div>"])
 
@@ -483,7 +482,7 @@ class _Page:
             header = (f'<th scope="row" role="rowheader"><span class="id">{_e(model.id)}</span>'
                       + "".join(f' <span class="meta">{_e(line)}</span>' for line in meta) + "</th>")
             rows.append(_start("tr", attrs) + header + "".join(self._cell(model, cell) for cell in model.cells) + "</tr>")
-        caption = f"Each model on each engine, sorted by: {self.sort_labels[data.USE_CASES[0].sort]}."
+        caption = data.caption_line(data.USE_CASES[0], data.USE_CASES[0].sort, self.matrix)
         return "\n".join([
             '<h2 class="vh">Models and engines</h2>', '<table id="matrix" tabindex="-1" role="table">',
             f'<caption id="caption" class="vh">{_e(caption)}</caption>',
@@ -491,13 +490,12 @@ class _Page:
             *rows, "</tbody>", "</table>"])
 
     def use_lists(self) -> str:
-        labels = [client.label for client in self.matrix.clients]
         models = {model.id: model for model in self.matrix.models}
         parts = ['<section id="use-cases">', '<h2 id="use-cases-title">Use cases</h2>']
         for use in data.USE_CASES[1:]:
             found = data.view(self.matrix, use.id, data.Filters(), None)
-            parts += [f'<section class="use" data-use="{_e(use.id)}">', f"<h3>{_e(use.chip)}</h3>",
-                      f'<p class="rule">{_e(data.rule_line(use, labels))}</p>', f'<p class="answer">{_answer(found)}</p>']
+            parts += [f'<section class="use" data-use="{_e(use.id)}">', f"<h3>{_e(data.view_name(use, self.matrix))}</h3>",
+                      f'<p class="rule">{_e(data.rule_line(use, self.matrix))}</p>', f'<p class="answer">{_answer(found)}</p>']
             if found.rows:
                 parts.append("<ol>")
                 for model_id in found.rows:
@@ -760,7 +758,6 @@ class _Page:
         return "\n".join(parts)
 
     def template(self) -> str:
-        labels = [client.label for client in self.matrix.clients]
         spans = []
         for phrase in data.phrases(self.matrix):
             content = _phrase(phrase)
@@ -768,13 +765,13 @@ class _Page:
                 content += ' <button type="button" class="clear">Clear filters</button>'
             spans.append(_start("span", [("data-kind", phrase.kind), ("data-for", phrase.target or "")]) + content
                          + "</span>")
-        spans += [_start("span", [("data-kind", "rule"), ("data-for", use.id)]) + _e(data.rule_line(use, labels))
+        spans += [_start("span", [("data-kind", "rule"), ("data-for", use.id)]) + _e(data.rule_line(use, self.matrix))
                   + "</span>" for use in data.USE_CASES]
         return '<template id="phrases">\n' + "\n".join(spans) + "\n</template>"
 
     def body(self, script: str) -> str:
         default = data.USE_CASES[0]
-        print_line = f"View: {default.chip}; sorted by: {self.sort_labels[default.sort]}."
+        print_line = data.print_line(default, default.sort, data.Filters(), self.matrix)
         return "\n".join([
             "<body>", '<a class="skip" href="#matrix">Skip to the matrix</a>', self.header(), "<main>",
             f'<p class="only-no-js">{_e(NO_JS)}</p>', f'<p id="print-view" class="print-only">{_e(print_line)}</p>',

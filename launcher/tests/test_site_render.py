@@ -256,7 +256,6 @@ class SiteRenderTest(unittest.TestCase):
                     self.assertEqual((section.attrs["data-model"], section.attrs["data-engine"]),
                                      (model.id, cell.runtime))
         self.assertEqual(squash(tree.by_id("answer")), data.view(matrix, "", data.Filters(), None).answer)
-        labels = [clients.LABELS[name] for name in clients.NAMES]
 
         def check_uses(matrix, tree):
             """The static use-case lists (ruling 10) and the phrase template (rulings 5 and 6) of one page."""
@@ -267,8 +266,8 @@ class SiteRenderTest(unittest.TestCase):
             for use in data.USE_CASES[1:]:
                 with self.subTest(use=use.id):
                     section, found = uses[use.id], data.view(matrix, use.id, data.Filters(), None)
-                    self.assertEqual(squash(section.find_all("h3")[0]), use.chip)
-                    self.assertEqual(squash(section.find_all("p", "rule")[0]), data.rule_line(use, labels))
+                    self.assertEqual(squash(section.find_all("h3")[0]), data.view_name(use, matrix))
+                    self.assertEqual(squash(section.find_all("p", "rule")[0]), data.rule_line(use, matrix))
                     self.assertEqual(squash(section.find_all("p", "answer")[0]), found.answer)
                     expected = []
                     for model_id in found.rows:
@@ -288,7 +287,7 @@ class SiteRenderTest(unittest.TestCase):
             expected = [(phrase.kind, phrase.target or "",
                          phrase.text + (" Clear filters" if phrase.kind == "empty" else ""),
                          ["#" + phrase.target] if phrase.link else []) for phrase in data.phrases(matrix)]
-            expected += [("rule", use.id, data.rule_line(use, labels), []) for use in data.USE_CASES]
+            expected += [("rule", use.id, data.rule_line(use, matrix), []) for use in data.USE_CASES]
             self.assertEqual([(span.attrs["data-kind"], span.attrs["data-for"], squash(span),
                                [a.attrs["href"] for a in span.find_all("a")]) for span in spans], expected)
             empty = next(span for span in spans if span.attrs["data-kind"] == "empty")
@@ -296,14 +295,15 @@ class SiteRenderTest(unittest.TestCase):
                              [({"type": "button", "class": "clear"}, "Clear filters")])
 
         check_uses(matrix, tree)
-        self.assertEqual(squash(tree.by_id("caption")), "Each model on each engine, sorted by: Quality rank, then speed.")
-        self.assertEqual(squash(tree.by_id("print-view")), "View: All results; sorted by: Quality rank, then speed.")
-        self.assertEqual(squash(tree.by_id("use-rule")), data.rule_line(data.USE_CASES[0], labels))
+        self.assertEqual(squash(tree.by_id("caption")), "Decode speed, context and client results of each model on each engine. "
+                         "View: All models; sorted by: Top 3 rank, then speed.")
+        self.assertEqual(squash(tree.by_id("print-view")), "View: All models; sorted by: Top 3 rank, then speed.")
+        self.assertEqual(squash(tree.by_id("use-rule")), data.rule_line(data.USE_CASES[0], matrix))
         fieldset = tree.by_id("uses")
         self.assertEqual([(node.attrs["value"], node.attrs["data-sort"], "checked" in node.attrs)
                           for node in fieldset.find_all("input")],
                          [(use.id, use.sort, not use.id) for use in data.USE_CASES])
-        self.assertEqual([squash(node) for node in fieldset.find_all("label")], [use.chip for use in data.USE_CASES])
+        self.assertEqual([squash(node) for node in fieldset.find_all("label")], [data.view_name(use, matrix) for use in data.USE_CASES])
         self.assertEqual(squash(tree.by_id("filters-label")), "Filters")
         live = tree.by_id("live")
         self.assertEqual((live.tag, live.attrs, live.text()), ("p", {"id": "live", "class": "vh", "aria-live": "polite"}, ""))
@@ -331,7 +331,7 @@ class SiteRenderTest(unittest.TestCase):
         self.assertEqual(options("ram"), [("", "Any", True), *((str(cap), f"{cap} GiB", False)
                                                                 for cap in sorted({cell.recipe.memory_cap
                                                                                    for cell in runs}))])
-        self.assertEqual(options("sort"), [(key, label, key == "rank") for key, label in data.SORTS])
+        self.assertEqual(options("sort"), [(key, data.sort_label(key, matrix), key == "rank") for key, _ in data.SORTS])
         legend = tree.by_id("legend")
         self.assertEqual([squash(li) for li in legend.find_all("ul", "legend-classes")[0].find_all("li")],
                          [f"{word.capitalize()}: {render.CLASS_MEANINGS[cls]}." for cls, word in render.CLASS_WORDS.items()])

@@ -195,10 +195,13 @@ class Matrix:
 
 @dataclass(frozen=True)
 class UseCase:
+    """A view; name and rule are templates that view_name and rule_line fill from the Matrix, and roles are the role
+    keys of its pick cards in card order ("engines" expands to one engine role per engine)."""
     id: str
-    chip: str
+    name: str
     sort: str
     rule: str
+    roles: tuple[str, ...]
 
 
 @dataclass(frozen=True)
@@ -212,6 +215,15 @@ class Filters:
     thinking: tuple[str, ...] | None = None
     tools: str | None = None
     ram: int | None = None
+
+
+@dataclass(frozen=True)
+class Pick:
+    """One pick card: the role keys it holds in role order ("next-<sort>" for a fill card), its words and its pair."""
+    roles: tuple[str, ...]
+    label: str
+    model: str
+    runtime: str
 
 
 @dataclass(frozen=True)
@@ -633,20 +645,38 @@ OPENCODE_MINIMUM = 65_536  # docs/opencode.md#context-budget: "The practical min
 LONG_CONTEXT = 131_072
 ASCII_SPACE = " \t\n\r\f\v"  # the search trims these only, as page.js does (str.strip and String.trim differ)
 USE_CASES = (
-    UseCase("", "All results", "rank", "Every model on every engine; best quality first, then fastest."),
-    UseCase("opencode", "Coding in OpenCode", "rank",
-            "Recipes with tool calling and at least 64k of context, OpenCode's practical minimum, whose latest OpenCode "
-            "session passed; best quality first, then fastest."),
-    UseCase("quality", "Best quality", "rank", "The ranked picks that run here; rank 1 first, then fastest."),
-    UseCase("fastest", "Fastest", "speed", "Every recipe that runs, fastest decode first."),
-    UseCase("long-context", "Long context", "rank", "Recipes that hold 128k tokens; best quality first, then fastest."),
-    UseCase("every-client", "Every client", "rank",
-            "Recipes whose latest session passed in every client: {clients}; best quality first, then fastest."),
+    UseCase("", "All models", "rank", "", ("rank", "fastest", "fastest-top")),
+    UseCase("opencode", "Coding in {opencode}", "rank",
+            "Tool calling, at least {minimum}k of context ({opencode}'s practical minimum), and the latest {opencode} "
+            "session passed.", ("default", "rank", "fastest")),
+    UseCase("quality", "Top {top} models", "rank", "Models in the Top {top} that run here.",
+            ("rank", "rank-long", "fastest-top")),
+    UseCase("fastest", "Fastest decode", "speed", "Every pair that runs, fastest decode first.", ("engines",)),
+    UseCase("long-context", "{long}k context", "rank", "Pairs that hold {long}k tokens.",
+            ("rank", "fastest", "fastest-top")),
+    UseCase("every-client", "Passed in all {client_count} clients", "rank",
+            "Pairs whose latest session passed in {clients}.", ("rank", "fastest", "size")),
     UseCase("compare", "Compare engines", "gap",
-            "Models that run on two or more engines; biggest speed difference first."),
+            "Models that run on two or more engines, biggest speed difference first.", ("gap", "rank", "fastest")),
 )
-SORTS = (("rank", "Quality rank, then speed"), ("speed", "Fastest first"), ("context", "Longest context first"),
+SORTS = (("rank", "Top {top} rank, then speed"), ("speed", "Fastest first"), ("context", "Longest context first"),
          ("size", "Smallest download first"), ("gap", "Biggest engine difference first"), ("name", "Model ID, A to Z"))
+ROLES = {
+    "rank": "Highest ranked",
+    "fastest": "Fastest",
+    "fastest-top": "Fastest in the Top {top}",
+    "rank-long": "Highest ranked at {long}k",
+    "default": "Default in the {opencode} config",
+    "size": "Smallest download",
+    "gap": "Biggest engine difference",
+    "next-rank": "Next by Top {top} rank",
+    "next-speed": "Next by speed",
+    "next-context": "Next by context",
+    "next-size": "Next by download size",
+    "next-gap": "Next by engine difference",
+    "next-name": "Next by model ID",
+}
+ENGINE_ROLE = "Fastest on {engine}"
 CELL_KEYS = ("rank", "speed", "context", "size")
 ROW_KEYS = ("gap", "name")
 NO_BEST = Phrase("no-best", None, "Best quality: no ranked model is in this view.", "", "")
@@ -739,9 +769,90 @@ def _joined(items: Sequence[str]) -> str:
     return items[0] if len(items) == 1 else ", ".join(items[:-1]) + " and " + items[-1]
 
 
-def rule_line(use: UseCase, labels: Sequence[str]) -> str:
-    """The rule line of a use case, with the client labels joined into the Every client rule."""
-    return use.rule.replace("{clients}", _joined(list(labels))) if "{clients}" in use.rule else use.rule
+def _fill(template: str, matrix: Matrix, **extra: str) -> str:
+    """A name, rule, sort or role template filled from the matrix: the Top table's size, LONG_CONTEXT and the
+    OpenCode minimum in k, the OpenCode label and the client labels and count."""
+    labels = [client.label for client in matrix.clients]
+    return template.format(top=matrix.top, long=LONG_CONTEXT // 1024, minimum=OPENCODE_MINIMUM // 1024,
+                           opencode={client.id: client.label for client in matrix.clients}["opencode"],
+                           clients=_joined(labels), client_count=len(labels), **extra)
+
+
+def view_name(use: UseCase, matrix: Matrix) -> str:
+    return _fill(use.name, matrix)
+
+
+def rule_line(use: UseCase, matrix: Matrix) -> str:
+    """The rule line of a view; "" for All models."""
+    return _fill(use.rule, matrix)
+
+
+def sort_label(key: str, matrix: Matrix) -> str:
+    labels = dict(SORTS)
+    if key not in labels:
+        raise ValueError(f"unknown sort {key!r}")
+    return _fill(labels[key], matrix)
+
+
+def role_words(role: str, matrix: Matrix) -> str:
+    """The words of one role key; "engine-<runtime>" names that engine."""
+    if role.startswith("engine-"):
+        engines = {runtime.id: runtime.label for runtime in matrix.runtimes}
+        if role[len("engine-"):] not in engines:
+            raise ValueError(f"unknown role {role!r}")
+        return _fill(ENGINE_ROLE, matrix, engine=engines[role[len("engine-"):]])
+    if role not in ROLES:
+        raise ValueError(f"unknown role {role!r}")
+    return _fill(ROLES[role], matrix)
+
+
+def role_label(roles: Sequence[str], matrix: Matrix) -> str:
+    """A pick card's label: fastest-top and the engine roles drop beside fastest, rank-long beside rank; the first
+    kept role's words, then the others' with a lower-case first letter, joined with ", " and " and "."""
+    kept = [role for role in roles
+            if not ((role == "fastest-top" or role.startswith("engine-")) and "fastest" in roles)
+            and not (role == "rank-long" and "rank" in roles)]
+    words = [role_words(role, matrix) for role in kept]
+    return _joined([words[0], *(word[:1].lower() + word[1:] for word in words[1:])])
+
+
+def picks_line(picks: Sequence[Pick], matrix: Matrix) -> str:
+    """The picks after the count line and in the static lists; "" without cards."""
+    if not picks:
+        return ""
+    engines = {runtime.id: runtime.label for runtime in matrix.runtimes}
+    return "Picks: " + "; ".join(f"{pick.label}: {pick.model} on {engines[pick.runtime]}" for pick in picks) + "."
+
+
+def filter_count(filters: Filters) -> int:
+    """The filters that are set; the search does not count."""
+    return sum(1 for value in (filters.engines, filters.statuses, filters.must_pass, filters.context, filters.thinking,
+                               filters.tools, filters.ram) if value is not None)
+
+
+def filters_label(filters: Filters) -> str:
+    n = filter_count(filters)
+    return f"Filters ({n})" if n else "Filters"
+
+
+def show_label(rows: int) -> str:
+    return f"Show {_counted(rows, 'model', 'models')}"
+
+
+def match_line(rows: int) -> str:
+    return f"{_counted(rows, 'model matches', 'models match')}."
+
+
+def caption_line(use: UseCase, sort: str, matrix: Matrix) -> str:
+    return (f"Decode speed, context and client results of each model on each engine. View: {view_name(use, matrix)}; "
+            f"sorted by: {sort_label(sort, matrix)}.")
+
+
+def print_line(use: UseCase, sort: str, filters: Filters, matrix: Matrix) -> str:
+    """The print line; a search that is not empty once trimmed of ASCII_SPACE counts as a filter here."""
+    n = filter_count(filters) + (1 if filters.search.strip(ASCII_SPACE) else 0)
+    active = f"; {_counted(n, 'filter', 'filters')} active" if n else ""
+    return f"View: {view_name(use, matrix)}; sorted by: {sort_label(sort, matrix)}{active}."
 
 
 def _classes(cell: Cell) -> dict[str, str]:
@@ -927,10 +1038,10 @@ def view(matrix: Matrix, use: str, filters: Filters, sort: str | None) -> View:
     rows = tuple(model.id for model, _ in shown)
     cells = tuple((model.id, cell.runtime) for model, cells in shown for cell in cells)
     if case.sort == "gap":
-        head = f"{case.chip}: {_counted(len(rows), 'model', 'models')}."
+        head = f"{view_name(case, matrix)}: {_counted(len(rows), 'model', 'models')}."
         gapped = sorted((model for model, _ in shown if _gap(model) is not None), key=lambda model: place(model, "gap"))
         return View(rows, cells, head, (_gap_phrase(gapped[0], labels),) if gapped else ())
-    head = (f"{case.chip}: {_counted(len(rows), 'model', 'models')}, "
+    head = (f"{view_name(case, matrix)}: {_counted(len(rows), 'model', 'models')}, "
             f"{_counted(len(runs), 'recipe that runs', 'recipes that run')}.")
     if not runs:
         return View(rows, cells, head, (NO_BEST,))
