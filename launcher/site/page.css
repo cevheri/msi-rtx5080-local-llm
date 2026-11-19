@@ -324,6 +324,28 @@ html:not(.js) .hint-copy { display: none; }
 .tl .c:not(:first-child) { margin-top: 10px; }
 .tl .c + .x, .tl .x + .c { margin-top: 0; }
 .tl .p { color: var(--term-dim); margin-right: 1ch; user-select: none; }
+/* The script's command lines: a button that copies its command, "Copy" shown on hover and focus (spec 7.6) */
+button.x {
+  width: 100%; margin: 0; border: 0; background: transparent; color: var(--term-ink); font: inherit; text-align: left; cursor: pointer;
+  border-radius: 0;
+}
+button.x:hover { background: rgba(92, 211, 230, .10); }
+button.x:focus-visible { outline: 2px solid var(--term-hi); outline-offset: -2px; background: rgba(92, 211, 230, .10); }
+.x .cp { margin-left: auto; padding-left: 32px; font: 600 13px/inherit var(--font-sans); color: var(--term-dim); visibility: hidden; }
+button.x:hover .cp, button.x:focus-visible .cp { visibility: visible; }
+button.x.done .cp { visibility: visible; color: var(--term-hi); }
+.x.chg .t { text-decoration: underline 2px var(--term-hi); text-underline-offset: 5px; }
+
+/* Motion, none under reduced motion (spec 8.4): the verdicts cross-fade, the drawings wipe in from the left and a
+   changed command's underline fades */
+@media (prefers-reduced-motion: no-preference) {
+  .fade { animation: fade 120ms var(--ease) both; }
+  .wipe { animation: wipe 240ms var(--ease) both; }
+  .x.chg .t { animation: hi 600ms var(--ease) both; }
+}
+@keyframes fade { from { opacity: 0; } }
+@keyframes wipe { from { clip-path: inset(0 100% 0 0); } }
+@keyframes hi { to { text-decoration-color: transparent; } }
 .tnotes { list-style: none; margin-top: 16px; max-width: 52em; }
 .tnotes li { position: relative; padding-left: 18px; font-size: var(--t-small); line-height: 1.5; color: var(--ink-2); }
 .tnotes li + li { margin-top: 6px; }

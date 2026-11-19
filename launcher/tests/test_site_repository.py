@@ -8,9 +8,10 @@ from launcher import clients, markdown
 from launcher.catalog import load_catalog
 from launcher.e2e import summary
 from launcher.runtimes import ADAPTERS
-from launcher.site import data, fit, render, words
+from launcher.site import data, fit, render, state, words
 from launcher.tests.fakes import REPO
 from launcher.tests.site_fixture import well_formed_problems
+from launcher.tests.test_site_state import HERO_TEXTS, text_of
 
 
 class SiteRepositoryTest(unittest.TestCase):
@@ -81,6 +82,21 @@ class SiteRepositoryTest(unittest.TestCase):
     def test_the_ranking_answer_rests_on_the_decision_summary(self):
         summary = " ".join(markdown.section(REPO, "docs/model-selection.md#decision-summary"))
         self.assertIn("one forced swap so that the DeepSeek family is represented", summary)
+
+    def test_pages_stay_within_the_size_budget(self):
+        pages = render.site(data.load(REPO), data.Build("https://github.com/cevheri/msi-rtx5080-local-llm", "0" * 40, 0), REPO)
+        sizes = {path: len(page.encode("utf-8")) for path, page in pages.items()}
+        self.assertLessEqual(sizes.pop("index.html"), 220_000)
+        self.assertEqual([p for p, n in sizes.items() if n > 120_000], [])
+
+    def test_the_hero_never_says_setups_or_your_before_input(self):
+        matrix = data.load(REPO)
+        b, labels = fit.bench(matrix), words.labels(matrix)
+        st = state.home_state(matrix, b, labels, render.Links(REPO, data.Build("https://github.com/o/r", "0" * 40, 0)))
+        hero = {record[i] for row in st["hero"] for record in row for i in HERO_TEXTS if record[i] >= 0}
+        lap = {record[i] for record in st["heroLap"] for i in HERO_TEXTS if record[i] >= 0}
+        self.assertFalse([t for t in map(text_of, (st["S"][i] for i in hero | lap)) if re.search(r"\bsetups\b", t)])
+        self.assertFalse([t for t in map(text_of, (st["S"][i] for i in lap)) if re.search(r"\byour\b", t, re.I)])
 
 
 if __name__ == "__main__":

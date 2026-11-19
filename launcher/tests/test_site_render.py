@@ -232,6 +232,7 @@ class SiteRenderTest(unittest.TestCase):
                 self.assertEqual([t for t in ("<script", "<style", "<link") if t in page and page.index(t) < policy_at], [])
                 policy = next(n.attrs["content"] for n in tree.find_all("meta") if n.attrs.get("http-equiv") == "Content-Security-Policy")
                 scripts = [n.text() for n in tree.find_all("script") if n.attrs.get("type") != "application/json"]
+                self.assertEqual(len(scripts), 2)              # the head script and page.js (spec 8.1)
                 style = tree.find_all("style")[0].text()
                 head = f"script-src {' '.join(sha(s) for s in scripts)}; " if scripts else ""
                 self.assertEqual(policy, f"default-src 'none'; {head}style-src {sha(style)}; img-src data:; base-uri 'none'; "
@@ -577,6 +578,16 @@ class SiteRenderTest(unittest.TestCase):
         evidence = [a.attrs["href"] for a in tree.by_id("evidence").find_all("a")]
         self.assertEqual(evidence[2], BLOB + "/research/2026-11-18/llmctl-fixture-e2e/summary.md")   # M18
         self.assertEqual([n.attrs["class"] for n in tree.by_id("engines").find_all("p", "vw")], ["vw ok", "vw ok"])
+
+    def test_engines_list_is_no_radio_group_without_script(self):
+        # the lead's ruling on Task 7's deferred minor: the radios are hidden without script, so the static list has
+        # no radio group role; page.js sets it when it reveals them (test_site_state)
+        for path, page in self.pages().items():
+            if path.startswith("models/"):
+                engs = parse(page).find_all("div", "engs")[0]
+                with self.subTest(page=path):
+                    self.assertNotIn("role", engs.attrs)
+                    self.assertNotIn("aria-labelledby", engs.attrs)
 
     def test_model_page_chooses_the_row_setup(self):
         # spec 4.4: the chosen engine is the model's row setup on the laptop, not its default engine

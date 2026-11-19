@@ -36,7 +36,7 @@ RAM_GEOMETRY: Mapping[str, Mapping[str, tuple[int, int, int]]] = {
              "end": (-2, 14, 0)},
 }
 RAM_HEIGHT = {"map": 28, "mini": 10}
-_MARK_WIDTH = {"tk": "1", "end": "2"}  # the hairline and the end mark are drawn in pixels, not percentages
+MARK_WIDTH = {"tk": "1", "end": "2"}  # the hairline and the end mark are drawn in pixels, not percentages
 
 
 def fill(setup: fit.Setup, machine: fit.Machine, test_gpu: int) -> tuple[Fraction, bool]:
@@ -161,7 +161,7 @@ def ram_svg(bar: tuple[tuple[str, str, str | None], ...], size: str) -> str:
     rects = []
     for cls, x, width in bar:
         y, height, rx = geometry[cls]
-        attrs = f'class="{cls}" x="{x}" y="{y}" width="{_MARK_WIDTH[cls] if width is None else width}" height="{height}"'
+        attrs = f'class="{cls}" x="{x}" y="{y}" width="{MARK_WIDTH[cls] if width is None else width}" height="{height}"'
         corner = f' rx="{rx}"' if rx else ""
         rects.append(f"<rect {attrs}{corner}></rect>")
     return (f'<svg class="ram-bar" width="100%" height="{RAM_HEIGHT[size]}" aria-hidden="true" focusable="false">'

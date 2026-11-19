@@ -417,7 +417,9 @@ class _Home:
 
 
 def _speed_unit(decode: float | None) -> str:
-    return "" if decode is None else f' <span class="unit">{_e(words.SPEED_UNIT)}</span>'
+    """The unit after a speed, hidden when it is not measured (H9, P17); the script shows or hides it per setup."""
+    hidden = " hidden" if decode is None else ""
+    return f'<span class="spu"{hidden}> <span class="unit">{_e(words.SPEED_UNIT)}</span></span>'
 
 
 def hero_html(home: _Home) -> str:
@@ -500,9 +502,9 @@ def _row_html(home: _Home, model: data.Model, scale: int) -> str:
         f'<span class="vh">{_e(hidden["context"])}</span></span><span class="sep">, </span>'
         f'<span class="num n dl"><b>{_e(words.gb_bytes(facts.size_bytes))}</b> <span class="unit">{_e(words.GB_UNIT)}'
         f'</span><span class="vh">{_e(hidden["download"])}</span></span></div>'
-        f'<div class="more"><span class="vh">{_e(words.agents_head(agent, labels))}: </span>'
+        f'<div class="more"><span class="vh"><span class="agp">{_e(words.agents_head(agent, labels))}</span>: </span>'
         f'<span class="ag">{_e(words.agents_cell(cell.clients, labels, setup.chat_only, agent))}</span>'
-        f'<span class="dot">. </span><span class="vh">{_e(words.machine_head(True))}: </span>'
+        f'<span class="dot">. </span><span class="vh"><span class="vdp">{_e(words.machine_head(True))}</span>: </span>'
         f'<span class="vd{" ok" if verdict.key == "ok" else ""}">{_e(words.verdict_word(verdict.key, labels))}</span>'
         '<span class="dot">.</span></div></li>')
 
@@ -576,6 +578,7 @@ def compare_html(home: _Home) -> str:
     with its speed, agents, lead and strip on the laptop, the others saying why they don't run."""
     matrix, bench, labels, machine, agent = home.matrix, home.bench, home.labels, home.bench.home, fit.DEFAULT_AGENT
     setups = {setup.key: setup for setup in bench.setups}
+    setup_index = {setup.key: n for n, setup in enumerate(bench.setups)}      # the state's setup order
     scale = draw.scale(bench, machine)
     heads = (words.engine_head(runtime, n == 0) for n, runtime in enumerate(matrix.runtimes))
     head = "".join(f'<th scope="col"><b>{_e(label)}</b> {_e(detail)}</th>' for label, detail in heads)
@@ -592,7 +595,7 @@ def compare_html(home: _Home) -> str:
         lead = words.lead_words(model, cell, labels)
         strip = draw.strip(setup, machine, bench.test_gpu, scale)
         href = _page_href(f"/models/{model.id}/#engine-{runtime.id}", HOME)
-        return (f'<td><a class="cell" href="{_e(href)}">{label}<span class="sp">{_e(words.speed(facts.decode))}'
+        return (f'<td><a class="cell" href="{_e(href)}" data-s="{setup_index[setup.key]}">{label}<span class="sp">{_e(words.speed(facts.decode))}'
                 f'{_speed_unit(facts.decode)}<span class="cx2">, {_e(words.context_k(facts.context))}</span></span>'
                 f'<span class="sub2 ags">'
                 f'{_e(words.compare_agents(cell.clients, labels, setup.chat_only, runtime.id, agent))}</span>'
@@ -799,7 +802,8 @@ def _why_html(page: _ModelPage, cell: data.Cell) -> str:
 
 
 def _engines_html(page: _ModelPage) -> str:
-    """Engines (spec 3.3, M15): one row per engine, the chosen one marked, the ones that don't run saying why."""
+    """Engines (spec 3.3, M15): one row per engine, the chosen one marked, the ones that don't run saying why. The
+    list is no radio group without script, whose radios are hidden; page.js makes it one when it shows them."""
     model, labels, machine = page.model, page.labels, page.bench.home
     scale = draw.scale(page.bench, machine)
     rows = []
@@ -830,7 +834,7 @@ def _engines_html(page: _ModelPage) -> str:
             "</div></div>")
     return (f'<section class="m-sec" id="engines" aria-labelledby="h-engines">'
             f'<h2 id="h-engines">{_e(words.ENGINES_HEADING)}</h2>'
-            f'<div class="engs" role="radiogroup" aria-labelledby="h-engines">{"".join(rows)}</div></section>')
+            f'<div class="engs">{"".join(rows)}</div></section>')
 
 
 def _agents_html(page: _ModelPage) -> str:
@@ -910,17 +914,25 @@ def model_html(matrix: data.Matrix, bench: fit.Bench, labels: words.Labels, mode
 
 def site(matrix: data.Matrix, build: Build, root: Path) -> dict[str, str]:
     """Every page of the site by its path under --out: the home, then one page per model (spec 3.1 and 10)."""
+    # state imports this module for Links and _href, so it is imported here: a module-level import both ways stops
+    # the import on Python 3.11 to 3.13, which evaluate state's annotations while render is half initialized
+    from launcher.site import state
+
     links = Links(root, build)
     check_notes(matrix, links)
     labels = words.labels(matrix)
     style = check_asset("page.css", (_ASSETS / "page.css").read_text(encoding="utf-8"), "style")
+    script = check_asset("page.js", (_ASSETS / "page.js").read_text(encoding="utf-8"), "script")
     bench = fit.bench(matrix)
     home = _Home(matrix, build, links, bench, labels, fit.hero_pick(bench, bench.home, fit.DEFAULT_AGENT))
     skip = f'<a class="skip" href="#models">{_e(words.SKIP_TO_MODELS)}</a>'
     body = "\n".join([skip, header_html(HOME, _nav(build)), _home_main(home), footer_html(matrix, build, links, HOME)])
-    pages = {HOME: document(title=words.HOME_TITLE, description=words.home_description(labels), body=body, style=style)}
+    pages = {HOME: document(title=words.HOME_TITLE, description=words.home_description(labels), body=body, style=style,
+                            scripts=(script,), state=state.dumps(state.home_state(matrix, bench, labels, links)))}
     for model in matrix.models:
         pages[_model_path(model.id)] = document(title=words.model_title(model.name),
                                                description=words.model_description(model.name, labels),
-                                               body=model_html(matrix, bench, labels, model, links), style=style)
+                                               body=model_html(matrix, bench, labels, model, links), style=style,
+                                               scripts=(script,),
+                                               state=state.dumps(state.model_state(matrix, bench, labels, model, links)))
     return pages
