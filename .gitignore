@@ -6,5 +6,5 @@ __pycache__/
 *.pyc
 docs/superpowers/
 
-# The runtime matrix page that python3 -m launcher.site build writes.
+# The model guide that python3 -m launcher.site build writes.
 _site/

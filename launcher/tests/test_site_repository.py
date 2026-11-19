@@ -1,15 +1,17 @@
-"""The runtime matrix page built from the real repository: invariants only, never today's values (design D14)."""
+"""The model guide built from the real repository: invariants only, never today's values (design D14)."""
 
 import json
+import re
 import unittest
 
-from launcher import clients
+from launcher import clients, markdown
 from launcher.catalog import load_catalog
 from launcher.e2e import summary
 from launcher.runtimes import ADAPTERS
-from launcher.site import data, render
+from launcher.site import data, fit, render, state, words
 from launcher.tests.fakes import REPO
 from launcher.tests.site_fixture import well_formed_problems
+from launcher.tests.test_site_state import HERO_TEXTS, text_of
 
 
 class SiteRepositoryTest(unittest.TestCase):
@@ -26,9 +28,12 @@ class SiteRepositoryTest(unittest.TestCase):
                         self.assertIsNotNone(cell.recipe, cell.runtime)
                     else:
                         self.assertIsNone(cell.recipe, cell.runtime)
-        page = render.page(matrix, data.Build("https://github.com/cevheri/msi-rtx5080-local-llm", "0" * 40, 0), REPO)
-        self.assertEqual(well_formed_problems(page), [])
-        self.assertNotIn(str(REPO), page)
+        pages = render.site(matrix, data.Build("https://github.com/cevheri/msi-rtx5080-local-llm", "0" * 40, 0), REPO)
+        self.assertGreater(len(pages), 0)
+        for path, page in pages.items():
+            with self.subTest(page=path):
+                self.assertEqual(well_formed_problems(page), [])
+                self.assertNotIn(str(REPO), page)
 
     def test_supported_rule_matches_the_e2e_plan(self):
         from launcher.e2e import clients as e2e
@@ -50,14 +55,48 @@ class SiteRepositoryTest(unittest.TestCase):
                  if cell.status == "runs" and cell.recipe.opencode == matrix.opencode_default]
         self.assertEqual(pairs, [matrix.default])
 
-    def test_no_view_names_a_pair_twice(self):
+    def test_every_setup_names_its_model_alike(self):
+        for model in data.load(REPO).models:
+            for cell in model.cells:
+                if cell.status == "runs":
+                    with self.subTest(model=model.id, runtime=cell.runtime):
+                        self.assertEqual(data.display_name(cell.recipe.name, cell.recipe.file), model.name)
+
+    def test_every_state_has_a_pick_that_agrees_with_its_row(self):
+        b = fit.bench(data.load(REPO))
+        for m in fit.machines():
+            for agent in (*b.agents, fit.NONE):
+                with self.subTest(machine=m, agent=agent):
+                    pick = fit.hero_pick(b, m, agent)
+                    row = fit.row_setup(b, pick.setup.model, m)
+                    if row == pick.setup:
+                        self.assertEqual(fit.verdict(row, m, b.test_gpu).key, pick.verdict.key)
+                    if pick.verdict.key == "ok":
+                        self.assertEqual(fit.verdict(row, m, b.test_gpu).key, "ok")
+
+    def test_refusal_messages_are_llmctls(self):
+        _, rows = markdown.table(markdown.section(REPO, "docs/llmctl.md#when-up-refuses"), "Message starts with")
+        starts = {span for row in rows for span in re.findall(r"`([^`]+)`", row[0])}
+        self.assertEqual([message for message, _ in words.REFUSALS if message not in starts], [])
+
+    def test_the_ranking_answer_rests_on_the_decision_summary(self):
+        summary = " ".join(markdown.section(REPO, "docs/model-selection.md#decision-summary"))
+        self.assertIn("one forced swap so that the DeepSeek family is represented", summary)
+
+    def test_pages_stay_within_the_size_budget(self):
+        pages = render.site(data.load(REPO), data.Build("https://github.com/cevheri/msi-rtx5080-local-llm", "0" * 40, 0), REPO)
+        sizes = {path: len(page.encode("utf-8")) for path, page in pages.items()}
+        self.assertLessEqual(sizes.pop("index.html"), 220_000)
+        self.assertEqual([p for p, n in sizes.items() if n > 120_000], [])
+
+    def test_the_hero_never_says_setups_or_your_before_input(self):
         matrix = data.load(REPO)
-        for use in data.USE_CASES:
-            for sort, _ in data.SORTS:
-                with self.subTest(use=use.id, sort=sort):
-                    picks = data.view(matrix, use.id, data.Filters(), sort).picks
-                    self.assertLessEqual(len(picks), 3)
-                    self.assertEqual(len({(pick.model, pick.runtime) for pick in picks}), len(picks))
+        b, labels = fit.bench(matrix), words.labels(matrix)
+        st = state.home_state(matrix, b, labels, render.Links(REPO, data.Build("https://github.com/o/r", "0" * 40, 0)))
+        hero = {record[i] for row in st["hero"] for record in row for i in HERO_TEXTS if record[i] >= 0}
+        lap = {record[i] for record in st["heroLap"] for i in HERO_TEXTS if record[i] >= 0}
+        self.assertFalse([t for t in map(text_of, (st["S"][i] for i in hero | lap)) if re.search(r"\bsetups\b", t)])
+        self.assertFalse([t for t in map(text_of, (st["S"][i] for i in lap)) if re.search(r"\byour\b", t, re.I)])
 
 
 if __name__ == "__main__":

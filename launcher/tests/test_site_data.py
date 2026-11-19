@@ -1,4 +1,4 @@
-"""The runtime matrix page's sources: the shipped catalog, the runtime coverage table and the Top 10 (design D4, D5,
+"""The model guide's sources: the shipped catalog, the runtime coverage table and the Top 10 (design D4, D5,
 D13), loaded from a small fixture repository."""
 
 import dataclasses
@@ -32,19 +32,6 @@ def strings(value):
     elif isinstance(value, tuple):
         for item in value:
             yield from strings(item)
-
-
-def order(matrix, key):
-    """The Runs cells, as (model ID, runtime), sorted by their place in one cell order."""
-    places = {(m.id, c.runtime): dict(c.positions)[key] for m in matrix.models for c in m.cells if c.positions}
-    return sorted(places, key=places.get)
-
-
-def cards(matrix, use, filters=data.Filters(), sort=None):
-    """(label, model, runtime) of each pick of a view, computed over that view's cells and its effective sort."""
-    key = sort or next(u.sort for u in data.USE_CASES if u.id == use)
-    found = data.view(matrix, use, filters, sort)
-    return [(p.label, p.model, p.runtime) for p in data.picks(matrix, use, found.cells, key)]
 
 
 class SiteDataTest(unittest.TestCase):
@@ -139,11 +126,26 @@ class SiteDataTest(unittest.TestCase):
         self.assertStops(fixture, "llama.cpp")
 
     def test_failed_and_does_not_fit_cells_need_their_labels(self):
-        for text in ("Failed: crashed", "Does not fit: too big", "Unknown: x", ""):
+        where = "docs/model-selection.md: row deepseek-r1-0528-qwen3-8b, column SGLang: "
+        for text, need in (("Failed: crashed", "a Failed: cell needs the date of its measurement as measured YYYY-MM-DD"),
+                           ("Does not fit: too big", "a Does not fit: cell needs the label (estimate)"),
+                           ("Unknown: x", None), ("", None)):
             with self.subTest(cell=text):
                 fixture = self.fresh()
                 fixture.coverage({("deepseek-r1-0528-qwen3-8b", "sglang"): text})
-                self.assertStops(fixture, "row deepseek-r1-0528-qwen3-8b, column SGLang")
+                message = self.assertStops(fixture, "row deepseek-r1-0528-qwen3-8b, column SGLang")
+                if need is not None:
+                    self.assertEqual(message, where + need)
+
+    def test_cells_that_do_not_run_link_their_source(self):
+        for key, text, word in ((("deepseek-r1-0528-qwen3-8b", "sglang"), "Failed: out of memory, measured 2026-11-17", "Failed:"),
+                                (("k2-horizon-7b", "vllm"), "Does not fit: too large for the budget (estimate)", "Does not fit:")):
+            with self.subTest(cell=key):
+                fixture = self.fresh()
+                fixture.coverage({key: text})
+                label = {"sglang": "SGLang", "vllm": "vLLM"}[key[1]]
+                self.assertEqual(self.assertStops(fixture, "needs a link"), f"docs/model-selection.md: row {key[0]}, column "
+                                                                             f"{label}: a {word} cell needs a link to its source")
 
     def test_catalog_problems_stop_the_build(self):
         (self.fixture.root / "recipes/llamacpp/broken.toml").write_text("id = [\n", encoding="utf-8")
@@ -198,8 +200,10 @@ class SiteDataTest(unittest.TestCase):
         catalog = data.shipped_catalog(self.fixture.root)
         rows = [TOP10_ROW.format(rank=rank, id=model_id, repo=catalog.runtimes["llamacpp"].recipes[model_id].model.repo)
                 for rank, model_id in enumerate(TOP10_IDS, start=1)]
-        self.fixture.top10([*rows, "| 4 | [Unshipped](https://huggingface.co/org/unshipped) | llama.cpp |"])
-        self.assertEqual(self.fixture.load().top, 4)
+        self.fixture.top10([*rows, "| 4 | [Unshipped](https://huggingface.co/org/unshipped) | Vendor 4 | 1B dense "
+                                   "| llama.cpp | MIT |"])
+        self.assertStops(self.fixture, "docs/model-selection.md#top-10: rank 4 ([Unshipped](https://huggingface.co/org/unshipped)) "
+                                       "has no shipped recipe; the page lists only models llmctl can start")
 
     def test_opencode_default_is_read_from_the_validated_config(self):
         matrix = self.fixture.load()
@@ -271,13 +275,6 @@ class SiteDataTest(unittest.TestCase):
         self.fixture.opencode(config_section())
         with self.assertRaisesRegex(data.SiteError, re.escape("llamacpp-docker/qwen3.6-35b-a3b names 2 OpenCode entries")):
             self.fixture.load()
-
-    def test_client_letters_must_be_unique(self):
-        labels = {"pi": "Pi", "pio": "Pio", "kimi": "Kimi"}
-        self.assertEqual(data.client_letters(("pi", "kimi"), labels, {}), {"pi": "P", "kimi": "K"})
-        with self.assertRaisesRegex(data.SiteError, r"pi.*pio.*LETTERS"):
-            data.client_letters(("pi", "pio"), labels, {})
-        self.assertEqual(data.client_letters(("pi", "pio"), labels, {"pio": "Q"}), {"pi": "P", "pio": "Q"})
 
     def test_model_holds_no_absolute_path(self):
         self.assertEqual([s for s in strings(self.fixture.load()) if s.startswith("/")], [])
@@ -608,402 +605,211 @@ class SiteDataTest(unittest.TestCase):
         self.assertEqual([data.speed_text(x) for x in (66.0, 257.2, 70.55, 100.0, 36.4)],
                          ["66.0", "257.2", "70.55", "100.0", "36.4"])
 
-    def test_lead_gap_and_bar(self):
+    def test_lead_of_the_fastest_engine(self):
         m = self.fixture.load()
         labels = {runtime.id: runtime.label for runtime in m.runtimes}
         lead = lambda matrix, model_id, runtime: data.lead(model_of(matrix, model_id), cell_of(matrix, model_id, runtime), labels)
-        gap = lambda matrix, model_id: data.gap_text(model_of(matrix, model_id), labels)
         self.assertEqual((lead(m, "qwen3.6-35b-a3b", "sglang"), lead(m, "gpt-oss-20b", "llamacpp"),
                           lead(m, "qwen3.6-35b-a3b", "llamacpp")),
                          (("24%", "fastest, 24% ahead of llama.cpp"), ("33%", "fastest, 33% ahead of SGLang"), None))
-        self.assertEqual([gap(m, i) for i in ("qwen3.6-35b-a3b", "gpt-oss-20b", "deepseek-r1-0528-qwen3-8b", "k2-horizon-7b")],
-                         ["SGLang 24% ahead of llama.cpp", "llama.cpp 99% ahead of vLLM", "vLLM 3% ahead of llama.cpp", None])
-        self.assertEqual(data.top_speed(m), 188.2)
-        self.assertEqual([data.bar_width(x, 188.2) for x in (188.2, 151.3, 122.5, 83.5, None)], [100, 80, 65, 44, 0])
-        self.assertEqual([data.bar_width(1.0, 8.0), data.bar_width(3.0, 8.0), data.bar_width(50.0, None),
-                          data.bar_width(250.0, 200.0), data.bar_width(33.8, 104.0)],
-                         [13, 38, 0, 100, 33])                    # half up, clamped, exact (32 in floats)
         with self.assertRaisesRegex(ValueError, "unknown fastest tag 'Quickest'"):
             data.lead(model_of(m, "gpt-oss-20b"),
                       dataclasses.replace(cell_of(m, "gpt-oss-20b", "llamacpp"), fastest="Quickest"), labels)
-        cases = (  # gpt-oss-20b's speeds on llama.cpp, vLLM and SGLang; its gap words; the lead of each engine
-            (("100.0", "112.0", "112.0"), "vLLM and SGLang 12% ahead of llama.cpp",
-             (None, ("tied", "tied fastest with SGLang"), ("tied", "tied fastest with vLLM"))),
-            (("150.0", "100.0", "100.0"), "llama.cpp 50% ahead of vLLM and SGLang",
-             (("50%", "fastest, 50% ahead of vLLM and SGLang"), None, None)),
-            (("100.4", "100.0", "100.2"), "llama.cpp under 1% ahead of vLLM",
-             (("under 1%", "fastest, under 1% ahead of SGLang"), None, None)),
-            (("90.0", "90.0", "90.0"), "the same speed on llama.cpp, vLLM and SGLang",
+        cases = (  # gpt-oss-20b's speeds on llama.cpp, vLLM and SGLang; the lead of each engine
+            (("100.0", "112.0", "112.0"), (None, ("tied", "tied fastest with SGLang"), ("tied", "tied fastest with vLLM"))),
+            (("150.0", "100.0", "100.0"), (("50%", "fastest, 50% ahead of vLLM and SGLang"), None, None)),
+            (("100.4", "100.0", "100.2"), (("under 1%", "fastest, under 1% ahead of SGLang"), None, None)),
+            (("90.0", "90.0", "90.0"),
              (("tied", "tied fastest with vLLM and SGLang"), ("tied", "tied fastest with llama.cpp and SGLang"),
               ("tied", "tied fastest with llama.cpp and vLLM"))),
-            (("112.5", "100.0", None), "llama.cpp 13% ahead of vLLM", (("13%", "fastest, 13% ahead of vLLM"), None, None)),
-            (("51.0", "40.0", "45.0"), "llama.cpp 28% ahead of vLLM",    # exact: 27% in floats
-             (("13%", "fastest, 13% ahead of SGLang"), None, None)))
-        for speeds, words, leads in cases:
+            (("112.5", "100.0", None), (("13%", "fastest, 13% ahead of vLLM"), None, None)),
+            (("51.0", "40.0", "45.0"), (("13%", "fastest, 13% ahead of SGLang"), None, None)))
+        for speeds, leads in cases:
             fixture = self.fresh()
             for runtime, speed in zip(("llamacpp", "vllm", "sglang"), speeds):
                 fixture.set_value(runtime, "gpt-oss-20b", "decode_tok_s", speed)
             matrix = fixture.load()
             with self.subTest(speeds=speeds):
-                self.assertEqual(gap(matrix, "gpt-oss-20b"), words)
                 self.assertEqual(tuple(lead(matrix, "gpt-oss-20b", r) for r in ("llamacpp", "vllm", "sglang")), leads)
-        for runtime, recipe_id in RECIPES:
-            self.fixture.set_value(runtime, recipe_id, "decode_tok_s", None)
-        self.assertIsNone(data.top_speed(self.fixture.load()))
-
-    def test_cell_and_row_orders(self):
-        matrix = self.fixture.load()
-        self.assertEqual(order(matrix, "rank"), [("qwen3.6-35b-a3b", "sglang"), ("qwen3.6-35b-a3b", "llamacpp"),
-            ("gpt-oss-20b", "llamacpp"), ("gpt-oss-20b", "sglang"), ("gpt-oss-20b", "vllm"),
-            ("deepseek-r1-0528-qwen3-8b", "vllm"), ("deepseek-r1-0528-qwen3-8b", "llamacpp"), ("mellum2.1-12b", "llamacpp"),
-            ("qwen3-coder-next", "llamacpp"), ("k2-horizon-7b", "llamacpp")])
-        self.assertEqual(order(matrix, "context")[5:], [("qwen3-coder-next", "llamacpp"), ("k2-horizon-7b", "llamacpp"),
-            ("gpt-oss-20b", "vllm"), ("deepseek-r1-0528-qwen3-8b", "vllm"), ("deepseek-r1-0528-qwen3-8b", "llamacpp")])
-        catalog, engines = data.shipped_catalog(self.fixture.root), list(ADAPTERS)
-        size = lambda key: (catalog.runtimes[key[1]].recipes[key[0]].model.size_bytes, key[0], engines.index(key[1]))
-        self.assertEqual(order(matrix, "size"), sorted(order(matrix, "size"), key=size))
-        rows = {m.id: dict(m.positions) for m in matrix.models}
-        self.assertEqual(sorted(rows, key=lambda i: rows[i]["gap"]), ["gpt-oss-20b", "qwen3.6-35b-a3b",
-            "deepseek-r1-0528-qwen3-8b", "k2-horizon-7b", "mellum2.1-12b", "qwen3-coder-next"])
-        self.assertEqual(sorted(rows, key=lambda i: rows[i]["name"]), sorted(rows))
-        self.fixture.set_value("sglang", "gpt-oss-20b", "decode_tok_s", None)         # no speed: last within its group
-        self.fixture.set_value("llamacpp", "qwen3-coder-next", "decode_tok_s", "70.6")  # a tie: model ID decides
-        matrix = self.fixture.load()
-        self.assertEqual(order(matrix, "rank")[2:5], [("gpt-oss-20b", "llamacpp"), ("gpt-oss-20b", "vllm"), ("gpt-oss-20b", "sglang")])
-        self.assertEqual(order(matrix, "speed")[-4:], [("deepseek-r1-0528-qwen3-8b", "llamacpp"), ("qwen3-coder-next", "llamacpp"),
-            ("k2-horizon-7b", "llamacpp"), ("gpt-oss-20b", "sglang")])
-        self.assertEqual(order(matrix, "context")[:6], [("mellum2.1-12b", "llamacpp"), ("gpt-oss-20b", "llamacpp"),
-            ("qwen3.6-35b-a3b", "sglang"), ("qwen3.6-35b-a3b", "llamacpp"), ("qwen3-coder-next", "llamacpp"), ("gpt-oss-20b", "sglang")])
-        self.fixture.set_value("llamacpp", "gpt-oss-20b", "decode_tok_s", "72.5")  # a tie across models: ID before engine
-        self.assertEqual(order(self.fixture.load(), "speed")[3:6], [("gpt-oss-20b", "vllm"),
-            ("deepseek-r1-0528-qwen3-8b", "vllm"), ("gpt-oss-20b", "llamacpp")])
-
-    def test_use_case_membership(self):
-        matrix = self.fixture.load()
-        model, cell = model_of(matrix, "qwen3.6-35b-a3b"), cell_of(matrix, "qwen3.6-35b-a3b", "llamacpp")
-        recipe = lambda **changes: dataclasses.replace(cell, recipe=dataclasses.replace(cell.recipe, **changes))
-        classes = lambda **changes: dataclasses.replace(cell, clients=tuple(
-            dataclasses.replace(r, cls=changes.get(r.client, r.cls)) for r in cell.clients))
-        uses = lambda c, m=model: data.use_cases_of(m, c)
-        self.assertEqual(uses(cell), ("opencode", "quality", "fastest", "long-context", "every-client", "compare"))
-        self.assertEqual([u.id for u in data.USE_CASES], ["", "opencode", "quality", "fastest", "long-context",
-                                                          "every-client", "compare"])
-        self.assertIn("opencode", uses(recipe(context=65536)))
-        self.assertNotIn("opencode", uses(recipe(context=65535)))
-        self.assertNotIn("opencode", uses(recipe(chat_only=True)))
-        self.assertNotIn("opencode", uses(classes(opencode="known-issue")))
-        self.assertIn("quality", uses(cell, dataclasses.replace(model, rank=1)))
-        self.assertNotIn("quality", uses(cell, dataclasses.replace(model, rank=None)))
-        self.assertIn("fastest", uses(recipe(decode=None, context=1024, chat_only=True)))
-        self.assertIn("long-context", uses(recipe(context=131072)))
-        self.assertNotIn("long-context", uses(recipe(context=130048)))
-        self.assertTrue(all(r.cls == "passed" for r in cell.clients))
-        self.assertIn("every-client", uses(cell))
-        self.assertNotIn("every-client", uses(classes(kimi="not-supported")))
-        self.assertIn("compare", uses(cell))
-        unmeasured = tuple(dataclasses.replace(c, recipe=dataclasses.replace(c.recipe, decode=None))
-                           if c.runtime == "sglang" else c for c in model.cells)                # Runs cells, not speeds
-        self.assertIn("compare", uses(cell, dataclasses.replace(model, cells=unmeasured)))
-        self.assertNotIn("compare", uses(cell, dataclasses.replace(model, cells=tuple(
-            c for c in model.cells if c.runtime != "sglang"))))
-        self.assertEqual(uses(cell_of(matrix, "deepseek-r1-0528-qwen3-8b", "sglang"),
-                              model_of(matrix, "deepseek-r1-0528-qwen3-8b")), ())
-        self.assertEqual(uses(recipe(context=65536), dataclasses.replace(model, rank=None)),
-                         ("opencode", "fastest", "every-client", "compare"))
-        self.assertEqual(cell.uses, uses(cell))
-        self.assertEqual(data.rule_line(data.USE_CASES[5], matrix),
-                         "Pairs whose latest session passed in OpenCode, Hermes, Pi, dsh and Kimi.")
-        self.assertEqual(data.rule_line(data.USE_CASES[3], matrix), "Every pair that runs, fastest decode first.")
-
-    def test_view_names_rules_and_sort_labels_come_from_the_data(self):
-        m = self.fixture.load()
-        self.assertEqual([data.view_name(u, m) for u in data.USE_CASES],
-                         ["All models", "Coding in OpenCode", "Top 3 models", "Fastest decode", "128k context",
-                          "Passed in all 5 clients", "Compare engines"])
-        self.assertEqual([data.rule_line(u, m) for u in data.USE_CASES],
-                         ["", "Tool calling, at least 64k of context (OpenCode's practical minimum), and the latest OpenCode "
-                          "session passed.", "Models in the Top 3 that run here.", "Every pair that runs, fastest decode first.",
-                          "Pairs that hold 128k tokens.", "Pairs whose latest session passed in OpenCode, Hermes, Pi, dsh and Kimi.",
-                          "Models that run on two or more engines, biggest speed difference first."])
-        self.assertEqual([(u.id, u.sort, u.roles) for u in data.USE_CASES],
-                         [("", "rank", ("rank", "fastest", "fastest-top")), ("opencode", "rank", ("default", "rank", "fastest")),
-                          ("quality", "rank", ("rank", "rank-long", "fastest-top")), ("fastest", "speed", ("engines",)),
-                          ("long-context", "rank", ("rank", "fastest", "fastest-top")),
-                          ("every-client", "rank", ("rank", "fastest", "size")), ("compare", "gap", ("gap", "rank", "fastest"))])
-        self.assertEqual([data.sort_label(key, m) for key, _ in data.SORTS],
-                         ["Top 3 rank, then speed", "Fastest first", "Longest context first", "Smallest download first",
-                          "Biggest engine difference first", "Model ID, A to Z"])
-        self.assertEqual({role: data.role_words(role, m) for role in data.ROLES},
-                         {"rank": "Highest ranked", "fastest": "Fastest", "fastest-top": "Fastest in the Top 3",
-                          "rank-long": "Highest ranked at 128k", "default": "Default in the OpenCode config",
-                          "size": "Smallest download", "gap": "Biggest engine difference", "next-rank": "Next by Top 3 rank",
-                          "next-speed": "Next by speed", "next-context": "Next by context", "next-size": "Next by download size",
-                          "next-gap": "Next by engine difference", "next-name": "Next by model ID"})
-        self.assertEqual(list(data.ROLES), ["rank", "fastest", "fastest-top", "rank-long", "default", "size", "gap", "next-rank",
-                                            "next-speed", "next-context", "next-size", "next-gap", "next-name"])
-        self.assertEqual([data.role_words(f"engine-{r.id}", m) for r in m.runtimes],
-                         ["Fastest on llama.cpp", "Fastest on vLLM", "Fastest on SGLang"])
-        for roles, label in ((("rank", "fastest", "fastest-top"), "Highest ranked and fastest"), (("rank", "rank-long"), "Highest ranked"),
-                             (("gap", "rank", "fastest"), "Biggest engine difference, highest ranked and fastest"),
-                             (("fastest", "engine-vllm"), "Fastest"), (("default", "rank"), "Default in the OpenCode config and highest ranked"),
-                             (("next-gap",), "Next by engine difference"),
-                             (("rank-long", "fastest-top"), "Highest ranked at 128k and fastest in the Top 3"),
-                             (("engine-vllm",), "Fastest on vLLM")):
-            self.assertEqual(data.role_label(roles, m), label)
-        for bad in (lambda: data.role_words("bogus", m), lambda: data.role_words("engine-bogus", m),
-                    lambda: data.sort_label("bogus", m)):
-            with self.assertRaises(ValueError):
-                bad()
-        twelve = dataclasses.replace(m, top=12)
-        self.assertEqual((data.view_name(data.USE_CASES[2], twelve), data.rule_line(data.USE_CASES[2], twelve),
-                          data.sort_label("rank", twelve), data.role_words("fastest-top", twelve), data.role_words("next-rank", twelve)),
-                         ("Top 12 models", "Models in the Top 12 that run here.", "Top 12 rank, then speed", "Fastest in the Top 12",
-                          "Next by Top 12 rank"))
-        six = dataclasses.replace(m, clients=m.clients + (data.Client("zed", "Zed", "Z", ()),))
-        self.assertEqual((data.view_name(data.USE_CASES[5], six), data.rule_line(data.USE_CASES[5], six)),
-                         ("Passed in all 6 clients", "Pairs whose latest session passed in OpenCode, Hermes, Pi, dsh, Kimi and Zed."))
-        oc = dataclasses.replace(m, clients=tuple(dataclasses.replace(c, label="OC") if c.id == "opencode" else c for c in m.clients))
-        self.assertEqual((data.view_name(data.USE_CASES[1], oc), data.rule_line(data.USE_CASES[1], oc), data.role_words("default", oc)),
-                         ("Coding in OC", "Tool calling, at least 64k of context (OC's practical minimum), and the latest OC session "
-                          "passed.", "Default in the OC config"))
-
-    def test_script_strings(self):
-        m, F = self.fixture.load(), data.Filters
-        each = (F(engines=("vllm",)), F(engines=()), F(statuses=("runs",)), F(must_pass="kimi"), F(context=128),
-                F(thinking=("toggle",)), F(tools="yes"), F(ram=20))
-        self.assertEqual([data.filter_count(f) for f in (F(), F(search="qwen"), F(search=" \t "), *each)], [0, 0, 0] + [1] * 8)
-        self.assertEqual(data.filter_count(F(search="q", engines=("vllm",), statuses=("runs",), must_pass="every", context=64,
-                                             thinking=(), tools="no", ram=16)), 7)
-        self.assertEqual((data.filters_label(F()), data.filters_label(F(ram=20, tools="no"))), ("Filters", "Filters (2)"))
-        self.assertEqual([data.show_label(n) for n in (15, 1, 0)], ["Show 15 models", "Show 1 model", "Show 0 models"])
-        self.assertEqual([data.match_line(n) for n in (10, 1, 0)], ["10 models match.", "1 model matches.", "0 models match."])
-        head = "Decode speed, context and client results of each model on each engine. View: "
-        self.assertEqual(data.caption_line(data.USE_CASES[0], "rank", m), head + "All models; sorted by: Top 3 rank, then speed.")
-        self.assertEqual(data.caption_line(data.USE_CASES[6], "name", m), head + "Compare engines; sorted by: Model ID, A to Z.")
-        for filters, tail in ((F(), "."), (F(search=" \t "), "."), (F(search="qwen"), "; 1 filter active."),
-                              (F(search="\xa0"), "; 1 filter active."), (F(ram=20), "; 1 filter active."),
-                              (F(search="qwen", ram=20, tools="no"), "; 3 filters active.")):
-            with self.subTest(filters=filters):
-                self.assertEqual(data.print_line(data.USE_CASES[3], "speed", filters, m),
-                                 "View: Fastest decode; sorted by: Fastest first" + tail)
-        two = (data.Pick(("rank", "fastest"), "Highest ranked and fastest", "qwen3.6-35b-a3b", "sglang"),
-               data.Pick(("next-rank",), "Next by Top 3 rank", "qwen3.6-35b-a3b", "llamacpp"))
-        self.assertEqual(data.picks_line(two, m), "Picks: Highest ranked and fastest: qwen3.6-35b-a3b on SGLang; "
-                                                  "Next by Top 3 rank: qwen3.6-35b-a3b on llama.cpp.")
-        self.assertEqual(data.picks_line((), m), "")
-
-    def test_picks_follow_the_roles_of_each_view(self):
-        m = self.fixture.load()
-        best = ("Highest ranked", "qwen3.6-35b-a3b", "sglang")
-        fast = ("Fastest", "mellum2.1-12b", "llamacpp")
-        top = ("Fastest in the Top 3", "gpt-oss-20b", "llamacpp")
-        runs = [k for k in data.view(m, "every-client", data.Filters(), None).cells if cell_of(m, *k).status == "runs"]
-        smallest = min(runs, key=lambda k: dict(cell_of(m, *k).positions)["size"])        # ruling 20
-        self.assertEqual(cards(m, ""), [best, fast, top])
-        self.assertEqual(cards(m, "opencode"), [("Default in the OpenCode config", "qwen3.6-35b-a3b", "llamacpp"), best, fast])
-        self.assertEqual(cards(m, "quality"), [best, top, ("Next by Top 3 rank", "qwen3.6-35b-a3b", "llamacpp")])
-        self.assertEqual(cards(m, "fastest"), [("Fastest on llama.cpp", "mellum2.1-12b", "llamacpp"),
-                                               ("Fastest on SGLang", "qwen3.6-35b-a3b", "sglang"), ("Fastest on vLLM", "gpt-oss-20b", "vllm")])
-        self.assertEqual(cards(m, "long-context"), [best, fast, top])                       # ruling 6
-        self.assertEqual(cards(m, "every-client"), [best, fast, ("Smallest download", *smallest)])
-        self.assertEqual(cards(m, "compare"), [("Biggest engine difference and fastest", "gpt-oss-20b", "llamacpp"), best,
-                                               ("Next by engine difference", "deepseek-r1-0528-qwen3-8b", "vllm")])
-        self.assertEqual(len({frozenset(card[1:] for card in cards(m, use)) for use in ("", "opencode", "quality")}), 3)
-        roles = lambda use: [p.roles for p in data.picks(m, use, data.view(m, use, data.Filters(), None).cells,
-                                                          next(u.sort for u in data.USE_CASES if u.id == use))]
-        self.assertEqual(roles("quality"), [("rank", "rank-long"), ("fastest-top",), ("next-rank",)])
-        self.assertEqual(roles("compare"), [("gap", "fastest"), ("rank",), ("next-gap",)])
-        self.assertEqual(roles("fastest"), [("engine-llamacpp",), ("engine-sglang",), ("engine-vllm",)])
-
-    def test_picks_merge_roles_and_fill_from_the_view_order(self):
-        m, F = self.fixture.load(), data.Filters
-        gpt = data.picks(m, "", data.view(m, "", F(search="gpt-oss"), None).cells, "rank")
-        self.assertEqual([(p.roles, p.label, p.runtime) for p in gpt],
-                         [(("rank", "fastest", "fastest-top"), "Highest ranked and fastest", "llamacpp"),
-                          (("next-rank",), "Next by Top 3 rank", "sglang"), (("next-rank",), "Next by Top 3 rank", "vllm")])
-        cells = data.view(m, "compare", F(search="gpt-oss"), None).cells
-        self.assertEqual([(p.roles, p.label, p.model, p.runtime) for p in data.picks(m, "compare", cells, "gap")],
-                         [(("gap", "rank", "fastest"), "Biggest engine difference, highest ranked and fastest", "gpt-oss-20b",
-                           "llamacpp")])                                                  # next-gap: one cell per model
-        self.assertEqual([(p.roles, p.runtime) for p in data.picks(m, "compare", cells, "rank")][1:],
-                         [(("next-rank",), "sglang"), (("next-rank",), "vllm")])
-        self.assertEqual(cards(m, "quality", sort="name")[2], ("Next by model ID", "deepseek-r1-0528-qwen3-8b", "vllm"))
-        self.assertEqual(cards(m, "every-client", sort="gap"), cards(m, "every-client"))
-        best, fast = ("Highest ranked", "qwen3.6-35b-a3b", "sglang"), ("Fastest", "mellum2.1-12b", "llamacpp")
-        sized = tuple(dataclasses.replace(u, roles=("size", "rank", "fastest", "fastest-top")) if not u.id else u
-                      for u in data.USE_CASES)
-        with mock.patch.object(data, "USE_CASES", sized):
-            found = cards(m, "")
-        self.assertEqual((len(found), found[0][0], found[1:]), (3, "Smallest download", [best, fast]))
-        for use in data.USE_CASES:
-            for key, _ in data.SORTS:
-                with self.subTest(use=use.id, sort=key):
-                    found = cards(m, use.id, sort=key)
-                    self.assertLessEqual(len(found), 3)
-                    self.assertEqual(len({card[1:] for card in found}), len(found))
-        for use, sort in (("bogus", "rank"), ("", "bogus")):
-            with self.subTest(use=use, sort=sort):
-                with self.assertRaises(ValueError):
-                    data.picks(m, use, (), sort)
-        bogus = tuple(dataclasses.replace(u, roles=("bogus",)) if not u.id else u for u in data.USE_CASES)
-        with mock.patch.object(data, "USE_CASES", bogus):
-            with self.assertRaises(ValueError):
-                data.picks(m, "", (), "rank")                                             # the role loop runs without cells
-
-    def test_picks_of_filtered_views(self):
-        m, F = self.fixture.load(), data.Filters
-        self.assertEqual(cards(m, "", F(search="qwen3.6")), [("Highest ranked and fastest", "qwen3.6-35b-a3b", "sglang"),
-                                                              ("Next by Top 3 rank", "qwen3.6-35b-a3b", "llamacpp")])
-        self.assertEqual(cards(m, "", F(search="mellum")), [("Fastest", "mellum2.1-12b", "llamacpp")])  # unranked, one pair
-        self.assertEqual(cards(m, "fastest", F(engines=("llamacpp",))), [("Fastest on llama.cpp", "mellum2.1-12b", "llamacpp"),
-                         ("Next by speed", "gpt-oss-20b", "llamacpp"), ("Next by speed", "qwen3.6-35b-a3b", "llamacpp")])
-        self.assertEqual(cards(m, "opencode", F(engines=("sglang",))),                      # the default pair out of view
-                         [("Highest ranked and fastest", "qwen3.6-35b-a3b", "sglang"), ("Next by Top 3 rank", "gpt-oss-20b", "sglang")])
-        self.assertEqual(cards(m, "", F(engines=("vllm",))), [("Highest ranked and fastest", "gpt-oss-20b", "vllm"),
-                                                               ("Next by Top 3 rank", "deepseek-r1-0528-qwen3-8b", "vllm")])
-        self.assertEqual(cards(m, "", F(statuses=("failed", "does-not-fit"))), [])
-        self.assertEqual(cards(m, "", F(search="zzz")), [])
-        self.assertEqual(cards(m, "compare", F(engines=("llamacpp",))),                    # no row has two in-view speeds
-                         [("Highest ranked", "qwen3.6-35b-a3b", "llamacpp"), ("Fastest", "gpt-oss-20b", "llamacpp"),
-                          ("Next by engine difference", "deepseek-r1-0528-qwen3-8b", "llamacpp")])
-        self.assertEqual(cards(m, "", F(engines=("llamacpp",), search="qwen3"), sort="gap"),  # fill in the row order
-                         [("Highest ranked and fastest", "qwen3.6-35b-a3b", "llamacpp"),
-                          ("Next by engine difference", "deepseek-r1-0528-qwen3-8b", "llamacpp"),
-                          ("Next by engine difference", "qwen3-coder-next", "llamacpp")])
-        fixture = self.fresh()
-        fixture.set_value("vllm", "gpt-oss-20b", "decode_tok_s", None)
-        m2 = fixture.load()
-        self.assertEqual(cards(m2, "compare", F(engines=("vllm", "sglang"))),               # a gap needs two speeds
-                         [("Highest ranked and fastest", "qwen3.6-35b-a3b", "sglang"),
-                          ("Next by engine difference", "gpt-oss-20b", "sglang"),
-                          ("Next by engine difference", "deepseek-r1-0528-qwen3-8b", "vllm")])
-        self.assertEqual(cards(m2, "fastest", F(engines=("vllm",), search="gpt-oss")),      # an engine pick needs a speed
-                         [("Next by speed", "gpt-oss-20b", "vllm")])
-        # The gap card names the gap row's fastest in-view cell, not its first in engine order.
-        self.assertEqual(cards(m, "compare", F(engines=("vllm", "sglang")))[0],
-                         ("Biggest engine difference", "gpt-oss-20b", "sglang"))
-        # Smallest download takes every Runs cell, one without a speed too.
-        fixture = self.fresh()
-        fixture.set_value("llamacpp", "deepseek-r1-0528-qwen3-8b", "decode_tok_s", None)
-        self.assertEqual(cards(fixture.load(), "every-client")[2],
-                         ("Smallest download", "deepseek-r1-0528-qwen3-8b", "llamacpp"))
-
-    def test_view_key_and_divider(self):
-        m, F = self.fixture.load(), data.Filters
-        v = lambda use="", sort=None, matrix=m, **f: data.view(matrix, use, F(**f), sort)
-        self.assertEqual(v().key, ("counts", "not-supported", "letters", "fastest", "bars"))
-        self.assertEqual((v("opencode").key, v(search="mellum").key), (("counts", "fastest", "bars"), ("counts", "bars")))
-        self.assertEqual((v(statuses=("failed", "does-not-fit")).key, v(search="zzz").key), ((), ()))
-        self.assertEqual([v(sort=key).divider for key, _ in data.SORTS], ["mellum2.1-12b", None, None, None, None, None])
-        self.assertEqual((v("quality").divider, v(engines=("vllm",)).divider, v(search="mellum").divider,
-                          v(statuses=("failed", "does-not-fit")).divider), (None, None, "mellum2.1-12b", None))
-        k2_kimi = row(prefix("llamacpp", "k2-horizon-7b"), "kimi")                       # Not tested
-        self.fixture.run("2026-11-18", "llmctl-fixture-e2e", [line for line in default_rows() if line != k2_kimi],
-                         readme="# e2e\n\n## The No rows\n\nNone.\n")
-        self.fixture.run("2026-11-19", "llmctl-key-e2e", [row(QWEN, "up"), row(QWEN, "status", "no answer"),
-                                                          row(QWEN, "hermes-z", "no answer"), row(QWEN, "pi", "no answer")])
-        self.note(self.fixture, "qwen3.6-35b-a3b", "llamacpp", "e2e 2026-11-19: `hermes-z` wrote hello.py elsewhere")
-        every = ("counts", "known-issue", "failed", "not-tested", "not-supported", "letters", "setup", "fastest", "bars")
-        self.assertEqual(data.KEY_PARTS, every)
-        self.assertEqual((v(matrix=self.fixture.load()).key, v(matrix=self.fixture.load(), search="mellum").key),
-                         (every, ("counts", "bars")))
-        for runtime, recipe_id in RECIPES:
-            self.fixture.set_value(runtime, recipe_id, "decode_tok_s", None)
-        self.assertEqual(v(matrix=self.fixture.load()).key, every[:7])                  # no fastest tag, no top speed
-
-    def test_count_line(self):
-        self.assertEqual(data.count_line(15, 45, 29, 45, True), "15 models; 29 of 45 pairs run.")
-        self.assertEqual(data.count_line(14, 26, 26, 45, False), "14 models; 26 pairs match.")
-        self.assertEqual(data.count_line(1, 1, 1, 45, False), "1 model; 1 pair matches.")
-        self.assertEqual(data.count_line(1, 3, 2, 3, True), "1 model; 2 of 3 pairs run.")                 # ruling 7
-        self.assertEqual((data.count_line(0, 0, 0, 45, False), data.count_line(0, 0, 0, 45, True)), ("", ""))
-        m, F = self.fixture.load(), data.Filters
-        self.assertEqual([data.view(m, "", F(search=s), None).count for s in ("", " \t\n ", "gpt-oss", "\xa0gpt")],
-                         ["6 models; 10 of 18 pairs run.", "6 models; 10 of 18 pairs run.", "1 model; 3 pairs match.", ""])
-        self.assertEqual([data.view(m, use, F(), None).count for use in ("opencode", "compare")],
-                         ["5 models; 8 pairs match.", "3 models; 7 pairs match."])
-        self.assertEqual(data.view(m, "", F(ram=16), None).count, "4 models; 4 pairs match.")
-
-    def test_view_orders_by_in_view_cells(self):
-        m = self.fixture.load()
-        v = data.view(m, "", data.Filters(engines=("vllm",)), "speed")
-        self.assertEqual(v.rows, ("gpt-oss-20b", "deepseek-r1-0528-qwen3-8b", "k2-horizon-7b", "mellum2.1-12b",
-                                  "qwen3-coder-next", "qwen3.6-35b-a3b"))
-        picked = lambda found: [(p.label, p.model, p.runtime) for p in found.picks]
-        self.assertEqual((v.count, picked(v)), ("6 models; 6 pairs match.",
-                                                [("Highest ranked and fastest", "gpt-oss-20b", "vllm"),
-                                                 ("Next by speed", "deepseek-r1-0528-qwen3-8b", "vllm")]))
-        self.assertEqual(data.view(m, "", data.Filters(), None).count, "6 models; 10 of 18 pairs run.")
-        k2 = data.view(m, "", data.Filters(engines=("llamacpp",), search=" K2 "), None)
-        self.assertEqual((k2.count, picked(k2)), ("1 model; 1 pair matches.", [("Fastest", "k2-horizon-7b", "llamacpp")]))
-        failed = data.view(m, "", data.Filters(statuses=("failed",)), None)
-        self.assertEqual((failed.count, failed.picks), ("1 model; 1 pair matches.", ()))
-        empty = data.view(m, "", data.Filters(search="no such model"), None)
-        self.assertEqual(empty, data.View((), (), "", (), (), None))
-        cells = lambda **f: data.view(m, "", data.Filters(**f), None).cells
-        deepseek = ("deepseek-r1-0528-qwen3-8b", "vllm")
-        self.assertEqual(cells(tools="no"), (deepseek, ("deepseek-r1-0528-qwen3-8b", "llamacpp")))  # the Failed cell leaves
-        self.assertEqual(len(cells(tools="yes")), 8)
-        self.assertEqual((len(cells(context=128)), len(cells(context=64))), (6, 10))           # 65536 tokens is 64k
-        self.assertIn(("qwen3.6-35b-a3b", "sglang"), cells(ram=27))                             # a cap equal to the value
-        self.assertNotIn(("qwen3.6-35b-a3b", "sglang"), cells(ram=20))
-        self.assertEqual(len(cells(ram=20)), 6)
-        self.assertEqual(cells(thinking=("none",)), (("qwen3-coder-next", "llamacpp"),))
-        self.assertEqual(len(cells(thinking=("always", "effort"))), 6)
-        self.assertNotIn(deepseek, cells(must_pass="opencode"))                                # OpenCode not supported
-        self.assertIn(deepseek, cells(must_pass="hermes"))
-        self.assertEqual((len(cells(must_pass="every")), len(cells(must_pass="hermes"))), (9, 10))
-        self.assertEqual(data.view(m, "", data.Filters(search=" 3.6 "), None).rows, ("qwen3.6-35b-a3b",))
-        # The search trims ASCII whitespace only, as page.js does; other spaces stay part of the search.
-        self.assertEqual(data.view(m, "", data.Filters(search="\t\n3.6\r\f\v"), None).rows, ("qwen3.6-35b-a3b",))
-        for search in ("\ufeff3.6", "\x853.6", "\xa03.6"):
-            with self.subTest(search=search):
-                self.assertEqual(data.view(m, "", data.Filters(search=search), None).rows, ())
-        gpt = lambda use, sort: [c[1] for c in data.view(m, use, data.Filters(), sort).cells if c[0] == "gpt-oss-20b"]
-        self.assertEqual(gpt("", "speed"), ["llamacpp", "sglang", "vllm"])
-        self.assertEqual(gpt("compare", None), ["llamacpp", "vllm", "sglang"])
-        self.assertEqual(data.view(m, "", data.Filters(), "gap").picks, data.view(m, "", data.Filters(), None).picks)
-        self.assertEqual(picked(data.view(m, "compare", data.Filters(), "rank")),
-                         [("Biggest engine difference and fastest", "gpt-oss-20b", "llamacpp"),
-                          ("Highest ranked", "qwen3.6-35b-a3b", "sglang"),
-                          ("Next by Top 3 rank", "qwen3.6-35b-a3b", "llamacpp")])
-        self.assertEqual(picked(data.view(m, "compare", data.Filters(), None))[2],
-                         ("Next by engine difference", "deepseek-r1-0528-qwen3-8b", "vllm"))
-        for use in data.USE_CASES:
-            for sort in (None, *(key for key, _ in data.SORTS)):
-                with self.subTest(use=use.id, sort=sort):
-                    found = data.view(m, use.id, data.Filters(), sort)
-                    self.assertEqual(found.picks, data.picks(m, use.id, found.cells, sort or use.sort))
-        for use, sort, filters in (("bogus", None, data.Filters()), ("", "bogus", data.Filters()),
-                                   ("", None, data.Filters(must_pass="bogus")), ("", None, data.Filters(tools="maybe"))):
-            with self.subTest(use=use, sort=sort, filters=filters):
-                with self.assertRaises(ValueError):
-                    data.view(m, use, filters, sort)
 
     def test_missing_speed_is_shown_as_absent(self):
         self.fixture.set_value("vllm", "gpt-oss-20b", "decode_tok_s", None)
         m = self.fixture.load()
         cell = cell_of(m, "gpt-oss-20b", "vllm")
         self.assertEqual((cell.recipe.decode, cell.fastest), (None, None))
-        self.assertEqual(order(m, "speed")[-1], ("gpt-oss-20b", "vllm"))
         speeds = {c.runtime: c.recipe.decode for c in model_of(m, "gpt-oss-20b").cells if c.recipe}
         self.assertEqual(data.fastest_tags(speeds), {"llamacpp": "Fastest by 33%"})
         self.assertEqual(cell_of(m, "gpt-oss-20b", "llamacpp").fastest, "Fastest by 33%")
-        self.assertEqual(data.bar_width(cell.recipe.decode, data.top_speed(m)), 0)
-        picked = lambda found: [(p.label, p.model, p.runtime) for p in found.picks]
-        self.assertEqual(picked(data.view(m, "fastest", data.Filters(engines=("vllm",)), None)),
-                         [("Fastest on vLLM", "deepseek-r1-0528-qwen3-8b", "vllm"),
-                          ("Next by speed", "gpt-oss-20b", "vllm")])
-        found = data.view(m, "", data.Filters(engines=("vllm",), search="gpt-oss"), None)
-        self.assertEqual((found.count, picked(found)),
-                         ("1 model; 1 pair matches.", [("Highest ranked", "gpt-oss-20b", "vllm")]))
-        self.assertEqual(found.key, ("counts", "bars"))
 
     def test_opencode_use_case_follows_the_context_budget(self):
         text = "\n".join(markdown.section(REPO, "docs/opencode.md#context-budget"))
         self.assertIn("The practical minimum for OpenCode is 64k tokens", text,
                       "docs/opencode.md#context-budget changed: update data.OPENCODE_MINIMUM")
         self.assertEqual(data.OPENCODE_MINIMUM, 64 * 1024, "update data.OPENCODE_MINIMUM")
+
+    def test_display_names_follow_the_build_token_rule(self):
+        cases = {"Qwen3.6-35B-A3B Q4_K_M": "Qwen3.6-35B-A3B", "Qwen3.8-27B UD-Q3_K_XL": "Qwen3.8-27B",
+                 "Qwen3-Coder-Next UD-IQ4_XS": "Qwen3-Coder-Next",
+                 "NVIDIA Nemotron 3.5 Bolt 74B-A9B 24GB GGUF": "NVIDIA Nemotron 3.5 Bolt 74B-A9B",
+                 "Gemma 4 E4B IT QAT W4A16 (smoke-test model)": "Gemma 4 E4B",
+                 "DeepSeek-R1-0528-Qwen3-8B FP8 per tensor (chat only)": "DeepSeek-R1-0528-Qwen3-8B",
+                 "Mellum2.1 12B-A2.5B Thinking AWQ-INT4": "Mellum2.1 12B-A2.5B Thinking",
+                 "gpt-oss-20b MXFP4 (vLLM, eager mode)": "gpt-oss-20b",
+                 "K2 Horizon MoVA 36B A4B Q4_K_M": "K2 Horizon MoVA 36B A4B", "Qwen3.5-9B NVFP4": "Qwen3.5-9B",
+                 "Qwen3.5-9B (chat only)": "Qwen3.5-9B"}
+        for name, shown in cases.items():
+            with self.subTest(name=name):
+                self.assertEqual(data.display_name(name, "recipes/x.toml"), shown)
+        with self.assertRaisesRegex(data.SiteError, r"^recipes/x\.toml: no display name in the recipe name 'Q8_0 only'$"):
+            data.display_name("Q8_0 only", "recipes/x.toml")
+
+    def test_models_carry_their_name_mention_and_maker(self):
+        m = self.fixture.load()
+        got = {model.id: (model.name, model.honorable, model.maker) for model in m.models}
+        self.assertEqual(got["qwen3.6-35b-a3b"], ("Qwen3.6-35B-A3B", False,
+                                                  data.Maker("Vendor 1", "35B / 3B active MoE", "Apache-2.0")))
+        self.assertEqual(got["mellum2.1-12b"], ("Mellum2.1 12B-A2.5B Thinking", True, None))
+        self.assertEqual(got["k2-horizon-7b"], ("K2 Horizon 7B", False, None))
+        self.assertEqual(got["deepseek-r1-0528-qwen3-8b"][0], "DeepSeek-R1-0528-Qwen3-8B")
+
+    def test_a_model_without_a_default_engine_setup_stops_the_build(self):
+        model = model_of(self.fixture.load(), "qwen3.6-35b-a3b")
+        cells = [dataclasses.replace(c, status="failed", recipe=None) if c.runtime == "llamacpp" else c for c in model.cells]
+        with self.assertRaisesRegex(data.SiteError, r"^docs/model-selection\.md: row qwen3\.6-35b-a3b: no setup runs on "
+                                                    r"its default engine, so the page has no name for it$"):
+            data.default_cell("qwen3.6-35b-a3b", cells)
+
+    def test_setups_know_their_expert_offload_and_launch_lines(self):
+        m = self.fixture.load()
+        self.assertEqual([(c.model, c.runtime) for mo in m.models for c in mo.cells if c.status == "runs" and c.recipe.offload],
+                         [("gpt-oss-20b", "sglang"), ("qwen3-coder-next", "llamacpp"), ("qwen3.6-35b-a3b", "llamacpp"),
+                          ("qwen3.6-35b-a3b", "sglang")])
+        self.assertEqual(cell_of(m, "qwen3.6-35b-a3b", "llamacpp").recipe.launch,
+                         data.Launch("llamacpp-docker/qwen3.6-35b-a3b", "llmctl", "llmctl/local",
+                                     "qwen3.6-35b-a3b on llama.cpp (llmctl)", "llmctl/local", "launcher/kimi-chat-only.md"))
+        self.assertEqual(cell_of(m, "qwen3.6-35b-a3b", "sglang").recipe.launch,   # SGLang serves the recipe's served_name
+                         data.Launch("sglang-docker/qwen3.6-35b-a3b", "llmctl", "llmctl/qwen3.6-35b-a3b",
+                                     "qwen3.6-35b-a3b on SGLang (llmctl)", "llmctl/qwen3.6-35b-a3b",
+                                     "launcher/kimi-chat-only.md"))
+        chat = cell_of(m, "deepseek-r1-0528-qwen3-8b", "vllm").recipe.launch
+        self.assertEqual((chat.opencode, chat.kimi, chat.dsh), (None, None, "deepseek-r1-0528-qwen3-8b on vLLM (llmctl)"))
+        with mock.patch("launcher.dsh_config.usage_lines", return_value=["dsh: x", "  dsh web"]), \
+                self.assertRaisesRegex(data.SiteError, r"^recipes/llamacpp/[a-z0-9.-]+\.toml: dsh's up line changed: '  dsh web'$"):
+            self.fresh().load()
+        with mock.patch("launcher.kimi_config.usage_lines", return_value=["Kimi: x", "  kimi"]), \
+                self.assertRaisesRegex(data.SiteError, r"^recipes/llamacpp/[a-z0-9.-]+\.toml: Kimi's up line changed: '  kimi'$"):
+            self.fresh().load()
+
+    def test_runtimes_carry_their_port_and_image_size(self):
+        m = self.fixture.load()
+        self.assertEqual([(r.id, r.port, r.image_gb) for r in m.runtimes],
+                         [("llamacpp", 8080, "7.05"), ("vllm", 8000, "35.4"), ("sglang", 30000, "49.7")])
+        path = self.fixture.root / "docs/host-setup.md"
+        path.write_text("\n".join(line for line in path.read_text(encoding="utf-8").splitlines() if "vLLM image" not in line)
+                        + "\n", encoding="utf-8")
+        self.assertStops(self.fixture, "docs/host-setup.md#disk-budget: no measured image size for vLLM")
+
+    def test_laptop_facts_come_from_the_recipes_and_the_readme(self):
+        m = self.fixture.load()
+        dates = sorted(self.fixture._read(r, i)["evidence"]["date"] for r, i in RECIPES)
+        self.assertEqual(m.laptop, data.Laptop("MSI Raider 18 Max HX A2WI", "RTX 5080 Laptop GPU", 16, 61, 40, 140,
+                                               "Ubuntu 26.04.1", dates[0], dates[-1]))
+        self.assertEqual(m.licenses, ("CC BY 4.0", "MIT"))
+        readme = self.fixture.root / "README.md"
+        text = readme.read_text(encoding="utf-8")
+        for old, new, message in (
+                ("61 GiB usable", "62 GiB usable", "README.md#machine: the RAM row must read '<N> GiB usable, about <M> GiB "
+                                                   "free' with N as in the recipes"),
+                ("140 W power limit", "no limit", "README.md#machine: the GPU row needs '<N> W power limit' and the "
+                                                  "Software row an OS first"),
+                ("under MIT", "under Apache-2.0", "README.md#license: expected CC BY 4.0 and MIT")):
+            with self.subTest(old=old):
+                readme.write_text(text.replace(old, new), encoding="utf-8")
+                self.assertStops(self.fixture, message)
+        readme.write_text(text, encoding="utf-8")
+        self.fixture.set_value("llamacpp", "k2-horizon-7b", "hardware", '"Another laptop, RTX 4090 Laptop GPU 16 GB, 32 GiB RAM"')
+        self.assertStops(self.fixture, "recipes name 2 different test machines; the page assumes one")
+
+    def test_top_10_and_honorable_mentions_are_required(self):
+        fixture = self.fresh()
+        path = fixture.root / "docs/model-selection.md"
+        text = path.read_text(encoding="utf-8")
+        path.write_text(text.replace(" | License |", " | Licence |"), encoding="utf-8")
+        self.assertStops(fixture, "docs/model-selection.md#top-10: no License column")
+        path.write_text(text.replace("## Honorable mentions", "## Mentions"), encoding="utf-8")
+        self.assertStops(fixture, "docs/model-selection.md: no section #honorable-mentions")
+
+    def test_an_honorable_mention_is_the_name_alone_or_the_name_and_more_words(self):
+        path = self.fixture.root / "docs/model-selection.md"
+        text = path.read_text(encoding="utf-8")
+        for link, honorable in (("Mellum2.1 12B-A2.5B Thinking AWQ", True), ("Mellum2.1 12B-A2.5B ThinkingX", False)):
+            with self.subTest(link=link):
+                path.write_text(text.replace("[Mellum2.1 12B-A2.5B Thinking]", f"[{link}]"), encoding="utf-8")
+                self.assertEqual(model_of(self.fixture.load(), "mellum2.1-12b").honorable, honorable)
+
+    def test_an_honorable_mention_without_a_link_stops_the_build(self):
+        path = self.fixture.root / "docs/model-selection.md"
+        path.write_text(path.read_text(encoding="utf-8") + "| Plain text model | Fast sub-agent | Fixture row |\n",
+                        encoding="utf-8")
+        self.assertStops(self.fixture, "docs/model-selection.md#honorable-mentions: row 'Plain text model': the Model "
+                                       "cell must start with a link")
+
+    def test_a_broken_coverage_cell_is_reported_before_a_broken_mention(self):
+        self.fixture.coverage({("gpt-oss-20b", "vllm"): "Maybe: later"})
+        path = self.fixture.root / "docs/model-selection.md"
+        path.write_text(path.read_text(encoding="utf-8") + "| Plain text model | Fast sub-agent | Fixture row |\n",
+                        encoding="utf-8")
+        self.assertStops(self.fixture, "docs/model-selection.md: row gpt-oss-20b, column vLLM: the cell must start with")
+
+    def test_runtime_ports_follow_the_runtime_files(self):
+        path = self.fixture.root / "recipes/llamacpp/_runtime.toml"
+        path.write_text(path.read_text(encoding="utf-8").replace("host_port = 8080", "host_port = 8081"),
+                        encoding="utf-8")
+        self.assertEqual([r.port for r in self.fixture.load().runtimes], [8081, 8000, 30000])
+
+    def test_laptop_facts_follow_the_readme_and_the_recipes(self):
+        readme = self.fixture.root / "README.md"
+        readme.write_text(readme.read_text(encoding="utf-8").replace("140 W", "150 W")
+                          .replace("about 40 GiB free", "about 39 GiB free").replace("Ubuntu 26.04.1", "Debian 13.2"),
+                          encoding="utf-8")
+        for runtime, recipe_id in RECIPES:
+            self.fixture.set_value(runtime, recipe_id, "hardware", '"Other Laptop 17, RTX 4090 Laptop GPU 24 GB, 61 GiB RAM"')
+        laptop = self.fixture.load().laptop
+        self.assertEqual((laptop.name, laptop.gpu_name, laptop.gpu_gb, laptop.ram_free_gib, laptop.power_w, laptop.os),
+                         ("Other Laptop 17", "RTX 4090 Laptop GPU", 24, 39, 150, "Debian 13.2"))
+
+    def test_a_hardware_string_not_in_three_parts_stops_the_build(self):
+        for hardware in ("MSI Raider 18 Max HX A2WI, RTX 5080 Laptop GPU 16 GB",
+                         "MSI Raider 18 Max HX A2WI, Ryzen 9, RTX 5080 Laptop GPU 16 GB, 61 GiB RAM"):
+            with self.subTest(hardware=hardware):
+                fixture = self.fresh()
+                for runtime, recipe_id in RECIPES:
+                    fixture.set_value(runtime, recipe_id, "hardware", f'"{hardware}"')
+                message = self.assertStops(fixture, f": the hardware {hardware!r} must read '<laptop>, <GPU name> <N> GB, "
+                                                    "<M> GiB RAM'")
+                self.assertRegex(message, r"^recipes/[a-z]+/[a-z0-9.-]+\.toml: ")
+
+    def test_license_names_count_at_a_sentence_end_but_not_inside_a_word(self):
+        readme = self.fixture.root / "README.md"
+        text = readme.read_text(encoding="utf-8")
+        readme.write_text(text.replace("under MIT ([LICENSE-CODE](LICENSE-CODE)).", "under MIT."), encoding="utf-8")
+        self.assertEqual(self.fixture.load().licenses, ("CC BY 4.0", "MIT"))
+        readme.write_text(text.replace("under CC BY 4.0 ([LICENSE](LICENSE))", "under CC BY 4.0."), encoding="utf-8")
+        self.assertEqual(self.fixture.load().licenses, ("CC BY 4.0", "MIT"))
+        for old, new in (("under MIT", "under MITRE"), ("CC BY 4.0", "CC BY 4.0.1")):
+            with self.subTest(new=new):
+                readme.write_text(text.replace(old, new), encoding="utf-8")
+                self.assertStops(self.fixture, "README.md#license: expected CC BY 4.0 and MIT")
+
+    def test_an_empty_maker_cell_or_a_malformed_image_size_stops_the_build(self):
+        fixture = self.fresh()
+        path = fixture.root / "docs/model-selection.md"
+        path.write_text(path.read_text(encoding="utf-8").replace("| Vendor 2 |", "|  |"), encoding="utf-8")
+        self.assertStops(fixture, "docs/model-selection.md#top-10: row 2: the Vendor cell is empty")
+        path = self.fixture.root / "docs/host-setup.md"
+        path.write_text(path.read_text(encoding="utf-8").replace("| 7.05 GB on disk", "| 7..05 GB on disk"),
+                        encoding="utf-8")
+        self.assertStops(self.fixture, "docs/host-setup.md#disk-budget: no measured image size for llama.cpp")
 
 
 if __name__ == "__main__":
