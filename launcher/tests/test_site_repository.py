@@ -1,5 +1,6 @@
 """The runtime matrix page built from the real repository: invariants only, never today's values (design D14)."""
 
+import json
 import unittest
 
 from launcher import clients
@@ -40,6 +41,14 @@ class SiteRepositoryTest(unittest.TestCase):
                 for client in clients.NAMES:
                     with self.subTest(recipe=recipe_id, runtime=runtime, client=client):
                         self.assertEqual(client in planned, data.SUPPORTED.get(client, lambda r: True)(recipe))
+
+    def test_opencode_default_reads_the_block_the_docs_tests_read(self):
+        from launcher.tests.test_opencode_config import doc_config_text
+        self.assertEqual(data.opencode_default(REPO), json.loads(doc_config_text())["model"])
+        matrix = data.load(REPO)
+        pairs = [(model.id, cell.runtime) for model in matrix.models for cell in model.cells
+                 if cell.status == "runs" and cell.recipe.opencode == matrix.opencode_default]
+        self.assertEqual(pairs, [matrix.default])
 
 
 if __name__ == "__main__":

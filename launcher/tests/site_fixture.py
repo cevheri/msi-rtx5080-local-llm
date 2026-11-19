@@ -34,6 +34,7 @@ TOP10_ROW = "| {rank} | [{id}](https://huggingface.co/{repo}) | llama.cpp |"
 TOP10_IDS = ("qwen3.6-35b-a3b", "gpt-oss-20b", "deepseek-r1-0528-qwen3-8b")
 LICENSE_LINES = ("The documentation is licensed under CC BY 4.0 ([LICENSE](LICENSE)); the code under MIT "
                  "([LICENSE-CODE](LICENSE-CODE)).", "Third-party material keeps its own license.")
+OPENCODE_DEFAULT = "llamacpp-docker/qwen3.6-35b-a3b"
 
 
 DEFAULT_RUN = ("2026-11-18", "llmctl-fixture-e2e")
@@ -77,6 +78,12 @@ def default_rows() -> list[str]:
     return rows
 
 
+def config_section(model: str = OPENCODE_DEFAULT) -> str:
+    """A validated config section: one sentence and a json block whose top-level "model" is `model`."""
+    config = json.dumps({"$schema": "https://opencode.ai/config.json", "model": model}, indent=2)
+    return f"The config the docs tests validate.\n\n```json\n{config}\n```\n"
+
+
 def _separator(header: str) -> str:
     return "|" + "---|" * (header.count("|") - 1)
 
@@ -114,6 +121,9 @@ class SiteFixture:
         self._write("LICENSE", "CC BY 4.0\n")
         self._write("LICENSE-CODE", "MIT\n")
         self._write_selection()
+        self.opencode(config_section())
+        self._write("docs/clients.md", "# Clients\n")
+        self._write("docs/host-setup.md", "# Host setup\n")
         self.run(*DEFAULT_RUN, default_rows(), readme="# e2e\n\n## The No rows\n\nNone.\n",
                  records={name: version_record(stdout) for name, stdout in DEFAULT_VERSIONS})
 
@@ -175,7 +185,8 @@ class SiteFixture:
         return [COVERAGE_HEADER, _separator(COVERAGE_HEADER), *rows]
 
     def _write_selection(self) -> None:
-        lines = ["# Model selection", "", "## Runtime coverage", "", "Every model has one cell per engine.", "",
+        lines = ["# Model selection", "", "## Decision summary", "", "Pick a model by its role.", "",
+                 "## Runtime coverage", "", "Every model has one cell per engine.", "",
                  *self._coverage_lines(), "", "## Top 10", "", TOP10_HEADER, _separator(TOP10_HEADER), *self._top10]
         self._write("docs/model-selection.md", "\n".join(lines) + "\n")
 
@@ -200,6 +211,12 @@ class SiteFixture:
         """Replace the Top 10 rows under the default header."""
         self._top10 = list(rows)
         self._write_selection()
+
+    def opencode(self, section: str | None) -> None:
+        """Write docs/opencode.md with `section` under "The validated config", or without that section for None."""
+        validated = "" if section is None else "## The validated config\n\n" + section + "\n"
+        self._write("docs/opencode.md", "# OpenCode\n\n" + validated
+                    + "## Context budget\n\nThe practical minimum for OpenCode is 64k tokens.\n")
 
     def load(self):
         from launcher.site import data

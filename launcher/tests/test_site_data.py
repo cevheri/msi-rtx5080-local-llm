@@ -3,8 +3,10 @@ D13), loaded from a small fixture repository."""
 
 import dataclasses
 import os
+import re
 import shutil
 import tempfile
+import tomllib
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -13,8 +15,8 @@ from launcher import clients, markdown, ops, preflight
 from launcher.runtimes import ADAPTERS
 from launcher.site import data
 from launcher.tests.fakes import REPO
-from launcher.tests.site_fixture import (RECIPES, SiteFixture, cell_of, default_rows, model_of, prefix, row,
-                                        version_record)
+from launcher.tests.site_fixture import (RECIPES, TOP10_IDS, TOP10_ROW, SiteFixture, cell_of, config_section,
+                                        default_rows, model_of, prefix, row, version_record)
 
 QWEN = prefix("llamacpp", "qwen3.6-35b-a3b")
 QWEN_SGLANG = prefix("sglang", "qwen3.6-35b-a3b")
@@ -178,6 +180,83 @@ class SiteDataTest(unittest.TestCase):
                          repos)
         with self.assertRaisesRegex(data.SiteError, "^docs/model-selection.md: a row with an empty Rank cell: "):
             data.rank_of(head + ["|  | [B](https://huggingface.co/org/B) | x |"], repos)
+        self.assertEqual(self.fixture.load().top, 3)
+        catalog = data.shipped_catalog(self.fixture.root)
+        rows = [TOP10_ROW.format(rank=rank, id=model_id, repo=catalog.runtimes["llamacpp"].recipes[model_id].model.repo)
+                for rank, model_id in enumerate(TOP10_IDS, start=1)]
+        self.fixture.top10([*rows, "| 4 | [Unshipped](https://huggingface.co/org/unshipped) | llama.cpp |"])
+        self.assertEqual(self.fixture.load().top, 4)
+
+    def test_opencode_default_is_read_from_the_validated_config(self):
+        matrix = self.fixture.load()
+        self.assertEqual(data.opencode_default(self.fixture.root), "llamacpp-docker/qwen3.6-35b-a3b")
+        self.assertEqual((matrix.opencode_default, matrix.default),
+                         ("llamacpp-docker/qwen3.6-35b-a3b", ("qwen3.6-35b-a3b", "llamacpp")))
+        self.fixture.opencode(config_section("sglang-docker/gpt-oss-20b") + "\n" + config_section("vllm-docker/gpt-oss-20b"))
+        self.assertEqual(self.fixture.load().default, ("gpt-oss-20b", "sglang"))           # the first json block wins
+        self.fixture.opencode('```jsonc\n{"model": "vllm-docker/gpt-oss-20b"}\n```\n\n' + config_section())
+        self.assertEqual(self.fixture.load().default, ("qwen3.6-35b-a3b", "llamacpp"))     # only "```json" opens one
+        where = "docs/opencode.md#the-validated-config: "
+        no_model = where + 'the validated config has no top-level "model" string'
+        for section, message in ((None, "docs/opencode.md: no section #the-validated-config"),
+                                 ("No block here.\n", where + "the section has no complete json block"),
+                                 ('```json\n{"model": "x"}\n', where + "the section has no complete json block"),
+                                 ('```json\n["x"]\n```\n', no_model), ('```json\n{"model": 1}\n```\n', no_model),
+                                 ('```json\n{"providers": {}}\n```\n', no_model)):
+            with self.subTest(section=section):
+                self.fixture.opencode(section)
+                with self.assertRaises(data.SiteError) as caught:
+                    self.fixture.load()
+                self.assertEqual(str(caught.exception), message)
+        with self.subTest(section="a json block under the next section"):           # the section ends at its heading
+            (self.fixture.root / "docs/opencode.md").write_text(
+                "# OpenCode\n\n## The validated config\n\nNo block here.\n\n## Context budget\n\n"
+                + config_section().split("\n\n", 1)[1], encoding="utf-8")
+            with self.assertRaises(data.SiteError) as caught:
+                self.fixture.load()
+            self.assertEqual(str(caught.exception), where + "the section has no complete json block")
+        with self.subTest(section="a closing fence that carries text"):              # any later ``` line closes it
+            self.fixture.opencode('```json\n{"model": "sglang-docker/gpt-oss-20b"}\n```text\n```\n')
+            self.assertEqual(self.fixture.load().default, ("gpt-oss-20b", "sglang"))
+        self.fixture.opencode('```json\n{"model": }\n```\n')
+        with self.assertRaisesRegex(data.SiteError, "^" + re.escape(where + "the validated config is not JSON: ") + "."):
+            self.fixture.load()
+        (self.fixture.root / "docs/opencode.md").unlink()
+        with self.assertRaisesRegex(data.SiteError, "^docs/opencode.md: missing$"):
+            self.fixture.load()
+
+    def test_opencode_default_must_name_one_pair_that_runs(self):
+        where = "docs/opencode.md#the-validated-config: "
+        target = self.fixture.root / "recipes/vllm/k2-horizon-7b.toml"    # an estimate recipe in a Does not fit cell
+        shutil.copyfile(REPO / "recipes/vllm/k2-horizon-7b.toml", target)
+        doc = tomllib.loads(target.read_text(encoding="utf-8"))["doc"]
+        target.write_text("".join(line + "\n" for line in target.read_text(encoding="utf-8").splitlines()
+                                  if not line.startswith("decode_tok_s = "))
+                          .replace('kind = "measured"', f'kind = "estimate"\ndoc = "{doc}"'), encoding="utf-8")
+        path, anchor = doc.split("#", 1)
+        with (self.fixture.root / path).open("a", encoding="utf-8") as models:
+            models.write(f"## {anchor}\n\n")
+        self.assertEqual(data.shipped_catalog(self.fixture.root).runtimes["vllm"].recipes["k2-horizon-7b"].opencode, True)
+        self.assertEqual(cell_of(self.fixture.load(), "k2-horizon-7b", "vllm").status, "does-not-fit")
+        for model in ("vllm-docker/k2-horizon-7b",                 # the entry of a Does not fit cell
+                      "vllm-docker/deepseek-r1-0528-qwen3-8b",     # a recipe with opencode = false
+                      "llamacpp-docker/no-such-model"):
+            with self.subTest(model=model):
+                self.fixture.opencode(config_section(model))
+                with self.assertRaises(data.SiteError) as caught:
+                    self.fixture.load()
+                self.assertEqual(str(caught.exception), f"{where}the default model {model} names 0 OpenCode entries of "
+                                                        "pairs that run; it must name exactly one")
+        self.fixture.opencode(config_section(""))
+        with self.assertRaisesRegex(data.SiteError,
+                                    "^" + re.escape(where + 'the validated config has no top-level "model" string') + "$"):
+            self.fixture.load()
+        runtime = self.fixture.root / "recipes/sglang/_runtime.toml"         # two engines with one provider name
+        runtime.write_text(runtime.read_text(encoding="utf-8").replace('"sglang-docker"', '"llamacpp-docker"'),
+                           encoding="utf-8")
+        self.fixture.opencode(config_section())
+        with self.assertRaisesRegex(data.SiteError, re.escape("llamacpp-docker/qwen3.6-35b-a3b names 2 OpenCode entries")):
+            self.fixture.load()
 
     def test_client_letters_must_be_unique(self):
         labels = {"pi": "Pi", "pio": "Pio", "kimi": "Kimi"}

@@ -21,6 +21,7 @@ from launcher.model import Recipe, RuntimeConfig
 from launcher.runtimes import ADAPTERS
 
 SELECTION = "docs/model-selection.md"
+OPENCODE_CONFIG = "docs/opencode.md#the-validated-config"
 THINKING = {"toggle": "Toggle", "effort": "Effort levels", "always": "Always on", "none": "No thinking"}
 LETTERS: dict[str, str] = {}
 STATUS_WORDS = (("Runs:", "runs"), ("Failed:", "failed"), ("Does not fit:", "does-not-fit"))
@@ -187,6 +188,9 @@ class Matrix:
     runs: tuple[Run, ...]
     ranked_without_recipe: tuple[tuple[int, str], ...]
     license: tuple[str, ...]
+    top: int
+    opencode_default: str
+    default: tuple[str, str]
 
 
 @dataclass(frozen=True)
@@ -263,6 +267,23 @@ def _section(root: Path, doc: str) -> list[str]:
         raise SiteError(f"{path}: not valid UTF-8: {exc}") from None
     except LookupError:
         raise SiteError(f"{path}: no section #{anchor}") from None
+
+
+def opencode_default(root: Path) -> str:
+    """The top-level "model" of the first json block in the validated OpenCode config section."""
+    lines = _section(root, OPENCODE_CONFIG)
+    start = next((n for n, line in enumerate(lines) if line == "```json"), None)
+    end = None if start is None else next((n for n in range(start + 1, len(lines)) if lines[n].startswith("```")), None)
+    if start is None or end is None:
+        raise SiteError(f"{OPENCODE_CONFIG}: the section has no complete json block")
+    try:
+        config = json.loads("\n".join(lines[start + 1:end]))
+    except json.JSONDecodeError as exc:
+        raise SiteError(f"{OPENCODE_CONFIG}: the validated config is not JSON: {exc}") from None
+    model = config.get("model") if isinstance(config, dict) else None
+    if not isinstance(model, str) or not model:
+        raise SiteError(f'{OPENCODE_CONFIG}: the validated config has no top-level "model" string')
+    return model
 
 
 def _table(lines: list[str], first_cell: str, source: str) -> tuple[list[str], list[list[str]]]:
@@ -897,10 +918,17 @@ def load(root: Path) -> Matrix:
     license_lines = tuple(line for line in _section(root, "README.md#license") if line.strip())
     if not license_lines:
         raise SiteError("README.md: the License section has no text")
+    default_model = opencode_default(root)
+    pairs = [(model.id, cell.runtime) for model in models for cell in model.cells
+             if cell.status == "runs" and cell.recipe.opencode == default_model]
+    if len(pairs) != 1:
+        raise SiteError(f"{OPENCODE_CONFIG}: the default model {default_model} names {len(pairs)} OpenCode entries of "
+                        "pairs that run; it must name exactly one")
     run_list = tuple(data.run for data in runs)
     versions = _client_versions(run_list)
     return Matrix(runtimes=runtimes,
                   clients=tuple(Client(name, clients.LABELS[name], letters[name], versions[name])
                                 for name in clients.NAMES),
                   models=tuple(models), runs=run_list, ranked_without_recipe=ranked_without_recipe,
-                  license=license_lines)
+                  license=license_lines, top=len(ranks) + len(ranked_without_recipe),
+                  opencode_default=default_model, default=pairs[0])
