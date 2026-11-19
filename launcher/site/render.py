@@ -7,7 +7,7 @@ import hashlib
 import html
 import posixpath
 import re
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from fractions import Fraction
 from pathlib import Path
 from urllib.parse import quote, unquote
@@ -276,6 +276,29 @@ def _count(n: int, one: str, many: str) -> str:
     return f"{n} {one if n == 1 else many}"
 
 
+def client_sentence(results: Sequence[data.ClientResult], labels: Mapping[str, str]) -> str:
+    """The client result in words (Copy, card clients): the count the cell shows, then each client that did not pass,
+    with its run count for Known issue and Failed."""
+    passed = sum(1 for result in results if result.cls == "passed")
+    if passed == len(results):
+        return f"All {len(results)} clients passed."
+    rest = [f"{labels[result.client]}: {CLASS_WORDS[result.cls]}"
+            + (f", {result.passed_runs} of {result.runs} runs passed" if result.cls in ("known-issue", "failed") else "")
+            for result in results if result.cls != "passed"]
+    return f"{passed} of {len(results)} clients; " + "; ".join(rest) + "."
+
+
+def _lamp(cls: str, letter: str, hidden: bool = True) -> str:
+    """A client mark: span.lamp.<class> holding the letter; hidden from readers unless its container is."""
+    attrs = [("class", f"lamp {cls}")] + ([("aria-hidden", "true")] if hidden else [])
+    return _start("span", attrs) + f"<span>{_e(letter)}</span></span>"
+
+
+def _bar(width: int) -> str:
+    """A speed bar on the page's one scale, its width a w-<n> class the build styles."""
+    return f'<span class="bar" aria-hidden="true"><i class="w-{width}"></i></span>'
+
+
 class _Page:
     """The parts of one page; every repository string is escaped here, every Markdown text goes through inline."""
 
@@ -285,6 +308,7 @@ class _Page:
         self.links = Links(root, build)
         self.labels = {runtime.id: runtime.label for runtime in matrix.runtimes}
         self.client_labels = {client.id: client.label for client in matrix.clients}
+        self.top = data.top_speed(matrix)
         self.runs = [(model, cell) for model in matrix.models for cell in model.cells if cell.status == "runs"]
         if not self.runs:
             raise SiteError(f"{data.SELECTION}: runtime coverage: no Runs: cell, so the page has no measurement")
@@ -412,31 +436,51 @@ class _Page:
             "<p>Client results count every e2e run of the same model ID on the same engine, so they can span changes "
             "to a recipe.</p>", "</details>"])
 
-    def _tile(self, model: data.Model, cell: data.Cell) -> str:
+    def _runs_tile(self, model: data.Model, cell: data.Cell) -> str:
+        """A Runs tile: span.g with its parts in the tile table's order (Table and cells)."""
+        facts = cell.recipe
         label = self.labels[cell.runtime]
-        parts = [f'<span class="engine">{_e(label)}</span>',
-                 f'<span class="status">{_e(STATUS_LABELS[cell.status])}</span>']
-        if cell.status == "failed":
-            parts.append(f'<span class="date">on {_e(cell.measured)}</span>')
-        elif cell.status == "does-not-fit":
-            parts.append('<span class="label">(estimate)</span>')
+        if facts.decode is None:
+            parts = ['<span class="sp"><span class="vh">speed </span><span class="none">not recorded</span>'
+                     '<span class="vh">,</span></span>']
         else:
-            facts = cell.recipe
-            if cell.fastest is not None:
-                parts.append(f'<span class="tag"><span aria-hidden="true">*</span> {_e(cell.fastest)}</span>')
-            if facts.decode is None:
-                parts.append('<span class="speed">speed not recorded</span>')
+            parts = [f'<span class="sp">{_e(data.speed_text(facts.decode))}<span class="vh"> tok/s,</span></span>']
+        marker = data.lead(model, cell, self.labels)
+        if marker is not None:
+            shown, words = marker
+            if shown == "tied":
+                parts.append(f'<span class="mk"><span aria-hidden="true">* tied</span><span class="vh">{_e(words)},'
+                             "</span></span>")
             else:
-                parts.append(f'<span class="speed">{facts.decode:g}</span> <span class="unit">tok/s</span>')
-            parts.append(f'<span class="pill">{facts.context // 1024}k</span>')
-            letters = {client.id: client.letter for client in self.matrix.clients}
-            lamps = " ".join(f'<span class="lamp {_e(result.cls)}"><span aria-hidden="true">{_e(letters[result.client])}'
-                            f'</span><span class="vh">{_e(self.client_labels[result.client])} '
-                            f"{_e(CLASS_WORDS[result.cls])},</span></span>" for result in cell.clients)
-            parts.append(f'<span class="lamps">{lamps}</span>')
-            if cell.setup:
-                parts.append(f'<span class="setup">{_e(SETUP_MARK)}</span>')
-        return f'<a class="tile" href="#d-{_e(cell.runtime)}-{_e(model.id)}">' + " ".join(parts) + "</a>"
+                first, _, rest = words.partition(shown)
+                parts.append(f'<span class="mk"><span aria-hidden="true">* </span><span class="vh">{_e(first)}</span>'
+                             f'{_e(shown)}<span class="vh">{_e(rest)},</span></span>')
+        if (model.id, cell.runtime) == self.matrix.default:
+            words = data.role_words("default", self.matrix)
+            parts.append(f'<span class="dm"><span class="tag" aria-hidden="true">{_e(self.client_labels["opencode"])} '
+                         f'default</span><span class="vh">{_e(words[:1].lower() + words[1:])},</span></span>')
+        if cell.setup:
+            parts.append(f'<span class="su">{_e(SETUP_MARK)}<span class="vh">,</span></span>')
+        parts.append(f'<span class="cx">{facts.context // 1024}k<span class="vh"> context,</span></span>')
+        parts.append(f'<span class="sz">{facts.size_bytes / 1e9:.1f} GB<span class="vh"> download,</span></span>')
+        letters = {client.id: client.letter for client in self.matrix.clients}
+        passed = sum(1 for result in cell.clients if result.cls == "passed")
+        parts.append(f'<span class="pc" aria-hidden="true"><span class="pcn">{passed}/{len(cell.clients)}</span>'
+                     + "".join(_lamp(result.cls, letters[result.client], hidden=False)
+                               for result in cell.clients if result.cls != "passed") + "</span>")
+        parts.append(_bar(data.bar_width(facts.decode, self.top)))
+        parts.append(f'<span class="vh">{_e(label)}: {_e(client_sentence(cell.clients, self.client_labels))}</span>')
+        return (f'<a class="tile" href="#d-{_e(cell.runtime)}-{_e(model.id)}"><span class="g">' + "".join(parts)
+                + "</span></a>")
+
+    @staticmethod
+    def _other_tile(model: data.Model, cell: data.Cell) -> str:
+        """A Failed or Does not fit tile: its status word and the date or the evidence label."""
+        if cell.status == "failed":
+            words = f'<span class="miss"><b>Failed</b> <span class="dt">{_e(cell.measured)}</span></span>'
+        else:
+            words = '<span class="miss">Does not fit <span class="nw">(estimate)</span></span>'
+        return f'<a class="tile x" href="#d-{_e(cell.runtime)}-{_e(model.id)}">{words}</a>'
 
     def _cell(self, model: data.Model, cell: data.Cell) -> str:
         attrs: list[tuple[str, str | None]] = [("role", "cell"), ("data-engine", cell.runtime),
@@ -448,41 +492,69 @@ class _Page:
             attrs += [("data-ctx", str(facts.context // 1024)), ("data-cap", str(facts.memory_cap)),
                       ("data-think", facts.thinking), ("data-tools", "no" if facts.chat_only else "yes"),
                       ("data-use", " ".join(cell.uses))]
+            if cell.fastest is not None:
+                attrs.append(("data-fast", None))
+            if (model.id, cell.runtime) == self.matrix.default:
+                attrs.append(("data-default", None))
+            if cell.setup:
+                attrs.append(("data-setup", None))
             attrs += [(f"data-c-{result.client}", result.cls) for result in cell.clients]
             attrs += [(f"data-o-{key}", str(place)) for key, place in cell.positions]
-        label = self.labels[cell.runtime]
-        attrs.append(("data-search", data.search_text(model, cell, label)))
-        return (_start("td", attrs) + self._tile(model, cell)
-                + f' <span class="out" hidden><span class="engine" aria-hidden="true">{_e(label)}</span> '
-                + "Not in this view</span></td>")
+        attrs.append(("data-search", data.search_text(model, cell, self.labels[cell.runtime])))
+        tile = self._runs_tile(model, cell) if cell.status == "runs" else self._other_tile(model, cell)
+        return _start("td", attrs) + tile + '<span class="out" hidden>Not in this view</span></td>'
+
+    def _row(self, model: data.Model) -> str:
+        positions = dict(model.positions)
+        attrs = [("id", f"m-{model.id}"), ("role", "row"), ("data-model", model.id),
+                 ("data-o-name", str(positions["name"])), ("data-o-gap", str(positions["gap"]))]
+        if model.rank is not None:
+            attrs.append(("data-rank", str(model.rank)))
+        header = (f'<th scope="row" role="rowheader"><span class="rk">{"" if model.rank is None else model.rank}</span> '
+                  f'<span class="id">{_e(model.id)}</span>')
+        if model.chat_only:
+            header += ' <span class="tag">Chat only<span class="vh">, no tool calling</span></span>'
+        gap = data.gap_text(model, self.labels)
+        if gap is not None:
+            header += f'<span class="gv"><span class="vh">; </span>{_e(gap)}</span>'
+        return (_start("tr", attrs) + header + "</th>" + "".join(self._cell(model, cell) for cell in model.cells)
+                + "</tr>")
+
+    def _head(self, runtime: data.Runtime) -> str:
+        """An engine's column head: its label, the version its heading gives after the label, and its Runs count."""
+        runs = sum(1 for model in self.matrix.models for cell in model.cells
+                   if cell.runtime == runtime.id and cell.status == "runs")
+        version = runtime.heading.removeprefix(runtime.label).strip()
+        return (f'<th scope="col" role="columnheader" data-engine="{_e(runtime.id)}"><span class="en">{_e(runtime.label)}'
+                "</span>" + (f' <span class="ver">{_e(version)}</span>' if version else "")
+                + f'<span class="n"><span class="vh">, </span>{runs} of {len(self.matrix.models)} run</span></th>')
 
     def matrix_table(self) -> str:
         found = data.view(self.matrix, "", data.Filters(), None)
         models = {model.id: model for model in self.matrix.models}
-        heads = ['<th scope="col" role="columnheader">Model</th>'] + [
-            f'<th scope="col" role="columnheader" data-engine="{_e(runtime.id)}">{_e(runtime.heading)} '
-            f'<span class="count">{_count(runtime.recipes, "recipe", "recipes")}</span></th>'
-            for runtime in self.matrix.runtimes]
+        heads = [f'<th scope="col" role="columnheader" class="mh">Top {self.matrix.top} rank and model</th>',
+                 *(self._head(runtime) for runtime in self.matrix.runtimes)]
+        divider = (_start("tr", [("id", "grp"), ("class", "grp"), ("role", "row")]
+                          + ([("hidden", None)] if found.divider is None else []))
+                   + f'<th colspan="{len(self.matrix.runtimes) + 1}" scope="rowgroup" role="rowheader">'
+                   + f"Not in the Top {self.matrix.top}</th></tr>")
         rows = []
         for model_id in found.rows:
-            model = models[model_id]
-            positions = dict(model.positions)
-            attrs = [("id", f"m-{model.id}"), ("role", "row"), ("data-model", model.id),
-                     ("data-o-name", str(positions["name"])), ("data-o-gap", str(positions["gap"]))]
-            if model.rank is not None:
-                attrs.append(("data-rank", str(model.rank)))
-            meta = ([f"Rank {model.rank}"] if model.rank is not None else []) + (["Chat only"] if model.chat_only else [])
-            if model.aliases:
-                meta.append(("alias " if len(model.aliases) == 1 else "aliases ") + ", ".join(model.aliases))
-            header = (f'<th scope="row" role="rowheader"><span class="id">{_e(model.id)}</span>'
-                      + "".join(f' <span class="meta">{_e(line)}</span>' for line in meta) + "</th>")
-            rows.append(_start("tr", attrs) + header + "".join(self._cell(model, cell) for cell in model.cells) + "</tr>")
+            if model_id == found.divider:
+                rows.append(divider)
+            rows.append(self._row(models[model_id]))
+        if found.divider is None:
+            rows.append(divider)
         caption = data.caption_line(data.USE_CASES[0], data.USE_CASES[0].sort, self.matrix)
+        pairs = len(self.matrix.models) * len(self.matrix.runtimes)
         return "\n".join([
-            '<h2 class="vh">Models and engines</h2>', '<table id="matrix" tabindex="-1" role="table">',
+            '<h2 class="vh">Models and engines</h2>',
+            _start("div", [("class", "tbl")]) + _start("table", [
+                ("id", "matrix"), ("role", "table"), ("tabindex", "-1"), ("data-pairs", str(pairs)), ("data-use", ""),
+                ("data-sort", data.USE_CASES[0].sort)]),
             f'<caption id="caption" class="vh">{_e(caption)}</caption>',
             '<thead role="rowgroup"><tr role="row">' + "".join(heads) + "</tr></thead>", '<tbody role="rowgroup">',
-            *rows, "</tbody>", "</table>"])
+            *rows, "</tbody>", "</table></div>"])
 
     def _pair_link(self, model_id: str, runtime: str, words: str) -> str:
         return f'<a href="#d-{_e(runtime)}-{_e(model_id)}">{_e(words)}</a>'

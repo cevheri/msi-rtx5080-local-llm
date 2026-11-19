@@ -8,10 +8,12 @@ import hashlib
 import io
 import os
 import re
+import shutil
 import socket
 import subprocess
 import sys
 import tempfile
+import tomllib
 import unittest
 from pathlib import Path
 
@@ -246,7 +248,10 @@ class SiteRenderTest(unittest.TestCase):
                 with self.subTest(model=model.id, runtime=cell.runtime):
                     td = next(node for node in tree.by_id("m-" + model.id).find_all("td")
                               if node.attrs["data-engine"] == cell.runtime)
-                    self.assertIn(words[cell.status], td.find_all("span", "status")[0].text())
+                    if cell.status == "runs":
+                        self.assertTrue(visible(td).startswith(data.speed_text(cell.recipe.decode)), visible(td))
+                    else:
+                        self.assertIn(words[cell.status], visible(td))
                     section = tree.by_id(f"d-{cell.runtime}-{model.id}")
                     self.assertIsNotNone(section)
                     # page.js names the dialog by this h3 (aria-labelledby).
@@ -365,7 +370,7 @@ class SiteRenderTest(unittest.TestCase):
                          ["rowgroup", "rowgroup"])
         self.assertEqual({node.attrs.get("role") for node in table.find_all("tr")}, {"row"})
         self.assertEqual({(node.attrs["scope"], node.attrs.get("role")) for node in table.find_all("th")},
-                         {("col", "columnheader"), ("row", "rowheader")})
+                         {("col", "columnheader"), ("row", "rowheader"), ("rowgroup", "rowheader")})
         self.assertEqual([node.attrs["aria-labelledby"] for node in tree.find_all("section")
                           if "aria-labelledby" in node.attrs], [])
         # The lead's autofocus ruling: the markup carries no autofocus (Chrome logs a line for it on every load with
@@ -384,12 +389,11 @@ class SiteRenderTest(unittest.TestCase):
                       page)
         self.assertEqual(squash(tree.by_id("legend").find_all("summary")[0]),
                          "Legend: O OpenCode, H Hermes, P Pi, D dsh, K Kimi")
+        self.assertEqual([squash(node) for node in table.find_all("th", "mh")], ["Top 3 rank and model"])
         heads = [node for node in table.find_all("thead")[0].find_all("th") if node.attrs.get("data-engine")]
-        for head, start, count in zip(heads, ("llama.cpp b12407", "vLLM v0.33.0", "SGLang v0.5.23"),
-                                      ("6 recipes", "2 recipes", "2 recipes")):
-            self.assertTrue(squash(head).startswith(start), squash(head))
-            self.assertEqual(squash(head.find_all("span", "count")[0]), count)
-        self.assertEqual(len(heads), len(ADAPTERS))
+        self.assertEqual([tuple(squash(head.find_all("span", cls)[0]) for cls in ("en", "ver", "n")) for head in heads],
+                         [("llama.cpp", "b12407", ", 6 of 6 run"), ("vLLM", "v0.33.0", ", 2 of 6 run"),
+                          ("SGLang", "v0.5.23", ", 2 of 6 run")])
         self.fixture.run("2026-11-19", "llmctl-pi-e2e", [line for runtime, recipe_id in RECIPES
                                                          for line in (row(prefix(runtime, recipe_id), "up"),
                                                                       row(prefix(runtime, recipe_id), "pi", "no answer"))])
@@ -397,6 +401,29 @@ class SiteRenderTest(unittest.TestCase):
         tree = parse(render.page(matrix, BUILD, self.fixture.root))
         self.assertEqual(data.view(matrix, "every-client", data.Filters(), None).rows, ())
         check_lists(matrix, tree)
+        # A head counts its engine's Runs cells, not its recipes: an estimate recipe ships in vLLM's Does not fit cell.
+        target = self.fixture.root / "recipes/vllm/k2-horizon-7b.toml"
+        shutil.copyfile(REPO / "recipes/vllm/k2-horizon-7b.toml", target)
+        doc = tomllib.loads(target.read_text(encoding="utf-8"))["doc"]
+        target.write_text("".join(line + "\n" for line in target.read_text(encoding="utf-8").splitlines()
+                                  if not line.startswith("decode_tok_s = "))
+                          .replace('kind = "measured"', f'kind = "estimate"\ndoc = "{doc}"'), encoding="utf-8")
+        path, anchor = doc.split("#", 1)
+        with (self.fixture.root / path).open("a", encoding="utf-8") as models:
+            models.write(f"## {anchor}\n\n")
+        # A heading that is the engine label alone has no span.ver (2026-11-19 plan ruling 13).
+        self.fixture.coverage_table([self.fixture._coverage_lines()[0].replace("llama.cpp b12407", "llama.cpp"),
+                                     *self.fixture._coverage_lines()[1:]])
+        matrix = self.fixture.load()
+        self.assertEqual(matrix.runtimes[1].recipes, 3)
+        heads = [node for node in parse(render.page(matrix, BUILD, self.fixture.root)).by_id("matrix")
+                 .find_all("thead")[0].find_all("th") if node.attrs.get("data-engine")]
+        self.assertEqual([[(node.attrs["class"], squash(node)) for node in head.children if not isinstance(node, str)]
+                          for head in heads],
+                         [[("en", "llama.cpp"), ("n", ", 6 of 6 run")],
+                          [("en", "vLLM"), ("ver", "v0.33.0"), ("n", ", 2 of 6 run")],
+                          [("en", "SGLang"), ("ver", "v0.5.23"), ("n", ", 2 of 6 run")]])
+        self.assertEqual(spoken(heads[0]), "llama.cpp, 6 of 6 run")
 
     def test_page_loads_nothing_from_other_sites(self):
         page = self.page()
@@ -454,6 +481,11 @@ class SiteRenderTest(unittest.TestCase):
         matrix = self.fixture.load()
         tree = parse(render.page(matrix, BUILD, self.fixture.root))
         labels = {runtime.id: runtime.label for runtime in matrix.runtimes}
+        table = tree.by_id("matrix")
+        self.assertEqual({name: table.attrs.get(name) for name in ("role", "tabindex", "data-pairs", "data-use", "data-sort")},
+                         {"role": "table", "tabindex": "-1", "data-pairs": "18", "data-use": "", "data-sort": "rank"})
+        self.assertEqual([node.find_all("table")[0].attrs.get("id") for node in tree.find_all("div", "tbl")], ["matrix"])
+        self.assertEqual(table.find_all("span", "engine"), [])
         for model in matrix.models:
             tr = tree.by_id("m-" + model.id)
             positions = dict(model.positions)
@@ -469,19 +501,14 @@ class SiteRenderTest(unittest.TestCase):
                                      (cell.status, data.search_text(model, cell, labels[cell.runtime])))
                     tile = tds[cell.runtime].find_all("a", "tile")[0]
                     self.assertEqual(tile.attrs["href"], f"#d-{cell.runtime}-{model.id}")
-                    # The stacked layout shows the engine label first, so it starts the link's name (SC 2.5.3).
-                    first = next(node for node in tile.children if not isinstance(node, str))
-                    self.assertEqual((first.attrs, first.text()), ({"class": "engine"}, labels[cell.runtime]))
-                    # A card below the switch width names the engine of a cell out of view, as its tile does
-                    # (Cells: "In the stacked layout each cell starts with its engine label").
-                    out = tds[cell.runtime].find_all("span", "out")[0]
-                    self.assertEqual((squash(out), "hidden" in out.attrs),
-                                     (labels[cell.runtime] + " Not in this view", True))
-                    engine = out.find_all("span", "engine")[0]
-                    self.assertEqual((engine.text(), engine.attrs.get("aria-hidden")), (labels[cell.runtime], "true"))
+                    self.assertEqual(len(tds[cell.runtime].find_all("a")), 1)
+                    out = tds[cell.runtime].find_all("span", "out")
+                    self.assertEqual([(squash(node), "hidden" in node.attrs) for node in out], [("Not in this view", True)])
                     if cell.status != "runs":
+                        self.assertEqual(tile.attrs["class"], "tile x")
                         self.assertEqual(sorted(attrs), ["data-engine", "data-search", "data-status", "role"])
                         continue
+                    self.assertEqual(tile.attrs["class"], "tile")
                     facts = cell.recipe
                     expected = {"data-ctx": str(facts.context // 1024), "data-cap": str(facts.memory_cap),
                                 "data-think": facts.thinking, "data-tools": "no" if facts.chat_only else "yes",
@@ -490,51 +517,90 @@ class SiteRenderTest(unittest.TestCase):
                     expected.update({f"data-o-{key}": str(place) for key, place in cell.positions})
                     if facts.decode is not None:
                         expected["data-speed"] = f"{facts.decode:g}"
+                    if cell.fastest is not None:
+                        expected["data-fast"] = None
+                    if (model.id, cell.runtime) == matrix.default:
+                        expected["data-default"] = None
+                    if cell.setup:
+                        expected["data-setup"] = None
                     self.assertEqual({name: attrs[name] for name in expected if name in attrs}, expected)
                     self.assertEqual(sorted(attrs), sorted([*expected, "data-engine", "data-status", "data-search",
                                                             "role"]))
-        rows = [node.attrs["id"][2:] for node in tree.by_id("matrix").find_all("tbody")[0].find_all("tr")]
-        self.assertEqual(rows, list(data.view(matrix, "", data.Filters(), None).rows))
-        tile = self.tile(tree, "qwen3.6-35b-a3b", "sglang")
-        # The visible facts of one tile per status, typed from the fixture's pinned SPEEDS, CONTEXTS and FAILED_CELL.
-        parts = lambda model_id, runtime: [(node.attrs["class"], squash(node)) for node in
-                                           self.tile(tree, model_id, runtime).children
-                                           if not isinstance(node, str) and node.attrs["class"] != "lamps"]
+        body = [node.attrs["id"] for node in table.find_all("tbody")[0].find_all("tr")]
+        self.assertEqual([row_id[2:] for row_id in body if row_id.startswith("m-")],
+                         list(data.view(matrix, "", data.Filters(), None).rows))
+        self.assertEqual(body[body.index("grp") + 1], "m-mellum2.1-12b")
+        # The row headers: the rank, the whole ID and the Chat only tag with its spoken words.
+        deepseek = tree.by_id("m-deepseek-r1-0528-qwen3-8b").find_all("th")[0]
+        self.assertEqual([(node.attrs["class"], squash(node)) for node in deepseek.children if not isinstance(node, str)
+                          and node.attrs["class"] != "gv"],
+                         [("rk", "3"), ("id", "deepseek-r1-0528-qwen3-8b"), ("tag", "Chat only, no tool calling")])
+        tag = deepseek.find_all("span", "tag")[0]
+        self.assertEqual((visible(tag), spoken(tag)), ("Chat only", "Chat only, no tool calling"))
+        mellum = tree.by_id("m-mellum2.1-12b").find_all("th")[0]
+        self.assertEqual((squash(mellum.find_all("span", "rk")[0]), mellum.find_all("span", "tag")), ("", []))
+        size = lambda model_id, runtime: f"{cell_of(matrix, model_id, runtime).recipe.size_bytes / 1e9:.1f} GB"
+        parts = lambda model_id, runtime: [(node.attrs["class"], visible(node)) for node in
+                                           self.tile(tree, model_id, runtime).find_all("span", "g")[0].children
+                                           if not isinstance(node, str)]
         self.assertEqual(parts("qwen3.6-35b-a3b", "sglang"),
-                         [("engine", "SGLang"), ("status", "Runs"), ("tag", "* Fastest by 24%"), ("speed", "151.3"),
-                          ("unit", "tok/s"), ("pill", "128k")])
-        self.assertEqual(parts("k2-horizon-7b", "llamacpp"),
-                         [("engine", "llama.cpp"), ("status", "Runs"), ("speed", "66.9"), ("unit", "tok/s"),
-                          ("pill", "80k")])
-        self.assertEqual(parts("deepseek-r1-0528-qwen3-8b", "sglang"),
-                         [("engine", "SGLang"), ("status", "Failed"), ("date", "on 2026-11-17")])
-        self.assertEqual(parts("k2-horizon-7b", "vllm"),
-                         [("engine", "vLLM"), ("status", "Does not fit"), ("label", "(estimate)")])
-        tag = tile.find_all("span", "tag")[0]
-        self.assertEqual(" ".join(tag.text().split()), "* Fastest by 24%")
-        self.assertEqual([(node.attrs, node.text()) for node in tag.find_all("span")], [({"aria-hidden": "true"}, "*")])
-        words = " ".join(node.text() for node in tile.find_all("span", "vh"))
-        self.assertTrue(words.startswith("OpenCode passed,"), words)
-        letters = {client.id: client.letter for client in matrix.clients}
-        self.assertEqual(tile.find_all("span", "lamps")[0].text(),
-                         " ".join(f"{letters[name]}{clients.LABELS[name]} passed," for name in clients.NAMES))
-        lamps = tile.find_all("span", "lamps")[0].find_all("span", "lamp")
-        self.assertEqual([node.attrs["class"] for node in lamps], ["lamp passed"] * len(clients.NAMES))
-        self.assertEqual([node.find_all("span")[0].attrs for node in lamps], [{"aria-hidden": "true"}] * 5)
-        self.assertEqual(tile.find_all("span", "setup"), [])
+                         [("sp", "151.3"), ("mk", "* 24%"), ("cx", "128k"), ("sz", size("qwen3.6-35b-a3b", "sglang")),
+                          ("pc", "5/5"), ("bar", ""), ("vh", "")])
+        self.assertEqual(parts("qwen3.6-35b-a3b", "llamacpp"),
+                         [("sp", "122.5"), ("dm", "OpenCode default"), ("cx", "128k"),
+                          ("sz", size("qwen3.6-35b-a3b", "llamacpp")), ("pc", "5/5"), ("bar", ""), ("vh", "")])
+        self.assertEqual(tile_name(self.tile(tree, "qwen3.6-35b-a3b", "sglang")),
+                         "151.3 tok/s, fastest, 24% ahead of llama.cpp, 128k context, SGLang: All 5 clients passed.")
+        self.assertEqual(tile_name(self.tile(tree, "qwen3.6-35b-a3b", "llamacpp"), drop=("sz",)),
+                         "122.5 tok/s, default in the OpenCode config, 128k context, llama.cpp: All 5 clients passed.")
+        deepseek = self.tile(tree, "deepseek-r1-0528-qwen3-8b", "vllm")
+        self.assertEqual(tile_name(deepseek), "72.5 tok/s, fastest, 3% ahead of llama.cpp, 64k context, "
+                                              "vLLM: 4 of 5 clients; OpenCode: not supported.")
+        pc = deepseek.find_all("span", "pc")[0]
+        self.assertEqual((pc.attrs.get("aria-hidden"), squash(pc.find_all("span", "pcn")[0]),
+                          [(n.attrs["class"], n.text()) for n in pc.find_all("span", "lamp")]),
+                         ("true", "4/5", [("lamp not-supported", "O")]))
+        # Run counts follow Known issue and Failed only: a client that was not tested has none.
+        self.assertEqual(render.client_sentence((data.ClientResult("kimi", "not-tested", 0, 0, None, None),),
+                                                {"kimi": "Kimi"}), "0 of 1 clients; Kimi: not tested.")
+        widths = {("deepseek-r1-0528-qwen3-8b", "llamacpp"): "w-38", ("deepseek-r1-0528-qwen3-8b", "vllm"): "w-39",
+                  ("gpt-oss-20b", "llamacpp"): "w-88", ("gpt-oss-20b", "vllm"): "w-44", ("gpt-oss-20b", "sglang"): "w-66",
+                  ("k2-horizon-7b", "llamacpp"): "w-36", ("mellum2.1-12b", "llamacpp"): "w-100",
+                  ("qwen3-coder-next", "llamacpp"): "w-38", ("qwen3.6-35b-a3b", "llamacpp"): "w-65",
+                  ("qwen3.6-35b-a3b", "sglang"): "w-80"}
+        self.assertEqual({key: self.tile(tree, *key).find_all("i")[0].attrs["class"] for key in widths}, widths)
+        self.assertEqual({self.tile(tree, *key).find_all("span", "bar")[0].attrs.get("aria-hidden") for key in widths},
+                         {"true"})
+        self.assertEqual([visible(self.tile(tree, *key)) for key in (("deepseek-r1-0528-qwen3-8b", "sglang"),
+                                                                    ("k2-horizon-7b", "vllm"))],
+                         ["Failed 2026-11-17", "Does not fit (estimate)"])
+        # A failed setup step, a known issue and a failure, and a Runs cell without a speed.
+        cell = ("qwen3.6-35b-a3b", "llamacpp")
+        self.fixture.coverage({cell: self.fixture._default_cell(*cell)
+                               + "; e2e 2026-11-19: `hermes-z` wrote hello.py elsewhere"})
+        qwen = prefix("llamacpp", "qwen3.6-35b-a3b")
+        self.fixture.run("2026-11-19", "llmctl-next-e2e", [row(qwen, "up"), row(qwen, "status", "no answer"),
+                                                           row(qwen, "hermes-z", "no answer"), row(qwen, "pi", "no answer")])
         self.fixture.set_value("vllm", "gpt-oss-20b", "decode_tok_s", None)
-        cell = prefix("llamacpp", "qwen3.6-35b-a3b")
-        self.fixture.run("2026-11-19", "llmctl-next-e2e", [row(cell, "up"), row(cell, "status", "no answer"),
-                                                           row(cell, "opencode")])
         tree = parse(self.page())
         tile = self.tile(tree, "gpt-oss-20b", "vllm")
-        self.assertEqual(" ".join(tile.find_all("span", "speed")[0].text().split()), "speed not recorded")
+        self.assertEqual(parts("gpt-oss-20b", "vllm")[0], ("sp", "not recorded"))
+        self.assertEqual(tile_name(tile), "speed not recorded, 64k context, vLLM: All 5 clients passed.")
         self.assertNotIn("data-speed", tile_cell(tree, "gpt-oss-20b", "vllm").attrs)
+        self.assertEqual(tile.find_all("i")[0].attrs["class"], "w-0")
         setups = [(model_id, td.attrs["data-engine"]) for model_id in sorted({r for _, r in RECIPES})
-                  for td in tree.by_id("m-" + model_id).find_all("td") if td.find_all("span", "setup")]
+                  for td in tree.by_id("m-" + model_id).find_all("td") if "data-setup" in td.attrs]
         self.assertEqual(setups, [("qwen3.6-35b-a3b", "llamacpp")])
-        self.assertEqual(self.tile(tree, "qwen3.6-35b-a3b", "llamacpp").find_all("span", "setup")[0].text(),
-                         "Setup check failed")
+        qwen_tile = self.tile(tree, "qwen3.6-35b-a3b", "llamacpp")
+        su = qwen_tile.find_all("span", "su")
+        self.assertEqual([(visible(node), spoken(node)) for node in su], [("Setup check failed", "Setup check failed,")])
+        pc = qwen_tile.find_all("span", "pc")[0]
+        self.assertEqual((squash(pc.find_all("span", "pcn")[0]),
+                          [(n.attrs["class"], n.text()) for n in pc.find_all("span", "lamp")]),
+                         ("3/5", [("lamp known-issue", "H"), ("lamp failed", "P")]))
+        self.assertEqual(squash(qwen_tile.find_all("span", "g")[0].find_all("span", "vh")[-1]),
+                         "llama.cpp: 3 of 5 clients; Hermes: known issue, 1 of 2 runs passed; Pi: failed, 1 of 2 runs "
+                         "passed.")
         # data-search holds the model ID, the aliases, the recipe name and the engine label, lower-cased (Cells).
         self.fixture.set_value("llamacpp", "k2-horizon-7b", "aliases", '["k2-7b", "horizon"]')
         self.fixture.set_value("llamacpp", "k2-horizon-7b", "name", '"K2 Horizon Q4"')
@@ -543,6 +609,66 @@ class SiteRenderTest(unittest.TestCase):
                          "k2-horizon-7b k2-7b horizon k2 horizon q4 llama.cpp")
         self.assertEqual(tile_cell(tree, "k2-horizon-7b", "vllm").attrs["data-search"],
                          "k2-horizon-7b k2-7b horizon vllm")
+
+    def test_sort_values_are_in_the_markup(self):
+        matrix = self.fixture.load()
+        tree = parse(render.page(matrix, BUILD, self.fixture.root))
+        for model in matrix.models:
+            for cell in model.cells:
+                if cell.status != "runs":
+                    continue
+                with self.subTest(model=model.id, runtime=cell.runtime):
+                    size = f"{cell.recipe.size_bytes / 1e9:.1f} GB"
+                    sz = self.tile(tree, model.id, cell.runtime).find_all("span", "sz")
+                    self.assertEqual([(visible(node), spoken(node)) for node in sz], [(size, size + " download,")])
+        gaps = {}
+        for node in tree.by_id("matrix").find_all("tbody")[0].find_all("tr"):
+            for gv in node.find_all("span", "gv"):
+                self.assertTrue(squash(gv).startswith("; "), squash(gv))
+                gaps[node.attrs["id"][2:]] = visible(gv)
+        self.assertEqual(gaps, {"qwen3.6-35b-a3b": "SGLang 24% ahead of llama.cpp",
+                                "gpt-oss-20b": "llama.cpp 99% ahead of vLLM",
+                                "deepseek-r1-0528-qwen3-8b": "vLLM 3% ahead of llama.cpp"})
+
+    def test_divider_row_before_the_first_unranked_model(self):
+        def body(tree):
+            return tree.by_id("matrix").find_all("tbody")[0].find_all("tr")
+
+        tree = parse(self.page())
+        self.assertEqual([node.attrs["id"] for node in body(tree)],
+                         ["m-qwen3.6-35b-a3b", "m-gpt-oss-20b", "m-deepseek-r1-0528-qwen3-8b", "grp", "m-mellum2.1-12b",
+                          "m-qwen3-coder-next", "m-k2-horizon-7b"])
+        grp = tree.by_id("grp")
+        self.assertEqual((grp.attrs.get("class"), grp.attrs.get("role"), "hidden" in grp.attrs), ("grp", "row", False))
+        self.assertEqual([(th.attrs.get("colspan"), th.attrs.get("scope"), th.attrs.get("role"), squash(th))
+                          for th in grp.find_all("th")], [("4", "rowgroup", "rowheader", "Not in the Top 3")])
+        ids = ("qwen3.6-35b-a3b", "gpt-oss-20b", "deepseek-r1-0528-qwen3-8b", "mellum2.1-12b", "qwen3-coder-next",
+               "k2-horizon-7b")
+        self.fixture.top10([TOP10_ROW.format(rank=rank, id=model_id,
+                                             repo=self.fixture._read("llamacpp", model_id)["model"]["repo"])
+                            for rank, model_id in enumerate(ids, start=1)])
+        tree = parse(self.page())
+        rows = body(tree)
+        self.assertEqual([node.attrs["id"] for node in rows], [*(f"m-{model_id}" for model_id in ids), "grp"])
+        self.assertEqual(("hidden" in rows[-1].attrs, squash(rows[-1])), (True, "Not in the Top 6"))
+        # The divider follows View.divider: a ranked model without a Runs cell sorts last, so no unranked row
+        # follows a ranked one and the divider stays hidden at the end (R-D16).
+        target = self.fixture.root / "recipes/llamacpp/k2-horizon-7b.toml"
+        text = target.read_text(encoding="utf-8")
+        target.write_text("".join(line + "\n" for line in text.splitlines() if not line.startswith("decode_tok_s = "))
+                          .replace('kind = "measured"', f'kind = "estimate"\ndoc = "{tomllib.loads(text)["doc"]}"'),
+                          encoding="utf-8")
+        self.fixture.coverage({("k2-horizon-7b", "llamacpp"): "Failed: out of memory, measured 2026-11-17 "
+                               "([record](../research/2026-11-17/fixture-failure/README.md))"})
+        ranked = ("qwen3.6-35b-a3b", "gpt-oss-20b", "deepseek-r1-0528-qwen3-8b", "k2-horizon-7b")
+        self.fixture.top10([TOP10_ROW.format(rank=rank, id=model_id,
+                                             repo=self.fixture._read("llamacpp", model_id)["model"]["repo"])
+                            for rank, model_id in enumerate(ranked, start=1)])
+        rows = body(parse(self.page()))
+        self.assertEqual([(node.attrs["id"], "hidden" in node.attrs) for node in rows],
+                         [("m-qwen3.6-35b-a3b", False), ("m-gpt-oss-20b", False), ("m-deepseek-r1-0528-qwen3-8b", False),
+                          ("m-mellum2.1-12b", False), ("m-qwen3-coder-next", False), ("m-k2-horizon-7b", False),
+                          ("grp", True)])
 
     def tile(self, tree, model_id, runtime):
         return tile_cell(tree, model_id, runtime).find_all("a", "tile")[0]
@@ -1159,6 +1285,35 @@ class SiteRenderTest(unittest.TestCase):
 
 def squash(node) -> str:
     return " ".join(node.text().split())
+
+
+def _kept(node, keep) -> str:
+    """The text of the node and its descendants that `keep` admits; a node it refuses drops its whole subtree."""
+    if not keep(node):
+        return ""
+    return "".join(child if isinstance(child, str) else _kept(child, keep) for child in node.children)
+
+
+def _classes(node) -> set[str]:
+    return set((node.attrs.get("class") or "").split())
+
+
+def visible(node) -> str:
+    """The squashed text a sighted reader sees: without `.vh` and `[hidden]` elements."""
+    return " ".join(_kept(node, lambda n: "vh" not in _classes(n) and "hidden" not in n.attrs).split())
+
+
+def spoken(node, drop=()) -> str:
+    """The squashed text a screen reader reads: without aria-hidden subtrees, `[hidden]` elements and the classes in
+    `drop`."""
+    return " ".join(_kept(node, lambda n: n.attrs.get("aria-hidden") != "true" and "hidden" not in n.attrs
+                          and not _classes(n) & set(drop)).split())
+
+
+def tile_name(tile, drop=("sz", "dm")) -> str:
+    """A tile's accessible name: the spoken text of each child of its span.g, joined with spaces and squashed."""
+    g = tile.find_all("span", "g")[0]
+    return " ".join(" ".join(spoken(child, drop) for child in g.children if not isinstance(child, str)).split())
 
 
 def _text_without_lamps(node) -> str:
