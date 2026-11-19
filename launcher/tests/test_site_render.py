@@ -19,7 +19,7 @@ from pathlib import Path
 from launcher.runtimes import ADAPTERS
 from launcher.site import data, render
 from launcher.tests.fakes import REPO
-from launcher.tests.site_fixture import (RECIPES, SiteFixture, cell_of, parse, py311_fraction_format,
+from launcher.tests.site_fixture import (RECIPES, Node, SiteFixture, cell_of, parse, py311_fraction_format,
                                          well_formed_problems)
 
 BUILD = data.Build("https://github.com/o/r", "a" * 40, 0)
@@ -256,6 +256,80 @@ class SiteRenderTest(unittest.TestCase):
                           "This page sets no cookies, has no analytics and loads nothing from other sites."])
         self.assertEqual([a.attrs["href"] for a in footer.find_all("a")], ["https://github.com/o/r", "https://github.com/o/r/commit/" + "a" * 40])
 
+    def test_home_blocks_in_order(self):
+        main = parse(self.pages()["index.html"]).by_id("main")
+        self.assertEqual([n.attrs.get("id") or n.attrs.get("class") for n in main.children if isinstance(n, Node) and n.tag == "section"],
+                         ["fh", "models", "more-models", "get-started"])
+
+    def test_home_skip_link_nav_and_script_only_controls(self):
+        tree = parse(self.pages()["index.html"])
+        skip = tree.find_all("a")[0]
+        self.assertEqual((skip.attrs.get("class"), skip.attrs["href"], squash_text(skip)),
+                         ("skip", "#models", "Skip to the models"))
+        self.assertEqual([(squash_text(a), a.attrs["href"]) for a in tree.find_all("header")[0].find_all("li")
+                          for a in a.find_all("a")],
+                         [("Models", "#models"), ("Get started", "#get-started"), ("GitHub", "https://github.com/o/r")])
+        sortbox = tree.by_id("models").find_all("div", "sortbox")[0]
+        self.assertIn("hidden", sortbox.attrs)                   # spec 3.4: the sort is the script's
+        self.assertIn("data-js-only", sortbox.attrs)
+        css = (REPO / "launcher/site/page.css").read_text(encoding="utf-8")
+        self.assertRegex(css, r"(?m)^html:not\(\.js\) \.inputs\b")  # spec 3.4: no inputs without script
+
+    def test_hero_shows_the_laptop_answer(self):
+        tree = parse(self.pages()["index.html"])
+        answer = tree.by_id("answer")
+        self.assertEqual(squash_text(answer.find_all("p", "fh-verdict")[0]), "On our test laptop: all 6 models run as we measured them.")
+        self.assertEqual(squash_text(answer.find_all("h2")[0]), "Start with Qwen3.6-35B-A3B")
+        self.assertEqual(squash_text(answer.find_all("p", "reason")[0]), "Our default, and the model our OpenCode setup starts with.")
+        self.assertEqual(squash_text(answer.find_all("p", "hagents")[0]),
+                         "Passed the agent test in OpenCode (1 of 1 run). Also works in Hermes, Pi, dsh and Kimi.")
+        notes = [[squash_text(s) for s in p.find_all("span") if "ch-r" in s.attrs.get("class", "") or
+                  s.attrs.get("class") in ("gl", "rl")] for p in answer.find_all("p", "ch-notes")]
+        self.assertEqual(notes, [["14.7 GB used of our 16 GB", "about 1 GB for the desktop (estimate)"],
+                                 ["14.9 GB used at peak. llmctl asks for 20 GB free to start it.",
+                                  "about 22 GB in use by the desktop and apps (estimate)"]])
+        self.assertEqual(len(answer.find_all("i", "hb")), 16)
+        self.assertEqual(squash_text(answer.find_all("summary")[0]), "Why does a 20.5 GB download fit in 14.7 GB of GPU memory?")
+        self.assertEqual(answer.find_all("a", "btn")[0].attrs["href"], "#get-started")
+        self.assertIsNone(re.search(r"\byour\b", squash_text(answer), re.I))
+        self.assertIsNone(re.search(r"\bsetups\b", squash_text(tree.find_all("section", "fh")[0])))
+
+    def test_shelf_rows_follow_our_ranking(self):
+        tree = parse(self.pages()["index.html"])
+        rows = lambda sid: [li.attrs["data-model"] for li in tree.by_id(sid).find_all("li", "row")]
+        self.assertEqual(rows("models"), ["qwen3.6-35b-a3b", "gpt-oss-20b", "deepseek-r1-0528-qwen3-8b"])
+        self.assertEqual(rows("more-models"), ["qwen3-coder-next", "k2-horizon-7b", "mellum2.1-12b"])
+        row = tree.by_id("models").find_all("li", "row")[0]
+        self.assertEqual(row.find_all("a")[0].attrs["href"], "models/qwen3.6-35b-a3b/")
+        self.assertEqual(squash_text(row.find_all("h3")[0]), "Qwen3.6-35B-A3B")
+        self.assertEqual([squash_text(t) for t in row.find_all("span", "tag")], ["Our default", "Start here"])
+        self.assertEqual([squash_text(b) for b in row.find_all("b")], ["122.5", "128k", "20.5"])
+        self.assertEqual([squash_text(row.find_all("span", c)[0]) for c in ("galt", "ag", "vd")],
+                         ["Uses 14.7 GB of GPU memory.", "Passed (1 of 1 run)", "Runs as measured"])
+        self.assertEqual([squash_text(v) for v in row.find_all("span", "vh") if squash_text(v).endswith(":")],
+                         ["In OpenCode:", "On our laptop:"])        # S4: the hidden heads before the agents cell and verdict
+        self.assertEqual(len(row.find_all("i", "b")), 16)
+
+    def test_get_started_shows_the_picks_commands(self):
+        tree = parse(self.pages()["index.html"])
+        self.assertEqual(len(tree.find_all("div", "term")), 1)
+        self.assertEqual(terminal_lines(tree.by_id("get-started")), [
+            "# Get llmctl (once)", "$ git clone https://github.com/o/r", "$ cd r",
+            "# Download 20.5 GB of model files; the llama.cpp engine (7.05 GB on disk) comes too, the first time",
+            "$ ./llmctl pull qwen3.6-35b-a3b",
+            "# Start it: llmctl checks your machine first, then points your agents at it", "$ ./llmctl up qwen3.6-35b-a3b",
+            "# Open OpenCode and pick llamacpp-docker/qwen3.6-35b-a3b with /models", "$ opencode",
+            "# Check: a reply, a tool call and your speed (ours: 122.5 tok/s)", "$ ./llmctl test",
+            "# Stop it when you're done, so your GPU can rest", "$ ./llmctl down"])
+        self.assertEqual(squash_text(tree.by_id("get-started").find_all("p", "ep")[0]),
+                         "Other tools: http://127.0.0.1:8080/v1 with the model name local.")
+
+    def test_repository_text_is_escaped(self):
+        self.fixture.set_value("llamacpp", "k2-horizon-7b", "name", '"K2 <b>&\\" Horizon Q8_0"')
+        home = self.pages()["index.html"]
+        self.assertIn("K2 &lt;b&gt;&amp;&quot; Horizon", home)
+        self.assertNotIn("<b>&", home)
+
     def test_every_coverage_note_is_checked(self):
         # the pages show only first clauses, so render.check_notes keeps the subset rule for every note (P20)
         qwen = ("qwen3.6-35b-a3b", "llamacpp")
@@ -459,6 +533,20 @@ def sha(text: str) -> str:
 def squash_text(node) -> str:
     """The node's text with whitespace collapsed."""
     return " ".join(node.text().split())
+
+
+def terminal_lines(node) -> list[str]:
+    """The lines of the div.term inside node, as "# ..." for a comment and "$ ..." for a command."""
+    out = []
+    for line in node.find_all("div", "term")[0].find_all("div", "tl")[0].children:
+        if not isinstance(line, Node):
+            continue
+        if "c" in (line.attrs.get("class") or "").split():
+            out.append(squash_text(line))
+        else:
+            out.append("$ " + " ".join("".join(part if isinstance(part, str) else "" if "p" in (
+                part.attrs.get("class") or "").split() else part.text() for part in line.children).split()))
+    return out
 
 
 def visible_text(page: str) -> str:

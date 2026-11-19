@@ -1,13 +1,14 @@
 """The model guide built from the real repository: invariants only, never today's values (design D14)."""
 
 import json
+import re
 import unittest
 
-from launcher import clients
+from launcher import clients, markdown
 from launcher.catalog import load_catalog
 from launcher.e2e import summary
 from launcher.runtimes import ADAPTERS
-from launcher.site import data, fit, render
+from launcher.site import data, fit, render, words
 from launcher.tests.fakes import REPO
 from launcher.tests.site_fixture import well_formed_problems
 
@@ -71,6 +72,11 @@ class SiteRepositoryTest(unittest.TestCase):
                         self.assertEqual(fit.verdict(row, m, b.test_gpu).key, pick.verdict.key)
                     if pick.verdict.key == "ok":
                         self.assertEqual(fit.verdict(row, m, b.test_gpu).key, "ok")
+
+    def test_refusal_messages_are_llmctls(self):
+        _, rows = markdown.table(markdown.section(REPO, "docs/llmctl.md#when-up-refuses"), "Message starts with")
+        starts = {span for row in rows for span in re.findall(r"`([^`]+)`", row[0])}
+        self.assertEqual([message for message, _ in words.REFUSALS if message not in starts], [])
 
 
 if __name__ == "__main__":

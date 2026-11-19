@@ -7,14 +7,15 @@ import hashlib
 import html
 import posixpath
 import re
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import quote, unquote
 
 from launcher import markdown
 from launcher.catalog import Catalog
 from launcher.runtimes import ADAPTERS
-from launcher.site import data, words
+from launcher.site import data, draw, fit, words
 from launcher.site.data import Build, SiteError
 
 README = "README.md"
@@ -337,9 +338,240 @@ def document(*, title: str, description: str, body: str, style: str, scripts: tu
                       "</html>"]) + "\n"
 
 
-def _home_main() -> str:
-    return (f'<main id="main" class="wrap"><section class="fh" aria-labelledby="q"><div class="ask">'
-            f'<h1 id="q">{_e(words.H1)}</h1></div></section></main>')
+def _cell(matrix: data.Matrix, key: tuple[str, str]) -> data.Cell:
+    """The Runs cell of a setup."""
+    return next(cell for model in matrix.models if model.id == key[0] for cell in model.cells if cell.runtime == key[1])
+
+
+def _runtime(matrix: data.Matrix, runtime: str) -> data.Runtime:
+    return next(item for item in matrix.runtimes if item.id == runtime)
+
+
+def chips_html(name: str, values: Sequence, labels: Mapping, selected, legend: str, *, swatch: str | None = None,
+               help_html: str = "", select: str | None = None, cls: str = "field") -> str:
+    """A fieldset of radio chips named `name` (one per value, labelled from `labels`, `selected` checked) under its
+    legend, with an optional colour swatch, help line and, for the agent, the select that replaces the chips on
+    phones."""
+    row = "".join(f'<label class="chip"><input type="radio" name="{_e(name)}" value="{_e(value)}" data-k="{_e(name)}"'
+                  f'{" checked" if value == selected else ""}><span>{_e(labels[value])}</span></label>'
+                  for value in values)
+    chips = f'<div class="chips">{row}</div>'
+    if select is not None:
+        chips = f'<div class="agent-chips">{chips}</div>{select}'
+    mark = f'<i class="sw {_e(swatch)}" aria-hidden="true"></i>' if swatch else ""
+    return f'<fieldset class="{_e(cls)}"><legend>{mark}{_e(legend)}</legend>{help_html}{chips}</fieldset>'
+
+
+def map_html(text: words.MapText, track: str, bar: tuple[tuple[str, str, str | None], ...],
+             moe: tuple[str, words.Rich] | None, links: Links, here: str) -> str:
+    """The memory map (spec 7.4 and 8.3): the GPU track and the RAM bar with their notes, the mixture-of-experts
+    question when there is one (hidden otherwise, for the script) and the key; one figure named by its sentence."""
+    def notes(left: words.Rich, right: str, short: bool, side: str) -> str:
+        return (f'<p class="ch-notes"><span class="{side}l">{rich_html(left, links, here)}</span>'
+                f'<span class="ch-r {side}r{" short" if short else ""}">{_e(right)}</span></p>')
+    if moe is None:
+        question = '<details class="hmoe" hidden><summary></summary><p></p></details>'
+    else:
+        question = (f'<details class="hmoe"><summary>{_e(moe[0])}</summary><p>{rich_html(moe[1], links, here)}</p>'
+                    "</details>")
+    key = " ".join(f'<span><i class="k k-{kind}"></i>{_e(caption)}</span>'
+                   for kind, caption in zip(("solid", "line", "hatch"), words.CAPTION))
+    return (f'<figure class="hmap" aria-label="{_e(text.alt)}" role="img">'
+            f'<div class="ch"><p class="ch-label" aria-hidden="true"><i class="sw gpu"></i>{_e(words.GPU_TRACK)}</p>'
+            f'<div class="ch-body"><div class="htrack" aria-hidden="true">{draw.track_html(track)}</div>'
+            f'{notes(text.gpu_left, text.gpu_right, text.gpu_short, "g")}</div></div>'
+            f'<div class="ch"><p class="ch-label" aria-hidden="true"><i class="sw ram"></i>{_e(words.RAM_TRACK)}</p>'
+            f'<div class="ch-body">{draw.ram_svg(bar, "map")}'
+            f'{notes(text.ram_left, text.ram_right, text.ram_short, "r")}</div></div>'
+            f'{question}<figcaption class="hkey">{key}</figcaption></figure>')
+
+
+def terminal_html(title: str, label: str, lines: Sequence[str]) -> str:
+    """A terminal drawn without script (spec 7.6): comment lines and command lines, the prompt hidden from assistive
+    technology; page.js turns the command lines into copy buttons."""
+    body = []
+    for line in lines:
+        if line.startswith("# "):
+            body.append(f'<div class="c">{_e(line)}</div>')
+        elif line.startswith("$ "):
+            body.append(f'<div class="x"><span class="p" aria-hidden="true">$</span>{_e(line[2:])}</div>')
+        else:
+            raise ValueError(f"launcher/site/render.py: a terminal line is neither a comment nor a command: {line!r}")
+    hints = "".join(f'<span class="{kind}">{_e(hint)}</span>' for kind, hint in zip(("click", "tap"), words.COPY_HINTS))
+    return (f'<div class="term"><div class="th"><span class="tt">{_e(title)}</span>'
+            f'<span class="hint-copy">{hints}</span></div>'
+            f'<div class="tb" tabindex="0" role="region" aria-label="{_e(label)}"><div class="tl">{"".join(body)}'
+            "</div></div></div>")
+
+
+@dataclass(frozen=True)
+class _Home:
+    """What the home's blocks share: the repository, the rules' bench, the names, the laptop and our pick there."""
+    matrix: data.Matrix
+    build: Build
+    links: Links
+    bench: fit.Bench
+    labels: words.Labels
+    pick: fit.Pick
+
+
+def _speed_unit(decode: float | None) -> str:
+    return "" if decode is None else f' <span class="unit">{_e(words.SPEED_UNIT)}</span>'
+
+
+def hero_html(home: _Home) -> str:
+    """The hero (spec 7.3): the question, the controls (script only) and the laptop's answer."""
+    bench, labels, machine, agent = home.bench, home.labels, home.bench.home, fit.DEFAULT_AGENT
+    agent_ids = (*bench.agents, fit.NONE)
+    select = (f'<select class="agent-select" data-k="agent" aria-label="{_e(words.AGENT_LEGEND)}">'
+              + "".join(f'<option value="{_e(a)}"{" selected" if a == agent else ""}>{_e(labels.agents[a])}</option>'
+                        for a in agent_ids) + "</select>")
+    inputs = (
+        '<div class="inputs" id="inputs">'
+        + chips_html("gpu", fit.GPUS, {g: words.gpu_chip(g) for g in fit.GPUS}, machine.gpu, words.GPU_LEGEND,
+                     swatch="gpu", help_html=f'<p class="help">{rich_html(words.GPU_HELP, home.links, HOME)}</p>')
+        + chips_html("ram", fit.RAMS, {r: words.ram_chip(r) for r in fit.RAMS}, machine.ram, words.RAM_LEGEND,
+                     swatch="ram", help_html=f'<p class="help">{rich_html(words.RAM_HELP, home.links, HOME)}</p>')
+        + chips_html("agent", agent_ids, labels.agents, agent, words.AGENT_LEGEND, cls="field field-agent",
+                     select=select, help_html=f'<p class="help help-wide">{_e(words.agent_help(len(bench.agents)))}</p>')
+        + f'<p class="fh-state" id="fh-state"><span class="st">{_e(words.STATE_UNTOUCHED)}</span> '
+        f'<button type="button" class="linkish" id="reset" hidden>{_e(words.RESET)}</button></p></div>')
+    ask = (f'<div class="ask"><h1 id="q">{_e(words.H1)}</h1><p class="fh-lead">{_e(words.LEAD)}</p>{inputs}'
+           f'<p class="nojs-note">{_e(words.NOJS_NOTE)}</p>'
+           f'<details class="os"><summary>{_e(words.OS_SUMMARY)}</summary>'
+           f'<p>{rich_html(words.OS_BODY, home.links, HOME)}</p></details></div>')
+    pick = home.pick
+    setup, verdict = pick.setup, pick.verdict
+    facts = _cell(home.matrix, setup.key).recipe
+    names = [labels.models[model] for model in fit.models_as_measured(bench, machine)]
+    reason = words.reason(labels, pick, fit.default_verdict(bench, machine), fit.change(setup, verdict), names,
+                          fit.more_memory(bench, machine), agent)
+    question = words.moe_question(setup)
+    moe = None if question is None else (question, words.moe_answer(setup.runtime))
+    text = words.map_text(labels, setup, verdict, machine, True, False)
+    speed, context, download = words.FACT_LABELS
+    agents = words.agents_line(_cell(home.matrix, setup.key).clients, labels, setup.chat_only, setup.runtime, agent)
+    answer = (
+        f'<div class="answer" id="answer" role="region" aria-label="{_e(words.ANSWER_LABEL)}" tabindex="-1">'
+        f'<p class="fh-verdict" aria-live="polite">{_e(words.verdict_line(True, len(names), labels.total))}</p>'
+        f'<h2 class="pick-h" tabindex="-1">'
+        f'{_e(words.pick_heading(words.title(labels, setup.model, setup.runtime, setup.default_engine)))}</h2>'
+        f'<p class="reason">{_e(reason)}</p><dl class="hfacts">'
+        f'<div><dt>{_e(speed)}</dt><dd><span class="f-sp">{_e(words.speed(facts.decode))}</span>'
+        f'{_speed_unit(facts.decode)}</dd></div>'
+        f'<div><dt>{_e(context)}</dt><dd class="f-cx">{_e(words.context_k(facts.context))}</dd></div>'
+        f'<div><dt>{_e(download)}</dt><dd><span class="f-dl">{_e(words.gb_bytes(facts.size_bytes))}</span> '
+        f'{_e(words.GB_UNIT)}</dd></div></dl>'
+        + map_html(text, draw.track(setup, machine, bench.test_gpu), draw.ram_bar(setup, machine), moe, home.links,
+                   HOME)
+        + f'<p class="hagents">{_e(agents)}</p>'
+        f'<p class="cta"><a class="btn" href="#get-started">{_e(words.CTA)}</a></p></div>')
+    return f'<section class="fh" aria-labelledby="q">{ask}{answer}</section>'
+
+
+def _row_html(home: _Home, model: data.Model, scale: int) -> str:
+    """One row of the model list (spec 7.5, S4) for the laptop and our default agent."""
+    bench, labels, machine, agent = home.bench, home.labels, home.bench.home, fit.DEFAULT_AGENT
+    setup = fit.row_setup(bench, model.id, machine)
+    verdict = fit.verdict(setup, machine, bench.test_gpu)
+    cell = _cell(home.matrix, setup.key)
+    facts = cell.recipe
+    pick = home.pick.setup.model == model.id
+    default = next(item for item in bench.setups if item.model == model.id and item.default_engine)
+    tags = []
+    if default.key == bench.default:
+        tags.append(f'<span class="tag">{_e(words.TAGS["default"])}</span>')
+    if model.chat_only:
+        tags.append(f'<span class="tag">{_e(words.TAGS["chat"])}</span>')
+    tags.append(f'<span class="tag pick-tag"{"" if pick else " hidden"}>{_e(words.TAGS["pick"])}</span>')
+    hidden = words.ROW_HIDDEN
+    rank = "" if model.rank is None else f'<span class="vh">{_e(hidden["rank"])}</span>{model.rank}'
+    engine = words.row_engine(labels, setup) or ""
+    strip = draw.strip(setup, machine, bench.test_gpu, scale)
+    return (
+        f'<li class="row{" pick" if pick else ""}" data-model="{_e(model.id)}"><span class="rank">{rank}</span>'
+        f'<div class="name"><h3><a href="{_e(_page_href(f"/models/{model.id}/", HOME))}">{_e(model.name)}</a></h3>'
+        f'<span class="eng">{_e(engine)}</span>{"".join(tags)}</div>'
+        f'<div class="stripcell"><span class="stripbox" aria-hidden="true">{draw.strip_html(strip)}</span>'
+        f'<span class="vh galt">{_e(words.uses(labels, setup))}</span></div>'
+        f'<div class="facts"><span class="num n sp"><b>{_e(words.speed(facts.decode))}</b>{_speed_unit(facts.decode)}'
+        f'</span><span class="sep">, </span><span class="num n cx"><b>{_e(words.context_k(facts.context))}</b>'
+        f'<span class="vh">{_e(hidden["context"])}</span></span><span class="sep">, </span>'
+        f'<span class="num n dl"><b>{_e(words.gb_bytes(facts.size_bytes))}</b> <span class="unit">{_e(words.GB_UNIT)}'
+        f'</span><span class="vh">{_e(hidden["download"])}</span></span></div>'
+        f'<div class="more"><span class="vh">{_e(words.agents_head(agent, labels))}: </span>'
+        f'<span class="ag">{_e(words.agents_cell(cell.clients, labels, setup.chat_only, agent))}</span>'
+        f'<span class="dot">. </span><span class="vh">{_e(words.machine_head(True))}: </span>'
+        f'<span class="vd{" ok" if verdict.key == "ok" else ""}">{_e(words.verdict_word(verdict.key, labels))}</span>'
+        '<span class="dot">.</span></div></li>')
+
+
+def shelf_html(home: _Home) -> str:
+    """Our Top {top} and More models we measured (spec 7.5): the key, the sort (script only), the column heads and
+    the rows in our ranking."""
+    bench, labels, machine = home.bench, home.labels, home.bench.home
+    heads = words.COLUMN_HEADS
+    head = ('<div class="colhead" aria-hidden="true">' + f"<span>{_e(heads[0])}</span><span>{_e(heads[1])}</span>"
+            f'<span class="strip-head">{_e(words.strip_head(machine, labels, True))}</span>'
+            + "".join(f'<span class="n">{_e(text)}</span>' for text in heads[2:])
+            + f'<span class="ag ag-head">{_e(words.agents_head(fit.DEFAULT_AGENT, labels))}</span>'
+            f'<span class="vd vd-head">{_e(words.machine_head(True))}</span></div>')
+    scale = draw.scale(bench, machine)
+    models = {model.id: model for model in home.matrix.models}
+    order = [models[model] for model in fit.model_order(bench)]
+    rows = lambda ranked: "".join(_row_html(home, model, scale) for model in order
+                                  if (model.rank is not None) == ranked)
+    sort = ('<div class="sortbox" data-js-only hidden><label class="sel inline">'
+            f'<span class="lbl">{_e(words.SORT_LABEL)}</span><select name="sort" data-k="sort">'
+            + "".join(f'<option value="{_e(value)}"{" selected" if n == 0 else ""}>{_e(text)}</option>'
+                      for n, (value, text) in enumerate(words.SORTS)) + "</select></label></div>")
+    key = (f'<p class="key strip-key"><span>{_e(words.KEY[0])}</span><span><i class="sg"></i>{_e(words.KEY[1])}</span>'
+           f'<span><i class="h"></i>{_e(words.KEY[2])}</span></p>')
+    return (f'<section class="shelf-sec" id="models" aria-labelledby="h-top"><div class="shelf-top">'
+            f'<h2 id="h-top" tabindex="-1">{_e(words.top_heading(labels))}</h2>'
+            f'<div class="shelf-tools">{key}{sort}</div></div>{head}<ul class="shelf" role="list">{rows(True)}</ul>'
+            "</section>"
+            f'<section class="shelf-sec" id="more-models" aria-labelledby="h-more">'
+            f'<h2 id="h-more">{_e(words.MORE_HEADING)}</h2>{head}<ul class="shelf" role="list">{rows(False)}</ul>'
+            "</section>")
+
+
+def get_started_html(home: _Home) -> str:
+    """Get started (spec 7.6) for our pick on the laptop: the checks, the terminal, its notes, the endpoint and the
+    refusals."""
+    links, labels, agent = home.links, home.labels, fit.DEFAULT_AGENT
+    setup, verdict = home.pick.setup, home.pick.verdict
+    facts = _cell(home.matrix, setup.key).recipe
+    runtime = _runtime(home.matrix, setup.runtime)
+    engine = labels.engines[setup.runtime]
+    checks = (*words.CHECKS, words.disk_check(facts.size_bytes, runtime.image_gb, engine))
+    items = "".join(f'<li><span class="what{" disk" if n == len(checks) - 1 else ""}">{_e(what)}</span>'
+                    f'<span class="how">{rich_html(how, links, HOME)}</span></li>'
+                    for n, (what, how) in enumerate(checks))
+    lines = [*words.head_lines(home.build.repository), *words.pull_lines(facts, engine, runtime.image_gb),
+             *words.override_lines(setup, verdict, fit.change(setup, verdict), labels.first_engine),
+             *words.up_lines(facts), *words.agent_lines(facts, labels, setup.runtime, agent), *words.tail_lines(facts)]
+    title = words.terminal_title(labels.models[setup.model], engine)
+    notes = "".join(f"<li>{rich_html(note, links, HOME)}</li>" for note in words.terminal_notes(facts, labels, agent))
+    refusals = "".join(f"<div><dt><code>{_e(message)}</code></dt><dd>{_e(fix)}</dd></div>"
+                       for message, fix in words.REFUSALS)
+    more = "".join(f"<li>{rich_html(item, links, HOME)}</li>" for item in words.REFUSE_LINKS)
+    return (
+        f'<section class="sec" id="get-started" aria-labelledby="h-gs">'
+        f'<h2 id="h-gs" tabindex="-1">{_e(words.GS_HEADING)}</h2><p class="sec-lead">{_e(words.GS_LEAD)}</p>'
+        f'<div class="sub" id="before-you-start"><h3>{_e(words.BEFORE_HEADING)}</h3>'
+        f'<p class="prose">{_e(words.BEFORE_LEAD)}</p><ol class="checks">{items}</ol>'
+        f'<p class="sudo">{rich_html(words.SUDO_LINE, links, HOME)}</p></div>'
+        f'<div class="sub"><h3 id="the-commands" tabindex="-1">{_e(words.COMMANDS_HEADING)}</h3>'
+        f'{terminal_html(title, words.COMMANDS_LABEL, lines)}<ul class="tnotes">{notes}</ul>'
+        f'<p class="ep">{rich_html(words.endpoint(runtime.port, facts.served), links, HOME)}</p></div>'
+        f'<div class="sub" id="if-llmctl-refuses"><h3>{_e(words.REFUSE_HEADING)}</h3>'
+        f'<p class="prose">{_e(words.REFUSE_LEAD)}</p><dl class="refuse">{refusals}</dl><ul class="links">{more}</ul>'
+        "</div></section>")
+
+
+def _home_main(home: _Home) -> str:
+    return f'<main id="main" class="wrap">{hero_html(home)}{shelf_html(home)}{get_started_html(home)}</main>'
 
 
 def site(matrix: data.Matrix, build: Build, root: Path) -> dict[str, str]:
@@ -348,6 +580,10 @@ def site(matrix: data.Matrix, build: Build, root: Path) -> dict[str, str]:
     check_notes(matrix, links)
     labels = words.labels(matrix)
     style = check_asset("page.css", (_ASSETS / "page.css").read_text(encoding="utf-8"), "style")
-    nav = ((words.NAV["github"], build.repository),)
-    body = "\n".join([header_html(HOME, nav), _home_main(), footer_html(matrix, build, links, HOME)])
+    bench = fit.bench(matrix)
+    home = _Home(matrix, build, links, bench, labels, fit.hero_pick(bench, bench.home, fit.DEFAULT_AGENT))
+    nav = ((words.NAV["models"], "/#models"), (words.NAV["get-started"], "/#get-started"),
+           (words.NAV["github"], build.repository))
+    skip = f'<a class="skip" href="#models">{_e(words.SKIP_TO_MODELS)}</a>'
+    body = "\n".join([skip, header_html(HOME, nav), _home_main(home), footer_html(matrix, build, links, HOME)])
     return {HOME: document(title=words.HOME_TITLE, description=words.home_description(labels), body=body, style=style)}
