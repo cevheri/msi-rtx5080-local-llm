@@ -961,6 +961,8 @@ class _Page:
             "<p>A pair is one model on one engine: one cell of the table.</p>",
             f"<p>Images llmctl starts: {images}.</p>", self.versions(), f"<p>{self.speeds_line()}</p>",
             '<h3 id="read-clients">How to read the client results</h3>', self.classes(),
+            "<p>An e2e (end-to-end) run starts each recipe with llmctl and runs every agent client's session against "
+            "it.</p>",
             "<p>Run counts in the client lines count every e2e run of the same model on the same engine, so they can "
             "span changes to the pair's settings.</p>",
             f"<p>The {len(self.matrix.clients)} agent clients ({labels}) are the coding agents llmctl points at the "

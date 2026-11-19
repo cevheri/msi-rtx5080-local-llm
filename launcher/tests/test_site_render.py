@@ -992,6 +992,7 @@ class SiteRenderTest(unittest.TestCase):
             "dsh 0.2.2-rc.3 and Kimi 2.5.3.",
             speeds,
             "How to read the client results",
+            "An e2e (end-to-end) run starts each recipe with llmctl and runs every agent client's session against it.",
             "Run counts in the client lines count every e2e run of the same model on the same engine, so they can span "
             "changes to the pair's settings.",
             "The 5 agent clients (OpenCode, Hermes, Pi, dsh and Kimi) are the coding agents llmctl points at the running "
